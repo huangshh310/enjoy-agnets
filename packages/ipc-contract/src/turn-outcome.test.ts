@@ -11,9 +11,17 @@ test("出错：写类已执行则待验收，Attention 仍是出错", () => {
   })
 })
 
-test("用户停：写类已执行则待验收，Attention 中性已停止", () => {
+test("用户停：写类已执行则待验收，Attention 是 stopped", () => {
   const write = { name: "write_file", state: "output-available" as const }
   assert.deepEqual(decideTurnOutcome({ ended: "abort", tools: [write] }), {
+    workflow: "needs_review",
+    attention: "stopped"
+  })
+})
+
+test("归档：写类已执行则待验收，Attention 仍是中性", () => {
+  const write = { name: "write_file", state: "output-available" as const }
+  assert.deepEqual(decideTurnOutcome({ ended: "archive", tools: [write] }), {
     workflow: "needs_review",
     attention: "neutral"
   })
@@ -26,20 +34,20 @@ test("出错：没有写类已执行则保持执行中", () => {
   })
 })
 
-test("用户停：没有写类已执行则中性已停止，不算出错", () => {
+test("用户停：没有写类已执行则 stopped，不算出错", () => {
   assert.deepEqual(
     decideTurnOutcome({
       ended: "abort",
       tools: [{ name: "read_file", state: "output-available" }]
     }),
-    { workflow: "in_progress", attention: "neutral" }
+    { workflow: "in_progress", attention: "stopped" }
   )
   assert.deepEqual(
     decideTurnOutcome({
       ended: "abort",
       tools: [{ name: "write_file", state: "approval-requested" }]
     }),
-    { workflow: "in_progress", attention: "neutral" }
+    { workflow: "in_progress", attention: "stopped" }
   )
 })
 
@@ -98,7 +106,7 @@ test("写类已执行或执行中报错：待验收", () => {
   )
 })
 
-test("abort 时 input-available 先封成 stopped，算可能已改盘，Attention 中性", () => {
+test("abort 时 input-available 先封成 stopped，算可能已改盘", () => {
   const sealed = sealTurnTools([{ name: "write_file", state: "input-available" }], { aborted: true })
   assert.equal(sealed[0]?.state, "output-error")
   assert.deepEqual(sealed[0]?.result, { code: "user_aborted" })
@@ -118,7 +126,7 @@ test("abort 时 input-available 先封成 stopped，算可能已改盘，Attenti
       ended: "abort",
       tools: [{ name: "write_file", state: "input-available" }]
     }),
-    { workflow: "needs_review", attention: "neutral" }
+    { workflow: "needs_review", attention: "stopped" }
   )
 })
 

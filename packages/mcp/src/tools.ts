@@ -1,6 +1,9 @@
 /**
  * MCP tools/list 结果解析与写操作启发式。不信任 Server 字段形状。
  */
+import { CURATED_MCP_SERVER_IDS } from "@enjoy-agents/ipc-contract/mcp-curated"
+
+export { CURATED_MCP_SERVER_IDS }
 
 export type McpToolInfo = {
   name: string
@@ -35,30 +38,6 @@ export function isMutatingToolName(name: string): boolean {
   const leaf = name.trim()
   return MUTATING_NAME.test(leaf) || SHELL_NAME.test(leaf)
 }
-
-/** 精选预设 id 列表。hint 身份以 curated_preset_id + 指纹为准，不认显示名。 */
-export const CURATED_MCP_SERVER_IDS = [
-  "filesystem",
-  "everything",
-  "github",
-  "postgres",
-  "sqlite",
-  "puppeteer",
-  "brave-search",
-  "memory",
-  "docker",
-  "redis",
-  "gitlab",
-  "slack",
-  "notion",
-  "linear",
-  "sentry",
-  "fetch",
-  "sequential-thinking",
-  "git",
-  "mysql",
-  "playwright"
-] as const
 
 const CURATED_MCP_SET = new Set<string>(CURATED_MCP_SERVER_IDS)
 

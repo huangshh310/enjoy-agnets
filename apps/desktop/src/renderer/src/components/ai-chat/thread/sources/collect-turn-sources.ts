@@ -1,5 +1,5 @@
 /**
- * 从本轮 cited sources + 工具调用收成芯片，去重。网页 URL 本轮不做。
+ * 本轮芯片 = 工具碰过的文件（读/写）∪ 知识库 source.added。不从 git dirty 推断。网页 URL 本轮不做。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
@@ -27,7 +27,8 @@ export function collectTurnSources(
           id: source.sourceId || source.path,
           path: source.path,
           startLine: source.startLine,
-          title: source.title
+          title: source.title,
+          fromKnowledge: true
         },
         skillPrefix
       )
@@ -76,6 +77,7 @@ function toChip(
     title?: string
     toolName?: string
     fromEnjoy?: boolean
+    fromKnowledge?: boolean
   },
   skillPrefix: (name: string) => string
 ): TurnSourceChip {
@@ -111,5 +113,18 @@ function dedupeChips(chips: readonly TurnSourceChip[]): TurnSourceChip[] {
     const prev = byKey.get(key)
     if (!prev || (prev.startLine == null && chip.startLine != null)) byKey.set(key, chip)
   }
-  return [...byKey.values()]
+  return preferKnowledgeOverFile([...byKey.values()])
+}
+
+/** 同一 path 既是知识库 cite 又被工具碰过：只留知识库标。 */
+function preferKnowledgeOverFile(chips: readonly TurnSourceChip[]): TurnSourceChip[] {
+  const knowledgePaths = new Set(
+    chips.filter((chip) => chip.kind === "knowledge" && chip.path).map((chip) => chip.path as string)
+  )
+  return chips.filter((chip) => {
+    if (!chip.path || chip.kind === "knowledge" || chip.kind === "skill" || chip.kind === "mcp") {
+      return true
+    }
+    return !knowledgePaths.has(chip.path)
+  })
 }

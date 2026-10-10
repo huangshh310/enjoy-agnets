@@ -3,7 +3,7 @@
  */
 import { displayBaseName, shortenSourcePath } from "./source-path.ts"
 
-export type SourceKind = "file" | "doc" | "skill" | "mcp"
+export type SourceKind = "file" | "doc" | "skill" | "mcp" | "knowledge"
 
 export type TurnSourceChip = {
   id: string
@@ -25,7 +25,9 @@ export function classifySourceKind(input: {
   path?: string
   title?: string
   toolName?: string
+  fromKnowledge?: boolean
 }): SourceKind {
+  if (input.fromKnowledge) return "knowledge"
   const path = (input.path ?? "").replaceAll("\\", "/")
   const title = input.title ?? ""
   const tool = (input.toolName ?? "").toLowerCase()
@@ -53,7 +55,9 @@ export function formatSourceChipLabel(
     const name = chip.title?.replace(/^技能\s*[·.]\s*/, "") || displayBaseName(chip.path) || chip.title || "skill"
     return skillPrefix(name)
   }
-  if (chip.kind === "doc") return chip.title?.trim() || displayBaseName(chip.path) || chip.path || ""
+  if (chip.kind === "knowledge" || chip.kind === "doc") {
+    return chip.title?.trim() || displayBaseName(chip.path) || chip.path || ""
+  }
   const file = chip.path || chip.title || ""
   const short = shortenSourcePath(file)
   return chip.startLine != null ? `${short} · L${chip.startLine}` : short

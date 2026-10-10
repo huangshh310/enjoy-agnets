@@ -10,6 +10,6 @@ export function turnFromEvent(event: StreamEvent): TurnOutcome | undefined {
 
 export function omitCompleteFromTurn(event: StreamEvent, fallbackDeniedOnly: boolean): boolean {
   const turn = turnFromEvent(event)
-  if (turn) return turn.attention === "neutral"
+  if (turn) return turn.attention === "neutral" || turn.attention === "stopped"
   return event.type === "run.end" && fallbackDeniedOnly
 }

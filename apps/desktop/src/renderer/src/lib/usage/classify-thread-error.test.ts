@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   classifyThreadError,
+  humanizeThreadError,
   INTERNAL_STORE_ERROR,
   SEND_FAILED_RESTORE,
   SESSION_CREATE_TIMEOUT,
@@ -15,7 +16,10 @@ import {
   NEED_PROVIDER_KEY,
   NO_CHAT_ROUTE,
   ACP_RESUME_FALLBACK,
-  NEED_REMOTE_CONNECTED
+  NEED_REMOTE_CONNECTED,
+  RESTORE_NO_MATCHING,
+  RUN_FAILED,
+  CATCH_UP_APPROVAL_TIMEOUT
 } from "./classify-thread-error.ts"
 
 test("402 / spend / credit 走 L4，不并进泛化限流", () => {
@@ -33,6 +37,18 @@ test("429 才是速率限制", () => {
 test("普通供应商错误保持 generic", () => {
   assert.equal(classifyThreadError("model not found"), "generic")
   assert.equal(classifyThreadError("No output generated"), "generic")
+})
+
+test("机器码走人话，横幅不得摊原文", () => {
+  const t = (path: string) => path
+  assert.equal(classifyThreadError(RESTORE_NO_MATCHING), "restore_no_matching")
+  assert.equal(classifyThreadError(RUN_FAILED), "run_failed")
+  assert.equal(classifyThreadError(CATCH_UP_APPROVAL_TIMEOUT), "catch_up_timeout")
+  assert.equal(humanizeThreadError(RESTORE_NO_MATCHING, t), "chat.restoreNoMatching")
+  assert.equal(humanizeThreadError(RUN_FAILED, t), "chat.runFailed")
+  assert.equal(humanizeThreadError(CATCH_UP_APPROVAL_TIMEOUT, t), "studio.automations.catchUpTimeout")
+  assert.equal(humanizeThreadError("mystery_machine_code", t), "chat.errorGenericHint")
+  assert.notEqual(humanizeThreadError(RESTORE_NO_MATCHING, t), RESTORE_NO_MATCHING)
 })
 
 test("库约束原文不进 generic 详情", () => {

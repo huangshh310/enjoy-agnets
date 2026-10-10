@@ -15,8 +15,15 @@ export function ThreadNoticeBanner() {
   if (!notice) return null
   const kind = classifyThreadError(notice)
   const stopped = kind === "stopped"
+  const catchUpTimeout = kind === "catch_up_timeout"
   const resume = kind === "resume_fallback"
-  const title = stopped ? t("chat.runStopped") : resume ? t("chat.acpResumeFallbackTitle") : notice
+  const title = stopped
+    ? t("chat.runStopped")
+    : catchUpTimeout
+      ? t("studio.automations.catchUpTimeout")
+      : resume
+        ? t("chat.acpResumeFallbackTitle")
+        : notice
   const detail = resume ? t("chat.acpResumeFallbackHint") : undefined
 
   return (
@@ -27,7 +34,7 @@ export function ThreadNoticeBanner() {
       <span
         className={cx(
           "mt-1.5 size-2 shrink-0 rounded-full",
-          stopped ? "bg-text-tertiary" : "bg-status-yellow-text"
+          stopped || catchUpTimeout ? "bg-text-tertiary" : "bg-status-yellow-text"
         )}
         aria-hidden
       />

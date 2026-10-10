@@ -19,6 +19,7 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
+import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
@@ -191,6 +192,15 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
+  if (toolAbortKind(tool) === "neutral") {
+    return {
+      id: tool.id,
+      kind: "command",
+      title: formatToolName(tool.name),
+      errorText: t("studio.automations.catchUpTimeout"),
+      status: "skipped"
+    }
+  }
   if (isSkippedTool(tool)) {
     return {
       id: tool.id,

@@ -163,6 +163,7 @@ export function mapToolStatus(
   const abort = toolAbortKind(tool)
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"
+  if (abort === "neutral") return "skipped"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"

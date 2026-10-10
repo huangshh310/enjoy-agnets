@@ -28,6 +28,14 @@ test("三例形态：文件行号、文档名、技能短名", () => {
   )
 })
 
+test("知识库 cite 独立成 knowledge，不跟文件抢 key", () => {
+  assert.equal(classifySourceKind({ path: "src/auth/login.ts", fromKnowledge: true }), "knowledge")
+  assert.equal(
+    formatSourceChipLabel({ kind: "knowledge", title: "login.ts", path: "src/auth/login.ts" }, (n) => n),
+    "login.ts"
+  )
+})
+
 test("MCP 工具名收成服务器芯片，不当文件", () => {
   assert.equal(parseMcpServerId("mcp_filesystem__read_file"), "filesystem")
   assert.equal(parseMcpServerId("mcp_mcp_ab__list_dir"), "mcp_ab")

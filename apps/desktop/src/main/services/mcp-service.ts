@@ -9,6 +9,7 @@ import {
   upsertMcpServer,
   type McpServerRow
 } from "@enjoy-agents/db"
+import { McpUpsertInput } from "@enjoy-agents/ipc-contract"
 import {
   callMcpTool,
   connectMcpServer,
@@ -48,6 +49,11 @@ export function listHostMcpCandidates() {
       (item) => item.scope === "server" && item.level === "deny"
     )
   }))
+}
+
+/** IPC `mcp.upsert`：先 Zod 再 upsert，测试与 handler 走同一入口。 */
+export function handleMcpUpsert(raw: unknown) {
+  return upsertServer(McpUpsertInput.parse(raw))
 }
 
 export function upsertServer(input: {

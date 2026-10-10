@@ -169,7 +169,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.errorTitle, "模型这次没回完")
   assert.equal(z.chat.preparingHint, "正在准备…")
   assert.equal(z.chat.viewRawJson, "查看原始内容")
-  assert.equal(z.chat.sourcesSheetFooter, "选中的文件可以回看；来自挂载或 MCP 的内容没有文件路径，无法回看。")
+  assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开。")
   assert.doesNotMatch(z.chat.approvalHintAll, /sudo|rm -rf|write_file|bash/)
   assert.doesNotMatch(z.chat.approvalToolQuestion, /\{name\}/)
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
@@ -209,6 +209,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+  assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开。")
+  assert.doesNotMatch(z.chat.sourcesSheetFooter, /可聚焦|path|跳转/)
 })
 
 const MOD_COPY_ALLOWLIST = new Set([

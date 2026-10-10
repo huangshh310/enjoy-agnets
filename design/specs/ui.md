@@ -1,6 +1,6 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-10-10（创建中 Enter 队全文；无 GPU 关棱镜环；NEED_MODEL 中性条）
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-10-10（创建中 Enter 队全文；无 GPU 关棱镜环；本轮来源页脚「点文件可以在右侧打开。」）
 
 视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。完成条「在浏览器打开」：[`../previews/p0-f-preview-open.html`](../previews/p0-f-preview-open.html)（锁 tip `9a1a4ca`）。本轮来源详情：[`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)（锁 tip `76b5ecd`）。会话作业三件套：[`../previews/m-cbd-session-ops.html`](../previews/m-cbd-session-ops.html)（【视觉真源】M-CBD；账本+来源列密日志观感已被下一份取代）。账本/来源可读性：[`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)（【视觉真源】M-D + P0-G，锁 tip `b1721a7`；M-CBD 产品锁其余不变，F1 不在范围）。I1 同引擎中途换模型（设计锁，不宣称应用 1:1）：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)。P0 Composer 铬条回归（C1 全引擎探索\|执行 · 思考按能力 · I1 图标）：[`../previews/p0-composer-chrome.html`](../previews/p0-composer-chrome.html)（锁 tip `4dc2ac4`）。P0 Composer 输入区瘦身（密度与布局压过 chrome；C1 / I1 / P0-S 能力不砍；预览 tip `64d26b6` / blob `c545aeb`，不宣称像素 1:1）：[`../previews/p0-composer-slim.html`](../previews/p0-composer-slim.html)；产品锁 [`../references/p0-composer-slim.md`](../references/p0-composer-slim.md)。P0-S Skills/MCP 宿主透传（Composer 一行芯片；预览仍是视觉锁，不宣称像素 1:1）：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)。I4 本机 Automations（`#/settings/automations` 已接线列表/抽屉/本机 cron；预览仍是视觉锁，不宣称像素 1:1）：[`../previews/i4-automations.html`](../previews/i4-automations.html)。I4-P1 保存后 / 本机 webhook（产品短锁未落地；视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)，不宣称像素 1:1）：[`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md)。P2 命名身份（引擎可选显示名已接线：设置字段 / Picker「重命名」；芯片/Inbox 人话；侧栏会话行主行是会话题；空回退品牌名+模型；预览仍是视觉锁，不宣称像素 1:1）：[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)；产品锁 [`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)。
 
@@ -81,7 +81,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 底栏项目 / 分支选择：`ai-chat/status-bar/`（禁止写死 Main）
 - Mermaid：`thread/mermaid/`；Preview Rail：`thread/thread-preview-rail.tsx`（窄屏与账本开启时隐藏，杜绝刻度穿插气泡）
 - Shift+Tab 审批循环：`use-permission-cycle-hotkey.ts`（挂 `chat-stage.tsx`；只切读取/编辑，`cyclePermissionMode`）
-- 本轮来源芯片与「本轮来源」sheet：`ai-chat/thread/sources/` + `stores/sources-sheet/`（芯片 / 账本行共用；芯片入口仍认 [`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)，锁 tip `76b5ecd`；账本分组 / 来源诚实空态认 [`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)，锁 tip `b1721a7`）
+- 本轮来源芯片与「本轮来源」sheet：`ai-chat/thread/sources/` + `stores/sources-sheet/`（芯片 / 账本行共用；芯片入口仍认 [`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)，锁 tip `76b5ecd`；账本分组 / 来源诚实空态认 [`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)，锁 tip `b1721a7`）。类型标 `file | skill | mcp | knowledge`：图标表 `source-badge.ts` 是 `Record<SourceBadgeKind, …>`，知识库用 `RiBookOpenLine`，缺 kind 回落问号标，禁止 `ICONS[badge]` 为 undefined 白屏。知识库行不跳审查，但点芯片仍 `data-selected=true`。选中行底 `bg-accent-500/10`（低透明 accent，浅/深都跟 token），标题 `text-text-primary`，图标与类型标走未选中的 secondary / tertiary，禁止 `bg-accent-50` 或行内 hex（`accent-50` 是浅色蓝 `#eef5ff`，暗色不会翻）。页脚普通人话「点文件可以在右侧打开。」，禁止「可聚焦 / path / 跳转」。
+- 渲染崩溃回退：`layout/crash-fallback/`。`App` 根 `RendererErrorBoundary` + 根路由 `errorComponent` 共用「这里出了点问题。」/「重新加载」。默认面不摊 `error.message` / stack（含 `Element type is invalid`）；开发者档 `enjoy-agents-dev-copy=1` 或 console 才留堆栈。E2E 桥 `crashRenderer` 只为拍回退面。
 - 验收闸：`ai-chat/review-gate/`（顶栏三段 + 打回/通过）；账本：`ai-chat/run-ledger/`（按 kind 分组折叠，文件行开同一张 sheet）
 - 审批策略：`ai-chat/approval-policy-toggle.tsx`（底栏盾牌）；智能体发现条 `settings/approval-discover/`；禁止再挂 `AutoApproveBar`
 - Composer 本轮改动条与跳动宠物：`ai-chat/composer/session-review/`；系统浏览器预览：`session-review/preview-open/`
@@ -174,7 +175,10 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - **已修**：空态发送键常驻淡灰。全部档芯片写「全部」+ `status-yellow` 警告色（不是红底），悬停白话「全部：助手可直接改文件、运行命令，不再逐条问你」。
 - **隐患**：Shift+Tab 在输入框「失灵」。根因：hotkey 跳过 input/textarea/contentEditable。空 Composer 才切档；有字让出焦点后退。循环不要进「全部」。
 - **隐患**：Composer `@` 漏 MCP / 把 MCP 当授权。发现组是 discover（文件+文档+技能+MCP+muted web）；执行仍走 ToolLoop。
-- **隐患**：有 path 的文件 chip 直接 `openSourceRow` / `openChangedFile`，底脚会跳过「本轮来源」sheet。根因：把审查捷径绑在芯片上。正确做法（P0-G `76b5ecd`）：芯片与 +N **只开 sheet**；聚焦审查只从 sheet 内有 path 的文件行；技能 / MCP 不跳转。sheet 用轻 scrim（`bg-black/10`），禁止全屏黑底遮死右侧看板。
+- **隐患**：有 path 的文件 chip 直接 `openSourceRow` / `openChangedFile`，底脚会跳过「本轮来源」sheet。根因：把审查捷径绑在芯片上。正确做法（P0-G `76b5ecd`）：芯片与 +N **只开 sheet**；聚焦审查只从 sheet 内有 path 的文件行；技能 / MCP / 知识库不跳转。sheet 用轻 scrim（`bg-black/10`），禁止全屏黑底遮死右侧看板。
+- 点「知识库 readme.md」芯片整窗「Element type is invalid… SourceRowBody」。根因：`SourceBadgeKind` 已含 `knowledge`，图标表却只有 file/skill/mcp，`ICONS[badge]` 是 undefined。正确做法：`source-badge.ts` 用 `Record<SourceBadgeKind, …>` + 运行时问号回落；每加 kind 必须补表。验收：`e2e/knowledge-source-chip.spec.ts`（stub 索引 `.` 后发 `hello knowledge`）。
+- 暗色下「本轮来源」选中行白字几乎看不见。根因：`bg-accent-50` 锁死浅色蓝 `#eef5ff`，不跟 `.dark` 翻。正确做法：选中走 `bg-accent-500/10` + `text-text-primary`，标/图标用普通 token，行内禁止 hex / `accent-50`。
+- 渲染未捕获异常曾把 React 英文堆栈（`Something went wrong! Element type is invalid…`）摊给用户。根因：根树没有错误边界。正确做法：`RendererErrorBoundary` + 路由 `errorComponent` 只走人话；堆栈进 console / 开发者档。
 - **隐患**：toast 写死 56px 盖住 Composer「默认」「桌面」和模型选择器。根因：只认顶边在视口下半的 clearance，矮窗高 Composer 顶边越过中线被忽略。正确做法：按底边是否贴底（约 96px 内）量顶边，写入 `--app-toast-bottom-offset`，Toaster `offset.bottom` 用同一值；无贴底 Composer 回落页脚/56。
 - **隐患**：「已完成 · 刚刚」居中浮在 Stage 顶盖住会话题，把标题裁成「stub-…」；「需处理」盖住用户气泡。正确做法：已完成进顶栏状态区约 4s 自消；需处理占标题栏下一行。
 - **隐患**：本轮账本像终端 dump（截断路径刷屏、每行大「命令」、重复蓝条），从账本打开的「本轮来源」像空白主区。根因：平铺 transcript、kind 当每行主标签；sheet 无文件时不画。正确做法（已接线，锁 `b1721a7`）：按 kind 分组折叠、主行文件名优先、命令一行摘要、stdout 另字段；点文件行开同一张 P0-G sheet；底脚芯片仍无来源不弹空 sheet。禁止假来源卡 / 假进度 / 从账本重跑。F1 状态机不要顺手改。审批后错误行若摊 `No result received.`，走 `ledger-error-copy.ts` 人话。

@@ -32,6 +32,8 @@ import { openExternalHttpUrl } from "./services/window-open-external"
 import { SSH_HOST_CHANNELS, registerSshHostIpc } from "./ipc-ssh-hosts.ts"
 import { registerWorkspaceIpc } from "./ipc-workspace.ts"
 import { listInboxStateRows, putInboxStates } from "./services/inbox-state-service"
+import { listPendingApprovalsForInbox } from "./services/list-live-pending-approvals"
+import { listSessionsNeedingReviewForInbox } from "./services/list-sessions-needs-review"
 
 export const SHELL_CHANNELS = [
   "workspace.open",
@@ -67,6 +69,8 @@ export const SHELL_CHANNELS = [
   "workspace.changes",
   "inbox.state.list",
   "inbox.state.put",
+  "approvals.pending",
+  "sessions.needsReview",
   "agent.run",
   "agent.abort",
   "agent.steer",
@@ -106,6 +110,8 @@ export function registerShellIpc() {
 function registerInboxIpc() {
   ipcMain.handle("inbox.state.list", (_event, raw) => listInboxStateRows(raw))
   ipcMain.handle("inbox.state.put", (_event, raw) => putInboxStates(raw))
+  ipcMain.handle("approvals.pending", (_event, raw) => listPendingApprovalsForInbox(raw))
+  ipcMain.handle("sessions.needsReview", (_event, raw) => listSessionsNeedingReviewForInbox(raw))
 }
 
 function registerAgentIpc() {

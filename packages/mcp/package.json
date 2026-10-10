@@ -13,6 +13,7 @@
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\""
   },
   "dependencies": {
+    "@enjoy-agents/ipc-contract": "workspace:*",
     "ai": "catalog:",
     "zod": "catalog:"
   },

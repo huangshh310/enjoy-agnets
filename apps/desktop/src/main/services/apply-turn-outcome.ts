@@ -6,14 +6,13 @@ import type { TurnOutcome } from "@enjoy-agents/ipc-contract"
 import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import type { ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
-import { patchSession } from "./session-queries"
 import { shouldWriteSessionWorkflow, stickyTurnOutcome } from "./session-workflow-sticky"
 
 export { shouldWriteSessionWorkflow, stickyTurnOutcome }
 
 export function turnOutcomeForRun(
   run: Pick<ActiveRun, "tools" | "input">,
-  ended: "end" | "error" | "abort"
+  ended: "end" | "error" | "abort" | "archive"
 ): TurnOutcome {
   return stickyTurnOutcome(
     decideTurnOutcome({ ended, tools: run.tools }),
@@ -32,7 +31,13 @@ export function persistSessionWorkflow(
 ): void {
   if (!sessionId) return
   if (!shouldWriteSessionWorkflow(readSessionWorkflow(sessionId), workflow)) return
-  void patchSession({ id: sessionId, workflowStatus: workflow }).catch(() => undefined)
+  try {
+    getDatabase()
+      .prepare("UPDATE sessions SET workflow_status = ? WHERE id = ?")
+      .run(workflow, sessionId)
+  } catch (error) {
+    console.error("persistSessionWorkflow failed", sessionId, workflow, error)
+  }
 }
 
 function readSessionWorkflow(sessionId: string): string | null {
