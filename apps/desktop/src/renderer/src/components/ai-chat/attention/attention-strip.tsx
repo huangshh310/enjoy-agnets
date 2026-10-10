@@ -19,6 +19,7 @@ export function AttentionNeedsBar() {
       className="relative z-20 shrink-0 px-4 pb-1 pt-0.5"
     >
       <div
+        data-testid="attention-strip"
         role="region"
         aria-label={t("attention.stripLabel")}
         className={cx(

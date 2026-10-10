@@ -31,7 +31,7 @@ export async function openCodingStream(
   input: OpenCodingStreamInput
 ): Promise<OpenedCodingStream> {
   const policy = approvalPolicyFromPrefs(input)
-  if (isE2eStub()) return rememberOpened(input, openedE2eStub(input))
+  if (isE2eStub(app.isPackaged)) return rememberOpened(input, openedE2eStub(input))
   if (isAcpHostRuntime(input.runtimeId)) {
     return rememberOpened(input, await openedAcpStream(input))
   }

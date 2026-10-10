@@ -37,6 +37,17 @@ test("流事件分流：成功待验收，失败/开跑回执行中", () => {
   assert.equal(workflowAfterStreamEvent("text.delta"), null)
 })
 
+test("有 turn 时只信 main：只读回待办，出错不进待验收", () => {
+  assert.equal(
+    workflowAfterStreamEvent("run.end", { turn: { workflow: "todo", attention: "complete" } }),
+    "todo"
+  )
+  assert.equal(
+    workflowAfterStreamEvent("run.error", { turn: { workflow: "in_progress", attention: "error" } }),
+    "in_progress"
+  )
+})
+
 test("sync 按结束原因分流，废止一律 needs_review，不看写盘 path", () => {
   const sync = readFileSync(join(dir, "sync-review-gate.ts"), "utf8")
   assert.ok(sync.includes("workflowAfterStreamEvent"))

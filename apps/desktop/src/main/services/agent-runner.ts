@@ -2,12 +2,8 @@
  * Agent 编排入口：启动 / 中止 / 审批。泵与内存态在独立模块。
  */
 import { AbortAgentInput } from "@enjoy-agents/ipc-contract"
-import { USER_ABORT_MESSAGE } from "./claim-run-end"
-import { persistActiveRun } from "./flush-agent-run"
-import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
+import { abortActiveRunMemory } from "./abort-active-run"
 import { cancelCodingStream } from "./open-coding-stream"
-import { clearSteer } from "./runtime-interact/steering-queue"
-import { deleteActiveRun, emitEvent, getActiveRun, settleRun } from "./agent-run-state"
 
 export { createSession, listMessages, listSessions, patchSession } from "./session-queries"
 export { runAgent, resumeAgentRun } from "./agent-run-start"
@@ -20,21 +16,14 @@ export async function abortAgent(rawInput: unknown) {
   const { runId } = AbortAgentInput.parse(
     typeof rawInput === "string" ? { runId: rawInput } : rawInput
   )
-  const run = getActiveRun(runId)
-  clearCatchUpApprovalTimeout(runId)
-  if (run) {
-    run.userCancelled = true
-    persistActiveRun(run, runId, "cancelled")
-    clearSteer(run.input.sessionId)
-    settleRun(runId, { status: "error", summary: USER_ABORT_MESSAGE })
-    emitEvent(run.window, { type: "run.error", runId, message: USER_ABORT_MESSAGE })
-  }
-  run?.abort.abort()
-  deleteActiveRun(runId)
+  const run = abortActiveRunMemory(runId)
   await cancelCodingStream(runId)
   const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
   const { cancelInFlightDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
-  endDesktopActOverlay()
-  cancelInFlightDesktopAct()
+  endDesktopActOverlay({ runId, sessionId: run?.input.sessionId })
+  cancelInFlightDesktopAct({
+    runId,
+    sessionId: run?.input.sessionId
+  })
   return { ok: true }
 }

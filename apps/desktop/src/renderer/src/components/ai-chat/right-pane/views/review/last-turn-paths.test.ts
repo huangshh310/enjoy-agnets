@@ -135,6 +135,35 @@ test("还在审批的写盘也不算本轮改动", () => {
   )
 })
 
+test("已允许的 write_file 立刻用入参 path，不等 result", () => {
+  assert.deepEqual(
+    pathsFromTools([
+      { id: "1", name: "write_file", args: { path: "e2e-stub.txt" }, state: "input-available" }
+    ]),
+    ["e2e-stub.txt"]
+  )
+})
+
+test("用户停封口的 write_file 立刻列 path", () => {
+  const messages = [
+    msg({ role: "user", content: "write a note" }),
+    msg({
+      role: "assistant",
+      content: "",
+      tools: [
+        {
+          id: "1",
+          name: "write_file",
+          args: { path: "e2e-stub.txt" },
+          state: "output-error",
+          result: { code: "user_aborted" }
+        }
+      ]
+    })
+  ]
+  assert.deepEqual(pathsFromLastTurn(messages), ["e2e-stub.txt"])
+})
+
 test("写盘 output-error 算本轮改动，进待验收", () => {
   const messages = [
     msg({ role: "user", content: "write a note" }),

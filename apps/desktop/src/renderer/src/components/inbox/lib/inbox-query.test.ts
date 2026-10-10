@@ -37,6 +37,42 @@ function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id"
   }
 }
 
+test("已决审批与已归档会话不进拍板", () => {
+  const repositories: RepositoryNode[] = [
+    { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+    { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+  ]
+  const items = inboxFromAttention(
+    [
+      attention({
+        id: "ses_live:pending_approval",
+        sessionId: "ses_live",
+        kind: "pending_approval",
+        status: "active",
+        summary: "活着 · write_file"
+      }),
+      attention({
+        id: "ses_live:pending_done",
+        sessionId: "ses_live",
+        kind: "pending_approval",
+        status: "resolved",
+        summary: "已决 · write_file"
+      }),
+      attention({
+        id: "ses_arch:pending_approval",
+        sessionId: "ses_arch",
+        kind: "pending_approval",
+        status: "active",
+        summary: "归档 · write_file"
+      })
+    ],
+    { t, readIds: new Set(), hiddenIds: new Set(), repositories }
+  )
+  assert.equal(items.length, 1)
+  assert.equal(items[0]?.sessionId, "ses_live")
+  assert.equal(inboxNavCounts(items).approval, 1)
+})
+
 test("complete 不进安静 Inbox，不占拍板徽标", () => {
   const items = inboxFromAttention(
     [attention({ id: "c", sessionId: "ses_c", kind: "complete", summary: "done" })],

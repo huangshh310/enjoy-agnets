@@ -27,11 +27,13 @@ test("取消文案含 abort，供 Inbox 失败筛标已取消", () => {
 })
 
 test("abortAgent 发 run.error 并标 userCancelled，不发 run.end", () => {
+  const abort = readFileSync(join(dir, "abort-active-run.ts"), "utf8")
+  assert.ok(abort.includes("userCancelled = true"))
+  assert.ok(abort.includes("USER_ABORT_MESSAGE"))
+  assert.ok(abort.includes('type: "run.error"'))
+  assert.ok(!abort.includes('type: "run.end"'))
   const runner = readFileSync(join(dir, "agent-runner.ts"), "utf8")
-  assert.ok(runner.includes("userCancelled = true"))
-  assert.ok(runner.includes("USER_ABORT_MESSAGE"))
-  assert.ok(runner.includes('type: "run.error"'))
-  assert.ok(!runner.includes('type: "run.end"'))
+  assert.ok(runner.includes("abortActiveRunMemory"))
   assert.ok(runner.includes("cancelInFlightDesktopAct"))
   const decide = readFileSync(join(dir, "decide-approval.ts"), "utf8")
   assert.ok(decide.includes("runWithActiveRunId"))

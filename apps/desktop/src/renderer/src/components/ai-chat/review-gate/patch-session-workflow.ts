@@ -5,7 +5,23 @@
 import type { SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { nextLocalSessionWorkflow } from "./next-local-session-workflow.ts"
 
+export { nextLocalSessionWorkflow }
+
+/** 流事件只改本地节点。工单落库只许 main（`persistTurnWorkflow`）。 */
+export function applyLocalSessionWorkflow(
+  sessionId: string,
+  workflowStatus: SessionWorkflowStatus
+): void {
+  const store = useChatStore.getState()
+  const current = store.repositories.find((node) => node.id === sessionId)?.workflowStatus ?? null
+  const next = nextLocalSessionWorkflow(current, workflowStatus)
+  if (!next) return
+  store.patchSessionNode(sessionId, { workflowStatus: next })
+}
+
+/** 用户点通过 / 打回才写穿。流事件禁止走这条。 */
 export async function patchSessionWorkflow(
   sessionId: string,
   workflowStatus: SessionWorkflowStatus

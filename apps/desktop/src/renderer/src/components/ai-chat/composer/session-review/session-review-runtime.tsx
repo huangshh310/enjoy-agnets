@@ -7,29 +7,40 @@ import { formatRunElapsed } from "./format-run-elapsed"
 
 export function SessionReviewRuntime({
   modelLabel,
-  startedAt
+  startedAt,
+  waiting = false
 }: {
   modelLabel: string
   startedAt: number
+  waiting?: boolean
 }) {
   const { t } = useI18n()
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
+    if (waiting) return
     const tick = () => setNow(Date.now())
     tick()
     const timer = window.setInterval(tick, 1000)
     return () => window.clearInterval(timer)
-  }, [startedAt])
+  }, [startedAt, waiting])
 
   return (
-    <p className="flex min-w-0 shrink-0 items-center gap-1.5 text-caption-2-medium text-text-secondary">
-      <span className="size-1.5 shrink-0 rounded-full bg-accent-500 animate-pulse" aria-hidden />
+    <p
+      data-testid="session-review-runtime"
+      className="flex min-w-0 shrink-0 items-center gap-1.5 text-caption-2-medium text-text-secondary"
+    >
+      <span
+        className={`size-1.5 shrink-0 rounded-full bg-accent-500 ${waiting ? "" : "animate-pulse"}`}
+        aria-hidden
+      />
       <span className="truncate tabular-nums">
-        {t("chat.sessionReviewWorking", {
-          model: modelLabel,
-          elapsed: formatRunElapsed(now - startedAt, t)
-        })}
+        {waiting
+          ? t("chat.sessionReviewWaiting")
+          : t("chat.sessionReviewWorking", {
+              model: modelLabel,
+              elapsed: formatRunElapsed(now - startedAt, t)
+            })}
       </span>
     </p>
   )

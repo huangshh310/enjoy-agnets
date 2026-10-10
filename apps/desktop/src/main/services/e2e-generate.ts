@@ -46,7 +46,11 @@ async function finishE2eGeneration(
     durationMs: Date.now() - started,
     ttfoMs: 1
   })
-  stampAndSend(window, { type: "run.end", runId }, request.sessionId)
+  stampAndSend(
+    window,
+    { type: "run.end", runId, turn: { workflow: "todo", attention: "complete" } },
+    request.sessionId
+  )
 }
 
 async function emitStubKind(

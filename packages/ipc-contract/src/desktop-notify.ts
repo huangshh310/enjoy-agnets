@@ -10,6 +10,35 @@ import { z } from "zod"
  */
 export const USER_ABORT_MESSAGE = "Aborted by user."
 
+/** 用户停 / 归档 abort 的结构化码。UI 只认这码，禁止把 message 摊进界面。 */
+export const USER_ABORTED_CODE = "user_aborted"
+
+/** 泵真实出错结清未决审批：不是用户 Stop，工具行走出错，禁止标已停止。 */
+export const RUN_FAILED_CODE = "run_failed"
+
+/** approval.resolved.code 只认这两档。 */
+export const APPROVAL_RESOLVED_CODES = [USER_ABORTED_CODE, RUN_FAILED_CODE] as const
+export type ApprovalResolvedCode = (typeof APPROVAL_RESOLVED_CODES)[number]
+
+export function toolHasResultCode(
+  tool: { result?: unknown; errorText?: string } | undefined,
+  code: string
+): boolean {
+  if (!tool) return false
+  if (tool.errorText === code) return true
+  const result = tool.result
+  return Boolean(result && typeof result === "object" && (result as { code?: string }).code === code)
+}
+
+/** 用户停 → 已停止；泵出错结清 → 出错。禁止把 run_failed 当成已拒绝。 */
+export function toolAbortKind(
+  tool?: { result?: unknown; errorText?: string }
+): "stopped" | "error" | undefined {
+  if (toolHasResultCode(tool, USER_ABORTED_CODE)) return "stopped"
+  if (toolHasResultCode(tool, RUN_FAILED_CODE)) return "error"
+  return undefined
+}
+
 /** 通知层结束态。从现有 `run.end` / `run.error` 推导，不改事件契约。 */
 export const DesktopNotifyRunKind = z.enum(["completed", "stopped", "errored"])
 export type DesktopNotifyRunKind = z.infer<typeof DesktopNotifyRunKind>
@@ -52,18 +81,27 @@ const ACTION_VERBS_EN: Record<DesktopNotifyActionKind, string> = {
  */
 export function isUserAbortMessage(message: string | undefined | null): boolean {
   if (typeof message !== "string") return false
+  if (message === USER_ABORTED_CODE) return true
   const normalized = message.trim().replace(/\.+$/, "").toLowerCase()
   return normalized === "aborted by user"
+}
+
+export function isUserAbortEvent(event: {
+  code?: string
+  message?: string
+}): boolean {
+  return event.code === USER_ABORTED_CODE || isUserAbortMessage(event.message)
 }
 
 /** `run.end` → 已完成；用户停 `run.error` → 已停止；其它 `run.error` → 出错。 */
 export function deriveRunNotifyKind(event: {
   type: string
   message?: string
+  code?: string
 }): DesktopNotifyRunKind | null {
   if (event.type === "run.end") return "completed"
   if (event.type === "run.error") {
-    return isUserAbortMessage(event.message) ? "stopped" : "errored"
+    return isUserAbortEvent(event) ? "stopped" : "errored"
   }
   return null
 }

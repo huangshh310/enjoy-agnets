@@ -31,6 +31,9 @@ function fakeHost(git: {
     grep: async () => [],
     bash: async (command) => {
       bashLog.push(command)
+      if (command.includes("is-inside-work-tree")) {
+        return { stdout: "true", stderr: "", exitCode: 0 }
+      }
       if (command.includes("log")) {
         return { stdout: git.log ?? "", stderr: "", exitCode: 0 }
       }
@@ -51,10 +54,23 @@ function fakeHost(git: {
 }
 
 test("changes 解析 host.gitStatus，不是空 stub", async () => {
-  const rows = await sshWorkspaceChanges(fakeHost({ status: " M src/a.ts" }))
-  assert.equal(rows.length, 1)
-  assert.equal(rows[0]?.path, "src/a.ts")
+  const snapshot = await sshWorkspaceChanges(fakeHost({ status: " M src/a.ts" }))
+  assert.equal(snapshot.gitRepo, true)
+  assert.equal(snapshot.files.length, 1)
+  assert.equal(snapshot.files[0]?.path, "src/a.ts")
   assert.equal(changesFromGitStatus("").length, 0)
+})
+
+test("非 git 远端工作区回 gitRepo=false，不假装干净仓库", async () => {
+  const host = fakeHost({})
+  host.bash = async (command) => {
+    if (command.includes("is-inside-work-tree")) {
+      return { stdout: "", stderr: "not a git repository", exitCode: 128 }
+    }
+    return { stdout: "", stderr: "", exitCode: 1 }
+  }
+  const snapshot = await sshWorkspaceChanges(host)
+  assert.deepEqual(snapshot, { files: [], gitRepo: false })
 })
 
 test("gitLog 走 host bash git log", async () => {

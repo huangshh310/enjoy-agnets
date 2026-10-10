@@ -22,8 +22,19 @@ export { encodeMessage, decodeMessages, initializeRequest } from "./stdio-rpc"
 export { handshakeHttp, handshakeSse, parseSseData, rpcPost } from "./http-rpc"
 export { createMcpHandleRegistry, type McpHandleRegistry } from "./registry"
 export {
+  CURATED_MCP_FINGERPRINTS,
+  isCuratedMcpIdentity,
+  isKnownCuratedPresetId,
+  matchesCuratedFingerprint,
+  resolveCuratedPresetId
+} from "./curated-presets"
+export {
+  CURATED_MCP_SERVER_IDS,
+  isCuratedMcpServerName,
   isMutatingToolName,
   mcpAgentToolName,
+  mcpReadOnlyHintApplies,
+  mcpToolRequiresWriteApproval,
   parseToolsList,
   type McpToolInfo
 } from "./tools"

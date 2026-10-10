@@ -7,6 +7,7 @@ import {
   isStaleObservationAfterAllow,
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
 import type { SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
@@ -146,12 +147,22 @@ export function extractFilePaths(
   })
 }
 
-export type ToolRenderStatus = "pending" | "running" | "completed" | "error" | "denied" | "skipped"
+export type ToolRenderStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "error"
+  | "denied"
+  | "skipped"
+  | "stopped"
 
 export function mapToolStatus(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): ToolRenderStatus {
+  const abort = toolAbortKind(tool)
+  if (abort === "stopped") return "stopped"
+  if (abort === "error") return "error"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"

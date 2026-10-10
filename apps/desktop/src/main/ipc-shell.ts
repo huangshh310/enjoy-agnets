@@ -10,7 +10,8 @@ import {
   TerminalWriteInput,
   WindowForceQuitInput,
   parseWindowOpenExternalInput,
-  WindowSetTaskbarTitleInput
+  WindowSetTaskbarTitleInput,
+  SessionActiveInput
 } from "@enjoy-agents/ipc-contract"
 import {
   abortAgent,
@@ -19,6 +20,7 @@ import {
   steerAgent
 } from "./services/agent-runner"
 import { inspectPrompt } from "./services/inspect-prompt-service"
+import { sessionActiveRun } from "./services/session-active-run"
 import {
   closeWorkspaceTerminal,
   openWorkspaceTerminal,
@@ -70,6 +72,7 @@ export const SHELL_CHANNELS = [
   "agent.steer",
   "agent.decide",
   "agent.inspectPrompt",
+  "agent.sessionActive",
   "terminal.open",
   "terminal.write",
   "terminal.resize",
@@ -111,6 +114,10 @@ function registerAgentIpc() {
   ipcMain.handle("agent.steer", (event, raw) => steerAgent(windowFromEvent(event), raw))
   ipcMain.handle("agent.decide", (event, raw) => decideApproval(windowFromEvent(event), raw))
   ipcMain.handle("agent.inspectPrompt", (_event, raw) => inspectPrompt(raw))
+  ipcMain.handle("agent.sessionActive", (_event, raw) => {
+    const { sessionId } = SessionActiveInput.parse(raw)
+    return sessionActiveRun(sessionId)
+  })
 }
 
 function registerTerminalIpc() {

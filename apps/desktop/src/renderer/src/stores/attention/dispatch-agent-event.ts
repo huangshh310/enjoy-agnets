@@ -13,6 +13,7 @@ import { shouldRefineSessionTitle } from "@renderer/lib/session-title"
 import { visibleUserText } from "@renderer/lib/user-message-text"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { lastTurnDeniedOnly } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
+import { omitCompleteFromTurn } from "@renderer/components/ai-chat/review-gate/turn-from-event"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 
@@ -22,12 +23,21 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
   if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId)
+  const storeEarly = useChatStore.getState()
+  const foreground = belongsToForeground(
+    event,
+    storeEarly.sessionId,
+    storeEarly.runId,
+    storeEarly.running,
+    sessionId
+  )
   if (sessionId) {
     const meta = sessionMetaOf(sessionId)
-    const chat = useChatStore.getState()
     useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId, {
-      omitComplete:
-        event.type === "run.end" && sessionId === chat.sessionId && lastTurnDeniedOnly(chat.messages)
+      omitComplete: omitCompleteFromTurn(
+        event,
+        foreground && event.type === "run.end" && lastTurnDeniedOnly(storeEarly.messages)
+      )
     })
   }
 
@@ -56,7 +66,7 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   }
 
   const store = useChatStore.getState()
-  if (belongsToForeground(event, store.sessionId, store.runId, store.running, sessionId)) {
+  if (foreground) {
     store.applyStreamEvent(event)
     syncReviewGateAfterEvent(event, sessionId, true)
     return

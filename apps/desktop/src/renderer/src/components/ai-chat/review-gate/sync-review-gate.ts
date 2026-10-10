@@ -6,24 +6,26 @@
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { lastTurnDeniedOnly } from "../right-pane/views/review/last-turn-paths"
-import { patchSessionWorkflow } from "./patch-session-workflow"
+import { applyLocalSessionWorkflow } from "./patch-session-workflow"
 import { workflowAfterStreamEvent } from "./review-gate-phase"
+import { turnFromEvent } from "./turn-from-event"
 
 export function syncReviewGateAfterEvent(
   event: StreamEvent,
   sessionId: string | undefined,
-  _foreground: boolean
+  foreground: boolean
 ): void {
   if (!sessionId) return
   const chat = useChatStore.getState()
+  const turn = turnFromEvent(event)
   const deniedOnly =
-    event.type === "run.end" && sessionId === chat.sessionId && lastTurnDeniedOnly(chat.messages)
-  const next = workflowAfterStreamEvent(event.type, { deniedOnly })
+    !turn && foreground && event.type === "run.end" && lastTurnDeniedOnly(chat.messages)
+  const next = workflowAfterStreamEvent(event.type, { deniedOnly, turn })
   if (!next) return
-  void patchSessionWorkflow(sessionId, next)
+  applyLocalSessionWorkflow(sessionId, next)
 }
 
 export function syncReviewGateOnComposerStart(sessionId: string | null): void {
   if (!sessionId) return
-  void patchSessionWorkflow(sessionId, "in_progress")
+  applyLocalSessionWorkflow(sessionId, "in_progress")
 }

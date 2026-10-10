@@ -120,13 +120,9 @@ function pathFromTool(tool: ThreadToolCall): string | null {
   return path
 }
 
-/** 还在审批 / 未发出。output-error 可能已改盘，不算未执行。 */
+/** 还在审批的不算。已允许的 input-available 用入参 path，不等 result。 */
 function isToolNeverSent(tool: ThreadToolCall): boolean {
-  return (
-    tool.state === "approval-requested" ||
-    tool.state === "input-streaming" ||
-    tool.state === "input-available"
-  )
+  return tool.state === "approval-requested" || tool.state === "input-streaming"
 }
 
 /** Enjoy 本地工具 + CLI/ACP 常见写盘名（Write / StrReplace / apply_patch）。 */

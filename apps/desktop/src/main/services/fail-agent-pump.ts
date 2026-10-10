@@ -11,9 +11,12 @@ import { deleteActiveRun, emitEvent, settleRun, type ActiveRun } from "./agent-r
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { claimCatchUpFail } from "./claim-catchup-fail"
 import { isCatchUpApprovalTimeout } from "./automations-catchup-timeout"
+import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
+import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
+  settlePendingApprovalsForRun(runId, run.window, run.userCancelled ? "aborted" : "failed")
   if (!claimCatchUpFail(run)) return
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)
@@ -36,7 +39,7 @@ async function disposeFailedStream(runId: string, run: ActiveRun): Promise<void>
     }
     await disposeCodingStream(runId)
     const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
-    endDesktopActOverlay()
+    endDesktopActOverlay({ runId, sessionId: run.input.sessionId })
   } catch {
     // 流或 overlay 已拆：failed / run.error / settle 已经落下。
   }
@@ -61,7 +64,9 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     errorClass: classified.errorClass
   })
   settleRun(runId, { status: "error", summary: classified.message })
-  emitEvent(run.window, { type: "run.error", runId, message: classified.message })
+  const turn = turnOutcomeForRun(run, "error")
+  persistTurnWorkflow(run.input.sessionId, turn)
+  emitEvent(run.window, { type: "run.error", runId, message: classified.message, turn })
   if (classified.errorClass !== "timeout") return
   emitEvent(run.window, {
     type: "generation.warning",
@@ -82,5 +87,7 @@ function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {
     errorClass: "approval_denied"
   })
   settleRun(runId, { status: "error", summary: CATCH_UP_APPROVAL_TIMEOUT })
-  emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT })
+  const turn = turnOutcomeForRun(run, "error")
+  persistTurnWorkflow(run.input.sessionId, turn)
+  emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT, turn })
 }

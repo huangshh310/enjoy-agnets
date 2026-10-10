@@ -65,6 +65,17 @@ type MessageRow = {
   parts?: unknown[]
 }
 
+async function sessionOwnActiveRunning(sessionId: string): Promise<boolean> {
+  try {
+    const active = (await getIde().agent.sessionActive({ sessionId })) as {
+      running?: boolean
+    }
+    return active?.running === true
+  } catch {
+    return false
+  }
+}
+
 export function saveCurrentSessionDraft() {
   const store = useChatStore.getState()
   const sid = store.sessionId
@@ -89,6 +100,8 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     liveMessages: store.messages
   })
   const generation = bumpSessionHydrateGeneration()
+  const parkedRunning = useAttentionStore.getState().parks[sessionId]?.running === true
+  const sessionRunning = (await sessionOwnActiveRunning(sessionId)) || parkedRunning
   if (!sameSession) {
     useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
@@ -107,7 +120,14 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
-  applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
+  applySessionHydrate({
+    dbRows: rows,
+    sameSession,
+    generation,
+    sessionId,
+    sessionRunning
+  })
+  useAttentionStore.getState().clearCompleteIfErrored(sessionId)
   queueComposerFocus()
 }
 
