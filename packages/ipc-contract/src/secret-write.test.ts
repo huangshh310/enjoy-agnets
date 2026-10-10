@@ -12,8 +12,9 @@ import {
   secretWriteOkPayload
 } from "./secret-write.ts"
 
-test("SecretWriteErrorCode 含 KEYCHAIN_UNAVAILABLE", () => {
+test("SecretWriteErrorCode 只有 KEYCHAIN_UNAVAILABLE，不加 LOCKED", () => {
   assert.deepEqual(SecretWriteErrorCode.options, ["KEYCHAIN_UNAVAILABLE"])
+  assert.equal(SecretWriteErrorCode.safeParse("KEYCHAIN_LOCKED").success, false)
 })
 
 test("失败只回 { ok:false, code }，多余字段拒收", () => {

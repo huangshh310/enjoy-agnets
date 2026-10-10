@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approval.resolved.code`；CLI ready 查登录；终态丢掉补 run.error）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`SecretWriteErrorCode` 只有 `KEYCHAIN_UNAVAILABLE`，不加 `KEYCHAIN_LOCKED`）
 
 ## 当前真相
 
@@ -60,7 +60,7 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；写密钥回包 `secret-write.ts`（子路径 `@enjoy-agents/ipc-contract/secret-write`：`SecretWriteErrorCode` / `{ok:false,code}`）；聊天 `chat.ts`、可对话路线 `chat-readiness.ts`（子路径 `@enjoy-agents/ipc-contract/chat-readiness`）、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、预览打开 `workspace-preview.ts`（子路径 `@enjoy-agents/ipc-contract/workspace-preview`）、移动规划 `workspace-move-plan.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window（含 `WindowOpenExternalInput`）/ terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts`、本机 CLI `agent-tools.ts` + 静态保真 `runtime-capabilities.ts` + 供应商引用 `provider-agent-bind.ts`（不是 IPC 频道）、AGENTS.md 链 `agents-md-chain.ts`（不是 IPC 频道）、宿主注入快照 `host-inject.ts`（子路径 `@enjoy-agents/ipc-contract/host-inject`，不是 invoke 频道）、CU-P1-P 通知推导 `desktop-notify.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-notify`：`DesktopActApprovalArgs.sensitive` 在 `builtin-tools.ts`，结束态 / 待审批红action 纯函数在此，不是新 invoke 频道）、CU-P1-36 硬拒码 `desktop-act-codes.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-act-codes`：`bare_coords_disabled` 审批与 actOnce 共用，不是新 invoke 频道）各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；写密钥回包 `secret-write.ts`（子路径 `@enjoy-agents/ipc-contract/secret-write`：`SecretWriteErrorCode` 只有 `KEYCHAIN_UNAVAILABLE`，Electron 分不开锁了/没装所以不加 `KEYCHAIN_LOCKED`；失败 `{ok:false,code}`）；聊天 `chat.ts`、可对话路线 `chat-readiness.ts`（子路径 `@enjoy-agents/ipc-contract/chat-readiness`）、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、预览打开 `workspace-preview.ts`（子路径 `@enjoy-agents/ipc-contract/workspace-preview`）、移动规划 `workspace-move-plan.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window（含 `WindowOpenExternalInput`）/ terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts`、本机 CLI `agent-tools.ts` + 静态保真 `runtime-capabilities.ts` + 供应商引用 `provider-agent-bind.ts`（不是 IPC 频道）、AGENTS.md 链 `agents-md-chain.ts`（不是 IPC 频道）、宿主注入快照 `host-inject.ts`（子路径 `@enjoy-agents/ipc-contract/host-inject`，不是 invoke 频道）、CU-P1-P 通知推导 `desktop-notify.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-notify`：`DesktopActApprovalArgs.sensitive` 在 `builtin-tools.ts`，结束态 / 待审批红action 纯函数在此，不是新 invoke 频道）、CU-P1-36 硬拒码 `desktop-act-codes.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-act-codes`：`bare_coords_disabled` 审批与 actOnce 共用，不是新 invoke 频道）各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 会话：`ipc-session.ts`（`SESSION_CHANNELS` 必须进 `CHANNELS`，含 `patch` / `recap` / `estimatedCost`）
 - 估算成本：`packages/ipc-contract/src/estimated-cost.ts`（子路径 `@enjoy-agents/ipc-contract/estimated-cost`）；出站闸：`apps/desktop/src/main/services/accept-stream-event.ts`（`emitEvent` / `stampAndSend`）；终态丢掉兜底 `settle-dropped-terminal.ts`

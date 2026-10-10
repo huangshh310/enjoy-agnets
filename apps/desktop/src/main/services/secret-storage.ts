@@ -1,5 +1,10 @@
 /**
  * 系统钥匙串是否能安全写密钥。Linux `basic_text` 当不可用。禁止明文回落。
+ * Electron 39 的 `isEncryptionAvailable` + `getSelectedStorageBackend` 分不开
+ * 「没装 Secret Service」和「已装但锁了」：两边都是 encryption=false，
+ * 后端名只跟桌面环境启发式走（Hyprland 上已解锁的 gnome-keyring 仍可能是 `basic_text`；
+ * GNOME 上没装钥匙串仍可能是 `gnome_libsecret`）。encrypt 失败也只有同一句
+ * "Encryption is not available."。不要猜 `KEYCHAIN_LOCKED`。
  */
 import { app, safeStorage } from "electron"
 import type { SecretWriteErrorCode } from "@enjoy-agents/ipc-contract"

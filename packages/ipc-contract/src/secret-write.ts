@@ -4,7 +4,10 @@
  */
 import { z } from "zod"
 
-/** 写密钥失败码。新码只往这个 enum 加。 */
+/**
+ * 写密钥失败码。新码只往这个 enum 加。
+ * Electron 39 `safeStorage` 分不开「没装」和「锁了」，**不加** `KEYCHAIN_LOCKED`。
+ */
 export const SecretWriteErrorCode = z.enum(["KEYCHAIN_UNAVAILABLE"])
 export type SecretWriteErrorCode = z.infer<typeof SecretWriteErrorCode>
 
