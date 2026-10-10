@@ -2,6 +2,7 @@
  * 列表次行：已跳过 / 错过 N 次 / 中性超时。名称旁不挂重复小标。
  */
 import type { Automation, AutomationMissedRecord, AutomationSkipReason } from "@enjoy-agents/ipc-contract"
+import { joinSegments } from "../../../lib/join-segments"
 import { formatLastRunWhen } from "./last-run-label"
 import { errorCodeCopy, errorCodeTip, isNeutralErrorCode, skipReasonCopy, skipReasonTip } from "./missed-copy"
 
@@ -43,7 +44,7 @@ export function lastRunLine(input: {
     const when = formatLastRunWhen(automation.lastRunAt ?? now, now, locale)
     return {
       kind: "neutral",
-      text: `${neutral} · ${when}`,
+      text: joinSegments(neutral, when),
       tip: errorCodeTip(automation.lastRunErrorCode, t),
       testId: "automation-row-neutral"
     }

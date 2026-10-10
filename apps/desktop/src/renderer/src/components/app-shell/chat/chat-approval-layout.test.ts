@@ -50,6 +50,18 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
   assert.match(menu, /event\.key !== "Enter" && event\.key !== " "/)
   assert.match(zh, /flagSession: "加星标"/)
   assert.match(en, /flagSession: "Star"/)
+  assert.doesNotMatch(menu, /session-row-menu-archive[\s\S]*text-text-secondary/)
+  const action = read("ai-chat/sidebar/sidebar-action.tsx")
+  assert.match(action, /focus-visible:ring-2 focus-visible:ring-border-focus-ring/)
+})
+
+test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {
+  const chrome = read("ai-chat/thread/approval/approval-chrome.tsx")
+  const stacked = read("ai-chat/composer/stacked-rail/composer-stacked-styles.ts")
+  assert.match(chrome, /flex min-w-0 flex-1 flex-col gap-1\.5/)
+  assert.match(chrome, /leading-6 text-text-primary/)
+  assert.match(stacked, /flex w-full min-w-0 flex-col/)
+  assert.doesNotMatch(stacked, /calc\(100%-1\.25rem\)/)
 })
 
 test("任务栏标题走 displaySessionTitle，选中应用仍画操作提示", () => {

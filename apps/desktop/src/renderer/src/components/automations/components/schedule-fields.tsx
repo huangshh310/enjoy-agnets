@@ -2,9 +2,11 @@
  * 定时：每天 / 工作日 / 每周 + 时间；高级才露 cron。
  */
 import { useState } from "react"
+import { RiCalendarScheduleLine } from "@remixicon/react"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import { useI18n, useT } from "@renderer/i18n"
+import { joinSegments } from "@renderer/lib/join-segments"
 import { formatClock } from "../lib/format-cron"
 import {
   clockValue,
@@ -108,8 +110,12 @@ export function ScheduleFields({
           </label>
         </div>
       )}
-      <p className="text-caption-2-regular text-text-secondary" data-testid="automation-schedule-preview">
-        {preview} · {formatTimezoneLabel(timeZone, locale)}
+      <p
+        className="inline-flex items-center gap-1.5 text-caption-2-regular text-text-secondary"
+        data-testid="automation-schedule-preview"
+      >
+        <RiCalendarScheduleLine className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
+        <span>{joinSegments(preview, formatTimezoneLabel(timeZone, locale))}</span>
       </p>
       <button
         type="button"

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
+import { joinSegments } from "@renderer/lib/join-segments"
 import { RemoteHostSwitcher } from "./remote-host-switcher"
 
 import { parseRemoteLabel } from "./parse-remote-label"
@@ -59,9 +60,9 @@ export function RemoteStatusStrip() {
         : "bg-text-tertiary ring-text-tertiary/20"
 
   const statusText = isConnected
-    ? `${t("settings.workspace.remoteFootnote")} · ${endpoint || label || t("settings.workspace.sshConnected")}`
+    ? joinSegments(t("settings.workspace.remoteFootnote"), endpoint || label || t("settings.workspace.sshConnected"))
     : connecting
-      ? `${t("settings.workspace.sshConnectingLine")} ${endpoint || label || ""}`.trim()
+      ? joinSegments(t("settings.workspace.sshConnectingLine"), endpoint || label)
       : isFailed
         ? `${t("settings.workspace.sshFailedPrefix")}${remoteError ? `：${remoteError}` : ""}`
         : t("settings.workspace.sshDisconnectedReadOnly")

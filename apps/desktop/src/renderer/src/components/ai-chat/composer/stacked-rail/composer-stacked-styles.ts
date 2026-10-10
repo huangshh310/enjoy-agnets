@@ -1,9 +1,9 @@
 /**
- * Composer 上沿轨：比输入框略窄、贴在上方，不进输入壳。对标 Synara stacked-top。
+ * Composer 上沿轨：与输入框 / 卡片列同宽，贴在上方，不进输入壳。
  * 不透明、裁切溢出，避免展开列表透到下一行。
  */
 export const STACKED_FRAME_CLASS_NAME = [
-  "mx-auto -mb-px flex w-[calc(100%-1.25rem)] min-w-0 flex-col overflow-hidden empty:hidden",
+  "-mb-px flex w-full min-w-0 flex-col overflow-hidden empty:hidden",
   "rounded-t-[18px] border border-b-0 border-border-button-default bg-background-primary-default"
 ].join(" ")
 

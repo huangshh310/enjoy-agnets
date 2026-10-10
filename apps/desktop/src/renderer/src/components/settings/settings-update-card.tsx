@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { parseAppUpdateSnapshot, type AppUpdateSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
 import { useT, type TranslateFn } from "@renderer/i18n"
+import { joinSegments } from "@renderer/lib/join-segments"
 import { useAppUpdateStore } from "@renderer/stores/app-update-store"
 import { UPDATE_CTA_CLASS } from "../app-update/constants"
 import { SettingsCard, SettingsRow } from "./settings-row"
@@ -22,7 +23,7 @@ export function SettingsUpdateCard() {
     <SettingsCard title={t("settings.update.title")}>
       <SettingsRow
         title={t("settings.update.current")}
-        description={`${t("settings.update.currentDesc", { version })} · ${statusLabel(snapshot, t)}`}
+        description={joinSegments(t("settings.update.currentDesc", { version }), statusLabel(snapshot, t))}
       >
         {hasPrompt ? (
           <Button type="button" className={`rounded-2lg ${UPDATE_CTA_CLASS}`} onClick={() => setDialogOpen(true)}>

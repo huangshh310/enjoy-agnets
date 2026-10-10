@@ -130,6 +130,17 @@ test("定时用可读预设，删除要确认，项目选择器只高亮一项",
   assert.match(picker, /uniqueWorkspaces/)
 })
 
+test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {
+  const row = readFileSync(join(dir, "components/automation-row.tsx"), "utf8")
+  assert.match(row, /data-testid="automation-row-open"/)
+  assert.match(row, /absolute inset-0/)
+  assert.match(row, /onCheckedChange=\{onToggle\}/)
+  assert.match(row, /onClick=\{onOpenFailed\}/)
+  assert.match(row, /pointer-events-auto/)
+  assert.match(row, /LastRunExplain/)
+  assert.match(row, /RiCalendarScheduleLine/)
+})
+
 test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际或取消时间", () => {
   const list = readFileSync(join(dir, "components/missed-records-list.tsx"), "utf8")
   assert.match(list, /missedGroupSummary/)
