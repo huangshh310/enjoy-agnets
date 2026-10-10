@@ -267,9 +267,14 @@ async function relaunchAndAllow(input: {
     await expectDecidableCard(window)
     await window.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
     await expect
-      .poll(() => existsSync(stubPath(input.workspace)), { timeout: 20_000 })
-      .toBe(true)
-    expect(readStub(input.workspace)).toContain("from stub")
+      .poll(() => {
+        try {
+          return readStub(input.workspace)
+        } catch {
+          return ""
+        }
+      }, { timeout: 20_000 })
+      .toContain("from stub")
     await expectApprovalInboxCleared(window)
   } finally {
     await closeForRelaunch(second)
