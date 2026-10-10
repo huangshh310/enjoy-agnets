@@ -9,6 +9,9 @@ import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mod
 import { applyDefaultChatRoute } from "./apply-default-chat-route"
 import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
+import { peekDefaultRoute } from "./chat-readiness-cache"
+import { applyDefaultChatRoute } from "./apply-default-chat-route"
+import { runtimeIdFromDefaultRoute } from "../lib/chat-default-route"
 import { abortComposerRun } from "./composer-run-control"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { pickActiveModel } from "./pick-active-model"
@@ -37,6 +40,7 @@ import { useChatReadiness } from "./use-chat-readiness"
 import { planNewSession } from "./plan-new-session"
 import { rememberWorkspaceOnLoad } from "./unknown-workspace-remember"
 import { landEmptyHome } from "./nav-history/nav-history-controller"
+import { useNoProjectNudge } from "../components/app-shell/chat/no-project-nudge"
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
@@ -231,6 +235,9 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   } else {
     store.setModel(sessionPatch.modelId, sessionPatch.modelLabel)
   }
+  if (!explicitPreferred) {
+    applyDefaultChatRoute(peekDefaultRoute())
+  }
   // 先写 model 再亮 hasKey，避免发送盘在 modelId 仍空时变成 Send。
   store.setHasKey(snapshot.hasKey)
 }
@@ -249,6 +256,7 @@ export async function openFolder() {
 export async function startPersistedSession() {
   const workspaceId = useChatStore.getState().workspaceId
   if (planNewSession(workspaceId) === "empty_home") {
+    useNoProjectNudge.getState().pulse()
     await landEmptyHome()
     return
   }

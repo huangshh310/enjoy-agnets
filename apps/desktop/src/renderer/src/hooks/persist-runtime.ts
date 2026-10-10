@@ -94,6 +94,7 @@ export async function persistRuntimeId(runtimeId: AgentToolId, modelId?: string)
   const store = useChatStore.getState()
   store.setRuntimeId(runtimeId)
   store.setPreferredRuntimeId(runtimeId)
+  store.setExplicitRuntimePreference(true)
   if (store.sessionId) await bindSessionRuntime(store.sessionId, runtimeId)
   await patchPreferences({ runtimeId })
   if (!hasIde()) return

@@ -67,7 +67,7 @@ export function connectModelRowHintKey(option: ConnectModelOption): string {
   if (option.kind === "local_model") {
     return option.verified
       ? "settings.setupGuide.connectLocalHint"
-      : "settings.setupGuide.connectLocalUnverified"
+      : "settings.setupGuide.connectLocalUnverifiedWhy"
   }
   if (option.kind === "api_key") return "settings.setupGuide.connectApiKeyHint"
   return "settings.setupGuide.connectLaterHint"

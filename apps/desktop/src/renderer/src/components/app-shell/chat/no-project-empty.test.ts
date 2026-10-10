@@ -41,6 +41,7 @@ test("主区空态不再写打开工作区", () => {
   const empty = readFileSync(join(dir, "no-project-empty.tsx"), "utf8")
   assert.match(empty, /chat\.noProjectEmpty/)
   assert.match(empty, /chat\.selectFolder/)
+  assert.match(empty, /chat\.noProjectNewChatHint/)
   assert.doesNotMatch(empty, /chat\.openWorkspace/)
   assert.doesNotMatch(stage, /chat\.openWorkspace/)
 })

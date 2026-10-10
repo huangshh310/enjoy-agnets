@@ -19,8 +19,11 @@ import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { parseSettingsSectionSearch } from "../settings-section-search"
-import { OFFICIAL_CREATE, OFFICIAL_PRESET_KIND, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
+import { OFFICIAL_CREATE, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
 import { resumeSetupGuide } from "@renderer/components/setup-guide/setup-guide-store"
+import { isTransientProviderOrigin } from "@renderer/lib/provider-form-origin"
+import { ProviderPickPanel } from "./provider-pick-panel"
+import { SettingsSideDrawer } from "../settings-side-drawer"
 
 export function ProviderSettings() {
   const t = useT()
@@ -31,13 +34,27 @@ export function ProviderSettings() {
   const [activeTab, setActiveTab] = useState<"configured" | "presets">(
     search.create === OFFICIAL_CREATE ? "presets" : "configured"
   )
+  const [picking, setPicking] = useState(search.create === OFFICIAL_CREATE)
   const openedOfficial = useRef(false)
   useEffect(() => {
     if (openedOfficial.current || search.create !== OFFICIAL_CREATE) return
     openedOfficial.current = true
     setActiveTab("presets")
-    settings.openCreate(OFFICIAL_PRESET_KIND)
-  }, [search.create, settings])
+    setPicking(true)
+  }, [search.create])
+
+  function leaveOrigin() {
+    settings.closeEditor()
+    setPicking(false)
+    if (search.from === SETUP_GUIDE_FROM) {
+      resumeSetupGuide()
+      void navigate({ to: "/" })
+      return
+    }
+    if (isTransientProviderOrigin(search.from)) {
+      void navigate({ to: "/" })
+    }
+  }
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string; agents: string } | null>(
     null
   )
@@ -60,6 +77,7 @@ export function ProviderSettings() {
   )
 
   function handleSelectPreset(kind: ProviderKind, apiStyle: ApiStyle) {
+    setPicking(false)
     settings.openCreate(kind, apiStyle)
   }
 
@@ -188,6 +206,22 @@ export function ProviderSettings() {
         )}
       </div>
 
+      <SettingsSideDrawer
+        open={picking && !settings.editor}
+        onClose={leaveOrigin}
+        labelledBy="provider-pick-title"
+        closeLabel={t("common.close")}
+        motion={false}
+      >
+        <ProviderPickPanel
+          onPick={(kind) => {
+            setPicking(false)
+            settings.openCreate(kind)
+          }}
+          onCancel={leaveOrigin}
+        />
+      </SettingsSideDrawer>
+
       <ProviderEditorDrawer
         editor={settings.editor}
         preset={settings.preset}
@@ -196,15 +230,15 @@ export function ProviderSettings() {
         refs={settings.editor?.id ? refsByProvider[settings.editor.id] : undefined}
         canSave={settings.canSave}
         detecting={settings.detecting}
-        onClose={settings.closeEditor}
+        simple={!settings.editor?.id && Boolean(search.create)}
+        motion={false}
+        onClose={search.create ? leaveOrigin : settings.closeEditor}
         onChange={settings.updateEditor}
         onFetchModels={() => void settings.fetchModels()}
         onDetect={() => void settings.detect()}
         onSave={() => {
           void settings.save(true).then(() => {
-            if (search.from !== SETUP_GUIDE_FROM) return
-            resumeSetupGuide()
-            void navigate({ to: "/" })
+            if (search.create) leaveOrigin()
           })
         }}
         onOpenAgent={openAgent}

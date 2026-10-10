@@ -8,6 +8,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { AppearanceChoice } from "./appearance-choice"
 import { CapabilityCards } from "./capability-cards"
 import { ConnectModelStep } from "./connect-model-step"
+import { officialProviderSearch, pauseGuideForProviderForm, SETUP_GUIDE_FROM } from "./open-provider-form"
+import { useNavigate } from "@tanstack/react-router"
 import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
@@ -33,15 +35,21 @@ export function SetupGuideDialog() {
   const markEngaged = useSetupGuideStore((state) => state.markEngaged)
   const [step, setStep] = useState<SetupGuideStep>("intro")
   const [workspaceName, setWorkspaceName] = useState("")
+  const [connectPick, setConnectPick] = useState<string | null>(null)
+  const navigate = useNavigate()
   const finishing = useRef(false)
   const queryClient = useQueryClient()
-  const chatReady = useChatReadiness().data?.ready === true
+  const readiness = useChatReadiness().data
+  const chatReady = readiness?.ready === true
 
   useEffect(() => {
     if (!open) return
     const resume = useSetupGuideStore.getState().takeResumeStep()
     setStep(resume ?? "intro")
-    if (!resume) setWorkspaceName("")
+    if (!resume) {
+      setWorkspaceName("")
+      setConnectPick(null)
+    }
   }, [open])
   useEffect(() => {
     if (isSetupGuideChoiceStep(step)) markEngaged()
@@ -51,6 +59,19 @@ export function SetupGuideDialog() {
     void finishSetupGuide(finishing, hide, () => queryClient.invalidateQueries({ queryKey: ["settings"] }))
   }
   const onNext = () => {
+    if (step === "connect-model") {
+      if (connectPick === "api_key" && (readiness?.apiKeys.length ?? 0) === 0) {
+        pauseGuideForProviderForm("connect-model")
+        void navigate({
+          to: "/settings/$section",
+          params: { section: "providers" },
+          search: officialProviderSearch(SETUP_GUIDE_FROM)
+        })
+        return
+      }
+      setStep(nextSetupGuideStep(step))
+      return
+    }
     if (step === "ready" && !readyGuideFinishes(chatReady)) {
       setStep("connect-model")
       return
@@ -83,7 +104,8 @@ export function SetupGuideDialog() {
             step={step}
             workspaceName={workspaceName}
             onOpened={setWorkspaceName}
-            onSkipConnect={() => setStep(nextSetupGuideStep("connect-model"))}
+            connectPick={connectPick}
+            onConnectPick={setConnectPick}
           />
         </div>
         <SetupGuideFooter
@@ -106,24 +128,33 @@ function SetupGuideBody({
   step,
   workspaceName,
   onOpened,
-  onSkipConnect
+  connectPick,
+  onConnectPick
 }: {
   step: SetupGuideStep
   workspaceName: string
   onOpened: (name: string) => void
-  onSkipConnect: () => void
+  connectPick: string | null
+  onConnectPick: (id: string) => void
 }) {
-  return STEP_BODY[step]({ workspaceName, onOpened, onSkipConnect })
+  return STEP_BODY[step]({ workspaceName, onOpened, connectPick, onConnectPick })
 }
 
 const STEP_BODY: Record<
   SetupGuideStep,
-  (props: { workspaceName: string; onOpened: (name: string) => void; onSkipConnect: () => void }) => ReactNode
+  (props: {
+    workspaceName: string
+    onOpened: (name: string) => void
+    connectPick: string | null
+    onConnectPick: (id: string) => void
+  }) => ReactNode
 > = {
   intro: () => <IntroPoints />,
   capabilities: () => <CapabilityCards />,
   engines: () => <EngineInstallList />,
-  "connect-model": ({ onSkipConnect }) => <ConnectModelStep onSkip={onSkipConnect} />,
+  "connect-model": ({ connectPick, onConnectPick }) => (
+    <ConnectModelStep picked={connectPick} onPick={onConnectPick} />
+  ),
   appearance: () => <AppearanceChoice />,
   workspace: ({ workspaceName, onOpened }) => <WorkspaceChoice name={workspaceName} onOpened={onOpened} />,
   ready: () => <ReadyShortcuts />

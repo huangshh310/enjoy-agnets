@@ -67,7 +67,7 @@ test("远端未验证本机模型露出「未验证」，不推荐、不占就�
   const local = options.find((item) => item.kind === "local_model")
   assert.equal(local?.kind === "local_model" && local.verified, false)
   assert.equal(local?.kind === "local_model" && local.recommended, false)
-  assert.equal(connectModelRowHintKey(local!), "settings.setupGuide.connectLocalUnverified")
+  assert.equal(connectModelRowHintKey(local!), "settings.setupGuide.connectLocalUnverifiedWhy")
   const key = options.find((item) => item.kind === "api_key")
   assert.equal(key?.kind === "api_key" && key.recommended, true)
 })

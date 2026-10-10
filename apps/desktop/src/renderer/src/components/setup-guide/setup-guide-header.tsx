@@ -2,7 +2,7 @@
  * 引导标题。介绍和完成页居中，中间步骤带序号。末屏绿勾只在可对话时画。
  */
 import type { ReactNode } from "react"
-import { RiCheckLine } from "@remixicon/react"
+import { RiCheckLine, RiKey2Line } from "@remixicon/react"
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useT } from "@renderer/i18n"
 import { AppMark } from "@renderer/components/brand/app-mark"
@@ -57,8 +57,9 @@ function ReadyMark({ ready }: { ready: boolean }) {
   return (
     <span
       data-testid="ready-mark-pending"
-      className="mb-3 size-11 rounded-full border border-text-primary/15 bg-background-secondary-default"
-      aria-hidden
-    />
+      className="mb-3 flex size-11 items-center justify-center rounded-full border border-text-primary/15 bg-background-secondary-default text-text-secondary"
+    >
+      <RiKey2Line className="size-5" aria-hidden />
+    </span>
   )
 }

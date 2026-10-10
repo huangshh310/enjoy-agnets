@@ -37,6 +37,7 @@ export const enChat = {
     "Enjoy Agents only runs against a folder you choose. Pick a project to load sessions and git changes.",
   noProjectEmpty: "Pick a folder to start. Enjoy only reads and writes inside the folder you choose.",
   selectFolder: "Choose folder",
+  noProjectNewChatHint: "Pick a folder first, then you can start a new chat.",
   expandSidebar: "Expand sidebar",
   collapseSidebar: "Collapse sidebar",
   contextTokensHint: "View this turn’s context token buckets",

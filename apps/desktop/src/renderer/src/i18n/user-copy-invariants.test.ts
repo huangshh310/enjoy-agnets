@@ -47,7 +47,13 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
-      setupGuide: { replayDesc: string; replay: string; connectLocalUnverified: string }
+      setupGuide: {
+        replayDesc: string
+        replay: string
+        connectLocalUnverified: string
+        connectLocalUnverifiedWhy: string
+        goVerify: string
+      }
       update: { devSkip: string }
       builtinTools: { browserBridgeTitle: string }
       providers: Record<string, string>
@@ -92,6 +98,10 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
   assert.equal(z.chat.goConnect, "去连接")
   assert.equal(z.settings.setupGuide.connectLocalUnverified, "未验证")
+  assert.equal(z.settings.setupGuide.connectLocalUnverifiedWhy, "这是远端地址，还没确认能连上，所以现在不能用来对话。")
+  assert.equal(z.settings.setupGuide.goVerify, "去验证")
+  assert.equal(z.settings.providers.pickTitle, "选一家，粘贴密钥")
+  assert.equal(z.chat.noProjectNewChatHint, "先选一个文件夹，才能开新对话。")
   assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
   assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")

@@ -7,11 +7,13 @@ import { cx } from "@/utils/cx"
 import { loadWorkspace, type WorkspaceRow } from "@renderer/hooks/use-agent-session"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useNoProjectNudge } from "./no-project-nudge"
 
 export function NoProjectEmpty() {
   const t = useT()
   const [over, setOver] = useState(false)
   const [busy, setBusy] = useState(false)
+  const nudge = useNoProjectNudge((state) => state.on)
 
   async function open(path?: string) {
     if (!hasIde()) return
@@ -42,9 +44,25 @@ export function NoProjectEmpty() {
       )}
     >
       <p className="max-w-sm text-body-medium text-text-secondary">{t("chat.noProjectEmpty")}</p>
-      <Button type="button" className="h-9" disabled={busy} onClick={() => void open()}>
-        {t("chat.selectFolder")}
-      </Button>
+      {nudge ? (
+        <p data-testid="no-project-new-chat-hint" className="max-w-sm text-caption-1-medium text-text-secondary">
+          {t("chat.noProjectNewChatHint")}
+        </p>
+      ) : null}
+      <span className={cx("rounded-xl p-1", nudge && "bg-accent-500/10")}>
+        <Button
+          type="button"
+          data-testid="no-project-select-folder"
+          className="h-9"
+          disabled={busy}
+          onClick={() => {
+            useNoProjectNudge.getState().clear()
+            void open()
+          }}
+        >
+          {t("chat.selectFolder")}
+        </Button>
+      </span>
     </div>
   )
 }

@@ -73,7 +73,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 壳：`settings-shell.tsx`（登记情境栏）；应用铬 `app-shell/`
 - 抽屉叠层：`settings-overlay.ts`（base 50 / nested 70 / float 80）
 - 看板原语：`settings-hub.tsx`
-- 启动引导：`apps/desktop/src/renderer/src/components/setup-guide/`（`connect-model-step.tsx` / `connect-model-options.ts` / `ready-face.ts` / `ready-summary.tsx` / `setup-guide-store.ts`）；可对话路线 `hooks/use-chat-readiness.ts`；无路线横幅 `ai-chat/thread/thread-notice-banner.tsx`
+- 启动引导：`apps/desktop/src/renderer/src/components/setup-guide/`（`connect-model-step.tsx` / `connect-model-options.ts` / `appearance-choice.tsx` / `ready-face.ts` / `ready-summary.tsx` / `setup-guide-store.ts`）；可对话路线 `hooks/use-chat-readiness.ts` + `lib/chat-default-route.ts`；无路线横幅 `ai-chat/thread/thread-no-chat-route-notice.tsx`；添加密钥先选厂商 `providers/provider-pick-panel.tsx` + `provider-simple-fields.tsx`
 - 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings/agent-tools/`（`agent-tool-row.tsx` / `list-secondary.ts` / `install-row-copy.ts` / `list-layout.ts` / `official-login/` / `power-source/` / `bind-source/` / `drawer-trust/` / `display-name/engine-display-name-field.tsx` / `agent-tool-add-archive-link.tsx` / `capability-matrix.tsx` / `config-boundary-table.tsx` / `acp-registry-*.tsx` / `custom-acp-agent-form.tsx`）、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；本机执行沙箱：`sandbox-settings.tsx`；进阶沙箱：`settings-harness.tsx` / `settings-harness-credentials.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）

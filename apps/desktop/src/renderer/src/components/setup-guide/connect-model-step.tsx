@@ -1,56 +1,44 @@
 /**
- * 向导「连一个模型」：可点行，复用淡描边砖。选项只来自 chat.readiness。
+ * 向导「连一个模型」：点选再按继续。未验证本机模型给人话 + 去验证。
  */
 import { RiKey2Line, RiServerLine, RiTimeLine } from "@remixicon/react"
 import { useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
+import { useQueryClient } from "@tanstack/react-query"
 import { cx } from "@/utils/cx"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import {
   connectModelOptions,
   connectModelRowHintKey,
   type ConnectModelOption
 } from "./connect-model-options"
-import { SETUP_GUIDE_FROM, officialProviderSearch, pauseGuideForProviderForm } from "./open-provider-form"
 import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 
-export function ConnectModelStep({ onSkip }: { onSkip: () => void }) {
+export function ConnectModelStep({
+  picked,
+  onPick
+}: {
+  picked: string | null
+  onPick: (id: string) => void
+}) {
   const t = useT()
-  const navigate = useNavigate()
   const readiness = useChatReadiness().data
   const options = connectModelOptions(readiness)
-  const [picked, setPicked] = useState<string | null>(null)
-
-  function choose(option: ConnectModelOption) {
-    if (option.kind === "later") {
-      onSkip()
-      return
-    }
-    if (option.kind === "api_key" && !option.connected) {
-      pauseGuideForProviderForm("connect-model")
-      void navigate({
-        to: "/settings/$section",
-        params: { section: "providers" },
-        search: officialProviderSearch(SETUP_GUIDE_FROM)
-      })
-      return
-    }
-    setPicked(option.id)
-  }
-
   return (
     <ul data-testid="setup-guide-connect-model" className="flex flex-col gap-2">
       {options.map((option) => (
         <li key={option.id}>
           <ConnectModelRow
             option={option}
-            selected={picked === option.id || (option.kind === "api_key" && option.connected)}
-            onChoose={() => choose(option)}
+            selected={picked === option.id || (option.kind === "api_key" && option.connected && picked == null)}
+            onChoose={() => onPick(option.id)}
             title={rowTitle(option, t)}
             hint={t(connectModelRowHintKey(option), hintVars(option))}
             connectedLabel={t("settings.setupGuide.connectApiKeyConnected")}
+            unverifiedLabel={t("settings.setupGuide.connectLocalUnverified")}
           />
         </li>
       ))}
@@ -64,7 +52,8 @@ function ConnectModelRow({
   onChoose,
   title,
   hint,
-  connectedLabel
+  connectedLabel,
+  unverifiedLabel
 }: {
   option: ConnectModelOption
   selected: boolean
@@ -72,27 +61,33 @@ function ConnectModelRow({
   title: string
   hint: string
   connectedLabel: string
+  unverifiedLabel: string
 }) {
-  const recommended = option.kind !== "later" && option.recommended
   return (
     <button
       type="button"
       data-testid={`connect-model-${option.kind}`}
       data-verified={option.kind === "local_model" ? String(option.verified) : undefined}
-      data-recommended={recommended ? "true" : undefined}
+      data-recommended={option.kind !== "later" && option.recommended ? "true" : undefined}
       onClick={onChoose}
       className={cx(
-        "flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left",
+        "flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-none",
         GUIDE_TILE_CLASS,
-        recommended && "ring-1 ring-accent-500",
-        selected && option.kind === "api_key" && "ring-1 ring-state-success-text/50",
-        option.kind === "later" && "text-text-secondary"
+        selected && "ring-1 ring-text-primary/30",
+        option.kind === "later" && "text-text-secondary",
+        "focus-visible:ring-2 focus-visible:ring-border-focus-ring"
       )}
     >
       <RowMark option={option} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-headline-medium font-medium text-text-primary">{title}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-headline-medium font-medium text-text-primary">{title}</span>
+          {option.kind === "local_model" && !option.verified ? (
+            <span className="text-caption-2-medium text-text-tertiary">{unverifiedLabel}</span>
+          ) : null}
+        </span>
         <span className="text-body-2-regular text-text-secondary">{hint}</span>
+        {option.kind === "local_model" && !option.verified ? <VerifyLocalAction service={option.service} /> : null}
       </span>
       {option.kind === "api_key" && option.connected ? (
         <span className="inline-flex items-center gap-1.5 text-caption-1-medium text-state-success-text">
@@ -102,6 +97,62 @@ function ConnectModelRow({
       ) : null}
     </button>
   )
+}
+
+function VerifyLocalAction({ service }: { service: "ollama" | "lmstudio" }) {
+  const t = useT()
+  const client = useQueryClient()
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const [phase, setPhase] = useState<"idle" | "pending" | "error">("idle")
+  return (
+    <span className="mt-1 flex items-center gap-2">
+      <button
+        type="button"
+        data-testid="connect-model-verify"
+        disabled={phase === "pending"}
+        onClick={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          void verifyLocalModel(service, providers, setPhase, () =>
+            client.invalidateQueries({ queryKey: ["chat-readiness"] })
+          )
+        }}
+        className="cursor-pointer text-caption-1-medium text-accent-600 hover:underline disabled:opacity-60"
+      >
+        {phase === "pending" ? t("settings.setupGuide.verifyPending") : t("settings.setupGuide.goVerify")}
+      </button>
+      {phase === "error" ? (
+        <span className="text-caption-2-regular text-text-secondary">{t("settings.setupGuide.verifyFailed")}</span>
+      ) : null}
+    </span>
+  )
+}
+
+async function verifyLocalModel(
+  service: string,
+  providers: Array<{ id: string; kind: string; baseURL?: string; apiStyle?: string }>,
+  setPhase: (phase: "idle" | "pending" | "error") => void,
+  refresh: () => Promise<unknown>
+): Promise<void> {
+  if (!hasIde()) return
+  const profile = providers.find((row) => row.kind === service)
+  if (!profile) {
+    setPhase("error")
+    return
+  }
+  setPhase("pending")
+  try {
+    const res = (await getIde().settings.pingProvider({
+      id: profile.id,
+      kind: profile.kind,
+      baseURL: profile.baseURL,
+      apiStyle: profile.apiStyle
+    })) as { ok?: boolean }
+    setPhase(res.ok ? "idle" : "error")
+    if (res.ok) await refresh()
+  } catch {
+    setPhase("error")
+  }
 }
 
 function RowMark({ option }: { option: ConnectModelOption }) {

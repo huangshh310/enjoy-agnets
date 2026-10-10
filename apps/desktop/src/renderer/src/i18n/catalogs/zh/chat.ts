@@ -36,6 +36,7 @@ export const zhChat = {
   openWorkspaceHint: "Enjoy Agents 只会在你选择的文件夹中运行。选择一个项目即可加载会话和 Git 改动。",
   noProjectEmpty: "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。",
   selectFolder: "选择文件夹",
+  noProjectNewChatHint: "先选一个文件夹，才能开新对话。",
   expandSidebar: "展开侧栏",
   collapseSidebar: "收起侧栏",
   contextTokensHint: "查看本轮上下文 Token 分桶",

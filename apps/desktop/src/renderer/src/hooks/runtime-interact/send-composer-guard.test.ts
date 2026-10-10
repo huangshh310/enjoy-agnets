@@ -9,8 +9,7 @@ import {
   NEED_CLI_OUTDATED,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
-  NEED_REMOTE_CONNECTED,
-  NO_CHAT_ROUTE
+  NEED_REMOTE_CONNECTED
 } from "../../lib/usage/classify-thread-error.ts"
 import {
   resetCliLoginLoopStore,
@@ -334,13 +333,16 @@ test("SSH connecting|failed|disconnected 时 guardComposerSend 为 false", () =>
     assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m", workspaceKind: "ssh", remoteStatus: status }), false)
   }
   assert.equal(
-    composerSendReady({
-      runtimeId: "enjoy-local",
-      hasKey: true,
-      modelId: "m",
-      workspaceKind: "ssh",
-      remoteStatus: "connected"
-    }),
+    composerSendReady(
+      {
+        runtimeId: "enjoy-local",
+        hasKey: true,
+        modelId: "m",
+        workspaceKind: "ssh",
+        remoteStatus: "connected"
+      },
+      { chatReady: true }
+    ),
     true
   )
 })

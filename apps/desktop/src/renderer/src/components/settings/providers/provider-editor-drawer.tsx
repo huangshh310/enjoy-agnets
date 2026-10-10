@@ -10,6 +10,7 @@ import { handleDrawerClosePointer } from "../settings-drawer-close"
 import { SettingsSideDrawer } from "../settings-side-drawer"
 import { presetBlurb } from "./provider-blurb"
 import { ProviderEditorFields } from "./provider-editor-fields"
+import { ProviderSimpleFields } from "./provider-simple-fields"
 import { ProviderIcon } from "./provider-icons"
 import type { EditorState, ProbeState } from "./providers.types"
 
@@ -28,7 +29,9 @@ export function ProviderEditorDrawer({
   onSave,
   onOpenAgent,
   saveLabel,
-  layer = "base"
+  layer = "base",
+  simple = false,
+  motion = true
 }: {
   editor: EditorState | null
   preset: ProviderPreset | null
@@ -45,6 +48,8 @@ export function ProviderEditorDrawer({
   onOpenAgent?: (runtimeId: string) => void
   saveLabel?: string
   layer?: "base" | "nested"
+  simple?: boolean
+  motion?: boolean
 }) {
   const t = useT()
   const open = Boolean(editor && preset)
@@ -55,6 +60,7 @@ export function ProviderEditorDrawer({
       labelledBy="provider-editor-title"
       closeLabel={t("common.close")}
       layer={layer}
+      motion={motion}
     >
       {editor && preset ? (
         <EditorDrawerForm
@@ -72,6 +78,7 @@ export function ProviderEditorDrawer({
           onSave={onSave}
           onOpenAgent={onOpenAgent}
           saveLabel={saveLabel}
+          simple={simple}
         />
       ) : null}
     </SettingsSideDrawer>
@@ -92,7 +99,8 @@ function EditorDrawerForm({
   onDetect,
   onSave,
   onOpenAgent,
-  saveLabel
+  saveLabel,
+  simple
 }: {
   editor: EditorState
   preset: ProviderPreset
@@ -108,6 +116,7 @@ function EditorDrawerForm({
   onSave: () => void
   onOpenAgent?: (runtimeId: string) => void
   saveLabel?: string
+  simple?: boolean
 }) {
   return (
     <form
@@ -118,17 +127,28 @@ function EditorDrawerForm({
       className="flex h-full min-h-0 flex-1 flex-col"
     >
       <EditorDrawerHeader editor={editor} preset={preset} refs={refs} onClose={onClose} onOpenAgent={onOpenAgent} />
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-        <ProviderEditorFields
-          editor={editor}
-          preset={preset}
-          modelChoices={modelChoices}
-          probe={probe}
-          detecting={detecting}
-          onChange={onChange}
-          onFetchModels={onFetchModels}
-          onDetect={onDetect}
-        />
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-5">
+        {simple ? (
+          <ProviderSimpleFields
+            editor={editor}
+            preset={preset}
+            modelChoices={modelChoices}
+            detecting={detecting}
+            onChange={onChange}
+            onDetect={onDetect}
+          />
+        ) : (
+          <ProviderEditorFields
+            editor={editor}
+            preset={preset}
+            modelChoices={modelChoices}
+            probe={probe}
+            detecting={detecting}
+            onChange={onChange}
+            onFetchModels={onFetchModels}
+            onDetect={onDetect}
+          />
+        )}
       </div>
       <EditorDrawerFooter docsURL={preset.docsURL} canSave={canSave} saveLabel={saveLabel} onClose={onClose} />
     </form>
@@ -214,7 +234,13 @@ function EditorDrawerFooter({
         <span />
       )}
       <div className="flex items-center gap-2">
-        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
+          onClick={onClose}
+        >
           {t("common.cancel")}
         </Button>
         <Button type="submit" size="sm" disabled={!canSave}>

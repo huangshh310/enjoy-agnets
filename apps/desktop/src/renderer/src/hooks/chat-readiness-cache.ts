@@ -1,12 +1,12 @@
 /**
- * 可对话路线快照缓存。发送闸读这里，避免测试拉进 ide / react-query。
+ * 可对话路线快照缓存。发送盘读这里，避免测试拉进 ide / react-query。
  */
-import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import type { ChatDefaultRoute, ChatReadinessView } from "../lib/chat-default-route.ts"
 
 let last: ChatReadiness | undefined
 let codingRuntime: "local" | "harness" = "local"
 
-export function rememberChatReadiness(snapshot: ChatReadiness | undefined): void {
+export function rememberChatReadiness(snapshot: ChatReadinessView | undefined): void {
   last = snapshot
 }
 
