@@ -167,13 +167,17 @@ test("basic_text 删完一张都不剩才 clear；恢复后没有档案", async 
 })
 
 function enableProductionKeychain() {
+  delete process.env.ENJOY_E2E_KEYCHAIN
+  delete process.env.ENJOY_E2E_STUB
   stub.setEncryptionAvailable?.(true)
   stub.setSelectedStorageBackend?.("gnome_libsecret")
 }
 
+/** 三端都能读密文但不准重加密：KEYCHAIN=unavailable 比 linux basic_text 先闸。 */
 function hangWriteKeepReadable() {
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_KEYCHAIN = "unavailable"
   stub.setEncryptionAvailable?.(true)
-  stub.setSelectedStorageBackend?.("basic_text")
 }
 
 function hangDecrypt() {
