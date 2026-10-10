@@ -50,15 +50,19 @@ export async function relaunchElectron(env: NodeJS.ProcessEnv): Promise<Electron
 
 /** 等审批时 app.close() 会撞 before-quit 确认框，必须 forceQuit，否则 CI 挂满 180s。 */
 export async function closeForRelaunch(app: ElectronApplication): Promise<void> {
-  for (const window of app.windows()) {
-    await window
-      .evaluate(async () => {
-        const quit = (
-          globalThis as { ide?: { window?: { forceQuit?: () => Promise<unknown> } } }
-        ).ide?.window?.forceQuit
-        if (quit) await quit()
-      })
-      .catch(() => undefined)
+  try {
+    for (const window of app.windows()) {
+      await window
+        .evaluate(async () => {
+          const quit = (
+            globalThis as { ide?: { window?: { forceQuit?: () => Promise<unknown> } } }
+          ).ide?.window?.forceQuit
+          if (quit) await quit()
+        })
+        .catch(() => undefined)
+    }
+  } catch {
+    /* already gone */
   }
   await Promise.race([app.close(), delay(5_000)]).catch(() => undefined)
   await crashKill(app)
@@ -91,7 +95,12 @@ export async function expectApprovalInboxCleared(window: Page): Promise<void> {
 }
 
 export async function crashKill(app: ElectronApplication): Promise<void> {
-  const proc = app.process()
+  let proc: ReturnType<ElectronApplication["process"]> | null = null
+  try {
+    proc = app.process()
+  } catch {
+    return
+  }
   const pid = proc?.pid
   if (pid) {
     try {
