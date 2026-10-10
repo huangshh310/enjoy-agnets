@@ -8,20 +8,12 @@ import { CredentialCheckCode, type CredentialCheck } from "@enjoy-agents/ipc-con
 export type CredentialUiState = "none" | "pending" | "ok" | "invalid" | "unverified"
 export type CredentialUiTone = "success" | "danger" | "warning" | "muted"
 
-const FALLBACK_FORBIDDEN = "forbidden"
-const FALLBACK_BILLING = "billing"
-
-function optionalZodEnum(schema: { enum: object }, key: string, fallback: string): string {
-  const value = (schema.enum as Record<string, unknown>)[key]
-  return typeof value === "string" ? value : fallback
-}
-
 export function credentialForbiddenCode(): string {
-  return optionalZodEnum(CredentialCheckCode, "forbidden", FALLBACK_FORBIDDEN)
+  return CredentialCheckCode.enum.forbidden
 }
 
 export function credentialBillingCode(): string {
-  return optionalZodEnum(CredentialCheckCode, "billing", FALLBACK_BILLING)
+  return CredentialCheckCode.enum.billing
 }
 
 export function isForbiddenCredentialCode(code: string | null | undefined): boolean {

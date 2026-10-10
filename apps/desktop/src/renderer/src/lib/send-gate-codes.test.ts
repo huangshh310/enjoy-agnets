@@ -29,29 +29,26 @@ test("credential_invalid 与无路线来自合约 SendGateCode", () => {
   assert.equal(isDraftKeepingSendGate(CREDENTIAL_INVALID), true)
 })
 
-test("provider_unreachable 从合约 ChatSendErrorCode 读", () => {
+test("provider_unreachable 从合约 ChatSendErrorCode / SendGateCode 读", () => {
   const pinned = providerUnreachableCode()
   assert.equal(pinned, PROVIDER_UNREACHABLE)
   assert.equal(pinned, ChatSendErrorCode.enum.provider_unreachable)
+  assert.equal(pinned, SendGateCode.enum.provider_unreachable)
   assert.equal(isProviderUnreachable(pinned), true)
   assert.equal(isDraftKeepingSendGate(pinned), true)
-  assert.equal("provider_unreachable" in SendGateCode.enum, false)
 })
 
-test("forbidden / billing 合约有则读枚举，没有则回落字面量，不扩 Zod", () => {
+test("forbidden / billing 只从合约枚举读，不回落字面量", () => {
   const forbidden = providerForbiddenCode()
   const billing = providerBillingCode()
-  const enums = ChatSendErrorCode.enum as Record<string, string>
-  if ("provider_forbidden" in enums) assert.equal(forbidden, enums.provider_forbidden)
-  else assert.equal(forbidden, "provider_forbidden")
-  if ("provider_billing" in enums) assert.equal(billing, enums.provider_billing)
-  else assert.equal(billing, "provider_billing")
+  assert.equal(forbidden, ChatSendErrorCode.enum.provider_forbidden)
+  assert.equal(billing, ChatSendErrorCode.enum.provider_billing)
+  assert.equal(forbidden, SendGateCode.enum.provider_forbidden)
+  assert.equal(billing, SendGateCode.enum.provider_billing)
   assert.equal(isProviderForbidden(forbidden), true)
   assert.equal(isProviderBilling(billing), true)
   assert.equal(isDraftKeepingSendGate(forbidden), true)
   assert.equal(isDraftKeepingSendGate(billing), true)
   assert.equal(isCredentialInvalid(forbidden), false)
   assert.equal(isProviderUnreachable(billing), false)
-  assert.equal("provider_forbidden" in SendGateCode.enum, false)
-  assert.equal("provider_billing" in SendGateCode.enum, false)
 })

@@ -241,9 +241,6 @@ test("末屏 ready + unverified 只挂副标题", async () => {
   }
 })
 
-const PENDING_KAI_RESTRICTED =
-  "pending-kai: ENJOY_E2E_CREDENTIAL=unverified:forbidden|unverified:billing 与 ENJOY_E2E_SEND=forbidden|billing 等 #135 新 tip"
-
 const RESTRICTED = {
   forbidden: {
     send: "forbidden",
@@ -268,9 +265,8 @@ const RESTRICTED = {
 } as const
 
 for (const [code, fixture] of Object.entries(RESTRICTED)) {
-  test(`pending-kai 列表 ${code}：琥珀暂时用不了 + 再试一次 + 次行`, async () => {
+  test(`列表 ${code}：琥珀暂时用不了 + 再试一次 + 次行`, async () => {
     test.setTimeout(180_000)
-    test.skip(true, PENDING_KAI_RESTRICTED)
     const blocked = canLaunchElectron()
     test.skip(Boolean(blocked), blocked ?? "")
     const { app, window } = await launchEnjoy(keyEnv({ ENJOY_E2E_CREDENTIAL: fixture.credential }))
@@ -298,9 +294,8 @@ for (const [code, fixture] of Object.entries(RESTRICTED)) {
     }
   })
 
-  test(`pending-kai 发送 ${code}：琥珀白卡 + 换个模型 / 再试一次，草稿留下`, async () => {
+  test(`发送 ${code}：琥珀白卡 + 换个模型 / 再试一次，草稿留下`, async () => {
     test.setTimeout(180_000)
-    test.skip(true, PENDING_KAI_RESTRICTED)
     const blocked = canLaunchElectron()
     test.skip(Boolean(blocked), blocked ?? "")
     const { app, window } = await launchEnjoy(keyEnv({ ENJOY_E2E_SEND: fixture.send }))
@@ -329,9 +324,8 @@ for (const [code, fixture] of Object.entries(RESTRICTED)) {
     }
   })
 
-  test(`pending-kai 末屏 ${code}：标题可以开始了 + 琥珀副标题`, async () => {
+  test(`末屏 ${code}：标题可以开始了 + 琥珀副标题`, async () => {
     test.setTimeout(180_000)
-    test.skip(true, PENDING_KAI_RESTRICTED)
     const blocked = canLaunchElectron()
     test.skip(Boolean(blocked), blocked ?? "")
     const { app, window } = await launchEnjoy({
