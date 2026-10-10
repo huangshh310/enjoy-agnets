@@ -4,6 +4,7 @@
  */
 import type { AgentToolId, AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { buildChatReadiness, type ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { e2eCredentialFixture } from "./credential-check-run.ts"
 
 export const E2E_CHAT_READY_KEY_PROFILE_ID = "e2e"
 export const E2E_CHAT_READY_MODEL_ID = "stub-e2e"
@@ -50,7 +51,8 @@ export function e2eChatReadiness(
       engineCount: 1,
       preferredRuntimeId: "enjoy-local",
       modelId: E2E_CHAT_READY_MODEL_ID,
-      hasEnjoySecret: true
+      hasEnjoySecret: true,
+      credentialCheck: e2eCredentialFixture(env, packaged) ?? { state: "ok" }
     })
   }
   if (kind === "engine") {

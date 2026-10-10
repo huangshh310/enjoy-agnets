@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-10（钥匙串 ① 黄条 / ② 红字）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-10（存密钥后后台校验 `credentialCheck`）
 
 ## 当前真相
 
@@ -15,6 +15,10 @@
 一张档案可以同时有 Chat、Responses、Anthropic 三条端点（`endpoints`），多把 Key（`keys[]`），以及 `baseAPI`（编辑器主 URL 展示哪一条）。请求以端点里实际有值为准，**不是协议互译**。`apiKey` / `baseURL` / `apiStyle` 每次保存重算：`apiKey` 是第一把启用且未锁协议的 Key，否则第一把对 `baseAPI` 启用的 Key；`baseURL` 是 `endpoints[baseAPI]`，空则第一条有值的端点；`apiStyle` 等于 `baseAPI`。派生字段只给旧调用点和列表展示。Google 官方主机仍走 `createGoogle`，不改成 OpenAI 兼容根。
 
 `enabled` 是关闭但保留。关掉的档案不进选择器、不进 CLI 绑定。`activeId` 仍是新会话 Enjoy Local 的默认档案，和 `enabled` 是两件事。关掉当前默认档案时，`activeId` 改到下一张仍开启的档案。设置页「当前」只显示仍开启的默认档案；一张都没开就写「未在使用」，不把已关闭的名字当成当前。关掉的行主按钮是「开启」。页头模型数是收录，含已关闭档案，文案不是「此刻可选」。复制档案在主进程完成，Key 不进 renderer。
+
+存密钥成功后 main **后台**做一次轻量校验（优先 GET `/models`，没有目录再 1 token POST；超时 6s，不重试，不挡对话框）。结果落 settings KV `provider.credentialChecks`，挂到 `ProviderPublic.credentialCheck`：`{ state: "ok"|"invalid"|"unverified", code?: CredentialCheckCode, checkedAt? }`。401/403 → `invalid` + `auth_rejected`；网络 / 超时 / 未知协议 / 5xx → `unverified`（`network` / `timeout` / `unknown`）。**禁止**回传 HTTP 原文或 JSON。`settings.recheckProvider({ id })` 立刻再跑并回新状态，然后推 readiness。夹具 `ENJOY_E2E_STUB=1` + 未打包 + `ENJOY_E2E_CREDENTIAL=ok|invalid|unverified`（未设默认 `ok`，以免旧窗口 E2E 掉 ready）。
+
+invalid：不 ready、不自动 adopt、发送 `definitely_unusable` + `credential_invalid`。unverified：不 ready、不 adopt，发送 uncertain 放行。无密钥本机档案不跑这套，仍走 ping。
 
 密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
 
@@ -55,13 +59,15 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - 上下文窗口解析：`packages/providers/src/context-window.ts`、`gateway-catalog.ts`；`models.list` 在 `secrets.ts` 的 `listAllPublicModels` 注入
 - 空 vault 目录：`apps/desktop/src/main/services/listed-models.ts`
 - vault：`apps/desktop/src/main/services/secrets-vault.ts`（加解密 / 迁移）；档案 CRUD：`secrets.ts`（删除时解绑 CLI）
+- 存密钥后校验：`apps/desktop/src/main/services/credential-check-run.ts`（GET `/models` → 1 token；6s；夹具 `ENJOY_E2E_CREDENTIAL`）+ `credential-check-store.ts`（settings KV `provider.credentialChecks`）+ `credential-check-schedule.ts`（写完后台跑、不挡对话框）
 - 设置 UI：`apps/desktop/src/renderer/src/components/settings/providers/`
-- 合约：`packages/ipc-contract` 的 `UpsertProviderInput` / `ProviderPublic`；CLI 兼容与引用派生 `provider-agent-bind.ts`
+- 合约：`packages/ipc-contract` 的 `UpsertProviderInput` / `ProviderPublic` / `CredentialCheck`（子路径 `@enjoy-agents/ipc-contract/credential-check`）；CLI 兼容与引用派生 `provider-agent-bind.ts`
 - 单价与估算：`packages/providers/src/pricing/`（子路径 `@enjoy-agents/providers/pricing`，只给 main；根入口不导出，renderer 不要别名这份快照）
 - 快照重建：`packages/providers/scripts/refresh-price-snapshot.ts`
 
 ## 已知坑
 
+- **隐患**：不要复用 `detectProvider` 当密钥校验。探测把 401 JSON 当「协议通了」；校验必须按状态码分类（401/403 → `invalid` + `auth_rejected`，5xx / 网络 / 超时 → `unverified`），且**禁止**把 HTTP 原文或 JSON 回给 renderer。
 - **隐患**：`settings.upsertProvider` 在无系统钥匙串时抛英文，renderer `void save()` 吞掉后抽屉既不关也不报错。正确做法：renderer `runSecretWrite` 先检 `ok` 再接 throw；① `secretStorageAvailable === false` 黄条+禁保存（输入不锁）；② `KEYCHAIN_UNAVAILABLE` 保存钮上方红字（不提重启）；其它「没存上，请再试一次」；草稿留下。不要在本包定义 `SecretWriteErrorCode` 枚举（#133 ipc-contract）。
 - **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。
 - **隐患**：`customHeaders` / `customBody` 曾随 `ProviderPublic` 全文回 renderer。正确做法：只回键的占位 JSON；保存时空值保留已存，与 apiKey 空则保留同一套。

@@ -104,7 +104,7 @@ test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸�
 test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不含密钥", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
-    [{ id: "prv_1", kind: "openai", enabled: true, hasKey: true, requiresKey: true }],
+    [{ id: "prv_1", kind: "openai", enabled: true, hasKey: true, requiresKey: true, credentialCheck: { state: "ok" } }],
     []
   )
   assert.equal(snap.ready, true)

@@ -3,6 +3,7 @@
  * ready = 新对话默认路线已验证可发；闸更宽（ready ⇒ 放行）。
  */
 import { z } from "zod"
+import { CredentialCheck, CREDENTIAL_INVALID } from "./credential-check.ts"
 import { chatRouteAllowsSend, NO_CHAT_ROUTE } from "./chat-route-gate.ts"
 
 export {
@@ -13,6 +14,13 @@ export {
   type ChatRouteGateInput,
   type ChatRouteGateKind
 } from "./chat-route-gate.ts"
+export {
+  CREDENTIAL_INVALID,
+  CredentialCheck,
+  CredentialCheckCode,
+  parseCredentialCheck,
+  type CredentialCheckState
+} from "./credential-check.ts"
 
 export const ChatReadinessInput = z.object({}).strict()
 export type ChatReadinessInput = z.infer<typeof ChatReadinessInput>
@@ -37,7 +45,7 @@ export const ChatLocalModelRoute = z
 export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
 
 /** 发送闸稳定码。main `agent.run` 失败回 `{ ok:false, code }`，不要 throw 以免 IPC 加前缀。 */
-export const SendGateCode = z.enum([NO_CHAT_ROUTE])
+export const SendGateCode = z.enum([NO_CHAT_ROUTE, CREDENTIAL_INVALID])
 export type SendGateCode = z.infer<typeof SendGateCode>
 
 export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()
@@ -102,7 +110,9 @@ export const ChatReadiness = z
      * 系统钥匙串能否加密存密钥。缺省 / 坏字段 `.catch(true)`，旧快照不当成挂掉。
      * Linux `basic_text` 算 false。禁止明文回落。
      */
-    secretStorageAvailable: z.boolean().catch(true)
+    secretStorageAvailable: z.boolean().catch(true),
+    /** 当前默认路线的密钥校验。缺省 / 坏字段当 unverified。 */
+    credentialCheck: CredentialCheck.optional().catch({ state: "unverified" })
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>
@@ -128,6 +138,7 @@ export type PublicKeyProvider = {
   active?: boolean
   /** 用来判断远端 Ollama / LM Studio，不进快照。 */
   baseURL?: string
+  credentialCheck?: CredentialCheck
 }
 
 /** 已装 / 已探测到的引擎数。enjoy-local 算一台引擎，但不等于可以对话。 */
@@ -157,6 +168,8 @@ export type ResolveDefaultChatRouteInput = {
   hasEnjoySecret?: boolean
   /** 当前档案若是带密钥的，才写 defaultRoute.profileId。 */
   activeKeyProfileId?: string | null
+  /** 当前路线密钥校验。缺省当未验证：不 ready，发送仍放行。 */
+  credentialState?: CredentialCheck["state"]
 }
 
 function chatDefaultRouteOf(
@@ -195,19 +208,37 @@ export function resolveDefaultChatRoute(input: ResolveDefaultChatRouteInput): Ch
 
 function defaultRouteUsable(
   route: ChatDefaultRoute,
-  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels" | "hasEnjoySecret">
+  input: Pick<
+    ResolveDefaultChatRouteInput,
+    "apiKeys" | "localModels" | "hasEnjoySecret" | "credentialState"
+  >
 ): boolean {
   return chatRouteAllowsSend({
     runtimeId: route.runtimeId,
     hasEnjoySecret: enjoySecretOf(input),
-    verifiedLocal: input.localModels.some(isVerifiedLocalModel)
+    verifiedLocal: input.localModels.some(isVerifiedLocalModel),
+    credentialState: input.credentialState
   })
+}
+
+/** ready 比闸严：带密钥档案必须校验 ok；invalid / unverified / 未检都不 ready。 */
+function defaultRouteReady(
+  route: ChatDefaultRoute,
+  input: Pick<
+    ResolveDefaultChatRouteInput,
+    "apiKeys" | "localModels" | "hasEnjoySecret" | "credentialState" | "engines"
+  >
+): boolean {
+  if (route.runtimeId === "enjoy-local" && enjoySecretOf(input) && input.apiKeys.length > 0) {
+    return input.credentialState === "ok"
+  }
+  return defaultRouteUsable(route, input)
 }
 
 function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute | null {
   const modelId = input.modelId?.trim() || undefined
   const keyProfile = activeKeyProfileIdOf(input)
-  if (enjoySecretOf(input)) {
+  if (enjoySecretOf(input) && input.credentialState !== "invalid") {
     return chatDefaultRouteOf("enjoy-local", modelId, keyProfile)
   }
   if (input.localModels.some(isVerifiedLocalModel)) {
@@ -227,9 +258,10 @@ export function chatReadyFromRoutes(input: {
   modelId?: string
   hasEnjoySecret?: boolean
   activeKeyProfileId?: string | null
+  credentialState?: CredentialCheck["state"]
 }): boolean {
   const route = resolveDefaultChatRoute(input)
-  return defaultRouteUsable(route, input)
+  return defaultRouteReady(route, input)
 }
 
 export function buildChatReadiness(input: {
@@ -243,10 +275,12 @@ export function buildChatReadiness(input: {
   hasEnjoySecret?: boolean
   activeKeyProfileId?: string | null
   adoptedHint?: { name: string }
+  credentialCheck?: CredentialCheck
 }): ChatReadiness {
   const engines = [...input.engines]
   const localModels = [...input.localModels]
   const apiKeys = [...input.apiKeys]
+  const credentialState = input.credentialCheck?.state
   const defaultRoute = resolveDefaultChatRoute({
     explicit: input.explicit,
     preferredRuntimeId: input.preferredRuntimeId,
@@ -255,13 +289,17 @@ export function buildChatReadiness(input: {
     localModels,
     apiKeys,
     hasEnjoySecret: input.hasEnjoySecret,
-    activeKeyProfileId: input.activeKeyProfileId
+    activeKeyProfileId: input.activeKeyProfileId,
+    credentialState
   })
+  const credentialCheck = input.credentialCheck
   return ChatReadiness.parse({
-    ready: defaultRouteUsable(defaultRoute, {
+    ready: defaultRouteReady(defaultRoute, {
       apiKeys,
       localModels,
-      hasEnjoySecret: input.hasEnjoySecret
+      hasEnjoySecret: input.hasEnjoySecret,
+      credentialState,
+      engines
     }),
     engineCount: input.engineCount,
     engines,
@@ -269,7 +307,8 @@ export function buildChatReadiness(input: {
     apiKeys,
     defaultRoute,
     hasEnjoySecret: enjoySecretOf(input),
-    ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {})
+    ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {}),
+    ...(credentialCheck ? { credentialCheck } : {})
   })
 }
 

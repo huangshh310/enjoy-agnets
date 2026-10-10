@@ -427,6 +427,7 @@ export const zhChat = {
   openCliLogin: "打开登录",
   addProviderKey: "去连接模型",
   noChatRouteNotice: "还差一步：连一个模型，才能发消息。草稿会留着。",
+  credentialInvalidNotice: "这组密钥无效，发不出去。请到设置里换一把再试。",
   needModelNotice: "还差一步：选一个模型，才能发消息。草稿会留着。",
   adoptedDefaultRouteToast: "之后的新对话默认用「{name}」，可在设置里改。",
   goConnect: "去连接",

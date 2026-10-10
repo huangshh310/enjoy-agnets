@@ -15,6 +15,8 @@ import {
   e2eStubEngineInspectValue
 } from "./e2e-chat-readiness"
 import { writeInspectCache } from "./agent-tools-account/inspect-store"
+import { e2eCredentialFixture } from "./credential-check-run.ts"
+import { writeCredentialCheck } from "./credential-check-store.ts"
 import { isE2eStub } from "./e2e-stub"
 import { upsertProfile } from "./secrets"
 
@@ -44,6 +46,10 @@ export async function seedE2eChatReadyRoute(input: {
       activate: true
     })
     setSetting("defaultModelId", E2E_CHAT_READY_MODEL_ID)
+    writeCredentialCheck(
+      E2E_CHAT_READY_KEY_PROFILE_ID,
+      e2eCredentialFixture() ?? { state: "ok" }
+    )
     seededKind = "key"
     return true
   }

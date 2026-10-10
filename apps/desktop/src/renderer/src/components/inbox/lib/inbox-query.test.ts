@@ -332,6 +332,33 @@ test("待验收与拍板一样要和会话列表求交，空列表 fail-closed",
   )
 })
 
+test("待验收行带上改动文件与完成时间", () => {
+  const rows = inboxFromNeedsReviewSessions(
+    [
+      {
+        id: "ses_r",
+        workspaceId: "ws",
+        title: "待看",
+        updatedAt: 9,
+        workflowStatus: "needs_review",
+        changedFiles: { names: ["a.ts", "b.ts"], total: 4 },
+        completedAt: "2026-10-10T00:00:00.000Z"
+      }
+    ],
+    {
+      t,
+      now: 10,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_r", name: "待看", kind: "session", parentId: "ws", updatedAt: 9 }
+      ]
+    }
+  )
+  assert.equal(rows.length, 1)
+  assert.deepEqual(rows[0]?.changedFiles, { names: ["a.ts", "b.ts"], total: 4 })
+  assert.equal(rows[0]?.completedAt, "2026-10-10T00:00:00.000Z")
+})
+
 test("待验收从会话 workflowStatus 合成，不进拍板计数", () => {
   const repositories: RepositoryNode[] = [
     { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },

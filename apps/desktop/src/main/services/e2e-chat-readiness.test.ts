@@ -46,6 +46,7 @@ test("写盘夹具必须隔离 userData", () => {
 test("stub + key 带可发默认路线，不含秘密", () => {
   const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key" })
   assert.equal(snap?.ready, true)
+  assert.equal(snap?.credentialCheck?.state, "ok")
   assert.equal(snap?.apiKeys[0]?.presetId, "openai")
   assert.equal(snap?.defaultRoute?.runtimeId, "enjoy-local")
   assert.equal(snap?.defaultRoute?.modelId, "stub-e2e")
@@ -59,6 +60,31 @@ test("stub + key 带可发默认路线，不含秘密", () => {
     true
   )
   assert.equal(JSON.stringify(snap).includes("sk-"), false)
+})
+
+test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
+  const ok = e2eChatReadiness({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key",
+    ENJOY_E2E_CREDENTIAL: "ok"
+  })
+  assert.equal(ok?.ready, true)
+  assert.equal(ok?.credentialCheck?.state, "ok")
+  const invalid = e2eChatReadiness({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key",
+    ENJOY_E2E_CREDENTIAL: "invalid"
+  })
+  assert.equal(invalid?.ready, false)
+  assert.equal(invalid?.credentialCheck?.state, "invalid")
+  assert.equal(invalid?.credentialCheck?.code, "auth_rejected")
+  const unverified = e2eChatReadiness({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key",
+    ENJOY_E2E_CREDENTIAL: "unverified"
+  })
+  assert.equal(unverified?.ready, false)
+  assert.equal(unverified?.credentialCheck?.state, "unverified")
 })
 
 test("stub + none 引擎数不能冒充可以开始", () => {

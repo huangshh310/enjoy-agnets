@@ -34,6 +34,8 @@ export interface InboxNotification {
   errorMessage?: string
   toolName?: string
   isAborted?: boolean
+  changedFiles?: { names: string[]; total: number }
+  completedAt?: string
 }
 
 export interface InboxGroup {

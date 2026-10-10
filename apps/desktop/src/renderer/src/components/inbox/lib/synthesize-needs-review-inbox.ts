@@ -45,7 +45,9 @@ export function inboxFromNeedsReviewSessions(
         actionKey: "openSession" as const,
         actionLabel: input.t("pages.inbox.actions.openSession"),
         status: "resolved" as const,
-        sessionTitle: session.title
+        sessionTitle: session.title,
+        ...(session.changedFiles ? { changedFiles: session.changedFiles } : {}),
+        ...(session.completedAt ? { completedAt: session.completedAt } : {})
       }
     })
     .filter((item) => !hidden.has(item.id))
@@ -65,7 +67,9 @@ export function synthesizeNeedsReviewInbox(input: {
       workspaceId: session.workspaceId ?? session.parentId ?? null,
       title: session.name,
       updatedAt: session.updatedAt,
-      workflowStatus: "needs_review" as const
+      workflowStatus: "needs_review" as const,
+      ...(session.changedFiles ? { changedFiles: session.changedFiles } : {}),
+      ...(session.completedAt ? { completedAt: session.completedAt } : {})
     }))
   return inboxFromNeedsReviewSessions(rows, input)
 }

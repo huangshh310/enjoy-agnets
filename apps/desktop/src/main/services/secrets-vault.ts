@@ -88,6 +88,7 @@ export type ProviderPublic = {
   modelsURL?: string
   reasoningFamily: ReasoningFamilyName
   proxy?: string
+  credentialCheck?: import("@enjoy-agents/ipc-contract/credential-check").CredentialCheck
 }
 
 export type Vault = {

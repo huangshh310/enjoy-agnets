@@ -164,7 +164,8 @@ const ide = {
     pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input),
     detectProvider: (input: unknown) => ipcRenderer.invoke("settings.detectProvider", input),
     duplicateProvider: (input: unknown) => ipcRenderer.invoke("settings.duplicateProvider", input),
-    setProviderEnabled: (input: unknown) => ipcRenderer.invoke("settings.setProviderEnabled", input)
+    setProviderEnabled: (input: unknown) => ipcRenderer.invoke("settings.setProviderEnabled", input),
+    recheckProvider: (input: unknown) => ipcRenderer.invoke("settings.recheckProvider", input)
   },
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),

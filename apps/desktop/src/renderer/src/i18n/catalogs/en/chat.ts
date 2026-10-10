@@ -430,6 +430,7 @@ export const enChat = {
   openCliLogin: "Open sign-in",
   addProviderKey: "Connect a model",
   noChatRouteNotice: "One more step: connect a model before sending. Your draft stays.",
+  credentialInvalidNotice: "This API key is invalid, so sending is blocked. Replace it in Settings and try again.",
   needModelNotice: "One more step: pick a model before sending. Your draft stays.",
   adoptedDefaultRouteToast: "New chats will use “{name}” by default. You can change this in Settings.",
   goConnect: "Connect",

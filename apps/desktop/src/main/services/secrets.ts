@@ -13,6 +13,7 @@ import {
   type ProviderKind
 } from "@enjoy-agents/providers"
 import { unbindProviderFromAgentTools } from "./agent-tools-vault"
+import { clearCredentialCheck, readCredentialChecks } from "./credential-check-store.ts"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
@@ -32,7 +33,17 @@ export { listedModelsFromProfiles } from "./listed-models"
 
 export async function listPublicProviders(): Promise<ProviderPublic[]> {
   const vault = await readVault()
-  return vault.profiles.map((profile) => toPublic(profile, vault.activeId))
+  const checks = readCredentialChecks()
+  return vault.profiles.map((profile) => {
+    const pub = toPublic(profile, vault.activeId)
+    const check = checks[profile.id]
+    return check ? { ...pub, credentialCheck: check } : pub
+  })
+}
+
+export async function findProfileById(id: string): Promise<ProviderProfile | undefined> {
+  const vault = await readVault()
+  return vault.profiles.find((profile) => profile.id === id)
 }
 
 export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
@@ -110,6 +121,7 @@ export async function setProfileEnabled(id: string, enabled: boolean): Promise<P
 
 export async function removeProfile(id: string): Promise<void> {
   unbindProviderFromAgentTools(id)
+  clearCredentialCheck(id)
   const vault = await readVault()
   vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
   if (vault.activeId === id) {

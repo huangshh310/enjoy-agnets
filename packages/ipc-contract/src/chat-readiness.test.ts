@@ -3,10 +3,12 @@ import { test } from "node:test"
 import {
   AgentRunResult,
   ChatReadiness,
+  CREDENTIAL_INVALID,
   NO_CHAT_ROUTE,
   apiKeyRoutes,
   buildChatReadiness,
   chatRouteAllowsSend,
+  chatRouteGateCode,
   chatRouteGateKind,
   countAvailableEngines,
   isLoopbackModelBaseUrl,
@@ -56,7 +58,8 @@ test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不
     engines: [],
     localModels: [],
     apiKeys: [KEY],
-    engineCount: 1
+    engineCount: 1,
+    credentialCheck: { state: "ok" }
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
@@ -153,6 +156,16 @@ test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 
     secretStorageAvailable: "no"
   })
   assert.equal(badKeychain.secretStorageAvailable, true)
+  const badCheck = ChatReadiness.parse({
+    ready: false,
+    engineCount: 0,
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    credentialCheck: { state: "nope", message: "401 Unauthorized" }
+  })
+  assert.equal(badCheck.credentialCheck?.state, "unverified")
+  assert.equal(JSON.stringify(badCheck).includes("Unauthorized"), false)
 })
 
 test("已登录外置引擎单独构成路线；enjoy-local 即使 loggedIn 也不进 engines", () => {
@@ -362,5 +375,85 @@ test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
       verifiedLocal: false
     }),
     true
+  )
+})
+
+test("密钥 invalid 不 ready、不 adopt、发送拦 credential_invalid", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    credentialCheck: { state: "invalid", code: "auth_rejected" }
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.credentialCheck?.state, "invalid")
+  assert.equal(
+    chatRouteGateKind({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false,
+      credentialState: "invalid"
+    }),
+    "definitely_unusable"
+  )
+  assert.equal(
+    chatRouteGateCode({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false,
+      credentialState: "invalid"
+    }),
+    CREDENTIAL_INVALID
+  )
+})
+
+test("带密钥档案缺 credentialCheck 不 ready，发送仍放行", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1,
+    hasEnjoySecret: true
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(
+    chatRouteGateCode({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    null
+  )
+})
+
+test("密钥 unverified 不 ready，发送 uncertain 放行", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    credentialCheck: { state: "unverified", code: "timeout" }
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(
+    chatRouteGateKind({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false,
+      credentialState: "unverified"
+    }),
+    "uncertain"
+  )
+  assert.equal(
+    chatRouteGateCode({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false,
+      credentialState: "unverified"
+    }),
+    null
   )
 })

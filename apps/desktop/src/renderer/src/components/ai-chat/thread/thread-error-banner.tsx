@@ -27,6 +27,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
 import { ThreadNeedModelNotice } from "./thread-need-model-notice"
 import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
+import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
 const REMOTE_INSTALL_MAP: Record<string, string> = {
   deepseek: "npm i -g @deepseek-ai/dsh",
@@ -55,6 +56,23 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   if (kind === "stopped" || kind === "catch_up_timeout") return null
   if (kind === "no_chat_route") {
     return <ThreadNoChatRouteNotice onDismiss={() => setError(null)} className={className} />
+  }
+  if (kind === "credential_invalid") {
+    return (
+      <ThreadSendGateNotice
+        testId="thread-credential-invalid-notice"
+        kind="credential_invalid"
+        message={t("chat.credentialInvalidNotice")}
+        actionLabel={t("chat.goConnect")}
+        actionIcon={<RiKey2Line className="size-3" />}
+        onAction={() => {
+          setError(null)
+          void navigate({ to: "/settings/$section", params: { section: "providers" } })
+        }}
+        onDismiss={() => setError(null)}
+        className={className}
+      />
+    )
   }
   if (kind === "needs_model") {
     return <ThreadNeedModelNotice onDismiss={() => setError(null)} className={className} />

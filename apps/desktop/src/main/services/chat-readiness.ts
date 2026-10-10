@@ -88,6 +88,17 @@ export function emitChatReadiness(snapshot: ChatReadiness): void {
   }
 }
 
+/** 立刻重算并推快照。recheck 等需要等新状态的入口用这个。 */
+export async function pushChatReadinessNow(): Promise<ChatReadiness | undefined> {
+  try {
+    const snapshot = await computeChatReadiness()
+    emitChatReadiness(snapshot)
+    return snapshot
+  } catch {
+    return undefined
+  }
+}
+
 /** 连续 inspect / detect 合并成一次推送。 */
 export function scheduleChatReadinessPush(): void {
   if (pushTimer) return

@@ -50,7 +50,8 @@ export function assembleChatReadiness(
     explicit: route.explicit,
     modelId: route.modelId,
     hasEnjoySecret,
-    activeKeyProfileId
+    activeKeyProfileId,
+    credentialCheck: active?.credentialCheck
   })
 }
 

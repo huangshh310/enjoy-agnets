@@ -7,6 +7,7 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
+  CREDENTIAL_INVALID,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
   NEED_REMOTE_CONNECTED,
@@ -25,7 +26,8 @@ function readyKey() {
     engines: [],
     localModels: [],
     apiKeys: [{ kind: "api_key", providerId: "p", presetId: "openai" }],
-    engineCount: 1
+    engineCount: 1,
+    credentialCheck: { state: "ok" }
   })
 }
 
@@ -86,6 +88,34 @@ test("无快照时 Enjoy Local 放行，Harness 也放行", () => {
   rememberChatReadiness(readyNone())
   const harness = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "" })
   assert.equal(guardComposerSend(harness as never, { ideReady: true }), true)
+})
+
+test("密钥 invalid 回 credential_invalid，unverified 放行", () => {
+  rememberChatReadiness(
+    buildChatReadiness({
+      engines: [],
+      localModels: [],
+      apiKeys: [{ kind: "api_key", providerId: "p", presetId: "openai" }],
+      engineCount: 1,
+      hasEnjoySecret: true,
+      credentialCheck: { state: "invalid", code: "auth_rejected" }
+    })
+  )
+  const blocked = store({ runtimeId: "enjoy-local", hasKey: true })
+  assert.equal(guardComposerSend(blocked as never, { ideReady: true }), false)
+  assert.equal(blocked.read().error, CREDENTIAL_INVALID)
+  rememberChatReadiness(
+    buildChatReadiness({
+      engines: [],
+      localModels: [],
+      apiKeys: [{ kind: "api_key", providerId: "p", presetId: "openai" }],
+      engineCount: 1,
+      hasEnjoySecret: true,
+      credentialCheck: { state: "unverified", code: "timeout" }
+    })
+  )
+  const open = store({ runtimeId: "enjoy-local", hasKey: true })
+  assert.equal(guardComposerSend(open as never, { ideReady: true }), true)
 })
 
 test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", () => {

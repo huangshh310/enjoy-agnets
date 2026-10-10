@@ -14,6 +14,7 @@ import {
   NEED_CLI_OUTDATED,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
+  CREDENTIAL_INVALID,
   NO_CHAT_ROUTE,
   ACP_RESUME_FALLBACK,
   NEED_REMOTE_CONNECTED,
@@ -69,6 +70,7 @@ test("ACP 未登录不是可重试供应商错误", () => {
     "auth"
   )
   assert.equal(classifyThreadError(NO_CHAT_ROUTE), "no_chat_route")
+  assert.equal(classifyThreadError(CREDENTIAL_INVALID), "credential_invalid")
   assert.equal(
     classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
     "no_chat_route"
