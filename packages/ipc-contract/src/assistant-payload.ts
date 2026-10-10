@@ -24,6 +24,10 @@ export type ThreadToolCall = {
   reasoningChars?: number
   /** 子 Agent 工具挂到父 delegate 的 toolCallId。 */
   parentToolCallId?: string
+  /** 这次执行是否靠本会话允许跳过卡片。mike 画工具行灰前缀。 */
+  allowedBySession?: boolean
+  /** 为何再问：重启回挂 waiting=restart，续跑 / 回挂 running=restore。 */
+  reaskReason?: "restart" | "restore"
 }
 
 export type CitedSource = {

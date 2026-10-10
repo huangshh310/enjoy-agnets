@@ -22,7 +22,7 @@ export function stripUntrustedAutomationFlags(input: RunAgentInput): RunAgentInp
 export function trustedAutomationFlags(
   extras?: { denyAnyDesktop?: boolean; automationSource?: unknown; origin?: unknown },
   existing?: { denyAnyDesktop?: boolean; automationSource?: AutomationRunSource; origin?: AgentRunOrigin }
-): { denyAnyDesktop?: boolean; automationSource?: AutomationRunSource; origin: AgentRunOrigin } {
+): { denyAnyDesktop?: boolean; automationSource?: AutomationRunSource; origin?: AgentRunOrigin } {
   const source = extras?.automationSource ?? existing?.automationSource
   const parsedSource = isAutomationSource(source) ? source : undefined
   return {
@@ -30,6 +30,15 @@ export function trustedAutomationFlags(
     automationSource: parsedSource,
     origin: inferAgentRunOrigin(extras?.origin ?? existing?.origin, parsedSource)
   }
+}
+
+/** Composer 前台发送才盖 user；工作流 / ai.generate / 已信任自动化不得冒充。 */
+export function stampForegroundUserOrigin(
+  input: RunAgentInput,
+  trust: TrustedRunAgentOptions
+): RunAgentInput {
+  if (trust.trustAutomationFlags || trust.rememberMru === false) return input
+  return { ...input, origin: "user" }
 }
 
 function isAutomationSource(value: unknown): value is AutomationRunSource {

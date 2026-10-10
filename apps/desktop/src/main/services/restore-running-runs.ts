@@ -8,7 +8,7 @@ import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { listRuns, updateRun, type RunRow } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
-import { emitEvent, holdAgentRun } from "./agent-run-state"
+import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { trustedAutomationFlags } from "./agent-run-trust"
@@ -118,6 +118,8 @@ async function holdAndPump(
     messages: extras.modelMessages as ModelMessage[]
   })
   hydrateActiveRunUsage(row.id)
+  const held = getActiveRun(row.id)
+  if (held) held.reaskReason = "restore"
   emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId, kind: "agent" })
   void prepareAndPump(row.id)
   return true

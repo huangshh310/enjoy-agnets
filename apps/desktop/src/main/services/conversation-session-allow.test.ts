@@ -54,6 +54,7 @@ test("新 run 从会话表种子工具名与 bash 前缀", () => {
       modelId: "m",
       mode: "agent",
       attachments: [],
+      origin: "user",
       messages: [{ role: "user", content: "write" }]
     }
   })

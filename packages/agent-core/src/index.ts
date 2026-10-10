@@ -3,6 +3,7 @@ export type { CodingAgentOptions, StreamCodingAgentOptions } from "./coding-agen
 export { joinInstructions } from "./join-instructions";
 export {
   resolveToolApproval,
+  sessionTableAllowsTool,
   isExploreMutatingDeny,
   isMcpWriteToolName,
   mcpToolLeafName,
@@ -84,6 +85,7 @@ export { assertSandboxCommand, type SandboxPolicy } from "./policies/sandbox";
 export {
   bashAllowPrefix,
   bashCommandHasUnsafeOperators,
+  bashCommandIsInterpreterStyle,
   sessionAllowsBash,
   commandFromToolInput
 } from "./policies/bash-prefix";

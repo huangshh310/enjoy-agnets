@@ -15,6 +15,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       name: event.name,
       ...(event.args !== undefined ? { args: mergeToolArgs(current?.args, event.args) } : {}),
       ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
+      ...sessionAllowPatch(event),
       state: hasArgs ? "input-available" : "input-streaming"
     })
     return
@@ -40,6 +41,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       name: event.name,
       ...(event.args !== undefined ? { args: event.args } : {}),
       ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
+      ...sessionAllowPatch(event),
       result,
       errorText: event.error,
       state: notExecuted ? "output-denied" : event.error ? "output-error" : "output-available"
@@ -51,6 +53,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       id: event.toolCallId,
       name: event.name,
       args: event.args,
+      ...sessionAllowPatch(event),
       state: "approval-requested"
     })
     return
@@ -117,6 +120,16 @@ function mergeToolArgs(prev: unknown, next: unknown): unknown {
   return merged
 }
 
+function sessionAllowPatch(event: {
+  allowedBySession?: boolean
+  reaskReason?: "restart" | "restore"
+}): Pick<ThreadToolCall, "allowedBySession" | "reaskReason"> {
+  return {
+    ...(event.allowedBySession !== undefined ? { allowedBySession: event.allowedBySession } : {}),
+    ...(event.reaskReason ? { reaskReason: event.reaskReason } : {})
+  }
+}
+
 function isArgsRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
@@ -141,6 +154,8 @@ function upsertTool(tools: ThreadToolCall[], patch: Partial<ThreadToolCall> & { 
     args: patch.args,
     result: patch.result,
     errorText: patch.errorText,
-    parentToolCallId: patch.parentToolCallId
+    parentToolCallId: patch.parentToolCallId,
+    allowedBySession: patch.allowedBySession,
+    reaskReason: patch.reaskReason
   })
 }

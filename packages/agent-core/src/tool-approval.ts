@@ -182,6 +182,29 @@ function resolveMcpApproval(
   return "not-applicable"
 }
 
+/**
+ * 只看会话表（工具名 / bash 前缀 / desktop 会话），不看 prefs Auto / 持久簿。
+ * 给 tool / approval 事件的 `allowedBySession` 用。
+ */
+export function sessionTableAllowsTool(
+  toolName: string,
+  policy: ApprovalPolicy,
+  input?: unknown
+): boolean {
+  if (toolName === ASK_USER_QUESTIONS_TOOL || toolName === SET_SESSION_HEARTBEAT_TOOL) return false
+  if (toolName.startsWith("mcp_")) return sessionAllows(toolName, policy.sessionApprovedTools)
+  if (toolName === "desktop_act") {
+    const desktopInput = prepareDesktopActGateInput(input, policy.lookupDesktopObservation)
+    if (desktopActSkipsApproval(desktopInput) || desktopActAlwaysAsks(desktopInput)) return false
+    return sessionAllowsDesktopAct(desktopInput, policy)
+  }
+  if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) return false
+  if (BASH_SET.has(toolName)) {
+    return sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashPrefixes)
+  }
+  return sessionAllows(toolName, policy.sessionApprovedTools)
+}
+
 function sessionAllows(toolName: string, session?: ReadonlySet<string>): boolean {
   if (!session) return false
   if (session.has(toolName)) return true

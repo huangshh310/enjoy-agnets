@@ -27,6 +27,7 @@ import { getWorkspace } from "./workspace"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { peekCommandReceipt, rememberCommandReceipt } from "./command-receipts"
 import {
+  stampForegroundUserOrigin,
   stripUntrustedAutomationFlags,
   trustedAutomationFlags,
   type TrustedRunAgentOptions
@@ -46,7 +47,8 @@ export async function runAgent(
   trust: TrustedRunAgentOptions = {}
 ) {
   const parsed = RunAgentInput.parse(rawInput)
-  const input = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
+  const stripped = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
+  const input = stampForegroundUserOrigin(stripped, trust)
   return beginAgentRun(window, input, {
     persistUser: input.persistUser !== false,
     rememberMru: trust.rememberMru
@@ -174,7 +176,11 @@ async function beginAgentRun(
     secret,
     messages: modelMessages
   })
-  if (options.runId) hydrateActiveRunUsage(runId)
+  if (options.runId) {
+    hydrateActiveRunUsage(runId)
+    const run = getActiveRun(runId)
+    if (run) run.reaskReason = "restore"
+  }
   if (input.commandId) rememberCommandReceipt(input.commandId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
