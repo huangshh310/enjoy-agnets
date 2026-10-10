@@ -57,17 +57,21 @@ test("第六批补刀：回焦、更新、资料、时区", async () => {
     await window.evaluate(() => {
       location.hash = "#/settings/general"
     })
-    await window.getByText("开发版本不检查更新。").first().waitFor({ timeout: 15_000 })
+    const devSkip = window.getByText("开发版本不检查更新。").first()
+    await devSkip.waitFor({ timeout: 15_000 })
     await expect(window.getByRole("button", { name: "检查更新" })).toHaveCount(0)
+    await devSkip.scrollIntoViewIfNeeded()
     await snap(window, "b6_dev_skip_update")
 
     await window.evaluate(() => {
       location.hash = "#/settings/account"
     })
-    await window.getByText("助手与模型").first().waitFor({ timeout: 15_000 })
+    const engines = window.getByText("助手与模型").first()
+    await engines.waitFor({ timeout: 15_000 })
     await expect(window.getByText("活跃先锋")).toBeVisible()
     await expect(window.getByText("百万吞吐")).toBeVisible()
     await expect(window.getByText(/主进程|vault|Blobatar|Wire API/i)).toHaveCount(0)
+    await window.getByText("活跃先锋").first().scrollIntoViewIfNeeded()
     await snap(window, "b6_account_plain")
 
     await window.evaluate(() => {
