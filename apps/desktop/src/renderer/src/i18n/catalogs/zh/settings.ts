@@ -208,7 +208,7 @@ export const zhSettings = {
     pasteInlineDesc: "大段文本也留在输入框，不收成 pasted-text.txt。",
     recall: "召回上次发送",
     recallDesc: "空输入框按 ↑ 召回本线程已发正文，不带回附件。",
-    steer: "立即纠偏",
+    steer: "立即插话",
     steerDesc: "运行中把当前草稿立刻交给下一步检查点。",
     cyclePermission: "循环切换审批风险档",
     cyclePermissionDesc: "在读取和编辑两档之间切换。全部只能下手选。输入框为空或焦点不在其它输入框时生效；有字时 Shift+Tab 后退焦点。",

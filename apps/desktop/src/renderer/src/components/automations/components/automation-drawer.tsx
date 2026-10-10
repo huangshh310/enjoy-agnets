@@ -29,6 +29,7 @@ export function AutomationDrawer({
   saving,
   running,
   records,
+  lastRunText,
   locale,
   now,
   onClose,
@@ -43,6 +44,7 @@ export function AutomationDrawer({
   saving: boolean
   running: boolean
   records: AutomationMissedRecord[]
+  lastRunText?: string
   locale: string
   now: number
   onClose: () => void
@@ -116,9 +118,11 @@ export function AutomationDrawer({
         {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
         <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
         <label className="block">
-          <span className="text-caption-1-medium text-text-secondary">
-            {t("studio.automations.modelLabel")}{" "}
-            <span className="text-text-secondary">{t("studio.automations.modelOptional")}</span>
+          <span className="flex items-baseline gap-1.5 text-caption-1-medium text-text-secondary">
+            <span>{t("studio.automations.modelLabel")}</span>
+            <span className="text-caption-2-regular text-text-tertiary">
+              {t("studio.automations.modelOptional")}
+            </span>
           </span>
           <Input
             value={draft.modelId}
@@ -134,7 +138,9 @@ export function AutomationDrawer({
             onChange={(catchUpMissed) => onChange({ catchUpMissed })}
           />
         ) : null}
-        {draft.id ? <MissedRecordsList records={records} locale={locale} now={now} /> : null}
+        {draft.id ? (
+          <MissedRecordsList records={records} lastRunText={lastRunText} locale={locale} now={now} />
+        ) : null}
         <label className="block">
           <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.promptLabel")}</span>
           <Textarea

@@ -48,6 +48,7 @@ test("右栏启动页不挂 frost；审查空态自己抬到 z-10 且不透明",
   assert.match(picker, /relative z-10/)
   assert.match(picker, /bg-background-primary-default/)
   assert.match(reviewEmpty, /relative z-10/)
+  assert.match(reviewEmpty, /overflow-hidden/)
   assert.match(reviewEmpty, /bg-background-primary-default/)
   assert.match(reviewEmpty, /chat\.treeClean/)
   assert.match(changesEmpty, /relative z-10/)

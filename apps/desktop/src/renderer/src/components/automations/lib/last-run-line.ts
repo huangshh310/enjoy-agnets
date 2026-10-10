@@ -57,10 +57,11 @@ export function lastRunLine(input: {
   }
   if (automation.lastRunAt) {
     const latestAny = [...records].sort((left, right) => right.scheduledAt - left.scheduledAt)[0]
+    const when = formatLastRunWhen(automation.lastRunAt, now, locale)
     const text =
       latestAny && isSuccessfulCatchUp(latestAny)
         ? missedGroupSummary({ records, now, locale, t })
-        : t("studio.automations.lastRun", { when: formatLastRunWhen(automation.lastRunAt, now, locale) })
+        : lastRunStatusLine(automation.lastRunStatus, when, t)
     return { kind: "last", text, testId: "automation-row-last" }
   }
   return { kind: "never", text: t("studio.automations.neverRun"), testId: "automation-row-never" }
@@ -112,7 +113,7 @@ export function missedGroupSummary(input: {
   const ordered = [...records].sort((left, right) => right.scheduledAt - left.scheduledAt)
   const latestAny = ordered[0]
   if (latestAny && isSuccessfulCatchUp(latestAny)) {
-    return t("studio.automations.lastRun", {
+    return t("studio.automations.lastRunOk", {
       when: formatLastRunWhen(latestAny.recordedAt ?? latestAny.scheduledAt, now, locale)
     })
   }
@@ -130,6 +131,16 @@ export function missedGroupSummary(input: {
     reason,
     when
   })
+}
+
+function lastRunStatusLine(
+  status: Automation["lastRunStatus"],
+  when: string,
+  t: Translate
+): string {
+  if (status === "ok") return t("studio.automations.lastRunOk", { when })
+  if (status === "failed") return t("studio.automations.lastRunFailed", { when })
+  return t("studio.automations.lastRun", { when })
 }
 
 function isSuccessfulCatchUp(row: AutomationMissedRecord): boolean {

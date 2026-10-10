@@ -39,6 +39,7 @@ export function EmptySessionStart(props: {
             <ChatComposerCluster
               className="w-full shrink-0"
               composerClassName="px-0 pb-2 [&_textarea]:min-h-[72px]"
+              autoFocus
               onModelChange={props.onModelChange}
               onSend={props.onSend}
             />

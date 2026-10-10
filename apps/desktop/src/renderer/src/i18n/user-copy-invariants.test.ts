@@ -109,6 +109,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.setupGuide.replayDesc, "再走一遍引擎安装、外观和打开项目。")
   assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
   assert.equal(z.chat.errorRetryHint, "这一轮没能完成，可以重试")
+  assert.equal(z.chat.errorTitle, "模型这次没回完")
   assert.equal(z.chat.preparingHint, "正在准备…")
   assert.equal(z.chat.viewRawJson, "查看原始内容")
   assert.equal(z.chat.sourcesSheetFooter, "选中的文件可以回看；来自挂载或 MCP 的内容没有文件路径，无法回看。")
@@ -124,7 +125,14 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.cronDaily, "每天 {time}")
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
   assert.equal(z.studio.automations.missedGroupSame, "因{reason}错过 {n} 次 · {when}")
-  assert.equal(z.studio.automations.missedGroupMixed, "因最近一次{reason}错过 {n} 次 · {when}")
+  assert.equal(z.studio.automations.missedGroupMixed, "错过 {n} 次 · 最近一次{reason} · {when}")
+  assert.equal(z.studio.automations.lastRunOk, "上次成功 · {when}")
+  assert.equal(z.studio.automations.lastRunFailed, "上次出错 · {when}")
+  assert.equal(z.chat.errorTitle, "模型这次没回完")
+  assert.equal(z.chat.writing, "正在写")
+  assert.equal(z.chat.placeholderRunning.includes("{mod}"), true)
+  assert.equal(z.chat.placeholderRunning.includes("立即插话"), true)
+  assert.equal(z.chat.runtimeSteer.includes("纠偏"), false)
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
   assert.equal(z.studio.automations.deleteTitle, "删除这条自动化\uFF1F")
@@ -139,6 +147,27 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+})
+
+const MOD_COPY_ALLOWLIST = new Set([
+  "settings.shortcuts.layoutMac",
+  "settings.shortcuts.needsModifier"
+])
+
+test("默认词表不写死修饰键符号，运行态快捷键走平台修饰键", () => {
+  for (const [locale, tree] of [
+    ["zh", zh],
+    ["en", en]
+  ] as const) {
+    for (const { key, value } of flattenEntries(tree)) {
+      if (MOD_COPY_ALLOWLIST.has(key)) continue
+      assert.equal(value.includes("\u2318"), false, `${locale} ${key} hard-codes a mac modifier`)
+    }
+  }
+  const z = zh as { chat: Record<string, string> }
+  assert.match(z.chat.placeholderRunning, /\{mod\}/)
+  assert.match(z.chat.runtimeSteer, /\{mod\}/)
+  assert.match(z.chat.mentionSlashHint, /\{mod\}/)
 })
 
 test("中文词条不用半角 ? !，确认问句走全角问号", () => {

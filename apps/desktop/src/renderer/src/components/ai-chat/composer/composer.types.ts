@@ -16,4 +16,5 @@ export type ComposerProps = {
   onStop: () => void
   onAttach: (file: File) => void
   className?: string
+  autoFocus?: boolean
 }

@@ -7,10 +7,12 @@ import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 
 export function ChatComposer({
   className,
+  autoFocus = false,
   onModelChange,
   onSend
 }: {
   className?: string
+  autoFocus?: boolean
   onModelChange: (model: ModelOption) => void
   onSend: () => void
 }) {
@@ -35,6 +37,7 @@ export function ChatComposer({
       onStop={() => void abortComposerRun()}
       onAttach={(file) => void attachComposerFile(file)}
       className={className}
+      autoFocus={autoFocus}
     />
   )
 }

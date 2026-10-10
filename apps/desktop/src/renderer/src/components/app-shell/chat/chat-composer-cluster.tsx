@@ -11,6 +11,7 @@ import { ComposerPreparingHint } from "./composer-preparing-hint"
 export function ChatComposerCluster(props: {
   className?: string
   composerClassName?: string
+  autoFocus?: boolean
   onModelChange: (model: ModelOption) => void
   onSend: () => void
 }) {
@@ -20,6 +21,7 @@ export function ChatComposerCluster(props: {
       <ComposerPreparingHint />
       <ChatComposer
         className={props.composerClassName}
+        autoFocus={props.autoFocus}
         onModelChange={props.onModelChange}
         onSend={props.onSend}
       />

@@ -3,6 +3,7 @@
  */
 import { useEffect, useState } from "react"
 import { RiLoader4Line, RiSendPlane2Line, RiStopCircleLine } from "@remixicon/react"
+import { isApplePlatform } from "@renderer/components/settings/keybindings/keybinding-format"
 import { useT } from "@renderer/i18n"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { CanvasNodeType, type CanvasGenerationMode, type CanvasNodeData } from "../lib/canvas.types"
@@ -64,7 +65,9 @@ export function CanvasPromptPanel({
       <textarea
         rows={3}
         value={prompt}
-        placeholder={t("pages.workflows.canvasPromptPlaceholder")}
+        placeholder={t("pages.workflows.canvasPromptPlaceholder", {
+          mod: isApplePlatform() ? "⌘" : "Ctrl"
+        })}
         className="thin-scrollbar h-24 w-full resize-none bg-transparent text-sm leading-5 outline-none"
         onChange={(event) => {
           setPrompt(event.target.value)

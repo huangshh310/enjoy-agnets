@@ -85,7 +85,7 @@ export function ReviewHeader(props: {
         <div className="flex min-w-0 shrink-0 items-center gap-2">
           <ReviewScopeDropdown scope={scope} onSelectScope={onSelectScope} />
 
-          <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-semibold font-semibold">
+          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-background-secondary-default px-2.5 py-1 font-mono text-caption-1-semibold tabular-nums">
             <span className="text-state-success-text">+{additions.toLocaleString()}</span>
             <span className="text-text-error-primary">-{deletions.toLocaleString()}</span>
           </div>

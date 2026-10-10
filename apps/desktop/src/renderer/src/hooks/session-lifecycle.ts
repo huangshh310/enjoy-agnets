@@ -88,6 +88,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   })
   const generation = bumpSessionHydrateGeneration()
   if (!sameSession) {
+    useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
       parkForegroundRun()
       saveCurrentSessionDraft()
@@ -112,6 +113,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
   if (isDefaultSessionTitle(customTitle) && isReusableEmptySession(useChatStore.getState(), workspaceId)) {
+    useAttentionStore.getState().clearCompletes()
     focusComposerAfterNewSession()
     return
   }
@@ -168,6 +170,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
 
 /** 立刻露出欢迎页，但 sessionId 要等 create 回来。发送走排队，不占 running。 */
 function detachForegroundForCreate() {
+  useAttentionStore.getState().clearCompletes()
   useChatStore.setState({
     ...idleComposerPatch(),
     sessionId: null,

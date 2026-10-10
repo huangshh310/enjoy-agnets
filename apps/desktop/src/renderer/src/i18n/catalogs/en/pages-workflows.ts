@@ -58,7 +58,7 @@ export const enWorkflowPages = {
   canvasEmptyAudio: "Empty audio node",
   canvasEditText: "Double-click to edit",
   canvasFromNode: "Create from connection",
-  canvasPromptPlaceholder: "Write a prompt, ⌘↵ to generate",
+  canvasPromptPlaceholder: "Write a prompt, {mod}↵ to generate",
   canvasSelectModel: "Select generation model",
   canvasShortcuts: "Shortcuts",
   canvasAppearance: "Canvas Appearance & Grid",

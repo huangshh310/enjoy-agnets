@@ -9,7 +9,7 @@ export function AutomationFooter() {
   return (
     <p
       data-toast-clearance=""
-      className="mt-auto border-t border-separator-border bg-background-secondary-default px-4 py-2 text-caption-1-medium text-text-secondary"
+      className="mt-auto border-t border-separator-border bg-background-secondary-default px-4 py-2 text-caption-1-medium text-text-primary"
     >
       {joinSegments(t("studio.automations.localOnly"), t("studio.automations.webhookLocalOnly"))}
     </p>

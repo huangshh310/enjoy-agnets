@@ -11,10 +11,12 @@ import { catchUpWhenCopy, errorCodeCopy, isNeutralErrorCode, missedExpandLabel, 
 
 export function MissedRecordsList({
   records,
+  lastRunText,
   locale,
   now
 }: {
   records: AutomationMissedRecord[]
+  lastRunText?: string
   locale: string
   now: number
 }) {
@@ -37,9 +39,14 @@ export function MissedRecordsList({
         </span>
       </summary>
       {ordered.length === 0 ? (
-        <p className="border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-secondary">
-          {t("studio.automations.missedEmpty")}
-        </p>
+        <div className="space-y-1 border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-secondary">
+          {lastRunText ? (
+            <p data-testid="automation-drawer-last-run">
+              {t("studio.automations.lastRunDrawer", { line: lastRunText })}
+            </p>
+          ) : null}
+          <p>{t("studio.automations.missedEmpty")}</p>
+        </div>
       ) : (
         <ul className="space-y-1 border-t border-separator-border px-2.5 py-2">
           {ordered.map((row) => (

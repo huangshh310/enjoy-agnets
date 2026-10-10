@@ -7,6 +7,7 @@ import { useT, type TranslateFn } from "@renderer/i18n"
 import { ComposerDesktopBiasBar } from "./desktop/composer-desktop-bias-bar.tsx"
 import { ComposerMentionList } from "./composer-mention-list.tsx"
 import { ComposerMentionPopover } from "./composer-mention-popover.tsx"
+import { isApplePlatform } from "@renderer/components/settings/keybindings/keybinding-format"
 import { useComposerMentions } from "./use-composer-mentions.ts"
 import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 
@@ -16,6 +17,7 @@ export function ComposerInput({
   onSend,
   onSteer,
   running,
+  autoFocus = false,
   textareaRef,
   onPaste,
   onFocus,
@@ -26,6 +28,7 @@ export function ComposerInput({
   onSend: () => void
   onSteer: () => void
   running: boolean
+  autoFocus?: boolean
   textareaRef: RefObject<HTMLTextAreaElement | null>
   onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void
   onFocus: () => void
@@ -64,6 +67,7 @@ export function ComposerInput({
       <textarea
         ref={textareaRef}
         data-testid="composer-input"
+        autoFocus={autoFocus}
         rows={1}
         value={value}
         onChange={(event) => {
@@ -76,7 +80,11 @@ export function ComposerInput({
         onPaste={onPaste}
         onFocus={onFocus}
         onBlur={onBlur}
-        placeholder={running ? t("chat.placeholderRunning") : t("chat.placeholder")}
+        placeholder={
+          running
+            ? t("chat.placeholderRunning", { mod: isApplePlatform() ? "⌘" : "Ctrl" })
+            : t("chat.placeholder")
+        }
         className="max-h-48 min-h-[38px] w-full resize-none bg-transparent py-1 text-body-medium text-text-primary outline-none placeholder:text-text-secondary/70 leading-relaxed"
       />
       <ComposerDesktopBiasBar value={value} apps={mentions.desktopApps} />

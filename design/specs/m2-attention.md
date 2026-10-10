@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（已完成进顶栏约 4s；需处理占标题栏下一行；output-error 进待验收）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（已完成只留最新一颗；切会话/新对话清掉；不抢焦点）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -12,7 +12,7 @@
 
 | 表面 | 现状 |
 |---|---|
-| L1 AttentionStrip | `AttentionNeedsBar` 在 `ChatStageHeader` **下一行占位**（不绝对居中盖会话题，也不盖用户气泡）。`AttentionCompleteStatus` 进顶栏右侧状态区，约 4s 自消（`COMPLETE_TTL_MS = 4000`），不计入「需处理 N」。支持一键关闭及单项关闭。无 active/focused 则整条 `null`。只画仍在侧栏可见的会话，禁止指向已归档行。胶囊按优先级排序；当前会话 Dock 已开时收成微点。主标签是界面语言的 kind（待审批 / 待回答…），`min-w-32`，会话题只进 `title`。`approval.resolved`（含 deny）只收未决槽，不当 `error`；需处理随拍板清零。新 `pending_approval` / `ask_user` 进场时 `resolveTerminalSlots` 只收同会话 complete，未处理的 error 保留，禁止「需处理」和「已完成刚刚」叠出。归档有未决审批时先走 Dock 同一条 deny。 |
+| L1 AttentionStrip | `AttentionNeedsBar` 在 `ChatStageHeader` **下一行占位**（不绝对居中盖会话题，也不盖用户气泡）。`AttentionCompleteStatus` 进顶栏右侧状态区，约 4s 自消（`COMPLETE_TTL_MS = 4000`），不计入「需处理 N」。多会话完成只画**最新一颗**（新 `complete` 先 `clearActiveCompletes`）；切会话 / 点「新对话」立刻收掉。胶囊 `tabIndex={-1}`，`role=status` + `aria-live=polite`，禁止抢 Composer 焦点。支持一键关闭及单项关闭。无 active/focused 则整条 `null`。只画仍在侧栏可见的会话，禁止指向已归档行。胶囊按优先级排序；当前会话 Dock 已开时收成微点。主标签是界面语言的 kind（待审批 / 待回答…），`min-w-32`，会话题只进 `title`。`approval.resolved`（含 deny）只收未决槽，不当 `error`；需处理随拍板清零。新 `pending_approval` / `ask_user` 进场时 `resolveTerminalSlots` 只收同会话 complete，未处理的 error 保留，禁止「需处理」和「已完成刚刚」叠出。归档有未决审批时先走 Dock 同一条 deny。 |
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。`desktop_act` 走桌面名片（`desktop-approval-card.tsx`：缩略图 + `desktopActApprovalText` + 可选 appKey 副标题；四选一 `approval-allow` / `approval-session` / `approval-always-app` / `approval-deny` 映射 `allow` / `allow_session` / `allow_always` / `deny`，底栏「继续」才落决策），不是裸「允许桌面工具」。`needs_second_confirm` 走同一张 `desktop-approval-card.tsx` 的 warn/danger 变体（并排新旧缩略图；`approval-second-confirm-allow` / `approval-second-confirm-cancel` 仍映射 `allow` / `deny`；缺图禁用主钮；不露始终允许）。仅 `args.sensitive === false` 且有稳键时默认「本会话允许」，始终允许不再 featured。`bypassesSessionAllow` 划掉本会话/始终允许（无稳键不画始终允许）；敏感（缺字段也算）或缺 appKey 则不画这两项并默认「允许一次」；敏感警示「这是敏感应用，每次都会问你」。无 pending 则 `null`。 |
 | L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、`{显示名或品牌} · {会话题}`（P2，悬停引擎真名）、摘要/错误预览与时间。**M-C 安静 Inbox**：侧栏筛选只有 **`approval`（拍板） / `needs_review`（待验收） / `failed`（失败）**，默认 `approval`。拍板 = `pending_approval` + `ask_user`。待验收行由会话 `workflowStatus === "needs_review"` 合成，不是 Attention kind；**只有宣称收工且本轮有已执行工具（或纯聊天无工具）的 `run.end` 才标 `needs_review`**。本轮工具全是拒绝 / 未执行：回 `todo`，Attention **不** upsert `complete`（不弹「已完成」）。`run.error` / 用户取消保持 `in_progress`，走失败筛（取消文案含 abort →「已取消」），不进待验收、不进拍板角标。完成 / 运行中 / 读文件刷屏不进默认列；运行中仍只在侧栏「进行中」。轨徽标与页内数字徽标 = **拍板数**（`stripApprovalCount`），不计待验收 / 失败 / 完成 / 运行中。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回；失败阅读器无通过/打回。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
@@ -175,6 +175,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。
 - **隐患**：一轮 `run.end` 直接标 `done`、刷 complete Inbox，或把失败/取消也一律 `needs_review`（#47 曾一刀切）；写盘被拒绝后仍弹「已完成」并进待验收。正确做法：只有 Agent 宣称收工且本轮有已执行工具（或纯聊天）的 `run.end` 进待验收；本轮工具全未执行则回待办且 `omitComplete`。写盘 `output-error`（无未执行码）可能已改盘，进待验收并列出 path。`run.error` / 用户 abort 保持 `in_progress`，走 Inbox 失败筛（取消文案含 abort →「已取消」）。取消后泵不得再发 `run.end`。只有人点「通过」才能 `done`。产品锁：[../references/m-cbd-f1-review-taxonomy.md](../references/m-cbd-f1-review-taxonomy.md)。审查 / Attention 决策仍在 renderer（迁 main 是下一刀，不在本 PR）。
 - **隐患**：complete 10s TTL 未过又来一张审批，Strip 会同时亮「需处理」和「已完成」。正确做法：新审批进场先 `resolveTerminalSlots`（只收 complete）。拒绝只走 `approval.resolved`，不要把 deny 折成 `run.error` 计需处理。
+- **隐患**：三个会话先后收工会叠出三颗「已完成」；切到新对话胶囊还在。根因：upsert 按 `(sessionId, complete)` 各留一槽，切会话不清。正确做法：新 complete 先 `clearActiveCompletes`，界面只画 `latestVisibleComplete`；`loadSession` / 新对话 `clearCompletes()`。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。侧栏未决审批只加红点，禁止 `focusAttention` 把用户拽回待批会话（Strip / Inbox / handoff 才跳）。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。
 - Inbox 假种子会冒充 live Attention，已删；空库只走空态。

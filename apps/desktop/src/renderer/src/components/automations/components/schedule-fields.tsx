@@ -102,7 +102,7 @@ export function ScheduleFields({
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.scheduleTime")}</span>
             <Input
               type="time"
-              lang={locale.startsWith("zh") ? "zh-CN" : "en-GB"}
+              lang="en-GB"
               step={60}
               value={clockValue(parsed.hour, parsed.minute)}
               onChange={(event) => {

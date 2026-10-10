@@ -58,7 +58,7 @@ export const zhWorkflowPages = {
   canvasEmptyAudio: "空音频节点",
   canvasEditText: "双击编辑文本",
   canvasFromNode: "从连线新建",
-  canvasPromptPlaceholder: "输入提示词，⌘↵ 生成",
+  canvasPromptPlaceholder: "输入提示词，{mod}↵ 生成",
   canvasSelectModel: "选择生成模型",
   canvasShortcuts: "快捷键",
   canvasAppearance: "画布外观与网格",

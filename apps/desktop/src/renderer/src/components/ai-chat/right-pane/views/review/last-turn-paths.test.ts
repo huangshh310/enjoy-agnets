@@ -191,6 +191,12 @@ test("纯聊天没有工具，不算拒绝收工", () => {
 test("按目录分成两级改动树", () => {
   assert.deepEqual(groupChangedPaths(["src/a.ts", "src/b.ts", "readme.md"]), [
     { dir: "src", files: ["a.ts", "b.ts"] },
-    { dir: ".", files: ["readme.md"] }
+    { dir: "", files: ["readme.md"] }
+  ])
+})
+
+test("根目录与占位短横不进改动树目录行", () => {
+  assert.deepEqual(groupChangedPaths(["readme.md", "-"]), [
+    { dir: "", files: ["readme.md", "-"] }
   ])
 })

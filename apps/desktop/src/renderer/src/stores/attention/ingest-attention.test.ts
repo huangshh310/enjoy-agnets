@@ -11,6 +11,8 @@ import {
   isStripCompact,
   stripNeedsCount,
   stripApprovalCount,
+  clearActiveCompletes,
+  latestVisibleComplete,
   stripVisibleForOpenSessions,
   stripVisibleItems
 } from "./ingest-attention.ts"
@@ -232,6 +234,36 @@ test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", ()
 
 test("已完成约 4s 自消", () => {
   assert.equal(COMPLETE_TTL_MS, 4_000)
+})
+
+test("多会话完成只留最新一颗，切走就清", () => {
+  const first = ingestAttentionEvent([], {
+    event: { type: "run.end", runId: "run_a" },
+    sessionId: "ses_a",
+    sessionTitle: "A",
+    now: 1
+  })
+  const second = ingestAttentionEvent(first, {
+    event: { type: "run.end", runId: "run_b" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  const third = ingestAttentionEvent(second, {
+    event: { type: "run.end", runId: "run_c" },
+    sessionId: "ses_c",
+    sessionTitle: "C",
+    now: 3
+  })
+  const live = stripVisibleItems(third).filter((item) => item.kind === "complete")
+  assert.equal(live.length, 1)
+  assert.equal(live[0]?.sessionId, "ses_c")
+  assert.equal(latestVisibleComplete(third)?.sessionId, "ses_c")
+  const cleared = clearActiveCompletes(third)
+  assert.equal(
+    cleared.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
 })
 
 test("点 complete 直接 resolved；dismiss 写 dismissed；约 4s 后过期", () => {

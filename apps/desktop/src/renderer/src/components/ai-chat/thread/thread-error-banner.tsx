@@ -138,7 +138,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             ? t("chat.needProviderKeyTitle")
             : kind === "rate_limit"
               ? t("chat.usage.rateLimitTitle")
-              : t("chat.errorRetryHint"))
+              : t("chat.errorTitle"))
   const detail =
     gate?.hint ??
     (kind === "resume_fallback"
@@ -154,12 +154,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               : kind === "send_restore"
                 ? t("chat.sendFailedRestore")
                 : kind === "store"
-                  ? isDevCopyEnabled()
-                    ? error
-                    : t("chat.errorGenericHint")
-                  : isDevCopyEnabled()
-                    ? error
-                    : null)
+                  ? t("chat.errorRetryHint")
+                  : t("chat.errorRetryHint"))
+  const code = isDevCopyEnabled() ? error : null
 
   return (
     <div
@@ -190,6 +187,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
           </div>
           {detail ? (
             <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
+          ) : null}
+          {code ? (
+            <p className="font-mono text-caption-2-regular break-words text-text-tertiary">{code}</p>
           ) : null}
           <div className="mt-1 flex flex-wrap items-center gap-2 pt-1">
             {kind === "remote_cli_missing" ? (

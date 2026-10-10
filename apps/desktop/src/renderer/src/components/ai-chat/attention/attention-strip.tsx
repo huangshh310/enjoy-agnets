@@ -71,6 +71,8 @@ export function AttentionCompleteStatus() {
     <div
       data-testid="attention-complete-status"
       role="status"
+      aria-live="polite"
+      aria-atomic="true"
       aria-label={t("attention.kind.complete")}
       className="flex max-w-56 shrink-0 items-center gap-1.5"
     >

@@ -2,7 +2,11 @@
  * 助手轮气泡下的本轮写盘树。点开右栏审查。
  */
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
-import { groupChangedPaths, pathsFromTools } from "../../right-pane/views/review/last-turn-paths"
+import {
+  groupChangedPaths,
+  isPlaceholderChangedDir,
+  pathsFromTools
+} from "../../right-pane/views/review/last-turn-paths"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
@@ -13,13 +17,15 @@ export function TurnChangedFiles({ message }: { message: ThreadMessage }) {
 
   return (
     <div className="mt-1.5 flex flex-col gap-1" data-testid="turn-changed-files">
-      <span className="text-caption-2-medium text-text-tertiary">{t("chat.turnChangedFiles")}</span>
+      <span className="text-caption-1-medium text-text-secondary">{t("chat.turnChangedFiles")}</span>
       {groups.map((group) => (
-        <div key={group.dir} className="flex flex-col gap-0.5">
-          <p className="truncate font-mono text-caption-2-regular text-text-tertiary">{group.dir}</p>
+        <div key={group.dir || group.files.join("/")} className="flex flex-col gap-0.5">
+          {isPlaceholderChangedDir(group.dir) ? null : (
+            <p className="truncate font-mono text-caption-2-regular text-text-tertiary">{group.dir}</p>
+          )}
           <div className="flex flex-wrap gap-1 pl-2">
             {group.files.map((file) => {
-              const path = group.dir === "." ? file : `${group.dir}/${file}`
+              const path = isPlaceholderChangedDir(group.dir) ? file : `${group.dir}/${file}`
               return (
                 <button
                   key={path}

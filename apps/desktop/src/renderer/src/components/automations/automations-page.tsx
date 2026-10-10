@@ -14,6 +14,7 @@ import { showAppToast } from "@renderer/lib/app-toast"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/session-runtime"
 import { requestInboxFilter } from "@renderer/components/inbox/lib/pending-inbox-filter"
+import { lastRunLine } from "./lib/last-run-line"
 import { AutomationDrawer } from "./components/automation-drawer"
 import { AutomationFooter } from "./components/automation-footer"
 import { AutomationList } from "./components/automation-list"
@@ -157,6 +158,24 @@ export function AutomationsPage() {
         saving={saving}
         running={Boolean(draft?.id && runningId === draft.id)}
         records={draft?.id ? (missedById[draft.id] ?? []) : []}
+        lastRunText={
+          draft?.id
+            ? lastRunLine({
+                automation: automations.find((item) => item.id === draft.id) ?? {
+                  id: draft.id,
+                  name: draft.name,
+                  prompt: draft.prompt,
+                  trigger: draft.trigger,
+                  enabled: draft.enabled,
+                  updatedAt: now
+                },
+                records: missedById[draft.id] ?? [],
+                now,
+                locale,
+                t
+              }).text
+            : undefined
+        }
         locale={locale}
         now={now}
         onClose={requestClose}

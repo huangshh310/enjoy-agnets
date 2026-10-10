@@ -4,7 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
 import { Button } from "@/components/ui/button"
@@ -156,7 +156,7 @@ function ChatThreadBody(props: {
     pathname,
     findOpen
   })
-  useEffect(() => {
+  useLayoutEffect(() => {
     queueComposerFocus()
   }, [sessionId, pathname])
   const assistant = lastAssistantTurn(messages)

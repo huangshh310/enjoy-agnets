@@ -10,6 +10,7 @@ export const enCommand = {
   groupRecent: "Recent Chat Sessions",
   groupMessages: "This thread",
   groupShortcuts: "Shortcuts",
+  quickSearchAndPalette: "Quick search and command palette",
   groupAcp: "Current engine commands",
   chat: "Chat",
   knowledge: "Knowledge & retrieval",

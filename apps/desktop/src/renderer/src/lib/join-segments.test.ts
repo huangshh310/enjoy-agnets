@@ -10,3 +10,10 @@ test("跳过空段，不留下双点或首尾点", () => {
   assert.equal(joinSegments(null, "  ", undefined), "")
   assert.equal(joinSegments("  引擎  ", "模型"), "引擎 · 模型")
 })
+
+test("空占位短横与点不进拼接，不留下孤儿分隔符", () => {
+  assert.equal(joinSegments("-", "·", ".", "本轮改动"), "本轮改动")
+  assert.equal(joinSegments("本轮改动", "-", ""), "本轮改动")
+  assert.equal(joinSegments("", "-", "·", ".", null), "")
+  assert.doesNotMatch(joinSegments("-", "", "·"), /[·\-.–—]/)
+})

@@ -82,7 +82,7 @@ test("列表混因与抽屉同一句", () => {
   })
   const drawer = missedGroupSummary({ records, now: noon, locale: "zh", t })
   assert.equal(line.text, drawer)
-  assert.equal(line.text, "因最近一次应用未运行错过 3 次 · 今天 08:00")
+  assert.equal(line.text, "错过 3 次 · 最近一次应用未运行 · 今天 08:00")
 })
 
 test("不同原因或补跑会打断连续计数", () => {
@@ -105,6 +105,25 @@ test("不同原因或补跑会打断连续计数", () => {
     skip(ere8)
   ]
   assert.equal(consecutiveSkipStreak(afterCatchUp).count, 0)
+})
+
+test("成功与出错次行带状态词", () => {
+  const ok = lastRunLine({
+    automation: auto({ lastRunStatus: "ok", lastRunAt: noon }),
+    records: [],
+    now: noon,
+    locale: "zh",
+    t
+  })
+  assert.equal(ok.text, "上次成功 · 今天 12:00")
+  const failed = lastRunLine({
+    automation: auto({ lastRunStatus: "failed", lastRunAt: noon }),
+    records: [],
+    now: noon,
+    locale: "zh",
+    t
+  })
+  assert.equal(failed.text, "上次出错 · 今天 12:00")
 })
 
 test("超时码走人话中性句，不看 lastError", () => {
@@ -147,7 +166,7 @@ test("折叠条混因写最近原因，条数只数 skipped", () => {
   ]
   assert.equal(
     missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
-    "因最近一次应用未运行错过 3 次 · 今天 08:00"
+    "错过 3 次 · 最近一次应用未运行 · 今天 08:00"
   )
 })
 
@@ -179,7 +198,7 @@ test("成功补跑不算错过；最新成功时折叠条不写错过", () => {
   const latestOk = [catchUp(noon), skip(yest8)]
   assert.equal(
     missedGroupSummary({ records: latestOk, now: noon, locale: "zh", t }),
-    "上次 · 今天 13:00"
+    "上次成功 · 今天 13:00"
   )
   const line = lastRunLine({
     automation: auto({ lastRunStatus: "ok", lastRunAt: noon, lastRunCatchUp: true }),

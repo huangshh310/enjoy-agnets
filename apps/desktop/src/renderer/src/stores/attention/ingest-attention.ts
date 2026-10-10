@@ -51,11 +51,13 @@ export function ingestAttentionEvent(
   }
   if (!kind) return aged
   const cleared =
-    kind === "complete" || kind === "error"
-      ? resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
-      : kind === "pending_approval" || kind === "ask_user"
-        ? resolveTerminalSlots(aged, input.sessionId)
-        : aged
+    kind === "complete"
+      ? resolveDecisionSlots(clearActiveCompletes(aged), input.sessionId, eventRunId(input.event))
+      : kind === "error"
+        ? resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
+        : kind === "pending_approval" || kind === "ask_user"
+          ? resolveTerminalSlots(aged, input.sessionId)
+          : aged
   const next = upsertSlot(cleared, {
     sessionId: input.sessionId,
     workspaceId: input.workspaceId,
@@ -159,6 +161,24 @@ export function isStripCompact(
 ): boolean {
   if (!isChat || !dockOpen || item.sessionId !== currentSessionId) return false
   return item.kind === "pending_approval" || item.kind === "ask_user"
+}
+
+/** 切会话 / 新对话时收掉所有已完成胶囊。 */
+export function clearActiveCompletes(items: AttentionItem[]): AttentionItem[] {
+  return items.map((item) => {
+    if (item.kind !== "complete") return item
+    if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
+      return item
+    }
+    return { ...item, status: "resolved" }
+  })
+}
+
+/** 只画最新一条已完成，禁止三颗叠出。 */
+export function latestVisibleComplete(items: AttentionItem[]): AttentionItem | undefined {
+  return stripVisibleItems(items)
+    .filter((item) => item.kind === "complete")
+    .sort((left, right) => right.occurredAt - left.occurredAt)[0]
 }
 
 export function expireStaleCompletes(items: AttentionItem[], now: number): AttentionItem[] {

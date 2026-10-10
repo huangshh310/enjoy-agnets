@@ -1,6 +1,6 @@
 /**
  * Deny → 继续 / 重开已拒绝线程：ThinkingTrace 同步调用 parseAgentStepNodes。
- * 合入时若丢了 formatToolName 的 import，这里会抛 ReferenceError，整窗白屏。
+ * 合入时若丢了 formatToolLabel 的 import，这里会抛 ReferenceError，整窗白屏。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
@@ -13,7 +13,14 @@ import type { TranslateFn } from "@renderer/i18n"
 import { threadFromRows } from "../../../../hooks/hydrate-thread.ts"
 import { parseAgentStepNodes } from "./agent-step-tree-parser.ts"
 
-const mockT: TranslateFn = (key) => key
+const mockT: TranslateFn = (key, vars) => {
+  if (key === "chat.desktopApprovalSummary") {
+    return `在「${vars?.app ?? ""}」里${vars?.action ?? ""}「${vars?.control ?? ""}」`
+  }
+  if (key === "chat.desktopApprovalVerbClick") return "点击"
+  if (key === "chat.toolDesktop") return "操作桌面"
+  return key
+}
 
 function deniedDesktopAct(state: ThreadToolCall["state"]): ThreadToolCall {
   return {
@@ -32,7 +39,7 @@ test("拒绝后继续：desktop_act deny 必须 parse 出 denied，不得抛未�
   const nodes = parseAgentStepNodes("", [tool], mockT)
   assert.equal(nodes.length, 1)
   assert.equal(nodes[0]?.status, "denied")
-  assert.equal(nodes[0]?.title, "desktop act")
+  assert.equal(nodes[0]?.title, "在「备忘录」里点击「今日」")
   assert.ok((nodes[0]?.errorText ?? "").length > 0)
 })
 
@@ -51,6 +58,6 @@ test("重开已拒绝线程：库里 output-error + 拒绝码仍能 parse，不�
   const nodes = parseAgentStepNodes("", tools, mockT)
   assert.equal(nodes.length, 1)
   assert.equal(nodes[0]?.status, "denied")
-  assert.equal(nodes[0]?.title, "desktop act")
+  assert.equal(nodes[0]?.title, "在「备忘录」里点击「今日」")
   assert.notEqual(nodes[0]?.status, "running")
 })

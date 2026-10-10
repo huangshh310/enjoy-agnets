@@ -7,6 +7,7 @@ import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 import {
   hasLiveComplete,
   isStripCompact,
+  latestVisibleComplete,
   stripNeedsCount,
   stripVisibleForOpenSessions
 } from "@renderer/stores/attention/ingest-attention"
@@ -32,7 +33,8 @@ export function useAttentionStrip() {
     return stripVisibleForOpenSessions(items, openSessionIds)
   }, [items, repositories])
   const needsItems = visible.filter((item) => item.kind !== "complete")
-  const completeItems = visible.filter((item) => item.kind === "complete")
+  const latestComplete = latestVisibleComplete(visible)
+  const completeItems = latestComplete ? [latestComplete] : []
   const needs = stripNeedsCount(items)
 
   useEffect(() => {
@@ -43,6 +45,23 @@ export function useAttentionStrip() {
     }, 1000)
     return () => window.clearInterval(timer)
   }, [items, visible.length])
+
+  useEffect(() => {
+    function onE2eComplete() {
+      const chat = useChatStore.getState()
+      const fallback = chat.repositories.find((node) => node.kind === "session")
+      const targetId = chat.sessionId ?? fallback?.id
+      if (!targetId) return
+      useAttentionStore.getState().ingest(
+        { type: "run.end", runId: `e2e_${Date.now()}` },
+        targetId,
+        chat.sessionTitle || fallback?.name || "e2e",
+        chat.workspaceId ?? fallback?.workspaceId
+      )
+    }
+    window.addEventListener("enjoy:e2e-complete-pill", onE2eComplete)
+    return () => window.removeEventListener("enjoy:e2e-complete-pill", onE2eComplete)
+  }, [])
 
   const dismissAll = (targets: AttentionItem[]) => {
     for (const item of targets) useAttentionStore.getState().dismiss(item.id)

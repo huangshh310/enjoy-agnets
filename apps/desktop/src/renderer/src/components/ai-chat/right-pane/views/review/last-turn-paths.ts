@@ -88,13 +88,20 @@ export function pathsFromTools(tools: ThreadToolCall[]): string[] {
   return paths
 }
 
+/** 根目录 / 占位短横不画成孤儿「.」或「-」。 */
+export function isPlaceholderChangedDir(dir: string): boolean {
+  const trimmed = dir.trim()
+  return trimmed === "" || trimmed === "." || trimmed === "-" || trimmed === "·"
+}
+
 /** 按目录分组，气泡下画两级改动树。 */
 export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: string[] }> {
   const groups = new Map<string, string[]>()
   for (const path of paths) {
     const normalized = path.replace(/\\/g, "/")
     const slash = normalized.lastIndexOf("/")
-    const dir = slash < 0 ? "." : normalized.slice(0, slash)
+    const rawDir = slash < 0 ? "" : normalized.slice(0, slash)
+    const dir = isPlaceholderChangedDir(rawDir) ? "" : rawDir
     const file = slash < 0 ? normalized : normalized.slice(slash + 1)
     const files = groups.get(dir) ?? []
     files.push(file)
