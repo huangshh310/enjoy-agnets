@@ -43,8 +43,9 @@ async function openProviders(window: Page): Promise<void> {
   await window.evaluate(() => {
     location.hash = "#/settings/providers"
   })
-  await window.getByTestId("providers-configured-list").waitFor({ timeout: 12_000 })
-  await window.getByText("E2E Stub Key").waitFor({ timeout: 8_000 })
+  const list = window.getByTestId("providers-configured-list")
+  await list.waitFor({ timeout: 12_000 })
+  await list.getByText("E2E Stub Key").waitFor({ timeout: 8_000 })
 }
 
 function listStatus(window: Page) {
