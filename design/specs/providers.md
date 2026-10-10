@@ -74,7 +74,7 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - **隐患**：慢 401 的旧密钥会盖掉新密钥的 ok。正确做法：结果带本机 HMAC 指纹（含 endpoints / apiStyle），写/读都对当前档案；对不上当 unverified / 不写。无盐 sha256(key+URL) 能离线对密钥猜测，禁止再写入 settings KV。
 - **隐患**：stamp / lock 只盖 `adoptedDefaultRouteAt` 时快照仍按 prefer-ok 显示 ready，发送却认当前 invalid 档案。正确做法：盖章后立刻重算 readiness。
 - **隐患**：message 里的「401」或 `errorClass==="auth"` 会把额度/模型无权写成 invalid。只认 `httpStatusOf` 的 401 才是 invalid；403 是 forbidden。
-- **隐患**：探测默认 follow redirect 会把 `x-api-key` 带到别的主机。正确做法：`redirect:"manual"`，3xx 当 unverified。
+- **隐患**：探测默认 follow redirect 会把 `x-api-key` 带到别的主机。正确做法：校验 GET `/models` 与 `discover.ts` 拉目录 / ping 都 `redirect:"manual"`，3xx 当失败 / unverified，密钥不跟跳。
 - **隐患**：`settings.upsertProvider` 在无系统钥匙串时抛英文，renderer `void save()` 吞掉后抽屉既不关也不报错。正确做法：renderer `runSecretWrite` 先检 `ok` 再接 throw；① `secretStorageAvailable === false` 黄条+禁保存（输入不锁）；② `KEYCHAIN_UNAVAILABLE` 保存钮上方红字（不提重启）；其它「没存上，请再试一次」；草稿留下。不要在本包定义 `SecretWriteErrorCode` 枚举（#133 ipc-contract）。
 - **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。
 - **隐患**：`customHeaders` / `customBody` 曾随 `ProviderPublic` 全文回 renderer。正确做法：只回键的占位 JSON；保存时空值保留已存，与 apiKey 空则保留同一套。
