@@ -127,7 +127,7 @@ test("前台出字前失败不进 Inbox 失败列", async () => {
       location.hash = "#/inbox"
     })
     await expect(window.getByTestId("page-inbox")).toBeVisible({ timeout: 8_000 })
-    await window.getByRole("button", { name: "失败" }).click()
+    await window.locator('[data-nav-group="inbox_nav"]').getByRole("button", { name: "失败" }).click()
     await expect(window.getByText("hello inbox")).toHaveCount(0)
   } finally {
     await app.close()
