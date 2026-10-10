@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import { displayThinkingLabel } from "./thinking-label.ts"
 
@@ -43,4 +44,12 @@ test("Writing 与未知英文状态走人话，不露原文", () => {
   assert.equal(displayThinkingLabel("Structured", t), "结构化")
   assert.equal(displayThinkingLabel("MCP App", t), "扩展界面")
   assert.equal(displayThinkingLabel("Streaming tokens", t), "进行中")
+})
+
+test("线程占位与 Composer 底栏都走 displayThinkingLabel，禁止直接渲染 Writing", () => {
+  const thread = readFileSync(new URL("../ai-chat-thread.tsx", import.meta.url), "utf8")
+  const footer = readFileSync(new URL("../composer/composer-footer.tsx", import.meta.url), "utf8")
+  assert.match(thread, /displayThinkingLabel\(label, t\)/)
+  assert.doesNotMatch(thread, /<LoadingState[^>]*label=\{thinkingLabel\}/)
+  assert.match(footer, /displayThinkingLabel\(thinkingLabel, t\)/)
 })

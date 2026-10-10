@@ -46,7 +46,13 @@ export function useComposerMentions(
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
     syncCursor()
-    const action = mentionKeyAction(event.key, panel.open, panel.activeIndex, panel.items.length)
+    const action = mentionKeyAction(
+      event.key,
+      panel.open,
+      panel.activeIndex,
+      panel.items.length,
+      event.nativeEvent.isComposing || event.keyCode === 229
+    )
     if (action.type === "none") return false
     event.preventDefault()
     if (action.type === "move") panel.setActiveIndex(action.index)

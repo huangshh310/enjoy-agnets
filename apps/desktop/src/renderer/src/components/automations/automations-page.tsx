@@ -26,6 +26,7 @@ import {
   isDraftDirty,
   type AutomationDraft
 } from "./lib/draft"
+import { applyAutomationDrawerCloseFocus } from "./lib/automation-row-focus"
 
 export function AutomationsPage() {
   const t = useT()
@@ -56,6 +57,7 @@ export function AutomationsPage() {
     baselineRef.current = null
     setConfirmDiscard(false)
     setDraft(null)
+    applyAutomationDrawerCloseFocus()
   }
 
   function requestClose() {

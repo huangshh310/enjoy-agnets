@@ -38,6 +38,11 @@ test("入队抓按下全文，点新对话取消残留队列", () => {
   assert.match(life, /cancelQueuedComposerSend\(\)/)
 })
 
+test("组字中不发：输入框先看 shouldIgnoreComposerEnter", () => {
+  assert.match(input, /shouldIgnoreComposerEnter/)
+  assert.match(input, /onCompositionEnd/)
+})
+
 test("审批与 Dock 不自动发；空闲下一句仍走 submitComposer", () => {
   const approvalDir = new URL("../components/ai-chat/thread/approval/", import.meta.url)
   const dock = readFileSync(new URL("../components/ai-chat/attention/permission-dock.tsx", import.meta.url), "utf8")

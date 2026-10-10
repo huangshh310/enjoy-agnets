@@ -13,6 +13,10 @@ import { automationRowStatus } from "../lib/row-status"
 import { listTriggerChips } from "../lib/trigger-chips"
 import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { LastRunExplain } from "./last-run-explain"
+import {
+  clearAutomationRowPointerMark,
+  markAutomationRowPointer
+} from "../lib/automation-row-focus"
 
 export function AutomationRow({
   automation,
@@ -46,6 +50,12 @@ export function AutomationRow({
     >
       <div
         className="relative flex items-center gap-3 px-4 py-2.5"
+        onPointerDown={(event) => {
+          if (event.button !== 0) return
+          if ((event.target as HTMLElement).closest("[data-automation-row-stop]")) return
+          const openBtn = event.currentTarget.querySelector<HTMLButtonElement>("[data-testid=automation-row-open]")
+          markAutomationRowPointer(openBtn)
+        }}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("[data-automation-row-stop]")) return
           onOpen()
@@ -61,13 +71,11 @@ export function AutomationRow({
           aria-label={automation.name}
           onPointerDown={(event) => {
             if (event.button !== 0) return
-            event.currentTarget.dataset.pointerReturn = ""
+            markAutomationRowPointer(event.currentTarget)
           }}
           onKeyDown={(event) => {
             if (event.key !== "Enter" && event.key !== " ") return
-            delete event.currentTarget.dataset.pointerReturn
-          }}
-          onBlur={(event) => {
+            clearAutomationRowPointerMark()
             delete event.currentTarget.dataset.pointerReturn
           }}
           className={cx(

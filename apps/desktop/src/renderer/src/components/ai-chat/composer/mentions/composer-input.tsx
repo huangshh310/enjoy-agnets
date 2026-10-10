@@ -9,6 +9,8 @@ import { ComposerMentionList } from "./composer-mention-list.tsx"
 import { ComposerMentionPopover } from "./composer-mention-popover.tsx"
 import { isApplePlatform } from "@renderer/components/settings/keybindings/keybinding-format"
 import { useComposerMentions } from "./use-composer-mentions.ts"
+import { useComposerIme } from "./use-composer-ime.ts"
+import { shouldIgnoreComposerEnter } from "@renderer/hooks/composer-ime"
 import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 
 export function ComposerInput({
@@ -40,8 +42,10 @@ export function ComposerInput({
   const builtinCopy = useMemo(() => builtinCopyFromT(t), [t])
   const mentions = useComposerMentions(value, onChange, textareaRef, modeCopy, builtinCopy)
   const handleRecall = useComposerPromptHistory({ value, onChange, textareaRef })
+  const ime = useComposerIme(value, onChange)
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (shouldIgnoreComposerEnter(event)) return
     if (mentions.handleKeyDown(event)) return
     if (handleRecall(event)) return
     if (event.key !== "Enter" || event.shiftKey) return
@@ -69,11 +73,14 @@ export function ComposerInput({
         data-testid="composer-input"
         autoFocus={autoFocus}
         rows={1}
-        value={value}
+        value={ime.value}
         onChange={(event) => {
-          onChange(event.target.value)
+          ime.onValueChange(event)
           mentions.setCursor(event.target.selectionStart ?? event.target.value.length)
         }}
+        onCompositionStart={ime.onCompositionStart}
+        onCompositionUpdate={ime.onCompositionUpdate}
+        onCompositionEnd={ime.onCompositionEnd}
         onKeyDown={onKeyDown}
         onKeyUp={() => mentions.syncCursor()}
         onClick={() => mentions.syncCursor()}

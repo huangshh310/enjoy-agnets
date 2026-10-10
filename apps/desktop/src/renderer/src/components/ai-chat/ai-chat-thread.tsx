@@ -22,6 +22,8 @@ import { ThreadNoticeBanner } from "./thread/thread-notice-banner"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
 import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
+import { displayThinkingLabel } from "./thread/thinking-label"
+import { useT } from "@renderer/i18n"
 
 export function AiChatThread({
   messages,
@@ -103,6 +105,7 @@ function ThreadTurnBlock(props: {
 }
 
 function ThreadLoadingPlaceholder({ label }: { label: string }) {
+  const t = useT()
   const [startedAt] = useState(() => Date.now())
-  return <LoadingState variant="drive" label={label} startedAt={startedAt} />
+  return <LoadingState variant="drive" label={displayThinkingLabel(label, t)} startedAt={startedAt} />
 }
