@@ -59,7 +59,7 @@ export function RightPane({
 
   return (
     <section
-      data-frost="shell"
+      data-frost={empty ? undefined : "shell"}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
     >
       {empty ? (

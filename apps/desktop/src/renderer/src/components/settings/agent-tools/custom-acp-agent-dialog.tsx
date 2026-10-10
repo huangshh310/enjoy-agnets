@@ -36,7 +36,14 @@ export function CustomAcpAgentDialog({
           <h3 id="custom-acp-editor-title" className="text-title-3-semibold text-text-primary">
             {t("settings.registry.editCustom")}
           </h3>
-          <Button type="button" size="sm" variant="ghost" onClick={close} className="size-8 p-0">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={close}
+            data-app-region="no-drag"
+            className="size-8 p-0 [app-region:no-drag]"
+          >
             <RiCloseLine className="size-4" />
           </Button>
         </div>

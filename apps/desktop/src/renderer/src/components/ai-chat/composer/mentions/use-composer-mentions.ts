@@ -12,6 +12,7 @@ import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 import { addComposerSkillChip } from "./composer-skill-chips.ts"
 import { useMentionSources } from "./use-mention-sources.ts"
 import { mentionKeyAction } from "./mention-key.ts"
+import { dismissMentionValue } from "./mention-dismiss.ts"
 import type { MentionItem } from "./mention-items.ts"
 import { useComputerUseEnabled } from "@renderer/hooks/use-computer-use-enabled"
 import { desktopMentionInsert } from "./desktop/read-desktop-mention-bias.ts"
@@ -49,7 +50,12 @@ export function useComposerMentions(
     if (action.type === "none") return false
     event.preventDefault()
     if (action.type === "move") panel.setActiveIndex(action.index)
-    if (action.type === "dismiss") panel.setDismissed(true)
+    if (action.type === "dismiss") {
+      const mention = panel.mention
+      onChange(dismissMentionValue(value, mention))
+      if (mention) panel.setCursor(mention.start)
+      panel.setDismissed(true)
+    }
     if (action.type === "pick") void pick(panel.items[action.index])
     return true
   }
@@ -117,6 +123,7 @@ export function useComposerMentions(
     syncCursor,
     setCursor: panel.setCursor,
     listRef: panel.listRef,
-    desktopApps
+    desktopApps,
+    desktopEnabled: computerUse
   }
 }

@@ -25,10 +25,10 @@ export function AiChatStatusBar({
   const usagePercent = Math.min(100, Math.max(0, Math.round(inspector.tokenStats.usagePercent)))
 
   return (
-    <div className="flex items-center gap-3 px-8 pb-4 text-caption-1-medium text-text-tertiary">
+    <div className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-tertiary">
       <StatusBranchPicker />
       <StatusProjectPicker workspaceRootLabel={workspaceRootLabel} />
-      <div className="ml-auto inline-flex items-center gap-2">
+      <div className="ml-auto inline-flex shrink-0 items-center gap-2">
         <CompactSessionButton sessionId={sessionId} messageCount={messageCount} />
         <Popover>
           <PopoverTrigger asChild>

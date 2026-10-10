@@ -3,7 +3,9 @@
  */
 import { useState } from "react"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { ApprovalChrome } from "./approval-chrome"
+import { desktopApprovalSummaryKey, desktopApprovalVerb, desktopApprovalVerbKey } from "./desktop-approval-summary"
 import type { ApprovalDecide } from "./approval.types"
 import { desktopApprovalView } from "./desktop-approval-args"
 import { DesktopApprovalChoices } from "./desktop-approval-choices"
@@ -77,22 +79,18 @@ function FirstAllowChrome({
       <div className="flex flex-col" data-testid="desktop-approval-card">
         <div className="flex flex-wrap items-start gap-3">
           <DesktopThumb src={view.thumbnail} alt={view.appName} />
-          <DesktopApprovalSummary
-            view={view}
-            ttlLabel={t("chat.desktopApprovalTtlFrozen")}
-            sourceLine={sourceLine}
-          />
+          <DesktopApprovalSummary view={view} sourceLine={sourceLine} />
         </div>
         {view.sensitive ? (
           <p
             data-testid="desktop-approval-sensitive"
-            className="mt-3 rounded-lg border border-status-yellow-text/25 bg-status-yellow-text/10 px-2.5 py-1.5 text-caption-1-medium leading-snug text-status-yellow-text"
+            className="mt-1.5 rounded-lg border border-status-yellow-text/25 bg-status-yellow-text/10 px-2.5 py-1 text-caption-1-medium leading-snug text-status-yellow-text"
           >
             {t("chat.desktopSensitiveWarn")}
           </p>
         ) : null}
         {view.bypassesSessionAllow && !view.sensitive ? (
-          <p className="mt-3 inline-flex rounded-full bg-status-yellow-text/10 px-2 py-0.5 text-caption-2-semibold text-status-yellow-text">
+          <p className="mt-1.5 inline-flex rounded-full bg-status-yellow-text/10 px-2 py-0.5 text-caption-2-semibold text-status-yellow-text">
             {t("chat.desktopCoordsBypassHint")}
           </p>
         ) : null}
@@ -138,30 +136,44 @@ function SecondConfirmChrome({ args, decide }: { args: unknown; decide: Approval
 
 function DesktopApprovalSummary({
   view,
-  ttlLabel,
   sourceLine
 }: {
   view: ReturnType<typeof desktopApprovalView>
-  ttlLabel: string
   sourceLine?: string | null
 }) {
+  const t = useT()
+  const verb = desktopApprovalVerb(view.action)
+  const actionLabel = t(desktopApprovalVerbKey(verb))
+  const summary = t(desktopApprovalSummaryKey(view.controlName), {
+    app: view.appName,
+    action: actionLabel,
+    control: view.controlName
+  })
+  const showDev = isDevCopyEnabled()
   return (
     <div className="min-w-0 flex-1">
-      <p className="text-caption-1-medium text-text-secondary">{view.summary}</p>
+      <p className="text-caption-1-medium text-text-secondary">{summary}</p>
+      <p className="mt-0.5 text-caption-2-medium text-text-secondary">{t("chat.desktopApprovalTtlFrozen")}</p>
       <AutomationSourceLine text={sourceLine ?? null} />
-      {view.appKey ? (
-        <p className="mt-1 text-caption-2-medium text-text-tertiary" data-testid="desktop-approval-app-key">
-          {view.appKey}
-        </p>
-      ) : null}
-      <p className="mt-1 text-caption-2-medium text-text-tertiary">{ttlLabel}</p>
+      {showDev ? <DesktopApprovalDevDetails view={view} /> : null}
+    </div>
+  )
+}
+
+function DesktopApprovalDevDetails({ view }: { view: ReturnType<typeof desktopApprovalView> }) {
+  const t = useT()
+  return (
+    <div data-testid="desktop-approval-dev" className="mt-1 flex flex-col gap-0.5 text-caption-2-medium text-text-tertiary">
+      {view.appKey ? <p data-testid="desktop-approval-app-key">{view.appKey}</p> : null}
+      <p>{t("chat.desktopApprovalDevMeta", { action: view.action || "act", summary: view.summary })}</p>
     </div>
   )
 }
 
 function DesktopThumb({ src, alt }: { src: string; alt: string }) {
   const frame = useDesktopPreviewFrame()
-  if (!frame.show) return null
+  // 没有真实截图时不要占一块空盒子，否则普通审批卡会被撑出内滚。
+  if (!src || !frame.show) return null
   return (
     <div
       className={

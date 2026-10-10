@@ -15,6 +15,7 @@ export type DesktopApprovalView = {
   appName: string
   appKey: string
   appKeySource: string
+  action: string
   controlName: string
   summary: string
   thumbnail: string
@@ -57,6 +58,7 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     appName,
     appKey,
     appKeySource: text(row.appKeySource),
+    action: text(row.action),
     controlName,
     summary: desktopActApprovalText(row),
     thumbnail,

@@ -4,6 +4,7 @@
  */
 import { RiLock2Line, RiQuestionAnswerLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 
 export function AskUserHeader() {
   const t = useT()
@@ -17,7 +18,9 @@ export function AskUserHeader() {
       </div>
       <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary">
         <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
-        <span className="truncate">{t("chat.hmacBoundNotice")}</span>
+        <span className="truncate">
+          {t(isDevCopyEnabled() ? "chat.hmacBoundNotice" : "chat.approvalConfirmNotice")}
+        </span>
       </p>
     </header>
   )

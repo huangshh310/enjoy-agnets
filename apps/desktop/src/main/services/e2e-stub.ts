@@ -1,8 +1,15 @@
 /**
  * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
+ *
+ * 终端可点链接夹具（给 luna 验悬停）：
+ * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
+ * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  */
 import type { ModelMessage } from "ai"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+
+export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
+export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
 
 export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"

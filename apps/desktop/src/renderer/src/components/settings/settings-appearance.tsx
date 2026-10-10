@@ -33,7 +33,7 @@ export function AppearanceSettings() {
           { label: t("settings.appearance.activeTheme"), value: themeLabel },
           { label: t("settings.appearance.activeSkin"), value: skinLabel },
           { label: t("settings.appearance.osSync"), value: t("common.never") },
-          { label: t("settings.appearance.accent"), value: currentAccent.name }
+          { label: t("settings.appearance.accent"), value: t(currentAccent.nameKey) }
         ]}
       />
       <SettingsCard title={t("settings.appearance.cardTitle")}>

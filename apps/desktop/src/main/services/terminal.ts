@@ -11,6 +11,7 @@ import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { getSshPoolEntry } from "./ssh/ssh-pool.ts"
 import { launchRemoteProcess } from "./ssh/ssh-launch.ts"
 import { quoteRemote } from "./ssh/ssh-path.ts"
+import { isE2eStub, STUB_TERMINAL_LINK_ECHO, STUB_TERMINAL_LINK_URL } from "./e2e-stub.ts"
 
 type LiveSession = {
   pty: IPty
@@ -44,7 +45,21 @@ export async function openWorkspaceTerminal(
     if (!sender.isDestroyed()) sender.send("terminal.exit", TerminalExitEvent.parse({ sessionId }))
   })
   sessions.set(sessionId, { pty: child, sender })
+  seedStubTerminalLink(child)
   return { sessionId }
+}
+
+/** stub / 文档夹具：往 PTY 打一行 https URL，xterm WebLinks 才能出现悬停。 */
+function seedStubTerminalLink(child: IPty) {
+  if (!isE2eStub()) return
+  const line = process.platform === "win32" ? `Write-Host ${STUB_TERMINAL_LINK_URL}\r` : `${STUB_TERMINAL_LINK_ECHO}\n`
+  setTimeout(() => {
+    try {
+      child.write(line)
+    } catch {
+      /* 会话已关 */
+    }
+  }, 400)
 }
 
 export function writeWorkspaceTerminal(sessionId: string, data: string) {

@@ -5,9 +5,11 @@ import type { Automation, AutomationMissedRecord } from "@enjoy-agents/ipc-contr
 import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { cronChipLabel } from "../lib/cron-chip-label"
 import { lastRunLine } from "../lib/last-run-line"
 import { automationRowStatus } from "../lib/row-status"
 import { listTriggerChips } from "../lib/trigger-chips"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { LastRunExplain } from "./last-run-explain"
 
 export function AutomationRow({
@@ -15,7 +17,6 @@ export function AutomationRow({
   records,
   locale,
   now,
-  engineLabel,
   onOpen,
   onToggle,
   onOpenFailed
@@ -24,7 +25,6 @@ export function AutomationRow({
   records: AutomationMissedRecord[]
   locale: string
   now: number
-  engineLabel: string
   onOpen: () => void
   onToggle: (enabled: boolean) => void
   onOpenFailed: () => void
@@ -47,17 +47,18 @@ export function AutomationRow({
           <button type="button" onClick={onOpen} className="w-full text-left">
             <div className="flex flex-wrap items-center gap-1.5">
               <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
-              {chips.map((chip) => (
-                <span
-                  key={`${chip.kind}:${chip.text}`}
-                  className={cx(
-                    "rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default",
-                    chip.mono && "font-mono"
-                  )}
-                >
-                  {chipLabel(chip.kind, chip.text, t)}
-                </span>
-              ))}
+              {chips.map((chip) => {
+                const shown = chipLabel(chip.kind, chip.text, t)
+                return (
+                  <span
+                    key={`${chip.kind}:${chip.text}`}
+                    title={shown.title}
+                    className="rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default"
+                  >
+                    {shown.label}
+                  </span>
+                )
+              })}
               <StatusChip status={status} t={t} />
             </div>
           </button>
@@ -71,7 +72,7 @@ export function AutomationRow({
       </div>
       {status === "running" ? (
         <p className="border-t border-accent-500/15 bg-accent-500/10 px-4 py-1.5 text-caption-1-medium text-accent-600">
-          {t("studio.automations.runningBar", { engine: engineLabel, mode: modeLabel(automation, t) })}
+          {t("studio.automations.runningBar")}
         </p>
       ) : null}
       {status === "failed" ? (
@@ -94,13 +95,7 @@ function StatusChip({
   status: "idle" | "running" | "failed"
   t: (key: string) => string
 }) {
-  if (status === "idle") {
-    return (
-      <span className="rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-tertiary ring-1 ring-border-button-default">
-        {t("studio.automations.statusIdle")}
-      </span>
-    )
-  }
+  if (status === "idle") return null
   if (status === "running") {
     return (
       <span className="rounded-full bg-accent-500/10 px-1.5 py-px text-caption-2-medium font-medium text-accent-600 ring-1 ring-accent-500/20">
@@ -115,14 +110,18 @@ function StatusChip({
   )
 }
 
-function chipLabel(kind: string, text: string, t: (key: string) => string): string {
-  if (kind === "cron" || kind === "webhook") return text
-  if (kind === "on_save") return t("studio.automations.onSave")
-  return t("studio.automations.manual")
+function chipLabel(
+  kind: string,
+  text: string,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): { label: string; title?: string } {
+  if (kind === "cron") {
+    const plain = cronChipLabel(text, t)
+    const showRaw = plain.custom || isDevCopyEnabled()
+    return { label: plain.label, title: showRaw ? plain.raw : undefined }
+  }
+  if (kind === "webhook") return { label: t("studio.automations.webhookPortChip", { port: text }) }
+  if (kind === "on_save") return { label: t("studio.automations.onSave") }
+  return { label: t("studio.automations.manual") }
 }
 
-function modeLabel(item: Automation, t: (key: string) => string): string {
-  return item.mode === "plan" || item.mode === "ask"
-    ? t("chat.surfaceExplore")
-    : t("chat.surfaceExecute")
-}

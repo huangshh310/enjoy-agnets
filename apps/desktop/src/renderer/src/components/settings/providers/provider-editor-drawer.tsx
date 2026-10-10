@@ -148,7 +148,8 @@ function EditorDrawerHeader({
   onOpenAgent?: (runtimeId: string) => void
 }) {
   const t = useT()
-  const titleName = preset.kind === "custom" ? t("settings.providers.customName") : preset.name
+  const titleName =
+    editor.name.trim() || (preset.kind === "custom" ? t("settings.providers.customName") : preset.name)
   const description = preset.kind === "custom"
     ? t("settings.providers.customDesc")
     : presetBlurb(preset.kind, preset.description, t)
@@ -162,7 +163,9 @@ function EditorDrawerHeader({
           <h3 id="provider-editor-title" className="truncate text-title-3-semibold text-text-primary">
             {editor.id
               ? t("settings.providers.editTitle", { name: titleName })
-              : t("settings.providers.addTitle", { name: titleName })}
+              : preset.kind === "custom"
+                ? t("settings.providers.addCustom")
+                : t("settings.providers.addTitle", { name: titleName })}
           </h3>
           <p className="mt-0.5 text-caption-1-medium text-text-secondary">{description}</p>
           <EditorBoundAgents refs={refs} onOpenAgent={onOpenAgent} />
@@ -171,7 +174,8 @@ function EditorDrawerHeader({
       <button
         type="button"
         onClick={onClose}
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-secondary-default hover:text-text-primary"
+        data-app-region="no-drag"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary [app-region:no-drag] hover:bg-background-secondary-default hover:text-text-primary"
         aria-label={t("common.close")}
       >
         <RiCloseLine className="size-5" />

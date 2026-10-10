@@ -1,6 +1,13 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { createE2eStubStream, lastUserText, stubApprovedWrite, stubDeniedApproval } from "./e2e-stub.ts"
+import {
+  createE2eStubStream,
+  lastUserText,
+  stubApprovedWrite,
+  stubDeniedApproval,
+  STUB_TERMINAL_LINK_ECHO,
+  STUB_TERMINAL_LINK_URL
+} from "./e2e-stub.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 
 test("lastUserText 取最后一条用户字", () => {
@@ -140,6 +147,17 @@ test("桌面 stub 吐日历审批、终端审批、坐标硬拒", async () => {
     parts.push(String(part.type))
   }
   assert.deepEqual(parts, ["tool-approval-request"])
+})
+
+test("stub 终端链接夹具是可点 https URL", async () => {
+  assert.equal(STUB_TERMINAL_LINK_URL, "https://example.com/docs")
+  assert.equal(STUB_TERMINAL_LINK_ECHO, "echo https://example.com/docs")
+  const { readFileSync } = await import("node:fs")
+  const { dirname, join } = await import("node:path")
+  const { fileURLToPath } = await import("node:url")
+  const terminal = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "terminal.ts"), "utf8")
+  assert.match(terminal, /seedStubTerminalLink/)
+  assert.match(terminal, /STUB_TERMINAL_LINK_ECHO/)
 })
 
 test("stubApprovedWrite 识别 tool-approval-response", () => {

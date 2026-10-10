@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  displaySessionTitle,
   isDefaultSessionTitle,
   sanitizeTitle,
   formatOptimisticTitle,
@@ -22,6 +23,12 @@ test("isDefaultSessionTitle 正确识别默认占位标题", () => {
   assert.equal(isDefaultSessionTitle("仿苹果官网登录页"), false)
   assert.equal(isDefaultSessionTitle("Shanghai Weather"), false)
   assert.equal(isDefaultSessionTitle("Fix auth bug"), false)
+})
+
+test("displaySessionTitle 把占位题换成当前语言", () => {
+  assert.equal(displaySessionTitle("New agent", "新对话"), "新对话")
+  assert.equal(displaySessionTitle("Untitled", "新对话"), "新对话")
+  assert.equal(displaySessionTitle("修登录", "新对话"), "修登录")
 })
 
 test("sanitizeTitle 去除多余标点、前后引号及前缀", () => {

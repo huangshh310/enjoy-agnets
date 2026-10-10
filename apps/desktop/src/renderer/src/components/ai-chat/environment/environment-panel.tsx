@@ -19,6 +19,7 @@ import {
   EnvironmentRow,
   EnvironmentSectionLabel
 } from "./environment-row"
+import { formatTokens } from "../agent-limits/format-tokens"
 import { useEnvironmentPanel } from "./use-environment-panel"
 
 export function EnvironmentPanel({ open }: { open: boolean }) {
@@ -77,7 +78,7 @@ export function EnvironmentPanel({ open }: { open: boolean }) {
               data.quotaPercent != null
                 ? `${data.quotaPercent}%`
                 : data.usedTokens > 0
-                  ? formatTokenTrail(data.usedTokens)
+                  ? formatTokens(data.usedTokens)
                   : undefined
             }
             onClick={() => expandInspector("context")}
@@ -110,9 +111,4 @@ export function EnvironmentPanel({ open }: { open: boolean }) {
       </div>
     </aside>
   )
-}
-
-function formatTokenTrail(used: number): string {
-  if (used >= 1000) return `${Math.round(used / 1000)}k`
-  return String(used)
 }
