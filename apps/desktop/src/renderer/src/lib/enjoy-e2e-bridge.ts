@@ -2,7 +2,8 @@
  * 窗口 E2E / 截图桥：只挂已有单例，不新开 IPC。
  */
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { resumeSetupGuide, replaySetupGuide } from "@renderer/components/setup-guide/setup-guide-store"
+import { resumeSetupGuide, replaySetupGuide, useSetupGuideStore } from "@renderer/components/setup-guide/setup-guide-store"
+import { useCreateProjectStore } from "@renderer/components/workspace/create-project-open"
 import { rememberChatReadiness } from "@renderer/hooks/chat-readiness-cache"
 import { CHAT_READINESS_QUERY_KEY } from "@renderer/hooks/use-chat-readiness"
 import { queryClient } from "@renderer/lib/query-client"
@@ -13,6 +14,8 @@ export type EnjoyE2eBridge = {
   setError: (message: string | null) => void
   replayGuide: () => void
   resumeGuide: () => void
+  hideGuide: () => void
+  hideCreateProject: () => void
 }
 
 declare global {
@@ -32,6 +35,8 @@ export function installEnjoyE2eBridge(): void {
       useChatStore.getState().setError(message)
     },
     replayGuide: replaySetupGuide,
-    resumeGuide: resumeSetupGuide
+    resumeGuide: resumeSetupGuide,
+    hideGuide: () => useSetupGuideStore.getState().hide(),
+    hideCreateProject: () => useCreateProjectStore.getState().hide()
   }
 }

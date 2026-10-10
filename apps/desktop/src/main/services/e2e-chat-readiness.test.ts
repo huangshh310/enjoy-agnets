@@ -163,3 +163,9 @@ test("stub + engine 默认路线是已登录 CLI，闸放行", () => {
     true
   )
 })
+
+test("stub + unverified 露出远端本机模型但不 ready", () => {
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "unverified" })
+  assert.equal(snap?.ready, false)
+  assert.deepEqual(snap?.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
+})

@@ -53,10 +53,14 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     await expect(window.getByTestId("no-project-empty")).toBeVisible()
     await snap(window, "s1-5-new-chat-stays-empty")
 
-    await window.getByTestId("create-project-trigger").click({ force: true })
+    await window.getByTestId("create-project-trigger").click()
     await window.getByTestId("create-project-dialog").waitFor({ timeout: 8_000 })
+    await expect(window.getByTestId("create-project-dialog")).toBeVisible()
     await snap(window, "s1-create-project-first-click")
-    await window.keyboard.press("Escape")
+    await window.evaluate(() => {
+      window.__enjoyE2e?.hideCreateProject()
+    })
+    await expect(window.getByTestId("create-project-dialog")).toHaveCount(0)
 
     await window.evaluate(() => {
       location.hash = "#/settings/general"
@@ -80,43 +84,73 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
   }
 })
 
-test("S1-2 加密钥后已连上，末屏可以开始了", async () => {
+test("S1-2 添加表单、已连上、末屏可以开始了", async () => {
+  test.setTimeout(180_000)
+  const blocked = canLaunchElectron()
+  test.skip(Boolean(blocked), blocked ?? "")
+  const form = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "none"
+  })
+  try {
+    await openConnectModelStep(form.window)
+    await form.window.getByTestId("connect-model-api_key").click()
+    await form.window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
+      timeout: 8_000
+    })
+    await snap(form.window, "s1-2-add-key-form")
+  } finally {
+    await form.app.close()
+  }
+
+  const keyed = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key"
+  })
+  try {
+    await openConnectModelStep(keyed.window)
+    await expect(keyed.window.getByTestId("connect-model-api_key")).toContainText("已连上")
+    await snap(keyed.window, "s1-2-connect-model-connected")
+
+    await clickGuidePrimary(keyed.window)
+    await keyed.window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
+    await clickGuidePrimary(keyed.window)
+    await keyed.window.getByRole("heading", { name: "打开第一个工作区" }).waitFor({ timeout: 8_000 })
+    await clickGuidePrimary(keyed.window)
+    await keyed.window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
+    await expect(keyed.window.getByTestId("setup-guide-primary")).toHaveText("开始使用")
+    await expect(keyed.window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
+    await snap(keyed.window, "s1-2-ready-ok")
+  } finally {
+    await keyed.app.close()
+  }
+})
+
+test("未验证本机模型露出提示，末屏仍还差一步", async () => {
   test.setTimeout(180_000)
   const blocked = canLaunchElectron()
   test.skip(Boolean(blocked), blocked ?? "")
   const { app, window } = await launchEnjoy({
     ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_CHAT_READY: "none"
+    ENJOY_E2E_CHAT_READY: "unverified"
   })
   try {
     await openConnectModelStep(window)
-    await window.getByTestId("connect-model-api_key").click()
-    await window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, { timeout: 8_000 })
-    await snap(window, "s1-2-add-key-form")
+    const local = window.getByTestId("connect-model-local_model")
+    await expect(local).toBeVisible()
+    await expect(local).toHaveAttribute("data-verified", "false")
+    await expect(local).toContainText("未验证")
+    await expect(local).not.toHaveAttribute("data-recommended", "true")
+    await snap(window, "s1-unverified-local-model")
 
-    await window.evaluate(() => {
-      window.__enjoyE2e?.setChatReadiness({
-        ready: true,
-        engineCount: 1,
-        engines: [],
-        localModels: [],
-        apiKeys: [{ kind: "api_key", providerId: "e2e", presetId: "openai" }]
-      })
-      window.__enjoyE2e?.resumeGuide()
-    })
-    await window.getByTestId("setup-guide-connect-model").waitFor({ timeout: 8_000 })
-    await expect(window.getByTestId("connect-model-api_key")).toContainText("已连上")
-    await snap(window, "s1-2-connect-model-connected")
-
-    await clickGuidePrimary(window)
+    await window.getByTestId("connect-model-later").click()
     await window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "打开第一个工作区" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
-    await expect(window.getByTestId("setup-guide-primary")).toHaveText("开始使用")
-    await expect(window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
-    await snap(window, "s1-2-ready-ok")
+    await window.getByRole("heading", { name: "还差一步：连一个模型" }).waitFor({ timeout: 8_000 })
+    await expect(window.getByRole("heading", { name: "可以开始了" })).toHaveCount(0)
+    await snap(window, "s1-unverified-ready-need")
   } finally {
     await app.close()
   }
@@ -135,6 +169,10 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
   })
   try {
     await skipGuideIfOpen(window)
+    await window.evaluate(() => {
+      window.__enjoyE2e?.hideGuide()
+      window.__enjoyE2e?.hideCreateProject()
+    })
     await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
     await expect(window.getByTestId("no-project-empty")).toHaveCount(0)
     await expect(window.getByText("打开工作区", { exact: true })).toHaveCount(0)

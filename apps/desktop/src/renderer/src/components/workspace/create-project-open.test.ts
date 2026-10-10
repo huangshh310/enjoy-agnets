@@ -35,8 +35,37 @@ test("右键不打开", async () => {
   assert.equal(useCreateProjectStore.getState().open, false)
 })
 
-test("打开后侧栏重挂不会把窗关掉", () => {
+test("同步打开会被同一次外点立刻关上；微任务打开则留下", async () => {
+  const naive = { open: false }
+  naive.open = true
+  // Dialog 内容不在侧栏按钮下，同一次 pointerdown 被当成外点。
+  if (naive.open) naive.open = false
+  assert.equal(naive.open, false)
+
+  useCreateProjectStore.setState({ open: false })
+  let prevented = false
+  let stopped = false
+  requestCreateProject({
+    button: 0,
+    preventDefault: () => {
+      prevented = true
+    },
+    stopPropagation: () => {
+      stopped = true
+    }
+  })
+  assert.equal(prevented, true)
+  assert.equal(stopped, true)
+  assert.equal(useCreateProjectStore.getState().open, false)
+  await Promise.resolve()
+  assert.equal(useCreateProjectStore.getState().open, true)
+})
+
+test("侧栏重挂清掉本地 open，壳层 store 还在", () => {
+  let localOpen = true
+  localOpen = false
   useCreateProjectStore.getState().show()
+  assert.equal(localOpen, false)
   assert.equal(useCreateProjectStore.getState().open, true)
 })
 
