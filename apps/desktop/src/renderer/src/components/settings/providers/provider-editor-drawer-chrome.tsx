@@ -54,6 +54,7 @@ export function EditorDrawerHeader({
         type="button"
         onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
         onClick={onClose}
+        data-testid="provider-editor-close"
         data-app-region="no-drag"
         className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary [app-region:no-drag] hover:bg-background-secondary-default hover:text-text-primary"
         aria-label={t("common.close")}
@@ -106,6 +107,7 @@ export function EditorDrawerFooter({
             variant="ghost"
             onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
             onClick={onClose}
+            data-testid="provider-editor-cancel"
           >
             {t("common.cancel")}
           </Button>

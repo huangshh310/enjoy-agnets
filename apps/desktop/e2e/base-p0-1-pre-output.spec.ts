@@ -10,7 +10,8 @@ import {
   canLaunchElectron,
   hideOverlays,
   launchEnjoy,
-  skipGuideIfOpen
+  skipGuideIfOpen,
+  snap
 } from "./base-p0-1-launch"
 
 function keyEnv(extra: Record<string, string> = {}): Record<string, string> {
@@ -56,10 +57,66 @@ test("出字前失败：线程没有用户气泡，草稿还在 Composer", async
     })
     await expect(window.getByTestId("composer-input")).toHaveValue("hello rollback")
     await expect(threadBubbles(window)).toHaveCount(0)
+    await snap(window, "p0-1-pre-output-draft-only")
   } finally {
     await app.close()
   }
 })
+
+const PRE_OUTPUT_SENDS = [
+  {
+    send: "rejected",
+    notice: "thread-credential-invalid-notice",
+    retry: null,
+    draft: "hello invalid"
+  },
+  {
+    send: "unreachable",
+    notice: "thread-credential-network-notice",
+    retry: "thread-credential-network-notice-action",
+    draft: "hello unreachable"
+  },
+  {
+    send: "forbidden",
+    notice: "thread-credential-restricted-notice",
+    retry: "thread-credential-restricted-notice-retry",
+    draft: "hello forbidden"
+  },
+  {
+    send: "billing",
+    notice: "thread-credential-restricted-notice",
+    retry: "thread-credential-restricted-notice-retry",
+    draft: "hello billing"
+  }
+] as const
+
+for (const fixture of PRE_OUTPUT_SENDS) {
+  test(`出字前 ${fixture.send}：无气泡，只有草稿和一条提示`, async () => {
+    test.setTimeout(180_000)
+    const blocked = canLaunchElectron()
+    test.skip(Boolean(blocked), blocked ?? "")
+    const { app, window } = await launchEnjoy(keyEnv({ ENJOY_E2E_SEND: fixture.send }))
+    try {
+      await openChat(window)
+      await sendDraft(window, fixture.draft)
+      await expect(window.getByTestId(fixture.notice)).toBeVisible({ timeout: 12_000 })
+      await expect(window.getByTestId(fixture.notice)).toHaveCount(1)
+      await expect(window.getByTestId("composer-input")).toHaveValue(fixture.draft)
+      await expect(threadBubbles(window)).toHaveCount(0)
+      if (fixture.retry) {
+        await window.getByTestId(fixture.retry).click()
+        await expect(window.getByTestId(fixture.notice)).toBeVisible({ timeout: 12_000 })
+        await window.getByTestId(fixture.retry).click()
+        await expect(window.getByTestId(fixture.notice)).toHaveCount(1, { timeout: 12_000 })
+        await expect(window.getByTestId("composer-input")).toHaveValue(fixture.draft)
+        await expect(threadBubbles(window)).toHaveCount(0)
+        await expect(threadBubbles(window).filter({ hasText: fixture.draft })).toHaveCount(0)
+      }
+    } finally {
+      await app.close()
+    }
+  })
+}
 
 test("出字前失败后再发成功：线程只有一轮气泡", async () => {
   test.setTimeout(180_000)
@@ -128,7 +185,7 @@ test("前台出字前失败不进 Inbox 失败列", async () => {
     })
     await expect(window.getByTestId("page-inbox")).toBeVisible({ timeout: 8_000 })
     await window.locator('[data-nav-group="inbox_nav"]').getByRole("button", { name: "失败" }).click()
-    await expect(window.getByText("hello inbox")).toHaveCount(0)
+    await expect(window.getByTestId("page-inbox").getByText("hello inbox")).toHaveCount(0)
   } finally {
     await app.close()
   }

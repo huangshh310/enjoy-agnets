@@ -113,7 +113,7 @@ function applyTerminalEvent(
     }
     const code = chatSendErrorCodeOf(event)
     if (shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) {
-      return rolledPreOutputPatch(messages, code ?? event.message, event.preOutput === true)
+      return rolledPreOutputPatch(messages, code ?? event.message)
     }
     const lastUser = lastUserText(messages)
     return {
@@ -135,16 +135,12 @@ function applyUnclaimedPreOutputError(
   if (activeRunId && activeRunId !== event.runId) return null
   const code = chatSendErrorCodeOf(event)
   if (!shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) return null
-  return rolledPreOutputPatch(messages, code ?? event.message, event.preOutput === true)
+  return rolledPreOutputPatch(messages, code ?? event.message)
 }
 
-function rolledPreOutputPatch(
-  messages: ThreadMessage[],
-  error: string,
-  dropAssistant = false
-): StreamPatch {
+function rolledPreOutputPatch(messages: ThreadMessage[], error: string): StreamPatch {
   const draft = lastUserText(messages)
-  const rolled = rollbackPreOutputTurn(messages, { dropAssistant })
+  const rolled = rollbackPreOutputTurn(messages, { dropAssistant: true })
   return {
     messages: rolled.messages,
     pendingApproval: null,

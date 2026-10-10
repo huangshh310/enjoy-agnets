@@ -19,10 +19,13 @@ import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { findProviderForEdit } from "@renderer/lib/open-provider-edit"
+import {
+  shouldLeaveProviderEditorToChat,
+  stripProviderEditorSearch
+} from "@renderer/lib/provider-editor-leave"
 import { parseSettingsSectionSearch } from "../settings-section-search"
 import { OFFICIAL_CREATE, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
 import { resumeSetupGuide } from "@renderer/components/setup-guide/setup-guide-store"
-import { isTransientProviderOrigin } from "@renderer/lib/provider-form-origin"
 import { ProviderPickPanel } from "./provider-pick-panel"
 import { SettingsSideDrawer } from "../settings-side-drawer"
 
@@ -45,8 +48,8 @@ export function ProviderSettings() {
     setPicking(true)
   }, [search.create])
   useEffect(() => {
-    if (!settings.editor) openedEdit.current = null
-  }, [settings.editor])
+    if (!settings.editor && !search.edit) openedEdit.current = null
+  }, [settings.editor, search.edit])
   useEffect(() => {
     if (!search.edit || openedEdit.current === search.edit) return
     const profile = findProviderForEdit(settings.providers, search.edit)
@@ -62,7 +65,8 @@ export function ProviderSettings() {
     if (input instanceof HTMLInputElement) input.focus()
   }, [search.focus, settings.editor])
 
-  function leaveOrigin() {
+  function dismissEditor() {
+    if (search.edit) openedEdit.current = search.edit
     settings.closeEditor()
     setPicking(false)
     if (search.from === SETUP_GUIDE_FROM) {
@@ -70,9 +74,15 @@ export function ProviderSettings() {
       void navigate({ to: "/" })
       return
     }
-    if (isTransientProviderOrigin(search.from)) {
+    if (shouldLeaveProviderEditorToChat(search.from)) {
       void navigate({ to: "/" })
+      return
     }
+    void navigate({
+      to: "/settings/$section",
+      params: { section: "providers" },
+      search: stripProviderEditorSearch(search)
+    })
   }
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string; agents: string } | null>(
     null
@@ -227,7 +237,7 @@ export function ProviderSettings() {
 
       <SettingsSideDrawer
         open={picking && !settings.editor}
-        onClose={leaveOrigin}
+        onClose={dismissEditor}
         labelledBy="provider-pick-title"
         closeLabel={t("common.close")}
         motion={false}
@@ -237,7 +247,7 @@ export function ProviderSettings() {
             setPicking(false)
             settings.openCreate(kind)
           }}
-          onCancel={leaveOrigin}
+          onCancel={dismissEditor}
         />
       </SettingsSideDrawer>
 
@@ -255,13 +265,13 @@ export function ProviderSettings() {
         simple={!settings.editor?.id}
         focusKey={search.focus === "key"}
         motion={false}
-        onClose={search.create ? leaveOrigin : settings.closeEditor}
+        onClose={dismissEditor}
         onChange={settings.updateEditor}
         onFetchModels={() => void settings.fetchModels()}
         onDetect={() => void settings.detect()}
         onSave={() => {
           void settings.save(true).then((ok) => {
-            if (ok && search.create) leaveOrigin()
+            if (ok) dismissEditor()
           })
         }}
         onOpenAgent={openAgent}

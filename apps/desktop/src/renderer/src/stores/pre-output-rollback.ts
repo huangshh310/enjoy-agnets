@@ -4,13 +4,12 @@
 import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
 import type { ThreadMessage } from "./chat-store"
 
-/** 出字 = 文本 / 思考 / 工具开跑 / 审批 / 引用。 */
+/** 模型真出字 = 文本 / 思考 / 工具。开泵前 cite 的 sources 不算。 */
 export function assistantHasOutput(message: ThreadMessage | undefined): boolean {
   if (!message || message.role !== "assistant") return false
   if (message.content.trim()) return true
   if ((message.reasoning ?? "").trim()) return true
   if (message.tools?.length) return true
-  if (message.sources?.length) return true
   return false
 }
 
@@ -49,4 +48,14 @@ export function shouldRollbackPreOutput(
   if (!isPreOutputFailureCode(event.code ?? undefined)) return false
   // Zod `.catch(false)` 把缺省打成 false；闸码且尚未出字仍回滚（ipc 缺省回落）。
   return lastTurnHasNoOutput(messages)
+}
+
+/** running 且尚未认领 runId 时，出字前失败不得进缓冲，否则晚到的 run.start 会再补泡。 */
+export function isImmediatePreOutputError(event: {
+  type: string
+  preOutput?: boolean
+  code?: string
+}): boolean {
+  if (event.type !== "run.error") return false
+  return event.preOutput === true || isPreOutputFailureCode(event.code)
 }

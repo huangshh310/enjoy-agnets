@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#135：none 不冻结，同会话 adopt toast；luna forbidden/billing 琥珀态；列表「改密钥」`openEdit`）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#136：关「改密钥」抽屉必须清掉 `edit`/`focus`/`from`；`from=chat` 回原会话带草稿）
 
 ## 当前真相
 
@@ -36,7 +36,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 
 `settings.listProviders` / `settings.get.providers[]` 每条可带只读 `credentialCheck`（main 落盘，renderer 不自己猜）。存密钥成功后对话框可立刻关；校验在后台跑，结果随后出现在列表和 `chat.readiness.credentialCheck`。手动再验走 `settings.recheckProvider({ id })`，回新状态并推 readiness。invalid 档案不 ready、不自动 adopt、发送回 `credential_invalid`；unverified / 未检 ready、可 adopt，发送放行，快照露出 `unverified`。文案 luna 定稿；mike 画列表态。详见 `providers`。
 
-Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets。自定义端点只从 Explore 横幅或已配置空态进入，页头不再放第二扇门。添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。自定义端点副标题「填好地址和密钥即可。用不到的协议留空。」；标题用「添加自定义端点」（不要「添加 自定义端点」空格）；主地址字段是「接口地址」，协议 / 主力模型 / 消息接口 / 回复接口等人话标签走中文，`Wire API` / `Chat` / `Base URL` 只进 hint；抽屉说明与 hint 走 `text-text-secondary`（与列表次行同一 token），不要 `text-text-tertiary`；「再添加一个密钥」。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。页头「当前」只在默认档案仍开启时出现，否则写「未在使用」。关掉的行主操作是「开启」。模型数字是收录，不是此刻可选。预设说明和新建自定义档案的显示名走界面语言。已配置行大约两行，预设卡说明只留一行，网格间距收紧。
+Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets。自定义端点只从 Explore 横幅或已配置空态进入，页头不再放第二扇门。添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。聊天条「改密钥」深链 `#/settings/providers?edit=…&focus=key&from=chat`，列表入口不带 `from`。关抽屉（取消 / × / Esc）或保存必须清掉 `edit` / `focus` / `from`，否则 `search.edit` 会把编辑器再打开；`from=chat` 取消与保存都回到原会话，Composer 草稿留下。自定义端点副标题「填好地址和密钥即可。用不到的协议留空。」；标题用「添加自定义端点」（不要「添加 自定义端点」空格）；主地址字段是「接口地址」，协议 / 主力模型 / 消息接口 / 回复接口等人话标签走中文，`Wire API` / `Chat` / `Base URL` 只进 hint；抽屉说明与 hint 走 `text-text-secondary`（与列表次行同一 token），不要 `text-text-tertiary`；「再添加一个密钥」。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。页头「当前」只在默认档案仍开启时出现，否则写「未在使用」。关掉的行主操作是「开启」。模型数字是收录，不是此刻可选。预设说明和新建自定义档案的显示名走界面语言。已配置行大约两行，预设卡说明只留一行，网格间距收紧。
 
 `#/skills` 是唯一 Skills 工作模块（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。`#/settings/agent?tab=defaults` 另有一行**可选拉取**卡片（`SettingsSkillSources`），只调用 `skills.sources.updateAll`，不复制整页 Skills UI。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。M6 可选更新：无 Git 源则**不渲染**更新按钮；点了才快进，不自动同步。空会话禁止挂更新条。
 
@@ -90,6 +90,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
+- **隐患**：「改密钥」抽屉取消 / × / Esc 关不掉。根因：`closeEditor` 只清本地 `editor`，`#/settings/providers?edit=…&focus=key` 还在，`openedEdit` 被重置后又按 `search.edit` 再打开；`from=chat` 的 `leaveOrigin` 也不回会话。正确做法：关上时清掉 `edit` / `focus` / `from`；`from=chat` 取消与保存都 `navigate` 回 `#/`，草稿留在 Composer。e2e `e2e/base-p0-1-provider-editor-close.spec.ts`（两条入口 × 取消 / × / Esc，关上后再开）。
 - **隐患**：`CHAT_READY=none` 冻结空快照时，向导存密钥后 `hasEnjoySecret` 已 true 但 `ready` 仍 false、`apiKeys` 空，adopt toast 要重启才出。正确做法：`none` 只种起始无路线，之后从真 vault 组装。`ENJOY_E2E_CREDENTIAL=ok` 时同会话 UI 存钥即可 `ready` + `adoptedHint`（toast 只出一次）。未设 `CHAT_READY` 不要注入 live ollama，否则首张已 ready 只盖章不 toast。信息 toast 2.4s 自熄，e2e 须在同会话拍屏/focus 前断言可见，之后只断言没有第二条。e2e `e2e/base-p0-1-adopt-toast.spec.ts`。
 - **隐患**：去添加密钥时 `pauseAt` 把向导 `open` 设成 false，Radix Dialog `onOpenChange(false)` 会当成用户关掉并 `finish()`，向导被标完成、resume 清掉。正确做法：`onOpenChange` 见 `paused` 不要 finish。
 - **隐患**：1100×700 设置侧栏看不到「项目与扩展」。根因：情境栏父级不裁剪高度，Radix ScrollArea 失效。正确做法：见 `ui` spec；e2e `settings-nav-scroll.spec.ts`。
