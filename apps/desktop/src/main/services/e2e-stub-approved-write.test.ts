@@ -15,6 +15,7 @@ import {
   STUB_WRITE_PATH,
   writeStubApprovedFile
 } from "./e2e-stub.ts"
+import { resolveInsideWorkspace } from "./paths.ts"
 
 function approvedWriteMessages(approvalId?: string): ModelMessage[] {
   return [
@@ -67,8 +68,10 @@ test("允许后写入 ENJOY_E2E_WORKSPACE/e2e-stub.txt", async () => {
   process.env.ENJOY_E2E_WORKSPACE = root
   try {
     const written = await writeStubApprovedFile()
-    assert.equal(written, join(root, STUB_WRITE_PATH))
-    assert.equal(await readFile(join(root, STUB_WRITE_PATH), "utf8"), STUB_WRITE_CONTENT)
+    // macOS `/tmp` → `/private/tmp`；跟 jail 同一套 realpath，不要和 mkdtemp 字面路径比。
+    assert.equal(written, resolveInsideWorkspace(root, STUB_WRITE_PATH))
+    assert.ok(written)
+    assert.equal(await readFile(written, "utf8"), STUB_WRITE_CONTENT)
   } finally {
     process.env.ENJOY_E2E_WORKSPACE = previous
     await rm(root, { recursive: true, force: true })
