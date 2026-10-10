@@ -6,7 +6,7 @@ import { syncActiveRunsDesktopAllow } from "./conversation-desktop-allow-sync"
 import { getDatabase } from "./database"
 import type { BrowserWindow } from "electron"
 import { stampSessionArchived, stampSessionUnarchived } from "./session-archive-stamp"
-import { denyPendingApprovalsForSession } from "./archive-deny-pending"
+import { abortLiveRunsForSession, denyPendingApprovalsForSession } from "./archive-deny-pending"
 
 export function listArchivedSessions() {
   return getDatabase()
@@ -22,6 +22,7 @@ export function listArchivedSessions() {
 }
 
 export async function archiveSession(sessionId: string, window?: BrowserWindow) {
+  await abortLiveRunsForSession(sessionId)
   const deniedApprovals = await denyPendingApprovalsForSession(sessionId, window)
   const now = Date.now()
   const changes = stampSessionArchived(getDatabase(), sessionId, now)

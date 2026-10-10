@@ -12,7 +12,8 @@ const {
   getActiveRun,
   holdAgentRun,
   getDatabase,
-  archiveSession
+  archiveSession,
+  denyPendingApprovalsForSession
 } = await import("./archive-deny-pending.behavior.load.ts")
 
 type SentEvent = { type: string; decision?: string }
@@ -94,6 +95,49 @@ test("归档带未决审批的会话：走 deny，清 pending，回 deniedApprov
   const result = await archiveSession(sessionId, run.window)
   assert.equal(result.deniedApprovals, 1)
   assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
+  assert.equal(getActiveRun(runId), undefined)
   assert.ok(events.some((event) => event.type === "approval.resolved" && event.decision === "deny"))
+  deleteActiveRun(runId)
+})
+
+test("活泵还在且 decide 失败：归档不绕过 denyStored", async () => {
+  const runId = "run_archive_live_fail"
+  const sessionId = "ses_archive_live_fail"
+  seedSession(sessionId)
+  holdAgentRun({
+    runId,
+    window: recordWindow([]),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId,
+      workspaceId: "ws_archive",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "write" }]
+    }
+  })
+  const run = getActiveRun(runId)
+  if (!run) throw new Error("hold failed")
+  run.pumping = true
+  rememberApproval({
+    runId,
+    approvalId: "apr_archive_live_fail",
+    toolCallId: "tool_archive_live",
+    name: "write_file",
+    args: { path: "note.txt" }
+  })
+  run.pendingApprovals.push({
+    approvalId: "apr_archive_live_fail",
+    toolCallId: "tool_wrong",
+    name: "write_file",
+    args: { path: "note.txt" }
+  })
+  await assert.rejects(
+    () => denyPendingApprovalsForSession(sessionId, run.window),
+    /tampered|no longer active|No matching/i
+  )
+  assert.ok(getActiveRun(runId))
   deleteActiveRun(runId)
 })

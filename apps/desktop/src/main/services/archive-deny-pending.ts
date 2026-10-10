@@ -1,5 +1,6 @@
 /**
- * 归档前把该会话未决审批走一遍普通 deny（与 Dock 点拒绝同一条 decide 路）。
+ * 归档前先 abort 该会话活泵，再把未决审批走普通 deny。
+ * denyStored 只在 run 已不在内存时用；活泵 decide 失败必须抛，禁止绕过。
  */
 import type { BrowserWindow } from "electron"
 import { listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
@@ -9,6 +10,14 @@ import { getDatabase } from "./database"
 import { recordSdkApprovalResponse } from "./approval-hmac"
 
 type PendingDeny = { runId: string; approvalId: string; toolCallId: string }
+
+export async function abortLiveRunsForSession(sessionId: string): Promise<void> {
+  const { abortAgent } = await import("./agent-runner")
+  for (const { runId, run } of listActiveRuns()) {
+    if (run.input.sessionId !== sessionId) continue
+    await abortAgent({ runId })
+  }
+}
 
 export async function denyPendingApprovalsForSession(
   sessionId: string,
@@ -47,22 +56,19 @@ function collectPending(sessionId: string): PendingDeny[] {
 
 async function denyOne(item: PendingDeny, window?: BrowserWindow): Promise<boolean> {
   const run = getActiveRun(item.runId)
-  const target = window ?? run?.window
-  if (run && target) {
-    try {
-      await decideApproval(target, {
-        runId: item.runId,
-        toolCallId: item.toolCallId,
-        approvalId: item.approvalId,
-        decision: "deny",
-        reason: "Session archived."
-      })
-      return true
-    } catch {
-      // 活泵已走掉：落到库行兜底。
-    }
+  if (run) {
+    const target = window ?? run.window
+    if (!target) throw new Error("Cannot deny a live approval without a window.")
+    await decideApproval(target, {
+      runId: item.runId,
+      toolCallId: item.toolCallId,
+      approvalId: item.approvalId,
+      decision: "deny",
+      reason: "Session archived."
+    })
+    return true
   }
-  return denyStored(item, target)
+  return denyStored(item, window)
 }
 
 function denyStored(item: PendingDeny, window?: BrowserWindow): boolean {
