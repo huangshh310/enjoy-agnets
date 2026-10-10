@@ -132,7 +132,7 @@ export function missedGroupSummary(input: {
   }
   const skipped = ordered.filter((row) => row.kind === "skipped")
   const latest = skipped[0]
-  if (!latest) return t("studio.automations.missedEmpty")
+  if (!latest) return t("studio.automations.missedRecentCount", { n: records.length })
   const when = formatLastRunWhen(latest.scheduledAt, now, locale)
   const reason = skipReasonCopy(latest.reason, t)
   if (skipped.length === 1) {

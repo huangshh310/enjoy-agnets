@@ -926,6 +926,58 @@ input[type="search"]::-webkit-search-cancel-button {
   --sidebar-ring: var(--color-border-focus-ring);
 }
 
+/* 审查/右栏：任何皮肤任何主题都实心铺底，禁止画布光斑透上来。不看 GPU。 */
+[data-testid="right-pane-shell"],
+[data-pane-shell-deco="off"],
+.right-pane-panel {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  isolation: isolate;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+}
+
+html.dark [data-testid="right-pane-shell"],
+html.dark [data-pane-shell-deco="off"],
+html.dark .right-pane-panel {
+  background-color: var(--color-neutral-900) !important;
+}
+
+[data-testid="right-pane-shell"]::before,
+[data-testid="right-pane-shell"]::after,
+[data-pane-shell-deco="off"]::before,
+[data-pane-shell-deco="off"]::after {
+  content: none !important;
+  display: none !important;
+  filter: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 软件合成：url(#) 滤镜与 backdrop-filter 一律停。默认平边。 */
+html[data-gpu-compositing="off"] *,
+html[data-gpu-compositing="off"] *::before,
+html[data-gpu-compositing="off"] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-gpu-compositing="off"] .skin-glass-orbs,
+html:not([data-gpu-compositing="on"]) .skin-glass-orbs {
+  display: none !important;
+}
+
+html[data-gpu-compositing="off"] .skin-glass-orb,
+html[data-gpu-compositing="off"] .skin-glass-mesh-gradient,
+html[data-gpu-compositing="off"] [class*="locale-switch"] {
+  filter: none !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

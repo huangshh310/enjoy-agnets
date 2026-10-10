@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（整行点开自动化；钥匙串 ① 黄条 / ② 红字）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（超时抽屉标题有 N 条记录）
 
 ## 当前真相
 
@@ -112,7 +112,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - **隐患**：启动滴答 / 唤醒 `recordAutomationResume` 先把 `lastAliveAt` 写成现在，回看窗 `[lastAliveAt, now-1min]` 变空，错过点静默消失。根因：20s tick 与 resume 都会 stamp 存活。正确做法：本轮回看用 `scanFromAt`（上次活着 / 休眠前），滴答只改 `lastAliveAt`；reconcile 结束再清 `scanFromAt`。
 - **隐患**：无窗口时 `tickAutomations` 直接 return，不写 alive stamp；应用开着但窗口关了，回看会记 `app_not_running`。`previous_still_running` **只**来自准点滴答（`recordBusySkip`），回看扫描不产这个原因。补跑停 Dock 不得卡住 reconcile：只点火不 await；30min 自动拒绝（`catch_up_approval_timeout`），不新开跳过原因。用户批准 / abort 必须清计时器，否则会误杀；超时先同步打 `catchUpApprovalTimedOut` 再 `abort`，`failAgentPump` 优先读这个标记，写出 `catch_up_approval_timeout`，不走 `classifyError` 的 timeout 类、不发 `generation.warning`。泵若先抢到判重，结果仍一致。结局只能是 failed，不能再 `run.end`。子 Agent / 二次确认也要挂计时器。多条待审批时决定一条后还有剩余就重新挂表。重启补跑 `waiting_review` 直接 `interrupted_by_restart`（只处理当前 runId），不要再挂。`failAgentPump` 按 ActiveRun **实例**判重，不能按 runId 卡死续跑。`lastRunErrorCode` 未知码读成 undefined，禁止整行丢掉。列表用 `lastRunErrorCode`（enum）、抽屉用 `records[].code` 区分超时与真错误。跳过保持 `consecutiveFails`（不加一、不清零）。7 天只回看记录，补跑新鲜度是 24h（`CATCH_UP_MAX_AGE_MS`）。`automation_missed_local` 今天不上云只因没有同步路径，以后做云同步必须显式排除。`restoreRunningRuns` 续上的补跑必须 `watchCatchUpSettle`（`waitForRunSettle` + `finishAutomationRun`），跑完把错过记录和自动化行写成真实终态；续跑中再停审批，30min 超时照常。只有没续上的才 `interrupted_by_restart`。`restoreRunningRuns` / `restoreWaitingRuns` 每个进程只执行一次，挂在首窗 `webContents.did-finish-load` 之后，避免 `webContents.send` 丢给还没加载的 renderer；窗口重建不再跑。watcher 再按 runId 判重。本进程已有 ActiveRun 的补跑 waiting 不是重启残留。双开用 `requestSingleInstanceLock`：拿不到锁的实例 `markQuitAllowed` 后 `app.exit(0)`，不启动调度 / 回看 / 补跑；`will-quit` / `window-all-closed` / `before-quit` 非主实例直接跳过，禁止 `stampAutomationAlive` / `getDatabase`。进程内 `claimMissedPoint` 查+写同步、中间不能 await。
 - **隐患**：错过摘要把成功补跑算进 N（「巡检·混合」skip / catch-up / skip 写成「错过 3 次」；「午间 diff 复盘」最新补跑成功仍写「错过 2 次」）。根因：`records.length >= 2`。正确做法：N 只数 `kind==="skipped"`；最新一条成功补跑走「上次 · {when}」，次行与折叠条同一句，禁止用「错过」开头。人话日期按周一日历周（本周「周X」、上周「上周X」），不要把 2–6 天前一律写成「上周X」。
-- **隐患**：补跑超时抽屉只见「最近 7 天没有错过记录」、不见「上次：…」。根因：`lastRunText` 写在 `records.length===0` 的 `<details>` 里，超时补跑其实有 catch_up 记录，折叠条无 skipped 就回 `missedEmpty`。正确做法：折叠条上方常驻 `drawerLastRunText`（有过运行就画）。
+- **隐患**：补跑超时抽屉展开标题写「最近 7 天没有错过记录」，列表却有「补跑 · 计划… · 未运行」。根因：折叠条 `missedGroupSummary` 无数 skipped 就回 `missedEmpty`；超时不是错过。正确做法：有记录无 skipped 用「最近 7 天有 N 条记录」；超时行锁定灰点 + 中性句；「错过 N 次」只数 skipped。上次行仍常驻折叠条上方。
 - **隐患**：Shift+Tab 在 Composer 里乱切审批档，挡住焦点后退。根因：命令 `when` 曾是 `!inputFocus`，但 Electron 里 Composer 焦点判定不稳，或用户就是要在空输入里切档。正确做法：默认不再带 `when`；`shouldCyclePermissionOnShiftTab` 空 Composer 切档，有字返回 false 让浏览器后退焦点，其它 input / 终端不切。盾牌 tooltip 写 `approvalCycleHint`。
 - 收件箱是 AppShell 模块，不是独立壳。不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
 - Studio / Team / Company / Account 旧 Hash 必须 redirect 进 AppShell，不要再挂 `SecondaryPageShell` 侧栏。

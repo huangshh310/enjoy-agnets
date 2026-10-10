@@ -2,8 +2,9 @@
  * 组字 / 建会话期间用本地稿，禁止受控 value 把 store 半成品写回去。
  */
 import { useEffect, useRef, useState, type ChangeEvent, type CompositionEvent } from "react"
-import { setComposerComposing } from "@renderer/hooks/composer-ime"
+import { setComposerComposing, shouldClearShownOnPreparing } from "@renderer/hooks/composer-ime"
 import { shouldHoldComposerStoreSync } from "@renderer/hooks/composer-dom"
+import { isNewSessionCreatePending } from "@renderer/hooks/new-session-create"
 import { useChatStore } from "@renderer/stores/chat-store"
 
 export function useComposerIme(value: string, onChange: (next: string) => void) {
@@ -13,7 +14,16 @@ export function useComposerIme(value: string, onChange: (next: string) => void) 
   const wasPreparing = useRef(false)
 
   useEffect(() => {
-    if (preparing && !wasPreparing.current && !value) setShown("")
+    if (
+      shouldClearShownOnPreparing({
+        preparing,
+        wasPreparing: wasPreparing.current,
+        value,
+        createPending: isNewSessionCreatePending()
+      })
+    ) {
+      setShown("")
+    }
     wasPreparing.current = preparing
   }, [preparing, value])
 

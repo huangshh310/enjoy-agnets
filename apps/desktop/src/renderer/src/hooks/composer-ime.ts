@@ -12,6 +12,17 @@ export function setComposerComposing(next: boolean): void {
   composing = next
 }
 
+/** 首发「正在准备…」不得清空已键入；只有建会话窗且 store 已空才擦 shown。 */
+export function shouldClearShownOnPreparing(input: {
+  preparing: boolean
+  wasPreparing: boolean
+  value: string
+  createPending: boolean
+}): boolean {
+  if (!input.createPending) return false
+  return input.preparing && !input.wasPreparing && !input.value
+}
+
 export function shouldIgnoreComposerEnter(event: {
   key: string
   keyCode?: number

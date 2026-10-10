@@ -160,3 +160,12 @@ html[data-skin="ink"] [data-pane-shell-deco="off"].rounded-3xl.shadow-card::afte
   content: none;
   display: none;
 }
+
+html[data-gpu-compositing="off"][data-skin="ink"] aside.rounded-3xl::after,
+html[data-gpu-compositing="off"][data-skin="ink"] main::after,
+html[data-gpu-compositing="off"][data-skin="ink"] [data-frost]::after,
+html[data-gpu-compositing="off"][data-skin="ink"] [data-testid="window-frame"]::after {
+  filter: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+}

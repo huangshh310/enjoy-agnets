@@ -183,6 +183,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
   assert.equal(z.studio.automations.missedGroupSame, "因{reason}错过 {n} 次 · {when}")
   assert.equal(z.studio.automations.missedGroupMixed, "错过 {n} 次 · 最近一次{reason} · {when}")
+  assert.equal(z.studio.automations.missedRecentCount, "最近 7 天有 {n} 条记录")
+  assert.equal(z.studio.automations.missedEmpty, "最近 7 天没有错过记录")
   assert.equal(
     (en as { studio: { automations: Record<string, string> } }).studio.automations.missedGroupMixed,
     "Missed {n} times · last time {reason} · {when}"

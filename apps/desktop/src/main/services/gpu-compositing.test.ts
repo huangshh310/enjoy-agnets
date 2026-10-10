@@ -51,6 +51,15 @@ test("命令行或 disableHardwareAcceleration 直接 off", () => {
   assert.equal(hardwareAccelerationForcedOff({ disableHardwareAcceleration: true }), true)
 })
 
+test("软件渲染旗标或 gpuInfo 里的 SwiftShader 直接 off", () => {
+  assert.equal(
+    gpuCompositingFromStatus({ gpu_compositing: "enabled", webgl: "enabled" }, {
+      softwareRenderer: true
+    }),
+    "off"
+  )
+})
+
 test("argv / env 解析给 preload", () => {
   assert.equal(parseGpuCompositingArg([gpuCompositingArg("off")]), "off")
   assert.equal(parseGpuCompositingArg([gpuCompositingArg("on")]), "on")

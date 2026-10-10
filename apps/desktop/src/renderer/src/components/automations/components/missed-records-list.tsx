@@ -110,7 +110,15 @@ function RecordStatus({
   const t = useT()
   if (timeout && isNeutralErrorCode(row.code)) {
     return (
-      <span className="text-text-tertiary" data-testid="automation-record-neutral">
+      <span
+        className="inline-flex items-center gap-1.5 text-text-tertiary"
+        data-testid="automation-record-neutral"
+      >
+        <span
+          aria-hidden
+          data-testid="automation-record-neutral-dot"
+          className="size-1.5 shrink-0 rounded-full bg-text-tertiary"
+        />
         {timeout}
       </span>
     )

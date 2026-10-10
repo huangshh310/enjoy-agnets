@@ -48,9 +48,14 @@ export function gpuFeatureIsHardware(value: string | undefined): boolean {
 
 export function gpuCompositingFromStatus(
   status: GpuFeatureStatusLike | null | undefined,
-  opts?: { hardwareAccelerationDisabled?: boolean }
+  opts?: {
+    hardwareAccelerationDisabled?: boolean
+    softwareRenderer?: boolean
+    gpuInfo?: unknown
+  }
 ): GpuCompositingFlag {
   if (opts?.hardwareAccelerationDisabled) return "off"
+  if (opts?.softwareRenderer) return "off"
   if (!status) return "off"
   if (!gpuFeatureIsHardware(status.gpu_compositing)) return "off"
   if (!gpuFeatureIsHardware(status.webgl)) return "off"

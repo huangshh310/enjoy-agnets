@@ -33,6 +33,10 @@ import {
   type GpuCompositingFlag
 } from "./services/gpu-compositing";
 import {
+  gpuInfoLooksSoftware,
+  softwareRendererSwitchOn
+} from "./services/gpu-compositing-software";
+import {
   attachGpuCompositingWatch,
   pushGpuCompositingScript,
   pushGpuCompositingToWindows
@@ -154,19 +158,37 @@ function createWindow(): BrowserWindow {
   return mainWindow;
 }
 
-/** 只信 getGPUFeatureStatus 的硬件确认；命令行旗标只能关不能开。 */
+let lastGpuInfo: unknown = null
+
+/** 只信硬件确认；SwiftShader / 软件 GL / 命令行软件实现一律 off。 */
 function readLiveGpuFlag(): GpuCompositingFlag {
   const forcedOff = hardwareAccelerationForcedOff({
     disableHardwareAcceleration: disableHaForE2e,
     hasSwitch: (name) => app.commandLine.hasSwitch(name)
   })
+  const software = softwareRendererSwitchOn({
+    switchValue: (name) => app.commandLine.getSwitchValue(name)
+  }) || gpuInfoLooksSoftware(lastGpuInfo)
   try {
     return gpuCompositingFromStatus(app.getGPUFeatureStatus(), {
-      hardwareAccelerationDisabled: forcedOff
+      hardwareAccelerationDisabled: forcedOff,
+      softwareRenderer: software
     })
   } catch {
     return "off"
   }
+}
+
+function refreshGpuInfoThenPublish(): void {
+  void app
+    .getGPUInfo("complete")
+    .then((info) => {
+      lastGpuInfo = info
+      publishGpuFlag(readLiveGpuFlag())
+    })
+    .catch(() => {
+      publishGpuFlag("off")
+    })
 }
 
 function publishGpuFlag(flag: GpuCompositingFlag): void {
@@ -180,7 +202,10 @@ const gpuWatch = attachGpuCompositingWatch({
       app.on("child-process-gone", (nativeEvent, details) => listener(nativeEvent, details))
       return
     }
-    app.on("gpu-info-update", () => listener())
+    app.on("gpu-info-update", () => {
+      refreshGpuInfoThenPublish()
+      listener()
+    })
   },
   readFlag: readLiveGpuFlag,
   publish: publishGpuFlag,
@@ -218,6 +243,7 @@ function bootPrimaryInstance(): void {
     });
     applyMacDockIcon();
     createWindow();
+    refreshGpuInfoThenPublish()
     if (process.env.ENJOY_DEV_SIMULATE_GPU_GONE === "1") {
       setImmediate(() => {
         app.emit("child-process-gone", {}, { type: "GPU", reason: "crashed" })

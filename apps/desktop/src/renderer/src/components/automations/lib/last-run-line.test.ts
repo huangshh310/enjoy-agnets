@@ -171,6 +171,23 @@ test("超时码走人话中性句，不看 lastError", () => {
   )
 })
 
+test("只有超时补跑时折叠条写有 N 条记录，不叫错过", () => {
+  const timeout: AutomationMissedRecord = {
+    automationId: "auto_1",
+    scheduledAt: today8,
+    recordedAt: noon,
+    kind: "catch_up",
+    isCatchUp: true,
+    status: "failed",
+    code: "catch_up_approval_timeout"
+  }
+  assert.equal(
+    missedGroupSummary({ records: [timeout], now: noon, locale: "zh", t }),
+    "最近 7 天有 1 条记录"
+  )
+  assert.equal(missedGroupSummary({ records: [], now: noon, locale: "zh", t }), "最近 7 天没有错过记录")
+})
+
 test("抽屉折叠条收成错过 N 次组摘要", () => {
   const records = [skip(today8), skip(yest8), skip(ere8)]
   assert.equal(

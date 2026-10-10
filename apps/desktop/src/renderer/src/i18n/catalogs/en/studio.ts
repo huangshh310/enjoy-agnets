@@ -294,6 +294,7 @@ export const enStudio = {
     missedExpandAction: "Show",
     missedCollapse: "Hide",
     missedEmpty: "No missed records in the last 7 days",
+    missedRecentCount: "{n} records in the last 7 days",
     missedCount: "Missed records · {n}",
     missedGroupSame: "Missed {n} times because {reason} · {when}",
     missedGroupMixed: "Missed {n} times · last time {reason} · {when}",

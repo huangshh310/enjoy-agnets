@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（无 GPU 写 data-gpu-compositing）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（SwiftShader 不算硬件合成）
 
 ## 当前真相
 
@@ -10,7 +10,7 @@
 - `backgroundColor: "#00000000"`。macOS 注入 `vibrancy: "fullscreen-ui"`。Windows **不要** `backgroundMaterial: "acrylic"`：acrylic 铺满矩形 HWND，CSS `rounded-2xl` 切不掉四角。磨砂只走 `WindowFrame` + `skins/glass.css`。
 - 默认 1440×920，最小 1100×720
 - `autoHideMenuBar: true`
-- `webPreferences.additionalArguments` 带 `--enjoy-gpu-compositing=on|off`。`app.whenReady` 后读 `app.getGPUFeatureStatus()`：`gpu_compositing` / `webgl` 不是硬件合成，或已 `disableHardwareAcceleration` / `--disable-gpu` / `--disable-gpu-compositing`，则为 `off`。preload 启动时写到 `html[data-gpu-compositing]`，不新开 IPC。e2e stub 仍先 `disableHardwareAcceleration()`。
+- `webPreferences.additionalArguments` 带 `--enjoy-gpu-compositing=on|off`。`app.whenReady` 后读 `app.getGPUFeatureStatus()` **和** `app.getGPUInfo("complete")`：`gpu_compositing` / `webgl` 必须是硬件 `enabled*` 才写 `on`。`disableHardwareAcceleration` / `--disable-gpu` / SwiftShader / LLVMpipe / `--use-gl=disabled` / `--use-angle=swiftshader` 一律 `off`。`child-process-gone` type=GPU 立刻 off；`gpu-info-update` 再读 info。preload 启动时写到 `html[data-gpu-compositing]`，不新开 IPC。e2e stub 默认仍 `disableHardwareAcceleration()`；`ENJOY_E2E_ALLOW_GPU=1` 才跳过。
 
 路由根用 `WindowFrame` 包一层：外框 `rounded-2xl` + `border-border-button-default` + `bg-background-full`；最大化时 `rounded-none border-0` 贴边。`html` / `body` / `#root` 必须透明，否则四角会露出方底。顶栏 `WindowTitleBar`（高 36px）；内容区可选择文本。
 

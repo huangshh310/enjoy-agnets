@@ -291,6 +291,7 @@ export const zhStudio = {
     missedExpandAction: "展开",
     missedCollapse: "收起",
     missedEmpty: "最近 7 天没有错过记录",
+    missedRecentCount: "最近 7 天有 {n} 条记录",
     missedCount: "错过记录 · {n} 条",
     missedGroupSame: "因{reason}错过 {n} 次 · {when}",
     missedGroupMixed: "错过 {n} 次 · 最近一次{reason} · {when}",

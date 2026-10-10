@@ -1,5 +1,6 @@
 /**
- * jojo：没带 --disable-gpu，GPU 进程启动失败回落到软件渲染时，审查栏空态仍不得画黄环。
+ * jojo / luna：Xvfb 无 --disable-gpu（SwiftShader 软件 GL）。
+ * 审查栏空态不得画黄环，不看 data-gpu-compositing。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -10,7 +11,7 @@ import { countGreyRingPixels, countHotYellowPixels } from "./png-ring-pixels"
 const mainEntry = join(process.cwd(), "out/main/index.js")
 const shots = "/opt/cursor/artifacts/screenshots"
 
-test("软件回退非 git 审查空态：浅/暗无环（不传 --disable-gpu）", async () => {
+test("SwiftShader 非 git 审查空态：浅/暗下右无环（不传 --disable-gpu）", async () => {
   test.setTimeout(150_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const playwright = await import("playwright")
@@ -24,7 +25,13 @@ test("软件回退非 git 审查空态：浅/暗无环（不传 --disable-gpu）
   const userData = mkdtempSync(join(tmpdir(), "enjoy-gpu-soft-nongit-ud-"))
   writeFileSync(join(workspace, "readme.md"), "# not a git repo\n")
   const app = await electron.launch({
-    args: [mainEntry, "--no-sandbox", "--use-gl=disabled", "--disable-dev-shm-usage"],
+    args: [
+      mainEntry,
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader"
+    ],
     cwd: process.cwd(),
     timeout: 45_000,
     env: {
@@ -33,27 +40,29 @@ test("软件回退非 git 审查空态：浅/暗无环（不传 --disable-gpu）
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData,
-      ENJOY_E2E_ALLOW_GPU: "1",
-      ENJOY_DEV_SIMULATE_GPU_GONE: "1"
+      ENJOY_E2E_ALLOW_GPU: "1"
     }
   })
   try {
     const window = await readyGlassWindow(app)
-    await expect(window.locator("html")).toHaveAttribute("data-gpu-compositing", "off", { timeout: 15_000 })
     await window.keyboard.press("Control+Shift+G")
     const review = window.locator('[data-testid="right-pane-shell"]')
     await expect(review).toBeVisible({ timeout: 12_000 })
     await expect(review).toHaveAttribute("data-pane-shell-deco", "off")
     await expect(review).not.toHaveAttribute("data-frost", "shell")
     await assertReviewHasNoPrism(window)
-    await sampleReview(window, "light")
+    const lightDump = await dumpReviewChain(window)
+    writeFileSync(join(shots, "review-elements-from-point-light.json"), JSON.stringify(lightDump, null, 2))
+    await sampleReviewLowerRight(window, "light")
     await window.screenshot({ path: join(shots, "p1_gpu_soft_light_review_nongit.png"), fullPage: true })
     await window.evaluate(() => {
       document.documentElement.classList.add("dark")
       document.documentElement.setAttribute("data-skin", "glass")
     })
     await assertReviewHasNoPrism(window)
-    await sampleReview(window, "dark")
+    const darkDump = await dumpReviewChain(window)
+    writeFileSync(join(shots, "review-elements-from-point-dark.json"), JSON.stringify(darkDump, null, 2))
+    await sampleReviewLowerRight(window, "dark")
     await window.screenshot({ path: join(shots, "p1_gpu_soft_dark_review_nongit.png"), fullPage: true })
   } finally {
     const proc = app.process()
@@ -72,7 +81,7 @@ async function readyGlassWindow(app: { firstWindow: () => Promise<Page> }) {
   await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
     timeout: 20_000
   })
-  await window.setViewportSize({ width: 1440, height: 900 })
+  await window.setViewportSize({ width: 1920, height: 1200 })
   await window
     .waitForSelector('button:has-text("跳过设置"), [data-testid="composer-input"]', { timeout: 20_000 })
     .catch(() => undefined)
@@ -89,27 +98,75 @@ async function readyGlassWindow(app: { firstWindow: () => Promise<Page> }) {
 async function assertReviewHasNoPrism(window: Page) {
   const hit = await window.evaluate(() => {
     const node = document.querySelector('[data-testid="right-pane-shell"]')
-    if (!node) return { after: "missing", filter: "", deco: "" }
+    if (!node) return { after: "missing", filter: "", deco: "", bg: "" }
     const after = getComputedStyle(node, "::after")
+    const cs = getComputedStyle(node)
     return {
       after: after.content,
       filter: after.filter,
-      deco: node.getAttribute("data-pane-shell-deco")
+      deco: node.getAttribute("data-pane-shell-deco"),
+      bg: cs.backgroundColor,
+      backdrop: cs.backdropFilter
     }
   })
   expect(hit.deco).toBe("off")
   expect(hit.after === "none" || hit.after === "").toBeTruthy()
   expect(!hit.filter || hit.filter === "none").toBeTruthy()
+  expect(hit.backdrop === "none" || !hit.backdrop).toBeTruthy()
+  expect(hit.bg === "rgb(255, 255, 255)" || hit.bg === "rgb(23, 23, 23)" || /neutral/.test(hit.bg)).toBeTruthy()
 }
 
-async function sampleReview(window: Page, mode: "light" | "dark") {
+async function dumpReviewChain(window: Page) {
+  return window.evaluate(() => {
+    const pane = document.querySelector('[data-testid="right-pane-shell"]')
+    const box = pane?.getBoundingClientRect()
+    if (!box) return { error: "missing pane" }
+    const x = Math.round(box.left + box.width * 0.78)
+    const y = Math.round(box.top + box.height * 0.78)
+    const chain = document.elementsFromPoint(x, y).slice(0, 10).map((el) => {
+      const cs = getComputedStyle(el)
+      const before = getComputedStyle(el, "::before")
+      const after = getComputedStyle(el, "::after")
+      return {
+        tag: el.tagName.toLowerCase(),
+        testid: el.getAttribute("data-testid") || "",
+        className: String(el.className || "").slice(0, 160),
+        filter: cs.filter,
+        mask: cs.maskImage || cs.mask,
+        backdrop: cs.backdropFilter,
+        backgroundColor: cs.backgroundColor,
+        backgroundImage: cs.backgroundImage.slice(0, 180),
+        before: { content: before.content, filter: before.filter, bg: before.backgroundImage.slice(0, 120) },
+        after: { content: after.content, filter: after.filter, bg: after.backgroundImage.slice(0, 120) }
+      }
+    })
+    const orbs = [...document.querySelectorAll(".skin-glass-orbs, .skin-glass-orb, .skin-glass-mesh-gradient")].map(
+      (el) => {
+        const cs = getComputedStyle(el)
+        return { className: String(el.className), display: cs.display, filter: cs.filter }
+      }
+    )
+    return {
+      gpu: document.documentElement.dataset.gpuCompositing || "",
+      skin: document.documentElement.getAttribute("data-skin"),
+      dark: document.documentElement.classList.contains("dark"),
+      x,
+      y,
+      liquid: Boolean(document.getElementById("skin-liquid-glass")),
+      orbs,
+      chain
+    }
+  })
+}
+
+async function sampleReviewLowerRight(window: Page, mode: "light" | "dark") {
   const box = await window.locator('[data-testid="right-pane-shell"]').boundingBox()
   expect(box).toBeTruthy()
   const clip = {
     x: Math.max(0, box!.x + box!.width * 0.52),
-    y: Math.max(0, box!.y + box!.height * 0.62),
-    width: Math.min(160, Math.max(48, box!.width * 0.28)),
-    height: Math.min(120, Math.max(40, box!.height * 0.2))
+    y: Math.max(0, box!.y + box!.height * 0.55),
+    width: Math.min(220, Math.max(64, box!.width * 0.42)),
+    height: Math.min(200, Math.max(64, box!.height * 0.38))
   }
   const buf = await window.screenshot({ clip })
   expect(countHotYellowPixels(buf), `${mode} review yellow`).toBe(0)

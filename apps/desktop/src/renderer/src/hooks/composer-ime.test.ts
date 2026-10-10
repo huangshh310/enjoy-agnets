@@ -4,9 +4,40 @@ import { test } from "node:test"
 import {
   isComposerComposing,
   setComposerComposing,
+  shouldClearShownOnPreparing,
   shouldIgnoreComposerEnter
 } from "./composer-ime"
 import { flushComposerDomToStore, syncComposerDom } from "./composer-dom"
+
+test("首发正在准备不得清空已键入，只有建会话窗才擦 shown", () => {
+  assert.equal(
+    shouldClearShownOnPreparing({
+      preparing: true,
+      wasPreparing: false,
+      value: "",
+      createPending: false
+    }),
+    false
+  )
+  assert.equal(
+    shouldClearShownOnPreparing({
+      preparing: true,
+      wasPreparing: false,
+      value: "hello",
+      createPending: true
+    }),
+    false
+  )
+  assert.equal(
+    shouldClearShownOnPreparing({
+      preparing: true,
+      wasPreparing: false,
+      value: "",
+      createPending: true
+    }),
+    true
+  )
+})
 
 test("组字中 Enter / keyCode 229 不发送", () => {
   setComposerComposing(false)
@@ -57,4 +88,6 @@ test("输入框与 flush 接线守门", () => {
     "utf8"
   )
   assert.match(ime, /shouldHoldComposerStoreSync\(\)/)
+  assert.match(ime, /shouldClearShownOnPreparing/)
+  assert.match(ime, /isNewSessionCreatePending/)
 })
