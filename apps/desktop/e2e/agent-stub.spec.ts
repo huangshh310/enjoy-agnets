@@ -91,6 +91,10 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
       location.hash = "#/workflows"
     })
     await window.waitForSelector('[data-testid="workflow-start"]', { timeout: 8_000 })
+    if ((await window.locator('[data-testid="workflow-dag"]').count()) === 0) {
+      await window.locator('[data-testid="workflow-create"]').click()
+      await window.waitForSelector('[data-testid="workflow-dag"]', { timeout: 8_000 })
+    }
     await window.locator('[data-testid="workflow-start"]').click()
     await window.waitForSelector('[data-testid="workflow-dag"]', { timeout: 12_000 })
 
@@ -151,8 +155,8 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
     await window.setViewportSize({ width: 1440, height: 900 })
     const composer = window.locator('[data-testid="composer-input"]')
     await sendWriteAndAllowSession(window, composer)
-    const firstName = await firstSessionName(window)
-    expect(firstName.length).toBeGreaterThan(0)
+    const firstId = await firstSessionId(window)
+    expect(firstId.length).toBeGreaterThan(0)
 
     await sendWriteExpectExecuted(window, composer)
     await sendWriteExpectExecuted(window, composer)
@@ -164,7 +168,7 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
     await expect(window.locator('[data-testid="approval-session"]')).toHaveCount(0, { timeout: 12_000 })
 
     // 新会话先关卡再归档：归档必须清掉第一会话的 allow，恢复后再问。
-    await archiveSessionNamed(window, firstName)
+    await archiveSessionById(window, firstId)
     await window.evaluate(() => {
       location.hash = "#/settings/archived"
     })
@@ -173,8 +177,8 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
     await window.evaluate(() => {
       location.hash = "#/"
     })
-    await expect(sessionRow(window, firstName)).toBeVisible({ timeout: 8_000 })
-    await sessionRow(window, firstName).click()
+    await expect(sessionRowById(window, firstId)).toBeVisible({ timeout: 8_000 })
+    await sessionRowById(window, firstId).click()
     await sendComposer(window, composer, "please write a note")
     await expect(window.locator('[data-testid="approval-session"]')).toBeVisible({ timeout: 20_000 })
   } finally {
@@ -252,20 +256,20 @@ async function countAllowedWrite(window: Page): Promise<number> {
   return window.evaluate(() => document.body.innerText.match(/stub-ok allowed write/g)?.length ?? 0)
 }
 
-async function firstSessionName(window: Page): Promise<string> {
+async function firstSessionId(window: Page): Promise<string> {
   const row = window.locator('[data-testid="sidebar-session-row"][data-session-surface="tree"]').first()
   await expect(row).toBeVisible({ timeout: 8_000 })
-  return (await row.getAttribute("data-session-name")) ?? ""
+  return (await row.getAttribute("data-session-id")) ?? ""
 }
 
-function sessionRow(window: Page, title: string) {
-  return window.locator('[data-testid="sidebar-session-row"][data-session-surface="tree"]').filter({
-    hasText: title
-  })
+function sessionRowById(window: Page, sessionId: string) {
+  return window.locator(
+    `[data-testid="sidebar-session-row"][data-session-surface="tree"][data-session-id="${sessionId}"]`
+  )
 }
 
-async function archiveSessionNamed(window: Page, title: string) {
-  const row = sessionRow(window, title)
+async function archiveSessionById(window: Page, sessionId: string) {
+  const row = sessionRowById(window, sessionId)
   await row.scrollIntoViewIfNeeded()
   await row.hover()
   await row.locator('[data-testid="session-row-menu"]').click()
