@@ -14,6 +14,8 @@ import {
 } from "@renderer/components/ai-chat/empty-state/checklist/empty-state-missing-actions"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { countAvailableEngines } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { guideEngineShowsReady } from "./guide-engine-ready"
 import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 
@@ -26,7 +28,8 @@ export function EngineInstallList() {
   const [phase, setPhase] = useState<Record<string, RowPhase>>({})
   const [refreshing, setRefreshing] = useState(false)
   const queryClient = useQueryClient()
-  const ready = tools.filter(guideEngineShowsReady).length
+  const readiness = useChatReadiness().data
+  const ready = readiness?.engineCount ?? countAvailableEngines(tools)
   const missing = tools.filter((tool) => !tool.comingSoon && !guideEngineShowsReady(tool)).length
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-3">

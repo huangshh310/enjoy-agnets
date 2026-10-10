@@ -135,6 +135,14 @@ const ide = {
       return () => ipcRenderer.off("agentTools.progress", listener)
     }
   },
+  chat: {
+    readiness: (input?: unknown) => ipcRenderer.invoke("chat.readiness", input ?? {}),
+    onReadiness: (callback: (event: unknown) => void) => {
+      const listener = (_event: unknown, payload: unknown) => callback(payload)
+      ipcRenderer.on("chat.readiness", listener)
+      return () => ipcRenderer.off("chat.readiness", listener)
+    }
+  },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),
     saveSecret: (input: unknown) => ipcRenderer.invoke("settings.saveSecret", input),

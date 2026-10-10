@@ -31,10 +31,10 @@ function getStamper(sessionId: string) {
   return created
 }
 
-/** 没有窗口时仍写入回放缓冲，供 Observability / workflow 恢复。 */
-export function stampAndBroadcast(event: StreamEvent, sessionId: string): StreamEvent {
+/** 没有窗口时仍写入回放缓冲，供 Observability / workflow 恢复。丢掉时返回 null，不要假装已发出。 */
+export function stampAndBroadcast(event: StreamEvent, sessionId: string): StreamEvent | null {
   const accepted = acceptStreamEvent(event)
-  if (!accepted) return event
+  if (!accepted) return null
   const window = BrowserWindow.getAllWindows().find((item) => !item.isDestroyed())
   if (window) return stampAndSend(window, accepted, sessionId)
   const stamper = getStamper(sessionId)
@@ -43,9 +43,9 @@ export function stampAndBroadcast(event: StreamEvent, sessionId: string): Stream
   return stamped
 }
 
-export function stampAndSend(window: BrowserWindow, event: StreamEvent, sessionId: string): StreamEvent {
+export function stampAndSend(window: BrowserWindow, event: StreamEvent, sessionId: string): StreamEvent | null {
   const accepted = acceptStreamEvent(event)
-  if (!accepted) return event
+  if (!accepted) return null
   const stamper = getStamper(sessionId)
   const stamped = stamper({ ...accepted, sessionId: accepted.sessionId ?? sessionId })
   replayBuffer.push(stamped)

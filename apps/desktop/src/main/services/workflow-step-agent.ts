@@ -5,6 +5,8 @@
 import { BrowserWindow } from "electron"
 import { getRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { BACKGROUND_AGENT_TRUST } from "./agent-run-trust"
 import { runAgent } from "./agent-run-start"
 import { waitForRunSettle } from "./agent-run-state"
 import { getDatabase } from "./database"
@@ -44,17 +46,19 @@ export async function runWorkflowAgentStep(input: {
       modelId: profile.modelId,
       persistUser: false,
       messages: [{ role: "user", content: prompt }]
-    })
+    }),
+    BACKGROUND_AGENT_TRUST
   )
-  input.onChildRun?.(started.runId)
+  const runId = requireAgentRunId(started)
+  input.onChildRun?.(runId)
   const poll = input.onChildStatus
     ? setInterval(() => {
-        const row = getRun(getDatabase(), started.runId)
+        const row = getRun(getDatabase(), runId)
         if (row) input.onChildStatus?.(row.status)
       }, CHILD_STATUS_POLL_MS)
     : undefined
   try {
-    const settle = await waitForRunSettle(started.runId)
+    const settle = await waitForRunSettle(runId)
     if (settle.status === "error") {
       throw new Error(settle.summary || `${input.label} failed.`)
     }

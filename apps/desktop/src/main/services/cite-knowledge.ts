@@ -27,7 +27,7 @@ export async function citeKnowledge(options: {
         startLine: hit.startLine,
         endLine: hit.endLine,
         snippet: hit.snippet,
-        score: hit.score
+        ...(Number.isFinite(hit.score) ? { score: hit.score } : {})
       },
       options.sessionId
     )

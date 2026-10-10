@@ -1,6 +1,10 @@
 /**
  * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
+import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
+
+export { NO_CHAT_ROUTE }
+
 export type ThreadErrorKind =
   | "credit"
   | "rate_limit"
@@ -8,6 +12,8 @@ export type ThreadErrorKind =
   | "authorizing"
   | "login_failed"
   | "needs_key"
+  | "needs_model"
+  | "no_chat_route"
   | "inspecting"
   | "outdated"
   | "remote_cli_missing"
@@ -18,6 +24,7 @@ export type ThreadErrorKind =
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
+export const NEED_MODEL = "NEED_MODEL"
 export const NEED_CLI_LOGIN = "NEED_CLI_LOGIN"
 export const NEED_CLI_INSPECTING = "NEED_CLI_INSPECTING"
 export const NEED_CLI_AUTHORIZING = "NEED_CLI_AUTHORIZING"
@@ -60,6 +67,10 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     return "send_restore"
   }
   if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
+  if (message === NO_CHAT_ROUTE || message.includes(NO_CHAT_ROUTE)) return "no_chat_route"
+  if (message === NEED_MODEL || lower.includes("choose a model") || message.includes("先选一个模型")) {
+    return "needs_model"
+  }
   if (
     message === NEED_PROVIDER_KEY ||
     lower.includes("add a provider api key") ||

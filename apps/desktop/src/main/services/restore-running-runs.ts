@@ -117,7 +117,7 @@ async function holdAndPump(
     messages: extras.modelMessages as ModelMessage[]
   })
   hydrateActiveRunUsage(row.id)
-  emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId })
+  emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId, kind: "agent" })
   void prepareAndPump(row.id)
   return true
 }

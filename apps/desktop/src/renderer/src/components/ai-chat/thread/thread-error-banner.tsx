@@ -26,6 +26,8 @@ import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-l
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
+import { ThreadNeedModelNotice } from "./thread-need-model-notice"
+import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
 
 const REMOTE_INSTALL_MAP: Record<string, string> = {
   deepseek: "npm i -g @deepseek-ai/dsh",
@@ -51,6 +53,12 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
   const [copiedInstall, setCopiedInstall] = useState(false)
+  if (kind === "no_chat_route") {
+    return <ThreadNoChatRouteNotice onDismiss={() => setError(null)} className={className} />
+  }
+  if (kind === "needs_model") {
+    return <ThreadNeedModelNotice onDismiss={() => setError(null)} className={className} />
+  }
   if (kind === "credit") {
     return <QuotaExhaustedCard error={error} id="thread-error-banner" />
   }
