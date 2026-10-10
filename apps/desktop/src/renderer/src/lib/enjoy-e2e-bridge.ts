@@ -13,6 +13,8 @@ export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
   getChatReadiness: () => ChatReadiness | undefined
   setError: (message: string | null) => void
+  /** 本会话已选引擎但清空模型，模拟 NEED_MODEL；绑定后 defaultRoute 不得回填。 */
+  clearSelectedModel: () => void
   replayGuide: () => void
   resumeGuide: () => void
   hideGuide: () => void
@@ -37,6 +39,14 @@ export function installEnjoyE2eBridge(): void {
     },
     setError(message) {
       useChatStore.getState().setError(message)
+    },
+    clearSelectedModel() {
+      const store = useChatStore.getState()
+      const sessionId = store.sessionId
+      if (sessionId) {
+        store.setSessionRuntimes({ ...store.sessionRuntimes, [sessionId]: store.runtimeId })
+      }
+      store.setModel("", "")
     },
     replayGuide: replaySetupGuide,
     resumeGuide: resumeSetupGuide,

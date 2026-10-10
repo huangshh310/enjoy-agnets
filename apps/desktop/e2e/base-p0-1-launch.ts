@@ -4,6 +4,7 @@
 import { existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { expect } from "@playwright/test"
 import type { ElectronApplication, Page } from "playwright"
 
 export const MAIN_ENTRY = join(process.cwd(), "out/main/index.js")
@@ -60,4 +61,50 @@ export async function openConnectModelStep(window: Page): Promise<void> {
   await window.getByRole("heading", { name: "安装本机引擎" }).waitFor({ timeout: 8_000 })
   await clickGuidePrimary(window)
   await window.getByTestId("setup-guide-connect-model").waitFor({ timeout: 8_000 })
+}
+
+export async function skipGuideIfOpen(window: Page): Promise<void> {
+  const skip = window.getByRole("button", { name: "跳过设置" })
+  if ((await skip.count()) > 0) await skip.click()
+}
+
+export async function hideOverlays(window: Page): Promise<void> {
+  await window.evaluate(() => {
+    window.__enjoyE2e?.hideGuide()
+    window.__enjoyE2e?.hideCreateProject()
+  })
+}
+
+/** 已有项目重开向导，走到「可以开始了」并关掉。 */
+export async function walkConnectedWizardThenStart(window: Page): Promise<void> {
+  await window.evaluate(() => {
+    window.__enjoyE2e?.replayGuide()
+  })
+  await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 12_000 })
+  await clickGuidePrimary(window)
+  await window.getByRole("heading", { name: "Enjoy 能做什么" }).waitFor({ timeout: 8_000 })
+  await clickGuidePrimary(window)
+  await window.getByRole("heading", { name: "安装本机引擎" }).waitFor({ timeout: 8_000 })
+  await clickGuidePrimary(window)
+  await window.getByTestId("setup-guide-connect-model").waitFor({ timeout: 8_000 })
+  await clickGuidePrimary(window)
+  await window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
+  await clickGuidePrimary(window)
+  await window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
+  await clickGuidePrimary(window)
+  await window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
+  await clickGuidePrimary(window)
+  await window.getByRole("dialog").waitFor({ state: "hidden", timeout: 8_000 }).catch(() => undefined)
+}
+
+export async function sendHelloAndExpectReply(window: Page): Promise<void> {
+  const composer = window.locator('[data-testid="composer-input"]')
+  await composer.click()
+  await window.keyboard.type("hello")
+  await window.keyboard.press("Enter")
+  const thread = window.getByTestId("chat-conversation")
+  await expect(thread.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
+  await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
+  await expect(window.locator('[data-testid="thread-need-model-notice"]')).toHaveCount(0)
+  await expect(thread.getByText(/stub-ok/)).toBeVisible({ timeout: 15_000 })
 }

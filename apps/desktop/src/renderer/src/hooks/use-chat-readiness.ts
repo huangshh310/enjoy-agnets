@@ -8,6 +8,7 @@ import { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide.ts"
 import { consumeAdoptedHint, notifyAdoptedDefaultRoute } from "./adopted-default-route-toast.ts"
 import { applyDefaultChatRoute } from "./apply-default-chat-route.ts"
+import { notifyAdoptedDefaultRoute } from "./adopted-route-toast.ts"
 import { rememberChatReadiness } from "./chat-readiness-cache.ts"
 
 export const CHAT_READINESS_QUERY_KEY = ["chat-readiness"] as const

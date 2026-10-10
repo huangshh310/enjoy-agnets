@@ -43,7 +43,12 @@ test("开发者文案白名单短且都在词表里", () => {
 
 test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
   const z = zh as {
-    chat: Record<string, string> & { noProjectEmpty: string; noChatRouteNotice: string }
+    chat: Record<string, string> & {
+      noProjectEmpty: string
+      noChatRouteNotice: string
+      needModelTitle: string
+      adoptedDefaultRouteToast: string
+    }
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
@@ -100,6 +105,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
   assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")
   assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
+  assert.equal(z.chat.needModelTitle, "先选一个模型")
+  assert.equal(z.chat.adoptedDefaultRouteToast, "已默认用 {name} 对话")
   assert.equal(z.chat.goConnect, "去连接")
   assert.equal(z.settings.setupGuide.connectLocalUnverified, "未验证")
   assert.equal(z.settings.setupGuide.connectLocalUnverifiedWhy, "这是远端地址，还没确认能连上，所以现在不能用来对话。")

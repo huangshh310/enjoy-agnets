@@ -4,12 +4,14 @@
 import { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test } from "@playwright/test"
 import {
   canLaunchElectron,
   clickGuidePrimary,
+  hideOverlays,
   launchEnjoy,
   openConnectModelStep,
+  skipGuideIfOpen,
   snap
 } from "./base-p0-1-launch"
 
@@ -195,10 +197,7 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
   })
   try {
     await skipGuideIfOpen(window)
-    await window.evaluate(() => {
-      window.__enjoyE2e?.hideGuide()
-      window.__enjoyE2e?.hideCreateProject()
-    })
+    await hideOverlays(window)
     await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
     await expect(window.getByTestId("no-project-empty")).toHaveCount(0)
     await expect(window.getByText("打开工作区", { exact: true })).toHaveCount(0)
@@ -242,82 +241,3 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
     await app.close()
   }
 })
-
-test("S1-2 有密钥和项目后能发 hello 并收到回复", async () => {
-  test.setTimeout(180_000)
-  const blocked = canLaunchElectron()
-  test.skip(Boolean(blocked), blocked ?? "")
-  // 有项目才种密钥；有项目向导会免。走密钥夹具 + 跳过向导才是真实发送路径。
-  const workspace = mkdtempSync(join(tmpdir(), "enjoy-p01-hello-"))
-  const { app, window } = await launchEnjoy({
-    ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_WORKSPACE: workspace,
-    ENJOY_E2E_SKIP_PROFILE: "1",
-    ENJOY_E2E_CHAT_READY: "key"
-  })
-  try {
-    await skipGuideIfOpen(window)
-    await window.evaluate(() => {
-      window.__enjoyE2e?.hideGuide()
-    })
-    await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
-    const readiness = await window.evaluate(() => window.__enjoyE2e?.getChatReadiness?.() ?? null)
-    console.log("CHAT_READY=key readiness", JSON.stringify(readiness))
-    const chip = window.getByTestId("composer-engine-chip")
-    if ((await chip.count()) > 0) {
-      console.log("CHAT_READY=key chip", await chip.innerText())
-      await snap(window, "s1-2-key-chip")
-    }
-    const composer = window.locator('[data-testid="composer-input"]')
-    await composer.click()
-    await window.keyboard.type("hello")
-    await window.keyboard.press("Enter")
-    const thread = window.getByTestId("chat-conversation")
-    await expect(thread.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
-    await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
-    await thread.getByText(/stub-ok/).waitFor({ timeout: 8_000 }).catch(() => undefined)
-    await snap(window, "s1-2-send-hello")
-  } finally {
-    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 5_000))])
-  }
-})
-
-test("S1-2 引擎夹具发 hello 不出现中性条", async () => {
-  test.setTimeout(180_000)
-  const blocked = canLaunchElectron()
-  test.skip(Boolean(blocked), blocked ?? "")
-  const workspace = mkdtempSync(join(tmpdir(), "enjoy-p01-engine-"))
-  const { app, window } = await launchEnjoy({
-    ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_WORKSPACE: workspace,
-    ENJOY_E2E_SKIP_PROFILE: "1",
-    ENJOY_E2E_CHAT_READY: "engine"
-  })
-  try {
-    await skipGuideIfOpen(window)
-    await window.evaluate(() => {
-      window.__enjoyE2e?.hideGuide()
-    })
-    await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
-    const chip = window.getByTestId("composer-engine-chip")
-    if ((await chip.count()) > 0) await snap(window, "s1-2-engine-chip")
-    const readiness = await window.evaluate(() => window.__enjoyE2e?.getChatReadiness?.() ?? null)
-    console.log("CHAT_READY=engine readiness", JSON.stringify(readiness))
-    if ((await chip.count()) > 0) console.log("CHAT_READY=engine chip", await chip.innerText())
-    const composer = window.locator('[data-testid="composer-input"]')
-    await composer.click()
-    await window.keyboard.type("hello")
-    await window.keyboard.press("Enter")
-    const thread = window.getByTestId("chat-conversation")
-    await expect(thread.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
-    await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
-    await snap(window, "s1-2-engine-send-hello")
-  } finally {
-    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 5_000))])
-  }
-})
-
-async function skipGuideIfOpen(window: Page): Promise<void> {
-  const skip = window.getByRole("button", { name: "跳过设置" })
-  if ((await skip.count()) > 0) await skip.click()
-}
