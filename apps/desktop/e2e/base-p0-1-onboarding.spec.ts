@@ -12,7 +12,6 @@ import {
   openConnectModelStep,
   snap
 } from "./base-p0-1-launch"
-import { sendComposer } from "./send-composer"
 
 test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => {
   test.setTimeout(180_000)
@@ -47,10 +46,7 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     await snap(window, "s1-3-ready-need")
 
     await window.getByRole("button", { name: "先逛逛" }).click()
-    await window.evaluate(() => {
-      window.__enjoyE2e?.hideGuide()
-    })
-    await expect(window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
+    await expect(window.getByRole("dialog")).toHaveCount(0, { timeout: 8_000 })
     await window.getByTestId("no-project-empty").waitFor({ timeout: 8_000 })
     await expect(window.getByTestId("no-project-empty")).toContainText("选一个文件夹开始")
     const pickFolder = window.getByTestId("no-project-select-folder")
@@ -273,7 +269,9 @@ test("S1-2 有密钥和项目后能发 hello 并收到回复", async () => {
       await snap(window, "s1-2-key-chip")
     }
     const composer = window.locator('[data-testid="composer-input"]')
-    await sendComposer(window, composer, "hello")
+    await composer.click()
+    await window.keyboard.type("hello")
+    await window.keyboard.press("Enter")
     await expect(window.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
     await expect(window.locator("[data-thread-message]").filter({ hasText: /.+/ })).toHaveCount(2, {
@@ -281,7 +279,7 @@ test("S1-2 有密钥和项目后能发 hello 并收到回复", async () => {
     })
     await snap(window, "s1-2-send-hello")
   } finally {
-    await app.close().catch(() => undefined)
+    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 5_000))])
   }
 })
 
