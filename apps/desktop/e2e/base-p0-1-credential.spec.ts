@@ -47,7 +47,7 @@ async function openProviders(window: Page): Promise<void> {
   })
   const list = window.getByTestId("providers-configured-list")
   await list.waitFor({ timeout: 12_000 })
-  await list.getByText("E2E Stub Key").waitFor({ timeout: 8_000 })
+  await list.getByText("E2E Stub Key", { exact: true }).waitFor({ timeout: 8_000 })
 }
 
 function listStatus(window: Page) {
