@@ -21,6 +21,16 @@ export function markDefaultChatRouteExplicit(): void {
   setSetting(DEFAULT_CHAT_ROUTE_EXPLICIT_KEY, "1")
 }
 
+/** 先写密钥；成功后才盖显式旗。失败不回滚，旗也不得提前落下。 */
+export async function persistDefaultModelAfterSecret(
+  modelId: string,
+  writeSecret: () => Promise<void>
+): Promise<void> {
+  await writeSecret()
+  markDefaultChatRouteExplicit()
+  setSetting("defaultModelId", modelId)
+}
+
 export function adoptedDefaultRouteAt(): string | undefined {
   return getSetting(ADOPTED_DEFAULT_ROUTE_AT_KEY)
 }
