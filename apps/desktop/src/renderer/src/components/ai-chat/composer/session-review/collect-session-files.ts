@@ -46,6 +46,8 @@ export type ReviewFilePick = {
   files: SessionReviewFile[]
   /** 来自本轮写盘时才默认展开；工作区脏文件只出一行 pill。 */
   fromLastTurn: boolean
+  /** git 仓求交为空、回落本轮 path：文件可能已提交/还原，文案加「本轮写过」。 */
+  wroteThisTurnOnly?: boolean
 }
 
 /**
@@ -65,7 +67,11 @@ export function describeReviewFiles(
   }
   const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
   if (dirty.length > 0) return { files: dirty, fromLastTurn: true }
-  return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
+  return {
+    files: collectSessionFiles(lastTurnPaths, changes),
+    fromLastTurn: true,
+    wroteThisTurnOnly: true
+  }
 }
 
 export function pickReviewFiles(

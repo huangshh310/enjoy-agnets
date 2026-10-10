@@ -95,6 +95,7 @@ const ide = {
     steer: (input: unknown) => ipcRenderer.invoke("agent.steer", input),
     decide: (decision: unknown) => ipcRenderer.invoke("agent.decide", decision),
     inspectPrompt: (input: unknown) => ipcRenderer.invoke("agent.inspectPrompt", input),
+    sessionActive: (input: unknown) => ipcRenderer.invoke("agent.sessionActive", input),
     onEvent: (callback: (event: unknown) => void) => {
       const listener = (_event: unknown, payload: unknown) => callback(payload);
       ipcRenderer.on("agent.event", listener);

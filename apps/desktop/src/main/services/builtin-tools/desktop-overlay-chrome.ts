@@ -6,7 +6,7 @@ import { app } from "electron"
 import { desktopOverlayOnce } from "./desktop-overlay-once"
 import { bindOverlayEscape, unbindOverlayEscape } from "./desktop-overlay-esc"
 import { currentToolRunId } from "../active-run-id"
-import { currentPumpingRunId, listActiveRuns } from "../agent-run-state"
+import { currentPumpingRunId, getActiveRun, listActiveRuns } from "../agent-run-state"
 import { readPreferences } from "../preferences"
 import { getBuiltinToolsState } from "./builtin-tools-state"
 import { overlayChromeCopy, shouldShowDesktopOverlay } from "./desktop-overlay-visibility"
@@ -74,8 +74,13 @@ export function beginDesktopActOverlay(input: { action: string; appName?: string
   paintOverlay(input.appName ?? "")
 }
 
-/** 结束 / 失败 / 二次确认停卡：立刻熄，不画成功条。 */
-export function endDesktopActOverlay(): void {
+/** 结束 / 失败 / 二次确认停卡：立刻熄，不画成功条。可按 session/run 限定。 */
+export function endDesktopActOverlay(scope?: { runId?: string; sessionId?: string }): void {
+  if (scope?.runId && controllingRunId && scope.runId !== controllingRunId) return
+  if (scope?.sessionId && controllingRunId) {
+    const owner = getActiveRun(controllingRunId)
+    if (owner && owner.input.sessionId !== scope.sessionId) return
+  }
   if (!overlayOn && !previewOnly) {
     unbindOverlayEscape()
     return

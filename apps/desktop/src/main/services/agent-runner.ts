@@ -20,7 +20,7 @@ export async function abortAgent(rawInput: unknown) {
   await cancelCodingStream(runId)
   const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
   const { cancelInFlightDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
-  endDesktopActOverlay()
+  endDesktopActOverlay({ runId, sessionId: run?.input.sessionId })
   cancelInFlightDesktopAct({
     runId,
     sessionId: run?.input.sessionId

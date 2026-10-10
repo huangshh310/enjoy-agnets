@@ -24,6 +24,7 @@ import { openSourcesSheet } from "@renderer/stores/sources-sheet/sources-sheet-s
 import type { TurnSourceChip } from "../../thread/sources/source-chip"
 import { reviewBannerPeek } from "../session-review/review-banner-peek"
 import type { SessionReviewFile } from "../session-review/session-review.types"
+import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 
 export function ComposerLiveChanges() {
   const t = useT()
@@ -31,6 +32,7 @@ export function ComposerLiveChanges() {
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const error = useChatStore((state) => state.error)
+  const notice = useChatStore((state) => state.notice)
   const sessionId = useChatStore((state) => state.sessionId)
   const model = useSessionReviewModel()
   const preview = useOpenSessionPreview()
@@ -48,9 +50,16 @@ export function ComposerLiveChanges() {
   const files = model.files
   const additions = files.reduce((sum, file) => sum + file.additions, 0)
   const deletions = files.reduce((sum, file) => sum + file.deletions, 0)
+  const stopped =
+    !running &&
+    (classifyThreadError(notice ?? "") === "stopped" || classifyThreadError(error ?? "") === "stopped")
   const peek = reviewBannerPeek(
     files,
-    { stopped: Boolean(error) && !running, placeholder: showGate },
+    {
+      stopped,
+      placeholder: showGate,
+      wroteThisTurnOnly: model.pick.wroteThisTurnOnly
+    },
     t
   )
   const chips = chipsFromLastAssistant(lastAssistantTurn(messages), (name) =>

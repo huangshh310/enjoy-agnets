@@ -31,7 +31,7 @@ async function cancelLiveStreamBestEffort(runId: string, sessionId: string): Pro
   try {
     const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
     const { cancelInFlightDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
-    endDesktopActOverlay()
+    endDesktopActOverlay({ runId, sessionId })
     cancelInFlightDesktopAct({ runId, sessionId })
   } catch {
     // overlay 未装

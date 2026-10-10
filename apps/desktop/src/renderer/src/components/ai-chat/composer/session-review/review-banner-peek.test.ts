@@ -19,6 +19,8 @@ const t = (key: string, vars?: Record<string, string | number>) => {
   if (key === "chat.sessionReviewCommandPlaceholder") {
     return "这一轮运行了命令，可能改了文件，请到「审查」里核对。"
   }
+  if (key === "chat.sessionReviewWroteThisTurn") return `本轮写过 ${vars?.n} 个文件 · ${vars?.name}`
+  if (key === "chat.sessionReviewWroteThisTurnMany") return `本轮写过 ${vars?.n} 个文件`
   return key
 }
 
@@ -37,5 +39,12 @@ test("真的没有 path 才用占位句", () => {
   assert.equal(
     reviewBannerPeek([], { placeholder: true }, t),
     "这一轮运行了命令，可能改了文件，请到「审查」里核对。"
+  )
+})
+
+test("git 仓已提交/还原：回落本轮 path 加「本轮写过」", () => {
+  assert.equal(
+    reviewBannerPeek([file("e2e-stub.txt")], { wroteThisTurnOnly: true }, t),
+    "本轮写过 1 个文件 · e2e-stub.txt"
   )
 })

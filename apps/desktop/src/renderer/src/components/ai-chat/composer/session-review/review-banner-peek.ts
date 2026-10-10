@@ -7,11 +7,18 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export function reviewBannerPeek(
   files: SessionReviewFile[],
-  opts: { stopped?: boolean; placeholder?: boolean },
+  opts: { stopped?: boolean; placeholder?: boolean; wroteThisTurnOnly?: boolean },
   t: Translate
 ): string {
   if (files.length > 0 && opts.stopped) {
     return t("chat.sessionReviewStopped", { n: files.length })
+  }
+  if (files.length > 0 && opts.wroteThisTurnOnly) {
+    if (files.length === 1) {
+      const name = files[0]?.name ?? files[0]?.path ?? ""
+      return t("chat.sessionReviewWroteThisTurn", { n: 1, name })
+    }
+    return t("chat.sessionReviewWroteThisTurnMany", { n: files.length })
   }
   if (files.length === 1) {
     const name = files[0]?.name ?? files[0]?.path ?? ""

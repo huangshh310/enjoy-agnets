@@ -37,7 +37,7 @@ async function disposeFailedStream(runId: string, run: ActiveRun): Promise<void>
     }
     await disposeCodingStream(runId)
     const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
-    endDesktopActOverlay()
+    endDesktopActOverlay({ runId, sessionId: run.input.sessionId })
   } catch {
     // 流或 overlay 已拆：failed / run.error / settle 已经落下。
   }

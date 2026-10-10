@@ -17,15 +17,10 @@ export function applySessionHydrate(input: {
   sessionRunning?: boolean
 }): boolean {
   const latest = useChatStore.getState()
-  const parkedRunning =
+  const sessionOwnRunning =
     input.sessionRunning === true ||
     useAttentionStore.getState().parks[input.sessionId]?.running === true
-  const running = hydrateSessionRunning({
-    sessionId: input.sessionId,
-    storeSessionId: latest.sessionId,
-    storeRunning: latest.running,
-    parkedRunning
-  })
+  const running = hydrateSessionRunning({ sessionOwnRunning })
   const ok = applyFinishedHydrate(
     {
       generation: input.generation,
