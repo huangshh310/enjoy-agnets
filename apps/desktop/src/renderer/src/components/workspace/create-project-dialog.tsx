@@ -19,6 +19,7 @@ import { folderNameFromPath, nextProjectName } from "@renderer/components/worksp
 import type { RemoteConnectInput } from "@renderer/components/workspace/remote-connect.types"
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
+import { secretWriteErrorMessage, unwrapSecretWrite } from "@renderer/lib/secret-write"
 
 export function CreateProjectDialog({
   open,
@@ -96,19 +97,19 @@ export function CreateProjectDialog({
     setLoading(true)
     setError(null)
     try {
-      const workspace = (await getIde().workspace.openSsh(input)) as {
+      const workspace = unwrapSecretWrite<{
         id: string
         name: string
         rootPath: string
         kind?: "local" | "ssh"
-      }
+      }>(await getIde().workspace.openSsh(input))
       await loadWorkspace({ ...workspace, kind: "ssh" })
       await createAndOpenSession(workspace.id, t("pages.workspaces.createProject.defaultSessionName"))
       await refreshAllWorkspaces()
       onOpenChange(false)
       resetState()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("pages.workspaces.createProject.createFailed"))
+      setError(secretWriteErrorMessage(err, t))
     } finally {
       setLoading(false)
     }

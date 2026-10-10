@@ -3,6 +3,7 @@
  */
 import { safeStorage } from "electron"
 import { isE2eStub } from "./e2e-stub.ts"
+import { SecretWriteFailure, isE2eKeychainUnavailable, isSecretStorageAvailable } from "./secret-storage.ts"
 import {
   getSecretValue,
   setSecretValue,
@@ -180,11 +181,14 @@ function readVaultBlob(): string | undefined {
 const E2E_PLAIN_PREFIX = "e2e-plain:"
 
 function encryptJson(value: unknown): string {
+  if (isE2eKeychainUnavailable()) {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
+  }
   if (isE2eStub() && !safeStorage.isEncryptionAvailable()) {
     return E2E_PLAIN_PREFIX + JSON.stringify(value)
   }
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error("OS keychain encryption is not available on this machine.")
+  if (!isSecretStorageAvailable()) {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   return safeStorage.encryptString(JSON.stringify(value)).toString("base64")
 }

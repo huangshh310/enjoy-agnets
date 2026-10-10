@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（合入 main #125–#127；014/015 列守卫仍幂等；UNIQUE 建失败不卡启动）
+> 进程边界与安全基线。最后更新：2026-10-10（写密钥 IPC 回 `{ok:false,code:KEYCHAIN_UNAVAILABLE}`；Linux `basic_text` 当不可用；禁止明文回落）
 
 ## 当前真相
 
@@ -71,7 +71,7 @@ Main Process（可信）
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
 - 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014 / #118）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`。015（#119）：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。014 / 015 的 ADD 都有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上审批 SDK 列（含 `sdk_approval_id` 与 UNIQUE 索引）和 `cost_missing`，不必重建库。向量存在 SQLite，检索在本机。
-- 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。
+- 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。写密钥 IPC（`settings.upsertProvider` / `saveSecret` / `setHarness`、`agentTools.upsertCustom`、`workspace.openSsh` / `sshHosts.upsert` 以及会重加密 vault 的档案改写）成功回 `{ ok:true, ... }`，钥匙串不可用回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`（`SecretWriteErrorCode`），**不要 throw 原文**。`safeStorage.isEncryptionAvailable()` 为假，或 Linux 后端是 `basic_text`，都算不可用；**禁止明文回落**。快照字段 `secretStorageAvailable`（`.catch(true)`）给渲染进程先警告。开发夹具 `ENJOY_E2E_STUB=1` + 未打包 + `ENJOY_E2E_KEYCHAIN=unavailable` 模拟挂掉；未打包 stub 默认仍走明文夹具，只为窗口 E2E。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
 - 本机 CLI 账号探测：main 可读 Cursor IDE `state.vscdb` 的 `cursorAuth/accessToken`、Grok `~/.grok/auth.json` 的 `key`，只用于打官方账单接口。token / key **不**进 IPC、**不**进 renderer、**不**写回文件。
@@ -100,12 +100,31 @@ Main Process（可信）
 
 - 窗口与生命周期：`apps/desktop/src/main/index.ts`。`requestSingleInstanceLock` 在 `whenReady` 之前；失败者 `app.exit(0)`，不启动 automations 调度 / 回看 / 补跑，退出钩子不碰共享库。`second-instance` 聚焦已有窗，未 ready 不新建（macOS Dock 仍走 `activate`）。
 - IPC 注册：`apps/desktop/src/main/ipc.ts`（胶水）+ `ipc-session.ts` / `ipc-shell.ts` / `ipc-settings.ts` / `ipc-ai.ts`
-- 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`
+- 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`；可用性：`secret-storage.ts`；写回包：`packages/ipc-contract/src/secret-write.ts`
 - preload：`apps/desktop/src/preload/index.ts`
 - 跨平台 PATH / spawn：`packages/agent-harness/src/agent-tools/detect/probe.ts`（`pathDirs` / `lookupOnPath` / `spawnPathCommand`）
 - Computer Use 执行器：`apps/desktop/native/computer-use/`，main 经 `executor-command.ts` 查找；打包进 `resources/bin/<platform>-<arch>/`。darwin helper 在有 `CSC_NAME` / `CU_CODESIGN_IDENTITY` 时由 `stage-computer-use.cjs` codesign；`desktop_doctor` 验即将 spawn 的路径与签名，未签名不得报绿。执行器可点其它应用，必须由用户打开设置开关并审批 `desktop_act`。辅助功能授给 **Enjoy Computer Use helper**，不是 renderer，也不是只授给 Electron 宿主。
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
 - 设计系统 lint：仓库根 `.oxlintrc.json`；命令 `pnpm lint`
+
+### Linux 开发：先解锁钥匙串再存密钥
+
+Electron 在 Linux 用 `gnome_libsecret` / KWallet。没有登录钥匙串、或后端掉到 `basic_text` 时，Enjoy **不会**改用明文。本机开发先开一个带会话总线的钥匙串，再跑 dev：
+
+```bash
+# 需要：libsecret / gnome-keyring（Debian/Ubuntu: gnome-keyring libsecret-tools）
+# 用你的登录钥匙串密码替换 KEYRING_PASSWORD。不要把密码写进仓库。
+export KEYRING_PASSWORD='your-login-keyring-password'
+dbus-run-session -- bash -c '
+  eval "$(gnome-keyring-daemon --start --components=secrets)"
+  printf "%s" "$KEYRING_PASSWORD" | gnome-keyring-daemon --unlock
+  pnpm --filter @enjoy-agents/desktop dev
+'
+```
+
+验过可用的标志：`safeStorage.isEncryptionAvailable()` 为 true，且 `safeStorage.getSelectedStorageBackend()` **不是** `basic_text`（常见是 `gnome_libsecret`）。只跑 `echo -n pw | gnome-keyring-daemon --unlock --components=secrets`、前面没有 `--start`，在干净会话里经常解不开。KDE 用 KWallet（`kwallet5` / `kwallet6`），同样禁止 `basic_text`。
+
+CI / 无桌面会话：不要指望能写入真实钥匙串；窗口 E2E 继续走 `ENJOY_E2E_STUB=1` 明文夹具，或显式 `ENJOY_E2E_KEYCHAIN=unavailable` 验错误文案。
 
 ## 已知坑
 
@@ -127,6 +146,7 @@ Main Process（可信）
 - 右栏浏览器用 `<webview>`，窗口必须 `webviewTag: true`。guest 走 `partition persist:enjoy-preview`，禁止 nodeIntegration。main `will-attach-webview` 强制这些偏好、剥掉 guest preload，且只放行 http(s) `src`。只加载 `parseHttpUrl` 通过的 http(s)。Windows 上 webview 是独立 HWND，父级 CSS 圆角可能切不掉。
 - 技能来源：renderer 不读 `~/.enjoy-agents/skill-sources/` JSON。git clone / pull 只在 main，且 `shell: false`。部署目的地仅 `customize-roots` 白名单（`globalSkillRoots` ∪ 已登记工作区 `workspaceSkillRoots`）。SSH / `git@` / `clawhub:` 一律 `UNSUPPORTED_SOURCE`，不要半套协议。
 - `path-safe` / Customize 白名单单测不能在 Linux 上用 `C:/...`：POSIX 下不是绝对路径，`join`/`resolve` 会拼进 runner cwd。POSIX 用 `/proj/...`，Windows 用盘符。工作区显示名回退最后一段时要同时切 `/` 与 `\`。
+- **隐患**：Linux 没开系统钥匙串时，`settings.upsertProvider` 曾 throw `OS keychain encryption is not available…`，渲染进程不接，用户卡在对话框。正确做法：写密钥 IPC 回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`；快照带 `secretStorageAvailable`；Linux `basic_text` 当不可用；**禁止明文回落**。开发解锁命令见上方「Linux 开发」。
 - **隐患**：MCP stdio / 自定义 ACP / 供应商 `customHeaders` 曾把明文密钥经 IPC 回 renderer。正确做法：`toPublic` 只回键的占位；编辑态空值保留已存；连接与开流仍只在 main 读明文。MCP spawn 必须剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`。
 - **隐患**：在 macOS 终端里 `spawn("npm")` 能跑，Windows Electron 里 `npm.cmd` 无 `shell` 会直接失败；Linux 没有 `/opt/homebrew`。正确做法：PATH 用 `lookupOnPath` / `pathDirs()`（补 linuxbrew、nodejs、Roaming npm、`~/.grok/bin`、`~/.factory/bin`）；安装与探最新版走 `spawnPathCommand`；MCP stdio 同款 Windows `.cmd` / `.bat` 才 `shell: true`；brew 配方在 Windows 降为 copy。
 - CLI 用量探测会读本机已登录会话（Cursor `state.vscdb`、Grok `auth.json` 的 `key`）。这些密钥只在 main 内存里用一次打官方 HTTPS，禁止写进 `InspectAgentToolResult` 或 vault。Dashboard / billing 失败就空条 + `—`，不要回落 CLI `about`/`status` 里的猜数字段。

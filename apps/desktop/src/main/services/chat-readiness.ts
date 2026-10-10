@@ -12,6 +12,7 @@ import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./def
 import { e2eChatReadiness } from "./e2e-chat-readiness"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { isE2eStub } from "./e2e-stub"
+import { isSecretStorageAvailable } from "./secret-storage.ts"
 import { hasSecret, listPublicProviders } from "./secrets"
 
 export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
@@ -72,8 +73,9 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
 function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): ChatReadiness {
   const withSecret =
     enjoySecret === undefined ? snapshot : { ...snapshot, hasEnjoySecret: enjoySecret }
-  const adopted = persistAdoptedDefaultRoute(withSecret)
-  return adopted.hint ? { ...withSecret, adoptedHint: adopted.hint } : withSecret
+  const withStorage = { ...withSecret, secretStorageAvailable: isSecretStorageAvailable() }
+  const adopted = persistAdoptedDefaultRoute(withStorage)
+  return adopted.hint ? { ...withStorage, adoptedHint: adopted.hint } : withStorage
 }
 
 function rememberSnapshot(snapshot: ChatReadiness): ChatReadiness {

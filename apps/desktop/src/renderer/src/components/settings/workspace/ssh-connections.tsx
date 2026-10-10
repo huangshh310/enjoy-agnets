@@ -21,6 +21,7 @@ import type { SshHostUpsertInput } from "@enjoy-agents/ipc-contract"
 import { SshHostFields } from "./ssh-host-fields"
 import { SshHostRow } from "./ssh-host-row"
 import { useSshConnections } from "./use-ssh-connections"
+import { SecretStorageWarning } from "../secret-storage-warning"
 
 export function SshConnections() {
   const model = useSshConnections()
@@ -134,6 +135,7 @@ export function SshConnections() {
             </button>
           </div>
 
+          <SecretStorageWarning />
           <SshHostFields value={model.draft} onChange={model.setDraft} />
 
           {/* 错误告警区 */}

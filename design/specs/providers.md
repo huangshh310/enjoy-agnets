@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 准备失败不进 unknown）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-10（写密钥回 KEYCHAIN_UNAVAILABLE；禁止明文回落）
 
 ## 当前真相
 
@@ -16,7 +16,7 @@
 
 `enabled` 是关闭但保留。关掉的档案不进选择器、不进 CLI 绑定。`activeId` 仍是新会话 Enjoy Local 的默认档案，和 `enabled` 是两件事。关掉当前默认档案时，`activeId` 改到下一张仍开启的档案。设置页「当前」只显示仍开启的默认档案；一张都没开就写「未在使用」，不把已关闭的名字当成当前。关掉的行主按钮是「开启」。页头模型数是收录，含已关闭档案，文案不是「此刻可选」。复制档案在主进程完成，Key 不进 renderer。
 
-密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
+密钥只存在主进程 vault（`safeStorage`）。钥匙串不可用时 `settings.upsertProvider` / `saveSecret` 回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`，不要 throw；Linux `basic_text` 当不可用，**禁止明文回落**。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
 
 旧档案没有 `endpoints` 时，`readVault` 做一次迁移：`endpoints[apiStyle] = baseURL`；URL 等于该预设同一区域的官方地址时才补兄弟端点，改过的中转地址不补。已保存的 MiniMax / 智谱 / 豆包 URL 不改去套餐主机。读档失败不当成空 vault 覆盖。
 

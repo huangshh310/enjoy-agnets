@@ -6,6 +6,7 @@ import type { ProviderPublic, SettingsSnapshot } from "@enjoy-agents/ipc-contrac
 import { isApiStyle, type ApiStyle } from "@enjoy-agents/providers/presets"
 import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import { getIde } from "@renderer/lib/ide"
+import { unwrapSettingsWrite } from "@renderer/lib/secret-write"
 import { applyDetectResults, catalogStyleOf, catalogUrlOf, detectUrlOf, mergeCatalog } from "./provider-editor-form"
 import {
   providerUpsertPayload,
@@ -21,7 +22,7 @@ export async function persistSnapshot(queryClient: QueryClient, snapshot: Settin
 export async function saveEditor(queryClient: QueryClient, editor: EditorState, activate: boolean) {
   await persistSnapshot(
     queryClient,
-    (await getIde().settings.upsertProvider(providerUpsertPayload(editor, activate))) as SettingsSnapshot
+    unwrapSettingsWrite(await getIde().settings.upsertProvider(providerUpsertPayload(editor, activate)))
   )
 }
 

@@ -8,6 +8,11 @@ export const zhSettings = {
   usageNumberRemaining: "剩余",
   detectAuto: "自动检测",
 
+  secrets: {
+    keychainUnavailable: "这台电脑现在没法安全保存密钥。请先解锁系统钥匙串，我们不会改用明文存储。",
+    keychainUnavailableHint: "Linux 需先解锁 GNOME Keyring 或 KWallet。开发命令见 architecture spec。"
+  },
+
   general: {
     title: "基本信息",
     hubTitle: "应用默认设置",

@@ -10,6 +10,8 @@ import { useT } from "@renderer/i18n"
 import type { CustomAgentRecord, UpsertCustomAgentInput } from "@enjoy-agents/ipc-contract"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
 import { mapCustomAgentFormError } from "./map-custom-agent-error"
+import { SecretStorageWarning } from "../secret-storage-warning"
+import { secretWriteErrorMessage, unwrapSecretWrite } from "@renderer/lib/secret-write"
 
 export type CustomAgentDraft = {
   id?: string
@@ -55,6 +57,7 @@ export function CustomAcpAgentForm({
         void submitCustomAgent(draft, setBusy, setError, onSaved, t)
       }}
     >
+      <SecretStorageWarning />
       <p className="text-caption-2-medium text-text-tertiary">{t("settings.registry.customBasenamePolicy")}</p>
       <Field label={t("settings.registry.customLabel")}>
         <Input
@@ -232,10 +235,10 @@ async function submitCustomAgent(
   setBusy(true)
   setError(null)
   try {
-    await getIde().agentTools.upsertCustom(toInput(draft))
+    unwrapSecretWrite(await getIde().agentTools.upsertCustom(toInput(draft)))
     onSaved()
   } catch (error) {
-    const raw = error instanceof Error ? error.message : String(error)
+    const raw = secretWriteErrorMessage(error, t)
     setError(mapCustomAgentFormError(raw, t, draft.command))
   } finally {
     setBusy(false)

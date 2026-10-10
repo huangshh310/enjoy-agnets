@@ -1,10 +1,10 @@
 # spec/remote
 
-> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-10-09（删除项目由 main 先 drop pool）
+> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-10-10（写密码回 KEYCHAIN_UNAVAILABLE）
 
 ## 当前真相
 
-两层：`ssh_hosts` 是机器名册（alias / host / user / port / auth=`agent|keypath|password` / 本机 key_path / source=`manual|ssh_config|wsl`）；`workspaces` `kind=ssh` 是该机上的一个远端路径（`ssh_host_id` + 反范式 ssh_* 列给 factory / pool）。私钥内容不入库、不进 renderer、不进聊天。登录密码只走 IPC 写通道，main `safeStorage` 按 hostId 存；list / `workspace.remote` / SQLite 主机表都不含明文。新主机 `StrictHostKeyChecking=accept-new`（不必先去终端敲 yes）；密码登录走 `SSH_ASKPASS`，密钥/agent 仍 `BatchMode=yes`。用户在应用内填密码即可探测 / 浏览 / 连接。
+两层：`ssh_hosts` 是机器名册（alias / host / user / port / auth=`agent|keypath|password` / 本机 key_path / source=`manual|ssh_config|wsl`）；`workspaces` `kind=ssh` 是该机上的一个远端路径（`ssh_host_id` + 反范式 ssh_* 列给 factory / pool）。私钥内容不入库、不进 renderer、不进聊天。登录密码只走 IPC 写通道，main `safeStorage` 按 hostId 存；list / `workspace.remote` / SQLite 主机表都不含明文。`openSsh` / `sshHosts.upsert` 带密码且钥匙串不可用时回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`，不要 throw；Linux `basic_text` 当不可用，禁止明文回落。新主机 `StrictHostKeyChecking=accept-new`（不必先去终端敲 yes）；密码登录走 `SSH_ASKPASS`，密钥/agent 仍 `BatchMode=yes`。用户在应用内填密码即可探测 / 浏览 / 连接。
 
 连接态：`idle | connecting | connected | failed | disconnected`。事件 `workspace.remote`（失败带 `error` 人话）。`connecting` / `failed` / `disconnected` / `idle` 时 Composer 发送闸禁发，横幅「远程已断开，先重新连接才能发送」。已连接时文件 / bash / git / 终端 cwd / ACP spawn 走 `AgentWorkspaceHost` 的 SSH 适配器，路径 jail **必须**是 `remote_path`（禁止回落 `root_path` / 本机 cwd）。`bash` 先在本机 `parseExecutableCommand` 拆 argv 再 `quoteRemote` + `exec`，禁止把用户字符串直接拼进远端 shell；`gitDiff` / `gitLog` 的 path 同样 jail。断线写操作与 catalog ACP spawn 抛 `REMOTE_DISCONNECTED`，不得 `{ok:true}`，不得 `createWorkspaceHost(user@host:path)`。自定义 ACP 在 SSH 上诚实拒绝，不拿远端标签当本机 cwd。Knowledge / 资产导出 / Customize 规则扫描对 `kind=ssh` 拒绝本机盘。Composer 脚注是 `远程 · host:path`（不要 `user@`，不要再叠「远程 ≠ 引擎」）。开项目文案：本机文件夹 / 远程 SSH…。远程第二步弹窗 380px。视觉真源锁 tip `3a3e00b`。
 

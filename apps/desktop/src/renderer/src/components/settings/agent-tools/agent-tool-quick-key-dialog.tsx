@@ -25,6 +25,8 @@ import { createTargetForBind } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
+import { SecretStorageWarning } from "../secret-storage-warning"
+import { secretWriteErrorMessage, unwrapSettingsWrite } from "@renderer/lib/secret-write"
 
 type QuickPresetMeta = {
   kind: string
@@ -185,17 +187,18 @@ export function AgentToolQuickKeyDialog({
     try {
       const effectiveBaseURL = baseURL.trim() || (preset.defaultBaseURL || undefined)
       const profileName = name.trim() || preset.defaultName
-      const snapshot = await getIde().settings.upsertProvider({
-        name: profileName,
-        kind: preset.kind,
-        apiKey: key,
-        baseURL: effectiveBaseURL,
-        apiStyle: preset.apiStyle,
-        models: preset.models,
-        modelId: preset.defaultModel
-      })
+      const snapshot = unwrapSettingsWrite(
+        await getIde().settings.upsertProvider({
+          name: profileName,
+          kind: preset.kind,
+          apiKey: key,
+          baseURL: effectiveBaseURL,
+          apiStyle: preset.apiStyle,
+          models: preset.models,
+          modelId: preset.defaultModel
+        })
+      )
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
-      // 从返回的快照中寻找新存入的档案
       const created = snapshot.providers.find((p: { name: string; id: string }) => p.name === profileName) ?? snapshot.providers.at(-1)
       if (created) {
         await onSaved(created.id, preset.defaultModel)
@@ -203,7 +206,7 @@ export function AgentToolQuickKeyDialog({
       onOpenChange(false)
       resetState()
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : String(err))
+      setErrorMsg(secretWriteErrorMessage(err, t))
     } finally {
       setSaving(false)
     }
@@ -229,6 +232,7 @@ export function AgentToolQuickKeyDialog({
             {t("settings.agentTools.quickKeyModalDesc")}
           </DialogDescription>
         </DialogHeader>
+        <SecretStorageWarning />
 
         <div className="flex flex-col gap-3.5 py-2">
           {/* API Key 输入框 */}

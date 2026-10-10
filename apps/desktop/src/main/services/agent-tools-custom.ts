@@ -21,6 +21,7 @@ import {
 import { readSessionRuntimes, writeSessionRuntime } from "./agent-tools-vault"
 import { getSetting, setSetting } from "./database"
 import { readPreferences, writePreferences } from "./preferences"
+import { SecretWriteFailure, isSecretStorageAvailable } from "./secret-storage.ts"
 import { mergeKeptSecrets, redactSecretMap } from "./secret-map"
 
 const KEY = "agentTools.customAgents"
@@ -151,8 +152,9 @@ function sanitizeEnv(env?: Record<string, string>): Record<string, string> {
 
 /** 值里出现 `enc:` 前缀的按密文处理；解不开视作用户原文，不二次加密。 */
 function encryptEnvValues(env: Record<string, string>): Record<string, string> {
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error("OS keychain encryption is not available on this machine.")
+  if (Object.keys(env).length === 0) return {}
+  if (!isSecretStorageAvailable()) {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   const out: Record<string, string> = {}
   for (const [key, value] of Object.entries(env)) {

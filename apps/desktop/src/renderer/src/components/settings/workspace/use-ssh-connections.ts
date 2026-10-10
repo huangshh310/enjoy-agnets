@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import type { SshConfigCandidate, SshHost, SshHostUpsertInput } from "@enjoy-agents/ipc-contract"
+import { secretWriteErrorMessage, unwrapSecretWrite } from "@renderer/lib/secret-write"
 import { draftToUpsert, emptyHostDraft, hostToDraft, type SshHostDraft } from "./ssh-host-fields.types"
 
 export function useSshConnections() {
@@ -59,12 +60,12 @@ export function useSshConnections() {
       setBusy(true)
       setError(null)
       try {
-        await getIde().workspace.sshHosts.upsert(input)
+        unwrapSecretWrite(await getIde().workspace.sshHosts.upsert(input))
         setDraft(emptyHostDraft())
         setOpen(false)
         await refresh()
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        setError(secretWriteErrorMessage(err, t))
       } finally {
         setBusy(false)
       }
@@ -75,12 +76,12 @@ export function useSshConnections() {
       setError(null)
       try {
         const payload = draftToUpsert(draft)
-        await getIde().workspace.sshHosts.upsert(payload)
+        unwrapSecretWrite(await getIde().workspace.sshHosts.upsert(payload))
         setDraft(emptyHostDraft())
         setOpen(false)
         await refresh()
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        setError(secretWriteErrorMessage(err, t))
       } finally {
         setBusy(false)
       }

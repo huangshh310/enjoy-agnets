@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（BASE-P0-1：`ready` 看当前档案 `hasEnjoySecret`；从无到有才 toast）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（写密钥回 KEYCHAIN_UNAVAILABLE；快照 `secretStorageAvailable`）
 
 ## 当前真相
 
@@ -118,7 +118,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - **隐患**：不变量测试 `import` 轨道 registry 时若 `McpIcon` 走 `@renderer` 别名，Node `--experimental-strip-types` 会 `ERR_MODULE_NOT_FOUND`。正确做法：`module-registry` 对 `mcp-brand-icons.ts` 用相对路径。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
-- 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。
+- 安全卡片不要为了绿点新开频道。钥匙串能不能写走 `chat.readiness` 的 `secretStorageAvailable`（缺省 / 坏字段 `.catch(true)`）；不可用时供应商 / SSH / harness / 自定义 ACP 表单先警告，保存回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`，禁止明文回落。
 - 个人资料不要只写 renderer `localStorage`：刷新能活但换 userData / 主进程看不到。权威在 `preferences.accountProfile`；旧 key 迁完即删。
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
 - 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。

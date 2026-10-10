@@ -9,7 +9,10 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { SettingsRow } from "./settings-row"
+import { SecretStorageWarning } from "./secret-storage-warning"
 import { harnessStatusCopy } from "./harness-status-copy"
+import { secretWriteErrorMessage, unwrapSecretWrite } from "@renderer/lib/secret-write"
+import { showAppToast } from "@renderer/lib/app-toast"
 
 export function SettingsHarnessCredentials() {
   const t = useT()
@@ -26,13 +29,17 @@ export function SettingsHarnessCredentials() {
     if (!hasIde()) return
     setSaving(true)
     try {
-      await getIde().settings.setHarness({
-        vercelToken: sandboxToken,
-        vercelTeamId: teamId,
-        vercelProjectId: projectId
-      })
+      unwrapSecretWrite(
+        await getIde().settings.setHarness({
+          vercelToken: sandboxToken,
+          vercelTeamId: teamId,
+          vercelProjectId: projectId
+        })
+      )
       setSandboxToken("")
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    } catch (error) {
+      showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
     } finally {
       setSaving(false)
     }
@@ -40,6 +47,9 @@ export function SettingsHarnessCredentials() {
 
   return (
     <>
+      <div className="px-5">
+        <SecretStorageWarning />
+      </div>
       <SettingsRow title={t("settings.harness.status")} description={status.description}>
         <span className="text-caption-1-medium text-text-secondary">{status.summary}</span>
       </SettingsRow>

@@ -22,6 +22,7 @@ import { ipcMain, shell } from "electron"
 import { inspectAgentTool } from "./services/agent-tools-account/inspect"
 import { installAgentTool, loginAgentTool, uninstallAgentTool } from "./services/agent-tools-install"
 import { getCustomAgent, removeCustomAgent, toEditableCustomAgent, upsertCustomAgent } from "./services/agent-tools-custom"
+import { runSecretWrite } from "./services/secret-write-guard.ts"
 import { writeSessionHandoff } from "./services/session-handoff"
 import { importAcpSession, listImportableAcpSessions } from "./services/acp-session-import"
 import {
@@ -123,8 +124,10 @@ export function registerAgentToolsIpc() {
   })
   ipcMain.handle("agentTools.upsertCustom", async (_event, raw: unknown) => {
     const input = UpsertCustomAgentInput.parse(raw)
-    upsertCustomAgent(input)
-    return listAgentTools()
+    return runSecretWrite(async () => {
+      upsertCustomAgent(input)
+      return { tools: await listAgentTools() }
+    })
   })
   ipcMain.handle("agentTools.removeCustom", async (_event, raw: unknown) => {
     const input = RemoveCustomAgentInput.parse(raw)

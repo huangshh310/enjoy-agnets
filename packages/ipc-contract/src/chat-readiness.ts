@@ -97,7 +97,12 @@ export const ChatReadiness = z
     /** 路由 hasSecret()；缺省时渲染闸当 uncertain。单字段坏不丢整张。 */
     hasEnjoySecret: z.boolean().optional().catch(undefined),
     /** 第一次从无到有才带，给 toast。单字段坏不丢整张。 */
-    adoptedHint: z.object({ name: z.string().min(1) }).strict().optional().catch(undefined)
+    adoptedHint: z.object({ name: z.string().min(1) }).strict().optional().catch(undefined),
+    /**
+     * 系统钥匙串能否安全写密钥。缺省 / 坏字段 `.catch(true)`，避免旧快照误挡。
+     * Linux `basic_text` 后端视为不可用；禁止明文回落。
+     */
+    secretStorageAvailable: z.boolean().catch(true)
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>
@@ -238,6 +243,7 @@ export function buildChatReadiness(input: {
   hasEnjoySecret?: boolean
   activeKeyProfileId?: string | null
   adoptedHint?: { name: string }
+  secretStorageAvailable?: boolean
 }): ChatReadiness {
   const engines = [...input.engines]
   const localModels = [...input.localModels]
@@ -264,6 +270,7 @@ export function buildChatReadiness(input: {
     apiKeys,
     defaultRoute,
     hasEnjoySecret: enjoySecretOf(input),
+    secretStorageAvailable: input.secretStorageAvailable ?? true,
     ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {})
   })
 }

@@ -8,6 +8,13 @@ export const enSettings = {
   usageNumberRemaining: "Remaining",
   detectAuto: "Detect automatically",
 
+  secrets: {
+    keychainUnavailable:
+      "This computer cannot store secrets securely right now. Unlock the system keychain — we will not fall back to plaintext.",
+    keychainUnavailableHint:
+      "On Linux, unlock GNOME Keyring or KWallet first. Dev commands are in the architecture spec."
+  },
+
   general: {
     title: "General details",
     hubTitle: "Application defaults",

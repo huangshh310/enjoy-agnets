@@ -8,6 +8,7 @@ import { join } from "node:path"
 const userData = mkdtempSync(join(tmpdir(), "enjoy-catchup-"))
 
 export const app = {
+  isPackaged: false,
   getPath(name) {
     return name === "userData" ? userData : join(userData, String(name))
   }
@@ -15,6 +16,7 @@ export const app = {
 
 export const safeStorage = {
   isEncryptionAvailable: () => false,
+  getSelectedStorageBackend: () => "basic_text",
   encryptString: (text) => Buffer.from(String(text), "utf8"),
   decryptString: (buf) => Buffer.from(buf).toString("utf8")
 }

@@ -6,6 +6,7 @@ import { HARNESS_ADAPTERS, resolveHarnessAdapter, type HarnessAdapter } from "@e
 import { getSecretValue, setSecretValue } from "@enjoy-agents/db"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { deleteSetting, getDatabase, getSetting } from "./database"
+import { SecretWriteFailure, isSecretStorageAvailable } from "./secret-storage.ts"
 import { findProfileByKinds, getActiveProfile } from "./secrets"
 
 const HARNESS_KEY = "harness.secret"
@@ -97,8 +98,8 @@ export function readHarnessSecret(): HarnessSecret | null {
 
 /** 合并后加密写入沙箱字段。模型 key 请写到 Providers。 */
 export function writeHarnessSecret(patch: Partial<HarnessSecret>): HarnessSecret {
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error("OS keychain encryption is not available on this machine.")
+  if (!isSecretStorageAvailable()) {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   const current = readHarnessSecret()
   const next: HarnessSecret = {
