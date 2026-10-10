@@ -305,19 +305,15 @@ test("S1-2 引擎夹具发 hello 不出现中性条", async () => {
     console.log("CHAT_READY=engine readiness", JSON.stringify(readiness))
     if ((await chip.count()) > 0) console.log("CHAT_READY=engine chip", await chip.innerText())
     const composer = window.locator('[data-testid="composer-input"]')
-    await composer.fill("hello")
-    await composer.press("Enter")
+    await composer.click()
+    await window.keyboard.type("hello")
+    await window.keyboard.press("Enter")
+    const thread = window.getByTestId("chat-conversation")
+    await expect(thread.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
-    const stored = window.getByTestId("chat-conversation").getByText("hello", { exact: true })
-    const inThread = await stored.count()
     await snap(window, "s1-2-engine-send-hello")
-    test.skip(
-      inThread === 0,
-      "CHAT_READY=engine 默认 Claude、ready、无中性条，但本机未装 CLI，对话区没有 hello。不改 main，交给 kai/#130。"
-    )
-    await expect(stored).toBeVisible()
   } finally {
-    await app.close()
+    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 5_000))])
   }
 })
 
