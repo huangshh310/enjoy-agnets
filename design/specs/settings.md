@@ -87,6 +87,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
+- **隐患**：去添加密钥时 `pauseAt` 把向导 `open` 设成 false，Radix Dialog `onOpenChange(false)` 会当成用户关掉并 `finish()`，向导被标完成、resume 清掉。正确做法：`onOpenChange` 见 `paused` 不要 finish。
 - **隐患**：1100×700 设置侧栏看不到「项目与扩展」。根因：情境栏父级不裁剪高度，Radix ScrollArea 失效。正确做法：见 `ui` spec；e2e `settings-nav-scroll.spec.ts`。
 - **隐患**：自动化抽屉 X / Esc / 遮罩静默丢改动。正确做法：`isDraftDirty` 对照打开快照；脏则 Confirm「放弃未保存的修改？」；确认框开着抽屉不抢 Esc（`isAppDialogOpen`）。
 - **隐患**：抽屉 X 要点两下才关。根因：焦点在输入框时，第一次 click 先触发 blur → 重渲，这次 click 被吞；不是脏表单守卫（脏表单应立刻出确认框）。正确做法：关闭钮 `onPointerDown` 走 `handleDrawerClosePointer`（主键 `preventDefault` 再 `onClose`），aside 抬到 `z-10` 避免遮罩抢点。

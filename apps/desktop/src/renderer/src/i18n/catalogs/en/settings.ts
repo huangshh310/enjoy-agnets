@@ -71,6 +71,7 @@ export const enSettings = {
     connectEngineHint: "Uses your signed-in {name}. No extra key.",
     connectLocal: "Use a local model",
     connectLocalHint: "Already running on this machine. No cloud.",
+    connectLocalUnverified: "Not verified",
     connectApiKey: "Add an API key",
     connectApiKeyHint: "Opens the official preset form. You come back here after saving.",
     connectApiKeyConnected: "Connected",

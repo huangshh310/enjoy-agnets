@@ -143,10 +143,10 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.fill("还差一步也要留下草稿")
     await composer.press("Enter")
-    await window.locator('[data-testid="thread-notice-banner"][data-kind="no_chat_route"]').waitFor({
+    await window.locator('[data-testid="thread-no-chat-route-notice"][data-kind="no_chat_route"]').waitFor({
       timeout: 8_000
     })
-    await expect(window.locator('[data-testid="thread-notice-banner"]')).toContainText("草稿会留着")
+    await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toContainText("草稿会留着")
     await expect(window.locator('[data-testid="composer-input"]')).toHaveValue("还差一步也要留下草稿")
     await expect(window.getByTestId("no-chat-route-connect")).toHaveText("去连接")
     await snap(window, "s1-6-no-chat-route")

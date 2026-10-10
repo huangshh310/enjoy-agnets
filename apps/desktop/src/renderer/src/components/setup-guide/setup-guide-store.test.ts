@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { resumeSetupGuide, useSetupGuideStore } from "./setup-guide-store.ts"
+import { resumeSetupGuide, shouldFinishGuideOnDismiss, useSetupGuideStore } from "./setup-guide-store.ts"
 
 test("pauseAt 不弹回介绍，resume 停在连模型", () => {
   useSetupGuideStore.setState({
@@ -19,4 +19,11 @@ test("pauseAt 不弹回介绍，resume 停在连模型", () => {
   resumeSetupGuide()
   assert.equal(useSetupGuideStore.getState().open, true)
   assert.equal(useSetupGuideStore.getState().takeResumeStep(), "connect-model")
+})
+
+test("pause 期间 Dialog 关闭不得 finish", () => {
+  useSetupGuideStore.setState({ paused: true })
+  assert.equal(shouldFinishGuideOnDismiss(), false)
+  useSetupGuideStore.setState({ paused: false })
+  assert.equal(shouldFinishGuideOnDismiss(), true)
 })

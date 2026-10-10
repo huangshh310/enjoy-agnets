@@ -42,6 +42,11 @@ export const useSetupGuideStore = create<SetupGuideState>((set, get) => ({
   }
 }))
 
+/** Dialog 因 pauseAt 关上时不要 finish，否则向导被标完成。 */
+export function shouldFinishGuideOnDismiss(): boolean {
+  return !useSetupGuideStore.getState().paused
+}
+
 export function replaySetupGuide(): void {
   useSetupGuideStore.getState().show("replay")
 }

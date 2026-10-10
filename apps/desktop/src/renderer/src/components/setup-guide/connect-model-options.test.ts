@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { connectModelOptions } from "./connect-model-options.ts"
+import { connectModelOptions, connectModelRowHintKey } from "./connect-model-options.ts"
 
 test("全新安装只露添加密钥和以后再连，两行等权", () => {
   const options = connectModelOptions(
@@ -53,4 +53,36 @@ test("没有快照时仍露出始终可点的两行", () => {
     connectModelOptions(undefined).map((item) => item.kind),
     ["api_key", "later"]
   )
+})
+
+test("远端未验证本机模型露出「未验证」，不推荐、不占就绪槽", () => {
+  const options = connectModelOptions(
+    buildChatReadiness({
+      engines: [],
+      localModels: [{ kind: "local_model", service: "ollama", verified: false }],
+      apiKeys: [],
+      engineCount: 1
+    })
+  )
+  const local = options.find((item) => item.kind === "local_model")
+  assert.equal(local?.kind === "local_model" && local.verified, false)
+  assert.equal(local?.kind === "local_model" && local.recommended, false)
+  assert.equal(connectModelRowHintKey(local!), "settings.setupGuide.connectLocalUnverified")
+  const key = options.find((item) => item.kind === "api_key")
+  assert.equal(key?.kind === "api_key" && key.recommended, true)
+})
+
+test("已验证本机模型才推荐，hint 不是未验证", () => {
+  const options = connectModelOptions(
+    buildChatReadiness({
+      engines: [],
+      localModels: [{ kind: "local_model", service: "ollama", verified: true }],
+      apiKeys: [],
+      engineCount: 1
+    })
+  )
+  const local = options.find((item) => item.kind === "local_model")
+  assert.equal(local?.kind === "local_model" && local.verified, true)
+  assert.equal(local?.kind === "local_model" && local.recommended, true)
+  assert.equal(connectModelRowHintKey(local!), "settings.setupGuide.connectLocalHint")
 })

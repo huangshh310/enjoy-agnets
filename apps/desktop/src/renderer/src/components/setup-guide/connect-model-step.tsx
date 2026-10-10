@@ -8,7 +8,11 @@ import { cx } from "@/utils/cx"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useT } from "@renderer/i18n"
-import { connectModelOptions, type ConnectModelOption } from "./connect-model-options"
+import {
+  connectModelOptions,
+  connectModelRowHintKey,
+  type ConnectModelOption
+} from "./connect-model-options"
 import { SETUP_GUIDE_FROM, officialProviderSearch, pauseGuideForProviderForm } from "./open-provider-form"
 import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 
@@ -45,7 +49,7 @@ export function ConnectModelStep({ onSkip }: { onSkip: () => void }) {
             selected={picked === option.id || (option.kind === "api_key" && option.connected)}
             onChoose={() => choose(option)}
             title={rowTitle(option, t)}
-            hint={rowHint(option, t)}
+            hint={t(connectModelRowHintKey(option), hintVars(option))}
             connectedLabel={t("settings.setupGuide.connectApiKeyConnected")}
           />
         </li>
@@ -74,6 +78,7 @@ function ConnectModelRow({
     <button
       type="button"
       data-testid={`connect-model-${option.kind}`}
+      data-verified={option.kind === "local_model" ? String(option.verified) : undefined}
       data-recommended={recommended ? "true" : undefined}
       onClick={onChoose}
       className={cx(
@@ -113,9 +118,6 @@ function rowTitle(option: ConnectModelOption, t: (path: string, vars?: Record<st
   return t("settings.setupGuide.connectLater")
 }
 
-function rowHint(option: ConnectModelOption, t: (path: string, vars?: Record<string, string>) => string): string {
-  if (option.kind === "engine") return t("settings.setupGuide.connectEngineHint", { name: option.name })
-  if (option.kind === "local_model") return t("settings.setupGuide.connectLocalHint")
-  if (option.kind === "api_key") return t("settings.setupGuide.connectApiKeyHint")
-  return t("settings.setupGuide.connectLaterHint")
+function hintVars(option: ConnectModelOption): Record<string, string> | undefined {
+  return option.kind === "engine" ? { name: option.name } : undefined
 }

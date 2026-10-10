@@ -71,6 +71,7 @@ export const zhSettings = {
     connectEngineHint: "走你已经登录的 {name}，不另存密钥",
     connectLocal: "用本机模型",
     connectLocalHint: "本机已在跑，不经过云",
+    connectLocalUnverified: "未验证",
     connectApiKey: "添加 API 密钥",
     connectApiKeyHint: "进官方预设表单，保存后回到这一步",
     connectApiKeyConnected: "已连上",

@@ -24,7 +24,7 @@ import {
 } from "./setup-guide-gate"
 import { SetupGuideFooter } from "./setup-guide-footer"
 import { SetupGuideHeader } from "./setup-guide-header"
-import { useSetupGuideStore } from "./setup-guide-store"
+import { shouldFinishGuideOnDismiss, useSetupGuideStore } from "./setup-guide-store"
 import { WorkspaceChoice } from "./workspace-choice"
 
 export function SetupGuideDialog() {
@@ -60,7 +60,13 @@ export function SetupGuideDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next) finish() }}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // pauseAt 会把 open 设成 false；Dialog 回调不得当成关掉向导。
+        if (!next && shouldFinishGuideOnDismiss()) finish()
+      }}
+    >
       <DialogContent
         className="grid h-[min(540px,calc(100vh-4rem))] w-[min(800px,calc(100vw-2rem))] max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-none"
         onInteractOutside={(event) => event.preventDefault()}
