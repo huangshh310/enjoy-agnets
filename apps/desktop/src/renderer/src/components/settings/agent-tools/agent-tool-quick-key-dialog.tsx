@@ -22,7 +22,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { createTargetForBind } from "@enjoy-agents/ipc-contract"
-import { SecretWriteNotice } from "@renderer/components/settings/secret-write-notice"
+import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "@renderer/components/settings/secret-write-notice"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { runSecretWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
@@ -234,9 +234,7 @@ export function AgentToolQuickKeyDialog({
           <DialogDescription className="text-caption-2-regular text-text-tertiary">
             {t("settings.agentTools.quickKeyModalDesc")}
           </DialogDescription>
-          {secretBlocked || writeCode ? (
-            <SecretWriteNotice code={secretBlocked ? "KEYCHAIN_UNAVAILABLE" : writeCode!} />
-          ) : null}
+          {secretBlocked ? <SecretWritePreflight /> : null}
         </DialogHeader>
 
         <div className="flex flex-col gap-3.5 py-2">
@@ -336,19 +334,24 @@ export function AgentToolQuickKeyDialog({
             >
               {t("common.cancel")}
             </button>
-            <button
-              type="button"
-              disabled={saving || secretBlocked || !apiKey.trim()}
-              onClick={() => void handleSaveAndBind()}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-accent-500 px-3.5 py-1.5 text-caption-2-medium font-semibold text-text-white shadow-2xs transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {saving ? (
-                <RiLoader4Line className="size-3.5 animate-spin" />
-              ) : (
-                <RiKey2Line className="size-3.5" />
-              )}
-              <span>{saving ? t("settings.secretWrite.saving") : t("settings.agentTools.quickKeySaveBtn")}</span>
-            </button>
+            <div className="flex flex-col items-end gap-1.5">
+              {!secretBlocked && writeCode ? <SecretWriteError code={writeCode} /> : null}
+              <SecretWriteSaveTip blocked={secretBlocked}>
+                <button
+                  type="button"
+                  disabled={saving || secretBlocked || !apiKey.trim()}
+                  onClick={() => void handleSaveAndBind()}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-accent-500 px-3.5 py-1.5 text-caption-2-medium font-semibold text-text-white shadow-2xs transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving ? (
+                    <RiLoader4Line className="size-3.5 animate-spin" />
+                  ) : (
+                    <RiKey2Line className="size-3.5" />
+                  )}
+                  <span>{saving ? t("settings.secretWrite.saving") : t("settings.agentTools.quickKeySaveBtn")}</span>
+                </button>
+              </SecretWriteSaveTip>
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

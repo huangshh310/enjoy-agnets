@@ -24,6 +24,6 @@ test("钥匙串抛错走人话，不摊英文", () => {
     "Error invoking remote method 'agentTools.upsertCustom': Error: OS keychain encryption is not available on this machine.",
     (path) => path
   )
-  assert.equal(shown, "settings.secretWrite.keychainUnavailable")
+  assert.equal(shown, "settings.secretWrite.writeFailedKeychain")
   assert.doesNotMatch(shown, /keychain encryption|isEncryptionAvailable/i)
 })

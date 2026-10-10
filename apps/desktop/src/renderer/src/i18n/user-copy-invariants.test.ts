@@ -52,7 +52,13 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
-      secretWrite: { keychainUnavailable: string; failed: string }
+      secretWrite: {
+        unavailableTitle: string
+        unavailableBody: string
+        saveNeedsKeychain: string
+        writeFailedKeychain: string
+        failed: string
+      }
       setupGuide: {
         replayDesc: string
         replay: string
@@ -103,10 +109,20 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
   assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
   assert.equal(
-    z.settings.secretWrite.keychainUnavailable,
-    "这台电脑没有可用的系统钥匙串，密钥暂时存不了。装好系统钥匙串（如 GNOME 密钥环）后重启 Enjoy 再试。"
+    z.settings.secretWrite.unavailableTitle,
+    "这台电脑没有可用的系统钥匙串，暂时没法安全地保存密钥。"
+  )
+  assert.equal(
+    z.settings.secretWrite.unavailableBody,
+    "装好系统钥匙串（比如 GNOME 密钥环）后，重启 Enjoy 再来添加。"
+  )
+  assert.equal(z.settings.secretWrite.saveNeedsKeychain, "需要系统钥匙串才能保存")
+  assert.equal(
+    z.settings.secretWrite.writeFailedKeychain,
+    "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。"
   )
   assert.equal(z.settings.secretWrite.failed, "没存上，请再试一次")
+  assert.doesNotMatch(z.settings.secretWrite.writeFailedKeychain, /重启/)
   assert.equal(z.settings.setupGuide.replayDesc, "再走一遍连模型、装引擎、外观和打开文件夹。")
   assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
   assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")
@@ -150,6 +166,14 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+})
+
+test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
+  const leak = /libsecret|DBus|keychain|isEncryptionAvailable|safeStorage|gnome-keyring/i
+  const secretWrite = (zh as { settings: { secretWrite: Record<string, string> } }).settings.secretWrite
+  for (const [key, value] of Object.entries(secretWrite)) {
+    assert.doesNotMatch(value, leak, `zh settings.secretWrite.${key} leaks keychain English: ${value}`)
+  }
 })
 
 test("用户可见词表不含供应商密钥，统一连接模型 / API 密钥", () => {

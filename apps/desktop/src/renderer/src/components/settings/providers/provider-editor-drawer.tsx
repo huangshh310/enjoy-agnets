@@ -5,7 +5,7 @@ import type { AgentBindRef } from "@enjoy-agents/ipc-contract"
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { useT } from "@renderer/i18n"
 import { SettingsSideDrawer } from "../settings-side-drawer"
-import { SecretWriteNotice } from "../secret-write-notice"
+import { SecretWritePreflight } from "../secret-write-notice"
 import { EditorDrawerFooter, EditorDrawerHeader } from "./provider-editor-drawer-chrome"
 import { ProviderEditorFields } from "./provider-editor-fields"
 import { ProviderSimpleFields } from "./provider-simple-fields"
@@ -131,7 +131,6 @@ function EditorDrawerForm({
   saveLabel?: string
   simple?: boolean
 }) {
-  const noticeCode = secretBlocked ? "KEYCHAIN_UNAVAILABLE" : saveError
   return (
     <form
       onSubmit={(event) => {
@@ -142,7 +141,7 @@ function EditorDrawerForm({
     >
       <EditorDrawerHeader editor={editor} preset={preset} refs={refs} onClose={onClose} onOpenAgent={onOpenAgent} />
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-5">
-        {noticeCode ? <SecretWriteNotice code={noticeCode} className="mb-4 text-caption-1-medium text-text-error-primary" /> : null}
+        {secretBlocked ? <SecretWritePreflight className="mb-4" /> : null}
         {simple ? (
           <ProviderSimpleFields
             editor={editor}
@@ -170,6 +169,8 @@ function EditorDrawerForm({
         canSave={canSave}
         saving={saving}
         saveLabel={saveLabel}
+        saveError={secretBlocked ? null : saveError}
+        secretBlocked={secretBlocked}
         onClose={onClose}
       />
     </form>

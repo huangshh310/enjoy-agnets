@@ -6,7 +6,9 @@ import type { AgentBindRef } from "@enjoy-agents/ipc-contract"
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
+import { SecretWriteError, SecretWriteSaveTip } from "../secret-write-notice"
 import { handleDrawerClosePointer } from "../settings-drawer-close"
+import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { presetBlurb } from "./provider-blurb"
 import { ProviderIcon } from "./provider-icons"
 import type { EditorState } from "./providers.types"
@@ -67,17 +69,21 @@ export function EditorDrawerFooter({
   canSave,
   saving,
   saveLabel,
+  saveError = null,
+  secretBlocked = false,
   onClose
 }: {
   docsURL?: string
   canSave: boolean
   saving?: boolean
   saveLabel?: string
+  saveError?: SecretWriteErrorCode | null
+  secretBlocked?: boolean
   onClose: () => void
 }) {
   const t = useT()
   return (
-    <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-separator-border/60 px-6 py-4">
+    <footer className="flex shrink-0 items-end justify-between gap-3 border-t border-separator-border/60 px-6 py-4">
       {docsURL ? (
         <a
           href={docsURL}
@@ -91,25 +97,30 @@ export function EditorDrawerFooter({
       ) : (
         <span />
       )}
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
-          onClick={onClose}
-        >
-          {t("common.cancel")}
-        </Button>
-        <Button
-          type="submit"
-          size="sm"
-          disabled={!canSave}
-          data-testid="provider-editor-save"
-          data-saving={saving ? "true" : undefined}
-        >
-          {saving ? t("settings.secretWrite.saving") : (saveLabel ?? t("settings.providers.saveActivate"))}
-        </Button>
+      <div className="flex min-w-0 flex-col items-end gap-1.5">
+        {saveError ? <SecretWriteError code={saveError} className="text-right text-caption-2-medium text-text-error-primary" /> : null}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
+            onClick={onClose}
+          >
+            {t("common.cancel")}
+          </Button>
+          <SecretWriteSaveTip blocked={secretBlocked}>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!canSave}
+              data-testid="provider-editor-save"
+              data-saving={saving ? "true" : undefined}
+            >
+              {saving ? t("settings.secretWrite.saving") : (saveLabel ?? t("settings.providers.saveActivate"))}
+            </Button>
+          </SecretWriteSaveTip>
+        </div>
       </div>
     </footer>
   )

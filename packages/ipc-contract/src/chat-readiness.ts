@@ -98,8 +98,11 @@ export const ChatReadiness = z
     hasEnjoySecret: z.boolean().optional().catch(undefined),
     /** 第一次从无到有才带，给 toast。单字段坏不丢整张。 */
     adoptedHint: z.object({ name: z.string().min(1) }).strict().optional().catch(undefined),
-    /** 系统钥匙串是否能加密存密钥。缺省不当不可用。Linux basic_text 算 false。 */
-    secretStorageAvailable: z.boolean().optional().catch(undefined)
+    /**
+     * 系统钥匙串能否加密存密钥。缺省 / 坏字段 `.catch(true)`，旧快照不当成挂掉。
+     * Linux `basic_text` 算 false。禁止明文回落。
+     */
+    secretStorageAvailable: z.boolean().catch(true)
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>

@@ -8,8 +8,11 @@ export const zhSettings = {
   usageNumberRemaining: "剩余",
   detectAuto: "自动检测",
   secretWrite: {
-    keychainUnavailable:
-      "这台电脑没有可用的系统钥匙串，密钥暂时存不了。装好系统钥匙串（如 GNOME 密钥环）后重启 Enjoy 再试。",
+    unavailableTitle: "这台电脑没有可用的系统钥匙串，暂时没法安全地保存密钥。",
+    unavailableBody: "装好系统钥匙串（比如 GNOME 密钥环）后，重启 Enjoy 再来添加。",
+    saveNeedsKeychain: "需要系统钥匙串才能保存",
+    writeFailedKeychain:
+      "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。",
     failed: "没存上，请再试一次",
     saving: "保存中…"
   },

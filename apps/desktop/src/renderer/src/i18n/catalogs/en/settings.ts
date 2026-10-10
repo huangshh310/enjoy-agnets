@@ -8,8 +8,11 @@ export const enSettings = {
   usageNumberRemaining: "Remaining",
   detectAuto: "Detect automatically",
   secretWrite: {
-    keychainUnavailable:
-      "This computer has no usable system keychain, so the key cannot be stored yet. Install a system keychain such as GNOME Keyring, restart Enjoy, and try again.",
+    unavailableTitle: "This computer has no usable system keychain, so keys cannot be stored safely yet.",
+    unavailableBody: "Install a system keychain (for example GNOME Keyring), restart Enjoy, then add the key.",
+    saveNeedsKeychain: "A system keychain is required to save",
+    writeFailedKeychain:
+      "Could not save: the system keychain is not usable right now. The key will not be stored in plaintext. Unlock the keychain, then save again.",
     failed: "Could not save. Please try again.",
     saving: "Saving…"
   },

@@ -1,13 +1,18 @@
 /**
- * ENJOY_E2E_KEYCHAIN=unavailable：加钥表单顶栏提示 + 禁保存，草稿留下。
- * 夹具未落地（secretStorageAvailable !== false）时 skip，不要假装测过。
+ * ① ENJOY_E2E_STUB=1 + ENJOY_E2E_KEYCHAIN=unavailable：黄条 + 禁保存。
+ * 夹具未落地（#133 未合）时 skip，不要假装测过。
+ * ② 写失败红字：e2e 桥强制 KEYCHAIN_UNAVAILABLE，不依赖本机钥匙串。
  */
 import { expect, test } from "@playwright/test"
-import { canLaunchElectron, launchEnjoy, openConnectModelStep } from "./base-p0-1-launch"
+import { canLaunchElectron, launchEnjoy, openConnectModelStep, snap } from "./base-p0-1-launch"
 
-const KEYCHAIN_COPY = "这台电脑没有可用的系统钥匙串，密钥暂时存不了。装好系统钥匙串（如 GNOME 密钥环）后重启 Enjoy 再试。"
+const PREFLIGHT_TITLE = "这台电脑没有可用的系统钥匙串，暂时没法安全地保存密钥。"
+const PREFLIGHT_BODY = "装好系统钥匙串（比如 GNOME 密钥环）后，重启 Enjoy 再来添加。"
+const WRITE_FAIL =
+  "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。"
+const SAVE_TIP = "需要系统钥匙串才能保存"
 
-test("钥匙串不可用时向导加钥步与添加表单提示且禁保存", async () => {
+test("① skip-until-#133：夹具不可用时向导与加钥表单黄条且禁保存", async () => {
   test.setTimeout(180_000)
   const blocked = canLaunchElectron()
   test.skip(Boolean(blocked), blocked ?? "")
@@ -21,15 +26,19 @@ test("钥匙串不可用时向导加钥步与添加表单提示且禁保存", as
     const available = await window.evaluate(() => window.__enjoyE2e?.getChatReadiness()?.secretStorageAvailable)
     test.skip(
       available !== false,
-      "ENJOY_E2E_KEYCHAIN=unavailable fixture not landed yet (secretStorageAvailable !== false)"
+      "skip-until-#133: ENJOY_E2E_KEYCHAIN=unavailable fixture not on main (secretStorageAvailable !== false)"
     )
 
     await openConnectModelStep(window)
     const wizardNotice = window.getByTestId("secret-write-notice")
     await expect(wizardNotice).toBeVisible()
-    await expect(wizardNotice).toHaveAttribute("data-code", "KEYCHAIN_UNAVAILABLE")
-    await expect(wizardNotice).toHaveText(KEYCHAIN_COPY)
-    await expect(wizardNotice).not.toContainText(/keychain encryption|isEncryptionAvailable/i)
+    await expect(wizardNotice).toHaveAttribute("data-kind", "preflight")
+    await expect(wizardNotice).toContainText(PREFLIGHT_TITLE)
+    await expect(wizardNotice).toContainText(PREFLIGHT_BODY)
+    await expect(wizardNotice).not.toContainText(/libsecret|DBus|keychain encryption|isEncryptionAvailable/i)
+    const later = window.getByTestId("connect-model-later")
+    await expect(later).toBeEnabled()
+    await snap(window, "p0-1-keychain-preflight-wizard")
 
     await window.getByTestId("connect-model-api_key").click()
     await window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
@@ -43,16 +52,123 @@ test("钥匙串不可用时向导加钥步与添加表单提示且禁保存", as
     await expect(window.getByTestId("provider-simple-fields")).toBeVisible()
     const formNotice = window.getByTestId("secret-write-notice")
     await expect(formNotice).toBeVisible()
-    await expect(formNotice).toHaveAttribute("data-code", "KEYCHAIN_UNAVAILABLE")
-    await expect(formNotice).toHaveText(KEYCHAIN_COPY)
+    await expect(formNotice).toHaveAttribute("data-kind", "preflight")
+    await expect(formNotice).toContainText(PREFLIGHT_TITLE)
     const save = window.getByTestId("provider-editor-save")
     await expect(save).toBeDisabled()
+    await expect(window.getByTestId("secret-write-save-tip")).toHaveAttribute("title", SAVE_TIP)
     const keyBox = window.getByTestId("provider-simple-fields").locator('input[type="password"]')
+    await expect(keyBox).toBeEnabled()
     await keyBox.fill("sk-keep-typed-value")
     await expect(keyBox).toHaveValue("sk-keep-typed-value")
     await expect(save).toBeDisabled()
     await expect(window.getByTestId("provider-simple-fields")).toBeVisible()
-    await expect(window.getByTestId("secret-write-notice")).toBeVisible()
+    await snap(window, "p0-1-keychain-preflight-form")
+  } finally {
+    await app.close()
+  }
+})
+
+test("① 渲染预检：setChatReadiness(false) 黄条 + 以后再连仍可用", async () => {
+  test.setTimeout(180_000)
+  const blocked = canLaunchElectron()
+  test.skip(Boolean(blocked), blocked ?? "")
+  const { app, window } = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "none"
+  })
+  try {
+    await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 20_000 })
+    await openConnectModelStep(window)
+    await window.evaluate(() => {
+      const current = window.__enjoyE2e?.getChatReadiness()
+      window.__enjoyE2e?.setChatReadiness({
+        ready: false,
+        engineCount: current?.engineCount ?? 0,
+        engines: current?.engines ?? [],
+        localModels: current?.localModels ?? [],
+        apiKeys: current?.apiKeys ?? [],
+        secretStorageAvailable: false
+      })
+    })
+    const wizardNotice = window.getByTestId("secret-write-notice")
+    await expect(wizardNotice).toBeVisible()
+    await expect(wizardNotice).toHaveAttribute("data-kind", "preflight")
+    await expect(wizardNotice).toContainText(PREFLIGHT_TITLE)
+    await expect(wizardNotice).toContainText(PREFLIGHT_BODY)
+    await expect(window.getByTestId("connect-model-later")).toBeEnabled()
+    await snap(window, "p0-1-keychain-preflight-wizard")
+
+    await window.getByTestId("connect-model-api_key").click()
+    await window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
+      timeout: 8_000
+    })
+    await window.evaluate(() => {
+      window.__enjoyE2e?.hideGuide()
+      const current = window.__enjoyE2e?.getChatReadiness()
+      window.__enjoyE2e?.setChatReadiness({
+        ready: false,
+        engineCount: current?.engineCount ?? 0,
+        engines: current?.engines ?? [],
+        localModels: current?.localModels ?? [],
+        apiKeys: current?.apiKeys ?? [],
+        secretStorageAvailable: false
+      })
+    })
+    await expect(window.getByTestId("provider-pick-panel")).toBeVisible()
+    await window.getByTestId("provider-pick-deepseek").click()
+    await expect(window.getByTestId("provider-simple-fields")).toBeVisible()
+    await expect(window.getByTestId("secret-write-notice")).toContainText(PREFLIGHT_TITLE)
+    const save = window.getByTestId("provider-editor-save")
+    await expect(save).toBeDisabled()
+    await expect(window.getByTestId("secret-write-save-tip")).toHaveAttribute("title", SAVE_TIP)
+    const keyBox = window.getByTestId("provider-simple-fields").locator('input[type="password"]')
+    await expect(keyBox).toBeEnabled()
+    await keyBox.fill("sk-keep-typed-value")
+    await expect(keyBox).toHaveValue("sk-keep-typed-value")
+    await snap(window, "p0-1-keychain-preflight-form")
+  } finally {
+    await app.close()
+  }
+})
+
+test("② 保存失败 KEYCHAIN_UNAVAILABLE 红字，草稿留下", async () => {
+  test.setTimeout(180_000)
+  const blocked = canLaunchElectron()
+  test.skip(Boolean(blocked), blocked ?? "")
+  const { app, window } = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "none"
+  })
+  try {
+    await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 20_000 })
+    await openConnectModelStep(window)
+    await window.getByTestId("connect-model-api_key").click()
+    await window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
+      timeout: 8_000
+    })
+    await window.evaluate(() => {
+      window.__enjoyE2e?.hideGuide()
+    })
+    await expect(window.getByTestId("provider-pick-panel")).toBeVisible()
+    await window.getByTestId("provider-pick-deepseek").click()
+    await expect(window.getByTestId("provider-simple-fields")).toBeVisible()
+    const keyBox = window.getByTestId("provider-simple-fields").locator('input[type="password"]')
+    await keyBox.fill("sk-keep-typed-value")
+    await window.evaluate(() => {
+      window.__enjoyE2e?.forceSecretWrite("KEYCHAIN_UNAVAILABLE")
+    })
+    await window.getByTestId("provider-editor-save").click()
+    const error = window.getByTestId("secret-write-error")
+    await expect(error).toBeVisible()
+    await expect(error).toHaveAttribute("data-code", "KEYCHAIN_UNAVAILABLE")
+    await expect(error).toHaveText(WRITE_FAIL)
+    await expect(error).not.toContainText(/重启|libsecret|DBus|keychain encryption/i)
+    await expect(window.getByTestId("secret-write-notice")).toHaveCount(0)
+    await expect(window.getByTestId("provider-simple-fields")).toBeVisible()
+    await expect(keyBox).toHaveValue("sk-keep-typed-value")
+    await expect(window.getByTestId("provider-editor-save")).toBeEnabled()
+    await snap(window, "p0-1-keychain-write-fail")
   } finally {
     await app.close()
   }

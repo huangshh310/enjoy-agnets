@@ -10,7 +10,7 @@ import { useSecretWriteGate } from "@renderer/hooks/use-secret-write-gate"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { runSecretWrite } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
-import { SecretWriteNotice } from "./secret-write-notice"
+import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "./secret-write-notice"
 import { SettingsRow } from "./settings-row"
 import { harnessStatusCopy } from "./harness-status-copy"
 
@@ -53,7 +53,7 @@ export function SettingsHarnessCredentials() {
       </SettingsRow>
       {showSandbox ? (
         <div className="flex flex-col gap-2.5 px-5 py-4">
-          {gate.noticeCode ? <SecretWriteNotice code={gate.noticeCode} /> : null}
+          {gate.preflight ? <SecretWritePreflight /> : null}
           <label className="block text-caption-1-medium text-text-primary">
             <span className="font-medium">{t("settings.harness.isolationToken")}</span>
             <span className="ml-1 text-text-tertiary">{t("settings.harness.isolationTokenDesc")}</span>
@@ -83,10 +83,13 @@ export function SettingsHarnessCredentials() {
               onChange={setProjectId}
             />
           </div>
-          <div>
-            <Button size="sm" disabled={saving || gate.blocked} onClick={() => void onSave()}>
-              {saving ? t("settings.secretWrite.saving") : t("settings.harness.saveToken")}
-            </Button>
+          <div className="flex flex-col items-start gap-1.5">
+            {gate.errorCode ? <SecretWriteError code={gate.errorCode} /> : null}
+            <SecretWriteSaveTip blocked={gate.blocked}>
+              <Button size="sm" disabled={saving || gate.blocked} onClick={() => void onSave()}>
+                {saving ? t("settings.secretWrite.saving") : t("settings.harness.saveToken")}
+              </Button>
+            </SecretWriteSaveTip>
           </div>
           <p className="text-caption-1-medium text-text-secondary">{t("settings.harness.needBoth")}</p>
         </div>

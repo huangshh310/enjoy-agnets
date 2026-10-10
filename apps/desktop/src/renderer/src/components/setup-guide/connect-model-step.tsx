@@ -8,7 +8,7 @@ import { cx } from "@/utils/cx"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { SecretWriteNotice } from "@renderer/components/settings/secret-write-notice"
+import { SecretWritePreflight } from "@renderer/components/settings/secret-write-notice"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import {
@@ -33,9 +33,7 @@ export function ConnectModelStep({
   const options = connectModelOptions(readiness)
   return (
     <div className="flex flex-col gap-2">
-      {readiness?.secretStorageAvailable === false ? (
-        <SecretWriteNotice code="KEYCHAIN_UNAVAILABLE" />
-      ) : null}
+      {readiness?.secretStorageAvailable === false ? <SecretWritePreflight /> : null}
     <ul data-testid="setup-guide-connect-model" className="flex flex-col gap-2">
       {options.map((option) => (
         <li key={option.id}>

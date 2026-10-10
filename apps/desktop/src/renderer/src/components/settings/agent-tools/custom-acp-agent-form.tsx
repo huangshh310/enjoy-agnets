@@ -11,7 +11,7 @@ import { useT } from "@renderer/i18n"
 import type { CustomAgentRecord, UpsertCustomAgentInput } from "@enjoy-agents/ipc-contract"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
 import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
-import { SecretWriteNotice } from "../secret-write-notice"
+import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "../secret-write-notice"
 import { submitCustomAgentWrite } from "./custom-acp-agent-submit"
 
 export type CustomAgentDraft = {
@@ -59,6 +59,7 @@ export function CustomAcpAgentForm({
         void submitCustomAgent(draft, setBusy, setError, gate.setWriteCode, onSaved, t)
       }}
     >
+      {gate.preflight ? <SecretWritePreflight /> : null}
       <p className="text-caption-2-medium text-text-tertiary">{t("settings.registry.customBasenamePolicy")}</p>
       <Field label={t("settings.registry.customLabel")}>
         <Input
@@ -79,12 +80,14 @@ export function CustomAcpAgentForm({
       <ArgsEditor args={draft.args} onChange={(args) => setDraft({ ...draft, args })} />
       <EnvEditor env={draft.env} onChange={(env) => setDraft({ ...draft, env })} />
       <CwdFields draft={draft} onChange={setDraft} />
-      {gate.noticeCode ? <SecretWriteNotice code={gate.noticeCode} /> : null}
+      {gate.errorCode ? <SecretWriteError code={gate.errorCode} /> : null}
       {error ? <p className="text-caption-1-medium text-text-error-primary">{error}</p> : null}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="sm" disabled={busy || gate.blocked} className="text-caption-1-medium">
-          {busy ? t("settings.secretWrite.saving") : t("settings.registry.saveCustom")}
-        </Button>
+        <SecretWriteSaveTip blocked={gate.blocked}>
+          <Button type="submit" size="sm" disabled={busy || gate.blocked} className="text-caption-1-medium">
+            {busy ? t("settings.secretWrite.saving") : t("settings.registry.saveCustom")}
+          </Button>
+        </SecretWriteSaveTip>
         {onCancel ? (
           <Button type="button" size="sm" variant="ghost" onClick={onCancel} className="text-caption-1-medium">
             {t("settings.agentTools.close")}

@@ -7,6 +7,7 @@ import { useCreateProjectStore } from "@renderer/components/workspace/create-pro
 import { rememberChatReadiness } from "@renderer/hooks/chat-readiness-cache"
 import { bindSessionRuntime } from "@renderer/hooks/persist-runtime"
 import { CHAT_READINESS_QUERY_KEY } from "@renderer/hooks/use-chat-readiness"
+import { forceSecretWriteForE2e, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { queryClient } from "@renderer/lib/query-client"
 import { useChatStore } from "@renderer/stores/chat-store"
 
@@ -27,6 +28,7 @@ export type EnjoyE2eBridge = {
   resumeGuide: () => void
   hideGuide: () => void
   hideCreateProject: () => void
+  forceSecretWrite: (code: SecretWriteErrorCode | null) => void
 }
 
 declare global {
@@ -71,6 +73,7 @@ export function installEnjoyE2eBridge(): void {
     replayGuide: replaySetupGuide,
     resumeGuide: resumeSetupGuide,
     hideGuide: () => useSetupGuideStore.getState().hide(),
-    hideCreateProject: () => useCreateProjectStore.getState().hide()
+    hideCreateProject: () => useCreateProjectStore.getState().hide(),
+    forceSecretWrite: forceSecretWriteForE2e
   }
 }
