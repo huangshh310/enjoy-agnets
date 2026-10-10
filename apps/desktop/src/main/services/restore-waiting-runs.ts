@@ -163,6 +163,7 @@ async function restoreOneWaiting(input: {
     abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
     return
   }
+  run.reaskReason = "restart"
   run.pendingApprovals = extras.pendingApprovals?.length
     ? extras.pendingApprovals
     : [

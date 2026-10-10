@@ -3,6 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
+import { sessionTableAllowsTool } from "@enjoy-agents/agent-core"
 import { seedRunSessionAllow } from "./conversation-session-allow"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
@@ -61,6 +62,8 @@ export type ActiveRun = {
   userCancelled?: boolean
   /** 补跑 Dock 超时：abort 前同步打上，谁先 fail 都写超时码。 */
   catchUpApprovalTimedOut?: boolean
+  /** 重启回挂 waiting=restart；续跑 / 回挂 running=restore。 */
+  reaskReason?: "restart" | "restore"
 }
 
 const activeRuns = new Map<string, ActiveRun>()
@@ -74,7 +77,7 @@ export type RunSettleResult = { status: "end" | "error"; summary: string }
 const SETTLED_RUNS_CAP = 200
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
-  const next = acceptStreamEvent(withAutomationApprovalSource(event))
+  const next = acceptStreamEvent(withAutomationApprovalSource(withSessionAllowMarks(event)))
   if (!next) {
     const fallback = droppedTerminalSettle(event)
     if (fallback) settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
@@ -95,6 +98,35 @@ function withAutomationApprovalSource(event: StreamEvent): StreamEvent {
   if (event.type !== "approval.required" || event.automationSource) return event
   const source = getActiveRun(event.runId)?.input.automationSource
   return source ? { ...event, automationSource: source } : event
+}
+
+function withSessionAllowMarks(event: StreamEvent): StreamEvent {
+  if (event.type !== "tool.start" && event.type !== "tool.result" && event.type !== "approval.required") {
+    return event
+  }
+  const run = getActiveRun(event.runId)
+  const allowedBySession =
+    event.allowedBySession ??
+    (run
+      ? sessionTableAllowsTool(
+          event.name,
+          {
+            requireWriteApproval: true,
+            requireBashApproval: true,
+            requireCommitApproval: true,
+            sessionApprovedTools: run.sessionApprovedTools,
+            sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes]
+          },
+          event.args
+        )
+      : false)
+  const reaskReason =
+    event.reaskReason ?? (event.type === "approval.required" ? run?.reaskReason : undefined)
+  return {
+    ...event,
+    allowedBySession,
+    ...(reaskReason ? { reaskReason } : {})
+  }
 }
 
 /** Workflow / Automation 等待同一 run 收工。 */

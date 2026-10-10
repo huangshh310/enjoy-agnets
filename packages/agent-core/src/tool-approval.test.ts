@@ -5,6 +5,7 @@ import {
   isExploreMutatingDeny,
   isMcpWriteToolName,
   resolveToolApproval,
+  sessionTableAllowsTool,
   toHarnessApprovalSettings
 } from "./tool-approval.ts"
 
@@ -309,6 +310,20 @@ test("会话放行 write 时，write_file / edit 一并放行", () => {
   assert.equal(resolveToolApproval("write", "agent", policy), "approved")
   assert.equal(resolveToolApproval("write_file", "agent", policy), "approved")
   assert.equal(resolveToolApproval("edit_file", "agent", policy), "approved")
+})
+
+test("sessionTableAllowsTool 只认会话表，不认 prefs Auto", () => {
+  const session = {
+    ...REQUIRE_ALL,
+    sessionApprovedTools: new Set(["write_file"]),
+    sessionApprovedBashPrefixes: ["git push"]
+  }
+  assert.equal(sessionTableAllowsTool("write_file", session), true)
+  assert.equal(sessionTableAllowsTool("edit_file", session), true)
+  assert.equal(sessionTableAllowsTool("bash", session, { command: "git push origin main" }), true)
+  assert.equal(sessionTableAllowsTool("bash", session, { command: "bash -c 'whoami'" }), false)
+  assert.equal(sessionTableAllowsTool("write_file", AUTO_ALL), false)
+  assert.equal(sessionTableAllowsTool("read_file", session), false)
 })
 
 test("Ask 模式即使会话已放行也拒绝", () => {

