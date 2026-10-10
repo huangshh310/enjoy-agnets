@@ -9,12 +9,14 @@ import {
   getApprovalByRunAndSdkId,
   getApprovalBySdkIdentity,
   insertApproval,
+  migrateApprovalForRepark,
   nextApprovalId,
   planRememberApproval,
   planSameRunSdkCollision,
   resolvedSdkApprovalId,
   setApprovalDecision,
-  setApprovalSdkResponse
+  setApprovalSdkResponse,
+  supersededSdkApprovalId
 } from "./approvals.ts"
 
 function decidedRow(overrides: Partial<Parameters<typeof insertApproval>[1]> = {}) {
@@ -199,6 +201,50 @@ test("同一 run 内 SDK id 对应不同 toolCall：碰撞计划是 fail closed"
   assert.equal(plan.action, "fail_closed")
   if (plan.action === "fail_closed") assert.equal(plan.cause, "sdk_id_collision")
   assert.equal(plan.sdkApprovalId, "apr_stub")
+})
+
+test("repark 迁走 sdk_approval_id，回放只命中新行", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  insertApproval(
+    db,
+    decidedRow({
+      id: "apr_stub",
+      sdkApprovalId: "apr_stub",
+      name: "desktop_act",
+      decision: "allow",
+      sdkApproved: null
+    })
+  )
+  const migrated = migrateApprovalForRepark(db, {
+    existingId: "apr_stub",
+    nextId: "apr_second",
+    name: "desktop_act",
+    args: JSON.stringify({ observationId: "obs_2" }),
+    hmac: "new-hmac",
+    createdAt: 2
+  })
+  assert.equal(migrated.id, "apr_second")
+  assert.equal(migrated.sdkApprovalId, "apr_stub")
+  const old = getApproval(db, "apr_stub")
+  assert.equal(old?.sdkApprovalId, supersededSdkApprovalId("apr_stub"))
+  assert.equal(old?.hmac, "")
+  assert.equal(old?.decision, "allow")
+  const active = getApprovalBySdkIdentity(db, {
+    sdkApprovalId: "apr_stub",
+    runId: "run_1",
+    toolCallId: "tool_stub"
+  })
+  assert.equal(active?.id, "apr_second")
+  assert.equal(active?.sdkApprovalId, "apr_stub")
+  assert.equal(
+    getApprovalBySdkIdentity(db, {
+      sdkApprovalId: supersededSdkApprovalId("apr_stub"),
+      runId: "run_1",
+      toolCallId: "tool_stub"
+    }),
+    undefined
+  )
 })
 
 test("落库 SDK response 后带 resumeCode 不得回放 true", () => {
