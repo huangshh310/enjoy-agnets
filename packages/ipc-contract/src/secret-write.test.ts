@@ -38,6 +38,14 @@ test("失败只回 { ok:false, code }，未知字段拒收；revokeUrl 只认 ht
     }).success,
     false
   )
+  assert.equal(
+    SecretWriteBlocked.safeParse({
+      ok: false,
+      code: "KEYCHAIN_UNAVAILABLE",
+      revokeUrl: "https://user:pass@platform.openai.com/api-keys"
+    }).success,
+    false
+  )
 })
 
 test("成功把既有 payload 摊在 ok:true 旁边", () => {

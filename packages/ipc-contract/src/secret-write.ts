@@ -11,15 +11,14 @@ import { z } from "zod"
 export const SecretWriteErrorCode = z.enum(["KEYCHAIN_UNAVAILABLE"])
 export type SecretWriteErrorCode = z.infer<typeof SecretWriteErrorCode>
 
-/** 删档案拒绝时可带：只 https、只来自精选 preset，没有就省略。 */
-const HttpsRevokeUrl = z.string().refine((value) => {
-  try {
-    const url = new URL(value)
-    return url.protocol === "https:" && !url.username && !url.password
-  } catch {
-    return false
-  }
-})
+/** 本包 `types: []`，不能 `new URL`。只认 https、拒 userinfo。 */
+function isHttpsRevokeUrl(value: string): boolean {
+  if (!value.startsWith("https://")) return false
+  const host = value.slice("https://".length).split(/[/?#]/, 1)[0] ?? ""
+  return host.length > 0 && !host.includes("@") && !host.includes(" ")
+}
+
+const HttpsRevokeUrl = z.string().refine(isHttpsRevokeUrl)
 
 export const SecretWriteBlocked = z
   .object({
