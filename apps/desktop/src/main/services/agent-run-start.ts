@@ -16,7 +16,7 @@ import { maybeRenameSession } from "./persist-session"
 import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { peekVerifiedLocalModel } from "./chat-readiness"
 import { hasSecret } from "./secrets"
-import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
+import { beginAgentRunGate, shouldSkipSelectedRouteGate } from "./selected-chat-route"
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
@@ -35,7 +35,6 @@ import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compactio
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eCostSeed, isE2eStub } from "./e2e-stub"
 import type { AgentRunResult } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
@@ -103,7 +102,7 @@ async function beginAgentRun(
 ): Promise<AgentRunResult> {
   const prefs = readPreferences()
   const runtimeId = resolveRuntimeId(input, prefs)
-  const blocked = selectedRouteGateCode({
+  const blocked = beginAgentRunGate({
     skip: shouldSkipSelectedRouteGate({
       automationSource: input.automationSource,
       rememberMru: options.rememberMru,
@@ -115,7 +114,7 @@ async function beginAgentRun(
     hasEnjoySecret: await hasSecret().catch(() => "unknown" as const),
     verifiedLocal: peekVerifiedLocalModel()
   })
-  if (blocked) return { ok: false, code: NO_CHAT_ROUTE }
+  if (blocked) return blocked
   writeSessionRuntime(input.sessionId, runtimeId)
   input.runtimeId = runtimeId
   const overlayModel = await resolveBoundRunModelId(input, runtimeId)

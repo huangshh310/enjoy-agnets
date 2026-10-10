@@ -23,9 +23,15 @@ export function ReadySummary({ workspaceName }: { workspaceName: string }) {
   const workspace = workspaceName
     ? t("settings.setupGuide.readyWorkspace", { name: workspaceName })
     : t("settings.setupGuide.readyNoWorkspace")
+  const unverified = (readiness.localModels ?? []).some((row) => row.verified === false)
   return (
     <p data-testid="ready-ok-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
-      {joinSegments(t("settings.setupGuide.readyEngines", { count: engineCount }), themeLabel, workspace)}
+      {joinSegments(
+        t("settings.setupGuide.readyEngines", { count: engineCount }),
+        unverified ? t("settings.setupGuide.configuredUnverified") : undefined,
+        themeLabel,
+        workspace
+      )}
     </p>
   )
 }

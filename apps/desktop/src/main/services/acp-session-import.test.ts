@@ -1,5 +1,8 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { acpListSpawnOverride } from "./acp-session-import-override.ts"
 import { projectListedAcpSessions } from "./acp-session-import-project.ts"
 import { acpSessionListFailedCopy } from "../../renderer/src/components/ai-chat/agent-picker/acp-session-import-copy.ts"
@@ -75,4 +78,9 @@ test("没写过覆盖时不读 modelId；缺字段会话不崩，界面走人话
   assert.equal(en, "Can't read this engine's local sessions right now.")
   assert.doesNotMatch(zh, /Cannot read|TypeError|modelId|undefined/)
   assert.doesNotMatch(en, /Cannot read|TypeError|modelId|undefined/)
+})
+
+test("列会话失败把原文打到 main 日志，不进界面", () => {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "acp-session-import.ts"), "utf8")
+  assert.match(src, /console\.warn\("agentTools\.listAcpSessions failed"/)
 })

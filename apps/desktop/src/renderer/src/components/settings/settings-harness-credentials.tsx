@@ -12,6 +12,7 @@ import { runSecretWrite } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "./secret-write-notice"
 import { SettingsRow } from "./settings-row"
+import { SecretStorageWarning } from "./secret-storage-warning"
 import { harnessStatusCopy } from "./harness-status-copy"
 
 export function SettingsHarnessCredentials() {
@@ -48,6 +49,9 @@ export function SettingsHarnessCredentials() {
 
   return (
     <>
+      <div className="px-5">
+        <SecretStorageWarning />
+      </div>
       <SettingsRow title={t("settings.harness.status")} description={status.description}>
         <span className="text-caption-1-medium text-text-secondary">{status.summary}</span>
       </SettingsRow>

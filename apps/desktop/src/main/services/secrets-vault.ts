@@ -3,7 +3,9 @@
  */
 import { safeStorage } from "electron"
 import { isE2eStub } from "./e2e-stub.ts"
+import { SecretWriteFailure, isSecretStorageAvailable } from "./secret-storage.ts"
 import {
+  deleteSecretValue,
   getSecretValue,
   setSecretValue,
 } from "@enjoy-agents/db"
@@ -139,6 +141,13 @@ export function toPublic(profile: ProviderProfile, activeId: string | null): Pro
   }
 }
 
+/** 库里有密文但解不开（换机 / 钥匙串挂了）：删档案必须拒绝，不能当成空 vault 成功。 */
+export function vaultCipherUnreadable(): boolean {
+  const stored = readVaultBlob()
+  if (!stored) return false
+  return decryptJson(stored) === undefined
+}
+
 export async function readVault(): Promise<Vault> {
   const stored = readVaultBlob()
   if (stored) {
@@ -148,12 +157,12 @@ export async function readVault(): Promise<Vault> {
       activeId: decoded.activeId,
       profiles: decoded.profiles as Parameters<typeof normalizeVault>[0]["profiles"]
     })
-    if (normalized.changed) await writeVault(normalized.vault)
+    if (normalized.changed) await writeVaultQuiet(normalized.vault)
     return normalized.vault
   }
   const migrated = migrateLegacySecret()
   if (migrated) {
-    await writeVault(migrated)
+    await writeVaultQuiet(migrated)
     return migrated
   }
   return emptyVault()
@@ -163,6 +172,21 @@ export async function writeVault(vault: Vault): Promise<void> {
   setSecretValue(getDatabase(), VAULT_KEY, encryptJson(vault))
   // 惰性清理 settings KV 里的旧位置；键不存在时无害。
   deleteSetting(VAULT_KEY)
+}
+
+/** 整行清掉，不重加密。钥匙串挂掉时只在删完一张都不剩才走这条。 */
+export function clearVault(): void {
+  deleteSecretValue(getDatabase(), VAULT_KEY)
+  deleteSetting(VAULT_KEY)
+}
+
+/** 读路径不得因钥匙串抛；迁库失败仍把内存里的 vault 还给调用方。 */
+async function writeVaultQuiet(vault: Vault): Promise<void> {
+  try {
+    await writeVault(vault)
+  } catch {
+    // 读时不回写。
+  }
 }
 
 /** vault 密文已迁到 secrets_vault 专表；首次读到旧 settings 键时搬一次。 */
@@ -180,13 +204,18 @@ function readVaultBlob(): string | undefined {
 const E2E_PLAIN_PREFIX = "e2e-plain:"
 
 function encryptJson(value: unknown): string {
+  // 生产永不写明文。e2e-plain 只在 stub+未打包+隔离 userData（isSecretStorageAvailable 三道闸）。
+  if (!isSecretStorageAvailable()) {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
+  }
   if (isE2eStub() && !safeStorage.isEncryptionAvailable()) {
     return E2E_PLAIN_PREFIX + JSON.stringify(value)
   }
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error("OS keychain encryption is not available on this machine.")
+  try {
+    return safeStorage.encryptString(JSON.stringify(value)).toString("base64")
+  } catch {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
-  return safeStorage.encryptString(JSON.stringify(value)).toString("base64")
 }
 
 function decryptJson<T>(stored: string): T | undefined {

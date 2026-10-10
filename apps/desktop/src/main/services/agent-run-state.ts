@@ -12,7 +12,7 @@ import { emptyTranscript, type RunTranscript } from "./persist-session"
 import type { StoredSecret } from "./secrets"
 import { acceptStreamEvent } from "./accept-stream-event"
 import { stampAndSend } from "./event-bus"
-import { droppedTerminalSettle } from "./settle-dropped-terminal"
+import { droppedTerminalRescue, droppedTerminalSettle } from "./settle-dropped-terminal"
 
 export type ActiveRun = {
   abort: AbortController
@@ -77,7 +77,16 @@ export function emitEvent(window: BrowserWindow, event: StreamEvent) {
   const next = acceptStreamEvent(withAutomationApprovalSource(event))
   if (!next) {
     const fallback = droppedTerminalSettle(event)
-    if (fallback) settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
+    if (fallback) {
+      settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
+      const rescue = droppedTerminalRescue(event)
+      const accepted = rescue ? acceptStreamEvent(rescue) : null
+      if (accepted) {
+        const sessionId = accepted.sessionId ?? sessionIdOfRun(accepted)
+        if (sessionId) stampAndSend(window, accepted, sessionId)
+        else if (!window.isDestroyed()) window.webContents.send("agent.event", accepted)
+      }
+    }
     return
   }
   const sessionId = next.sessionId ?? sessionIdOfRun(next)

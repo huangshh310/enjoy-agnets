@@ -20,6 +20,7 @@ import { ProviderOverridesTab } from "./provider-overrides-tab"
 import { ProviderParamsTab } from "./provider-params-tab"
 import type { EditorState, ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
+import { SecretStorageWarning } from "../secret-storage-warning"
 
 export function ProviderEditorFields({
   editor,
@@ -42,6 +43,8 @@ export function ProviderEditorFields({
 }) {
   const t = useT()
   return (
+    <div className="flex flex-col gap-3">
+    <SecretStorageWarning />
     <Tabs defaultValue="connection" className="w-full">
       {/* 顶部 Tab 导航栏 */}
       <TabsList className="grid w-full grid-cols-4 rounded-xl bg-background-tertiary-default p-1 mb-2">
@@ -114,5 +117,6 @@ export function ProviderEditorFields({
         />
       </TabsContent>
     </Tabs>
+    </div>
   )
 }

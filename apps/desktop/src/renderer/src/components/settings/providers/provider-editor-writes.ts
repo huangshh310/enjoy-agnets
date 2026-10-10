@@ -56,13 +56,15 @@ export async function runProviderProbe(
       models: Array<{ id: string; label: string }>
       code?: string
       vars?: Record<string, string>
+      saved?: boolean
     }
     setProbe({
       status: result.ok ? "ok" : "error",
       message: result.message,
       code: result.code,
       vars: result.vars,
-      models: result.models
+      models: result.models,
+      saved: result.saved
     })
     if (!result.ok || result.models.length === 0) return
     const models = mergeCatalog(editor.models, result.models)

@@ -14,7 +14,15 @@ export const enSettings = {
     writeFailedKeychain:
       "Could not save: the system keychain is not usable right now. The key will not be stored in plaintext. Unlock the keychain, then save again.",
     failed: "Could not save. Please try again.",
+    notSaved: "Not saved",
     saving: "Saving…"
+  },
+
+  secrets: {
+    keychainUnavailable:
+      "This computer cannot store secrets securely right now. Unlock the system keychain — we will not fall back to plaintext.",
+    keychainUnavailableHint:
+      "On Linux, unlock GNOME Keyring or KWallet first. Dev commands are in the architecture spec."
   },
 
   general: {
@@ -127,6 +135,7 @@ export const enSettings = {
     readyEngines: "{count} engines",
     readyWorkspace: "Project {name}",
     readyNoWorkspace: "No project yet",
+    configuredUnverified: "Configured · unverified",
     shortcutsToday: "Shortcuts worth learning today",
     shortcutSettings: "Open settings",
     shortcutApproval: "Cycle approval",
@@ -1052,6 +1061,11 @@ export const enSettings = {
     usedBy: "Used by",
     removeBoundTitle: "Delete {name}?",
     removeBoundDesc: "These assistants will go back to official login: {agents}. Enjoy keys for other profiles stay.",
+    deleteKeychainUnavailable:
+      "Couldn't delete: the system keychain is not usable right now, so this key cannot be removed yet. Your other keys are unchanged. Unlock the keychain, then try again.",
+    deleteRevokeHint: "If you are worried this key leaked, revoke it on the {provider} site first.",
+    deleteRevokeLink: "Revoke",
+    deleteRevokeHintGeneric: "If you are worried this key leaked, revoke it on the provider site first.",
     use: "Use",
     edit: "Edit",
     deleteAria: "Delete {name}",

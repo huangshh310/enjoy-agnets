@@ -1,5 +1,5 @@
 /**
- * 把 Composer 选中的 runtimeId 写入偏好与当前会话覆盖。
+ * Composer 选中的 runtime 只绑当前会话；设为主引擎才写偏好。
  * 中途换模走 persistSessionModel，禁止误写成全局 upsert。
  */
 import { capabilitiesFor, type AgentToolId } from "@enjoy-agents/ipc-contract"
@@ -8,6 +8,8 @@ import { getIde, hasIde } from "../lib/ide"
 import { supportsMidSessionModelSwitch } from "../lib/model-switch-state.ts"
 import { nextPreferredModelId, planSessionModelWrite } from "../lib/session-model.ts"
 import { useChatStore } from "../stores/chat-store"
+import { runSecretWrite, SecretWriteUiError } from "../lib/secret-write"
+import { applyPreferredRuntime, persistPreferredAfterSecret } from "./persist-preferred-runtime.ts"
 import { patchPreferences } from "./use-settings-snapshot"
 
 /** 只绑这一条会话，不改全局偏好。新建会话也走这里。 */
@@ -71,10 +73,15 @@ async function persistSessionModelRemote(
   }
   if (!writePreferenceDefault) return
   if (runtimeId === "enjoy-local") {
-    await getIde().settings.setActiveModel({ modelId: next })
+    await requireSecretWrite(() => getIde().settings.setActiveModel({ modelId: next }))
     return
   }
-  await getIde().agentTools.upsert({ id: runtimeId, modelId: next })
+  await requireSecretWrite(() => getIde().agentTools.upsert({ id: runtimeId, modelId: next }))
+}
+
+async function requireSecretWrite(op: () => Promise<unknown>): Promise<void> {
+  const outcome = await runSecretWrite(op)
+  if (!outcome.ok) throw new SecretWriteUiError(outcome.code)
 }
 
 function restoreSessionModel(previous: {
@@ -90,12 +97,25 @@ function restoreSessionModel(previous: {
   store.setSessionModels(previous.sessionModels)
 }
 
-export async function persistRuntimeId(runtimeId: AgentToolId, modelId?: string) {
+export async function persistRuntimeId(
+  runtimeId: AgentToolId,
+  modelId?: string,
+  opts?: { asDefault?: boolean }
+) {
   const store = useChatStore.getState()
   store.setRuntimeId(runtimeId)
-  store.setPreferredRuntimeId(runtimeId)
   if (store.sessionId) await bindSessionRuntime(store.sessionId, runtimeId)
-  await patchPreferences({ runtimeId })
-  if (!hasIde()) return
-  if (modelId) await getIde().agentTools.upsert({ id: runtimeId, modelId })
+  const writeSecret =
+    hasIde() && modelId
+      ? () => requireSecretWrite(() => getIde().agentTools.upsert({ id: runtimeId, modelId }))
+      : undefined
+  if (opts?.asDefault) {
+    await persistPreferredAfterSecret({
+      writeSecret,
+      applyPreferred: () => applyPreferredRuntime(store, runtimeId),
+      writePreferences: () => patchPreferences({ runtimeId })
+    })
+    return
+  }
+  if (writeSecret) await writeSecret()
 }

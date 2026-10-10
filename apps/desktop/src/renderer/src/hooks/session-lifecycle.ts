@@ -7,8 +7,7 @@ import {
   modeForNewSession,
   readRememberedDefaultMode
 } from "../components/ai-chat/composer/composer-mode"
-import { pickSessionRuntime } from "../lib/agent-runtime"
-import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
+import { DEFAULT_RUNTIME_ID, sessionSwitchComposerReset } from "../lib/session-runtime"
 import { getIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import {
@@ -105,7 +104,13 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     }
     store.setSession(sessionId, title)
     store.setMessages([])
-    store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
+    const next = sessionSwitchComposerReset({
+      nextSessionId: sessionId,
+      sessionRuntimes: store.sessionRuntimes,
+      preferredRuntimeId: store.preferredRuntimeId
+    })
+    store.setRuntimeId(next.runtimeId)
+    store.setAgentPickerOpen(next.agentPickerOpen)
     applyComposerModel(store, sessionId)
     useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
     useEngineHandoffStore.getState().resetPending()

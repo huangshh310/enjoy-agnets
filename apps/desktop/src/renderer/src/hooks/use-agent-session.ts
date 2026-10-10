@@ -15,8 +15,7 @@ import { applyDefaultChatRoute } from "./apply-default-chat-route"
 import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
-import { composerModelPatch } from "../lib/session-model.ts"
-import { pickActiveModel } from "./pick-active-model"
+import { applyComposerModelFromSettings } from "./apply-settings-composer-model"
 import {
   createAndOpenSession,
   loadSession,
@@ -26,6 +25,7 @@ import {
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import type { WorkspaceRow } from "./workspace-row"
 import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
+import { markModelsListFailed } from "./models-listed"
 import { useChatStore, type ModelOption } from "../stores/chat-store"
 import { pickForegroundSession } from "./pick-foreground-session"
 import { resolveApprovalRunId } from "./resolve-approval-run"
@@ -213,28 +213,31 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
     store.setHasKey(snapshot.hasKey)
     return
   }
-  const models = (await getIde().models.list()) as ModelOption[]
-  store.setModels(models)
-  const preferredModel = store.preferredModelId || snapshot.defaultModelId
-  const sessionPatch = store.sessionId
-    ? composerModelPatch({
-        sessionId: store.sessionId,
-        sessionModels: snapshot.sessionModels ?? store.sessionModels,
-        preferredModelId: preferredModel,
-        models
-      })
-    : { modelId: preferredModel, modelLabel: "" }
-  const selected = pickActiveModel(models, sessionPatch.modelId, snapshot.defaultModelId)
-  if (selected) {
-    store.setModel(
-      selected.id,
-      selected.label,
-      selected.provider,
-      store.reasoningEffort ?? selected.reasoningEffort
-    )
-  } else {
-    store.setModel(sessionPatch.modelId, sessionPatch.modelLabel)
+  let models: ModelOption[] = store.models
+  try {
+    models = (await getIde().models.list()) as ModelOption[]
+    store.setModels(models)
+  } catch {
+    markModelsListFailed()
   }
+  applyComposerModelFromSettings({
+    sessionId: store.sessionId,
+    sessionModels: snapshot.sessionModels ?? store.sessionModels,
+    preferredModelId: store.preferredModelId,
+    reasoningEffort: store.reasoningEffort,
+    defaultModelId: snapshot.defaultModelId,
+    readySnap,
+    models,
+    setModel: (id, label = "", provider, effort) =>
+      store.setModel(
+        id,
+        label,
+        provider,
+        effort === "low" || effort === "medium" || effort === "high" || effort === "xhigh"
+          ? effort
+          : undefined
+      )
+  })
   // 先写 model 再亮 hasKey，避免发送盘在 modelId 仍空时变成 Send。
   store.setHasKey(snapshot.hasKey)
 }

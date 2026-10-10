@@ -106,7 +106,7 @@ function RowOverflow({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="sm" className="h-7 w-7 rounded-lg p-0 text-text-tertiary" aria-label={t("settings.providers.moreActions")}>
+        <Button type="button" variant="ghost" size="sm" className="h-7 w-7 rounded-lg p-0 text-text-tertiary" aria-label={t("settings.providers.moreActions")} data-testid={`provider-row-more-${profile.id}`}>
           <RiMoreLine className="size-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -126,7 +126,7 @@ function RowOverflow({
           <RiFileCopyLine className="size-3.5" />
           {t("settings.providers.duplicate")}
         </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={onRemove}>
+        <DropdownMenuItem variant="destructive" data-testid={`provider-row-delete-${profile.id}`} onClick={onRemove}>
           <RiDeleteBinLine className="size-3.5" />
           {t("common.delete")}
         </DropdownMenuItem>

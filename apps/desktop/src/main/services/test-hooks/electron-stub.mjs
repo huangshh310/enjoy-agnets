@@ -8,15 +8,33 @@ import { join } from "node:path"
 const userData = mkdtempSync(join(tmpdir(), "enjoy-catchup-"))
 
 export const app = {
+  isPackaged: false,
   getPath(name) {
     return name === "userData" ? userData : join(userData, String(name))
   }
 }
 
+let encryptionAvailable = false
+let linuxBackend = "basic_text"
+
 export const safeStorage = {
-  isEncryptionAvailable: () => false,
+  isEncryptionAvailable: () => encryptionAvailable,
+  getSelectedStorageBackend: () => linuxBackend,
   encryptString: (text) => Buffer.from(String(text), "utf8"),
-  decryptString: (buf) => Buffer.from(buf).toString("utf8")
+  decryptString: (buf) => {
+    if (!encryptionAvailable) throw new Error("Encryption is not available.")
+    return Buffer.from(buf).toString("utf8")
+  },
+  setEncryptionAvailable(next) {
+    encryptionAvailable = Boolean(next)
+  },
+  setSelectedStorageBackend(next) {
+    linuxBackend = String(next)
+  },
+  resetForTest() {
+    encryptionAvailable = false
+    linuxBackend = "basic_text"
+  }
 }
 
 export class BrowserWindow {

@@ -70,7 +70,7 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
       models: [{ id: "grok-4.6", label: "grok-4.6" }]
     }
   })
-  assert.equal(grok, "grok-4.6")
+  assert.equal(grok, "Grok 4.6")
   assert.equal(
     composerActiveModelId({
       runtimeId: "grok",
@@ -85,7 +85,7 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     catalogLabel: "deepseek-v4-flash",
     catalogId: "ds"
   })
-  assert.equal(local, "deepseek-v4-flash")
+  assert.equal(local, "DeepSeek V4 Flash")
   const fallback = composerActiveModelLabel({
     runtimeId: "grok",
     catalogLabel: "deepseek-v4-flash",
@@ -102,7 +102,25 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     agents: [{ id: "claude", label: "Claude Code", selectedModel: "claude-sonnet-4-5" }]
   })
   assert.equal(pending.id, "claude-sonnet-4-5")
-  assert.equal(pending.label, "claude-sonnet-4-5")
+  assert.equal(pending.label, "Claude Sonnet 4.5")
+})
+
+test("分档 / 撤回映射没有档案 label 时从 id 读成人话，不摊 raw id", () => {
+  const label = composerActiveModelLabel({
+    runtimeId: "enjoy-local",
+    catalogLabel: "",
+    catalogId: "claude-haiku-5-5"
+  })
+  assert.equal(label, "Claude Haiku 5.5")
+  assert.ok(!label.includes("claude-haiku-5-5"))
+  assert.equal(
+    composerActiveModelLabel({
+      runtimeId: "enjoy-local",
+      catalogLabel: "",
+      catalogId: "claude-sonnet-4-5"
+    }),
+    "Claude Sonnet 4.5"
+  )
 })
 
 test("上一引擎的 deepseek 覆盖不会粘到没有这个 id 的 Claude", () => {
@@ -176,7 +194,7 @@ test("绑定档案时模型用 vault 所选，档案名只进 title", () => {
       models: [{ id: "hy3", label: "hy3" }]
     }
   })
-  assert.equal(label, "hy3")
+  assert.equal(label, "Hy3")
   assert.equal(
     composerBoundProviderLabel({ useCustomProvider: true, boundProviderName: "lucky0625" }),
     "lucky0625"
@@ -186,6 +204,6 @@ test("绑定档案时模型用 vault 所选，档案名只进 title", () => {
     modelLabel: label,
     providerLabel: "lucky0625"
   })
-  assert.equal(composerChipText(parts), "Codex CLI · hy3")
-  assert.equal(parts.title, "Codex CLI · lucky0625 · hy3")
+  assert.equal(composerChipText(parts), "Codex CLI · Hy3")
+  assert.equal(parts.title, "Codex CLI · lucky0625 · Hy3")
 })

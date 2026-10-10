@@ -4,9 +4,12 @@ import {
   createE2eStubStream,
   isE2eStub,
   lastUserText,
+  shouldEmitHugeMcpApp,
   shouldFailStubStore,
   stubApprovedWrite,
   stubDeniedApproval,
+  STUB_HUGE_MCP_APP_PROMPT,
+  STUB_HUGE_MCP_APP_PROMPT_ZH,
   STUB_STORE_ERROR_PROMPT,
   STUB_STORE_ERROR_PROMPT_ZH,
   STUB_TERMINAL_LINK_ECHO,
@@ -408,6 +411,44 @@ test("拒绝后继续不再重放同一张审批", async () => {
   }
   assert.equal(parts.includes("tool-approval-request"), false)
   assert.deepEqual(parts, ["finish"])
+})
+
+test("开发态 stub 超大 MCP App：打包态不吐警告", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  process.env.ENJOY_E2E_STUB = "1"
+  try {
+    assert.equal(shouldEmitHugeMcpApp(STUB_HUGE_MCP_APP_PROMPT, false), true)
+    assert.equal(shouldEmitHugeMcpApp(STUB_HUGE_MCP_APP_PROMPT_ZH, false), true)
+    assert.equal(shouldEmitHugeMcpApp(STUB_HUGE_MCP_APP_PROMPT, true), false)
+    const types: string[] = []
+    const codes: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: STUB_HUGE_MCP_APP_PROMPT }],
+      new AbortController().signal
+    )) {
+      types.push(String(part.type))
+      if (part.type === "generation.warning") codes.push(String(part.code ?? ""))
+      if (part.type === "mcp.app") {
+        assert.equal(part.phase, "error")
+        assert.equal(part.srcDoc, undefined)
+      }
+    }
+    assert.ok(types.includes("mcp.app"))
+    assert.ok(types.includes("generation.warning"))
+    assert.deepEqual(codes, ["mcp_app_srcdoc_too_large"])
+    const packaged: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: STUB_HUGE_MCP_APP_PROMPT }],
+      new AbortController().signal,
+      { packaged: true }
+    )) {
+      packaged.push(String(part.type))
+    }
+    assert.equal(packaged.includes("generation.warning"), false)
+    assert.ok(packaged.includes("text-delta"))
+  } finally {
+    process.env.ENJOY_E2E_STUB = previous
+  }
 })
 
 test("开发态 stub 存储失败夹具：打包态不扔", async () => {

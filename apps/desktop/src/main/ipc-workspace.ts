@@ -30,6 +30,7 @@ import { rememberWorkspaceOpened } from "./services/workspace-remember.ts"
 import { disconnectedError } from "./services/ssh/ssh-errors.ts"
 import { getSshPoolEntry } from "./services/ssh/ssh-pool.ts"
 import { connectWorkspace, disconnectWorkspace, openSshWorkspace, retryWorkspace } from "./services/workspace-ssh"
+import { guardPasswordWrite, runSecretWrite } from "./services/secret-write-guard.ts"
 import {
   dispatchChanges,
   dispatchDiff,
@@ -75,9 +76,14 @@ function registerWorkspaceOpenIpc() {
     return workspace
   })
   ipcMain.handle("workspace.openSsh", async (_event, raw) => {
-    const workspace = await openSshWorkspace(OpenSshWorkspaceInput.parse(raw))
-    rememberWorkspaceOpened(workspace.id)
-    return workspace
+    const input = OpenSshWorkspaceInput.parse(raw)
+    const blocked = guardPasswordWrite(input.password)
+    if (blocked) return blocked
+    return runSecretWrite(async () => {
+      const workspace = await openSshWorkspace(input)
+      rememberWorkspaceOpened(workspace.id)
+      return workspace
+    })
   })
   ipcMain.handle("workspace.remember", async (_event, raw) => {
     const workspaceId = WorkspaceIdInput.parse(raw).workspaceId

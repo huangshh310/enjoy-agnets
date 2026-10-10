@@ -11,6 +11,7 @@ import { sessionHasUserTurns } from "@renderer/components/ai-chat/agent-picker/h
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
+import { resolveModelDisplayName } from "@renderer/lib/model-display-name"
 import { modelSwitchKind } from "@renderer/lib/model-switch-state"
 import { getEffectiveModel, shouldShowModelSwitchBadge } from "@renderer/lib/session-model"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
@@ -93,7 +94,7 @@ function engineModelsForChip(
   advertised: ReadonlyArray<{ id: string; label: string }>
 ): SwitchableModel[] {
   if (runtimeId === DEFAULT_RUNTIME_ID) {
-    return catalog.map((item) => ({ id: item.id, label: item.label || item.id }))
+    return catalog.map((item) => ({ id: item.id, label: resolveModelDisplayName(item.id, item.label) }))
   }
-  return advertised.map((item) => ({ id: item.id, label: item.label || item.id }))
+  return advertised.map((item) => ({ id: item.id, label: resolveModelDisplayName(item.id, item.label) }))
 }

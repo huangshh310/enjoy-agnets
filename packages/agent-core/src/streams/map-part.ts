@@ -28,7 +28,7 @@ export function mapStreamPart(part: Record<string, unknown>, runId: string): Str
   const type = String(part.type ?? "")
   if (ENJOY_TYPES.has(type)) {
     // Enjoy 自组 approval.required 缺 args 时原样放行，禁止在这里填 {}。
-    return part as StreamEvent
+    return { ...(part as StreamEvent), runId: String(part.runId || runId) }
   }
   const text = readPartText(part)
 

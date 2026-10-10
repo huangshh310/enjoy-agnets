@@ -20,7 +20,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog"
 import { useQueryClient } from "@tanstack/react-query"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { SettingsSnapshot, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { createTargetForBind } from "@enjoy-agents/ipc-contract"
 import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "@renderer/components/settings/secret-write-notice"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
@@ -28,6 +28,8 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { runSecretWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
+import { SecretStorageWarning } from "../secret-storage-warning"
+import { persistSnapshot } from "../providers/provider-editor-writes"
 
 type QuickPresetMeta = {
   kind: string
@@ -200,16 +202,21 @@ export function AgentToolQuickKeyDialog({
         apiStyle: preset.apiStyle,
         models: preset.models,
         modelId: preset.defaultModel
-      }) as Promise<{ providers: Array<{ name: string; id: string }> }>
+      }) as Promise<SettingsSnapshot>
     )
     setSaving(false)
     if (!outcome.ok) {
       setWriteCode(outcome.code)
       return
     }
-    await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    const snap = SettingsSnapshot.safeParse(outcome.value)
+    if (!snap.success) {
+      setWriteCode("UNKNOWN")
+      return
+    }
+    await persistSnapshot(queryClient, snap.data)
     const created =
-      outcome.value.providers.find((p) => p.name === profileName) ?? outcome.value.providers.at(-1)
+      snap.data.providers.find((p) => p.name === profileName) ?? snap.data.providers.at(-1)
     if (created) await onSaved(created.id, preset.defaultModel)
     onOpenChange(false)
     resetState()
@@ -236,6 +243,7 @@ export function AgentToolQuickKeyDialog({
           </DialogDescription>
           {secretBlocked ? <SecretWritePreflight /> : null}
         </DialogHeader>
+        <SecretStorageWarning />
 
         <div className="flex flex-col gap-3.5 py-2">
           {/* API Key 输入框 */}

@@ -3,6 +3,7 @@
  */
 import { RiCommandLine, RiCpuLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
+import { resolveModelDisplayName } from "@renderer/lib/model-display-name"
 
 export function InspectorRuntime({
   modelId,
@@ -26,7 +27,7 @@ export function InspectorRuntime({
             {t("chat.inspectorModel")}
           </span>
           <span className="max-w-[140px] truncate font-mono font-semibold text-text-primary" title={modelId}>
-            {modelLabel || modelId}
+            {resolveModelDisplayName(modelId, modelLabel)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">

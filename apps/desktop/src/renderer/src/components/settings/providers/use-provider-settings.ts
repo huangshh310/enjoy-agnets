@@ -15,8 +15,15 @@ import {
 } from "./provider-editor-writes"
 import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
+import {
+  SecretWriteUiError,
+  secretWriteErrorMessage,
+  unwrapSettingsWrite,
+  type SecretWriteErrorCode
+} from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
+import { showAppToast } from "@renderer/lib/app-toast"
+import type { DeleteKeychainNoticeHint } from "@renderer/lib/delete-keychain-notice"
 
 export type PingStateMap = Record<
   string,
@@ -126,26 +133,37 @@ function useProviderWrites(
     },
     activate: async (id: string) => {
       if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.activateProvider({ id })) as SettingsSnapshot)
+      await writeProviderSnapshot(() => getIde().settings.activateProvider({ id }), queryClient, t)
     },
-    remove: async (id: string) => {
-      if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.removeProvider({ id })) as SettingsSnapshot)
-      if (editor?.id === id) closeEditor()
+    remove: async (id: string): Promise<ProviderRemoveResult> => {
+      if (!hasIde()) return { ok: false, kind: "other" }
+      try {
+        await persistSnapshot(queryClient, unwrapSettingsWrite(await getIde().settings.removeProvider({ id })))
+        if (editor?.id === id) closeEditor()
+        return { ok: true }
+      } catch (error) {
+        if (error instanceof SecretWriteUiError && error.code === "KEYCHAIN_UNAVAILABLE") {
+          return { ok: false, kind: "keychain", hint: { revokeUrl: error.revokeUrl, providerLabel: error.providerLabel } }
+        }
+        showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
+        return { ok: false, kind: "other" }
+      }
     },
     duplicate: async (profile: ProviderPublic) => {
       if (!hasIde()) return
       const name = `${profile.name} ${t("settings.providers.copySuffix")}`.trim()
-      await persistSnapshot(
+      await writeProviderSnapshot(
+        () => getIde().settings.duplicateProvider({ id: profile.id, name }),
         queryClient,
-        (await getIde().settings.duplicateProvider({ id: profile.id, name })) as SettingsSnapshot
+        t
       )
     },
     setEnabled: async (id: string, enabled: boolean) => {
       if (!hasIde()) return
-      await persistSnapshot(
+      await writeProviderSnapshot(
+        () => getIde().settings.setProviderEnabled({ id, enabled }),
         queryClient,
-        (await getIde().settings.setProviderEnabled({ id, enabled })) as SettingsSnapshot
+        t
       )
     },
     fetchModels: async () => {
@@ -162,6 +180,23 @@ function useProviderWrites(
         setDetecting(false)
       }
     }
+  }
+}
+
+export type ProviderRemoveResult =
+  | { ok: true }
+  | { ok: false; kind: "keychain"; hint: DeleteKeychainNoticeHint }
+  | { ok: false; kind: "other" }
+
+async function writeProviderSnapshot(
+  write: () => Promise<unknown>,
+  queryClient: QueryClient,
+  t: ReturnType<typeof useT>
+) {
+  try {
+    await persistSnapshot(queryClient, unwrapSettingsWrite(await write()))
+  } catch (error) {
+    showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
   }
 }
 

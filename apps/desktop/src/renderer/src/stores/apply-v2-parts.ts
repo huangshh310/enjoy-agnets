@@ -39,8 +39,20 @@ export function applyV2Part(
     return { messages, thinkingLabel: "Structured" }
   }
   if (event.type === "mcp.app") {
+    if (event.phase === "close") return { messages }
+    if (event.phase === "error") {
+      const next = (assistant.mcpApps ?? []).filter((item) => item.resourceUri !== event.resourceUri)
+      next.push({
+        serverId: event.serverId,
+        resourceUri: event.resourceUri,
+        srcDoc: "",
+        title: event.title
+      })
+      assistant.mcpApps = next
+      return { messages }
+    }
     const srcDoc = event.srcDoc?.trim()
-    if (!srcDoc || event.phase === "error" || event.phase === "close") return { messages }
+    if (!srcDoc) return { messages }
     const wrapped = srcDoc.includes("Content-Security-Policy") ? srcDoc : wrapApprovedAppHtml(srcDoc)
     const next = (assistant.mcpApps ?? []).filter((item) => item.resourceUri !== event.resourceUri)
     next.push({

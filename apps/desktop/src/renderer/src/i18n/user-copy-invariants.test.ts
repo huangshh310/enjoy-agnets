@@ -58,6 +58,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
         saveNeedsKeychain: string
         writeFailedKeychain: string
         failed: string
+        notSaved: string
       }
       setupGuide: {
         replayDesc: string
@@ -122,7 +123,16 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
     "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。"
   )
   assert.equal(z.settings.secretWrite.failed, "没存上，请再试一次")
+  assert.equal(z.settings.secretWrite.notSaved, "没存上")
   assert.doesNotMatch(z.settings.secretWrite.writeFailedKeychain, /重启/)
+  assert.equal(
+    z.settings.providers.deleteKeychainUnavailable,
+    "没删掉：系统钥匙串现在用不了，这把密钥暂时删不了，其他密钥不受影响。请确认钥匙串已解锁后再试。"
+  )
+  assert.equal(z.settings.providers.deleteRevokeHint, "如果担心这把密钥泄露，可以先到 {provider} 后台作废它。")
+  assert.equal(z.settings.providers.deleteRevokeLink, "去作废")
+  assert.equal(z.settings.providers.deleteRevokeHintGeneric, "如果担心这把密钥泄露，可以先到服务商后台作废它。")
+  assert.doesNotMatch(z.settings.providers.deleteKeychainUnavailable, /重启|KEYCHAIN/)
   assert.equal(z.settings.setupGuide.replayDesc, "再走一遍连模型、装引擎、外观和打开文件夹。")
   assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
   assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")

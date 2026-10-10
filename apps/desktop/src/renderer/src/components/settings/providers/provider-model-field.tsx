@@ -240,6 +240,9 @@ function ModelProbeStatus({ probe }: { probe: ProbeState }) {
       <div className="flex items-center gap-1.5 rounded-lg bg-accent-50/50 border border-accent-500/20 px-2.5 py-1.5 text-caption-1-medium text-accent-600">
         <RiCheckLine className="size-3.5 shrink-0" />
         <span className="truncate">{text}</span>
+        {probe.saved === false ? (
+          <span className="shrink-0 text-text-error-primary">{t("settings.secretWrite.notSaved")}</span>
+        ) : null}
       </div>
     )
   }

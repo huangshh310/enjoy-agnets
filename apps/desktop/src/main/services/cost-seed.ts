@@ -137,6 +137,7 @@ function pricedDeepseek(now: number): CostSeedSession {
   }
 }
 
+/** 只写 modelId，不种 Anthropic 档案/label：复检胶囊必须走人话回退，不能摊 raw id。 */
 function tierUnknown(now: number): CostSeedSession {
   return {
     key: "tier",

@@ -12,8 +12,8 @@ import {
   type ProfileUpsertInput,
   type ProviderKind
 } from "@enjoy-agents/providers"
-import { unbindProviderFromAgentTools } from "./agent-tools-vault"
 import { listedModelsFromProfiles } from "./listed-models"
+import { pickActiveEnabled } from "./pick-active-enabled"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
 import {
@@ -27,8 +27,9 @@ import {
 } from "./secrets-vault"
 
 export type { ProviderProfile, ProviderPublic, StoredSecret } from "./secrets-vault"
-export { readVault, writeVault } from "./secrets-vault"
+export { clearVault, readVault, writeVault } from "./secrets-vault"
 export { listedModelsFromProfiles } from "./listed-models"
+export { removeProfile } from "./profile-remove.ts"
 
 export async function listPublicProviders(): Promise<ProviderPublic[]> {
   const vault = await readVault()
@@ -37,9 +38,10 @@ export async function listPublicProviders(): Promise<ProviderPublic[]> {
 
 export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
   const vault = await readVault()
-  const active = vault.profiles.find((profile) => profile.id === vault.activeId && profile.enabled)
-  if (active) return active
-  return vault.profiles.find((profile) => profile.enabled)
+  return pickActiveEnabled(vault.profiles, {
+    enabled: (profile) => profile.enabled,
+    active: (profile) => (profile.id === vault.activeId ? true : undefined)
+  })
 }
 
 export async function findProfileByKinds(kinds: readonly string[]): Promise<ProviderProfile | undefined> {
@@ -106,16 +108,6 @@ export async function setProfileEnabled(id: string, enabled: boolean): Promise<P
   }
   await writeVault(vault)
   return toPublic(profile, vault.activeId)
-}
-
-export async function removeProfile(id: string): Promise<void> {
-  unbindProviderFromAgentTools(id)
-  const vault = await readVault()
-  vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
-  if (vault.activeId === id) {
-    vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
-  }
-  await writeVault(vault)
 }
 
 export async function activateProfile(id: string): Promise<ProviderPublic> {

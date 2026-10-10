@@ -23,6 +23,7 @@ const idle: EngineHandoffState = {
   draftSummary: "",
   filePaths: [],
   banner: null,
+  asDefault: false,
   pendingPreset: null
 }
 
@@ -44,6 +45,7 @@ export const useEngineHandoffStore = create<
       modelId: undefined,
       draftSummary: "",
       filePaths: [],
+      asDefault: false,
       pendingPreset: null
     })
 }))
@@ -51,7 +53,11 @@ export const useEngineHandoffStore = create<
 export type RequestEngineSwitchResult = "applied" | "pending" | "blocked" | "noop"
 
 /** Rail / Picker 选 to。未 ready 的调用方不要进来。 */
-export async function requestEngineSwitch(to: string, modelId?: string): Promise<RequestEngineSwitchResult> {
+export async function requestEngineSwitch(
+  to: string,
+  modelId?: string,
+  opts?: { asDefault?: boolean }
+): Promise<RequestEngineSwitchResult> {
   if (!isAgentToolId(to)) return "noop"
   const chat = useChatStore.getState()
   const plan = planComposerSwitch({
@@ -61,12 +67,16 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     hasPendingApproval: Boolean(chat.pendingApproval)
   })
   if (plan.kind === "noop") {
+    if (opts?.asDefault) {
+      await persistRuntimeId(to, modelId, opts)
+      return "applied"
+    }
     if (!modelId || to !== chat.runtimeId) return "noop"
     const switched = await requestModelSwitch(modelId)
     return switched === "applied" ? "applied" : "noop"
   }
   if (plan.kind === "apply") {
-    await persistRuntimeId(to, modelId)
+    await persistRuntimeId(to, modelId, opts)
     useEngineHandoffStore.getState().resetPending()
     return "applied"
   }
@@ -82,6 +92,7 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     draftSummary: draft.summary,
     filePaths: draft.files,
     banner: null,
+    asDefault: opts?.asDefault === true,
     pendingPreset: null
   })
   return plan.kind === "blocked_by_approval" ? "blocked" : "pending"
@@ -107,7 +118,11 @@ export async function confirmEngineHandoff(): Promise<boolean> {
         summary: formatHandoffHidden(state.draftSummary, state.filePaths) || "上一引擎会话已结束。"
       })
     }
-    await persistRuntimeId(state.toRuntimeId, state.modelId)
+    await persistRuntimeId(
+      state.toRuntimeId,
+      state.modelId,
+      state.asDefault ? { asDefault: true } : undefined
+    )
     if (state.pendingPreset) applyPresetFace(state.pendingPreset)
     useChatStore.getState().markHandoffCut(sessionId, Date.now())
     useEngineHandoffStore.setState({
@@ -117,6 +132,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
       modelId: undefined,
       draftSummary: "",
       filePaths: [],
+      asDefault: false,
       pendingPreset: null,
       banner: {
         sessionId,
@@ -143,6 +159,7 @@ export function cancelEngineHandoff(): string | null {
     modelId: undefined,
     draftSummary: "",
     filePaths: [],
+    asDefault: false,
     pendingPreset: null,
     banner: null
   })

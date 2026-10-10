@@ -23,6 +23,8 @@ export function ConfirmDialog({
   cancelLabel,
   destructive = false,
   children,
+  closeOnConfirm = true,
+  testId,
   onOpenChange,
   onConfirm
 }: {
@@ -33,6 +35,8 @@ export function ConfirmDialog({
   cancelLabel?: string
   destructive?: boolean
   children?: ReactNode
+  closeOnConfirm?: boolean
+  testId?: string
   onOpenChange: (open: boolean) => void
   onConfirm: () => void
 }) {
@@ -44,6 +48,7 @@ export function ConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
+        data-testid={testId}
         overlayClassName={SETTINGS_DRAWER_Z_CLASS.modal}
         className={cx(
           SETTINGS_DRAWER_Z_CLASS.modal,
@@ -70,8 +75,9 @@ export function ConfirmDialog({
           <Button
             variant={destructive ? "destructive" : "default"}
             size="sm"
+            data-testid="confirm-dialog-confirm"
             onClick={() => {
-              onOpenChange(false)
+              if (closeOnConfirm) onOpenChange(false)
               onConfirm()
             }}
           >

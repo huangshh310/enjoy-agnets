@@ -45,16 +45,19 @@ test("源码不写 window.open，接线走 window.openExternal", () => {
   const attach = readFileSync(join(dir, "attach-xterm-addons.ts"), "utf8")
   assert.doesNotMatch(src, /window\.open\s*\(/)
   assert.doesNotMatch(attach, /window\.open\s*\(/)
-  assert.ok(attach.includes("window.openExternal"))
+  assert.doesNotMatch(attach, /window\.openExternal/)
   assert.ok(attach.includes("requestOpenExternalQuiet"))
+  assert.ok(attach.includes("open-safe-external"))
   assert.ok(attach.includes("openTerminalLink("))
   assert.ok(attach.includes("onTerminalLinkActivate"))
   assert.ok(attach.includes("new WebLinksAddon(onTerminalLinkActivate)"))
-  assert.ok(attach.includes(".then("))
+  const openSafe = readFileSync(join(dir, "../../../../../lib/open-safe-external.ts"), "utf8")
+  assert.ok(openSafe.includes("window.openExternal"))
+  assert.ok(openSafe.includes(".then("))
   assert.ok(!attach.includes("showAppToast"))
 })
 
-test("renderer 只有终端点击回调调用 window.openExternal", () => {
+test("renderer 只有 open-safe-external 调用 window.openExternal", () => {
   const rendererRoot = join(dir, "../../../../..")
   const hits: string[] = []
   function walk(folder: string): void {
@@ -74,5 +77,5 @@ test("renderer 只有终端点击回调调用 window.openExternal", () => {
     }
   }
   walk(rendererRoot)
-  assert.deepEqual(hits, ["components/ai-chat/right-pane/views/terminal/attach-xterm-addons.ts"])
+  assert.deepEqual(hits, ["lib/open-safe-external.ts"])
 })

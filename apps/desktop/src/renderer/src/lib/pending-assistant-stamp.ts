@@ -1,6 +1,7 @@
 /**
  * 乐观助手泡打上本轮引擎/模型，换模后旧泡不改写。
  */
+import { resolveModelDisplayName } from "./model-display-name.ts"
 import { getEffectiveModel } from "./session-model.ts"
 
 export function pendingAssistantStamp(store: {
@@ -18,6 +19,6 @@ export function pendingAssistantStamp(store: {
   return {
     runtimeId: store.runtimeId || undefined,
     modelId: modelId || undefined,
-    modelLabel: store.modelLabel.trim() || modelId || undefined
+    modelLabel: modelId ? resolveModelDisplayName(modelId, store.modelLabel) : undefined
   }
 }

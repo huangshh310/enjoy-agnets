@@ -7,6 +7,7 @@ import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
+import { modelsListGate } from "../models-listed.ts"
 import {
   NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
@@ -41,11 +42,16 @@ function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
   })
 }
 
-/** 当前档案有密钥才催选模型，不是「任意档案有密钥」。 */
-function currentProfileNeedsModel(modelId: string): boolean {
+/** 当前档案有密钥才催选模型。无密钥 Ollama 不催；列表失败 / 超时交给主闸。 */
+function enjoyLocalModelGate(modelId: string, runtimeId: string): "ok" | "need" {
+  if (runtimeId !== "enjoy-local") return "ok"
   const snap = peekChatReadiness()
-  if (!snap?.hasEnjoySecret || !snap.defaultRoute?.profileId) return false
-  return !modelId.trim()
+  if (!snap?.hasEnjoySecret || modelId.trim()) return "ok"
+  const keyed = Boolean(snap.activeKeyProfileId ?? snap.defaultRoute?.profileId)
+  if (!keyed) return "ok"
+  const list = modelsListGate()
+  if (list !== "listed") return "ok"
+  return "need"
 }
 
 function enjoyLocalAllowsSend(): boolean {
@@ -62,7 +68,7 @@ export function composerSendReady(
   }
   if (store.runtimeId === "enjoy-local") {
     if (!enjoyLocalAllowsSend()) return false
-    if (currentProfileNeedsModel(store.modelId)) return false
+    if (enjoyLocalModelGate(store.modelId, store.runtimeId) !== "ok") return false
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)
@@ -96,7 +102,7 @@ export function guardComposerSend(
       store.setError(NO_CHAT_ROUTE)
       return false
     }
-    if (currentProfileNeedsModel(store.modelId)) {
+    if (enjoyLocalModelGate(store.modelId, store.runtimeId) === "need") {
       store.setError(NEED_MODEL)
       return false
     }

@@ -14,7 +14,13 @@ export const zhSettings = {
     writeFailedKeychain:
       "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。",
     failed: "没存上，请再试一次",
+    notSaved: "没存上",
     saving: "保存中…"
+  },
+
+  secrets: {
+    keychainUnavailable: "这台电脑现在没法安全保存密钥。请先解锁系统钥匙串，我们不会改用明文存储。",
+    keychainUnavailableHint: "Linux 需先解锁 GNOME Keyring 或 KWallet。开发命令见 architecture spec。"
   },
 
   general: {
@@ -127,6 +133,7 @@ export const zhSettings = {
     readyEngines: "{count} 个引擎",
     readyWorkspace: "项目 {name}",
     readyNoWorkspace: "还没打开项目",
+    configuredUnverified: "已配置·未验证",
     shortcutsToday: "今天值得记住的快捷键",
     shortcutSettings: "打开设置",
     shortcutApproval: "切换审批",
@@ -1047,6 +1054,11 @@ export const zhSettings = {
     usedBy: "被引用",
     removeBoundTitle: "删除 {name}？",
     removeBoundDesc: "这些助手会回到官方登录：{agents}。其它档案的密钥不受影响。",
+    deleteKeychainUnavailable:
+      "没删掉：系统钥匙串现在用不了，这把密钥暂时删不了，其他密钥不受影响。请确认钥匙串已解锁后再试。",
+    deleteRevokeHint: "如果担心这把密钥泄露，可以先到 {provider} 后台作废它。",
+    deleteRevokeLink: "去作废",
+    deleteRevokeHintGeneric: "如果担心这把密钥泄露，可以先到服务商后台作废它。",
     use: "使用",
     edit: "编辑",
     deleteAria: "删除 {name}",

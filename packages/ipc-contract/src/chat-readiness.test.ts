@@ -32,7 +32,8 @@ test("只有已登录外置引擎时 ready，默认路线是该引擎", () => {
     engines: [CLAUDE],
     localModels: [],
     apiKeys: [],
-    engineCount: 2
+    engineCount: 2,
+    activeKeyProfileId: null
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.engineCount, 2)
@@ -44,7 +45,8 @@ test("只有探测到的本机模型时 ready", () => {
     engines: [],
     localModels: [LOCAL_OK],
     apiKeys: [],
-    engineCount: 1
+    engineCount: 1,
+    activeKeyProfileId: null
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
@@ -56,7 +58,8 @@ test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不
     engines: [],
     localModels: [],
     apiKeys: [KEY],
-    engineCount: 1
+    engineCount: 1,
+    activeKeyProfileId: "prov_1"
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
@@ -65,12 +68,26 @@ test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不
   assert.equal(JSON.stringify(snap).includes("sk-"), false)
 })
 
+test("有 apiKeys 但 activeKeyProfileId 为 null：不 ready，不回落第一把", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1,
+    activeKeyProfileId: null
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.activeKeyProfileId, undefined)
+  assert.equal(snap.defaultRoute?.profileId, undefined)
+})
+
 test("一条路线都没有时不 ready，默认仍是出厂 enjoy-local", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [],
     apiKeys: [],
-    engineCount: 3
+    engineCount: 3,
+    activeKeyProfileId: null
   })
   assert.equal(snap.ready, false)
   assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
@@ -84,7 +101,8 @@ test("只有本地引擎、没连模型时不 ready", () => {
     engines: [],
     localModels: [],
     apiKeys: [],
-    engineCount: countAvailableEngines([{ id: "enjoy-local", status: "ready" }])
+    engineCount: countAvailableEngines([{ id: "enjoy-local", status: "ready" }]),
+    activeKeyProfileId: null
   })
   assert.equal(snap.ready, false)
   assert.equal(snap.engineCount, 1)
@@ -186,7 +204,8 @@ test("本机模型：只认 ping 通过；远端档案 verified:false 不算 rea
     engines: [],
     localModels: [REMOTE],
     apiKeys: [],
-    engineCount: 1
+    engineCount: 1,
+    activeKeyProfileId: null
   })
   assert.equal(remoteOnly.ready, false)
   assert.equal(isLoopbackModelBaseUrl("http://127.0.0.1:11434"), true)
@@ -213,7 +232,8 @@ test("未显式选择时第一次连上的可用路线盖过出厂 enjoy-local",
     resolveDefaultChatRoute({
       engines: [CLAUDE],
       localModels: [],
-      apiKeys: []
+      apiKeys: [],
+      activeKeyProfileId: null
     }).runtimeId,
     "claude"
   )
@@ -221,7 +241,8 @@ test("未显式选择时第一次连上的可用路线盖过出厂 enjoy-local",
     resolveDefaultChatRoute({
       engines: [CLAUDE],
       localModels: [],
-      apiKeys: [KEY]
+      apiKeys: [KEY],
+      activeKeyProfileId: "prov_1"
     }),
     { runtimeId: "enjoy-local", profileId: "prov_1" }
   )
@@ -231,7 +252,8 @@ test("未显式选择时第一次连上的可用路线盖过出厂 enjoy-local",
       preferredRuntimeId: "enjoy-local",
       engines: [CLAUDE],
       localModels: [],
-      apiKeys: []
+      apiKeys: [],
+      activeKeyProfileId: null
     }).runtimeId,
     "enjoy-local"
   )
@@ -281,6 +303,7 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
     engines: ChatEngineRoute[]
     localModels: ChatLocalModelRoute[]
     apiKeys: ChatApiKeyRoute[]
+    activeKeyProfileId: string | null
   }> = []
   for (const key of [false, true]) {
     for (const cli of [false, true]) {
@@ -293,7 +316,8 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
             name: `key=${key} cli=${cli} ping=${localPing} remote=${remote}`,
             engines: cli ? [CLAUDE] : [],
             localModels,
-            apiKeys: key ? [KEY] : []
+            apiKeys: key ? [KEY] : [],
+            activeKeyProfileId: key ? "prov_1" : null
           })
         }
       }
@@ -305,13 +329,15 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
     preferredRuntimeId: "enjoy-local",
     engines: [CLAUDE],
     localModels: [],
-    apiKeys: []
+    apiKeys: [],
+    activeKeyProfileId: null
   })
   cases.push({
     name: "nothing at all",
     engines: [],
     localModels: [],
-    apiKeys: []
+    apiKeys: [],
+    activeKeyProfileId: null
   })
   for (const input of cases) {
     const snap = buildChatReadiness({ ...input, engineCount: 1 })
@@ -322,6 +348,28 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
     })
     assert.ok(!snap.ready || allows, input.name)
   }
+})
+
+test("显式选了未登录 CLI 时不 ready，默认路线仍是该引擎", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    engineCount: 2,
+    explicit: true,
+    preferredRuntimeId: "claude",
+    activeKeyProfileId: null
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.defaultRoute?.runtimeId, "claude")
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "claude",
+      hasEnjoySecret: false,
+      verifiedLocal: false
+    }),
+    true
+  )
 })
 
 test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸也拦", () => {
@@ -346,15 +394,18 @@ test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸�
   )
 })
 
-test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
+test("当前档案是未 ping 的 Ollama、另一份 OpenAI 有密钥：不 ready（看 activeKeyProfileId）", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [REMOTE],
-    apiKeys: [],
+    apiKeys: [KEY],
     engineCount: 1,
-    hasEnjoySecret: true
+    hasEnjoySecret: true,
+    activeKeyProfileId: null
   })
-  assert.equal(snap.ready, true)
+  assert.equal(snap.ready, false)
+  assert.equal(snap.activeKeyProfileId, undefined)
+  assert.equal(snap.hasEnjoySecret, true)
   assert.equal(
     chatRouteAllowsSend({
       runtimeId: "enjoy-local",
@@ -363,4 +414,33 @@ test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
     }),
     true
   )
+})
+
+test("远端 / 未 ping 的无密钥本机：不 ready，闸仍放行", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [REMOTE],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    activeKeyProfileId: null
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    true
+  )
+  const pinged = buildChatReadiness({
+    engines: [],
+    localModels: [LOCAL_OK],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    activeKeyProfileId: null
+  })
+  assert.equal(pinged.ready, true)
 })
