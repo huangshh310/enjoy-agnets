@@ -45,12 +45,15 @@ test("luna #123：芯片文案、高级时区、抽屉月亮", async () => {
     })
 
     await window.setViewportSize({ width: 1440, height: 900 })
+    const skipGuide = window.getByRole("button", { name: "跳过设置" })
+    if ((await skipGuide.count()) > 0) await skipGuide.click()
     await window.evaluate(() => {
       location.hash = "#/automations"
     })
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
-    await window.locator('[data-testid="automation-row"]').filter({ hasText: "晨间待办整理" }).locator("button").first().click()
+    await window.locator('[data-testid="page-automations"]').getByRole("button", { name: "新建" }).click()
     await window.locator("#automation-editor-title").waitFor({ timeout: 8_000 })
+    await window.getByRole("button", { name: "定时" }).click()
     await window.locator('[data-testid="automation-schedule-advanced"]').click()
     await window.locator('[data-testid="automation-timezone-advanced"]').waitFor({ timeout: 8_000 })
     await expect(window.locator('[data-testid="automation-timezone-advanced"]')).toHaveText("北京时间（Asia/Shanghai）")
@@ -84,6 +87,8 @@ test("luna #123：芯片文案、高级时区、抽屉月亮", async () => {
 
     await window.getByRole("button", { name: "浅色" }).click()
     await window.locator('[aria-label="关闭"]').first().click()
+    const discard = window.getByRole("button", { name: "放弃" })
+    if ((await discard.count()) > 0) await discard.click()
     await window.locator("#automation-editor-title").waitFor({ state: "hidden", timeout: 8_000 })
 
     await window.evaluate(() => {
@@ -101,9 +106,10 @@ test("luna #123：芯片文案、高级时区、抽屉月亮", async () => {
     await window.getByText("读取", { exact: true }).first().click()
     await expect(chip).toContainText("读取")
 
-    await window.getByRole("button", { name: /展开|收起/ }).last().click()
-    const reviewTab = window.getByRole("button", { name: "审查" })
-    if ((await reviewTab.count()) > 0) await reviewTab.click()
+    const expandPane = window.getByRole("button", { name: "展开改动面板" })
+    if ((await expandPane.count()) > 0) await expandPane.click()
+    const reviewTab = window.getByRole("button", { name: /未提交差异与提交记录/ })
+    if ((await reviewTab.count()) === 1) await reviewTab.click()
     await window.setViewportSize({ width: 1100, height: 720 })
     const commit = window.getByText("提交或推送")
     if ((await commit.count()) > 0) {
