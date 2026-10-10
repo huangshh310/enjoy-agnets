@@ -5,8 +5,11 @@ import { useAttentionStore } from "../../stores/attention/attention-store"
 import { useChatStore } from "../../stores/chat-store"
 import { discardCreatedSession } from "../discard-created-session"
 import { dropEmptyPendingAssistant } from "../composer-run-control"
-import { type QueuedComposerAsset } from "../composer-assets"
-import { mergeComposerText, restoreComposerAfterFailedSend } from "../queue-composer-send"
+import {
+  mergeComposerText,
+  restoreComposerAfterFailedSend,
+  type QueuedComposerAsset
+} from "../queue-composer-send"
 
 export function failComposerSend(input: {
   text: string

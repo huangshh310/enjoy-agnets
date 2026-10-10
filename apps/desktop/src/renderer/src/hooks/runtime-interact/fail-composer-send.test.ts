@@ -8,6 +8,8 @@ const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "send-com
 const fail = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fail-composer-send.ts"), "utf8")
 
 test("发送失败走 failComposerSend：还文、notice、清停车、空会话可删", () => {
+  assert.match(fail, /type QueuedComposerAsset/)
+  assert.match(fail, /from "\.\.\/queue-composer-send"/)
   assert.match(src, /failComposerSend/)
   assert.match(src, /SEND_FAILED_RESTORE/)
   assert.match(src, /if \(prepared\)/)

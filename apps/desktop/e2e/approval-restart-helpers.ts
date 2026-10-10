@@ -110,11 +110,8 @@ export async function crashKill(app: ElectronApplication): Promise<void> {
     }
   }
   await Promise.race([waitExit(proc), delay(3_000)]).catch(() => undefined)
-  try {
-    await app.close()
-  } catch {
-    /* already dead */
-  }
+  // SIGKILL 之后 Playwright 的 Electron 句柄常收不掉，裸 await app.close() 会挂满 180s。
+  await Promise.race([app.close(), delay(3_000)]).catch(() => undefined)
 }
 
 /** 不可回挂：抹掉 waiting_review 检查点。库路径 `$ENJOY_E2E_USERDATA/app.db`。 */

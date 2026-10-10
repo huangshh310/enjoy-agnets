@@ -52,7 +52,7 @@ test("kill-9 且检查点已刷上：卡可拒绝，文案与 Inbox/徽标清空
     await expect(window.locator('[data-testid="attention-strip"]')).toHaveCount(0)
     await expectApprovalInboxCleared(window)
   } finally {
-    await second.close()
+    await closeForRelaunch(second)
   }
 })
 
@@ -78,7 +78,7 @@ test("kill-9 且检查点没刷上：结清停止，Inbox 空，重新发送回�
     await expect(window.locator('[data-testid="attention-strip"]')).toHaveCount(0)
     await expectApprovalInboxCleared(window)
   } finally {
-    await second.close()
+    await closeForRelaunch(second)
   }
 })
 
@@ -90,7 +90,7 @@ test("允许并完成后连重启两次：写行不再转圈，没有额外失�
   await first.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
   await expect.poll(() => existsSync(stubPath(env.workspace)), { timeout: 20_000 }).toBe(true)
   await expect(first.locator("body")).toContainText("stub-ok allowed write", { timeout: 20_000 })
-  await env.app.close()
+  await closeForRelaunch(env.app)
   expectFinishedRunsSettled(env.userData)
   for (let i = 0; i < 2; i += 1) {
     const app = await relaunchElectron(env.env)
@@ -98,7 +98,7 @@ test("允许并完成后连重启两次：写行不再转圈，没有额外失�
       const window = await firstWindow(app)
       await expectSettledFinishedTurns(window)
     } finally {
-      await app.close()
+      await closeForRelaunch(app)
     }
     expectFinishedRunsSettled(env.userData)
   }
@@ -111,7 +111,7 @@ test("拒绝后连重启两次：仍是已拒绝，写行不转圈", async () =>
   const first = await firstWindow(env.app)
   await first.locator('[data-testid="approval-deny"]').click({ timeout: 15_000, force: true })
   await expect(first.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
-  await env.app.close()
+  await closeForRelaunch(env.app)
   expectFinishedRunsSettled(env.userData)
   for (let i = 0; i < 2; i += 1) {
     const app = await relaunchElectron(env.env)
@@ -123,7 +123,7 @@ test("拒绝后连重启两次：仍是已拒绝，写行不转圈", async () =>
       await expect(window.locator("body")).not.toContainText("已运行 1 个工具 · 运行命令 · 失败")
       expect(existsSync(stubPath(env.workspace))).toBe(false)
     } finally {
-      await app.close()
+      await closeForRelaunch(app)
     }
     expectFinishedRunsSettled(env.userData)
   }
@@ -142,7 +142,7 @@ test("同一 userData 允许一轮再拒绝一轮，连重启两次都保持收�
   await sendComposer(first, first.locator('[data-testid="composer-input"]'), "please write a note")
   await first.locator('[data-testid="approval-deny"]').click({ timeout: 15_000, force: true })
   await expect(first.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
-  await env.app.close()
+  await closeForRelaunch(env.app)
   expectFinishedRunsSettled(env.userData)
   for (let i = 0; i < 2; i += 1) {
     const app = await relaunchElectron(env.env)
@@ -152,7 +152,7 @@ test("同一 userData 允许一轮再拒绝一轮，连重启两次都保持收�
       await expect(window.locator("body")).toContainText("已拒绝，本次未执行")
       await expect(window.locator("body")).toContainText("stub-ok allowed write")
     } finally {
-      await app.close()
+      await closeForRelaunch(app)
     }
     expectFinishedRunsSettled(env.userData)
   }
@@ -178,6 +178,6 @@ async function relaunchAndAllow(input: {
     expect(readStub(input.workspace)).toContain("from stub")
     await expectApprovalInboxCleared(window)
   } finally {
-    await second.close()
+    await closeForRelaunch(second)
   }
 }
