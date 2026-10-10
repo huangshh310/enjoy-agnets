@@ -9,8 +9,9 @@ import {
   type ThreadToolCall,
   type UIMessagePart
 } from "@enjoy-agents/ipc-contract"
-import { persistMessage } from "./persist-session"
+import { persistMessage, readMessageContent } from "./persist-session"
 import { hasAssistantPersistableBody } from "./agent-run-flush"
+import { canReuseAssistantRow } from "./assistant-row-ownership"
 
 export function partsFromExtras(content: string, extras: AssistantExtras): UIMessagePart[] {
   const parts: UIMessagePart[] = []
@@ -88,6 +89,7 @@ export function persistFinishedAssistant(input: {
   runKind?: AssistantRunKind
   modelId?: string
   runtimeId?: string
+  runId?: string
   /** 已有行则覆盖，保证一轮只占一条助手消息。 */
   messageId?: string
 }): string | undefined {
@@ -106,8 +108,17 @@ export function persistFinishedAssistant(input: {
     "assistant",
     serializeAssistantEnvelope(input),
     partsFromExtras(input.content, extras),
-    input.messageId
+    reusableAssistantMessageId(input.messageId, input.runId)
   )
+}
+
+/** 终态 / 别的 run 的行不得 UPDATE，新一轮必须 INSERT。 */
+function reusableAssistantMessageId(messageId: string | undefined, runId?: string): string | undefined {
+  if (!messageId) return undefined
+  const existing = readMessageContent(messageId)
+  if (existing == null) return messageId
+  if (!canReuseAssistantRow(existing, runId)) return undefined
+  return messageId
 }
 
 /** ACP 工具 result 可能不可 JSON 化；失败则剥掉 args/result 再写，避免整轮丢库。 */
@@ -120,6 +131,7 @@ function serializeAssistantEnvelope(input: {
   runKind?: AssistantRunKind
   modelId?: string
   runtimeId?: string
+  runId?: string
 }): string {
   const extras = input.extras
   const envelope = {
@@ -132,7 +144,8 @@ function serializeAssistantEnvelope(input: {
     structured: extras.structured,
     runKind: input.runKind,
     modelId: input.modelId,
-    runtimeId: input.runtimeId
+    runtimeId: input.runtimeId,
+    runId: input.runId
   }
   try {
     return serializeAssistantPayload(envelope)

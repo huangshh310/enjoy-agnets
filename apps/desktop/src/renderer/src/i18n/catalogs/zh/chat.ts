@@ -632,7 +632,7 @@ export const zhChat = {
   restoreNoMatching: "重启后对不上原来的审批，这一轮已结束。",
   restoreInterrupted: "重启时这一步还没做完，为了安全没有自动继续。",
   restartAbandoned: "重启后已中断",
-  resendLastPrompt: "重新发送",
+  resendLastPrompt: "放回输入框",
   approvalDecideHmac: "审批签名对不上。",
   approvalDecideAskUserNoSession: "这个提问不能设为整段会话都允许。",
   approvalDecideRunInactive: "这一轮已经结束，不能再批。",

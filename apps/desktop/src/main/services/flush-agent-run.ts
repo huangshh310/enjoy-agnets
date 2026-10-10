@@ -47,6 +47,7 @@ export function checkpointActiveRun(run: ActiveRun): boolean {
 }
 
 function writeAssistantRow(run: ActiveRun): boolean {
+  const runId = listActiveRuns().find((item) => item.run === run)?.runId
   const payload = flushPayloadFromRun({
     assistantPersisted: run.assistantPersisted,
     sessionId: run.input.sessionId,
@@ -56,7 +57,8 @@ function writeAssistantRow(run: ActiveRun): boolean {
     extras: { sources: run.citedSources },
     runKind: "agent",
     modelId: run.input.modelId,
-    runtimeId: run.input.runtimeId
+    runtimeId: run.input.runtimeId,
+    runId
   })
   if (!payload) return false
   try {

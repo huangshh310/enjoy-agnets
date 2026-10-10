@@ -87,6 +87,11 @@ test("落库带上本轮 modelId / runtimeId，换模不改旧泡", () => {
   assert.equal(payload?.runtimeId, "claude")
 })
 
+test("落库带上本轮 runId，下一轮不得盖上一行", () => {
+  const payload = flushPayloadFromRun(failedHtmlRun({ runId: "run_2" }))
+  assert.equal(payload?.runId, "run_2")
+})
+
 test("checkpoint 未封口与已落库都能拿出同一行 payload", () => {
   const payload = flushPayloadFromRun(failedHtmlRun({ assistantPersisted: false }))
   assert.ok(payload)

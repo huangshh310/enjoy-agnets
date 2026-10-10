@@ -19,9 +19,11 @@ const {
   deleteActiveRun,
   getActiveRun,
   getDatabase,
+  persistFinishedAssistant,
   persistMessage,
   queueInterruptedRunningSettle,
   readLatestAssistantSnapshot,
+  canReuseAssistantRow,
   rememberApproval,
   resetInterruptedRunningForTest,
   resetRestoreWaitingOnceForTests,
@@ -158,4 +160,61 @@ test("本轮用户句之后的助手：复用同一行", () => {
   assert.equal(snap.assistantPersisted, true)
   assert.equal(snap.assistantMessageId, assistantId)
   assert.equal(snap.tools[0]?.id, "t1")
+})
+
+const sealedRestart = serializeAssistantPayload({
+  content: "",
+  runId: "run_old",
+  tools: [
+    {
+      id: "tool_stub_1",
+      name: "write_file",
+      state: "output-error",
+      args: { path: "e2e-stub.txt" },
+      result: { code: "restart_abandoned", decision: "cancelled" }
+    }
+  ]
+})
+
+test("restart_abandoned 终态行：快照不复用，persist 新插行", () => {
+  const sessionId = "ses_probe_s_terminal"
+  seedWorkspace(sessionId, "ws_probe_s_terminal")
+  persistMessage(sessionId, "user", "please write a note")
+  const oldId = persistMessage(sessionId, "assistant", sealedRestart)
+  assert.equal(canReuseAssistantRow(sealedRestart, "run_new"), false)
+  const snap = readLatestAssistantSnapshot(sessionId, { runCreatedAt: 1 })
+  assert.equal(snap.assistantPersisted, false)
+  assert.equal(snap.assistantMessageId, undefined)
+  const freshId = persistFinishedAssistant({
+    sessionId,
+    content: "",
+    reasoning: "",
+    tools: [
+      {
+        id: "tool_stub_1",
+        name: "write_file",
+        state: "output-available",
+        args: { path: "e2e-stub.txt" },
+        result: { ok: true }
+      }
+    ],
+    startedAt: Date.now(),
+    extras: {},
+    runKind: "agent",
+    runId: "run_new",
+    messageId: oldId
+  })
+  assert.ok(freshId)
+  assert.notEqual(freshId, oldId)
+  assert.equal(
+    (getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(oldId) as { content: string })
+      .content,
+    sealedRestart
+  )
+  const fresh = parseAssistantPayload(
+    (getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(freshId) as { content: string })
+      .content
+  )
+  assert.equal(fresh.runId, "run_new")
+  assert.equal(fresh.tools?.[0]?.state, "output-available")
 })

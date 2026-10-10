@@ -639,7 +639,7 @@ export const enChat = {
   restoreNoMatching: "This run could not match the original approval after restart, so it ended.",
   restoreInterrupted: "This step wasn't finished when the app restarted, so it didn't continue automatically for safety.",
   restartAbandoned: "Interrupted after restart",
-  resendLastPrompt: "Resend",
+  resendLastPrompt: "Put back in input",
   approvalDecideHmac: "The approval signature did not match.",
   approvalDecideAskUserNoSession: "This question cannot be allowed for the whole session.",
   approvalDecideRunInactive: "This run has already ended, so it cannot be decided.",

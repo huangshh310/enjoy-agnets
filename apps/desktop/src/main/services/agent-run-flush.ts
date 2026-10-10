@@ -14,6 +14,7 @@ export type FlushableRun = {
   runKind?: AssistantRunKind
   modelId?: string
   runtimeId?: string
+  runId?: string
 }
 
 export type AssistantFlushPayload = {
@@ -26,6 +27,7 @@ export type AssistantFlushPayload = {
   runKind?: AssistantRunKind
   modelId?: string
   runtimeId?: string
+  runId?: string
 }
 
 /** 流式 checkpoint 最短间隔：每个 token 都写库会拖慢 ACP 长跑。 */
@@ -63,7 +65,8 @@ export function flushPayloadFromRun(run: FlushableRun): AssistantFlushPayload | 
     extras: run.extras,
     runKind: run.runKind,
     modelId: run.modelId,
-    runtimeId: run.runtimeId
+    runtimeId: run.runtimeId,
+    runId: run.runId
   }
 }
 

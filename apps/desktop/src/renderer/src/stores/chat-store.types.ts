@@ -74,6 +74,8 @@ export type ThreadMessage = {
   /** 本轮模型 stamp，换模后旧泡不改写 */
   modelId?: string
   runtimeId?: string
+  /** 本轮 run。新一轮禁止折进上一轮终态行。 */
+  runId?: string
   modelLabel?: string
   /** 轮末静态引导词；未点击不得自动发送 */
   actionChips?: ActionChip[]

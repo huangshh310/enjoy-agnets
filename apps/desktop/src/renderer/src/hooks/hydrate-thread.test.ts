@@ -117,6 +117,16 @@ test("仍在跑的会话回灌：不把 input-available 封成出错", () => {
   assert.equal(live?.tools?.[0]?.state, "input-available")
 })
 
+test("hydrate 恢复本轮 runId，旧泡不跟新一轮", () => {
+  const message = mapAssistantThreadMessage(
+    { id: "msg_run", content: "ok", createdAt: 1 },
+    { v: 1, content: "ok", runId: "run_2" },
+    { sources: [], assets: [], components: [] },
+    []
+  )
+  assert.equal(message.runId, "run_2")
+})
+
 test("无 stamp 的旧信封 runKind 为空", () => {
   const message = mapAssistantThreadMessage(
     { id: "msg_2", content: "ok", createdAt: 1 },

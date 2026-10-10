@@ -21,6 +21,7 @@ import { isRestoreFamilyCode, restoreFamilyCodeOf } from "@enjoy-agents/ipc-cont
 import { RESTORE_NO_MATCHING } from "../lib/usage/classify-thread-error"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
+import { canFoldIntoAssistant, findAssistantForToolEvent, foldAssistantIndex } from "./assistant-fold-target"
 import {
   canOpenAssistantTurn,
   isComposerRunStart,
@@ -66,9 +67,10 @@ export function reduceStreamEvent(
   if (event.type === "file.changed") return { messages }
   if (!isLivePart(event.type) || !event.runId) return { messages }
   if (event.type === "tool.result" || event.type === "tool.start" || event.type === "tool.args.delta") {
-    const next = cloneMessagesForToolEvent(messages, event.toolCallId)
+    const next = cloneMessagesForToolEvent(messages, event.toolCallId, event.runId)
     const assistant =
-      findAssistantForResolved(next, event.toolCallId) ?? attachAssistant(next, event.runId, activeRunId)
+      findAssistantForToolEvent(next, event.toolCallId, event.runId) ??
+      attachAssistant(next, event.runId, activeRunId)
     if (!assistant) return { messages }
     return applyLiveEvent(next, assistant, event)
   }
@@ -151,8 +153,8 @@ function applyApprovalEvent(
     }
   }
   if (event.type !== "approval.resolved") return null
-  const next = cloneMessagesForToolEvent(messages, event.toolCallId)
-  const assistant = findAssistantForResolved(next, event.toolCallId)
+  const next = cloneMessagesForToolEvent(messages, event.toolCallId, event.runId)
+  const assistant = findAssistantForToolEvent(next, event.toolCallId, event.runId)
   if (!assistant) {
     return { messages, pendingApproval: null, heldResolved: event }
   }
@@ -236,11 +238,12 @@ function applyLiveEvent(
   return { messages, thinkingLabel: (name ?? "tool").replaceAll("_", " ") }
 }
 
-function cloneMessagesForToolEvent(messages: ThreadMessage[], toolCallId: string): ThreadMessage[] {
-  const index = messages.findIndex(
-    (message) => message.role === "assistant" && message.tools?.some((tool) => tool.id === toolCallId)
-  )
-  const target = index >= 0 ? index : lastAssistantIndex(messages)
+function cloneMessagesForToolEvent(
+  messages: ThreadMessage[],
+  toolCallId: string,
+  runId?: string
+): ThreadMessage[] {
+  const target = foldAssistantIndex(messages, toolCallId, runId)
   if (target < 0) return [...messages]
   return messages.map((message, at) => {
     if (at !== target) return message
@@ -249,26 +252,6 @@ function cloneMessagesForToolEvent(messages: ThreadMessage[], toolCallId: string
       tools: message.tools?.map((tool) => ({ ...tool })) ?? []
     }
   })
-}
-
-function findAssistantForResolved(messages: ThreadMessage[], toolCallId: string): ThreadMessage | undefined {
-  const byId = messages.find(
-    (message) => message.role === "assistant" && message.tools?.some((tool) => tool.id === toolCallId)
-  )
-  if (byId) return byId
-  return [...messages]
-    .reverse()
-    .find(
-      (message) =>
-        message.role === "assistant" && message.tools?.some((tool) => tool.state === "approval-requested")
-    )
-}
-
-function lastAssistantIndex(messages: ThreadMessage[]): number {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    if (messages[index]?.role === "assistant") return index
-  }
-  return -1
 }
 
 function cloneMessagesForLiveEvent(messages: ThreadMessage[]): ThreadMessage[] {
@@ -302,7 +285,10 @@ function attachAssistant(
   activeRunId: string | null
 ): ThreadMessage | undefined {
   const existing = lastStreamingAssistant(messages)
-  if (existing) return activeRunId ? existing : undefined
+  if (existing && canFoldIntoAssistant(existing, runId)) {
+    existing.runId ??= runId
+    return activeRunId ? existing : undefined
+  }
   if (!canOpenAssistantTurn(runId, activeRunId)) return undefined
   const created: ThreadMessage = {
     id: `msg_${runId}`,
@@ -311,7 +297,8 @@ function attachAssistant(
     createdAt: Date.now(),
     streaming: true,
     reasoning: "",
-    tools: []
+    tools: [],
+    runId
   }
   messages.push(created)
   return created

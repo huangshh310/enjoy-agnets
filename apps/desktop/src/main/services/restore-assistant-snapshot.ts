@@ -4,6 +4,7 @@
  */
 import { parseAssistantPayload, type ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
+import { isTerminalRestartAssistant } from "./assistant-row-ownership"
 
 export type RestoredAssistantSnapshot = {
   assistantMessageId?: string
@@ -38,6 +39,9 @@ export function readLatestAssistantSnapshot(
     .get(sessionId) as { id: string; content: string; createdAt: number } | undefined
   if (!row) return { tools: [], assistantPersisted: false }
   if (!assistantBelongsToRun(row.createdAt, latestUser?.createdAt, opts?.runCreatedAt)) {
+    return { tools: [], assistantPersisted: false }
+  }
+  if (isTerminalRestartAssistant(row.content)) {
     return { tools: [], assistantPersisted: false }
   }
   const payload = parseAssistantPayload(row.content)

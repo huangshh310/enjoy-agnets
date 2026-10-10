@@ -115,6 +115,42 @@ test("kill-9 且检查点没刷上：结清停止，Inbox 空，重新发送回�
   }
 })
 
+test("kill-9 后删 HMAC：放回输入框再发，旧行不抢本轮改动", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  await crashKill(env.app)
+  deleteApprovalHmacKey(env.userData)
+  const second = await relaunchElectron(env.env)
+  try {
+    const window = await firstWindow(second)
+    const composer = window.locator('[data-testid="composer-input"]')
+    await expect(window.locator("body")).toContainText("重启后已中断", { timeout: 20_000 })
+    await expect(window.locator('[data-testid="thread-notice-banner"]')).toBeVisible({ timeout: 20_000 })
+    const resend = window.locator('[data-testid="thread-resend"]')
+    await expect(resend).toBeVisible()
+    await expect(resend).toContainText("放回输入框")
+    await resend.click()
+    await expect(composer).toHaveValue("please write a note")
+    await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
+    await sendComposer(window, composer, "please write a note")
+    await window.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
+    await expect.poll(() => existsSync(stubPath(env.workspace)), { timeout: 20_000 }).toBe(true)
+    const interrupted = window.locator("[data-thread-message]").filter({ hasText: "重启后已中断" })
+    await expect(interrupted).toBeVisible()
+    await expect(interrupted).toContainText("重启后已中断")
+    await expect(interrupted).not.toContainText("已运行 1 个工具")
+    await expect(interrupted.locator('[data-testid="turn-changed-files"]')).toHaveCount(0)
+    const changed = window.locator('[data-testid="turn-changed-files"]')
+    await expect(changed).toHaveCount(1)
+    await expect(changed).toContainText("e2e-stub.txt")
+    await expect(window.locator("body")).toContainText("stub-ok allowed write", { timeout: 20_000 })
+    await expectApprovalInboxCleared(window)
+  } finally {
+    await closeForRelaunch(second)
+  }
+})
+
 test("kill-9 后删 HMAC 密钥：重启后已中断，不是已拒绝", async () => {
   test.setTimeout(180_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")

@@ -57,6 +57,8 @@ export type AssistantPayload = {
   /** 本轮实际用的模型，换模后旧泡不改写。 */
   modelId?: string
   runtimeId?: string
+  /** 本轮 run。新一轮禁止 UPDATE 上一轮终态行。 */
+  runId?: string
   /** 轮末静态引导词；未点击不得自动发送。 */
   actionChips?: ActionChip[]
 } & AssistantExtras
@@ -75,6 +77,7 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
   const runKind = parseRunKind(payload.runKind)
   const modelId = payload.modelId?.trim() || undefined
   const runtimeId = payload.runtimeId?.trim() || undefined
+  const runId = payload.runId?.trim() || undefined
   // 有 runKind / 引导词 / 本轮模型必须走信封，否则 hydrate 只能靠资产/正文推断。
   if (
     !reasoning &&
@@ -84,6 +87,7 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
     !runKind &&
     !modelId &&
     !runtimeId &&
+    !runId &&
     actionChips.length === 0
   ) {
     return taken.content
@@ -100,6 +104,7 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
     runKind,
     modelId,
     runtimeId,
+    runId,
     actionChips: actionChips.length > 0 ? actionChips : undefined
   } satisfies AssistantPayload)
 }
@@ -123,6 +128,7 @@ export function parseAssistantPayload(raw: string): AssistantPayload {
         runKind: parseRunKind(parsed.runKind),
         modelId: typeof parsed.modelId === "string" ? parsed.modelId : undefined,
         runtimeId: typeof parsed.runtimeId === "string" ? parsed.runtimeId : undefined,
+        runId: typeof parsed.runId === "string" ? parsed.runId : undefined,
         actionChips: parsed.actionChips
       })
     }

@@ -297,6 +297,57 @@ test("空闲时回挂对不上走中性 notice，工具封成 restart_abandoned"
   )
 })
 
+test("新一轮 toolCallId 撞上上一轮：不得折进 restart_abandoned，本轮自己开行", () => {
+  const oldTools = [
+    {
+      id: "tool_stub_1",
+      name: "write_file",
+      state: "output-error" as const,
+      args: { path: "e2e-stub.txt" },
+      result: { code: "restart_abandoned", decision: "cancelled" }
+    }
+  ]
+  const messages: ThreadMessage[] = [
+    { id: "msg_user", role: "user", content: "please write a note", createdAt: 1 },
+    {
+      id: "msg_old",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: false,
+      runId: "run_old",
+      tools: oldTools
+    }
+  ]
+  const start = reduceStreamEvent(
+    messages,
+    { type: "tool.start", runId: "run_new", toolCallId: "tool_stub_1", name: "write_file" },
+    "run_new"
+  )
+  const allowed = reduceStreamEvent(
+    start.messages,
+    {
+      type: "tool.result",
+      runId: "run_new",
+      toolCallId: "tool_stub_1",
+      name: "write_file",
+      result: { ok: true, path: "e2e-stub.txt" }
+    },
+    "run_new"
+  )
+  const old = allowed.messages.find((row) => row.id === "msg_old")
+  const fresh = allowed.messages.find((row) => row.id === "msg_run_new")
+  assert.equal(
+    (old?.tools?.[0]?.result as { code?: string } | undefined)?.code,
+    "restart_abandoned"
+  )
+  assert.equal(old?.tools?.[0]?.state, "output-error")
+  assert.ok(fresh)
+  assert.equal(fresh?.runId, "run_new")
+  assert.equal(fresh?.tools?.[0]?.id, "tool_stub_1")
+  assert.equal(fresh?.tools?.[0]?.state, "output-available")
+})
+
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {
   const patch = reduceStreamEvent([], {
     type: "approval.resolved",
