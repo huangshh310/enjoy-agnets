@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（v14 列守卫；typecheck 不再等上游；renderer 开 no-undef）
+> 进程边界与安全基线。最后更新：2026-10-10（v14 UNIQUE 建失败不卡启动）
 
 ## 当前真相
 
@@ -133,6 +133,6 @@ Main Process（可信）
 - `window.open` 只对 `http:` / `https:` 走 `shell.openExternal`，一律 `{ action: "deny" }`。
 - `flushActiveRuns` 与泵的 `parkForApproval` 都顶层静态 import `persistWaitingRun`。
 - SQLite：`PRAGMA busy_timeout = 5000` + `core-indexes` 迁移（sessions/messages/message_parts/runs）。
-- **隐患**：旧 #119 曾把 v14 记成 `cost-missing`，本 PR 的审批 SDK 列才是 014。裸 `ALTER TABLE … ADD COLUMN` 在列已在或记账名对不上时会炸。正确做法：`addColumnIfMissing` / `ensureApprovalSdkColumns`；`schema_migrations` 已有 version=14（无论 name）时走 `repairClaimedV14` 补列，不要再插一条 014，也不要把 `cost_missing` 塞进本 PR。
+- **隐患**：旧 #119 曾把 v14 记成 `cost-missing`，本 PR 的审批 SDK 列才是 014。裸 `ALTER TABLE … ADD COLUMN` 在列已在或记账名对不上时会炸。正确做法：`addColumnIfMissing` / `ensureApprovalSdkColumns`；`schema_migrations` 已有 version=14（无论 name）时走 `repairClaimedV14` 补列，不要再插一条 014，也不要把 `cost_missing` 塞进本 PR。`repairClaimedV14` 每次启动都会尝试建 UNIQUE；库里若已有重复三元组，`CREATE UNIQUE INDEX` 会抛并把启动卡死。正确做法：`ensureApprovalsSdkIdentityIndex` 包 try，打日志后继续启动，不要让重复行挡住 boot。
 - **隐患**：`turbo` 的 `typecheck.dependsOn: ["^typecheck"]` 会让 desktop 等 ipc-contract。上游一红，下游 `formatToolName` 未定义这种 renderer 错根本不跑；CI 的 `pnpm typecheck` 接着失败，`pnpm test` 也被跳过。渲染层源文件在 `tsconfig.web.json` 里（只排除 `*.test.ts`），tsc 能抓，但要等它跑到。正确做法：typecheck / test 不要 `^typecheck`；renderer 开 `no-undef`，让 lint（typecheck 之前）先拦未定义标识符。
 - 泵 / 审批 / 检查点测试不要用 `sleep` 或「队列空了」当 idle。排队自启用 `DrainableQueue.drain()`；`agent.run` 必带 `commandId`，收据在 `holdAgentRun` 之后、`persistUserTurn` 之前写入。

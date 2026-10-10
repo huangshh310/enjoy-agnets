@@ -97,13 +97,16 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   const approved = decision.decision !== "deny" && !resumeCode
   const reason = skipped ? "User skipped questions." : resumeCode || decision.reason
   recordSdkApprovalResponse(decision.approvalId, { approved, reason, resumeCode })
-  run.messages.push(
-    approvalResponseMessage({
-      approvalId: sdkApprovalIdFor(decision.approvalId),
-      approved,
-      reason
-    })
-  )
+  // 活泵 / 子 Agent waiter：原 SDK id 已经回过 approved，第二张卡不得再 push 同一条。
+  if (!hadWaiter) {
+    run.messages.push(
+      approvalResponseMessage({
+        approvalId: sdkApprovalIdFor(decision.approvalId),
+        approved,
+        reason
+      })
+    )
+  }
   if (desktopResult && (!desktopActMayReportSuccess(desktopResume) || !hadWaiter)) {
     emitEvent(window, desktopResult)
   }
