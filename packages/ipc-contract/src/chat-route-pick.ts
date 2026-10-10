@@ -77,7 +77,7 @@ export function defaultRouteUsable(
   })
 }
 
-/** ready：带密钥档案只要不是 invalid。unverified / 未检都 ready，首发再验。 */
+/** ready 比闸严：CLI 须已登录；无密钥本机须 ping 过。带密钥只要不是 invalid。 */
 export function defaultRouteReady(
   route: ChatDefaultRoute,
   input: Pick<
@@ -85,11 +85,14 @@ export function defaultRouteReady(
     "apiKeys" | "localModels" | "hasEnjoySecret" | "credentialState" | "keyStates" | "engines"
   >
 ): boolean {
-  if (route.runtimeId === "enjoy-local" && enjoySecretOf(input) && input.apiKeys.length > 0) {
+  if (route.runtimeId !== "enjoy-local") {
+    return input.engines.some((row) => row.runtimeId === route.runtimeId)
+  }
+  if (enjoySecretOf(input) && input.apiKeys.length > 0) {
     const profileId = route.profileId ?? pickKeyedProfileId(input)
     return Boolean(profileId) && keyedStateOf(input, profileId) !== "invalid"
   }
-  return defaultRouteUsable(route, input)
+  return input.localModels.some((row) => row.verified === true)
 }
 
 function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute | null {
