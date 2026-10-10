@@ -28,8 +28,9 @@ export function ChangesList(props: {
   const t = useT()
 
   const gitRepo = useChatStore((state) => state.gitRepo)
+  // 非 git：不要拿空 status / 合成 last-turn 行去画 diff，只出诚实空态 + 本轮 path。
+  if (gitRepo === false) return <ReviewNotGitEmpty />
   if (changes.length === 0) {
-    if (gitRepo === false) return <ReviewNotGitEmpty />
     return (
       <div className="flex flex-col items-center justify-center gap-2 p-5 text-center">
         <p className="text-caption-1-medium text-text-tertiary">{t("chat.treeClean")}</p>

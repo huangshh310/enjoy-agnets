@@ -37,8 +37,8 @@ export function ReviewDiffPane(props: {
   }, [activePath, selectedFilePath, onSelectFile])
 
   const gitRepo = useChatStore((state) => state.gitRepo)
+  if (gitRepo === false) return <ReviewNotGitEmpty />
   if (changes.length === 0 && !activePath) {
-    if (gitRepo === false) return <ReviewNotGitEmpty />
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-text-tertiary">
         <div className="flex size-10 items-center justify-center rounded-full bg-state-success-text/10 text-state-success-text">
