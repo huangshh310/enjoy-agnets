@@ -3,6 +3,7 @@
  */
 import { RiKey2Line } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
+import { CHAT_CONNECT_FROM, officialProviderSearch } from "@renderer/components/setup-guide/open-provider-form"
 import { useT } from "@renderer/i18n"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
@@ -24,7 +25,11 @@ export function ThreadNoChatRouteNotice({
       actionIcon={<RiKey2Line className="size-3" />}
       onAction={() => {
         onDismiss()
-        void navigate({ to: "/settings/$section", params: { section: "providers" } })
+        void navigate({
+          to: "/settings/$section",
+          params: { section: "providers" },
+          search: officialProviderSearch(CHAT_CONNECT_FROM)
+        })
       }}
       onDismiss={onDismiss}
       className={className}
