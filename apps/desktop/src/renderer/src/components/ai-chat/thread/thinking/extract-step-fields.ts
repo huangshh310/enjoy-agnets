@@ -7,6 +7,7 @@ import {
   isStaleObservationAfterAllow,
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { RUN_FAILED_CODE, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import type { SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
@@ -155,18 +156,22 @@ export type ToolRenderStatus =
   | "skipped"
   | "stopped"
 
-function isUserAbortedTool(tool?: Pick<ThreadToolCall, "result" | "errorText">): boolean {
+function toolHasCode(
+  tool: Pick<ThreadToolCall, "result" | "errorText"> | undefined,
+  code: string
+): boolean {
   if (!tool) return false
-  if (tool.errorText === "user_aborted") return true
+  if (tool.errorText === code) return true
   const result = tool.result
-  return Boolean(result && typeof result === "object" && (result as { code?: string }).code === "user_aborted")
+  return Boolean(result && typeof result === "object" && (result as { code?: string }).code === code)
 }
 
 export function mapToolStatus(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): ToolRenderStatus {
-  if (isUserAbortedTool(tool)) return "stopped"
+  if (toolHasCode(tool, USER_ABORTED_CODE)) return "stopped"
+  if (toolHasCode(tool, RUN_FAILED_CODE)) return "error"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"

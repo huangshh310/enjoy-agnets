@@ -109,6 +109,22 @@ function hydratedPendingAssistant(): ThreadMessage[] {
   ]
 }
 
+test("泵出错结清 cancelled + run_failed：工具行走出错，不是已停止", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "cancelled",
+    code: "run_failed"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(tool.state, "output-error")
+  assert.equal(mapToolStatus(tool.state, tool), "error")
+  assert.notEqual(mapToolStatus(tool.state, tool), "stopped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
 test("Stop 结清 cancelled：工具行走已停止，不是已拒绝", () => {
   const patch = reduceStreamEvent(hydratedPendingAssistant(), {
     type: "approval.resolved",

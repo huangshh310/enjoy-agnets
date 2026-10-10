@@ -58,12 +58,13 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   if (event.type === "approval.resolved") {
     const current = tools.find((tool) => tool.id === event.toolCallId)
     const cancelled = event.decision === "cancelled"
+    const code = event.code ?? (cancelled ? USER_ABORTED_CODE : undefined)
     upsertTool(tools, {
       id: event.toolCallId,
       state: cancelled ? "output-error" : event.decision === "deny" ? "output-denied" : "input-available",
       result: mergeResultDecision(current?.result, {
         decision: event.decision,
-        ...(cancelled ? { code: USER_ABORTED_CODE } : {})
+        ...(code ? { code } : {})
       })
     })
   }

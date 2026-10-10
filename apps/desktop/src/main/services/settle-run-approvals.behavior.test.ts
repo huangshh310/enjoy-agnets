@@ -13,10 +13,11 @@ const {
   holdAgentRun,
   getDatabase,
   getApproval,
-  abortActiveRunMemory
+  abortActiveRunMemory,
+  failAgentPump
 } = await import("./settle-run-approvals.behavior.load.ts")
 
-type SentEvent = { type: string; decision?: string; toolCallId?: string }
+type SentEvent = { type: string; decision?: string; toolCallId?: string; code?: string }
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -111,4 +112,58 @@ test("Stop：卡片未批就中止，库写 cancelled，Inbox 不因审批残留
   assert.equal((tool?.result as { decision?: string; code?: string } | undefined)?.decision, "cancelled")
   assert.equal((tool?.result as { code?: string } | undefined)?.code, "user_aborted")
   deleteActiveRun(runId)
+})
+
+test("泵真实出错结清：码是 run_failed，不是 user_aborted / 已停止", async () => {
+  const runId = "run_fail_settle"
+  const sessionId = "ses_fail_settle"
+  const events: SentEvent[] = []
+  seedSession(sessionId, runId)
+  holdAgentRun({
+    runId,
+    window: recordWindow(events),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId,
+      workspaceId: "ws_stop",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "write" }]
+    }
+  })
+  const run = getActiveRun(runId)
+  if (!run) throw new Error("hold failed")
+  run.pumping = true
+  run.tools = [
+    {
+      id: "tool_fail",
+      name: "write_file",
+      state: "approval-requested",
+      args: { path: "fail-note.txt" }
+    }
+  ]
+  rememberApproval({
+    runId,
+    approvalId: "apr_fail_settle",
+    toolCallId: "tool_fail",
+    name: "write_file",
+    args: { path: "fail-note.txt", content: "x" }
+  })
+  run.pendingApprovals.push({
+    approvalId: "apr_fail_settle",
+    toolCallId: "tool_fail",
+    name: "write_file",
+    args: { path: "fail-note.txt", content: "x" }
+  })
+  await failAgentPump(runId, run, new Error("provider exploded"))
+  const stored = getApproval(getDatabase(), "apr_fail_settle")
+  assert.equal(stored?.decision, "cancelled")
+  assert.equal(stored?.sdkApproved, 0)
+  assert.equal(stored?.sdkReason, "run_failed")
+  assert.equal((run.tools[0]?.result as { code?: string } | undefined)?.code, "run_failed")
+  assert.notEqual((run.tools[0]?.result as { code?: string } | undefined)?.code, "user_aborted")
+  assert.ok(events.some((event) => event.type === "approval.resolved" && event.code === "run_failed"))
+  assert.ok(events.some((event) => event.type === "run.error" && event.code !== "user_aborted"))
 })

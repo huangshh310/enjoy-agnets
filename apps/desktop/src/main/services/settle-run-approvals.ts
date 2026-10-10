@@ -5,6 +5,7 @@
 import type { BrowserWindow } from "electron"
 import { listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
 import { foldToolEvent } from "@enjoy-agents/ipc-contract"
+import { RUN_FAILED_CODE, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { emitEvent, getActiveRun, listActiveRuns } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { recordSdkApprovalResponse } from "./approval-hmac"
@@ -12,23 +13,32 @@ import { foldDeniedAssistantTool, sessionIdForRun } from "./fold-denied-assistan
 
 export const RUN_STOPPED_REASON = "run_stopped"
 export const APPROVAL_CANCELLED = "cancelled" as const
+export type SettleApprovalCause = "aborted" | "failed"
 
 type PendingSettle = { runId: string; approvalId: string; toolCallId: string }
 
-export function settlePendingApprovalsForRun(runId: string, window?: BrowserWindow): number {
+export function settlePendingApprovalsForRun(
+  runId: string,
+  window?: BrowserWindow,
+  cause: SettleApprovalCause = "aborted"
+): number {
   let settled = 0
   for (const item of collectPendingForRun(runId)) {
-    if (settleOne(item, window)) settled += 1
+    if (settleOne(item, window, cause)) settled += 1
   }
   const run = getActiveRun(runId)
   if (run) run.pendingApprovals = []
   return settled
 }
 
-export function settlePendingApprovalsForSession(sessionId: string, window?: BrowserWindow): number {
+export function settlePendingApprovalsForSession(
+  sessionId: string,
+  window?: BrowserWindow,
+  cause: SettleApprovalCause = "aborted"
+): number {
   let settled = 0
   for (const item of collectPendingForSession(sessionId)) {
-    if (settleOne(item, window)) settled += 1
+    if (settleOne(item, window, cause)) settled += 1
   }
   return settled
 }
@@ -80,20 +90,23 @@ function collectPendingForSession(sessionId: string): PendingSettle[] {
   return out
 }
 
-function settleOne(item: PendingSettle, window?: BrowserWindow): boolean {
+function settleOne(item: PendingSettle, window?: BrowserWindow, cause: SettleApprovalCause = "aborted"): boolean {
   const db = getDatabase()
   const run = getActiveRun(item.runId)
   const inMemory = run?.pendingApprovals.some((pending) => pending.approvalId === item.approvalId)
   const inDb = listPendingApprovals(db, item.runId).some((row) => row.id === item.approvalId)
   if (!inMemory && !inDb) return false
+  const code = cause === "failed" ? RUN_FAILED_CODE : USER_ABORTED_CODE
+  const reason = cause === "failed" ? RUN_FAILED_CODE : RUN_STOPPED_REASON
   setApprovalDecision(db, item.approvalId, APPROVAL_CANCELLED)
-  recordSdkApprovalResponse(item.approvalId, { approved: false, reason: RUN_STOPPED_REASON })
+  recordSdkApprovalResponse(item.approvalId, { approved: false, reason })
   run?.approvalGate.resolve(item.approvalId, "deny")
   const resolved = {
     type: "approval.resolved" as const,
     runId: item.runId,
     toolCallId: item.toolCallId,
-    decision: APPROVAL_CANCELLED
+    decision: APPROVAL_CANCELLED,
+    code
   }
   if (run) {
     foldToolEvent(run.tools, resolved)
@@ -105,7 +118,8 @@ function settleOne(item: PendingSettle, window?: BrowserWindow): boolean {
         sessionId,
         runId: item.runId,
         toolCallId: item.toolCallId,
-        decision: APPROVAL_CANCELLED
+        decision: APPROVAL_CANCELLED,
+        code
       })
     }
   }

@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approval.resolved.cancelled`；精选 `curatedPresetId`）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approval.resolved.code`：Stop=`user_aborted`，出错=`run_failed`）
 
 ## 当前真相
 

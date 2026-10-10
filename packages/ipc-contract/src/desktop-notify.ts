@@ -13,6 +13,9 @@ export const USER_ABORT_MESSAGE = "Aborted by user."
 /** 用户停 / 归档 abort 的结构化码。UI 只认这码，禁止把 message 摊进界面。 */
 export const USER_ABORTED_CODE = "user_aborted"
 
+/** 泵真实出错结清未决审批：不是用户 Stop，工具行走出错，禁止标已停止。 */
+export const RUN_FAILED_CODE = "run_failed"
+
 /** 通知层结束态。从现有 `run.end` / `run.error` 推导，不改事件契约。 */
 export const DesktopNotifyRunKind = z.enum(["completed", "stopped", "errored"])
 export type DesktopNotifyRunKind = z.infer<typeof DesktopNotifyRunKind>

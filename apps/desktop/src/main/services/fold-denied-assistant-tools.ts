@@ -11,6 +11,7 @@ export function foldDeniedAssistantTool(input: {
   runId: string
   toolCallId: string
   decision?: "deny" | "cancelled"
+  code?: string
 }): boolean {
   const db = getDatabase()
   const rows = db
@@ -27,7 +28,8 @@ export function foldDeniedAssistantTool(input: {
       type: "approval.resolved",
       runId: input.runId,
       toolCallId: input.toolCallId,
-      decision: input.decision ?? "cancelled"
+      decision: input.decision ?? "cancelled",
+      ...(input.code ? { code: input.code } : {})
     })
     persistMessage(
       input.sessionId,

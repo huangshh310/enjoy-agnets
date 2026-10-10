@@ -89,6 +89,26 @@ test("用户停封口：input-available 标 user_aborted，审批中标 cancelle
   assert.deepEqual(sealed?.[1]?.result, { code: "user_aborted", decision: "cancelled" })
 })
 
+test("approval.resolved cancelled + run_failed 不是已停止", () => {
+  const tools: ThreadToolCall[] = [
+    { id: "t1", name: "write_file", state: "approval-requested", args: { path: "note.txt" } }
+  ]
+  foldToolEvent(tools, {
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "run_failed"
+  })
+  const row = tools[0]
+  assert.ok(row)
+  assert.equal(row.state, "output-error")
+  const result = row.result as { decision?: string; code?: string }
+  assert.equal(result.decision, "cancelled")
+  assert.equal(result.code, "run_failed")
+  assert.notEqual(result.code, "user_aborted")
+})
+
 test("approval.resolved cancelled 折成已停止，不是已拒绝", () => {
   const tools: ThreadToolCall[] = [
     { id: "t1", name: "write_file", state: "approval-requested", args: { path: "note.txt" } }
