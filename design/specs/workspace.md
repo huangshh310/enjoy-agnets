@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（`workspace.changes` 区分非 git；归档前先 deny 未决审批）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档先 abort 活泵；非 git 停跑不求交）
 
 ## 当前真相
 
@@ -9,7 +9,7 @@
 当前能力：
 
 - 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹；SSH 由 main 先 `dropSshPool` 再删行，回 `{ id, lastWorkspaceId }`（按 `recentWorkspaceIds` MRU 排除已删项，没有再名单第一个），不依赖 renderer 切走 disconnect。真实切换走 `loadWorkspace` → `workspace.remember`；`open` / `openSsh` / 开跑也会写入 MRU。`workspace.open` / `openSsh` 成功后 `loadWorkspace` 立刻 `setQueryData(["workspaces"])`。启动对齐只在启动时跑一次，且只在 `workspaceId == null` 时发生，不得用过期名单推断「有没有项目」。
-- 会话可归档：`session.archive` **先**对该会话未决审批走普通 `decide` deny（与 Dock 点拒绝同一条路：SDK 原 id、写库、发 `approval.resolved`），再戳 `archived_at`；回可选 `deniedApprovals`。侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。归档 / 恢复只写 `archived_at`，不 bump `updated_at`。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目**只剪**该项目在历史里的条目（`pruneHistory`），不弹栈、不 `showCurrent`、不落到 past 里的设置页。当前若在对话主区（`#/`）就留在主区，只换指针。一个不剩则 `setWorkspace(null)` 并 `landEmptyHome()` 回 `#/` 主区空态，不自动新建。不 `loadWorkspace` / `loadSession(sessions[0])` / `createAndOpenSession`。切到的 next 若是 SSH，只 `connect`，main 不会按需 lazy 建连。自动切到另一个项目时弹轻 toast「已切换到「A」」（`chat.switchedToProject`，`showAppToast` 默认 2400ms）；删光不弹。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。设置模块下 `ContextColumn` 换成 `ModuleNav`（`SettingsShell` 分段），**没有**项目行；删除入口只在 Chat 模块的 `AiChatSidebar` → `ProjectPopover`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
+- 会话可归档：`session.archive` **先 abort 该会话仍在内存的活泵**，再对未决审批 deny（活泵必须走 `decide`；`denyStored` 只在 run 已不在内存时用。活泵 decide 失败则中止归档，禁止绕过或留下悬空泵），再戳 `archived_at`；回可选 `deniedApprovals`。侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。归档 / 恢复只写 `archived_at`，不 bump `updated_at`。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目**只剪**该项目在历史里的条目（`pruneHistory`），不弹栈、不 `showCurrent`、不落到 past 里的设置页。当前若在对话主区（`#/`）就留在主区，只换指针。一个不剩则 `setWorkspace(null)` 并 `landEmptyHome()` 回 `#/` 主区空态，不自动新建。不 `loadWorkspace` / `loadSession(sessions[0])` / `createAndOpenSession`。切到的 next 若是 SSH，只 `connect`，main 不会按需 lazy 建连。自动切到另一个项目时弹轻 toast「已切换到「A」」（`chat.switchedToProject`，`showAppToast` 默认 2400ms）；删光不弹。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。设置模块下 `ContextColumn` 换成 `ModuleNav`（`SettingsShell` 分段），**没有**项目行；删除入口只在 Chat 模块的 `AiChatSidebar` → `ProjectPopover`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）。`workspace.changes` 回 `{ files, gitRepo? }`：`gitRepo: false` 是「这个文件夹没有用 Git 管理」，不要和干净仓库的空 `files` 混成「没有未提交改动」。审查空态走 `chat.reviewNotGit`，可列出本轮账本路径。旧客户端若只收到数组，当作未知是否 git。
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件或按已展开目录暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
@@ -79,7 +79,8 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 会话上次发送时的分支记在 renderer（`session-cwd-branch`，可 localStorage），不迁 SQLite。切走且该会话已有用户轮时，Composer 上画横幅「发送后这条会话会跟到当前分支」+ `旧 → 新`。记录只在 `agent.run` 认领成功后更新；开流失败横幅仍在。空会话 / 非 git / 脏树拒切 不画横幅。
 - `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。
 - `workspace.openPreview` 点了若走 `openBrowserUrl` 会进右栏 `<webview>`，不是系统浏览器。必须 main `shell.openExternal`。html 必须 jail + 后缀校验 + 文件存在；URL 只认环回。禁止远程、禁止自动 `vite` / dev server。探索态不禁用。由 `preview-open-invariants` 守门。
-- **隐患**：夹具工作区不是 git 仓库时，`git status` 失败被当成「没有未提交改动」，右侧审查空态与对话「本轮改动」打架。正确做法：`detectGitRepo`（`rev-parse --is-inside-work-tree`）把 `gitRepo: false` 与干净仓库拆开；空态走 `chat.reviewNotGit`，可列本轮账本路径。
+- **隐患**：夹具工作区不是 git 仓库时，`git status` 失败被当成「没有未提交改动」，右侧审查空态与对话「本轮改动」打架。正确做法：`detectGitRepo`（`rev-parse --is-inside-work-tree`）把 `gitRepo: false` 与干净仓库拆开；空态走 `chat.reviewNotGit`，可列本轮账本路径。停跑后 `describeReviewFiles` 在 `gitRepo === false` 时直接列本轮 path，禁止再和空 git 表求交。
+- **隐患**：归档只 deny 未决审批、不 abort 活泵，泵会在已归档会话里继续生成。`denyStored` 若在 decide 失败后兜底，活泵仍在。正确做法：先 `abortAgent`，再 deny；run 仍在内存且 decide 失败则抛错中止归档。
 - 审查栏 `gitCommit` 成功后必须 invalidate `["changes", workspaceId]`（改动条和 Review 共用这一份）。不要写成 `workspace-changes`，那条 query 不存在，提交后改动条会继续挂着已进 HEAD 的文件。
 - 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出**已暂存**数量与说明，再调 `workspace.gitCommit`（默认 `stageAll: false`，禁止再默认 `git add -A`）。Agent `git_commit` 仍走 HMAC，并可 `add -A`。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。按文件或已展开目录暂存走 `workspace.gitStage`，成功后 invalidate `["changes", workspaceId]`。目录只把当前 porcelain 里该前缀下的**文件**交给 Git（展开用 `status --porcelain --untracked-files=all`，避免未跟踪目录被收成 `dir/` 后再整目录 add）。调用带 `--literal-pathspecs`（文件名里的 `*` `?` `[` 不当通配符）；不 `git add -A`，不把目录路径本身交给 git，不碰前缀外的文件。没有文件行抛 `STAGE_NOTHING_MATCHED`。SSH 暂存同一套参数。审查树「暂存此文件夹」包含工作区仍有改动的叶子，含索引和工作区都脏的文件。
 - Review 主区出现横向空条纹：把全部 changed files 展开成 `FileDiff` 卡片流，且组件用 `flex-1` + `max-h-full`。滚动列给不出确定高度，diff 行塌成发丝。默认只渲染当前文件并 `fill`；叠放时必须 `compact`，禁止 `fill`。
