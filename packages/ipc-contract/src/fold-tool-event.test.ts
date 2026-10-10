@@ -75,6 +75,29 @@ test("收工封口：input-available 也封成 output-error，approval-requested
   assert.equal(sealed?.[1]?.state, "approval-requested")
 })
 
+test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
+  const tools: ThreadToolCall[] = []
+  foldToolEvent(tools, {
+    type: "tool.start",
+    runId: "r1",
+    toolCallId: "parent",
+    name: "delegate",
+    args: { task: "look around" }
+  })
+  foldToolEvent(tools, {
+    type: "tool.start",
+    runId: "r1",
+    toolCallId: "child",
+    name: "mcp_fs__move_file",
+    args: { path: "a.ts" },
+    parentToolCallId: "parent"
+  })
+  assert.equal(tools.length, 2)
+  assert.equal(tools[0]?.name, "delegate")
+  assert.equal(tools[1]?.name, "mcp_fs__move_file")
+  assert.equal(tools[1]?.parentToolCallId, "parent")
+})
+
 test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {
   const sealed = sealAbandonedTools([
     {

@@ -74,12 +74,40 @@ export const MUTATING_TOOLS: readonly string[] = [
   ...HOST_CONTROL_TOOLS
 ]
 
-/** 任务清单 / 问卷：名字带 write 但不是写盘。与 ledger `isTodoWriteName` 对齐。 */
-const NOT_WRITE_TYPE_LEAVES = new Set(["todo_write", "todo", "update_todos", "ask_user_questions"])
-
-/** 与 agent-core `isMcpWriteToolName` / MCP `isMutatingToolName` 同一套叶子启发式。 */
-const MUTATING_LEAF = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
-const MUTATING_SHELL_LEAF = /^(bash|shell|sh|zsh|cmd|command|run_command|run-command|terminal)$/i
+/**
+ * 收工判定唯一只读白名单。未知 MCP / ACP 弱名默认当可能改盘。
+ * `delegate` 本身不改盘，子工具已折进同一份 `run.tools`。
+ */
+const READ_ONLY_TYPE_LEAVES = new Set([
+  "read_file",
+  "read",
+  "list_dir",
+  "list",
+  "desktop_list_apps",
+  "glob",
+  "grep",
+  "repo_outline",
+  "outline",
+  "git_status",
+  "git_diff",
+  "git_log",
+  "desktop_snapshot",
+  "snapshot",
+  "desktop_screenshot",
+  "screenshot",
+  "browser_extract_content",
+  "extract",
+  "todo_write",
+  "todo",
+  "update_todos",
+  "ask_user_questions",
+  "ask",
+  "submit_plan",
+  "plan",
+  "delegate",
+  "task",
+  "subagent"
+])
 
 /** MCP `mcp_server__leaf` 与 ACP 弱名都取叶子。 */
 export function toolNameLeaf(name: string): string {
@@ -89,21 +117,14 @@ export function toolNameLeaf(name: string): string {
 }
 
 /**
- * 写类：MUTATING_TOOLS + 已有 MCP/ACP 叶子启发式。
- * 收工判定用这份，不要再维护 PATH_WRITE_TOOLS 之类的第二份名单。
+ * 写类：不在只读白名单里的都算可能改盘。
+ * 未知 MCP（`move_file` / `rename` / `apply_diff` / `git_merge` / `set_config` / `run_script`）
+ * 与 ACP `kind:"move"` 映射名都走这里，禁止再靠写名单 + 正则漏掉。
  */
 export function isWriteTypeToolName(name: string): boolean {
   const trimmed = name.trim()
   if (!trimmed) return false
   const leaf = toolNameLeaf(trimmed)
   const normalized = leaf.toLowerCase().replace(/[\s-]/g, "_")
-  if (NOT_WRITE_TYPE_LEAVES.has(normalized)) return false
-  if (
-    MUTATING_TOOLS.includes(trimmed) ||
-    MUTATING_TOOLS.includes(leaf) ||
-    MUTATING_TOOLS.includes(normalized)
-  ) {
-    return true
-  }
-  return MUTATING_LEAF.test(leaf) || MUTATING_SHELL_LEAF.test(normalized)
+  return !READ_ONLY_TYPE_LEAVES.has(normalized)
 }
