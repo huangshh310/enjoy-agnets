@@ -5,6 +5,9 @@ import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { snapshotConversationDesktopAllow, stripAnyDesktopSessionAllow } from "@enjoy-agents/agent-core/computer-use"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { eventMarksProducedOutput } from "@enjoy-agents/ipc-contract/pre-output-failure"
+import type { RunBackgroundKind } from "./pre-output-fail"
+import type { SessionTurnSnapshot } from "./pre-output-rollback"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
 import type { CitedSource } from "./cite-knowledge"
@@ -65,6 +68,12 @@ export type ActiveRun = {
   userCancelled?: boolean
   /** 补跑 Dock 超时：abort 前同步打上，谁先 fail 都写超时码。 */
   catchUpApprovalTimedOut?: boolean
+  /** 文本 / 工具 / 审批 / 开泵后的 source.added。 */
+  producedOutput?: boolean
+  /** 本轮刚写入的用户句；首字前回滚只删这个 id。 */
+  userMessageId?: string
+  sessionSnapshot?: SessionTurnSnapshot
+  backgroundKind?: RunBackgroundKind
 }
 
 const activeRuns = new Map<string, ActiveRun>()
@@ -84,6 +93,7 @@ export function emitEvent(window: BrowserWindow, event: StreamEvent) {
     if (fallback) settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
     return
   }
+  noteProducedOutput(next)
   const sessionId = next.sessionId ?? sessionIdOfRun(next)
   if (sessionId) {
     stampAndSend(window, next, sessionId)
@@ -93,6 +103,14 @@ export function emitEvent(window: BrowserWindow, event: StreamEvent) {
   if (window.isDestroyed()) return
   window.webContents.send("agent.event", next)
   settleRunWaiters(next)
+}
+
+function noteProducedOutput(event: StreamEvent): void {
+  const runId = "runId" in event ? event.runId : undefined
+  if (!runId) return
+  const run = getActiveRun(runId)
+  if (!run || run.producedOutput) return
+  if (eventMarksProducedOutput(event, run.pumping)) run.producedOutput = true
 }
 
 function withAutomationApprovalSource(event: StreamEvent): StreamEvent {
@@ -206,7 +224,11 @@ export function holdAgentRun(
     citedSources: patch.citedSources ?? [],
     transcript: emptyTranscript(),
     tools: [],
-    assistantPersisted: false
+    assistantPersisted: false,
+    producedOutput: false,
+    userMessageId: patch.userMessageId,
+    sessionSnapshot: patch.sessionSnapshot,
+    backgroundKind: patch.backgroundKind
   })
 }
 

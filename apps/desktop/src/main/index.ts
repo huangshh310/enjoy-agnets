@@ -108,6 +108,16 @@ function createWindow(): BrowserWindow {
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
   });
+  mainWindow.on("blur", () => {
+    void import("./services/session-focus").then(({ clearFocusedSessionId }) => {
+      clearFocusedSessionId()
+    })
+  })
+  mainWindow.on("closed", () => {
+    void import("./services/session-focus").then(({ clearFocusedSessionId }) => {
+      clearFocusedSessionId()
+    })
+  })
 
   blockNativeHistoryNavigation(mainWindow);
   lockPreviewWebview(mainWindow.webContents);

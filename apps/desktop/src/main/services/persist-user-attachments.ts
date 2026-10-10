@@ -27,11 +27,11 @@ export function persistUserTurn(
   content: string,
   attached: UserFileAsset[],
   messageId?: string
-) {
+): string | undefined {
   const last = lastUserTurn(sessionId)
-  if (shouldSkipDuplicateUserTurn(last, content, Date.now())) return
+  if (shouldSkipDuplicateUserTurn(last, content, Date.now())) return undefined
   const parts = userTurnParts(content, attached) as UIMessagePart[]
-  persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId)
+  return persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId)
 }
 
 function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {

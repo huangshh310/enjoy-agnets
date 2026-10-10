@@ -103,6 +103,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     message: z.string(),
     /** 用户停 / 归档：`user_aborted`。renderer 只认这码走中性已停止。 */
     code: z.string().optional(),
+    /** 首字前失败已回滚本轮气泡；缺省 / 坏字段当 false。 */
+    preOutput: z.boolean().catch(false),
     turn: TurnOutcome.optional(),
     ...Envelope
   }),

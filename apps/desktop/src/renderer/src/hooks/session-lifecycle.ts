@@ -40,6 +40,7 @@ import {
 } from "./new-session-create"
 import { absorbAssetsIntoQueuedSend } from "./queue-composer-send"
 import { queueComposerFocus } from "./composer-focus"
+import { reportSessionFocus } from "./report-session-focus"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -123,6 +124,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     sessionRunning
   })
   useAttentionStore.getState().clearCompleteIfErrored(sessionId)
+  reportSessionFocus(sessionId)
   queueComposerFocus()
 }
 
@@ -186,6 +188,7 @@ function detachForegroundForCreate() {
     composer: "",
     running: false
   })
+  reportSessionFocus(null)
   queueComposerFocus()
 }
 
@@ -237,6 +240,7 @@ function publishCreatedSession(
   store.setMessages([])
   store.setMode(modeForNewSession(readRememberedDefaultMode()))
   applyComposerModel(store, session.id)
+  reportSessionFocus(session.id)
 }
 
 export function parkForegroundRun() {

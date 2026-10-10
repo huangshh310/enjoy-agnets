@@ -14,27 +14,30 @@ export type RunRow = {
   checkpoint: string | null
   error: string | null
   usageJson: string | null
+  discardedPreOutput: number
   createdAt: number
   updatedAt: number
 }
 
 export function insertRun(
   db: AppDatabase,
-  row: Omit<RunRow, "createdAt" | "updatedAt" | "usageJson"> & {
+  row: Omit<RunRow, "createdAt" | "updatedAt" | "usageJson" | "discardedPreOutput"> & {
     createdAt?: number
     usageJson?: string | null
+    discardedPreOutput?: number
   }
 ): RunRow {
   const now = row.createdAt ?? Date.now()
   const record: RunRow = {
     ...row,
     usageJson: row.usageJson ?? null,
+    discardedPreOutput: row.discardedPreOutput ?? 0,
     createdAt: now,
     updatedAt: now
   }
   db.prepare(
-    `INSERT INTO runs (id, session_id, workspace_id, kind, status, model_id, provider_id, checkpoint, error, usage_json, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO runs (id, session_id, workspace_id, kind, status, model_id, provider_id, checkpoint, error, usage_json, discarded_pre_output, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     record.id,
     record.sessionId,
@@ -46,6 +49,7 @@ export function insertRun(
     record.checkpoint,
     record.error,
     record.usageJson,
+    record.discardedPreOutput,
     record.createdAt,
     record.updatedAt
   )
@@ -55,17 +59,18 @@ export function insertRun(
 export function updateRun(
   db: AppDatabase,
   id: string,
-  patch: Partial<Pick<RunRow, "status" | "checkpoint" | "error" | "usageJson">>
+  patch: Partial<Pick<RunRow, "status" | "checkpoint" | "error" | "usageJson" | "discardedPreOutput">>
 ): void {
   const current = getRun(db, id)
   if (!current) return
   db.prepare(
-    "UPDATE runs SET status = ?, checkpoint = ?, error = ?, usage_json = ?, updated_at = ? WHERE id = ?"
+    "UPDATE runs SET status = ?, checkpoint = ?, error = ?, usage_json = ?, discarded_pre_output = ?, updated_at = ? WHERE id = ?"
   ).run(
     patch.status ?? current.status,
     patch.checkpoint === undefined ? current.checkpoint : patch.checkpoint,
     patch.error === undefined ? current.error : patch.error,
     patch.usageJson === undefined ? current.usageJson : patch.usageJson,
+    patch.discardedPreOutput ?? current.discardedPreOutput,
     Date.now(),
     id
   )
@@ -88,6 +93,7 @@ export function getRun(db: AppDatabase, id: string): RunRow | undefined {
       `SELECT id, session_id as sessionId, workspace_id as workspaceId, kind, status,
               model_id as modelId, provider_id as providerId, checkpoint, error,
               usage_json as usageJson,
+              COALESCE(discarded_pre_output, 0) as discardedPreOutput,
               created_at as createdAt, updated_at as updatedAt
        FROM runs WHERE id = ?`
     )
@@ -119,6 +125,7 @@ export function listRuns(
       `SELECT id, session_id as sessionId, workspace_id as workspaceId, kind, status,
               model_id as modelId, provider_id as providerId, checkpoint, error,
               usage_json as usageJson,
+              COALESCE(discarded_pre_output, 0) as discardedPreOutput,
               created_at as createdAt, updated_at as updatedAt
        FROM runs ${where} ORDER BY updated_at DESC`
     )

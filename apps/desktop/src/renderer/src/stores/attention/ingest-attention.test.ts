@@ -408,6 +408,42 @@ test("run.end 没有 turn 不得折成已完成", () => {
   )
 })
 
+test("前台首字前失败 turn.neutral：不进失败、不计需处理", () => {
+  const items = ingestAttentionEvent([], {
+    event: {
+      type: "run.error",
+      runId: "run_pre_fg",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: true,
+      turn: { workflow: "todo", attention: "neutral" }
+    },
+    sessionId: "ses_pre_fg",
+    sessionTitle: "前台",
+    now: 1
+  })
+  assert.equal(items.some((item) => item.kind === "error" && item.status === "active"), false)
+  assert.equal(stripNeedsCount(items), 0)
+})
+
+test("后台自动化首字前失败 turn.error：进失败并计入需处理", () => {
+  const items = ingestAttentionEvent([], {
+    event: {
+      type: "run.error",
+      runId: "run_pre_bg",
+      message: "provider_forbidden",
+      code: "provider_forbidden",
+      preOutput: true,
+      turn: { workflow: "todo", attention: "error" }
+    },
+    sessionId: "ses_pre_bg",
+    sessionTitle: "后台",
+    now: 1
+  })
+  assert.equal(items.some((item) => item.kind === "error" && item.status === "active"), true)
+  assert.equal(stripNeedsCount(items), 1)
+})
+
 test("用户 Stop 只信 turn.stopped：不当出错，不进需处理", () => {
   const stopped = ingestAttentionEvent([], {
     event: {

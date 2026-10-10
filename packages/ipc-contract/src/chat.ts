@@ -4,6 +4,7 @@
 import { z } from "zod"
 import { AutomationRunSource } from "./automations-missed.ts"
 import { DesktopMentionBias } from "./desktop-mention-apps"
+import { CLIENT_REQUEST_ID_MAX } from "./pre-output-failure.ts"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 
 export const AgentMode = z.enum(["agent", "plan", "ask", "debug", "workflow", "tdd", "code_mode"])
@@ -40,6 +41,8 @@ export const RunAgentInput = z.object({
   executePlan: z.boolean().optional(),
   /** 幂等收据。同一 commandId 重试返回第一次的 runId，不双开 turn。 */
   commandId: z.string().min(1).optional(),
+  /** 双击防重。同一会话同一 id 60s 内不重写；首字前回滚后换新 id 才算重试。 */
+  clientRequestId: z.string().min(1).max(CLIENT_REQUEST_ID_MAX).optional(),
   /** CU-P1-B：Composer `@桌面` / `@应用` 偏置。缺省不偏。提及 ≠ 放行。 */
   desktopBias: DesktopMentionBias.optional(),
   /** 句首 `/computer-use`：这一发注册 desktop_*，不把总开关写成开。 */

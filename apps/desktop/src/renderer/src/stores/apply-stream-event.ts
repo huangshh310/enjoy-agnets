@@ -22,6 +22,7 @@ import {
   isForeignRunId,
   shouldFinalizeComposerRun
 } from "./stream-run-scope"
+import { dropPreOutputOptimisticTurn, lastUserText } from "./drop-pre-output-turn"
 
 export type StreamPatch = {
   messages: ThreadMessage[]
@@ -106,12 +107,22 @@ function applyTerminalEvent(
       }
     }
     const code = chatSendErrorCodeOf(event)
-    const lastUser = [...messages].reverse().find((item) => item.role === "user")
+    const lastUser = lastUserText(messages)
+    if (event.preOutput === true) {
+      return {
+        messages: dropPreOutputOptimisticTurn(messages),
+        pendingApproval: null,
+        running: false,
+        runId: null,
+        error: code ?? event.message,
+        ...(lastUser ? { composer: lastUser } : {})
+      }
+    }
     return {
       messages: finalizeRun(messages),
       running: false,
       error: code ?? event.message,
-      ...(code && lastUser?.content ? { composer: lastUser.content } : {})
+      ...(code && lastUser ? { composer: lastUser } : {})
     }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }

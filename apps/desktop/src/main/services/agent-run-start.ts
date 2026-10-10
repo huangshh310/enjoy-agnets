@@ -43,6 +43,9 @@ import type { AgentRunResult } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
+import { peekClientRequest, rememberClientRequest } from "./client-request-dedupe"
+import { backgroundKindOf } from "./pre-output-fail"
+import { snapshotSessionTurn } from "./pre-output-rollback"
 
 export async function runAgent(
   window: BrowserWindow,
@@ -164,12 +167,17 @@ async function beginAgentRun(
     const existing = peekCommandReceipt(input.commandId)
     if (existing) return { ok: true, runId: existing }
   }
+  if (input.clientRequestId && !options.runId) {
+    const existing = peekClientRequest(input.sessionId, input.clientRequestId)
+    if (existing) return { ok: true, runId: existing }
+  }
   const runId = options.runId ?? createId("run")
   const modelMessages = await modelMessagesForStart(
     input,
     options.resumeMessages,
     secret?.contextWindow
   )
+  const sessionSnapshot = snapshotSessionTurn(input.sessionId)
   holdAgentRun({
     runId,
     window,
@@ -178,14 +186,23 @@ async function beginAgentRun(
     secret,
     profileId: resolved?.profileId,
     credentialFingerprint: resolved?.fingerprint,
-    messages: modelMessages
+    messages: modelMessages,
+    sessionSnapshot,
+    backgroundKind: backgroundKindOf({
+      automationSource: input.automationSource,
+      heartbeat: Boolean(options.promptEcho),
+      rememberMru: options.rememberMru
+    })
   })
   if (options.runId) hydrateActiveRunUsage(runId)
   if (input.commandId) rememberCommandReceipt(input.commandId, runId)
+  if (input.clientRequestId) rememberClientRequest(input.sessionId, input.clientRequestId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }
-  persistOutgoingUser(input, options.persistUser)
+  const userMessageId = persistOutgoingUser(input, options.persistUser)
+  const live = getActiveRun(runId)
+  if (live && userMessageId) live.userMessageId = userMessageId
   emitRunStart(window, input, runId, options.promptEcho)
   if (!options.resumeMessages && workspace.kind !== "ssh") {
     void recordEnjoyCheckpoint(workspace.rootPath, {
@@ -224,16 +241,17 @@ function lastUserContent(input: RunAgentInput): string {
   return typeof content === "string" ? content.trim() : ""
 }
 
-function persistOutgoingUser(input: RunAgentInput, persistUser: boolean) {
+function persistOutgoingUser(input: RunAgentInput, persistUser: boolean): string | undefined {
   const lastUser = lastOutgoingUser(input)
-  if (!lastUser || !persistUser || isTodoContinueUserMessage(lastUser.content)) return
-  persistUserTurn(
+  if (!lastUser || !persistUser || isTodoContinueUserMessage(lastUser.content)) return undefined
+  const id = persistUserTurn(
     input.sessionId,
     lastUser.content,
     metasFromAssetIds(input.attachments),
     lastUser.id
   )
   maybeRenameSession(input.sessionId, lastUser.content)
+  return id
 }
 
 async function modelMessagesForStart(

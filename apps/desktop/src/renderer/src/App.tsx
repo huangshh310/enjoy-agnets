@@ -7,6 +7,7 @@ import { router } from "@renderer/router"
 import { Toaster } from "@/components/ui/sonner"
 import { initThemeSkin } from "@renderer/hooks/use-theme-skin"
 import { installEnjoyE2eBridge } from "@renderer/lib/enjoy-e2e-bridge"
+import { SessionFocusReporter } from "@renderer/hooks/session-focus-reporter"
 
 initThemeSkin()
 installEnjoyE2eBridge()
@@ -15,6 +16,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <TooltipProvider>
+          <SessionFocusReporter />
           <RouterProvider router={router} />
           <Toaster />
         </TooltipProvider>

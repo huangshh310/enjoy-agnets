@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（017 `session-review`：待验收改动文件与完成时间）
+> 进程边界与安全基线。最后更新：2026-10-10（018 `run-discarded-pre-output`：首字前失败回滚标记）
 
 ## 当前真相
 
@@ -70,7 +70,7 @@ Main Process（可信）
 ### 数据
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
-- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014 / #118）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`。015（#119）：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。016：`mcp_servers.curated_preset_id`。017 `session-review`：`sessions.review_changed_files`（JSON，`ReviewChangedFiles`：最多 3 个短名 + `total`）与 `review_completed_at`（ISO），只在 turn 标 `needs_review` 时由 main 写，给 Inbox 待验收行。014 / 015 的 ADD 都有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上审批 SDK 列（含 `sdk_approval_id` 与 UNIQUE 索引）和 `cost_missing`，不必重建库。向量存在 SQLite，检索在本机。
+- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014 / #118）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`。015（#119）：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。016：`mcp_servers.curated_preset_id`。017 `session-review`：`sessions.review_changed_files`（JSON，`ReviewChangedFiles`：最多 3 个短名 + `total`）与 `review_completed_at`（ISO），只在 turn 标 `needs_review` 时由 main 写，给 Inbox 待验收行。018 `run-discarded-pre-output`：`runs.discarded_pre_output`（INTEGER，默认 0）；首字前失败回滚气泡后标 1，run 行留下 `failed` 供对照，不改会话 `updated_at` / title / workflow。014 / 015 的 ADD 都有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上审批 SDK 列（含 `sdk_approval_id` 与 UNIQUE 索引）和 `cost_missing`，不必重建库。向量存在 SQLite，检索在本机。
 - 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。

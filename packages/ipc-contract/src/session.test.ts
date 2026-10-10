@@ -7,6 +7,7 @@ import {
   SessionIdInput,
   SessionPatchInput,
   SessionRenameInput,
+  SessionSetFocusedInput,
   SessionTruncateFromInput
 } from "./session.ts"
 
@@ -19,6 +20,13 @@ test("session.rename 拒绝未知字段", () => {
 
 test("session.rename 接受合法标题", () => {
   assert.equal(SessionRenameInput.safeParse({ sessionId: "s1", title: "Fix login" }).success, true)
+})
+
+test("session.setFocused 只要可空 sessionId", () => {
+  assert.equal(SessionSetFocusedInput.safeParse({ sessionId: "s1" }).success, true)
+  assert.equal(SessionSetFocusedInput.safeParse({ sessionId: null }).success, true)
+  assert.equal(SessionSetFocusedInput.safeParse({ sessionId: "" }).success, false)
+  assert.equal(SessionSetFocusedInput.safeParse({ sessionId: "s1", extra: 1 }).success, false)
 })
 
 test("session.archive 入参只要 sessionId", () => {

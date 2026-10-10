@@ -19,6 +19,7 @@
     "./workspace-preview": "./src/workspace-preview.ts",
     "./quoted-context": "./src/quoted-context.ts",
     "./chat-readiness": "./src/chat-readiness.ts",
+    "./pre-output-failure": "./src/pre-output-failure.ts",
     "./credential-check": "./src/credential-check.ts",
     "./host-inject": "./src/host-inject.ts",
     "./stream-event": "./src/stream-event.ts",

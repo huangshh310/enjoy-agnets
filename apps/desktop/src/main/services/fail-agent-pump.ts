@@ -17,6 +17,13 @@ import {
   classifyEnjoyLocalSendFailure,
   persistCredentialAfterSend
 } from "./credential-send-outcome.ts"
+import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
+import {
+  isForegroundPreOutputFailure,
+  preOutputAttention,
+  shouldRollbackPreOutput
+} from "./pre-output-fail"
+import { markRunDiscardedPreOutput, rollbackPreOutputMessages } from "./pre-output-rollback"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
@@ -66,7 +73,12 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
   if (sendFail?.persist) {
     void persistCredentialAfterSend(run, sendFail.persist)
   }
-  const message = sendFail?.code ?? classified.message
+  const code = sendFail?.code ?? (isPreOutputFailureCode(classified.message) ? classified.message : undefined)
+  const message = code ?? classified.message
+  if (shouldRollbackPreOutput({ producedOutput: Boolean(run.producedOutput), code })) {
+    emitPreOutputFail(runId, run, code)
+    return
+  }
   persistActiveRun(run, runId, "failed", message)
   recordMetric({
     runId,
@@ -83,7 +95,7 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     type: "run.error",
     runId,
     message,
-    ...(sendFail ? { code: sendFail.code } : {}),
+    ...(code ? { code } : {}),
     turn
   })
   if (classified.errorClass !== "timeout") return
@@ -92,6 +104,38 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     runId,
     code: "timeout",
     message: classified.message
+  })
+}
+
+function emitPreOutputFail(runId: string, run: ActiveRun, code: string): void {
+  rollbackPreOutputMessages({
+    sessionId: run.input.sessionId,
+    messageIds: [run.userMessageId, run.assistantMessageId],
+    snapshot: run.sessionSnapshot
+  })
+  markRunDiscardedPreOutput(runId, code)
+  recordMetric({
+    runId,
+    kind: "agent",
+    modelId: run.input.modelId,
+    status: "failed",
+    durationMs: Date.now() - run.startedAt,
+    errorClass: "pre_output"
+  })
+  settleRun(runId, { status: "error", summary: code })
+  const foreground = isForegroundPreOutputFailure(run)
+  const turn = {
+    ...turnOutcomeForRun(run, "error"),
+    workflow: (run.sessionSnapshot?.workflowStatus as "todo" | "in_progress" | "needs_review") ?? "todo",
+    attention: preOutputAttention(foreground)
+  }
+  emitEvent(run.window, {
+    type: "run.error",
+    runId,
+    message: code,
+    code,
+    preOutput: true,
+    turn
   })
 }
 

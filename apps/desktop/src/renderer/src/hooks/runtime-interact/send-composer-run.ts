@@ -231,6 +231,7 @@ async function startComposerRun(
     attachments: assetIds,
     executePlan: executePlan || undefined,
     commandId: crypto.randomUUID(),
+    clientRequestId: crypto.randomUUID(),
     ...(desktopBias ? { desktopBias } : {}),
     ...(once ? { computerUseOnce: true } : {})
   })

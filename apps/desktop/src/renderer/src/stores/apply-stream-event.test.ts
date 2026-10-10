@@ -218,6 +218,31 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
   assert.equal(delta.messages.at(-1)?.content, "好的")
 })
 
+test("首字前失败 preOutput：拿掉乐观气泡并还回草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_old", role: "assistant", content: "old", createdAt: 1 },
+    { id: "msg_user_1", role: "user", content: "hello", createdAt: 2 },
+    { id: "msg_pending", role: "assistant", content: "", createdAt: 3, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: true
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 1)
+  assert.equal(patch.messages[0]?.id, "msg_old")
+  assert.equal(patch.composer, "hello")
+  assert.equal(patch.running, false)
+  assert.equal(patch.runId, null)
+  assert.equal(patch.error, "provider_unreachable")
+})
+
 test("首发失败稳定码写回 error 并留下草稿", () => {
   const messages: ThreadMessage[] = [
     { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
