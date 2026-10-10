@@ -53,7 +53,11 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
         connectLocalUnverified: string
         connectLocalUnverifiedWhy: string
         goVerify: string
+        workspaceTitle: string
+        capEnginesBody: string
+        moreEngines: string
       }
+      agentTools: { manageProviders: string }
       update: { devSkip: string }
       builtinTools: { browserBridgeTitle: string }
       providers: Record<string, string>
@@ -101,6 +105,13 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.setupGuide.connectLocalUnverifiedWhy, "这是远端地址，还没确认能连上，所以现在不能用来对话。")
   assert.equal(z.settings.setupGuide.goVerify, "去验证")
   assert.equal(z.settings.providers.pickTitle, "选一家，粘贴密钥")
+  assert.equal(z.settings.setupGuide.workspaceTitle, "打开第一个项目")
+  assert.equal(z.settings.setupGuide.capEnginesBody, "Enjoy 本地和这台电脑上已经装好的助手，可以在同一条对话里换着用。模型和登录还在各自那边。")
+  assert.equal(z.settings.setupGuide.moreEngines, "更多引擎")
+  assert.equal(z.settings.providers.emptyTitle, "还没有连接模型")
+  assert.equal(z.chat.noProvidersYet, "还没有连接模型")
+  assert.equal(z.chat.manageProviders, "管理模型连接")
+  assert.equal(z.settings.agentTools.manageProviders, "管理模型连接")
   assert.equal(z.chat.noProjectNewChatHint, "先选一个文件夹，才能开新对话。")
   assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")

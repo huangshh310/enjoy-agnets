@@ -9,7 +9,8 @@ import {
   NEED_CLI_OUTDATED,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
-  NEED_REMOTE_CONNECTED
+  NEED_REMOTE_CONNECTED,
+  NO_CHAT_ROUTE
 } from "../../lib/usage/classify-thread-error.ts"
 import {
   resetCliLoginLoopStore,
@@ -90,7 +91,7 @@ test("无快照时 Enjoy Local 放行，Harness 也放行", () => {
 test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", () => {
   rememberChatReadiness(readyNone())
   const chat = store({ runtimeId: "enjoy-local", hasKey: true })
-  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: true }), false)
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
   assert.equal(chat.read().error, NO_CHAT_ROUTE)
   assert.equal(chat.read().picker, false)
 })
@@ -341,7 +342,6 @@ test("SSH connecting|failed|disconnected 时 guardComposerSend 为 false", () =>
         workspaceKind: "ssh",
         remoteStatus: "connected"
       },
-      { chatReady: true }
     ),
     true
   )

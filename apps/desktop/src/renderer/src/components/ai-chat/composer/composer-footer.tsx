@@ -6,7 +6,6 @@ import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { composerSendReady } from "@renderer/hooks/runtime-interact/send-composer-guard"
-import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -65,11 +64,7 @@ export function ComposerFooter({
   const remoteLabel = useChatStore((state) => state.remoteLabel)
   useCliLoginLoop(runtimeId)
   const chrome = composerChromeFor(runtimeId)
-  const chatReady = useChatReadiness().data?.ready === true
-  const sendReady = composerSendReady(
-    { runtimeId, hasKey, modelId, workspaceKind, remoteStatus },
-    { chatReady }
-  )
+  const sendReady = composerSendReady({ runtimeId, hasKey, modelId, workspaceKind, remoteStatus })
   const showVoice = chrome.voice && canRealtime
   return (
     <div className="flex min-w-0 flex-col">

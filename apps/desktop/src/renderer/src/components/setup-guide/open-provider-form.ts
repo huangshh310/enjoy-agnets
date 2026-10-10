@@ -6,8 +6,8 @@ import { useSetupGuideStore } from "./setup-guide-store"
 
 export const SETUP_GUIDE_FROM = "setup-guide"
 export const CHAT_CONNECT_FROM = "chat"
+/** 只打开选厂商，不要带 preset 以免预选 DeepSeek。 */
 export const OFFICIAL_CREATE = "official"
-export const OFFICIAL_PRESET_KIND = "deepseek"
 
 export function officialProviderSearch(from?: string): { create: string; from?: string } {
   return from ? { create: OFFICIAL_CREATE, from } : { create: OFFICIAL_CREATE, from: CHAT_CONNECT_FROM }

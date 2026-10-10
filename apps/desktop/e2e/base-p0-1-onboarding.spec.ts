@@ -36,7 +36,7 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     await expect(window.getByTestId("appearance-preview-light")).toBeVisible()
     await expect(window.getByTestId("appearance-preview-dark")).toBeVisible()
     await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "打开第一个工作区" }).waitFor({ timeout: 8_000 })
+    await window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "还差一步：连一个模型" }).waitFor({ timeout: 8_000 })
     await expect(window.getByTestId("ready-need-summary")).toContainText("已装 1 个引擎")
@@ -101,7 +101,6 @@ test("S1-2 添加表单、已连上、末屏可以开始了", async () => {
   try {
     await openConnectModelStep(form.window)
     await form.window.getByTestId("connect-model-api_key").click()
-    await clickGuidePrimary(form.window)
     await form.window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
       timeout: 8_000
     })
@@ -128,7 +127,7 @@ test("S1-2 添加表单、已连上、末屏可以开始了", async () => {
     await clickGuidePrimary(keyed.window)
     await keyed.window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(keyed.window)
-    await keyed.window.getByRole("heading", { name: "打开第一个工作区" }).waitFor({ timeout: 8_000 })
+    await keyed.window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(keyed.window)
     await keyed.window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
     await expect(keyed.window.getByTestId("setup-guide-primary")).toHaveText("开始使用")
@@ -162,7 +161,7 @@ test("未验证本机模型露出提示，末屏仍还差一步", async () => {
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "打开第一个工作区" }).waitFor({ timeout: 8_000 })
+    await window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "还差一步：连一个模型" }).waitFor({ timeout: 8_000 })
     await expect(window.getByRole("heading", { name: "可以开始了" })).toHaveCount(0)
@@ -235,10 +234,6 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
 
 test("S1-2 向导有密钥后能发 hello 并收到回复", async () => {
   test.setTimeout(180_000)
-  test.skip(
-    true,
-    "等 #130 落地 defaultRoute 与 CHAT_READY=key 可发 stub；当前 main 夹具只假 ready，发送仍会 no_chat_route"
-  )
   const blocked = canLaunchElectron()
   test.skip(Boolean(blocked), blocked ?? "")
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-p01-hello-"))
@@ -254,7 +249,7 @@ test("S1-2 向导有密钥后能发 hello 并收到回复", async () => {
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "打开第一个工作区" }).waitFor({ timeout: 8_000 })
+    await window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
@@ -268,6 +263,33 @@ test("S1-2 向导有密钥后能发 hello 并收到回复", async () => {
       timeout: 20_000
     })
     await snap(window, "s1-2-send-hello")
+  } finally {
+    await app.close()
+  }
+})
+
+test("S1-2 引擎夹具发 hello 不出现中性条", async () => {
+  test.setTimeout(180_000)
+  const blocked = canLaunchElectron()
+  test.skip(Boolean(blocked), blocked ?? "")
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-p01-engine-"))
+  const { app, window } = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_WORKSPACE: workspace,
+    ENJOY_E2E_SKIP_PROFILE: "1",
+    ENJOY_E2E_CHAT_READY: "engine"
+  })
+  try {
+    await skipGuideIfOpen(window)
+    await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
+    const chip = window.getByTestId("composer-engine-chip")
+    if ((await chip.count()) > 0) await snap(window, "s1-2-engine-chip")
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.fill("hello")
+    await composer.press("Enter")
+    await expect(window.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
+    await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
+    await snap(window, "s1-2-engine-send-hello")
   } finally {
     await app.close()
   }

@@ -58,15 +58,18 @@ export function SetupGuideDialog() {
   const finish = () => {
     void finishSetupGuide(finishing, hide, () => queryClient.invalidateQueries({ queryKey: ["settings"] }))
   }
+  const openAddKey = () => {
+    pauseGuideForProviderForm("connect-model")
+    void navigate({
+      to: "/settings/$section",
+      params: { section: "providers" },
+      search: officialProviderSearch(SETUP_GUIDE_FROM)
+    })
+  }
   const onNext = () => {
     if (step === "connect-model") {
       if (connectPick === "api_key" && (readiness?.apiKeys.length ?? 0) === 0) {
-        pauseGuideForProviderForm("connect-model")
-        void navigate({
-          to: "/settings/$section",
-          params: { section: "providers" },
-          search: officialProviderSearch(SETUP_GUIDE_FROM)
-        })
+        openAddKey()
         return
       }
       setStep(nextSetupGuideStep(step))
@@ -106,6 +109,7 @@ export function SetupGuideDialog() {
             onOpened={setWorkspaceName}
             connectPick={connectPick}
             onConnectPick={setConnectPick}
+            onAddKey={openAddKey}
           />
         </div>
         <SetupGuideFooter
@@ -129,15 +133,17 @@ function SetupGuideBody({
   workspaceName,
   onOpened,
   connectPick,
-  onConnectPick
+  onConnectPick,
+  onAddKey
 }: {
   step: SetupGuideStep
   workspaceName: string
   onOpened: (name: string) => void
   connectPick: string | null
   onConnectPick: (id: string) => void
+  onAddKey: () => void
 }) {
-  return STEP_BODY[step]({ workspaceName, onOpened, connectPick, onConnectPick })
+  return STEP_BODY[step]({ workspaceName, onOpened, connectPick, onConnectPick, onAddKey })
 }
 
 const STEP_BODY: Record<
@@ -147,13 +153,14 @@ const STEP_BODY: Record<
     onOpened: (name: string) => void
     connectPick: string | null
     onConnectPick: (id: string) => void
+    onAddKey: () => void
   }) => ReactNode
 > = {
   intro: () => <IntroPoints />,
   capabilities: () => <CapabilityCards />,
   engines: () => <EngineInstallList />,
-  "connect-model": ({ connectPick, onConnectPick }) => (
-    <ConnectModelStep picked={connectPick} onPick={onConnectPick} />
+  "connect-model": ({ connectPick, onConnectPick, onAddKey }) => (
+    <ConnectModelStep picked={connectPick} onPick={onConnectPick} onAddKey={onAddKey} />
   ),
   appearance: () => <AppearanceChoice />,
   workspace: ({ workspaceName, onOpened }) => <WorkspaceChoice name={workspaceName} onOpened={onOpened} />,

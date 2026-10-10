@@ -7,7 +7,6 @@ import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
-import { peekChatReady } from "../chat-readiness-cache.ts"
 import {
   NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
@@ -16,7 +15,8 @@ import {
   NEED_CLI_OUTDATED,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
-  NEED_REMOTE_CONNECTED
+  NEED_REMOTE_CONNECTED,
+  NO_CHAT_ROUTE
 } from "../../lib/usage/classify-thread-error.ts"
 
 type ComposerGuardStore = {
@@ -54,8 +54,7 @@ function enjoyLocalAllowsSend(): boolean {
 
 /** 发送盘是否亮成可发：Enjoy Local 信共享闸；CLI 仍看登录 / 检测。 */
 export function composerSendReady(
-  store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">,
-  opts?: { chatReady?: boolean }
+  store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">
 ): boolean {
   if ((store.workspaceKind ?? "local") === "ssh") {
     const status = store.remoteStatus ?? "disconnected"
@@ -74,7 +73,7 @@ export function composerSendReady(
 
 export function guardComposerSend(
   store: ComposerGuardStore,
-  opts?: { ideReady?: boolean; chatReady?: boolean }
+  opts?: { ideReady?: boolean }
 ): boolean {
   const ideReady = opts?.ideReady ?? hasIde()
   if (!ideReady) {

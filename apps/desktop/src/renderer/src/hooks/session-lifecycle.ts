@@ -8,8 +8,6 @@ import {
   readRememberedDefaultMode
 } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
-import { peekDefaultRoute } from "./chat-readiness-cache"
-import { runtimeIdFromDefaultRoute } from "../lib/chat-default-route"
 import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
 import { getIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
@@ -142,11 +140,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
       return
     }
     const typedDuringCreate = store.composer
-    const runtimeId = resolveCreateRuntime(
-      store.runtimeId,
-      store.preferredRuntimeId,
-      store.explicitRuntimePreference
-    )
+    const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
     absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
     if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
@@ -278,13 +272,8 @@ function applyComposerModel(store: ReturnType<typeof useChatStore.getState>, ses
   store.setModel(patch.modelId, patch.modelLabel, patch.provider)
 }
 
-/** 新建会话：用户显式选过跟 Composer；否则先吃 readiness.defaultRoute。 */
-function resolveCreateRuntime(current: string, preferred: string, explicit: boolean) {
-  const fromRoute = runtimeIdFromDefaultRoute(peekDefaultRoute())
-  const order = explicit
-    ? [current, preferred, DEFAULT_RUNTIME_ID]
-    : [fromRoute, current, preferred, DEFAULT_RUNTIME_ID]
-  for (const id of order) {
+function resolveCreateRuntime(current: string, preferred: string) {
+  for (const id of [current, preferred, DEFAULT_RUNTIME_ID]) {
     if (!id) continue
     const parsed = AgentToolId.safeParse(id)
     if (parsed.success) return parsed.data

@@ -49,9 +49,10 @@ export function NoProjectEmpty() {
           {t("chat.noProjectNewChatHint")}
         </p>
       ) : null}
-      <span className={cx("rounded-xl p-1", nudge && "bg-accent-500/10")}>
+      <span className={cx("rounded-xl p-1", nudge && "ring-1 ring-border-button-default")}>
         <Button
           type="button"
+          variant="outline"
           data-testid="no-project-select-folder"
           className="h-9"
           disabled={busy}

@@ -62,6 +62,11 @@ export function connectModelOptions(readiness: ChatReadiness | undefined): Conne
   return equalizeFreshInstall(options)
 }
 
+/** 未连上的「添加 API 密钥」是动作：点行就进选厂商。其余行点选再继续。 */
+export function connectModelRowAction(option: ConnectModelOption): "add-key" | "select" {
+  return option.kind === "api_key" && !option.connected ? "add-key" : "select"
+}
+
 export function connectModelRowHintKey(option: ConnectModelOption): string {
   if (option.kind === "engine") return "settings.setupGuide.connectEngineHint"
   if (option.kind === "local_model") {

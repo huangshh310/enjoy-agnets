@@ -35,7 +35,7 @@ test("P0-R 开项目词表对齐 3a3e00b", () => {
   )
   assert.match(zh, /localTitle: "本机文件夹"/)
   assert.match(zh, /remoteTitle: "远程 SSH…"/)
-  assert.match(zh, /打开位置，不是换引擎/)
+  assert.match(zh, /选一个文件夹作为项目/)
   assert.match(en, /localTitle: "Local folder"/)
   assert.match(en, /remoteTitle: "Remote SSH…"/)
 })

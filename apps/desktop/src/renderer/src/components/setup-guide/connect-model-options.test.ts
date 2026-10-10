@@ -4,7 +4,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { connectModelOptions, connectModelRowHintKey } from "./connect-model-options.ts"
+import {
+  connectModelOptions,
+  connectModelRowAction,
+  connectModelRowHintKey
+} from "./connect-model-options.ts"
 
 test("全新安装只露添加密钥和以后再连，两行等权", () => {
   const options = connectModelOptions(
@@ -46,6 +50,25 @@ test("已有 API 密钥时该行标已连上，不推荐再添加", () => {
   const key = options.find((item) => item.kind === "api_key")
   assert.equal(key?.kind === "api_key" && key.connected, true)
   assert.equal(key?.kind === "api_key" && key.recommended, false)
+})
+
+test("未连上的添加密钥是动作，其余点选", () => {
+  const fresh = connectModelOptions(
+    buildChatReadiness({ engines: [], localModels: [], apiKeys: [], engineCount: 1 })
+  )
+  const key = fresh.find((item) => item.kind === "api_key")
+  const later = fresh.find((item) => item.kind === "later")
+  assert.equal(connectModelRowAction(key!), "add-key")
+  assert.equal(connectModelRowAction(later!), "select")
+  const connected = connectModelOptions(
+    buildChatReadiness({
+      engines: [],
+      localModels: [],
+      apiKeys: [{ kind: "api_key", providerId: "p1", presetId: "openai" }],
+      engineCount: 0
+    })
+  ).find((item) => item.kind === "api_key")
+  assert.equal(connectModelRowAction(connected!), "select")
 })
 
 test("没有快照时仍露出始终可点的两行", () => {

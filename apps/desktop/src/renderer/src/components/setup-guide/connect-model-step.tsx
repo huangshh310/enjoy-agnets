@@ -12,6 +12,7 @@ import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import {
   connectModelOptions,
+  connectModelRowAction,
   connectModelRowHintKey,
   type ConnectModelOption
 } from "./connect-model-options"
@@ -19,10 +20,12 @@ import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 
 export function ConnectModelStep({
   picked,
-  onPick
+  onPick,
+  onAddKey
 }: {
   picked: string | null
   onPick: (id: string) => void
+  onAddKey: () => void
 }) {
   const t = useT()
   const readiness = useChatReadiness().data
@@ -34,7 +37,10 @@ export function ConnectModelStep({
           <ConnectModelRow
             option={option}
             selected={picked === option.id || (option.kind === "api_key" && option.connected && picked == null)}
-            onChoose={() => onPick(option.id)}
+            onChoose={() => {
+              if (connectModelRowAction(option) === "add-key") onAddKey()
+              else onPick(option.id)
+            }}
             title={rowTitle(option, t)}
             hint={t(connectModelRowHintKey(option), hintVars(option))}
             connectedLabel={t("settings.setupGuide.connectApiKeyConnected")}

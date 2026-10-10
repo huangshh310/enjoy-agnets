@@ -185,8 +185,6 @@ export type ChatStore = {
   /** Composer 当前运行时：enjoy-local 或本机 CLI id。 */
   runtimeId: string
   preferredRuntimeId: string
-  /** 用户在 Picker / 设置里显式选过默认引擎。未选时才吃 readiness.defaultRoute。 */
-  explicitRuntimePreference: boolean
   /** 空会话写过的偏好默认模型；中途换模不得改它。 */
   preferredModelId: string
   sessionRuntimes: Record<string, string>
@@ -246,7 +244,6 @@ export type ChatStore = {
   setComposer: (value: string) => void
   setRuntimeId: (runtimeId: string) => void
   setPreferredRuntimeId: (runtimeId: string) => void
-  setExplicitRuntimePreference: (explicit: boolean) => void
   setPreferredModelId: (modelId: string) => void
   setSessionRuntimes: (sessionRuntimes: Record<string, string>) => void
   setSessionModels: (sessionModels: Record<string, string>) => void

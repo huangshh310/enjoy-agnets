@@ -57,9 +57,9 @@ function ReadyMark({ ready }: { ready: boolean }) {
   return (
     <span
       data-testid="ready-mark-pending"
-      className="mb-3 flex size-11 items-center justify-center rounded-full border border-text-primary/15 bg-background-secondary-default text-text-secondary"
+      className="mb-3 flex size-11 items-center justify-center rounded-full bg-background-secondary-default text-text-primary"
     >
-      <RiKey2Line className="size-5" aria-hidden />
+      <RiKey2Line className="size-5 shrink-0" aria-hidden />
     </span>
   )
 }
