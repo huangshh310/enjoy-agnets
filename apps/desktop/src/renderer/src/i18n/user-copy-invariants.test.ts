@@ -48,6 +48,12 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       noChatRouteNotice: string
       needModelNotice: string
       adoptedDefaultRouteToast: string
+      credentialInvalidNotice: string
+      credentialNetworkNotice: string
+      goFixKey: string
+      resendDraft: string
+      resendingDraft: string
+      toolName: { writeFile: string }
     }
     nav: Record<string, string>
     settings: {
@@ -68,6 +74,12 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
         workspaceTitle: string
         capEnginesBody: string
         moreEngines: string
+        credentialInvalid: string
+        credentialUnverified: string
+        credentialUnverifiedNetwork: string
+        credentialUnverifiedTimeout: string
+        credentialUnverifiedUnknown: string
+        readyUnverifiedHint: string
       }
       agentTools: { manageProviders: string }
       update: { devSkip: string }
@@ -79,7 +91,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       instructions: Record<string, string>
       instructionPresets: { minimalDiffs: { tag: string } }
     }
-    pages: { knowledge: { sourcesHealthy: string } }
+    pages: { knowledge: { sourcesHealthy: string }; inbox: { emptyHint: string } }
   }
   assert.equal(z.chat.desktopApprovalTtlFrozen, "等你决定，画面已定格在提问那一刻")
   assert.equal(z.chat.mentionDesktopSheetHint, "这台电脑上能操控的应用")
@@ -127,7 +139,31 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
   assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")
   assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
+  assert.equal(
+    z.chat.credentialInvalidNotice,
+    "密钥没通过：{name} 不认这把密钥，消息没发出去。草稿会留着。"
+  )
+  assert.equal(
+    z.chat.credentialNetworkNotice,
+    "连不上 {name}，消息没发出去。草稿会留着，检查网络后再试。"
+  )
+  assert.equal(z.chat.goFixKey, "改密钥")
+  assert.equal(z.chat.resendDraft, "再发一次")
+  assert.equal(z.chat.resendingDraft, "正在发送…")
   assert.equal(z.chat.needModelNotice, "还差一步：选一个模型，才能发消息。草稿会留着。")
+  assert.equal(z.settings.setupGuide.credentialInvalid, "密钥无效")
+  assert.equal(z.settings.setupGuide.credentialUnverified, "已保存 · 还没验证")
+  assert.equal(z.settings.setupGuide.credentialUnverifiedNetwork, "连不上服务，检查网络后再试。")
+  assert.equal(z.settings.setupGuide.credentialUnverifiedTimeout, "服务半天没回应，稍后再试。")
+  assert.equal(
+    z.settings.setupGuide.credentialUnverifiedUnknown,
+    "暂时没法验证，可以先用，发消息时会再检查。"
+  )
+  assert.equal(z.settings.setupGuide.readyUnverifiedHint, "密钥还没验证，第一次发消息时会检查。")
+  assert.equal(z.chat.toolName.writeFile, "写入文件")
+  assert.equal(z.pages.inbox.emptyHint.includes("Inbox"), false)
+  assert.doesNotMatch(z.chat.credentialInvalidNotice, /401|403|ECONNREFUSED/)
+  assert.doesNotMatch(z.chat.credentialNetworkNotice, /401|403|ECONNREFUSED|status/)
   assert.equal(z.chat.adoptedDefaultRouteToast, "之后的新对话默认用「{name}」，可在设置里改。")
   assert.equal(z.chat.goConnect, "去连接")
   assert.equal(z.settings.setupGuide.connectLocalUnverified, "未验证")

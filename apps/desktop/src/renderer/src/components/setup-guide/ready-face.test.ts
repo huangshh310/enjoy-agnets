@@ -1,10 +1,10 @@
 /**
  * 末屏只认 ready，引擎数不能冒充可以开始。
- * ready + unverified 走占位键，不回落「还差一步」。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { showReadyUnverifiedHint } from "../../lib/credential-check-ui.ts"
 import { readyGuideFinishes, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face.ts"
 
 test("有可对话路线才写可以开始了", () => {
@@ -19,20 +19,26 @@ test("没有路线写还差一步，主钮去连接", () => {
   assert.equal(readyGuideFinishes(false), false)
 })
 
-test("ready 但密钥未验证走占位键，不回落还差一步", () => {
+test("option A：唯一未验证密钥算 ready，标题仍是可以开始了", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [],
-    apiKeys: [{ kind: "api_key", providerId: "p", presetId: "openai" }],
+    apiKeys: [{ kind: "api_key", providerId: "p", presetId: "deepseek" }],
     engineCount: 1,
     hasEnjoySecret: true,
-    credentialCheck: { state: "unverified", code: "timeout" }
+    credentialCheck: { state: "unverified", code: "unknown" }
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.credentialCheck?.state, "unverified")
-  assert.equal(readyGuideTitleKey(snap.ready, snap.credentialCheck?.state), "settings.setupGuide.readyUnverifiedTitle")
+  assert.equal(readyGuideTitleKey(snap.ready), "settings.setupGuide.readyTitle")
   assert.equal(readyGuidePrimaryKey(snap.ready), "settings.setupGuide.start")
   assert.equal(readyGuideFinishes(snap.ready), true)
+})
+
+test("末屏副标题只在 ready 且默认路线 unverified 时出现，不重算 ready", () => {
+  assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "unverified" }), true)
+  assert.equal(showReadyUnverifiedHint({ ready: false, credentialState: "unverified" }), false)
+  assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "ok" }), false)
 })
 
 test("未验证本机模型不把末屏写成可以开始了，只认 ready", () => {

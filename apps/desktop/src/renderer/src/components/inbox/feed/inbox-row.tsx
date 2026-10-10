@@ -4,6 +4,7 @@ import { useSessionEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { inboxIdentityTitle } from "@renderer/lib/agent-display-name"
 import { useT } from "@renderer/i18n"
 import type { InboxNotification } from "../inbox.types"
+import { formatNeedsReviewSubtitle } from "../lib/format-needs-review-subtitle"
 import { getInboxTheme, inboxTimeLabel } from "./inbox-copy"
 
 export function InboxRow(props: {
@@ -20,7 +21,10 @@ export function InboxRow(props: {
   const identity = useSessionEngineFace(item.sessionId)
   const sessionTitle = item.sessionTitle || item.title || t("common.untitledSession")
   const displayTitle = inboxIdentityTitle(identity.face, sessionTitle)
-  const snippet = item.errorMessage || item.summary
+  const snippet =
+    item.copyKey === "needs_review"
+      ? formatNeedsReviewSubtitle(item, t)
+      : item.errorMessage || item.summary
 
   return (
     <li className="px-2 py-0.5">

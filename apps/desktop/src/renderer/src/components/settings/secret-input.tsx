@@ -28,6 +28,7 @@ export function SecretInput({
     <InputGroup className="h-9 rounded-2lg border-border-button-default bg-background-primary-default shadow-xs dark:bg-transparent">
       <InputGroupInput
         id={id}
+        data-testid={id === "provider-key-input" ? "provider-key-input" : undefined}
         autoFocus={autoFocus}
         type={visible ? "text" : "password"}
         autoComplete="off"

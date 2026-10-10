@@ -32,6 +32,7 @@ export function ProviderEditorDrawer({
   saveLabel,
   layer = "base",
   simple = false,
+  focusKey = false,
   motion = true
 }: {
   editor: EditorState | null
@@ -53,6 +54,7 @@ export function ProviderEditorDrawer({
   saveLabel?: string
   layer?: "base" | "nested"
   simple?: boolean
+  focusKey?: boolean
   motion?: boolean
 }) {
   const t = useT()
@@ -86,6 +88,7 @@ export function ProviderEditorDrawer({
           onOpenAgent={onOpenAgent}
           saveLabel={saveLabel}
           simple={simple}
+          focusKey={focusKey}
         />
       ) : null}
     </SettingsSideDrawer>
@@ -110,7 +113,8 @@ function EditorDrawerForm({
   onSave,
   onOpenAgent,
   saveLabel,
-  simple
+  simple,
+  focusKey
 }: {
   editor: EditorState
   preset: ProviderPreset
@@ -130,6 +134,7 @@ function EditorDrawerForm({
   onOpenAgent?: (runtimeId: string) => void
   saveLabel?: string
   simple?: boolean
+  focusKey?: boolean
 }) {
   return (
     <form
@@ -150,6 +155,7 @@ function EditorDrawerForm({
             detecting={detecting}
             onChange={onChange}
             onDetect={onDetect}
+            focusKey={focusKey}
           />
         ) : (
           <ProviderEditorFields

@@ -36,12 +36,27 @@ export function ProviderSettings() {
   )
   const [picking, setPicking] = useState(search.create === OFFICIAL_CREATE)
   const openedOfficial = useRef(false)
+  const openedEdit = useRef<string | null>(null)
   useEffect(() => {
     if (openedOfficial.current || search.create !== OFFICIAL_CREATE) return
     openedOfficial.current = true
     setActiveTab("presets")
     setPicking(true)
   }, [search.create])
+  useEffect(() => {
+    if (!search.edit || openedEdit.current === search.edit) return
+    const profile = settings.providers.find((row) => row.id === search.edit)
+    if (!profile) return
+    openedEdit.current = search.edit
+    setPicking(false)
+    setActiveTab("configured")
+    settings.openEdit(profile)
+  }, [search.edit, settings.providers, settings.openEdit])
+  useEffect(() => {
+    if (search.focus !== "key" || !settings.editor) return
+    const input = document.getElementById("provider-key-input")
+    if (input instanceof HTMLInputElement) input.focus()
+  }, [search.focus, settings.editor])
 
   function leaveOrigin() {
     settings.closeEditor()
@@ -233,7 +248,8 @@ export function ProviderSettings() {
         saving={settings.saving}
         saveError={settings.saveError}
         secretBlocked={settings.secretBlocked}
-        simple={!settings.editor?.id && Boolean(search.create)}
+        simple={!settings.editor?.id}
+        focusKey={search.focus === "key"}
         motion={false}
         onClose={search.create ? leaveOrigin : settings.closeEditor}
         onChange={settings.updateEditor}

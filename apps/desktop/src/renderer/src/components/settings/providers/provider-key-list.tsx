@@ -35,7 +35,7 @@ export function ProviderKeyList({
   return (
     <div className="flex flex-col gap-2">
       <span className="text-caption-1-medium text-text-secondary">{t("settings.providers.apiKey")}</span>
-      {editor.keys.map((key) => (
+      {editor.keys.map((key, index) => (
         <div key={key.id} className="grid grid-cols-1 gap-2 rounded-xl border border-border-button-default p-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_140px_auto]">
           <Input
             value={key.name}
@@ -48,6 +48,7 @@ export function ProviderKeyList({
             value={key.apiKey}
             onChange={(value) => patchKey(key.id, { apiKey: value })}
             placeholder={key.keyHint || (key.hasKey ? t("settings.providers.keepKey") : "sk-...")}
+            id={index === 0 ? "provider-key-input" : undefined}
           />
           <Select
             value={key.apiStyle ?? ANY}

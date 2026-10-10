@@ -89,7 +89,7 @@ export function EditorDrawerFooter({
           href={docsURL}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-caption-1-medium text-text-tertiary hover:text-text-primary"
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-caption-1-medium text-text-tertiary hover:text-text-primary"
         >
           {t("settings.providers.apiDocs")}
           <RiExternalLinkLine className="size-3" />

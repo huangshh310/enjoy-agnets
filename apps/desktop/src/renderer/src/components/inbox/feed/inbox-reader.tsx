@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { toolDisplayName } from "@renderer/lib/tool-display-name"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { MarkdownResponse } from "@renderer/components/ai-chat/thread/markdown-response"
 import { parseAssistantPayload } from "@enjoy-agents/ipc-contract"
@@ -92,10 +93,13 @@ export function InboxReader(props: {
 
     return {
       latestAssistantText: assistantText,
-      toolsSummary: toolNames.length > 0 ? Array.from(new Set(toolNames)).join(", ") : null,
+      toolsSummary:
+        toolNames.length > 0
+          ? Array.from(new Set(toolNames), (name) => toolDisplayName(name, t)).join("、")
+          : null,
       thoughtSeconds: parsed.thoughtSeconds ?? null
     }
-  }, [sessionMessages])
+  }, [sessionMessages, t])
 
   if (!item) {
     return (
@@ -202,9 +206,8 @@ export function InboxReader(props: {
             <h2 className="text-title-2-semibold text-text-primary tracking-tight leading-snug">
               {displayTitle}
             </h2>
-            <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary font-mono">
+            <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary">
               <RiTerminalBoxLine className="size-3.5 text-text-tertiary" />
-              <span>{item.sessionId}</span>
               <button
                 type="button"
                 onClick={handleCopySessionId}
@@ -236,7 +239,7 @@ export function InboxReader(props: {
                 </div>
                 {item.toolName ? (
                   <span className="font-mono text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
-                    {item.toolName}
+                    {toolDisplayName(item.toolName, t)}
                   </span>
                 ) : null}
               </div>
@@ -302,7 +305,7 @@ export function InboxReader(props: {
               {toolsSummary ? (
                 <span className="inline-flex items-center gap-1">
                   <RiToolsLine className="size-3.5 text-text-tertiary" />
-                  <span>工具调用：{toolsSummary}</span>
+                  <span>{t("pages.inbox.toolsCalled", { names: toolsSummary })}</span>
                 </span>
               ) : null}
               {thoughtSeconds ? (

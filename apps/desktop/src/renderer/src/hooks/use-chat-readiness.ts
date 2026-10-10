@@ -40,7 +40,17 @@ export function useChatReadiness() {
     if (!hasIde()) return undefined
     const stop = getIde().chat.onReadiness((payload) => {
       const snap = acceptReadiness(payload)
-      if (snap) client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+      if (!snap) return
+      const prev = client.getQueryData<ChatReadiness>(CHAT_READINESS_QUERY_KEY)
+      client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+      // 首发回写 credentialCheck 后列表也要跟上，否则设置页还停在旧态。
+      if (
+        prev?.credentialCheck?.state !== snap.credentialCheck?.state ||
+        prev?.credentialCheck?.checkedAt !== snap.credentialCheck?.checkedAt ||
+        prev?.credentialCheck?.verifiedAt !== snap.credentialCheck?.verifiedAt
+      ) {
+        void client.invalidateQueries({ queryKey: ["settings"] })
+      }
     })
     const onFocus = () => {
       void client.invalidateQueries({ queryKey: CHAT_READINESS_QUERY_KEY })

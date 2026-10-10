@@ -6,10 +6,14 @@ import { RiFlashlightLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { AgentBindRef, ProviderPublic } from "@enjoy-agents/ipc-contract"
 import { ProviderIcon } from "./provider-icons"
+import { CredentialCheckStatus } from "./credential-check-status"
 import { ProviderRowActions } from "./provider-row-actions"
 import { WIRE_LABEL, wireLinesOf } from "./provider-wire-lines"
 import type { PingStateMap } from "./use-provider-settings"
+import { useNavigate } from "@tanstack/react-router"
+import { useRecheckProvider } from "@renderer/hooks/use-recheck-provider"
 import { useT } from "@renderer/i18n"
+import { providerEditSearch } from "@renderer/lib/open-provider-edit"
 
 export function ProviderConfiguredRow({
   profile,
@@ -36,6 +40,8 @@ export function ProviderConfiguredRow({
 }) {
   const hasKeyIssue = profile.requiresKey && !profile.hasKey
   const muted = !profile.enabled
+  const recheck = useRecheckProvider()
+  const navigate = useNavigate()
   return (
     <article
       className={cx(
@@ -54,6 +60,21 @@ export function ProviderConfiguredRow({
           <RowRefs refs={refs} onOpenAgent={onOpenAgent} />
         </div>
       </div>
+      {profile.hasKey ? (
+        <CredentialCheckStatus
+          check={profile.credentialCheck}
+          hasKey
+          pending={recheck.pendingId === profile.id}
+          onFixKey={() => {
+            void navigate({
+              to: "/settings/$section",
+              params: { section: "providers" },
+              search: providerEditSearch(profile.id)
+            })
+          }}
+          onRecheck={() => void recheck.recheck(profile.id)}
+        />
+      ) : null}
       <ProviderRowActions
         profile={profile}
         pingState={pingState}
