@@ -6,7 +6,9 @@
  */
 import { useMemo } from "react"
 import { useT } from "@renderer/i18n"
+import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useSourceFileReveal } from "../../../thread/sources/source-file-reveal"
 import { pathsFromLastTurn } from "./last-turn-paths"
 
 export function ReviewNotGitEmpty() {
@@ -20,12 +22,25 @@ export function ReviewNotGitEmpty() {
       {ledger.length > 0 ? (
         <ul className="flex flex-col gap-1 text-caption-1-medium text-text-secondary">
           {ledger.map((path) => (
-            <li key={path} className="truncate">
-              {path}
+            <li key={path}>
+              <button
+                type="button"
+                data-testid="review-not-git-file"
+                data-path={path}
+                onClick={() => openLedgerPreview(path)}
+                className="max-w-full truncate text-left text-text-primary underline-offset-2 hover:underline"
+              >
+                {path}
+              </button>
             </li>
           ))}
         </ul>
       ) : null}
     </div>
   )
+}
+
+function openLedgerPreview(path: string) {
+  useSourceFileReveal.getState().setReveal({ path, line: 1, view: "preview" })
+  void openChangedFile(path, { reveal: "files" })
 }

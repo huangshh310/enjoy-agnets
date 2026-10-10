@@ -211,7 +211,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
-  assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开。")
+  assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开；找不到的文件会就地展开片段。")
   assert.doesNotMatch(z.chat.sourcesSheetFooter, /可聚焦|path|跳转/)
 })
 

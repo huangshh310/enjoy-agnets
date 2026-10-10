@@ -3,6 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
+import { pinHitToQuery } from "@enjoy-agents/knowledge"
 import { stampAndSend } from "./event-bus"
 import { searchKnowledge } from "./knowledge-service"
 
@@ -15,7 +16,8 @@ export async function citeKnowledge(options: {
 }): Promise<{ messages: ModelMessage[]; sources: CitedSource[] }> {
   const { hits } = await searchKnowledge(options.workspaceId, options.query, 6)
   const sources: CitedSource[] = []
-  for (const hit of hits) {
+  for (const raw of hits) {
+    const hit = pinHitToQuery(raw, options.query)
     stampAndSend(
       options.window,
       {
@@ -36,11 +38,15 @@ export async function citeKnowledge(options: {
       title: hit.path,
       path: hit.path,
       startLine: hit.startLine,
+      endLine: hit.endLine,
       snippet: hit.snippet
     })
   }
   if (hits.length === 0) return { messages: [], sources }
-  const lines = hits.map((hit) => `- ${hit.path}:${hit.startLine ?? 0} ${hit.snippet}`)
+  const lines = hits.map((raw) => {
+    const hit = pinHitToQuery(raw, options.query)
+    return `- ${hit.path}:${hit.startLine ?? 0} ${hit.snippet}`
+  })
   return {
     messages: [{ role: "user", content: `Cite these workspace sources:\n${lines.join("\n")}` }],
     sources
@@ -52,5 +58,6 @@ export type CitedSource = {
   title: string
   path: string
   startLine?: number
+  endLine?: number
   snippet?: string
 }

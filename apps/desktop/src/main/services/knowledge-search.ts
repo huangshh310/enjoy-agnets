@@ -2,7 +2,12 @@
  * Knowledge 检索：向量优先，空结果回落词袋；可选 rerank 与来源过滤。
  */
 import { listChunkEmbeddings, listSources } from "@enjoy-agents/db"
-import { fallbackLocalRerank, lexicalScore, rerankWithProvider } from "@enjoy-agents/knowledge"
+import {
+  fallbackLocalRerank,
+  lexicalScore,
+  pinHitToQuery,
+  rerankWithProvider
+} from "@enjoy-agents/knowledge"
 import type { KnowledgeEmbeddingKind, KnowledgeHit } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { queryVector, resolveRerankModel, scoreEmbedded } from "./knowledge-embed"
@@ -33,11 +38,15 @@ export async function searchKnowledge(
     hits = lexicalSearch(workspaceId, query, limit)
     embeddingKind = "lexical"
   }
-  if (!rerank) return stampKind({ hits: hits.slice(0, limit), embeddingKind })
+  if (!rerank) return stampKind({ hits: pinHits(hits.slice(0, limit), query), embeddingKind })
   const withLexical = hits.map((hit) => ({ ...hit, lexical: lexicalScore(query, hit.snippet) }))
   const providerHits = await rerankWithProvider(await resolveRerankModel(), query, withLexical)
   const ranked = (providerHits ?? fallbackLocalRerank(query, withLexical)).slice(0, limit)
-  return stampKind({ hits: ranked, embeddingKind })
+  return stampKind({ hits: pinHits(ranked, query), embeddingKind })
+}
+
+function pinHits(hits: KnowledgeHit[], query: string): KnowledgeHit[] {
+  return hits.map((hit) => pinHitToQuery(hit, query))
 }
 
 function stampKind(result: SearchKnowledgeResult): SearchKnowledgeResult {

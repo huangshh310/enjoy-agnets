@@ -31,6 +31,7 @@ export type CitedSource = {
   title: string
   path: string
   startLine?: number
+  endLine?: number
   snippet?: string
 }
 

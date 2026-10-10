@@ -1,6 +1,7 @@
 /**
  * 本轮来源 sheet 行：类型标是文件 / 技能 / MCP / 知识库；文档并进文件。
  */
+import { citedLineRange, formatCitedLines } from "./source-cite-range.ts"
 import type { SourceKind, TurnSourceChip } from "./source-chip.ts"
 import { displayBaseName, shortenSourcePath } from "./source-path.ts"
 
@@ -33,7 +34,10 @@ export function sourceRowProvenance(
   const path = chip.path?.trim()
   if (!path) return ""
   const short = shortenSourcePath(path)
-  if (chip.kind !== "skill" && chip.startLine != null) return `${short} · L${chip.startLine}`
+  if (chip.kind !== "skill") {
+    const range = citedLineRange(chip)
+    if (range) return `${short} · ${formatCitedLines(range)}`
+  }
   return short
 }
 

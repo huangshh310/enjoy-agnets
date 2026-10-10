@@ -46,6 +46,21 @@ test("类型标只有文件 / 技能 / MCP，文档并进文件", () => {
 test("行列：名称是短名，出处是 path 或服务器", () => {
   assert.equal(sourceRowName(fileChip), "login.ts")
   assert.equal(sourceRowProvenance(fileChip, mcp), "src/auth/login.ts · L42")
+  assert.equal(
+    sourceRowProvenance(
+      {
+        id: "k1",
+        kind: "knowledge",
+        label: "readme.md",
+        path: "readme.md",
+        startLine: 2,
+        endLine: 2,
+        snippet: "hello knowledge"
+      },
+      mcp
+    ),
+    "readme.md · L2"
+  )
   assert.equal(sourceRowName(docChip), "登录流程说明")
   assert.equal(sourceRowProvenance(docChip, mcp), "docs/login.md")
   assert.equal(sourceRowName(skillChip), "读代码")
@@ -54,7 +69,7 @@ test("行列：名称是短名，出处是 path 或服务器", () => {
   assert.equal(sourceRowProvenance(mcpChip, mcp), "服务器 · filesystem")
 })
 
-test("只有带 path 的文件行可聚焦，技能 / MCP / 知识库不跳转", () => {
+test("只有带 path 的文件行走旧聚焦；知识库开打/展开见 source-row-action", () => {
   const knowledgeChip: TurnSourceChip = {
     id: "k1",
     kind: "knowledge",

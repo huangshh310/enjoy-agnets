@@ -1,11 +1,15 @@
 /**
- * 文件视图：左侧可拖拽改宽的目录树 + 右侧可编辑预览。
+ * 文件视图：左侧可拖拽改宽的目录树 + 右侧预览。
+ * 知识库 / 只读来源带 reveal.view=preview 时走只读「查看文件」，不进审查栏。
  */
 import { useEffect, useState } from "react"
 import { RiFolder3Line } from "@remixicon/react"
 import { remapAfterMove } from "@enjoy-agents/ipc-contract"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { getIde } from "@renderer/lib/ide"
+import { SourceFilePreview } from "../../source-file-preview"
+import { useSourceFileReveal } from "../../thread/sources/source-file-reveal"
+import { sameReviewPath } from "./review/same-review-path"
 import { FilesPreviewEditor } from "./files-preview-editor"
 import { FilesSplit } from "./files-split"
 import { FilesTree } from "./files-tree"
@@ -16,12 +20,14 @@ const MAX_PREVIEW_CHARS = 200_000
 
 export function FilesView({ workspaceId }: { workspaceId: string | null }) {
   const t = useT()
+  const reveal = useSourceFileReveal((state) => state.reveal)
   const [path, setPath] = useState<string | null>(null)
   const [content, setContent] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [moveError, setMoveError] = useState<string | null>(null)
   const [treeOpen, setTreeOpen] = useState(true)
   const [treeEpoch, setTreeEpoch] = useState(0)
+  const readOnly = reveal?.view === "preview" && path != null && sameReviewPath(reveal.path, path)
 
   useEffect(() => {
     if (!workspaceId) return
@@ -64,9 +70,17 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
     }
   }
 
-  const preview = workspaceId ? (
-    <FilesPreviewEditor workspaceId={workspaceId} path={path} content={content} error={error} />
-  ) : (
+  useEffect(() => {
+    if (reveal?.view !== "preview" || !reveal.path || !workspaceId) return
+    void openFile(reveal.path)
+  }, [reveal?.path, reveal?.view, workspaceId])
+
+  const preview =
+    workspaceId && readOnly && path ? (
+      <SourceFilePreview path={path} content={content} />
+    ) : workspaceId ? (
+      <FilesPreviewEditor workspaceId={workspaceId} path={path} content={content} error={error} />
+    ) : (
     <p className="flex h-full items-center justify-center px-3 text-center text-caption-1-medium text-text-tertiary">
       {t("chat.openFolderFirst")}
     </p>

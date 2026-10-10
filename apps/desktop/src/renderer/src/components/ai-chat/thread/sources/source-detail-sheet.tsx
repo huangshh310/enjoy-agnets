@@ -1,7 +1,7 @@
 /**
  * 「本轮来源」右（窄屏底）sheet。点芯片打开，不上 InlineCitations。
  */
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { useT } from "@renderer/i18n"
 import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
@@ -29,7 +29,7 @@ export function SourceDetailSheet({
   if (chips.length === 0 && !ledgerEntry) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-x-0 bottom-0 top-12 z-50">
       <SheetScrim onClose={onClose} />
       <SheetPanel chips={chips} activeId={activeId} ledgerEntry={ledgerEntry} onClose={onClose} />
     </div>,
@@ -55,6 +55,7 @@ function SheetScrim({ onClose }: { onClose: () => void }) {
   return (
     <button
       type="button"
+      data-testid="turn-sources-scrim"
       className="absolute inset-0 cursor-pointer bg-black/10 transition-opacity"
       onClick={onClose}
       aria-label={t("chat.sourcesSheetClose")}
@@ -88,8 +89,8 @@ function SheetPanel({
       className={cx(
         "absolute flex flex-col overflow-hidden border border-border-button-default bg-background-primary-default shadow-card",
         "inset-x-3 bottom-3 top-auto max-h-[min(70vh,32rem)] rounded-3xl animate-in slide-in-from-bottom duration-200",
-        "md:right-3 md:left-auto md:top-3 md:w-[min(20rem,calc(100vw-1.5rem))] md:slide-in-from-right",
-        empty ? "md:inset-y-auto md:max-h-none" : "md:inset-y-3 md:max-h-none"
+        "md:right-3 md:left-auto md:top-0 md:w-[min(20rem,calc(100vw-1.5rem))] md:slide-in-from-right",
+        empty ? "md:inset-y-auto md:max-h-none" : "md:bottom-3 md:max-h-none"
       )}
     >
       <header className="flex items-start justify-between gap-3 border-b border-separator-border px-4 py-3">
@@ -97,14 +98,14 @@ function SheetPanel({
           <h3 id="turn-sources-sheet-title" className="text-headline-semibold text-text-primary">
             {t("chat.sourcesSheetTitle")}
           </h3>
-          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{meta}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-primary">{meta}</p>
         </div>
         <button
           type="button"
           onClick={onClose}
           data-app-region="no-drag"
           style={APP_REGION_NO_DRAG_STYLE}
-          className="cursor-pointer text-caption-1-regular text-text-tertiary [app-region:no-drag] hover:text-text-primary"
+          className="cursor-pointer text-caption-1-regular text-text-secondary [app-region:no-drag] hover:text-text-primary"
         >
           {t("chat.sourcesSheetClose")}
         </button>
@@ -115,26 +116,44 @@ function SheetPanel({
           <p className="mt-1 text-caption-2-regular text-text-tertiary">{t("sessionOps.sourcesEmptyHint")}</p>
         </div>
       ) : (
-        <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
-          {chips.map((chip) => (
-            <SourceDetailRow
-              key={chip.id}
-              chip={chip}
-              selected={chip.id === activeId}
-              onOpen={(c) => {
-                openSourceRow(c)
-                onClose()
-              }}
-            />
-          ))}
-        </ul>
+        <SourceRowList chips={chips} activeId={activeId} onClose={onClose} />
       )}
       {empty ? null : (
-        <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-tertiary">
+        <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-primary">
           {t("chat.sourcesSheetFooter")}
         </p>
       )}
     </aside>
+  )
+}
+
+function SourceRowList({
+  chips,
+  activeId,
+  onClose
+}: {
+  chips: readonly TurnSourceChip[]
+  activeId: string | null
+  onClose: () => void
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  return (
+    <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
+      {chips.map((chip) => (
+        <SourceDetailRow
+          key={chip.id}
+          chip={chip}
+          selected={chip.id === activeId}
+          expanded={chip.id === expandedId}
+          onOpen={(next) => {
+            void openSourceRow(next).then((result) => {
+              if (result === "opened") onClose()
+              if (result === "expand") setExpandedId(next.id)
+            })
+          }}
+        />
+      ))}
+    </ul>
   )
 }
 
