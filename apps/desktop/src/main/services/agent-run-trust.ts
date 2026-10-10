@@ -1,8 +1,8 @@
 /**
  * 只有 main 可写补跑闸与 run origin。renderer 的 agent.run 必须剥掉。
  */
-import { inferAgentRunOrigin, type AutomationRunSource, type RunAgentInput } from "@enjoy-agents/ipc-contract"
-import type { AgentRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
+import type { AutomationRunSource, RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { inferAgentRunOrigin, type AgentRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
 
 export type TrustedRunAgentOptions = {
   /** main 内部入口（自动化补跑 / 续跑）才为 true。 */
