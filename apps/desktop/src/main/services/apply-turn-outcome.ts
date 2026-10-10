@@ -7,15 +7,18 @@ import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import type { ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { patchSession } from "./session-queries"
-import { shouldWriteSessionWorkflow } from "./session-workflow-sticky"
+import { shouldWriteSessionWorkflow, stickyTurnOutcome } from "./session-workflow-sticky"
 
-export { shouldWriteSessionWorkflow }
+export { shouldWriteSessionWorkflow, stickyTurnOutcome }
 
 export function turnOutcomeForRun(
-  run: Pick<ActiveRun, "tools">,
+  run: Pick<ActiveRun, "tools" | "input">,
   ended: "end" | "error" | "abort"
 ): TurnOutcome {
-  return decideTurnOutcome({ ended, tools: run.tools })
+  return stickyTurnOutcome(
+    decideTurnOutcome({ ended, tools: run.tools }),
+    readSessionWorkflow(run.input.sessionId)
+  )
 }
 
 /** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。 */
