@@ -24,12 +24,15 @@ export function useChatReadiness() {
     if (query.data) rememberChatReadiness(query.data)
   }, [query.data])
   useEffect(() => {
-    if (!hasIde()) return
-    return getIde().chat.onReadiness((payload) => {
+    if (!hasIde()) return undefined
+    const stop = getIde().chat.onReadiness((payload) => {
       const snap = payload as ChatReadiness
       rememberChatReadiness(snap)
       client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
     })
+    return () => {
+      stop()
+    }
   }, [client])
   return query
 }
