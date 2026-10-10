@@ -18,6 +18,8 @@ export type SecretStorageProbe = {
   platform?: NodeJS.Platform
   env?: NodeJS.ProcessEnv
   packaged?: boolean
+  /** stub 明文夹具第三道闸：必须是隔离 userData。 */
+  isolatedUserData?: boolean
 }
 
 export class SecretWriteFailure extends Error {
@@ -38,13 +40,19 @@ export function isE2eKeychainUnavailable(
   return isE2eStubEnv(env) && !packaged && env.ENJOY_E2E_KEYCHAIN === "unavailable"
 }
 
+function isolatedUserDataOf(live: SecretStorageProbe): boolean {
+  if (live.isolatedUserData !== undefined) return live.isolatedUserData
+  const env = live.env ?? process.env
+  return Boolean(env.ENJOY_E2E_USERDATA || env.ENJOY_DEV_USERDATA)
+}
+
 export function isSecretStorageAvailable(probe?: SecretStorageProbe): boolean {
   const live = probe ?? readSecretStorageProbe()
   const env = live.env ?? process.env
   const packaged = live.packaged === true
   if (isE2eKeychainUnavailable(env, packaged)) return false
-  // 未打包 stub 用明文夹具写密钥；只有 KEYCHAIN=unavailable 才模拟挂掉。
-  if (isE2eStubEnv(env) && !packaged) return true
+  // stub 明文夹具：未打包 + 隔离 userData。打包 / 非隔离即使 stub 也不放行。
+  if (isE2eStubEnv(env) && !packaged && isolatedUserDataOf(live)) return true
   if (!live.encryptionAvailable) return false
   const platform = live.platform ?? process.platform
   if (platform === "linux" && live.linuxBackend === LINUX_INSECURE_SECRET_BACKEND) return false
@@ -57,6 +65,7 @@ export function readSecretStorageProbe(): SecretStorageProbe {
     linuxBackend: readLinuxSecretBackend(),
     platform: process.platform,
     packaged: readPackaged(),
+    isolatedUserData: Boolean(process.env.ENJOY_E2E_USERDATA || process.env.ENJOY_DEV_USERDATA),
     env: process.env
   }
 }

@@ -12,16 +12,23 @@ test("runSecretWrite 把 SecretWriteFailure 收成 KEYCHAIN_UNAVAILABLE", async 
 })
 
 test("runSecretWrite 成功摊 payload", async () => {
-  const previous = process.env.ENJOY_E2E_STUB
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = "/tmp/enjoy-secret-write-ud"
   try {
     const result = await runSecretWrite(() => ({ hasKey: true }))
     assert.deepEqual(result, { ok: true, hasKey: true })
   } finally {
-    if (previous === undefined) delete process.env.ENJOY_E2E_STUB
-    else process.env.ENJOY_E2E_STUB = previous
+    restoreEnv("ENJOY_E2E_STUB", previousStub)
+    restoreEnv("ENJOY_E2E_USERDATA", previousUd)
   }
 })
+
+function restoreEnv(key: string, value: string | undefined) {
+  if (value === undefined) delete process.env[key]
+  else process.env[key] = value
+}
 
 test("没有密码时不挡 SSH 开档", () => {
   assert.equal(guardPasswordWrite(undefined), null)

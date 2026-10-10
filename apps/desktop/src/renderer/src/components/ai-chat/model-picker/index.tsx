@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { RiArrowDownSLine } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { markModelsListFailed } from "@renderer/hooks/models-listed.ts"
 import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -28,13 +29,16 @@ export function ModelPicker({
 
   useEffect(() => {
     if (!open || !hasIde()) return
-    void getIde().models.list().then((res) => {
-      if (!Array.isArray(res)) return
-      const listed = res as ModelOption[]
-      const store = useChatStore.getState()
-      store.setModels(listed)
-      if (listed.length === 0) store.setModel("", "")
-    })
+    void getIde()
+      .models.list()
+      .then((res) => {
+        if (!Array.isArray(res)) return
+        const listed = res as ModelOption[]
+        const store = useChatStore.getState()
+        store.setModels(listed)
+        if (listed.length === 0) store.setModel("", "")
+      })
+      .catch(() => markModelsListFailed())
   }, [open])
 
   return (

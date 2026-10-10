@@ -367,6 +367,28 @@ test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸�
   )
 })
 
+test("当前档案是未 ping 的 Ollama、另一份 OpenAI 有密钥：不 ready（看 activeKeyProfileId）", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [REMOTE],
+    apiKeys: [KEY],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    activeKeyProfileId: null
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.activeKeyProfileId, undefined)
+  assert.equal(snap.hasEnjoySecret, true)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    true
+  )
+})
+
 test("远端 / 未 ping 的无密钥本机：不 ready，闸仍放行", () => {
   const snap = buildChatReadiness({
     engines: [],

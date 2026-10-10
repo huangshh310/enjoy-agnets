@@ -7,7 +7,7 @@ import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
-import { modelsHaveListed } from "../models-listed.ts"
+import { modelsListGate } from "../models-listed.ts"
 import {
   NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
@@ -42,17 +42,16 @@ function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
   })
 }
 
-/** 当前档案有密钥才催选模型；列表没回来不催；会话掉回 enjoy-local 也催。 */
-function enjoyLocalModelGate(modelId: string, runtimeId: string): "ok" | "loading" | "need" {
+/** 当前档案有密钥才催选模型。无密钥 Ollama 不催；列表失败 / 超时交给主闸。 */
+function enjoyLocalModelGate(modelId: string, runtimeId: string): "ok" | "need" {
   if (runtimeId !== "enjoy-local") return "ok"
   const snap = peekChatReadiness()
   if (!snap?.hasEnjoySecret || modelId.trim()) return "ok"
-  const keyed = Boolean(snap.defaultRoute?.profileId)
-  const fellBackFromCli = Boolean(
-    snap.defaultRoute?.runtimeId && snap.defaultRoute.runtimeId !== "enjoy-local"
-  )
-  if (!keyed && !fellBackFromCli) return "ok"
-  return modelsHaveListed() ? "need" : "loading"
+  const keyed = Boolean(snap.activeKeyProfileId ?? snap.defaultRoute?.profileId)
+  if (!keyed) return "ok"
+  const list = modelsListGate()
+  if (list !== "listed") return "ok"
+  return "need"
 }
 
 function enjoyLocalAllowsSend(): boolean {
@@ -103,12 +102,10 @@ export function guardComposerSend(
       store.setError(NO_CHAT_ROUTE)
       return false
     }
-    const modelGate = enjoyLocalModelGate(store.modelId, store.runtimeId)
-    if (modelGate === "need") {
+    if (enjoyLocalModelGate(store.modelId, store.runtimeId) === "need") {
       store.setError(NEED_MODEL)
       return false
     }
-    if (modelGate === "loading") return false
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)

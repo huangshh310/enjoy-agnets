@@ -149,21 +149,30 @@ export async function readVault(): Promise<Vault> {
       activeId: decoded.activeId,
       profiles: decoded.profiles as Parameters<typeof normalizeVault>[0]["profiles"]
     })
-    if (normalized.changed) await writeVault(normalized.vault)
+    if (normalized.changed) await writeVaultQuiet(normalized.vault)
     return normalized.vault
   }
   const migrated = migrateLegacySecret()
   if (migrated) {
-    await writeVault(migrated)
+    await writeVaultQuiet(migrated)
     return migrated
   }
   return emptyVault()
 }
 
-export async function writeVault(vault: Vault): Promise<void> {
-  setSecretValue(getDatabase(), VAULT_KEY, encryptJson(vault))
+export async function writeVault(vault: Vault, opts?: { allowInsecure?: boolean }): Promise<void> {
+  setSecretValue(getDatabase(), VAULT_KEY, encryptJson(vault, opts))
   // 惰性清理 settings KV 里的旧位置；键不存在时无害。
   deleteSetting(VAULT_KEY)
+}
+
+/** 读路径不得因钥匙串抛；迁库失败仍把内存里的 vault 还给调用方。 */
+async function writeVaultQuiet(vault: Vault): Promise<void> {
+  try {
+    await writeVault(vault)
+  } catch {
+    // 读时不回写。
+  }
 }
 
 /** vault 密文已迁到 secrets_vault 专表；首次读到旧 settings 键时搬一次。 */
@@ -180,17 +189,22 @@ function readVaultBlob(): string | undefined {
 
 const E2E_PLAIN_PREFIX = "e2e-plain:"
 
-function encryptJson(value: unknown): string {
-  if (isE2eKeychainUnavailable()) {
+function encryptJson(value: unknown, opts?: { allowInsecure?: boolean }): string {
+  if (isE2eKeychainUnavailable() && !opts?.allowInsecure) {
     throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   if (isE2eStub() && !safeStorage.isEncryptionAvailable()) {
     return E2E_PLAIN_PREFIX + JSON.stringify(value)
   }
-  if (!isSecretStorageAvailable()) {
+  if (!isSecretStorageAvailable() && !opts?.allowInsecure) {
     throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
-  return safeStorage.encryptString(JSON.stringify(value)).toString("base64")
+  try {
+    return safeStorage.encryptString(JSON.stringify(value)).toString("base64")
+  } catch {
+    if (opts?.allowInsecure) return E2E_PLAIN_PREFIX + JSON.stringify(value)
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
+  }
 }
 
 function decryptJson<T>(stored: string): T | undefined {

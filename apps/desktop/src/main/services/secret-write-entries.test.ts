@@ -20,10 +20,11 @@ test("名单覆盖全部写密钥 IPC", () => {
   assert.deepEqual(
     [...SECRET_WRITE_CHANNELS].sort(),
     [
+      "agentTools.upsert",
       "agentTools.upsertCustom",
       "settings.activateProvider",
       "settings.duplicateProvider",
-      "settings.removeProvider",
+      "settings.probeProvider",
       "settings.saveSecret",
       "settings.setActiveModel",
       "settings.setDefaultModel",

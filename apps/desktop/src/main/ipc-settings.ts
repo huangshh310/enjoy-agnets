@@ -11,6 +11,7 @@ import {
   SetDefaultModelInput,
   SetHarnessInput,
   SetPreferencesInput,
+  SetProviderEnabledInput,
   UpsertProviderInput
 } from "@enjoy-agents/ipc-contract"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers"
@@ -30,7 +31,7 @@ import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secr
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { runSecretWrite } from "./services/secret-write-guard.ts"
 import { listAgentTools } from "./services/agent-tools-service"
-import { pushChatReadinessNow, scheduleChatReadinessPush } from "./services/chat-readiness"
+import { scheduleChatReadinessPush } from "./services/chat-readiness"
 import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
@@ -105,9 +106,15 @@ async function settingsSnapshot() {
 async function withSettingsSecretWrite(write: () => Promise<void>) {
   return runSecretWrite(async () => {
     await write()
-    await pushChatReadinessNow().catch(() => undefined)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
+}
+
+async function snapshotWithoutSecretWrite(write: () => Promise<void>) {
+  await write()
+  scheduleChatReadinessPush()
+  return settingsSnapshot()
 }
 
 function registerCoreSettingsIpc() {
@@ -207,13 +214,16 @@ function registerProviderIpc() {
     })
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
-    return withSettingsSecretWrite(async () => {
+    return snapshotWithoutSecretWrite(async () => {
       await removeProfile(ProviderIdInput.parse(raw).id)
     })
   })
   ipcMain.handle("settings.activateProvider", async (_event, raw) => {
+    const id = ProviderIdInput.parse(raw).id
+    const active = await getActiveProfile()
+    if (active?.id === id) return settingsSnapshot()
     return withSettingsSecretWrite(async () => {
-      await activateProfile(ProviderIdInput.parse(raw).id)
+      await activateProfile(id)
     })
   })
   ipcMain.handle("settings.setActiveModel", async (_event, raw) => {
@@ -230,6 +240,9 @@ function registerProviderIpc() {
     })
   })
   ipcMain.handle("settings.setProviderEnabled", async (_event, raw) => {
+    const input = SetProviderEnabledInput.parse(raw)
+    const current = (await listPublicProviders()).find((row) => row.id === input.id)
+    if (current && (current.enabled !== false) === input.enabled) return settingsSnapshot()
     return withSettingsSecretWrite(async () => {
       await setStoredProviderEnabled(raw)
     })

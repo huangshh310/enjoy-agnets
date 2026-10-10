@@ -41,9 +41,36 @@ test("未打包 stub 默认当可用，只有 KEYCHAIN=unavailable 才挂", () =
     isSecretStorageAvailable({
       encryptionAvailable: false,
       env: { ENJOY_E2E_STUB: "1" },
-      packaged: false
+      packaged: false,
+      isolatedUserData: true
     }),
     true
+  )
+})
+
+test("stub + basic_text 在打包或非隔离 userData 时不可用", () => {
+  const env = { ENJOY_E2E_STUB: "1" }
+  assert.equal(
+    isSecretStorageAvailable({
+      encryptionAvailable: false,
+      linuxBackend: LINUX_INSECURE_SECRET_BACKEND,
+      platform: "linux",
+      env,
+      packaged: true,
+      isolatedUserData: true
+    }),
+    false
+  )
+  assert.equal(
+    isSecretStorageAvailable({
+      encryptionAvailable: false,
+      linuxBackend: LINUX_INSECURE_SECRET_BACKEND,
+      platform: "linux",
+      env,
+      packaged: false,
+      isolatedUserData: false
+    }),
+    false
   )
 })
 

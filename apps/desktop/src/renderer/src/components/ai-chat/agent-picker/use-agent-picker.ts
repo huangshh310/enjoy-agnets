@@ -3,6 +3,7 @@
  */
 import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { markModelsListFailed } from "@renderer/hooks/models-listed.ts"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { canSwitchAgent, DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
@@ -73,10 +74,13 @@ function useAgentPickerEffects(base: ReturnType<typeof useAgentPickerBase>) {
   }, [handoffPhase, runtimeId, setOpen, setTabId])
   useEffect(() => {
     if (!open || !hasIde()) return
-    void getIde().models.list().then((res) => {
-      if (!Array.isArray(res)) return
-      useChatStore.getState().setModels(res as ModelOption[])
-    })
+    void getIde()
+      .models.list()
+      .then((res) => {
+        if (!Array.isArray(res)) return
+        useChatStore.getState().setModels(res as ModelOption[])
+      })
+      .catch(() => markModelsListFailed())
     void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
     void getIde().agentTools.detect().then(() => {
       void queryClient.invalidateQueries({ queryKey: ["settings"] })

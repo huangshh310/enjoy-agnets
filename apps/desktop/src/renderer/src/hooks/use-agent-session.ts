@@ -25,6 +25,7 @@ import {
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import type { WorkspaceRow } from "./workspace-row"
 import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
+import { markModelsListFailed } from "./models-listed"
 import { useChatStore, type ModelOption } from "../stores/chat-store"
 import { pickForegroundSession } from "./pick-foreground-session"
 import { resolveApprovalRunId } from "./resolve-approval-run"
@@ -212,8 +213,13 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
     store.setHasKey(snapshot.hasKey)
     return
   }
-  const models = (await getIde().models.list()) as ModelOption[]
-  store.setModels(models)
+  let models: ModelOption[] = store.models
+  try {
+    models = (await getIde().models.list()) as ModelOption[]
+    store.setModels(models)
+  } catch {
+    markModelsListFailed()
+  }
   applyComposerModelFromSettings({
     sessionId: store.sessionId,
     sessionModels: snapshot.sessionModels ?? store.sessionModels,

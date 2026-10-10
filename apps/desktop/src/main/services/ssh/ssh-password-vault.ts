@@ -5,7 +5,11 @@
 import { createRequire } from "node:module"
 import { deleteSecretValue, getSecretValue, setSecretValue } from "@enjoy-agents/db"
 import { getDatabase } from "../database.ts"
-import { SecretWriteFailure, isSecretStorageAvailable } from "../secret-storage.ts"
+import {
+  SecretWriteFailure,
+  isSecretStorageAvailable,
+  readSecretStorageProbe
+} from "../secret-storage.ts"
 
 const require = createRequire(import.meta.url)
 const PREFIX = "ssh-password:"
@@ -29,11 +33,14 @@ export function deleteSshPassword(hostId: string): void {
 
 function encrypt(plain: string): string {
   const safeStorage = loadSafeStorage()
-  if (!safeStorage || !isSecretStorageAvailable({
-    encryptionAvailable: safeStorage.isEncryptionAvailable(),
-    linuxBackend: readLinuxBackend(safeStorage),
-    platform: process.platform
-  })) {
+  if (
+    !safeStorage ||
+    !isSecretStorageAvailable({
+      ...readSecretStorageProbe(),
+      encryptionAvailable: safeStorage.isEncryptionAvailable(),
+      linuxBackend: readLinuxBackend(safeStorage)
+    })
+  ) {
     throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   return safeStorage.encryptString(plain).toString("base64")

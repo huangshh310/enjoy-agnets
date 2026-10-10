@@ -16,10 +16,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { applyActiveModelWrite } from "@renderer/lib/apply-active-model-write"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
-import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
+import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
+import { SecretWriteError } from "./secret-write-notice"
 import { ModelBrandIcon } from "./providers/provider-icons"
 import { useT } from "@renderer/i18n"
 import { SettingsCard } from "./settings-row"
@@ -39,6 +40,7 @@ export function CapabilitySettings() {
   const [activeFilter, setActiveFilter] = useState<CapabilityFilter>("all")
   const [search, setSearch] = useState("")
   const [probing, setProbing] = useState(false)
+  const [writeCode, setWriteCode] = useState<SecretWriteErrorCode | null>(null)
 
   // 1. 获取当前默认激活的模型详情
   const activeModel = useMemo(() => {
@@ -79,16 +81,13 @@ export function CapabilitySettings() {
   // 3. 一键切换默认模型
   async function handleSetDefaultModel(model: ModelOption) {
     setModel(model.id, model.label, model.provider, model.reasoningEffort)
+    setWriteCode(null)
     if (hasIde()) {
-      try {
-        const snapshot = (await getIde().settings.setActiveModel({
-          providerId: model.providerId,
-          modelId: model.id
-        })) as SettingsSnapshot
-        await applySettingsSnapshot(snapshot)
-      } catch {
-        await getIde().settings.setDefaultModel({ modelId: model.id })
-      }
+      const outcome = await applyActiveModelWrite({
+        providerId: model.providerId,
+        modelId: model.id
+      })
+      if (!outcome.ok) setWriteCode(outcome.code)
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
       await queryClient.invalidateQueries({ queryKey: ["models"] })
     }
@@ -109,6 +108,7 @@ export function CapabilitySettings() {
 
   return (
     <div className="flex flex-col gap-6">
+      {writeCode ? <SecretWriteError code={writeCode} /> : null}
       {/* ─── 当前默认模型看板 (Active Model Hero Pulse Card) ─── */}
       <div className="flex flex-col gap-3 rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-3">

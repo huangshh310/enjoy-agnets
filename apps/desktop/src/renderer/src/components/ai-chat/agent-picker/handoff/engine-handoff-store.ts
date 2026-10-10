@@ -23,6 +23,7 @@ const idle: EngineHandoffState = {
   draftSummary: "",
   filePaths: [],
   banner: null,
+  asDefault: false,
   pendingPreset: null
 }
 
@@ -44,6 +45,7 @@ export const useEngineHandoffStore = create<
       modelId: undefined,
       draftSummary: "",
       filePaths: [],
+      asDefault: false,
       pendingPreset: null
     })
 }))
@@ -65,6 +67,10 @@ export async function requestEngineSwitch(
     hasPendingApproval: Boolean(chat.pendingApproval)
   })
   if (plan.kind === "noop") {
+    if (opts?.asDefault) {
+      await persistRuntimeId(to, modelId, opts)
+      return "applied"
+    }
     if (!modelId || to !== chat.runtimeId) return "noop"
     const switched = await requestModelSwitch(modelId)
     return switched === "applied" ? "applied" : "noop"
@@ -86,6 +92,7 @@ export async function requestEngineSwitch(
     draftSummary: draft.summary,
     filePaths: draft.files,
     banner: null,
+    asDefault: opts?.asDefault === true,
     pendingPreset: null
   })
   return plan.kind === "blocked_by_approval" ? "blocked" : "pending"
@@ -111,7 +118,11 @@ export async function confirmEngineHandoff(): Promise<boolean> {
         summary: formatHandoffHidden(state.draftSummary, state.filePaths) || "上一引擎会话已结束。"
       })
     }
-    await persistRuntimeId(state.toRuntimeId, state.modelId)
+    await persistRuntimeId(
+      state.toRuntimeId,
+      state.modelId,
+      state.asDefault ? { asDefault: true } : undefined
+    )
     if (state.pendingPreset) applyPresetFace(state.pendingPreset)
     useChatStore.getState().markHandoffCut(sessionId, Date.now())
     useEngineHandoffStore.setState({
@@ -121,6 +132,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
       modelId: undefined,
       draftSummary: "",
       filePaths: [],
+      asDefault: false,
       pendingPreset: null,
       banner: {
         sessionId,
@@ -147,6 +159,7 @@ export function cancelEngineHandoff(): string | null {
     modelId: undefined,
     draftSummary: "",
     filePaths: [],
+    asDefault: false,
     pendingPreset: null,
     banner: null
   })

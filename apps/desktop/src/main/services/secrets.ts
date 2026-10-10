@@ -117,7 +117,7 @@ export async function removeProfile(id: string): Promise<void> {
   if (vault.activeId === id) {
     vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
   }
-  await writeVault(vault)
+  await writeVault(vault, { allowInsecure: true })
 }
 
 export async function activateProfile(id: string): Promise<ProviderPublic> {

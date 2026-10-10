@@ -8,6 +8,7 @@ import { getIde, hasIde } from "../lib/ide"
 import { supportsMidSessionModelSwitch } from "../lib/model-switch-state.ts"
 import { nextPreferredModelId, planSessionModelWrite } from "../lib/session-model.ts"
 import { useChatStore } from "../stores/chat-store"
+import { runSecretWrite, SecretWriteUiError } from "../lib/secret-write"
 import { patchPreferences } from "./use-settings-snapshot"
 
 /** 只绑这一条会话，不改全局偏好。新建会话也走这里。 */
@@ -71,10 +72,15 @@ async function persistSessionModelRemote(
   }
   if (!writePreferenceDefault) return
   if (runtimeId === "enjoy-local") {
-    await getIde().settings.setActiveModel({ modelId: next })
+    await requireSecretWrite(() => getIde().settings.setActiveModel({ modelId: next }))
     return
   }
-  await getIde().agentTools.upsert({ id: runtimeId, modelId: next })
+  await requireSecretWrite(() => getIde().agentTools.upsert({ id: runtimeId, modelId: next }))
+}
+
+async function requireSecretWrite(op: () => Promise<unknown>): Promise<void> {
+  const outcome = await runSecretWrite(op)
+  if (!outcome.ok) throw new SecretWriteUiError(outcome.code)
 }
 
 function restoreSessionModel(previous: {
@@ -103,5 +109,5 @@ export async function persistRuntimeId(
     await patchPreferences({ runtimeId })
   }
   if (!hasIde()) return
-  if (modelId) await getIde().agentTools.upsert({ id: runtimeId, modelId })
+  if (modelId) await requireSecretWrite(() => getIde().agentTools.upsert({ id: runtimeId, modelId }))
 }

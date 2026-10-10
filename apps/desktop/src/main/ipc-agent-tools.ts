@@ -66,7 +66,10 @@ export function registerAgentToolsIpc() {
   })
   ipcMain.handle("agentTools.upsert", async (_event, raw: unknown) => {
     const input = UpsertAgentToolInput.parse(raw)
-    return upsertAgentTool(input)
+    return runSecretWrite(async () => {
+      const tools = await upsertAgentTool(input)
+      return { tools }
+    })
   })
   ipcMain.handle("agentTools.doctor", async (_event, raw: unknown) => {
     const input = DoctorAgentToolInput.parse(raw)
