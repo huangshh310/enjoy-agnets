@@ -38,6 +38,8 @@ export type EnjoyE2eBridge = {
   crashRenderer: () => void
   /** 同会话同 id 打两次 agent.run，用来验 60s clientRequestId 去重。 */
   runWithClientRequestId: (text: string, clientRequestId: string) => Promise<AgentRunResult>
+  /** Xvfb 窗常常没有真实 focus，直接上报当前会话。 */
+  focusSession: () => Promise<void>
 }
 
 declare global {
@@ -91,6 +93,13 @@ export function installEnjoyE2eBridge(): void {
     hideCreateProject: () => useCreateProjectStore.getState().hide(),
     forceSecretWrite: forceSecretWriteForE2e,
     crashRenderer: () => useCrashProbeStore.getState().arm(),
+    async focusSession() {
+      const sessionId = useChatStore.getState().sessionId
+      if (!sessionId || !hasIde()) return
+      const setFocused = getIde().session.setFocused
+      if (typeof setFocused !== "function") return
+      await setFocused({ sessionId })
+    },
     async runWithClientRequestId(text, clientRequestId) {
       if (!hasIde()) throw new Error("ide unavailable")
       const store = useChatStore.getState()

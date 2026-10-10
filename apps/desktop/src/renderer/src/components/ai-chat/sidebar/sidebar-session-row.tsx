@@ -36,6 +36,7 @@ export function SidebarSessionRow({
   return (
     <div
       data-testid="sidebar-session-row"
+      data-session-id={sessionId}
       data-session-name={name}
       data-session-surface={surface}
       className={cx(

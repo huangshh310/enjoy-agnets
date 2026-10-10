@@ -29,8 +29,8 @@ async function openChat(window: Page): Promise<void> {
   await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
   await window.evaluate(() => {
     window.dispatchEvent(new Event("focus"))
+    return window.__enjoyE2e?.focusSession?.()
   })
-  await window.waitForTimeout(200)
 }
 
 function threadBubbles(window: Page) {
@@ -76,7 +76,7 @@ test("出字前失败后再发成功：线程只有一轮气泡", async () => {
     })
     await expect(threadBubbles(window)).toHaveCount(0)
     await window.getByTestId("composer-input").press("Enter")
-    await expect(threadBubbles(window).filter({ hasText: "hello later" })).toHaveCount(1, {
+    await expect(window.getByText("hello later", { exact: true })).toHaveCount(1, {
       timeout: 20_000
     })
     await expect(threadBubbles(window)).toHaveCount(2)
@@ -92,7 +92,9 @@ test("出字前失败切走再切回：仍没有用户气泡", async () => {
   const { app, window } = await launchEnjoy(keyEnv({ ENJOY_E2E_SEND: "unreachable" }))
   try {
     await openChat(window)
-    const name = await window.locator('[data-testid="sidebar-session-row"]').first().getAttribute("data-session-name")
+    const sessionId = await window.evaluate(
+      () => window.__enjoyE2e?.getComposerGate?.().sessionId ?? null
+    )
     await sendDraft(window, "hello rollback")
     await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({
       timeout: 12_000
@@ -100,11 +102,7 @@ test("出字前失败切走再切回：仍没有用户气泡", async () => {
     await expect(threadBubbles(window)).toHaveCount(0)
     await window.getByTestId("sidebar-new-session").click()
     await expect(window.getByTestId("composer-input")).toHaveValue("")
-    await window
-      .locator('[data-testid="sidebar-session-row"]')
-      .filter({ has: window.locator(`[data-session-name="${name ?? ""}"]`) })
-      .first()
-      .click()
+    await window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sessionId ?? ""}"]`).click()
     await expect(window.getByTestId("composer-input")).toBeVisible()
     await expect(threadBubbles(window)).toHaveCount(0)
     await expect(window.getByText("hello rollback", { exact: true })).toHaveCount(0)
@@ -124,7 +122,7 @@ test("前台出字前失败不进 Inbox 失败列", async () => {
     await expect(window.getByTestId("thread-credential-invalid-notice")).toBeVisible({
       timeout: 12_000
     })
-    await expect(window.getByTestId("attention-strip")).toHaveCount(0)
+    await expect(window.locator("[data-attention-kind='error']")).toHaveCount(0)
     await window.evaluate(() => {
       location.hash = "#/inbox"
     })
