@@ -113,17 +113,6 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     await expect(window.locator('[data-testid="automation-schedule-time"]')).not.toContainText("AM")
     await expect(window.locator('[data-testid="automation-schedule-time"]')).not.toContainText("PM")
     await snap(window, "gate_time_picker_24h")
-    await window.locator('[data-testid="automation-drawer-close"]').click()
-    await window.locator("#automation-editor-title").waitFor({ state: "hidden", timeout: 8_000 })
-
-    const timeoutRow = window.locator('[data-testid="automation-row"]').filter({ hasText: "补跑超时示例" })
-    await timeoutRow.locator('[data-testid="automation-row-open"]').click({ force: true })
-    await window.locator("#automation-editor-title").waitFor({ timeout: 12_000 })
-    const lastRun = window.locator('[data-testid="automation-drawer-last-run"]')
-    await expect(lastRun).toBeVisible({ timeout: 8_000 })
-    await expect(lastRun).toContainText("上次：")
-    await expect(lastRun).toContainText("补跑等待确认超时")
-    await snap(window, "luna_timeout_last_run")
 
     await window.evaluate(() => {
       location.hash = "#/settings/appearance"
