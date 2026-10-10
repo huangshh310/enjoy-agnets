@@ -10,9 +10,21 @@ import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
 export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
+/** 开发 / e2e 夹具：发送这句让本轮以存储失败收口，验红条。打包态不生效。 */
+export const STUB_STORE_ERROR_PROMPT = "stub store error"
+export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
 
 export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
+}
+
+export function isStubStoreErrorPrompt(text: string): boolean {
+  const trimmed = text.trim()
+  return trimmed === STUB_STORE_ERROR_PROMPT || trimmed === STUB_STORE_ERROR_PROMPT_ZH
+}
+
+export function shouldFailStubStore(prompt: string, packaged = false): boolean {
+  return isE2eStub() && !packaged && isStubStoreErrorPrompt(prompt)
 }
 
 let stubWriteSeq = 0
@@ -73,10 +85,14 @@ function hasApprovalResponse(messages: ModelMessage[], approved: boolean): boole
 
 export async function* createE2eStubStream(
   messages: ModelMessage[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  opts?: { packaged?: boolean }
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  if (shouldFailStubStore(prompt, opts?.packaged === true)) {
+    throw new Error("INTERNAL_STORE_ERROR")
+  }
   if (stubDeniedApproval(messages)) {
     yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
     return

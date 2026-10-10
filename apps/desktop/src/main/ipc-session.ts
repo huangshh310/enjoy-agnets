@@ -42,6 +42,7 @@ import { generateSessionRecap } from "./services/session-recap-service"
 import { truncateSessionFrom } from "./services/session-truncate"
 import { forkSession } from "./services/session-fork"
 import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
+import { delaySessionCreateIfDev } from "./services/delay-session-create"
 
 export const SESSION_CHANNELS = [
   "session.list",
@@ -80,6 +81,7 @@ function registerSessionCatalogIpc() {
   ipcMain.handle("session.listArchived", async () => listArchivedSessions())
   ipcMain.handle("session.create", async (_event, raw) => {
     const input = SessionCreateInput.parse(raw)
+    await delaySessionCreateIfDev()
     return createSession(input.workspaceId, input.title || "新对话")
   })
   ipcMain.handle("session.messages", async (_event, raw) =>

@@ -152,7 +152,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               ? t("chat.handoffConfirmFailed")
               : kind === "store"
                 ? t("chat.errorGenericHint")
-                : error)
+                : kind === "send_restore"
+                  ? t("chat.sendFailedRestore")
+                  : error)
 
   return (
     <div

@@ -14,6 +14,7 @@ export type ThreadErrorKind =
   | "remote_disconnected"
   | "resume_fallback"
   | "store"
+  | "send_restore"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -26,6 +27,9 @@ export const HANDOFF_CONFIRM_FAILED = "HANDOFF_CONFIRM_FAILED"
 export const NEED_REMOTE_CONNECTED = "NEED_REMOTE_CONNECTED"
 export const ACP_RESUME_FALLBACK = "ACP_RESUME_FALLBACK"
 export const INTERNAL_STORE_ERROR = "INTERNAL_STORE_ERROR"
+export const SEND_FAILED_RESTORE = "SEND_FAILED_RESTORE"
+export const SESSION_CREATE_TIMEOUT = "SESSION_CREATE_TIMEOUT"
+export const SESSION_NOT_READY = "SESSION_NOT_READY"
 
 const CREDIT_MARKERS = [
   "402",
@@ -47,6 +51,13 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     lower.includes("constraint failed")
   ) {
     return "store"
+  }
+  if (
+    message === SEND_FAILED_RESTORE ||
+    message === SESSION_CREATE_TIMEOUT ||
+    message === SESSION_NOT_READY
+  ) {
+    return "send_restore"
   }
   if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
   if (

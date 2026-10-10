@@ -30,6 +30,11 @@ import { workspaceRowFromNode } from "./workspace-row"
 import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
 import { discardCreatedSession } from "./discard-created-session"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
+import {
+  beginNewSessionCreate,
+  failNewSessionCreate,
+  finishNewSessionCreate
+} from "./new-session-create"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -98,25 +103,48 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
+  const { token } = beginNewSessionCreate()
   parkForegroundRun()
   const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
   bumpSessionHydrateGeneration()
-  const session = (await getIde().session.create({
-    workspaceId,
-    title: customTitle
-  })) as SessionRow
-  if (await discardCreatedSession(session.id, stale)) return
-  const store = useChatStore.getState()
-  const typedDuringCreate = store.composer
-  const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
-  publishCreatedSession(store, session, runtimeId)
-  if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
-    useChatStore.setState({ composer: typedDuringCreate })
+  detachForegroundForCreate()
+  try {
+    const session = (await getIde().session.create({
+      workspaceId,
+      title: customTitle
+    })) as SessionRow
+    if (await discardCreatedSession(session.id, stale)) {
+      failNewSessionCreate(token, new Error("SESSION_CREATE_STALE"))
+      return
+    }
+    const store = useChatStore.getState()
+    const typedDuringCreate = store.composer
+    const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
+    publishCreatedSession(store, session, runtimeId)
+    if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
+      useChatStore.setState({ composer: typedDuringCreate })
+    }
+    finishNewSessionCreate(token, session.id)
+    await bindSessionRuntime(session.id, runtimeId)
+    if (await discardCreatedSession(session.id, stale)) return
+    await refreshAllWorkspaces()
+  } catch (error) {
+    failNewSessionCreate(token, error)
+    throw error
   }
-  await bindSessionRuntime(session.id, runtimeId)
-  if (await discardCreatedSession(session.id, stale)) return
-  await refreshAllWorkspaces()
+}
+
+/** 立刻露出欢迎页，但 sessionId 要等 create 回来。发送走排队，不占 running。 */
+function detachForegroundForCreate() {
+  useChatStore.setState({
+    ...idleComposerPatch(),
+    sessionId: null,
+    messages: [],
+    sessionTitle: "新对话",
+    composer: "",
+    running: false
+  })
 }
 
 export async function selectPersistedSession(

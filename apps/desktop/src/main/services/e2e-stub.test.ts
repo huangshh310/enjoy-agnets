@@ -3,8 +3,11 @@ import { test } from "node:test"
 import {
   createE2eStubStream,
   lastUserText,
+  shouldFailStubStore,
   stubApprovedWrite,
   stubDeniedApproval,
+  STUB_STORE_ERROR_PROMPT,
+  STUB_STORE_ERROR_PROMPT_ZH,
   STUB_TERMINAL_LINK_ECHO,
   STUB_TERMINAL_LINK_URL
 } from "./e2e-stub.ts"
@@ -226,4 +229,37 @@ test("拒绝后继续不再重放同一张审批", async () => {
   }
   assert.equal(parts.includes("tool-approval-request"), false)
   assert.deepEqual(parts, ["finish"])
+})
+
+test("开发态 stub 存储失败夹具：打包态不扔", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  process.env.ENJOY_E2E_STUB = "1"
+  try {
+    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, false), true)
+    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT_ZH, false), true)
+    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, true), false)
+    assert.equal(shouldFailStubStore("hello", false), false)
+    await assert.rejects(
+      (async () => {
+        for await (const _part of createE2eStubStream(
+          [{ role: "user", content: STUB_STORE_ERROR_PROMPT }],
+          new AbortController().signal
+        )) {
+          void _part
+        }
+      })(),
+      /INTERNAL_STORE_ERROR/
+    )
+    const safe: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: STUB_STORE_ERROR_PROMPT }],
+      new AbortController().signal,
+      { packaged: true }
+    )) {
+      safe.push(String(part.type))
+    }
+    assert.ok(safe.includes("finish"))
+  } finally {
+    process.env.ENJOY_E2E_STUB = previous
+  }
 })

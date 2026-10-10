@@ -139,7 +139,7 @@ test("抽屉折叠条收成错过 N 次组摘要", () => {
   )
 })
 
-test("折叠条混因写最近原因，条数按整组", () => {
+test("折叠条混因写最近原因，条数只数 skipped", () => {
   const mixed = [
     skip(today8, "app_not_running"),
     skip(yest8, "system_sleep"),
@@ -149,4 +149,46 @@ test("折叠条混因写最近原因，条数按整组", () => {
     missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
     "错过 3 次 · 最近 应用未运行 · 今天 08:00"
   )
+})
+
+function catchUp(at: number, status: AutomationMissedRecord["status"] = "ok"): AutomationMissedRecord {
+  return {
+    automationId: "auto_1",
+    scheduledAt: at,
+    recordedAt: at + 3_600_000,
+    kind: "catch_up",
+    isCatchUp: true,
+    status
+  }
+}
+
+test("成功补跑不算错过；最新成功时折叠条不写错过", () => {
+  const mixed = [skip(today8), catchUp(yest8), skip(ere8)]
+  assert.equal(
+    missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
+    "错过 2 次 · 电脑睡眠 · 今天 08:00"
+  )
+  const mixedLine = lastRunLine({
+    automation: auto({ lastRunStatus: "skipped", lastSkipReason: "system_sleep", lastRunAt: today8 }),
+    records: mixed,
+    now: noon,
+    locale: "zh",
+    t
+  })
+  assert.equal(mixedLine.text, "错过 2 次 · 电脑睡眠 · 今天 08:00")
+  const latestOk = [catchUp(noon), skip(yest8)]
+  assert.equal(
+    missedGroupSummary({ records: latestOk, now: noon, locale: "zh", t }),
+    "上次 · 今天 13:00"
+  )
+  const line = lastRunLine({
+    automation: auto({ lastRunStatus: "ok", lastRunAt: noon, lastRunCatchUp: true }),
+    records: latestOk,
+    now: noon,
+    locale: "zh",
+    t
+  })
+  assert.equal(line.kind, "last")
+  assert.equal(line.text.startsWith("错过"), false)
+  assert.equal(line.text, missedGroupSummary({ records: latestOk, now: noon, locale: "zh", t }))
 })

@@ -3,6 +3,9 @@ import { test } from "node:test"
 import {
   classifyThreadError,
   INTERNAL_STORE_ERROR,
+  SEND_FAILED_RESTORE,
+  SESSION_CREATE_TIMEOUT,
+  SESSION_NOT_READY,
   NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
@@ -33,6 +36,12 @@ test("普通供应商错误保持 generic", () => {
 test("库约束原文不进 generic 详情", () => {
   assert.equal(classifyThreadError(INTERNAL_STORE_ERROR), "store")
   assert.equal(classifyThreadError("UNIQUE constraint failed: approvals.id"), "store")
+})
+
+test("创建窗发送失败走还文，不是 generic 详情", () => {
+  assert.equal(classifyThreadError(SEND_FAILED_RESTORE), "send_restore")
+  assert.equal(classifyThreadError(SESSION_CREATE_TIMEOUT), "send_restore")
+  assert.equal(classifyThreadError(SESSION_NOT_READY), "send_restore")
 })
 
 test("ACP 未登录不是可重试供应商错误", () => {
