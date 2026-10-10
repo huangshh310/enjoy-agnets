@@ -30,6 +30,45 @@ function assistantWithDeniedTool(): ThreadMessage[] {
   ]
 }
 
+test("用户停 run.error 不写红条，工具封成已停止", () => {
+  const messages: ThreadMessage[] = [
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "one two",
+      createdAt: 1,
+      streaming: true,
+      tools: [
+        {
+          id: "tool_1",
+          name: "write_file",
+          state: "input-available",
+          args: { path: "e2e-stub.txt" }
+        }
+      ]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "Aborted by user.",
+      code: "user_aborted",
+      turn: { workflow: "needs_review", attention: "neutral" }
+    },
+    "run_1"
+  )
+  assert.equal(patch.error, null)
+  assert.equal(patch.notice, "user_aborted")
+  assert.equal(patch.running, false)
+  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-error")
+  assert.equal(
+    (patch.messages[0]?.tools?.[0]?.result as { code?: string } | undefined)?.code,
+    "user_aborted"
+  )
+})
+
 test("未执行类 run.error 不写红条，库里 output-error 不改写", () => {
   const patch = reduceStreamEvent(assistantWithDeniedTool(), {
     type: "run.error",
@@ -69,6 +108,37 @@ function hydratedPendingAssistant(): ThreadMessage[] {
     }
   ]
 }
+
+test("泵出错结清 cancelled + run_failed：工具行走出错，不是已停止", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "cancelled",
+    code: "run_failed"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(tool.state, "output-error")
+  assert.equal(mapToolStatus(tool.state, tool), "error")
+  assert.notEqual(mapToolStatus(tool.state, tool), "stopped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
+test("Stop 结清 cancelled：工具行走已停止，不是已拒绝", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "cancelled"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(patch.pendingApproval, null)
+  assert.equal(tool.state, "output-error")
+  assert.equal(mapToolStatus(tool.state, tool), "stopped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
 
 test("切走再切回后的非流式助手：deny 立刻折成未执行，不转圈、不计入已运行", () => {
   const hydrated = hydratedPendingAssistant()

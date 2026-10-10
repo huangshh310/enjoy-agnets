@@ -21,6 +21,7 @@ import {
   RemoveWorkspaceResult,
   RestoreCheckpointInput,
   WatchWorkspaceInput,
+  WorkspaceChangesResult,
   WorkspaceConnectInput,
   WorkspaceIdInput,
   WriteFileInput
@@ -138,7 +139,9 @@ function registerWorkspaceGitIpc() {
     return dispatchDiff(input.workspaceId, input.path, input.ignoreWhitespace)
   })
   ipcMain.handle("workspace.changes", async (_event, raw) => {
-    return dispatchChanges(WorkspaceIdInput.parse(raw).workspaceId)
+    return WorkspaceChangesResult.parse(
+      await dispatchChanges(WorkspaceIdInput.parse(raw).workspaceId)
+    )
   })
   ipcMain.handle("workspace.gitLog", async (_event, raw) => {
     const input = GitLogInput.parse(raw)

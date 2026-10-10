@@ -18,17 +18,19 @@ import { useWorkspaceGit } from "./use-workspace-git"
 export function useReviewViewModel(props: ReviewViewProps) {
   const active = props.active ?? true
   const workspaceName = useChatStore((state) => state.workspaceName)
+  const gitRepo = useChatStore((state) => state.gitRepo)
   const scope = useRightPaneStore((state) => state.reviewScope)
   const setScope = useRightPaneStore((state) => state.setReviewScope)
   const { options, toggleOption, allExpanded, toggleAllExpanded, jumpOpen, setJumpOpen } =
     useReviewOptions()
   const { palette, setPalette } = useDiffPalette()
+  const inGit = gitRepo !== false
   const git = useWorkspaceGit(props.workspaceId, {
-    enabled: active,
-    includeBranchFiles: active && scope === "branch"
+    enabled: active && inGit,
+    includeBranchFiles: active && inGit && scope === "branch"
   })
   const checkpoints = useWorkspaceCheckpoints(props.workspaceId, {
-    enabled: active && scope === "checkpoints"
+    enabled: active && inGit && scope === "checkpoints"
   })
   const commitDockRef = useRef<ReviewCommitDockHandle>(null)
   const lastTurnPaths = useLastTurnPaths(active)

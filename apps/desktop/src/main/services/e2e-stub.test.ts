@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   createE2eStubStream,
+  isE2eStub,
   lastUserText,
   shouldEmitHugeMcpApp,
   shouldFailStubStore,
@@ -14,6 +15,13 @@ import {
   STUB_TERMINAL_LINK_ECHO,
   STUB_TERMINAL_LINK_URL
 } from "./e2e-stub.ts"
+import {
+  isVerySlowPrompt,
+  isWriteSlowNotePrompt,
+  STUB_VERY_SLOW_MS,
+  verySlowDelayMs,
+  verySlowHead
+} from "./e2e-stub-slow.ts"
 import {
   applyStubDesktopObservation,
   stubDesktopStreamParts,
@@ -30,6 +38,89 @@ test("lastUserText 取最后一条用户字", () => {
     ]),
     "two"
   )
+})
+
+test("very slow 只在 stub 开发态认，打包态当普通句", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  const previousSlow = process.env.ENJOY_E2E_STUB_SLOW_MS
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_STUB_SLOW_MS = "0"
+  try {
+    assert.equal(isVerySlowPrompt("please go very slow now", false), true)
+    assert.equal(isVerySlowPrompt("please go very slow now", true), false)
+    assert.ok(STUB_VERY_SLOW_MS >= 1500)
+    assert.equal(verySlowDelayMs(), 0)
+    assert.ok(verySlowHead().startsWith("one"))
+    const packed: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: "please go very slow now" }],
+      new AbortController().signal,
+      { packaged: true }
+    )) {
+      packed.push(String(part.type))
+    }
+    assert.equal(packed.includes("tool-approval-request"), false)
+    assert.ok(packed.includes("text-delta"))
+
+    const types: string[] = []
+    let text = ""
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: "please go very slow now" }],
+      new AbortController().signal
+    )) {
+      types.push(String(part.type))
+      if (part.type === "text-delta") text += String(part.text ?? "")
+    }
+    assert.match(text, /one two three four five/)
+    assert.equal(types.includes("tool-approval-request"), true)
+    assert.equal(types.at(-1), "tool-approval-request")
+  } finally {
+    process.env.ENJOY_E2E_STUB = previous
+    if (previousSlow == null) delete process.env.ENJOY_E2E_STUB_SLOW_MS
+    else process.env.ENJOY_E2E_STUB_SLOW_MS = previousSlow
+  }
+})
+
+test("please write slow note：先审批，允许后写盘再慢流", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  const previousSlow = process.env.ENJOY_E2E_STUB_SLOW_MS
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_STUB_SLOW_MS = "0"
+  try {
+    assert.equal(isWriteSlowNotePrompt("please write slow note", false), true)
+    assert.equal(isWriteSlowNotePrompt("please write slow note", true), false)
+    const first: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: "please write slow note" }],
+      new AbortController().signal
+    )) {
+      first.push(String(part.type))
+    }
+    assert.deepEqual(first, ["tool-approval-request"])
+
+    let text = ""
+    const after: string[] = []
+    for await (const part of createE2eStubStream(
+      [
+        { role: "user", content: "please write slow note" },
+        {
+          role: "tool",
+          content: [{ type: "tool-approval-response", approved: true }]
+        } as never
+      ],
+      new AbortController().signal
+    )) {
+      after.push(String(part.type))
+      if (part.type === "text-delta") text += String(part.text ?? "")
+    }
+    assert.equal(after.includes("tool-result"), true)
+    assert.match(text, /one two three/)
+    assert.doesNotMatch(text, /stub-ok allowed write/)
+  } finally {
+    process.env.ENJOY_E2E_STUB = previous
+    if (previousSlow == null) delete process.env.ENJOY_E2E_STUB_SLOW_MS
+    else process.env.ENJOY_E2E_STUB_SLOW_MS = previousSlow
+  }
 })
 
 test("write 提示发出审批 part", async () => {
@@ -364,6 +455,8 @@ test("开发态 stub 存储失败夹具：打包态不扔", async () => {
   const previous = process.env.ENJOY_E2E_STUB
   process.env.ENJOY_E2E_STUB = "1"
   try {
+    assert.equal(isE2eStub(false), true)
+    assert.equal(isE2eStub(true), false)
     assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, false), true)
     assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT_ZH, false), true)
     assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, true), false)

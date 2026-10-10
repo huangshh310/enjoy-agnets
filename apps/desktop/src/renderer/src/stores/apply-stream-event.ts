@@ -11,6 +11,7 @@ import {
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { markMcpAppTooLarge } from "../lib/mcp-app-surface"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
@@ -95,6 +96,16 @@ function applyTerminalEvent(
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) {
       return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
+    }
+    if (isUserAbortEvent(event)) {
+      return {
+        messages: finalizeRun(messages, { aborted: true }),
+        pendingApproval: null,
+        running: false,
+        runId: null,
+        error: null,
+        notice: USER_ABORTED_CODE
+      }
     }
     return { messages: finalizeRun(messages), running: false, error: event.message }
   }
@@ -288,7 +299,7 @@ function attachAssistant(
   return created
 }
 
-function finalizeRun(messages: ThreadMessage[]): ThreadMessage[] {
+function finalizeRun(messages: ThreadMessage[], opts?: { aborted?: boolean }): ThreadMessage[] {
   return messages.map((message) => {
     const chips =
       message.role === "assistant" ? takeActionChips(message.content, message.actionChips) : null
@@ -302,11 +313,8 @@ function finalizeRun(messages: ThreadMessage[]): ThreadMessage[] {
         ? (clampThoughtSeconds(message.createdAt) ?? undefined)
         : message.thoughtSeconds,
       tools: sealAbandonedTools(
-        message.tools?.map((tool) =>
-          tool.state === "input-streaming" || tool.state === "input-available"
-            ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
-            : tool
-        )
+        message.tools?.map((tool) => ({ ...tool })),
+        { aborted: opts?.aborted }
       )
     }
   })

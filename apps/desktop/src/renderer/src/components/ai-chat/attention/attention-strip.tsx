@@ -56,6 +56,7 @@ export function AttentionStrip() {
   return (
     <div className="pointer-events-none absolute top-3 inset-x-0 z-30 flex justify-center px-4">
       <div
+        data-testid="attention-strip"
         role="region"
         aria-label={t("attention.stripLabel")}
         className={cx(

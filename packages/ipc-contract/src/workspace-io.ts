@@ -146,6 +146,19 @@ export const ChangedFile = z.object({
 })
 export type ChangedFile = z.infer<typeof ChangedFile>
 
+/** workspace.changes：把「不是 git 仓库」和「仓库很干净」拆开。旧客户端只收数组。 */
+export const WorkspaceChangesResult = z.object({
+  files: z.array(ChangedFile),
+  gitRepo: z.boolean().optional()
+})
+export type WorkspaceChangesResult = z.infer<typeof WorkspaceChangesResult>
+
+/** 兼容旧数组回包。 */
+export function readWorkspaceChangesResult(raw: unknown): WorkspaceChangesResult {
+  if (Array.isArray(raw)) return { files: raw.map((row) => ChangedFile.parse(row)) }
+  return WorkspaceChangesResult.parse(raw)
+}
+
 export const GitCommitItem = z.object({
   hash: z.string(),
   shortHash: z.string(),

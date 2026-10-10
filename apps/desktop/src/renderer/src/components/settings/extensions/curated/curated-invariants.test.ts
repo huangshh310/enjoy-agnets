@@ -101,7 +101,8 @@ test("添加 MCP 走 mcp.upsert 且 trusted，不新开存储", async () => {
     allowedResourceUris: [],
     modelVisibleTools: [],
     appOnlyTools: [],
-    trusted: true
+    trusted: true,
+    curatedPresetId: "github"
   })
   assert.ok(addSrc.includes("trusted: true"))
   assert.ok(addSrc.includes("skills.sources.add"))

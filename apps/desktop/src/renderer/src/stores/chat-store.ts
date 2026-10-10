@@ -69,6 +69,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   selectedFilePath: null,
   selectedFileContent: "",
   changes: [],
+  gitRepo: null,
   additions: 0,
   deletions: 0,
   sessionReviewDismissedKey: null,
@@ -242,10 +243,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>
     set({ selectedFilePath, selectedFileContent }),
-  setChanges: (changes: ChangedFileRow[]) => {
+  setChanges: (changes: ChangedFileRow[], gitRepo?: boolean | null) => {
+    const current = get()
+    const nextGit = gitRepo === undefined ? current.gitRepo : gitRepo
+    if (current.gitRepo === nextGit && sameChangeRows(current.changes, changes)) return
     const additions = changes.reduce((sum, file) => sum + file.additions, 0)
     const deletions = changes.reduce((sum, file) => sum + file.deletions, 0)
-    set({ changes, additions, deletions })
+    set({
+      changes,
+      additions,
+      deletions,
+      gitRepo: nextGit
+    })
   },
   setSessionReviewDismissedKey: (sessionReviewDismissedKey) => set({ sessionReviewDismissedKey }),
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),
@@ -299,4 +308,22 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 export function formatNodeTime(timestamp: number): string {
   if (!Number.isFinite(timestamp) || timestamp <= 0) return ""
   return relativeTime(timestamp)
+}
+
+/** 工作区 git 状态投递：相同快照保持旧引用，避免审查栏 effect 空转。 */
+function sameChangeRows(left: ChangedFileRow[], right: ChangedFileRow[]): boolean {
+  if (left === right) return true
+  if (left.length !== right.length) return false
+  return left.every((row, index) => {
+    const other = right[index]
+    return (
+      other != null &&
+      row.path === other.path &&
+      row.status === other.status &&
+      row.additions === other.additions &&
+      row.deletions === other.deletions &&
+      row.staged === other.staged &&
+      row.worktree === other.worktree
+    )
+  })
 }

@@ -25,6 +25,7 @@ export type SessionReviewBarProps = {
   files: SessionReviewFile[]
   running?: boolean
   runStartedAt?: number
+  waitingApproval?: boolean
   modelLabel?: string
   onOpenReview: () => void
   onOpenFile: (path: string) => void

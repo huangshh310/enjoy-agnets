@@ -18,7 +18,8 @@ export type SessionMessageRow = {
   parts?: unknown[]
 }
 
-export function threadFromRows(rows: SessionMessageRow[]) {
+export function threadFromRows(rows: SessionMessageRow[], opts?: { sealAbandoned?: boolean }) {
+  const sealAbandoned = opts?.sealAbandoned !== false
   return dedupeConsecutiveUserTurns(rows).map((row) => {
     if (row.role !== "assistant") {
       return mapUserThreadMessage(row, extrasFromParts(Array.isArray(row.parts) ? row.parts : []))
@@ -31,7 +32,7 @@ export function threadFromRows(rows: SessionMessageRow[]) {
       row,
       payload,
       extrasFromParts(validated[0]?.parts),
-      sealAbandonedTools(payload.tools)
+      sealAbandoned ? sealAbandonedTools(payload.tools) : payload.tools
     )
   })
 }

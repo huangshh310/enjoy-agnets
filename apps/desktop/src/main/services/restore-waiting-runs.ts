@@ -9,13 +9,14 @@ import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
-import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { getActiveRun, holdAgentRun } from "./agent-run-state"
 import { claimRestoreWaitingOnce } from "./restore-once"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
+import { restoreHeldWaitingApprovals } from "./restore-waiting-approvals"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -37,13 +38,18 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         return false
       }
     })
-    if (pending.length === 0 || !row.workspaceId) {
+    if (!row.workspaceId) {
       updateRun(db, row.id, { status: "cancelled", error: "No pending approval after restart." })
       continue
     }
     const checkpoint = parseGenerationCheckpoint(row.checkpoint)
     if (!checkpoint?.request) {
       updateRun(db, row.id, { status: "cancelled", error: "Missing generation checkpoint." })
+      continue
+    }
+    const checkpointPendings = extras.pendingApprovals ?? []
+    if (pending.length === 0 && checkpointPendings.length === 0) {
+      updateRun(db, row.id, { status: "cancelled", error: "No pending approval after restart." })
       continue
     }
     try {
@@ -85,22 +91,20 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
             toolCallId: item.toolCallId,
             name: item.name
           }))
-      for (const item of run.pendingApprovals) {
-        const rowArgs = pending.find((approval) => approval.id === item.approvalId)
-        let args: unknown = {}
-        try {
-          args = rowArgs ? JSON.parse(rowArgs.args) : {}
-        } catch {
-          args = {}
+      const restored = restoreHeldWaitingApprovals({
+        runId: row.id,
+        hmacPending: pending,
+        items: run.pendingApprovals,
+        window
+      })
+      if (restored.ended) continue
+      run.pendingApprovals = restored.keep
+      if (restored.keep.length === 0) {
+        run.resumeAfterPump = true
+        if (!run.pumping) {
+          const { pumpStream } = await import("./agent-pump.ts")
+          void pumpStream(row.id)
         }
-        emitEvent(window, {
-          type: "approval.required",
-          runId: row.id,
-          approvalId: item.approvalId,
-          toolCallId: item.toolCallId,
-          name: item.name,
-          args
-        })
       }
     } catch (error) {
       updateRun(db, row.id, {

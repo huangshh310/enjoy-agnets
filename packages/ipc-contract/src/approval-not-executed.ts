@@ -5,12 +5,15 @@
 
 export const APPROVAL_ARGS_MISMATCH = "APPROVAL_ARGS_MISMATCH"
 export const APPROVAL_REPLAY_DENIED = "APPROVAL_REPLAY_DENIED"
+export const APPROVAL_ARGS_MISSING = "approval_args_missing"
 export const APPROVAL_ARGS_MISMATCH_COPY = "审批参数已变化，本次未执行。"
 export const APPROVAL_REPLAY_DENIED_COPY = "本次未执行。"
+export const APPROVAL_ARGS_MISSING_COPY = "没拿到这次操作的参数，已拒绝，未执行"
 
 const NOT_EXECUTED_CODES = new Set([
   APPROVAL_ARGS_MISMATCH,
   APPROVAL_REPLAY_DENIED,
+  APPROVAL_ARGS_MISSING,
   "stale_observation",
   "needs_foreground",
   "action_failed"
@@ -19,6 +22,7 @@ const NOT_EXECUTED_CODES = new Set([
 const NOT_EXECUTED_TEXT = new Set([
   APPROVAL_ARGS_MISMATCH_COPY,
   APPROVAL_REPLAY_DENIED_COPY,
+  APPROVAL_ARGS_MISSING_COPY,
   "已拒绝，本次未执行",
   "Declined, not run this time"
 ])
@@ -46,7 +50,7 @@ export function readApprovalNotExecutedCode(value: unknown): string | undefined 
   return undefined
 }
 
-const APPROVAL_DECISIONS = new Set(["allow", "deny", "allow_session", "allow_always"])
+const APPROVAL_DECISIONS = new Set(["allow", "deny", "allow_session", "allow_always", "cancelled"])
 
 export type NotExecutedTool = {
   state?: string
@@ -77,6 +81,7 @@ export function isStaleObservationAfterAllow(tool: NotExecutedTool | undefined):
 export function isToolNotExecuted(tool: NotExecutedTool | undefined): boolean {
   if (!tool) return false
   if (tool.state === "output-denied") return true
+  if (readApprovalDecision(tool.result) === "cancelled") return true
   if (isApprovalNotExecutedText(tool.errorText) || isApprovalNotExecutedCode(tool.errorText)) return true
   return Boolean(readApprovalNotExecutedCode(tool.result))
 }

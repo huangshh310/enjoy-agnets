@@ -8,6 +8,11 @@ import { checkpointActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { armCatchUpPark } from "./park-catch-up-approval"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
+import {
+  APPROVAL_ARGS_MISSING,
+  APPROVAL_ARGS_MISSING_MESSAGE,
+  isMissingApprovalArgs
+} from "./resolve-approval-args"
 
 export async function waitSecondConfirmApproval(
   runId: string,
@@ -15,6 +20,18 @@ export async function waitSecondConfirmApproval(
   args: unknown
 ): Promise<"allow" | "deny" | "allow_session" | "allow_always"> {
   const toolCallId = run.tools.at(-1)?.id || createId("tool")
+  if (isMissingApprovalArgs(args)) {
+    emitEvent(run.window, {
+      type: "tool.result",
+      runId,
+      toolCallId,
+      name: "desktop_act",
+      args,
+      result: { code: APPROVAL_ARGS_MISSING },
+      error: APPROVAL_ARGS_MISSING_MESSAGE
+    })
+    return "deny"
+  }
   const existing = getApprovalByRunAndToolCall(getDatabase(), { runId, toolCallId })
   const approvalId = existing
     ? rememberReparkApproval({

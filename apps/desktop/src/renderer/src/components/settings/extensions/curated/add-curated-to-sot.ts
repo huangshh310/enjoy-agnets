@@ -24,7 +24,8 @@ async function upsertMcpCard(card: ExtensionCuratedCard, ide: CuratedSotIde): Pr
     allowedResourceUris: [],
     modelVisibleTools: [],
     appOnlyTools: [],
-    trusted: true
+    trusted: true,
+    curatedPresetId: card.id
   })
 }
 

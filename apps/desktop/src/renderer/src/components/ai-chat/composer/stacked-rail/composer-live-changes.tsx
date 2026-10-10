@@ -22,16 +22,18 @@ import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-ga
 import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
 import { openSourcesSheet } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import type { TurnSourceChip } from "../../thread/sources/source-chip"
+import { reviewBannerPeek } from "../session-review/review-banner-peek"
 import type { SessionReviewFile } from "../session-review/session-review.types"
+import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 
 export function ComposerLiveChanges() {
   const t = useT()
   const queryClient = useQueryClient()
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
+  const error = useChatStore((state) => state.error)
+  const notice = useChatStore((state) => state.notice)
   const sessionId = useChatStore((state) => state.sessionId)
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
   const model = useSessionReviewModel()
   const preview = useOpenSessionPreview()
   const [undoOpen, setUndoOpen] = useState(false)
@@ -46,10 +48,20 @@ export function ComposerLiveChanges() {
   if (!showGate && !model.showReview) return null
 
   const files = model.files
-  const peek =
-    files.length > 0
-      ? t("chat.stackedFilesChanged", { n: files.length })
-      : t("chat.environmentChanges")
+  const additions = files.reduce((sum, file) => sum + file.additions, 0)
+  const deletions = files.reduce((sum, file) => sum + file.deletions, 0)
+  const stopped =
+    !running &&
+    (classifyThreadError(notice ?? "") === "stopped" || classifyThreadError(error ?? "") === "stopped")
+  const peek = reviewBannerPeek(
+    files,
+    {
+      stopped,
+      placeholder: showGate,
+      wroteThisTurnOnly: model.pick.wroteThisTurnOnly
+    },
+    t
+  )
   const chips = chipsFromLastAssistant(lastAssistantTurn(messages), (name) =>
     t("chat.sourceSkillLabel", { name })
   )
@@ -135,17 +147,24 @@ function LiveChangesRow({
       icon={<RiFileEditLine className="size-3.5 text-accent-500" />}
       label={showGate ? t("sessionOps.gateSubtitle") : peek}
       peek={showGate ? peek : undefined}
+      peekTestId="session-review-peek"
       meta={<DiffStat additions={additions} deletions={deletions} />}
       open={filesOpen}
       onToggle={onToggle}
       actions={actions}
     >
       <ul className="flex flex-col">
-        {files.map((file) => (
-          <li key={file.path}>
-            <SessionFileTrigger file={file} title={file.name} onOpen={openSessionReview} />
+        {files.length > 0 ? (
+          files.map((file) => (
+            <li key={file.path}>
+              <SessionFileTrigger file={file} title={file.name} onOpen={openSessionReview} />
+            </li>
+          ))
+        ) : showGate ? (
+          <li className="px-1 py-1 text-caption-2-regular text-text-tertiary">
+            {t("chat.sessionReviewCommandPlaceholder")}
           </li>
-        ))}
+        ) : null}
       </ul>
       {showGate ? (
         <GateExpanded
@@ -228,6 +247,7 @@ function KeepRowActions({
       </RowTextButton>
       <button
         type="button"
+        data-testid="session-review-open"
         disabled={busy}
         onClick={onReview}
         className="ml-1 flex h-6 items-center rounded-md bg-accent-500 px-2.5 text-caption-2-medium text-text-white hover:bg-accent-600 disabled:opacity-50"

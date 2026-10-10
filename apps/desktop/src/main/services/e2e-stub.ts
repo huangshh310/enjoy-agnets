@@ -17,6 +17,14 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 import { shouldEmitHugeMcpApp, stubHugeMcpAppParts } from "./e2e-stub-mcp-app.ts"
+import {
+  isVerySlowPrompt,
+  isWriteSlowNotePrompt,
+  STUB_VERY_SLOW_WORDS,
+  verySlowDelayMs,
+  verySlowHead,
+  verySlowTail
+} from "./e2e-stub-slow.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
@@ -27,13 +35,13 @@ export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
 export const STUB_WRITE_PATH = "e2e-stub.txt"
 export const STUB_WRITE_CONTENT = "from stub"
 
-export function isE2eStub(): boolean {
-  return process.env.ENJOY_E2E_STUB === "1"
+export function isE2eStub(packaged = false): boolean {
+  return process.env.ENJOY_E2E_STUB === "1" && packaged !== true
 }
 
 /** COST-P3 复检夹具：开发态 stub 才吐带单价的 totalUsage。 */
-export function isE2eCostSeed(): boolean {
-  return isE2eStub() && process.env.ENJOY_DEV_SEED_COST === "1"
+export function isE2eCostSeed(packaged = false): boolean {
+  return isE2eStub(packaged) && process.env.ENJOY_DEV_SEED_COST === "1"
 }
 
 export function isStubStoreErrorPrompt(text: string): boolean {
@@ -42,7 +50,7 @@ export function isStubStoreErrorPrompt(text: string): boolean {
 }
 
 export function shouldFailStubStore(prompt: string, packaged = false): boolean {
-  return isE2eStub() && !packaged && isStubStoreErrorPrompt(prompt)
+  return isE2eStub(packaged) && isStubStoreErrorPrompt(prompt)
 }
 
 let stubWriteSeq = 0
@@ -152,8 +160,10 @@ export function stubApprovedWriteResult(toolCallId: string): Record<string, unkn
 
 /** 活泵允许后补写盘；无工作区根则只吐 tool-result，不假装已经落盘。 */
 export async function writeStubApprovedFile(
-  root = process.env.ENJOY_E2E_WORKSPACE
+  root = process.env.ENJOY_E2E_WORKSPACE,
+  packaged = false
 ): Promise<string | null> {
+  if (!isE2eStub(packaged)) return null
   const workspace = root?.trim()
   if (!workspace) return null
   const abs = resolveInsideWorkspace(workspace, STUB_WRITE_PATH)
@@ -192,9 +202,29 @@ export async function* createE2eStubStream(
   }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
-    await writeStubApprovedFile()
+    await writeStubApprovedFile(undefined, opts?.packaged === true)
     yield stubApprovedWriteResult(toolCallId)
+    if (isWriteSlowNotePrompt(prompt, opts?.packaged === true)) {
+      yield* emitText(STUB_VERY_SLOW_WORDS.join(" "), signal, verySlowDelayMs())
+      return
+    }
+    if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+      yield* emitText(verySlowTail(), signal, verySlowDelayMs())
+      return
+    }
     yield* emitText("stub-ok allowed write", signal)
+    return
+  }
+  if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+    yield* emitText(verySlowHead(), signal, verySlowDelayMs())
+    stubWriteSeq += 1
+    yield {
+      type: "tool-approval-request",
+      toolCallId: `tool_stub_${stubWriteSeq}`,
+      approvalId: `apr_stub_${stubWriteSeq}`,
+      toolName: "write_file",
+      input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT }
+    }
     return
   }
   if (/\bwrite\b/i.test(prompt)) {

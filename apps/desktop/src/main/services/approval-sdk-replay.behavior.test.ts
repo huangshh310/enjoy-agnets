@@ -197,6 +197,22 @@ test("二次确认 repark 后 SDK 重发原 id：不得回放 approved true", ()
   assert.equal(applied.kind === "replay" ? applied.approved : false, false)
 })
 
+test("cancelled 行回放 SDK approved:false", () => {
+  const input = {
+    approvalId: "apr_cancelled_replay",
+    runId: "run_cancelled_replay",
+    toolCallId: "tool_cancelled_replay",
+    name: "write_file",
+    args: { path: "slow-note.txt" }
+  }
+  insertAndDecide(input, "cancelled", { approved: false, reason: "run_stopped" })
+  const applied = replayOriginal(input)
+  assert.equal(applied.kind, "replay")
+  if (applied.kind !== "replay") return
+  assert.equal(applied.approved, false)
+  assert.equal(applied.approvalId, "apr_cancelled_replay")
+})
+
 test("sdkApprovalIdFor 找不到行时 fail closed，不回退内部 id", () => {
   assert.throws(() => sdkApprovalIdFor("apr_missing_row"), /No matching tool approval is waiting/)
 })

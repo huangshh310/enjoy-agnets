@@ -209,6 +209,14 @@ function ToolStatusPill({ kind }: { kind: ReturnType<typeof toolRunKind> }) {
       </span>
     )
   }
+  if (kind === "stopped") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+        <RiCloseLine className="size-2.5" />
+        <span>{t("chat.toolStopped")}</span>
+      </span>
+    )
+  }
   if (kind === "error" || kind === "denied") {
     return (
       <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-text-error-primary">

@@ -2,6 +2,7 @@
  * Agent 跑完：落库、记 TTFO、发 run.end。从 agent-runner 拆出以免超行。
  */
 import { tokensPerSecond, ttfoMs } from "@enjoy-agents/agent-core"
+import type { TurnOutcome } from "@enjoy-agents/ipc-contract"
 import { persistActiveRun } from "./flush-agent-run"
 import { persistRunUsageFromActive } from "./run-usage"
 import { billingContextOf, enrichUsageEvent } from "./enrich-usage-cost"
@@ -9,11 +10,12 @@ import { recordMetric } from "./telemetry-service"
 import { settleRun } from "./agent-run-state"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import type { ActiveRun } from "./agent-run-state"
+import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 
 export function completeAgentRun(input: {
   runId: string
   run: ActiveRun
-  emit: (event: { type: "run.end"; runId: string }) => void
+  emit: (event: { type: "run.end"; runId: string; turn?: TurnOutcome }) => void
 }): void {
   const { run, runId } = input
   clearCatchUpApprovalTimeout(runId)
@@ -24,7 +26,9 @@ export function completeAgentRun(input: {
   recordCompletedRunMetric(runId, run)
   // 摘要给 Workflow / Automation 的 waitForRunSettle 用：子 run 的真实产出尾巴。
   settleRun(runId, { status: "end", summary: transcriptTail(run.transcript.visible) })
-  input.emit({ type: "run.end", runId })
+  const turn = turnOutcomeForRun(run, "end")
+  persistTurnWorkflow(run.input.sessionId, turn)
+  input.emit({ type: "run.end", runId, turn })
 }
 
 function recordCompletedRunMetric(runId: string, run: ActiveRun): void {
