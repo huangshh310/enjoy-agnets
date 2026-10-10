@@ -136,7 +136,7 @@ test("浅色干净仓库审查空态：elementFromPoint 无黄环，推送完整
 })
 
 function seedCleanGitWorkspace(workspace: string) {
-  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\nhello knowledge\n")
   execFileSync("git", ["init"], { cwd: workspace })
   execFileSync("git", ["add", "readme.md"], { cwd: workspace })
   execFileSync(

@@ -168,7 +168,7 @@ async function samplePanes(window: Page, mode: "light" | "dark") {
 }
 
 function seedCleanGit(workspace: string) {
-  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\nhello knowledge\n")
   execFileSync("git", ["init"], { cwd: workspace })
   execFileSync("git", ["add", "readme.md"], { cwd: workspace })
   execFileSync("git", ["-c", "user.email=e2e@test", "-c", "user.name=e2e", "commit", "-m", "init"], {

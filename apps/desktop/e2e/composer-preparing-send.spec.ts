@@ -64,10 +64,12 @@ test("正在准备时慢打 10 次，全文入库且输入框不回灌", async (
       await expect(composer).toHaveValue("")
       expect(countUserMessages(userData, PROMPT)).toBe(i + 1)
       expect(listUserContents(userData).length).toBe(before.length + 1)
-      const title = lastSessionTitle(userData)
-      expect(title).toBeTruthy()
+      await expect
+        .poll(() => lastSessionTitleForPrompt(userData, PROMPT), { timeout: 15_000 })
+        .toMatch(/hello world again|hello|stub-title/)
+      const title = lastSessionTitleForPrompt(userData, PROMPT)
       expect(title).not.toBe("he")
-      expect(title === PROMPT || (title ?? "").includes("hello")).toBeTruthy()
+      expect(["新对话", "New agent", "新会话"]).not.toContain(title)
     }
     await window.screenshot({ path: join(shots, "p1_preparing_hello_world_again.png"), fullPage: true })
   } finally {
@@ -126,14 +128,21 @@ function listUserContents(userData: string): string[] {
   return queryUserMessages(userData)
 }
 
-function lastSessionTitle(userData: string): string | null {
+function lastSessionTitleForPrompt(userData: string, content: string): string | null {
   const dbPath = join(userData, "app.db")
   if (!existsSync(dbPath)) return null
   const db = new DatabaseSync(dbPath)
   try {
-    const row = db.prepare("SELECT title FROM sessions ORDER BY created_at DESC LIMIT 1").get() as
-      | { title?: string }
-      | undefined
+    const row = db
+      .prepare(
+        `SELECT s.title AS title
+         FROM sessions s
+         JOIN messages m ON m.session_id = s.id
+         WHERE m.role = 'user' AND m.content = ?
+         ORDER BY m.created_at DESC
+         LIMIT 1`
+      )
+      .get(content) as { title?: string } | undefined
     return row?.title ?? null
   } finally {
     db.close()
