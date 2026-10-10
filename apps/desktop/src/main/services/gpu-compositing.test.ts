@@ -55,7 +55,7 @@ test("argv / env 解析给 preload", () => {
   assert.equal(parseGpuCompositingArg([gpuCompositingArg("off")]), "off")
   assert.equal(parseGpuCompositingArg([gpuCompositingArg("on")]), "on")
   assert.equal(parseGpuCompositingArg([], { ENJOY_GPU_COMPOSITING: "off" }), "off")
-  assert.equal(parseGpuCompositingArg([]), "on")
+  assert.equal(parseGpuCompositingArg([]), "off")
   assert.equal(gpuFeatureIsHardware("enabled"), true)
   assert.equal(gpuFeatureIsHardware("enabled_on"), true)
   assert.equal(gpuFeatureIsHardware("disabled_software"), false)

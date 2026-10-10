@@ -24,7 +24,7 @@ export function parseGpuCompositingArg(
   if (fromArg?.endsWith("=on")) return "on"
   if (env.ENJOY_GPU_COMPOSITING === "off") return "off"
   if (env.ENJOY_GPU_COMPOSITING === "on") return "on"
-  return "on"
+  return "off"
 }
 
 export function hardwareAccelerationForcedOff(input: {

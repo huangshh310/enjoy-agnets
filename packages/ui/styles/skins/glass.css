@@ -168,12 +168,12 @@ html.dark[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off
   opacity: 0.22;
 }
 
-/* 棱镜描边：mask-composite 在软件渲染 / 无 GPU 上会整层变成同心圆。
-   @supports 不够（Chromium 仍报支持），还要主进程 data-gpu-compositing。失败时只留外壳 1px 平边。 */
+/* 棱镜描边：只在确认硬件合成时 opt-in。缺旗标 / off / 软件回退默认 1px 平边。
+   审查栏与右栏 [data-testid=right-pane-shell] 永不画这一层。 */
 @supports (mask-composite: exclude) {
-  html[data-skin="glass"]:not([data-gpu-compositing="off"]) aside.rounded-3xl::after,
-  html[data-skin="glass"]:not([data-gpu-compositing="off"]) main::after,
-  html[data-skin="glass"]:not([data-gpu-compositing="off"]) [data-frost="shell"]:not([data-pane-shell-deco="off"])::after {
+  html[data-skin="glass"][data-gpu-compositing="on"] aside.rounded-3xl::after,
+  html[data-skin="glass"][data-gpu-compositing="on"] main::after,
+  html[data-skin="glass"][data-gpu-compositing="on"] [data-frost="shell"]:not([data-pane-shell-deco="off"]):not([data-testid="right-pane-shell"])::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -195,11 +195,20 @@ html.dark[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off
     filter: url(#skin-liquid-glass);
   }
 
-  html.dark[data-skin="glass"]:not([data-gpu-compositing="off"]) aside.rounded-3xl::after,
-  html.dark[data-skin="glass"]:not([data-gpu-compositing="off"]) main::after,
-  html.dark[data-skin="glass"]:not([data-gpu-compositing="off"]) [data-frost="shell"]:not([data-pane-shell-deco="off"])::after {
+  html.dark[data-skin="glass"][data-gpu-compositing="on"] aside.rounded-3xl::after,
+  html.dark[data-skin="glass"][data-gpu-compositing="on"] main::after,
+  html.dark[data-skin="glass"][data-gpu-compositing="on"] [data-frost="shell"]:not([data-pane-shell-deco="off"]):not([data-testid="right-pane-shell"])::after {
     opacity: 0.4;
   }
+}
+
+html[data-skin="glass"] [data-testid="right-pane-shell"]::before,
+html[data-skin="glass"] [data-testid="right-pane-shell"]::after {
+  content: none;
+  display: none;
+  filter: none;
+  -webkit-mask: none;
+  mask: none;
 }
 
 html[data-skin="glass"][data-gpu-compositing="off"] aside.rounded-3xl::after,

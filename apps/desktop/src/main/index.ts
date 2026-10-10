@@ -32,13 +32,19 @@ import {
   hardwareAccelerationForcedOff,
   type GpuCompositingFlag
 } from "./services/gpu-compositing";
+import {
+  attachGpuCompositingWatch,
+  pushGpuCompositingScript,
+  pushGpuCompositingToWindows
+} from "./services/gpu-compositing-watch";
 
 const isolatedUserData = process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA
 if (isolatedUserData) {
   app.setPath("userData", isolatedUserData);
 }
 const e2eStub = process.env.ENJOY_E2E_STUB === "1"
-if (e2eStub) {
+const disableHaForE2e = e2eStub && process.env.ENJOY_E2E_ALLOW_GPU !== "1"
+if (disableHaForE2e) {
   app.disableHardwareAcceleration();
 }
 
@@ -87,8 +93,8 @@ function lockPreviewWebview(contents: WebContents): void {
 }
 
 function createWindow(): BrowserWindow {
-  const gpuFlag = resolveGpuCompositingFlag()
-  process.env.ENJOY_GPU_COMPOSITING = gpuFlag
+  const gpuFlag = readLiveGpuFlag()
+  publishGpuFlag(gpuFlag)
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -109,7 +115,7 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      additionalArguments: [gpuCompositingArg(gpuFlag)],
+      additionalArguments: [gpuCompositingArg(gpuWatch.getFlag())],
       // 右栏浏览器预览用 <webview>，guest 无 node，partition persist:enjoy-preview。
       webviewTag: true
     }
@@ -119,9 +125,7 @@ function createWindow(): BrowserWindow {
     mainWindow.show();
   });
   mainWindow.webContents.on("dom-ready", () => {
-    void mainWindow.webContents.executeJavaScript(
-      `document.documentElement.setAttribute("data-gpu-compositing", ${JSON.stringify(gpuFlag)})`
-    )
+    void mainWindow.webContents.executeJavaScript(pushGpuCompositingScript(gpuWatch.getFlag()))
   })
 
   blockNativeHistoryNavigation(mainWindow);
@@ -150,10 +154,10 @@ function createWindow(): BrowserWindow {
   return mainWindow;
 }
 
-/** ready 之后读 GPU 特征；无硬件合成则 html[data-gpu-compositing=off]。 */
-function resolveGpuCompositingFlag(): GpuCompositingFlag {
+/** 只信 getGPUFeatureStatus 的硬件确认；命令行旗标只能关不能开。 */
+function readLiveGpuFlag(): GpuCompositingFlag {
   const forcedOff = hardwareAccelerationForcedOff({
-    disableHardwareAcceleration: e2eStub,
+    disableHardwareAcceleration: disableHaForE2e,
     hasSwitch: (name) => app.commandLine.hasSwitch(name)
   })
   try {
@@ -164,6 +168,24 @@ function resolveGpuCompositingFlag(): GpuCompositingFlag {
     return "off"
   }
 }
+
+function publishGpuFlag(flag: GpuCompositingFlag): void {
+  process.env.ENJOY_GPU_COMPOSITING = flag
+  pushGpuCompositingToWindows(flag, BrowserWindow.getAllWindows())
+}
+
+const gpuWatch = attachGpuCompositingWatch({
+  on: (event, listener) => {
+    if (event === "child-process-gone") {
+      app.on("child-process-gone", (nativeEvent, details) => listener(nativeEvent, details))
+      return
+    }
+    app.on("gpu-info-update", () => listener())
+  },
+  readFlag: readLiveGpuFlag,
+  publish: publishGpuFlag,
+  current: "off"
+})
 
 function restoreOrphansOnce(window: BrowserWindow): void {
   void import("./services/restore-waiting-runs").then(({ restoreWaitingRuns }) => {
@@ -196,6 +218,11 @@ function bootPrimaryInstance(): void {
     });
     applyMacDockIcon();
     createWindow();
+    if (process.env.ENJOY_DEV_SIMULATE_GPU_GONE === "1") {
+      setImmediate(() => {
+        app.emit("child-process-gone", {}, { type: "GPU", reason: "crashed" })
+      })
+    }
     startAppUpdate();
     void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
       startAutomationScheduler()

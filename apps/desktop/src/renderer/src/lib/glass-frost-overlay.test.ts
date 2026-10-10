@@ -39,19 +39,16 @@ test("玻璃 ::after 棱镜描边 z-index 必须是 0，禁止再盖正文", () 
   assert.doesNotMatch(glass, /::after[^{]*\{[^}]*z-index:\s*2/, "禁止把 ::after 抬回 z-index: 2")
 })
 
-test("空态与审查右栏：data-pane-shell-deco=off、不挂 data-frost=shell", () => {
+test("审查与右栏外壳任何状态都不挂装饰，不看 GPU", () => {
   const pane = readFirst([join(dir, "../components/ai-chat/right-pane/right-pane.tsx")])
-  assert.match(pane, /data-pane-shell-deco=\{shellFrost \? "on" : "off"\}/)
-  assert.match(pane, /data-frost=\{shellFrost \? "shell" : undefined\}/)
-  assert.match(pane, /useRightPaneShellFrost/)
+  assert.match(pane, /data-pane-shell-deco="off"/)
+  assert.doesNotMatch(pane, /data-frost=\{/)
+  assert.doesNotMatch(pane, /data-frost="shell"/)
   assert.doesNotMatch(pane, /reviewEmpty/)
-  const hook = readFirst([join(dir, "../components/ai-chat/right-pane/use-right-pane-shell-frost.ts")])
   const logic = readFirst([join(dir, "../components/ai-chat/right-pane/right-pane-shell-frost.logic.ts")])
-  assert.match(hook, /reviewActive/)
-  assert.match(logic, /if \(input\.reviewActive\) return false/)
+  assert.match(logic, /return false/)
+  assert.doesNotMatch(logic, /return true/)
   assert.doesNotMatch(logic, /reviewDecorEmpty/)
-  assert.doesNotMatch(hook, /reviewActive \? state\.messages : \[\]/)
-  assert.doesNotMatch(hook, /reviewActive \? state\.changes : \[\]/)
 })
 
 test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰", () => {
@@ -73,16 +70,26 @@ test("无 GPU 旗标关掉棱镜 ::after 和 liquid-glass 滤镜", () => {
     join(dir, "../../../main/index.ts"),
     join(dir, "../../../../main/index.ts")
   ])
+  const watch = readFirst([
+    join(dir, "../../../main/services/gpu-compositing-watch.ts"),
+    join(dir, "../../../../main/services/gpu-compositing-watch.ts")
+  ])
   const preload = readFirst([
     join(dir, "../../../preload/index.ts"),
     join(dir, "../../../../preload/index.ts")
   ])
   assert.match(glass, /@supports\s*\(mask-composite:\s*exclude\)/)
-  assert.match(glass, /:not\(\[data-gpu-compositing="off"\]\)[\s\S]*::after/)
+  assert.match(glass, /\[data-gpu-compositing="on"\][\s\S]*::after/)
+  assert.doesNotMatch(glass, /:not\(\[data-gpu-compositing="off"\]\)[\s\S]*mask-composite/)
   assert.match(glass, /\[data-gpu-compositing="off"\][\s\S]*::after[\s\S]*content:\s*none/)
   assert.match(glass, /\[data-gpu-compositing="off"\][\s\S]*filter:\s*none/)
+  assert.match(glass, /\[data-testid="right-pane-shell"\]::after/)
   assert.match(glass, /url\(#skin-liquid-glass\)/)
   assert.match(main, /getGPUFeatureStatus/)
+  assert.match(main, /child-process-gone/)
+  assert.match(main, /attachGpuCompositingWatch/)
+  assert.match(watch, /gpu-info-update/)
+  assert.match(watch, /child-process-gone/)
   assert.match(main, /additionalArguments/)
   assert.match(main, /gpuCompositingArg/)
   assert.match(preload, /applyGpuCompositingAttr/)

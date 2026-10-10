@@ -3,15 +3,29 @@
  * 只挂在外壳 ::after（1px 镂空边）上，禁止位移卡片正文。
  * 指针写入 --glass-light-x/y（百分比）和 --glass-light-angle（只给描边）。
  */
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+
+function gpuCompositingConfirmed(): boolean {
+  return (
+    typeof document !== "undefined" &&
+    document.documentElement.getAttribute("data-gpu-compositing") === "on"
+  )
+}
 
 export function LiquidGlassFilters() {
-  const gpuOff =
-    typeof document !== "undefined" &&
-    document.documentElement.getAttribute("data-gpu-compositing") === "off"
+  const [gpuOn, setGpuOn] = useState(gpuCompositingConfirmed)
 
   useEffect(() => {
-    if (gpuOff) return
+    const doc = document.documentElement
+    const sync = () => setGpuOn(doc.getAttribute("data-gpu-compositing") === "on")
+    const observer = new MutationObserver(sync)
+    observer.observe(doc, { attributes: true, attributeFilter: ["data-gpu-compositing"] })
+    sync()
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!gpuOn) return
     let frameId: number | null = null
     let targetX = 50
     let targetY = 28
@@ -48,9 +62,9 @@ export function LiquidGlassFilters() {
         window.cancelAnimationFrame(frameId)
       }
     }
-  }, [gpuOff])
+  }, [gpuOn])
 
-  if (gpuOff) return null
+  if (!gpuOn) return null
 
   return (
     <svg
