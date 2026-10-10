@@ -1,6 +1,6 @@
 # spec/ai-capabilities
 
-> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（终态也带 kind；`approval.resolved.code` 含 `restart_abandoned`）
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（回挂家族含 `restore_interrupted_running`；非 agent 终态清 checkpoint）
 
 ## 当前真相
 
@@ -41,7 +41,7 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 - 生成式 UI 刷新时只恢复白名单 `componentId`；未知 id 丢弃，不要当成可执行远程组件。
 - 标题补全、Extract `structured-object` 与 Agent 共用 `agent.event`，必须按当前 composer `runId` 过滤。`running && !runId` 先缓冲再回放。没有认领的 `runId` 时，旁路 `structured.delta` / `run.end` 不得写进乐观助手轮，也不得 finalize。Extract / 标题 / 提交说明必须 `collectRunOutput(start)`：先订阅再 IPC。`ENJOY_E2E_STUB` 的 `ai.generate` 先返回 `runId` 再 `setTimeout(0)` 吐事件，否则 structured.delta 在订阅前就结束。
 - **隐患**：主 run 收工后，标题补全的 `run.start` 若只凭同 session + 空闲就被 `belongsToForeground` 认领，reducer 会把它当成活跃 run，随后 `text.delta` 打开空助手气泡。正确做法：只认领 `kind==="agent"` 或带 prompt 的 `run.start`；旁路 generation 带自己的 kind（`completion` 等）。
-- **隐患**：标题补全超时的 `run.error("Request timed out")` 曾写到当前会话横幅，甚至在没有后台 park 时新建停车。根因：空闲时任意带 `runId` 的 `run.error` 都会 `shouldFinalizeComposerRun`；`isNonAgentRunKind` 只看事件字段，而终态以前不带 `kind`。正确做法：`ai.generate` 终态也 stamp `kind`；`rememberRun` 记下 `(runId, kind)`，两层按 runId 排除旁路；空闲只收回挂家族码（`restore_no_matching_approval` / `restore_restart_cancelled`）。
+- **隐患**：标题补全超时的 `run.error("Request timed out")` 曾写到当前会话横幅，甚至在没有后台 park 时新建停车。根因：空闲时任意带 `runId` 的 `run.error` 都会 `shouldFinalizeComposerRun`；`isNonAgentRunKind` 只看事件字段，而终态以前不带 `kind`。正确做法：`ai.generate` 终态也 stamp `kind`；`rememberRun` 记下 `(runId, kind)`，两层按 runId 排除旁路；空闲只收回挂家族码（`restore_no_matching_approval` / `restore_restart_cancelled` / `restore_interrupted_running`）。标题 / 补全等非 agent 终态必须清 `runs.checkpoint`。
 - `ai.resume` 早期无条件调用 `resumeWorkflow`，会把文本/Agent run 误当成 Workflow。现在按 `runs.kind` 分流；generation 快照不含密钥。聊天刷新恢复走 `hydrate-thread`，不是这条频道。Agent 续跑是同一请求重启循环，不是 SDK 中途 session.detach。
 - kind=`agent` 必须转发 `runAgent`，不要另开无 host 的 ToolLoop；合约拒绝缺 `workspaceId`。
 - `delegate`：Enjoy Local `delegate=true`（主循环注入）。plan/ask 子 Agent 也只读；agent/debug 可写，但 `createSubagentApproval` 必须走同一条 `decideApproval`。没有等待器时拒绝写盘。ACP 宿主 `delegate=false`。

@@ -38,7 +38,7 @@ async function finishE2eGeneration(
   const started = Date.now()
   try {
     await emitStubKind(window, runId, request)
-    updateRun(getDatabase(), runId, { status: "completed" })
+    updateRun(getDatabase(), runId, { status: "completed", checkpoint: null })
     recordMetric({
       runId,
       kind: request.kind,
@@ -54,7 +54,7 @@ async function finishE2eGeneration(
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    updateRun(getDatabase(), runId, { status: "failed", error: message })
+    updateRun(getDatabase(), runId, { status: "failed", error: message, checkpoint: null })
     recordMetric({
       runId,
       kind: request.kind,

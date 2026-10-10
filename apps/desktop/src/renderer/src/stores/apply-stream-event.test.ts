@@ -199,6 +199,18 @@ test("切回后允许一次但观察过期：tool.result 折到非流式助手�
   assert.equal([tool].filter((row) => !isToolNotExecuted(row)).length, 0)
 })
 
+test("重启放弃写盘行走 restart，不是红失败", () => {
+  const tool = {
+    id: "t1",
+    name: "write_file",
+    state: "output-error" as const,
+    result: { code: "restart_abandoned", decision: "cancelled" }
+  }
+  assert.equal(mapToolStatus(tool.state, tool), "restart")
+  assert.notEqual(mapToolStatus(tool.state, tool), "error")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
 test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开助手气泡", () => {
   const afterMain: ThreadMessage[] = [
     { id: "msg_user", role: "user", content: "写一段摘要", createdAt: 1 },

@@ -32,6 +32,13 @@ test("空闲时只收回挂家族 run.error", () => {
     }),
     true
   )
+  assert.equal(
+    shouldFinalizeComposerRun("run_wait", null, {
+      type: "run.error",
+      code: "restore_interrupted_running"
+    }),
+    true
+  )
 })
 
 test("空闲时标题补全 run.error 不收轮", () => {

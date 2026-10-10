@@ -89,7 +89,7 @@ test("全拒绝或从未发出：中性、不进待验收", () => {
   )
 })
 
-test("写类已执行或执行中报错：待验收", () => {
+test("写类只有真正 output-available 才进待验收", () => {
   assert.deepEqual(
     decideTurnOutcome({
       ended: "end",
@@ -102,16 +102,16 @@ test("写类已执行或执行中报错：待验收", () => {
       ended: "end",
       tools: [{ name: "write_file", state: "output-error", errorText: "ENOSPC" }]
     }),
-    { workflow: "needs_review", attention: "complete" }
+    { workflow: "todo", attention: "complete" }
   )
 })
 
-test("abort 时 input-available 先封成 stopped，算可能已改盘", () => {
+test("abort 时 input-available 封成 stopped，但未产出则不算已改", () => {
   const sealed = sealTurnTools([{ name: "write_file", state: "input-available" }], { aborted: true })
   assert.equal(sealed[0]?.state, "output-error")
   assert.deepEqual(sealed[0]?.result, { code: "user_aborted" })
   assert.deepEqual(decideTurnOutcome({ ended: "end", tools: sealed }), {
-    workflow: "needs_review",
+    workflow: "todo",
     attention: "complete"
   })
   assert.deepEqual(
@@ -119,14 +119,14 @@ test("abort 时 input-available 先封成 stopped，算可能已改盘", () => {
       ended: "end",
       tools: [{ name: "write_file", state: "input-available" }]
     }),
-    { workflow: "needs_review", attention: "complete" }
+    { workflow: "todo", attention: "complete" }
   )
   assert.deepEqual(
     decideTurnOutcome({
       ended: "abort",
       tools: [{ name: "write_file", state: "input-available" }]
     }),
-    { workflow: "needs_review", attention: "stopped" }
+    { workflow: "in_progress", attention: "stopped" }
   )
 })
 

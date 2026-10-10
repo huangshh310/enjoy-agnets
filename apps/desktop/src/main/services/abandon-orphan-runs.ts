@@ -1,19 +1,21 @@
 /**
  * 启动时收拾不能续的 running 行。waiting_review 留给 restoreWaitingRuns。
- * 带工具边界 modelMessages 的 Enjoy Local running 留给 restoreRunningRuns。
+ * 带工具边界的 Enjoy Local running 留给 restoreRunningRuns 接泵。
+ * 其余 running（含 stub / 工具中途）中性结清，禁止重跑、禁止写成红失败。
  */
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
-import { listRuns, updateRun } from "@enjoy-agents/db"
+import { listRuns } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { isE2eStub } from "./e2e-stub"
 import { canResumeRunningOrphan, parseAgentCheckpointExtras } from "./running-orphan-plan"
+import { queueInterruptedRunningSettle } from "./restore-interrupted-running"
 
 export function abandonOrphanRuns(): void {
   const db = getDatabase()
   const stub = isE2eStub()
   for (const row of listRuns(db, {}).filter((item) => item.status === "running")) {
     if (!stub && canKeepForResume(row)) continue
-    updateRun(db, row.id, { status: "cancelled", error: "Abandoned after process restart." })
+    queueInterruptedRunningSettle(row)
   }
 }
 

@@ -4,7 +4,7 @@
 import type { StreamEvent } from "./index"
 import type { ThreadToolCall } from "./assistant-payload"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
-import { USER_ABORTED_CODE } from "./desktop-notify.ts"
+import { RESTART_ABANDONED_CODE, USER_ABORTED_CODE } from "./desktop-notify.ts"
 
 export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void {
   if (event.type === "tool.start") {
@@ -100,7 +100,11 @@ export function sealAbandonedTools(
         ...tool,
         state: "output-error" as const,
         errorText: undefined,
-        result: { ...prev, code: sealCode }
+        result: {
+          ...prev,
+          code: sealCode,
+          ...(sealCode === RESTART_ABANDONED_CODE ? { decision: "cancelled" } : {})
+        }
       }
     }
     return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }

@@ -56,6 +56,32 @@ test("kill-9 且检查点已刷上：卡可拒绝，文案与 Inbox/徽标清空
   }
 })
 
+test("SLOW_TOOL 允许后立刻 kill-9：不重跑，中性中断 + 横幅，不算已改", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval({ slowTool: true })
+  const first = await firstWindow(env.app)
+  await first.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
+  await first.waitForTimeout(500)
+  expect(existsSync(stubPath(env.workspace))).toBe(false)
+  await crashKill(env.app)
+  const second = await relaunchElectron(env.env)
+  try {
+    const window = await firstWindow(second)
+    await expect(window.locator("body")).toContainText("重启后已中断", { timeout: 20_000 })
+    await expect(window.locator('[data-testid="thread-notice-banner"]')).toBeVisible({ timeout: 20_000 })
+    await expect(window.locator("body")).toContainText("重启后对不上原来的审批，这一轮已结束。")
+    await expect(window.locator('[data-testid="thread-resend"]')).toBeVisible()
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
+    await expect(window.locator("body")).not.toContainText("1 个文件已改")
+    await expect(window.locator('[data-testid="turn-changed-files"]')).toHaveCount(0)
+    expect(existsSync(stubPath(env.workspace))).toBe(false)
+    await expectApprovalInboxCleared(window)
+  } finally {
+    await closeForRelaunch(second)
+  }
+})
+
 test("kill-9 且检查点没刷上：结清停止，Inbox 空，重新发送回填", async () => {
   test.setTimeout(180_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")

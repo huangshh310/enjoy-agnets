@@ -76,6 +76,22 @@ test("收工封口：input-available 与 leftover approval-requested 都封成 o
   assert.equal(sealed?.[1]?.errorText, "No result received.")
 })
 
+test("已允许但没 result：重启封口改成 cancelled，不得留 allow 当失败", () => {
+  const sealed = sealAbandonedTools(
+    [
+      {
+        id: "t1",
+        name: "write_file",
+        state: "input-available",
+        args: { path: "e2e-stub.txt" },
+        result: { decision: "allow" }
+      }
+    ],
+    { code: "restart_abandoned" }
+  )
+  assert.deepEqual(sealed?.[0]?.result, { decision: "cancelled", code: "restart_abandoned" })
+})
+
 test("重启放弃封口：用 restart_abandoned，不是 user_aborted", () => {
   const sealed = sealAbandonedTools(
     [
@@ -85,7 +101,7 @@ test("重启放弃封口：用 restart_abandoned，不是 user_aborted", () => {
     { code: "restart_abandoned" }
   )
   assert.equal(sealed?.[0]?.state, "output-error")
-  assert.deepEqual(sealed?.[0]?.result, { code: "restart_abandoned" })
+  assert.deepEqual(sealed?.[0]?.result, { code: "restart_abandoned", decision: "cancelled" })
   assert.equal(sealed?.[1]?.state, "output-error")
   assert.deepEqual(sealed?.[1]?.result, { code: "restart_abandoned", decision: "cancelled" })
 })

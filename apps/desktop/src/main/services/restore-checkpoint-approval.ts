@@ -4,11 +4,9 @@
  */
 import {
   getApproval,
-  getRun,
   isSupersededSdkApprovalId,
   planSdkReplay,
   resolvedSdkApprovalId,
-  updateRun,
   type AppDatabase
 } from "@enjoy-agents/db"
 import type { BrowserWindow } from "electron"
@@ -17,6 +15,7 @@ import { approvalResponseMessage } from "./approval-response-message"
 import { getDatabase } from "./database"
 import { parseStoredApprovalArgs } from "./restore-approval-args"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+import { writeCancelledRestoreError } from "./restore-interrupted-running"
 
 type RestoredAllow = {
   approvalId: string
@@ -170,7 +169,7 @@ function replayStoredSdkResponse(
 
 /** 回挂对不上：未决 cancelled（reason=restart），run 记停止，不写 failed。 */
 export function endRestoredRunWithoutSdkReply(
-  db: AppDatabase,
+  _db: AppDatabase,
   runId: string,
   window?: BrowserWindow,
   sessionId?: string
@@ -178,7 +177,7 @@ export function endRestoredRunWithoutSdkReply(
   const run = getActiveRun(runId)
   const target = window ?? run?.window
   settlePendingApprovalsForRun(runId, target, "restart")
-  writeCancelledRestoreError(db, runId)
+  writeCancelledRestoreError(runId, RESTORE_NO_MATCHING_CODE)
   if (target) {
     emitEvent(target, {
       type: "run.error",
@@ -192,13 +191,3 @@ export function endRestoredRunWithoutSdkReply(
   if (run) deleteActiveRun(runId)
 }
 
-/** 库里已有原始异常时只记日志，禁止用回挂码盖掉 runs.error。 */
-function writeCancelledRestoreError(db: AppDatabase, runId: string): void {
-  const existing = getRun(db, runId)?.error
-  if (existing) {
-    console.error("[restore] keep original run.error", { runId, existing, restore: RESTORE_NO_MATCHING_CODE })
-    updateRun(db, runId, { status: "cancelled" })
-    return
-  }
-  updateRun(db, runId, { status: "cancelled", error: RESTORE_NO_MATCHING_CODE })
-}

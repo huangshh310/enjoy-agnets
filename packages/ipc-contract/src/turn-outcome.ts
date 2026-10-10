@@ -56,18 +56,19 @@ export function sealTurnTools<T extends TurnToolSnapshot>(
 }
 
 /**
- * 真出错：Attention=error；写类已开始则工单进待验收。
- * 用户 Stop：Attention=stopped；归档：Attention=neutral。写类已开始仍进待验收。
+ * 真出错：Attention=error；写类已 `output-available` 才进待验收。
+ * 用户 Stop：Attention=stopped；归档：Attention=neutral。未产出写结果不算已改。
  * 全拒绝或从未发出：回待办、Attention 中性。
  * 只读轮：回待办，Attention 仍可完成。
- * 写类已执行或执行中被掐：待验收 + 完成。
+ * 写类真正产出 output-available：待验收 + 完成。
  */
 export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
   const tools = sealTurnTools(input.tools, {
     aborted: input.ended === "abort" || input.ended === "archive"
   })
   const acted = tools.filter((tool) => tool.state !== "approval-requested" && !isToolNotExecuted(tool))
-  const wrote = acted.some((tool) => isWriteTypeToolName(tool.name))
+  // 本轮改动 / 待验收只认真正吐出 output-available 的写类。中断 / 失败不得宣称「已改」。
+  const wrote = tools.some((tool) => tool.state === "output-available" && isWriteTypeToolName(tool.name))
   if (input.ended === "archive") {
     return { workflow: wrote ? "needs_review" : "in_progress", attention: "neutral" }
   }

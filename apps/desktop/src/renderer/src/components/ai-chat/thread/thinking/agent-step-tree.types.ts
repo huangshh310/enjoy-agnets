@@ -24,6 +24,7 @@ export type AgentStepStatus =
   | "denied"
   | "skipped"
   | "stopped"
+  | "restart"
 
 export interface DomainPill {
   id: string

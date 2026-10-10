@@ -80,7 +80,7 @@ export async function abortGeneration(raw: unknown) {
   const input = AiAbortInput.parse(raw)
   controllers.get(input.runId)?.abort()
   await abortAgent({ runId: input.runId })
-  updateRun(getDatabase(), input.runId, { status: "cancelled" })
+  updateRun(getDatabase(), input.runId, { status: "cancelled", checkpoint: null })
   return { ok: true }
 }
 
@@ -152,7 +152,7 @@ async function runKind(
       budget,
       signal
     )
-    updateRun(getDatabase(), runId, { status: "completed" })
+    updateRun(getDatabase(), runId, { status: "completed", checkpoint: null })
     const durationMs = Date.now() - started
     recordMetric({
       runId,
@@ -170,7 +170,7 @@ async function runKind(
     )
   } catch (error) {
     const classified = logAndClassifyError("ai-generation", error)
-    updateRun(getDatabase(), runId, { status: "failed", error: classified.message })
+    updateRun(getDatabase(), runId, { status: "failed", error: classified.message, checkpoint: null })
     recordMetric({
       runId,
       kind: request.kind,

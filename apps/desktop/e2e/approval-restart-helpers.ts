@@ -18,7 +18,9 @@ export type RestartEnv = {
   env: NodeJS.ProcessEnv
 }
 
-export async function bootPendingApproval(): Promise<RestartEnv & { app: ElectronApplication }> {
+export async function bootPendingApproval(opts?: {
+  slowTool?: boolean
+}): Promise<RestartEnv & { app: ElectronApplication }> {
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-apr-ws-"))
   const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-apr-ud-"))
   writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
@@ -28,7 +30,8 @@ export async function bootPendingApproval(): Promise<RestartEnv & { app: Electro
     ENJOY_E2E_LANG: "zh",
     ENJOY_E2E_CHAT_READY: "key",
     ENJOY_E2E_WORKSPACE: workspace,
-    ENJOY_E2E_USERDATA: userData
+    ENJOY_E2E_USERDATA: userData,
+    ...(opts?.slowTool ? { ENJOY_E2E_SLOW_TOOL: "1" } : {})
   }
   const app = await launchElectron(env)
   try {

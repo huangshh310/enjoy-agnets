@@ -7,7 +7,11 @@ import {
   isStaleObservationAfterAllow,
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
-import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RESTART_ABANDONED_CODE,
+  toolAbortKind,
+  toolHasResultCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import type { SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
@@ -155,11 +159,13 @@ export type ToolRenderStatus =
   | "denied"
   | "skipped"
   | "stopped"
+  | "restart"
 
 export function mapToolStatus(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): ToolRenderStatus {
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return "restart"
   const abort = toolAbortKind(tool)
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"

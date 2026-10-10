@@ -19,7 +19,11 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
-import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RESTART_ABANDONED_CODE,
+  toolAbortKind,
+  toolHasResultCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
@@ -192,6 +196,15 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) {
+    return {
+      id: tool.id,
+      kind: "command",
+      title: formatToolName(tool.name),
+      errorText: t("chat.restartAbandoned"),
+      status: "restart"
+    }
+  }
   if (toolAbortKind(tool) === "neutral") {
     return {
       id: tool.id,
