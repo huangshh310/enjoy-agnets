@@ -1,6 +1,5 @@
 /**
- * 玻璃外壳 ::after 不得盖住空态正文。#122 去掉右栏启动页黄环；
- * 审查空态与其它 frost 面必须同样守住，禁止 z-index 再抬回 2。
+ * 玻璃/墨线/素描外壳装饰：审查与启动空态必须停渲染，禁止靠 z-index 不透明底盖住环。
  */
 import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
@@ -16,11 +15,20 @@ function readFirst(paths: string[]): string {
   return readFileSync(hit, "utf8")
 }
 
+const skinRootCandidates = [
+  join(dir, "../../../../../packages/ui/styles/skins"),
+  join(dir, "../../../../../../packages/ui/styles/skins")
+]
+function readSkin(file: string): string {
+  for (const root of skinRootCandidates) {
+    const path = join(root, file)
+    if (existsSync(path)) return readFileSync(path, "utf8")
+  }
+  assert.fail(`missing ${file} under packages/ui/styles/skins`)
+}
+
 test("玻璃 ::after 棱镜描边 z-index 必须是 0，禁止再盖正文", () => {
-  const glass = readFirst([
-    join(dir, "../../../../../packages/ui/styles/skins/glass.css"),
-    join(dir, "../../../../../../packages/ui/styles/skins/glass.css")
-  ])
+  const glass = readSkin("glass.css")
   const afterBlocks = [...glass.matchAll(/::after\s*\{([^}]+)\}/g)].map((match) => match[1] ?? "")
   assert.ok(afterBlocks.length >= 1, "glass.css 必须有 ::after")
   for (const block of afterBlocks) {
@@ -31,36 +39,35 @@ test("玻璃 ::after 棱镜描边 z-index 必须是 0，禁止再盖正文", () 
   assert.doesNotMatch(glass, /::after[^{]*\{[^}]*z-index:\s*2/, "禁止把 ::after 抬回 z-index: 2")
 })
 
-test("右栏启动页不挂 frost；审查空态自己抬到 z-10 且不透明", () => {
-  const pane = readFirst([
-    join(dir, "../components/ai-chat/right-pane/right-pane.tsx")
-  ])
-  const picker = readFirst([
-    join(dir, "../components/ai-chat/right-pane/picker-list.tsx")
-  ])
+test("空态右栏：data-pane-shell-deco=off、不挂 data-frost=shell", () => {
+  const pane = readFirst([join(dir, "../components/ai-chat/right-pane/right-pane.tsx")])
+  assert.match(pane, /data-pane-shell-deco=\{shellFrost \? "on" : "off"\}/)
+  assert.match(pane, /data-frost=\{shellFrost \? "shell" : undefined\}/)
+  assert.match(pane, /useRightPaneShellFrost/)
+  assert.doesNotMatch(pane, /reviewEmpty/)
+})
+
+test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰", () => {
+  const glass = readSkin("glass.css")
+  const ink = readSkin("ink.css")
+  const sketch = readSkin("sketch.css")
+  assert.match(glass, /\[data-pane-shell-deco="off"\]::after/)
+  assert.match(glass, /content:\s*none/)
+  assert.match(ink, /\[data-pane-shell-deco="off"\][\s\S]*rounded-3xl\.shadow-card/)
+  assert.match(ink, /:not\(\[data-pane-shell-deco="off"\]\)/)
+  assert.match(sketch, /:not\(\[data-pane-shell-deco="off"\]\)/)
+  assert.match(sketch, /\[data-pane-shell-deco="off"\][\s\S]*background-image:\s*none/)
+})
+
+test("审查空态组件不挂 data-frost，不靠装饰类名", () => {
   const reviewEmpty = readFirst([
     join(dir, "../components/ai-chat/right-pane/views/review/diff-stream/review-diff-pane.tsx")
-  ])
-  const changesEmpty = readFirst([
-    join(dir, "../components/ai-chat/right-pane/views/review/changes-list.tsx")
   ])
   const fileListEmpty = readFirst([
     join(dir, "../components/ai-chat/right-pane/views/review/file-tree/review-file-tree.tsx")
   ])
-  assert.match(pane, /reviewEmpty = activeTab\?\.kind === "review" && changes\.length === 0/)
-  assert.match(pane, /data-frost=\{empty \|\| reviewEmpty \? undefined : "shell"\}/)
-  assert.match(picker, /relative z-10/)
-  assert.match(picker, /bg-background-primary-default/)
-  assert.match(reviewEmpty, /relative z-10/)
-  assert.match(reviewEmpty, /overflow-hidden/)
-  assert.match(reviewEmpty, /bg-background-primary-default/)
-  assert.match(reviewEmpty, /chat\.treeClean/)
-  assert.match(changesEmpty, /relative z-10/)
-  assert.match(changesEmpty, /bg-background-primary-default/)
-  assert.match(fileListEmpty, /review-file-list-empty/)
-  assert.match(fileListEmpty, /relative z-10 isolate/)
-  assert.match(fileListEmpty, /overflow-hidden/)
-  assert.match(fileListEmpty, /bg-background-primary-default/)
-  assert.match(fileListEmpty, /chat\.reviewNoMatchingFiles/)
+  assert.doesNotMatch(reviewEmpty, /data-frost/)
   assert.doesNotMatch(fileListEmpty, /data-frost/)
+  assert.match(reviewEmpty, /chat\.treeClean/)
+  assert.match(fileListEmpty, /review-file-list-empty/)
 })

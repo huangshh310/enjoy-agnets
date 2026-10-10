@@ -92,7 +92,10 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     if ((await clean.count()) > 0) await expect(clean.first()).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="review-file-list-empty"]')).toBeVisible({ timeout: 8_000 })
     await expect(window.locator('[data-testid="review-file-list-empty"]')).toHaveText("没有匹配的文件")
-    const reviewPane = window.locator("section").filter({ has: window.locator('[data-testid="review-file-list-empty"]') })
+    const reviewPane = window.locator('[data-testid="right-pane-shell"]').filter({
+      has: window.locator('[data-testid="review-file-list-empty"]')
+    })
+    await expect(reviewPane).toHaveAttribute("data-pane-shell-deco", "off")
     await expect(reviewPane).not.toHaveAttribute("data-frost", "shell")
     await expect(window.locator('[data-testid="chat-breadcrumb-project"]')).toBeVisible()
     const crumb = ((await window.locator('[data-testid="chat-breadcrumb"]').innerText()) ?? "").replace(/\s+/g, " ")

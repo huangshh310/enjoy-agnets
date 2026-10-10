@@ -48,7 +48,7 @@ html.dark[data-skin="ink"] {
 
 html[data-skin="ink"] aside.rounded-3xl,
 html[data-skin="ink"] main,
-html[data-skin="ink"] .rounded-3xl.shadow-card,
+html[data-skin="ink"] .rounded-3xl.shadow-card:not([data-pane-shell-deco="off"]),
 html[data-skin="ink"] [data-testid="window-frame"]:not(.rounded-none) {
   position: relative;
   isolation: isolate;
@@ -148,4 +148,15 @@ html[data-skin="ink"] .shadow-card {
   border: 2px solid #1a1a1a;
   border-radius: 0.25rem;
   background-color: #f6f3ec;
+}
+
+html[data-skin="ink"] [data-pane-shell-deco="off"].rounded-3xl.shadow-card {
+  background-color: var(--color-background-primary-default);
+  background-image: none;
+  box-shadow: var(--shadow-card);
+}
+
+html[data-skin="ink"] [data-pane-shell-deco="off"].rounded-3xl.shadow-card::after {
+  content: none;
+  display: none;
 }

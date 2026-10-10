@@ -11,6 +11,7 @@ import { RightPaneChrome } from "./pane-chrome"
 import { RightPanePicker } from "./picker-list"
 import { RightPaneTabBody } from "./right-pane-body"
 import { useT } from "@renderer/i18n"
+import { useRightPaneShellFrost } from "./use-right-pane-shell-frost"
 
 export function RightPane({
   workspaceId,
@@ -56,12 +57,13 @@ export function RightPane({
   }, [workspaceId, reset])
 
   const empty = tabs.length === 0
-  const activeTab = tabs.find((tab) => tab.id === activeId)
-  const reviewEmpty = activeTab?.kind === "review" && changes.length === 0
+  const { shellFrost } = useRightPaneShellFrost(workspaceId, changes.length)
 
   return (
     <section
-      data-frost={empty || reviewEmpty ? undefined : "shell"}
+      data-pane-shell-deco={shellFrost ? "on" : "off"}
+      data-frost={shellFrost ? "shell" : undefined}
+      data-testid="right-pane-shell"
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
     >
       {empty ? (
