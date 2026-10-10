@@ -1,12 +1,15 @@
 /**
- * 首发结果回写 credentialCheck：成功 → ok；结构化 401/403 → invalid；网络不改。
+ * 首发结果回写 credentialCheck：成功 → ok；结构化 401 → invalid；403/402 走 unverified。
  * 写回跟本轮实际用的档案 + 指纹，不静态拉 chat-readiness。
  */
 import {
   classifyChatSendFailure,
   credentialCheckAfterAuthRejected,
+  credentialCheckAfterBilling,
+  credentialCheckAfterForbidden,
   credentialCheckAfterOkSend,
   type ChatSendErrorCode,
+  type ChatSendPersist,
   type CredentialCheck
 } from "@enjoy-agents/ipc-contract/credential-check"
 import { classifyError } from "@enjoy-agents/agent-core"
@@ -23,20 +26,51 @@ export function httpStatusOf(error: unknown): number | undefined {
   return undefined
 }
 
+export function structuredErrorTypeOf(error: unknown): string | undefined {
+  if (!error || typeof error !== "object") return undefined
+  const record = error as Record<string, unknown>
+  for (const value of [record.type, record.errorType]) {
+    if (isStructuredType(value)) return value
+  }
+  const nested = record.error
+  if (nested && typeof nested === "object") {
+    const inner = nested as Record<string, unknown>
+    for (const value of [inner.type, inner.code]) {
+      if (isStructuredType(value)) return value
+    }
+  }
+  const data = record.data
+  if (data && typeof data === "object") {
+    const payload = data as Record<string, unknown>
+    if (isStructuredType(payload.type)) return payload.type
+    const inner = payload.error
+    if (inner && typeof inner === "object") {
+      const typed = inner as Record<string, unknown>
+      if (isStructuredType(typed.type)) return typed.type
+    }
+  }
+  return undefined
+}
+
+function isStructuredType(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && !/^\d+$/.test(value)
+}
+
 export function classifyEnjoyLocalSendFailure(error: unknown): {
   code: ChatSendErrorCode
-  persistInvalid: boolean
+  persist: ChatSendPersist | null
 } | null {
   return classifyChatSendFailure({
     status: httpStatusOf(error),
     errorClass: classifyError(error).errorClass,
-    message: classifyError(error).message
+    message: classifyError(error).message,
+    errorType: structuredErrorTypeOf(error)
   })
 }
 
 export async function persistCredentialAfterSend(
   run: ActiveRun,
-  outcome: "ok" | "invalid"
+  outcome: "ok" | ChatSendPersist
 ): Promise<CredentialCheck | undefined> {
   const profileId = run.profileId
   if (!profileId || !run.secret?.apiKey?.trim()) return undefined
@@ -47,10 +81,17 @@ export async function persistCredentialAfterSend(
   const currentFp = credentialFingerprint(profile)
   const startedFp = run.credentialFingerprint ?? currentFp
   const at = new Date().toISOString()
-  const check = outcome === "ok" ? credentialCheckAfterOkSend(at) : credentialCheckAfterAuthRejected(at)
+  const check = checkAfterSend(outcome, at)
   const written = writeCredentialCheckIfCurrent(profileId, check, startedFp, currentFp)
   if (!written) return undefined
   const { pushChatReadinessNow } = await import("./chat-readiness")
   await pushChatReadinessNow().catch(() => undefined)
   return written
+}
+
+function checkAfterSend(outcome: "ok" | ChatSendPersist, at: string): CredentialCheck {
+  if (outcome === "ok") return credentialCheckAfterOkSend(at)
+  if (outcome === "forbidden") return credentialCheckAfterForbidden(at)
+  if (outcome === "billing") return credentialCheckAfterBilling(at)
+  return credentialCheckAfterAuthRejected(at)
 }

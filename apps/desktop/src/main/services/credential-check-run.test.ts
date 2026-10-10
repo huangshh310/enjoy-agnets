@@ -45,6 +45,12 @@ test("夹具要隔离 userData；STUB 单独不默认 ok", () => {
   assert.equal(e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "invalid" }, true), undefined)
 })
 
+test("403 → unverified/forbidden，不拦发送", async () => {
+  const check = await runCredentialCheck(profile, () => "t", async () => new Response("", { status: 403 }))
+  assert.equal(check.state, "unverified")
+  assert.equal(check.code, "forbidden")
+})
+
 test("401 → invalid，回包没有 HTTP 原文", async () => {
   const check = await runCredentialCheck(profile, () => "2026-10-10T00:00:00.000Z", async () =>
     new Response("{\"error\":\"Unauthorized secret\"}", { status: 401 })

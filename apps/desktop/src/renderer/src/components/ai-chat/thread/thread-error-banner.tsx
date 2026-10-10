@@ -93,6 +93,40 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
       />
     )
   }
+  if (kind === "provider_forbidden") {
+    return (
+      <ThreadSendGateNotice
+        testId="thread-provider-forbidden-notice"
+        kind="provider_forbidden"
+        message={t("chat.providerForbiddenNotice")}
+        actionLabel={t("chat.changeKey")}
+        actionIcon={<RiKey2Line className="size-3" />}
+        onAction={() => {
+          setError(null)
+          void navigate({ to: "/settings/$section", params: { section: "providers" } })
+        }}
+        onDismiss={() => setError(null)}
+        className={className}
+      />
+    )
+  }
+  if (kind === "provider_billing") {
+    return (
+      <ThreadSendGateNotice
+        testId="thread-provider-billing-notice"
+        kind="provider_billing"
+        message={t("chat.providerBillingNotice")}
+        actionLabel={t("chat.changeKey")}
+        actionIcon={<RiKey2Line className="size-3" />}
+        onAction={() => {
+          setError(null)
+          void navigate({ to: "/settings/$section", params: { section: "providers" } })
+        }}
+        onDismiss={() => setError(null)}
+        className={className}
+      />
+    )
+  }
   if (kind === "needs_model") {
     return <ThreadNeedModelNotice onDismiss={() => setError(null)} className={className} />
   }

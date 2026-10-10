@@ -63,8 +63,8 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     console.error("agent pump store error", error)
   }
   const sendFail = classifyEnjoyLocalSendFailure(error)
-  if (sendFail?.persistInvalid) {
-    void persistCredentialAfterSend(run, "invalid")
+  if (sendFail?.persist) {
+    void persistCredentialAfterSend(run, sendFail.persist)
   }
   const message = sendFail?.code ?? classified.message
   persistActiveRun(run, runId, "failed", message)

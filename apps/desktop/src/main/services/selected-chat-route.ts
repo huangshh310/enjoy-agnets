@@ -24,7 +24,7 @@ export function shouldSkipSelectedRouteGate(input: {
   return Boolean(input.isResume || input.isHeartbeat)
 }
 
-/** 只有 enjoy-local 确定不可用才回码。枚举含 provider_unreachable（#136 读），闸暂不回它。 */
+/** 只有 enjoy-local 确定不可用才回码。枚举含 unreachable / forbidden / billing（#136 读），闸暂不回它们。 */
 export function selectedRouteGateCode(input: SelectedRouteGateInput): SendGateCode | null {
   return chatRouteGateCode(input)
 }

@@ -430,6 +430,8 @@ export const zhChat = {
   credentialInvalidNotice: "这组密钥无效，发不出去。请到设置里换一把再试。",
   changeKey: "换一把密钥",
   providerUnreachableNotice: "连不上 {name}，检查网络后再试",
+  providerForbiddenNotice: "这个密钥暂时用不了这个模型，可能是权限或地区限制",
+  providerBillingNotice: "这个账户可能欠费或额度用完了",
   providerFallbackName: "供应商",
   tryAgain: "再试一次",
   needModelNotice: "还差一步：选一个模型，才能发消息。草稿会留着。",

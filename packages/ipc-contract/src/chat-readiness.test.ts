@@ -216,6 +216,14 @@ test("agent.run 结果是 { ok, runId|code }；发送闸码在枚举里", () => 
     ok: false,
     code: "provider_unreachable"
   })
+  assert.deepEqual(AgentRunResult.parse({ ok: false, code: "provider_forbidden" }), {
+    ok: false,
+    code: "provider_forbidden"
+  })
+  assert.deepEqual(AgentRunResult.parse({ ok: false, code: "provider_billing" }), {
+    ok: false,
+    code: "provider_billing"
+  })
   assert.equal(requireAgentRunId({ ok: true, runId: "run_1" }), "run_1")
   assert.throws(() => requireAgentRunId({ ok: false, code: NO_CHAT_ROUTE }), /no_chat_route/)
 })

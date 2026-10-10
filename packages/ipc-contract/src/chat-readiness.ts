@@ -8,6 +8,8 @@ import {
   CredentialCheck,
   CREDENTIAL_INVALID,
   PROVIDER_UNREACHABLE,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_BILLING,
   type CredentialCheckState
 } from "./credential-check.ts"
 import { NO_CHAT_ROUTE } from "./chat-route-gate.ts"
@@ -29,6 +31,8 @@ export {
 export {
   CREDENTIAL_INVALID,
   PROVIDER_UNREACHABLE,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_BILLING,
   ChatSendErrorCode,
   CredentialCheck,
   CredentialCheckCode,
@@ -62,7 +66,13 @@ export const ChatLocalModelRoute = z
 export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
 
 /** 发送闸稳定码。main `agent.run` 失败回 `{ ok:false, code }`，不要 throw 以免 IPC 加前缀。 */
-export const SendGateCode = z.enum([NO_CHAT_ROUTE, CREDENTIAL_INVALID, PROVIDER_UNREACHABLE])
+export const SendGateCode = z.enum([
+  NO_CHAT_ROUTE,
+  CREDENTIAL_INVALID,
+  PROVIDER_UNREACHABLE,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_BILLING
+])
 export type SendGateCode = z.infer<typeof SendGateCode>
 
 export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()

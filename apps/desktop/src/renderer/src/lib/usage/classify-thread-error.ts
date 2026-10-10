@@ -4,10 +4,18 @@
 import {
   CREDENTIAL_INVALID,
   NO_CHAT_ROUTE,
+  PROVIDER_BILLING,
+  PROVIDER_FORBIDDEN,
   PROVIDER_UNREACHABLE
 } from "@enjoy-agents/ipc-contract/chat-readiness"
 
-export { CREDENTIAL_INVALID, NO_CHAT_ROUTE, PROVIDER_UNREACHABLE }
+export {
+  CREDENTIAL_INVALID,
+  NO_CHAT_ROUTE,
+  PROVIDER_BILLING,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_UNREACHABLE
+}
 
 export type ThreadErrorKind =
   | "credit"
@@ -20,6 +28,8 @@ export type ThreadErrorKind =
   | "no_chat_route"
   | "credential_invalid"
   | "provider_unreachable"
+  | "provider_forbidden"
+  | "provider_billing"
   | "inspecting"
   | "outdated"
   | "remote_cli_missing"
@@ -92,6 +102,12 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
   if (message === CREDENTIAL_INVALID || message.includes(CREDENTIAL_INVALID)) {
     return "credential_invalid"
+  }
+  if (message === PROVIDER_FORBIDDEN || message.includes(PROVIDER_FORBIDDEN)) {
+    return "provider_forbidden"
+  }
+  if (message === PROVIDER_BILLING || message.includes(PROVIDER_BILLING)) {
+    return "provider_billing"
   }
   if (message === PROVIDER_UNREACHABLE || message.includes(PROVIDER_UNREACHABLE)) {
     return "provider_unreachable"

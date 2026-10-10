@@ -433,6 +433,8 @@ export const enChat = {
   credentialInvalidNotice: "This API key is invalid, so sending is blocked. Replace it in Settings and try again.",
   changeKey: "Change key",
   providerUnreachableNotice: "Can't reach {name}. Check the network and try again.",
+  providerForbiddenNotice: "This key can't use this model right now. It may be a permission or region limit.",
+  providerBillingNotice: "This account may be out of credit or over its quota.",
   providerFallbackName: "the provider",
   tryAgain: "Try again",
   needModelNotice: "One more step: pick a model before sending. Your draft stays.",

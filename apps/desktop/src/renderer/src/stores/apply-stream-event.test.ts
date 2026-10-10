@@ -237,6 +237,20 @@ test("首发失败稳定码写回 error 并留下草稿", () => {
   )
   assert.equal(unreachable.error, "provider_unreachable")
   assert.equal(unreachable.composer, "hello draft")
+  const forbidden = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "403", code: "provider_forbidden" },
+    "run_1"
+  )
+  assert.equal(forbidden.error, "provider_forbidden")
+  assert.equal(forbidden.composer, "hello draft")
+  const billing = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "402", code: "provider_billing" },
+    "run_1"
+  )
+  assert.equal(billing.error, "provider_billing")
+  assert.equal(billing.composer, "hello draft")
   assert.equal(JSON.stringify(invalid).includes("Unauthorized"), false)
 })
 

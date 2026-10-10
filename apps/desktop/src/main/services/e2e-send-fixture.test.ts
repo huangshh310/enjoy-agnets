@@ -5,6 +5,8 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   CREDENTIAL_INVALID,
+  PROVIDER_BILLING,
+  PROVIDER_FORBIDDEN,
   PROVIDER_UNREACHABLE,
   classifyChatSendFailure
 } from "@enjoy-agents/ipc-contract/credential-check"
@@ -20,6 +22,8 @@ const isolated = {
 test("ENJOY_E2E_SEND 要 stub + 未打包 + 隔离 userData 路径对得上", () => {
   assert.equal(e2eSendFixture({ ...isolated }, false, "/tmp/e2e-ud"), "rejected")
   assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "unreachable" }, false, "/tmp/e2e-ud"), "unreachable")
+  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "forbidden" }, false, "/tmp/e2e-ud"), "forbidden")
+  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "billing" }, false, "/tmp/e2e-ud"), "billing")
   assert.equal(e2eSendFixture({ ...isolated }, false, "/tmp/other"), undefined)
   assert.equal(e2eSendFixture({ ...isolated }, true, "/tmp/e2e-ud"), undefined)
   assert.equal(e2eSendFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_SEND: "rejected" }, false), undefined)
@@ -28,23 +32,31 @@ test("ENJOY_E2E_SEND 要 stub + 未打包 + 隔离 userData 路径对得上", ()
   assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: undefined }, false, "/tmp/e2e-ud"), undefined)
 })
 
-test("夹具错误走真实分类：rejected → invalid；unreachable 不改态", () => {
+test("夹具错误走真实分类：rejected → invalid；403/402 不写 invalid", () => {
   assert.deepEqual(classifyThrown(e2eSendFixtureError("rejected")), {
     code: CREDENTIAL_INVALID,
-    persistInvalid: true
+    persist: "invalid"
+  })
+  assert.deepEqual(classifyThrown(e2eSendFixtureError("forbidden")), {
+    code: PROVIDER_FORBIDDEN,
+    persist: "forbidden"
+  })
+  assert.deepEqual(classifyThrown(e2eSendFixtureError("billing")), {
+    code: PROVIDER_BILLING,
+    persist: "billing"
   })
   assert.deepEqual(classifyThrown(e2eSendFixtureError("unreachable")), {
     code: PROVIDER_UNREACHABLE,
-    persistInvalid: false
+    persist: null
   })
 })
 
 test("stub 流在 SEND=rejected / unreachable 时抛，打包或不隔离不抛", async () => {
   const hello = [{ role: "user" as const, content: "hello" }]
   const rejected = await rejectStub(hello, { ...isolated, ENJOY_E2E_SEND: "rejected" })
-  assert.deepEqual(classifyThrown(rejected), { code: CREDENTIAL_INVALID, persistInvalid: true })
+  assert.deepEqual(classifyThrown(rejected), { code: CREDENTIAL_INVALID, persist: "invalid" })
   const unreachable = await rejectStub(hello, { ...isolated, ENJOY_E2E_SEND: "unreachable" })
-  assert.deepEqual(classifyThrown(unreachable), { code: PROVIDER_UNREACHABLE, persistInvalid: false })
+  assert.deepEqual(classifyThrown(unreachable), { code: PROVIDER_UNREACHABLE, persist: null })
   const packed: string[] = []
   for await (const part of createE2eStubStream(hello, new AbortController().signal, {
     packaged: true,

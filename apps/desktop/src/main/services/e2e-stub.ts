@@ -12,7 +12,7 @@
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  *
- * 首发失败夹具（luna 录屏）：`ENJOY_E2E_SEND=unreachable|rejected`
+ * 首发失败夹具（luna 录屏）：`ENJOY_E2E_SEND=unreachable|rejected|forbidden|billing`
  * 走真实 classify / persist，闸同 seed（stub + 未打包 + 隔离 userData）。
  */
 import type { ModelMessage } from "ai"
