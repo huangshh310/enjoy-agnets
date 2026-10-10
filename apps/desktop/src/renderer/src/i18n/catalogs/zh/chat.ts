@@ -222,6 +222,8 @@ export const zhChat = {
   sourceChipMore: "+{count}",
   sourceSkillLabel: "技能 · {name}",
   sourceKnowledgeLabel: "知识库",
+  crashFallbackTitle: "这里出了点问题。",
+  crashFallbackReload: "重新加载",
   sourcesSheetTitle: "本轮来源",
   sourcesSheetMeta: "{n} 项 · 暂不支持网页来源",
   sourcesSheetClose: "关闭",

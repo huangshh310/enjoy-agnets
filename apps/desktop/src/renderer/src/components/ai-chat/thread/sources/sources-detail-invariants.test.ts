@@ -51,6 +51,7 @@ test("中英词表与预览同文，不用 Citations / Sources 抽屉", () => {
   assert.equal(zhChat.sourcesSheetKindFile, "文件")
   assert.equal(zhChat.sourcesSheetKindSkill, "技能")
   assert.equal(zhChat.sourcesSheetKindMcp, "MCP")
+  assert.equal(zhChat.sourceKnowledgeLabel, "知识库")
   assert.equal(zhChat.sourcesSheetMeta, "{n} 项 · 暂不支持网页来源")
   assert.equal(enChat.sourcesSheetTitle, "This turn")
   assert.doesNotMatch(zhChat.sourcesSheetTitle, /引用|Citations/i)
@@ -84,9 +85,9 @@ test("sheet 是右/底面板，不上 InlineCitations；无芯片且无账本行
   assert.ok(!files.sheet.includes("<InlineCitations"))
   assert.ok(!files.sheet.includes("inline-citations"))
   assert.ok(!files.sheet.includes("DialogContent"))
-  assert.ok(files.row.includes("sourcesSheetKindFile"))
-  assert.ok(files.row.includes("sourcesSheetKindSkill"))
-  assert.ok(files.row.includes("sourcesSheetKindMcp"))
+  assert.ok(files.row.includes("sourceBadgeLabelKey"))
+  assert.ok(files.row.includes("sourceBadgeIcon"))
+  assert.ok(files.row.includes("data-selected"))
 })
 
 test("只有带 path 的文件行聚焦审查；网页 URL 不进名单", () => {

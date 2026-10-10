@@ -224,6 +224,8 @@ export const enChat = {
   sourceChipMore: "+{count}",
   sourceSkillLabel: "Skill · {name}",
   sourceKnowledgeLabel: "Knowledge",
+  crashFallbackTitle: "This view hit a problem.",
+  crashFallbackReload: "Reload",
   sourcesSheetTitle: "This turn",
   sourcesSheetMeta: "{n} items · Web sources not available yet",
   sourcesSheetClose: "Close",
