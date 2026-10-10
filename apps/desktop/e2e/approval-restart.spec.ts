@@ -96,7 +96,7 @@ test("kill-9 且检查点没刷上：结清停止，Inbox 空，重新发送回�
     await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0)
     await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
     await expect(window.locator('[data-testid="thread-notice-banner"]')).toBeVisible({ timeout: 20_000 })
-    await expect(window.locator("body")).toContainText("已停止")
+    await expect(window.locator("body")).toContainText("重启后已中断")
     await expect(window.locator("body")).toContainText("重启后对不上原来的审批，这一轮已结束。")
     await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
     await window.locator('[data-testid="thread-resend"]').click()

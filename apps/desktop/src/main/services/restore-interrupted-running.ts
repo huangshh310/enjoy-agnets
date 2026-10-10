@@ -60,7 +60,8 @@ export function writeCancelledRestoreError(runId: string, restoreCode: string): 
   updateRun(db, runId, { status: "cancelled", error: restoreCode })
 }
 
-function persistSealedAssistantTools(sessionId: string): void {
+/** waiting 放弃与 running 中途共用：把助手工具行封成 restart_abandoned。 */
+export function persistSealedAssistantTools(sessionId: string): void {
   const rows = getDatabase()
     .prepare(
       "SELECT id, content FROM messages WHERE session_id = ? AND role = 'assistant' ORDER BY created_at DESC"

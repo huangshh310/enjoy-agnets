@@ -182,6 +182,25 @@ test("嵌套 args 里的真实路径要显示文件名", () => {
   assert.match(nodes[0]?.title ?? "", /layout\.tsx/)
 })
 
+test("restart_abandoned 显示重启后已中断，不是补跑超时", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [
+      {
+        id: "t1",
+        name: "write_file",
+        state: "output-error",
+        args: { path: "e2e-stub.txt" },
+        result: { code: "restart_abandoned", decision: "cancelled" }
+      }
+    ],
+    mockT
+  )
+  assert.equal(nodes[0]?.status, "restart")
+  assert.equal(nodes[0]?.errorText, "chat.restartAbandoned")
+  assert.notEqual(nodes[0]?.errorText, "studio.automations.catchUpTimeout")
+})
+
 test("ACP 弱名 command 带 path 当成读取，不要显示 $ command", () => {
   const nodes = parseAgentStepNodes("", [createTool("t1", "command", { path: "README.md" })], mockT)
   assert.equal(nodes[0]?.kind, "reading")

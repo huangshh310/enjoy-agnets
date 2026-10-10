@@ -247,7 +247,7 @@ test("desktop_act + sdkApproved=1：planSdkReplay fail closed，不回 approved:
   assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
 })
 
-test("sdkApproved=null + decision=allow：continue_decided，不结束整轮、不假回 SDK", () => {
+test("sdkApproved=null + decision=allow：unsent fail closed，审计 restart_unverifiable_decision", () => {
   const runId = "run_unsent_allow"
   const { applied, events } = applyOne(
     runId,
@@ -266,20 +266,16 @@ test("sdkApproved=null + decision=allow：continue_decided，不结束整轮、�
     },
     { approvalId: "apr_unsent_allow", toolCallId: "tool_unsent_allow", name: "write_file" }
   )
-  assert.equal(applied.ended, false)
-  assert.equal(applied.replies[0]?.approved, true)
-  assert.equal(applied.continueAllows.length, 1)
-  assert.equal(applied.continueAllows[0]?.approvalId, "apr_unsent_allow")
-  assert.equal(
-    events.some((event) => event.type === "tool.result"),
-    false
-  )
-  assert.equal(getRun(getDatabase(), runId)?.status, "waiting_review")
-  assert.ok(getActiveRun(runId))
-  deleteActiveRun(runId)
+  assert.equal(applied.ended, true)
+  assert.equal(applied.replies.length, 0)
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
+  assert.equal(getApproval(getDatabase(), "apr_unsent_allow")?.decision, "allow")
+  assert.equal(getApproval(getDatabase(), "apr_unsent_allow")?.sdkReason, "restart_unverifiable_decision")
+  assert.equal(getActiveRun(runId), undefined)
 })
 
-test("desktop_act 未发出 allow：desktop_reverify，不直接 continue_decided", () => {
+test("desktop_act 未发出 allow：fail closed，不发卡、不重拍", () => {
   const runId = "run_desktop_unsent"
   const { applied, events } = applyOne(
     runId,
@@ -298,13 +294,12 @@ test("desktop_act 未发出 allow：desktop_reverify，不直接 continue_decide
     },
     { approvalId: "apr_desktop_unsent", toolCallId: "tool_desktop_unsent", name: "desktop_act" }
   )
-  assert.equal(applied.ended, false)
-  assert.equal(applied.continueAllows.length, 0)
-  assert.equal(applied.desktopReverify.length, 1)
-  assert.equal(applied.desktopReverify[0]?.approvalId, "apr_desktop_unsent")
+  assert.equal(applied.ended, true)
+  assert.equal(events.some((event) => event.type === "approval.required"), false)
   assert.equal(events.some((event) => event.type === "tool.result"), false)
-  assert.ok(getActiveRun(runId))
-  deleteActiveRun(runId)
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
+  assert.equal(getApproval(getDatabase(), "apr_desktop_unsent")?.sdkReason, "restart_unverifiable_decision")
+  assert.equal(getActiveRun(runId), undefined)
 })
 
 test("resume_code=stale_observation：planSdkReplay fail closed，不回放", () => {

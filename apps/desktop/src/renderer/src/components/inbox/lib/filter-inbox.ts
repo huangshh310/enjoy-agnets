@@ -76,9 +76,10 @@ export function inboxFromPendingApprovals(
         sessionId: row.sessionId,
         workspaceId: row.workspaceId ?? undefined,
         actionKey: "openSession" as const,
-        actionLabel: input.t("pages.inbox.actions.openSession"),
+        actionLabel: input.t("pages.inbox.openApprovalAction"),
         status: "active" as const,
-        canOpenApproval: row.args != null
+        // 活 run：Composer 能用 main 内存 args 拍板，Inbox 同样出「立即前往审批」跳会话。
+        canOpenApproval: true
       }
     })
     .filter((item) => !input.hiddenIds.has(item.id))

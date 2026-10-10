@@ -20,7 +20,7 @@ export function ThreadNoticeBanner() {
   const catchUpTimeout = kind === "catch_up_timeout"
   const resume = kind === "resume_fallback"
   const title = restoreMismatch
-    ? t("chat.runStopped")
+    ? t("chat.restartAbandoned")
     : stopped
       ? t("chat.runStopped")
       : catchUpTimeout

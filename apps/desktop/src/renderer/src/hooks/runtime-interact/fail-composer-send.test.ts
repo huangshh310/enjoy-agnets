@@ -18,6 +18,8 @@ test("发送失败走 failComposerSend：还文、notice、清停车、空会话
   assert.match(body, /keepComposer: true/)
   assert.match(body, /restoreComposerAfterFailedSend/)
   assert.match(body, /dropMatchingOptimisticUser/)
+  assert.match(body, /createdSessionId/)
+  assert.match(body, /onlyIfEmpty: true/)
   const restoreAt = body.indexOf("restoreComposerAfterFailedSend")
   const discardAt = body.indexOf("discardCreatedSession")
   assert.ok(restoreAt >= 0 && discardAt > restoreAt)

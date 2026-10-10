@@ -69,6 +69,7 @@ function stampDenied(node: AgentStepNode, tool: ThreadToolCall): AgentStepNode {
 }
 
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return restartStepNode(tool, t)
   if (isDelegateToolName(tool.name)) return mapDelegateToStepNode(tool, t)
   const args = mergeToolArgs(tool)
   const result = asRecord(tool.result)
@@ -189,6 +190,16 @@ function readNode(
   }
 }
 
+function restartStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode {
+  return {
+    id: tool.id,
+    kind: "command",
+    title: formatToolName(tool.name),
+    errorText: t("chat.restartAbandoned"),
+    status: "restart"
+  }
+}
+
 function fallbackNode(
   tool: ThreadToolCall,
   shell: string | undefined,
@@ -196,15 +207,7 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
-  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) {
-    return {
-      id: tool.id,
-      kind: "command",
-      title: formatToolName(tool.name),
-      errorText: t("chat.restartAbandoned"),
-      status: "restart"
-    }
-  }
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return restartStepNode(tool, t)
   if (toolAbortKind(tool) === "neutral") {
     return {
       id: tool.id,

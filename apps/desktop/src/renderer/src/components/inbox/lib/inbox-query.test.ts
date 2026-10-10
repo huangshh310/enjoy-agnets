@@ -151,7 +151,7 @@ test("拍板行来自 main 未决，不靠 Attention 槽", () => {
   assert.equal(fromAttention.length, 0)
 })
 
-test("缺参未决仍进 Inbox，只开会话、不补可点卡", () => {
+test("缺参未决仍进 Inbox；活 run 出立即前往审批", () => {
   const rows = inboxFromPendingApprovals(
     [
       {
@@ -177,8 +177,9 @@ test("缺参未决仍进 Inbox，只开会话、不补可点卡", () => {
   )
   assert.equal(rows.length, 1)
   assert.equal(rows[0]?.id, "apr:apr_ghost")
-  assert.equal(rows[0]?.canOpenApproval, false)
+  assert.equal(rows[0]?.canOpenApproval, true)
   assert.equal(rows[0]?.actionKey, "openSession")
+  assert.equal(rows[0]?.actionLabel, "pages.inbox.openApprovalAction")
 })
 
 test("有短文件名时 Inbox 摘要带 basename", () => {

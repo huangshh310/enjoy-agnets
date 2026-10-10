@@ -90,6 +90,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
         text: prepared.content,
         reason: blocked || SEND_FAILED_RESTORE,
         sessionId: store.sessionId,
+        createdSessionId: prepared.sessionId,
         assets: prepared.assets
       })
       store.setPreparingHint(false)
@@ -117,6 +118,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
       restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     }
   }
+<<<<<<< HEAD
 }
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
@@ -129,6 +131,11 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
   if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)
+=======
+  const messages = beginOptimisticTurn(store, payload)
+  if (prepared) clearSentComposerText(prepared.content)
+  await launchComposerRun(store, payload, messages, prepared?.sessionId)
+>>>>>>> 52e56564 (fix: unsent 重启 fail closed，去掉直接执行与桌面重拍)
 }
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
@@ -185,7 +192,8 @@ function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
 async function launchComposerRun(
   store: ChatState,
   payload: SendPayload,
-  messages: ChatState["messages"]
+  messages: ChatState["messages"],
+  createdSessionId?: string
 ) {
   const sessionId = store.sessionId
   try {
@@ -203,6 +211,7 @@ async function launchComposerRun(
         text: payload.content,
         reason: blocked,
         sessionId,
+        createdSessionId,
         dropOptimisticUser: true
       })
       return
@@ -213,7 +222,8 @@ async function launchComposerRun(
       failComposerSend({
         text: payload.content,
         reason: SEND_FAILED_RESTORE,
-        sessionId
+        sessionId,
+        createdSessionId
       })
       return
     }
@@ -224,6 +234,7 @@ async function launchComposerRun(
       text: payload.content,
       reason: composerSendError(error),
       sessionId: store.sessionId,
+      createdSessionId,
       dropOptimisticUser: true
     })
   } finally {

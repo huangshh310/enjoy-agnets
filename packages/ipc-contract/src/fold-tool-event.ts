@@ -87,11 +87,11 @@ export function sealAbandonedTools(
           result: { ...prev, code: sealCode, decision: "cancelled" }
         }
       }
-      return {
-        ...tool,
-        state: "output-error" as const,
-        errorText: tool.errorText ?? "No result received."
-      }
+      // 冷启动等待回挂：未决行保持 pending，禁止先封成红失败。
+      return tool
+    }
+    if (sealCode && tool.state === "output-error") {
+      return upgradeHydrateRedSeal(tool, sealCode)
     }
     if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
     if (sealCode) {
@@ -109,6 +109,21 @@ export function sealAbandonedTools(
     }
     return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
   })
+}
+
+/** 冷启动曾封成红「No result received.」：回挂码来了要盖上去。已有码不改。 */
+function upgradeHydrateRedSeal(tool: ThreadToolCall, sealCode: string): ThreadToolCall {
+  const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+  if (typeof prev.code === "string" && prev.code) return tool
+  return {
+    ...tool,
+    errorText: undefined,
+    result: {
+      ...prev,
+      code: sealCode,
+      ...(sealCode === RESTART_ABANDONED_CODE ? { decision: "cancelled" } : {})
+    }
+  }
 }
 
 function mergeResultDecision(prev: unknown, next: unknown): unknown {

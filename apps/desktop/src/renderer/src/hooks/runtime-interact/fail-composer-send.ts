@@ -15,6 +15,8 @@ export function failComposerSend(input: {
   text: string
   reason: string
   sessionId: string | null
+  /** 只有这次发送新建的会话才能删；已有会话失败不删。 */
+  createdSessionId?: string | null
   assets?: QueuedComposerAsset[]
   dropOptimisticUser?: boolean
 }): void {
@@ -23,8 +25,15 @@ export function failComposerSend(input: {
   if (input.sessionId) useAttentionStore.getState().takePark(input.sessionId)
   // 先还文 + notice，再删空会话。禁止等 session.delete 才出提示（会空几秒）。
   restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
-  if (input.sessionId && isEmptyFailedSession(input.sessionId)) {
-    void discardCreatedSession(input.sessionId, () => true, { keepComposer: true })
+  if (
+    input.createdSessionId &&
+    input.createdSessionId === input.sessionId &&
+    isEmptyFailedSession(input.createdSessionId)
+  ) {
+    void discardCreatedSession(input.createdSessionId, () => true, {
+      keepComposer: true,
+      onlyIfEmpty: true
+    })
   }
 }
 

@@ -12,14 +12,16 @@ import { useChatStore } from "../stores/chat-store"
 export async function discardCreatedSession(
   sessionId: string,
   stale?: () => boolean,
-  opts?: { keepComposer?: boolean }
+  opts?: { keepComposer?: boolean; onlyIfEmpty?: boolean }
 ): Promise<boolean> {
   if (!stale?.()) return false
   if (useChatStore.getState().sessionId === sessionId) {
     clearDiscardedForeground(opts?.keepComposer === true)
   }
   forgetSessionRuntime(sessionId)
-  await getIde().session.delete({ sessionId }).catch(() => undefined)
+  await getIde()
+    .session.delete({ sessionId, onlyIfEmpty: opts?.onlyIfEmpty === true })
+    .catch(() => undefined)
   return true
 }
 

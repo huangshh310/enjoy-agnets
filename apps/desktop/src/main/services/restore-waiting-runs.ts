@@ -27,12 +27,16 @@ import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac, recordSdkApprovalResponse } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
 import { parseStoredApprovalArgs } from "./restore-approval-args"
-import { endRestoredRunWithoutSdkReply } from "./restore-checkpoint-approval"
+import {
+  auditUnsentIfNeeded,
+  endRestoredRunWithoutSdkReply
+} from "./restore-checkpoint-approval"
 import { restoreHeldWaitingApprovals } from "./restore-waiting-approvals"
 import { RESTART_UNVERIFIABLE_DECISION, settleListedApprovals } from "./settle-run-approvals"
-import { executeRestoredAllows, markResumeAndPump, reverifyRestoredDesktopAllows } from "./restore-waiting-continue"
+import { markResumeAndPump } from "./restore-waiting-continue"
 import { resolveRuntimeId } from "./resolve-runtime-id"
 import { foldMissingRunSecret, isMissingRunSecretError } from "./missing-run-secret"
+import { readLatestAssistantSnapshot } from "./restore-assistant-snapshot"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -56,13 +60,17 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
       continue
     }
     const partitioned = partitionHmacRows(row.id, listApprovalsForRun(db, row.id))
-    if (partitioned.hmacFailed.length > 0) {
+    const unverifiableDecided = partitioned.decidedPassed.filter((item) => !canReplayDecided(item))
+    if (partitioned.hmacFailed.length > 0 || unverifiableDecided.length > 0) {
+      // HMAC 失败：已决行的审计不盖。unsent：只补 restart_unverifiable_decision。
       for (const item of partitioned.hmacFailed) {
+        if (item.decision != null) continue
         recordSdkApprovalResponse(item.id, {
           approved: false,
           reason: RESTART_UNVERIFIABLE_DECISION
         })
       }
+      for (const item of unverifiableDecided) auditUnsentIfNeeded(item.id)
       settleListedApprovals(
         partitioned.hmacFailed
           .filter((item) => item.decision == null)
@@ -76,7 +84,7 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
     }
     const checkpoint = parseGenerationCheckpoint(row.checkpoint)
     const decidable = partitioned.pending.filter((item) => parseStoredApprovalArgs(item) != null)
-    const decidedReplayable = partitioned.decidedPassed.filter(canReplayOrContinueDecided)
+    const decidedReplayable = partitioned.decidedPassed.filter(canReplayDecided)
     if (!row.workspaceId || !checkpoint?.request) {
       abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
       continue
@@ -140,7 +148,8 @@ async function restoreOneWaiting(input: {
     input: parsed,
     workspaceRoot: workspace.rootPath,
     secret,
-    messages
+    messages,
+    ...readLatestAssistantSnapshot(row.sessionId)
   })
   hydrateActiveRunUsage(row.id)
   const run = getActiveRun(row.id)
@@ -171,10 +180,6 @@ async function restoreOneWaiting(input: {
   if (restored.ended) return
   run.pendingApprovals = restored.keep
   if (restored.keep.length > 0) return
-  // 已决 HMAC 通过：文件/命令执行；desktop_act allow 先重拍，禁止直接 act。
-  await executeRestoredAllows(row.id, restored.continueAllows)
-  const desktop = await reverifyRestoredDesktopAllows(row.id, restored.desktopReverify, window)
-  if (desktop === "abandoned" || desktop === "parked") return
   if (!markResumeAndPump(row.id)) {
     abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
   }
@@ -200,14 +205,8 @@ function partitionHmacRows(
   return { pending, hmacFailed, decidedPassed }
 }
 
-function canReplayOrContinueDecided(row: ApprovalRow): boolean {
-  const plan = planSdkReplay(row, row.id, resolvedSdkApprovalId(row), row.decision ?? "deny")
-  if (plan.action === "replay") return true
-  return (
-    (row.decision === "allow" || row.decision === "deny") &&
-    plan.action === "fail_closed" &&
-    plan.cause === "unsent"
-  )
+function canReplayDecided(row: ApprovalRow): boolean {
+  return planSdkReplay(row, row.id, resolvedSdkApprovalId(row), row.decision ?? "deny").action === "replay"
 }
 
 /** 回挂对不上：未决 cancelled（restart），run 记停止，发诚实收工码。 */
@@ -220,7 +219,7 @@ export function abandonWaitingRestore(
     console.error("[restore] abandon waiting restore", { runId, cause: input.cause })
     persistAbandonCause(runId, input.cause)
   }
-  endRestoredRunWithoutSdkReply(getDatabase(), runId, window, input?.sessionId)
+  endRestoredRunWithoutSdkReply(runId, window, input?.sessionId)
 }
 
 function persistAbandonCause(runId: string, cause: unknown): void {

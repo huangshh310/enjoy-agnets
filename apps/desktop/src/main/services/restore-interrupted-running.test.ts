@@ -12,6 +12,7 @@ const src = readFileSync(join(dir, "restore-interrupted-running.ts"), "utf8")
 const abandon = readFileSync(join(dir, "abandon-orphan-runs.ts"), "utf8")
 const restore = readFileSync(join(dir, "restore-running-runs.ts"), "utf8")
 const generation = readFileSync(join(dir, "ai-generation.ts"), "utf8")
+const checkpoint = readFileSync(join(dir, "restore-checkpoint-approval.ts"), "utf8")
 
 test("中途 running 封 restart_abandoned 并发 restore_interrupted_running", () => {
   assert.match(src, /RESTORE_INTERRUPTED_RUNNING/)
@@ -22,6 +23,8 @@ test("中途 running 封 restart_abandoned 并发 restore_interrupted_running", 
   assert.doesNotMatch(abandon, /Abandoned after process restart/)
   assert.match(restore, /emitQueuedInterruptedRunning/)
   assert.doesNotMatch(restore, /if \(isE2eStub\(\)\) return/)
+  assert.match(src, /export function persistSealedAssistantTools/)
+  assert.match(checkpoint, /persistSealedAssistantTools/)
 })
 
 test("标题 / 补全终态清掉 runs.checkpoint", () => {

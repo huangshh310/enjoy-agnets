@@ -2,7 +2,7 @@
  * 启动回挂：没检查点则结清停止；HMAC+检查点+签参才回挂可决策卡。
  */
 import assert from "node:assert/strict"
-import { existsSync, mkdtempSync, readFileSync } from "node:fs"
+import { existsSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
@@ -22,12 +22,11 @@ const {
   RESTART_UNVERIFIABLE_DECISION,
   deleteActiveRun,
   getActiveRun,
-  overrideRestoreDesktopActAllowForTest,
   setApprovalDecision,
   setApprovalSdkResponse
 } = await import("./restore-waiting-runs.behavior.load.ts")
 
-type SentEvent = { type: string; approvalId?: string; code?: string; message?: string }
+type SentEvent = { type: string; approvalId?: string; code?: string; message?: string; toolCallId?: string }
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -144,7 +143,7 @@ test("模拟重启有检查点：HMAC+签参回挂可决策卡，Inbox 仍有活
   deleteActiveRun(runId)
 })
 
-test("已决 allow + HMAC 通过：重启后工具真跑，不是 cancelled", async () => {
+test("已决 allow + SDK 已落库：回放 tool.result / run.tools，不重跑写盘", async () => {
   resetRestoreWaitingOnceForTests()
   const root = mkdtempSync(join(tmpdir(), "enjoy-decided-allow-"))
   const runId = "run_decided_allow"
@@ -179,11 +178,19 @@ test("已决 allow + HMAC 通过：重启后工具真跑，不是 cancelled", as
   })
   assert.ok(plan.action === "insert" || plan.action === "reuse")
   setApprovalDecision(db, approvalId, "allow")
+  setApprovalSdkResponse(db, approvalId, { approved: true, reason: "user allow" })
   await restoreWaitingRuns(recordWindow(events))
   assert.equal(getApproval(db, approvalId)?.decision, "allow")
+  assert.equal(getApproval(db, approvalId)?.sdkApproved, 1)
   assert.notEqual(getRun(db, runId)?.status, "cancelled")
-  assert.equal(readFileSync(join(root, "note.txt"), "utf8"), "from stub after allow")
-  assert.equal(existsSync(join(root, "note.txt")), true)
+  assert.ok(events.some((event) => event.type === "tool.result" && event.toolCallId === `tool_${approvalId}`))
+  const run = getActiveRun(runId)
+  assert.ok(run)
+  const last = run.messages.at(-1)
+  const part = Array.isArray(last?.content) ? last.content[0] : undefined
+  assert.equal((part as { approved?: boolean } | undefined)?.approved, true)
+  assert.equal(run.tools.some((tool) => tool.id === `tool_${approvalId}` && tool.state === "output-available"), true)
+  assert.equal(existsSync(join(root, "note.txt")), false)
   deleteActiveRun(runId)
 })
 
@@ -238,116 +245,59 @@ test("已决 allow + 篡 HMAC：cancelled，审计 restart_unverifiable_decision
   db.prepare("UPDATE approvals SET hmac = 'tampered' WHERE id = ?").run(approvalId)
   await restoreWaitingRuns(recordWindow(events))
   assert.equal(getRun(db, runId)?.status, "cancelled")
-  assert.equal(getApproval(db, approvalId)?.sdkReason, RESTART_UNVERIFIABLE_DECISION)
+  assert.equal(getApproval(db, approvalId)?.decision, "allow")
+  assert.notEqual(getApproval(db, approvalId)?.sdkReason, RESTART_UNVERIFIABLE_DECISION)
   assert.equal(existsSync(join("/tmp", "note.txt")), false)
-  assert.notEqual(getApproval(db, approvalId)?.decision, null)
 })
 
-test("desktop_act 已决 allow：不直接执行，走二次确认", async () => {
+test("desktop_act 已决 allow + 重启：无卡，fail closed + 审计", async () => {
   resetRestoreWaitingOnceForTests()
-  overrideRestoreDesktopActAllowForTest(async () => "second_confirm")
-  try {
-    const runId = "run_desktop_reverify"
-    const sessionId = "ses_desktop_reverify"
-    const approvalId = "apr_desktop_reverify"
-    const events: SentEvent[] = []
-    const db = getDatabase()
-    db.prepare(
-      "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-    ).run("ws_desktop_reverify", "ws", "/tmp", 1, 1)
-    db.prepare(
-      "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-    ).run(sessionId, "ws_desktop_reverify", "desktop", 1, 1)
-    insertRun(db, {
-      id: runId,
-      sessionId,
-      workspaceId: "ws_desktop_reverify",
-      kind: "agent",
-      status: "waiting_review",
-      modelId: "m",
-      providerId: null,
-      checkpoint: JSON.stringify({
-        version: 1,
-        request: {
-          kind: "agent",
-          sessionId,
-          modelId: "m",
-          messages: [{ role: "user", content: "click notes" }]
-        },
-        pendingApprovals: [{ approvalId, toolCallId: `tool_${approvalId}`, name: "desktop_act" }]
-      }),
-      error: null
-    })
-    const plan = rememberApproval({
-      runId,
-      approvalId,
-      toolCallId: `tool_${approvalId}`,
-      name: "desktop_act",
-      args: { action: "click", appName: "备忘录", observationId: "obs_1" }
-    })
-    assert.ok(plan.action === "insert" || plan.action === "reuse")
-    setApprovalDecision(db, approvalId, "allow")
-    await restoreWaitingRuns(recordWindow(events))
-    assert.notEqual(getRun(db, runId)?.status, "cancelled")
-    assert.ok(events.some((event) => event.type === "approval.required"))
-    assert.ok(getActiveRun(runId))
-    deleteActiveRun(runId)
-  } finally {
-    overrideRestoreDesktopActAllowForTest(null)
-  }
-})
-
-test("desktop_act 已决 allow 且无法重拍：fail closed + 审计", async () => {
-  resetRestoreWaitingOnceForTests()
-  overrideRestoreDesktopActAllowForTest(async () => "unavailable")
-  try {
-    const runId = "run_desktop_unavail"
-    const sessionId = "ses_desktop_unavail"
-    const approvalId = "apr_desktop_unavail"
-    const events: SentEvent[] = []
-    const db = getDatabase()
-    db.prepare(
-      "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-    ).run("ws_desktop_unavail", "ws", "/tmp", 1, 1)
-    db.prepare(
-      "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-    ).run(sessionId, "ws_desktop_unavail", "desktop", 1, 1)
-    insertRun(db, {
-      id: runId,
-      sessionId,
-      workspaceId: "ws_desktop_unavail",
-      kind: "agent",
-      status: "waiting_review",
-      modelId: "m",
-      providerId: null,
-      checkpoint: JSON.stringify({
-        version: 1,
-        request: {
-          kind: "agent",
-          sessionId,
-          modelId: "m",
-          messages: [{ role: "user", content: "click notes" }]
-        },
-        pendingApprovals: [{ approvalId, toolCallId: `tool_${approvalId}`, name: "desktop_act" }]
-      }),
-      error: null
-    })
-    const plan = rememberApproval({
-      runId,
-      approvalId,
-      toolCallId: `tool_${approvalId}`,
-      name: "desktop_act",
-      args: { action: "click", appName: "备忘录" }
-    })
-    assert.ok(plan.action === "insert" || plan.action === "reuse")
-    setApprovalDecision(db, approvalId, "allow")
-    await restoreWaitingRuns(recordWindow(events))
-    assert.equal(getRun(db, runId)?.status, "cancelled")
-    assert.equal(getApproval(db, approvalId)?.sdkReason, RESTART_UNVERIFIABLE_DECISION)
-    assert.equal(getActiveRun(runId), undefined)
-  } finally {
-    overrideRestoreDesktopActAllowForTest(null)
-  }
+  const runId = "run_desktop_reverify"
+  const sessionId = "ses_desktop_reverify"
+  const approvalId = "apr_desktop_reverify"
+  const events: SentEvent[] = []
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_desktop_reverify", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(sessionId, "ws_desktop_reverify", "desktop", 1, 1)
+  insertRun(db, {
+    id: runId,
+    sessionId,
+    workspaceId: "ws_desktop_reverify",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: JSON.stringify({
+      version: 1,
+      request: {
+        kind: "agent",
+        sessionId,
+        modelId: "m",
+        messages: [{ role: "user", content: "click notes" }]
+      },
+      pendingApprovals: [{ approvalId, toolCallId: `tool_${approvalId}`, name: "desktop_act" }]
+    }),
+    error: null
+  })
+  const plan = rememberApproval({
+    runId,
+    approvalId,
+    toolCallId: `tool_${approvalId}`,
+    name: "desktop_act",
+    args: { action: "click", appName: "备忘录", observationId: "obs_1" }
+  })
+  assert.ok(plan.action === "insert" || plan.action === "reuse")
+  setApprovalDecision(db, approvalId, "allow")
+  await restoreWaitingRuns(recordWindow(events))
+  assert.equal(getRun(db, runId)?.status, "cancelled")
+  assert.equal(events.some((event) => event.type === "approval.required"), false)
+  assert.equal(getApproval(db, approvalId)?.decision, "allow")
+  assert.equal(getApproval(db, approvalId)?.sdkReason, RESTART_UNVERIFIABLE_DECISION)
+  assert.equal(getActiveRun(runId), undefined)
 })
 
 test("desktop_act 已决 deny：回放 approved:false 并续跑", async () => {

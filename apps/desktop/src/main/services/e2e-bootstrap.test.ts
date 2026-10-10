@@ -15,6 +15,8 @@ test("stub 启动默认不自动 addKnowledgeSource 工作区根", () => {
   assert.match(src, /indexKnowledgeSource/)
   assert.match(src, /process\.env\.ENJOY_E2E_KNOWLEDGE !== "1"/)
   assert.match(src, /isE2eStub\(app\.isPackaged\)/)
+  assert.match(src, /ENJOY_E2E_USERDATA/)
+  assert.match(src, /ENJOY_DEV_USERDATA/)
 })
 
 test("重开同一 userData 不重复种会话", () => {

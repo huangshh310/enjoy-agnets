@@ -28,6 +28,7 @@ import {
   emitQueuedInterruptedRunning,
   queueInterruptedRunningSettle
 } from "./restore-interrupted-running"
+import { readLatestAssistantSnapshot } from "./restore-assistant-snapshot"
 
 export async function restoreRunningRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreRunningOnce()) return
@@ -129,7 +130,8 @@ async function holdAndPump(
     input,
     workspaceRoot: workspace.rootPath,
     secret,
-    messages: extras.modelMessages as ModelMessage[]
+    messages: extras.modelMessages as ModelMessage[],
+    ...readLatestAssistantSnapshot(row.sessionId)
   })
   hydrateActiveRunUsage(row.id)
   emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId, kind: "agent" })
