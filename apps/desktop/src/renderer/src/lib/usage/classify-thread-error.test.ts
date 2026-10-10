@@ -12,6 +12,7 @@ import {
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY,
+  NO_CHAT_ROUTE,
   ACP_RESUME_FALLBACK,
   NEED_REMOTE_CONNECTED
 } from "./classify-thread-error.ts"
@@ -50,6 +51,9 @@ test("ACP 未登录不是可重试供应商错误", () => {
     classifyThreadError("ACP_AUTH_REQUIRED: this CLI needs login before a session can start."),
     "auth"
   )
+  assert.equal(classifyThreadError(NO_CHAT_ROUTE), "no_chat_route")
+  assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "needs_key")
+  assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "generic")
   assert.equal(classifyThreadError(NEED_PROVIDER_KEY), "needs_key")
   assert.equal(
     classifyThreadError("Add a provider API key in Settings → Providers before using this bound profile."),

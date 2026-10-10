@@ -13,6 +13,7 @@ import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import { computeChatReadiness } from "./chat-readiness"
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
@@ -30,6 +31,7 @@ import {
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eCostSeed, isE2eStub } from "./e2e-stub"
+import { missingChatRouteCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
@@ -41,7 +43,10 @@ export async function runAgent(
 ) {
   const parsed = RunAgentInput.parse(rawInput)
   const input = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
-  return beginAgentRun(window, input, { persistUser: input.persistUser !== false })
+  return beginAgentRun(window, input, {
+    persistUser: input.persistUser !== false,
+    rememberMru: trust.rememberMru
+  })
 }
 
 /** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。 */
@@ -84,8 +89,18 @@ export async function resumeAgentRun(
 async function beginAgentRun(
   window: BrowserWindow,
   input: RunAgentInput,
-  options: { runId?: string; persistUser: boolean; resumeMessages?: unknown; promptEcho?: boolean }
+  options: {
+    runId?: string
+    persistUser: boolean
+    resumeMessages?: unknown
+    promptEcho?: boolean
+    rememberMru?: boolean
+  }
 ) {
+  if (!options.runId && !options.promptEcho) {
+    const blocked = missingChatRouteCode((await computeChatReadiness()).ready)
+    if (blocked) throw new Error(blocked)
+  }
   const prefs = readPreferences()
   const runtimeId = resolveRuntimeId(input, prefs)
   writeSessionRuntime(input.sessionId, runtimeId)
@@ -118,7 +133,8 @@ async function beginAgentRun(
     shouldRememberWorkspaceOnRun({
       automationSource: input.automationSource,
       isResume: Boolean(options.runId),
-      isHeartbeat: Boolean(options.promptEcho)
+      isHeartbeat: Boolean(options.promptEcho),
+      rememberMru: options.rememberMru
     })
   ) {
     rememberWorkspaceOpened(workspace.id)

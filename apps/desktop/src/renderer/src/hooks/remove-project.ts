@@ -19,7 +19,7 @@ export type RemoveProjectIo = {
   setWorkspacesCache: (rows: WorkspaceRow[]) => void
   invalidateCaches: () => Promise<void>
   collectPageIds: (workspaceId: string) => Promise<string[]>
-  /** 剪掉已删项目的历史条目，禁止因此导航。 */
+  /** 剪掉已删项目的历史条目；当前被剪时由 pruneHistoryPages 导航到 fallback。 */
   pruneHistory: (ids: readonly string[]) => void
   /** 切到 SSH next 时只建连，不灌会话。 */
   connectSsh?: (workspace: WorkspaceRow) => Promise<void>
@@ -28,7 +28,7 @@ export type RemoveProjectIo = {
   notifySwitched?: (workspace: WorkspaceRow) => void
 }
 
-/** 先 remove（main 断开），再剪历史（不导航），最后按返回的 lastWorkspaceId 收口指针。 */
+/** 先 remove（main 断开），再剪历史（当前被剪才导航），最后按返回的 lastWorkspaceId 收口指针。 */
 export async function runRemoveProject(workspaceId: string, io: RemoveProjectIo) {
   const ids = await io.collectPageIds(workspaceId)
   const wasActive = io.currentWorkspaceId() === workspaceId

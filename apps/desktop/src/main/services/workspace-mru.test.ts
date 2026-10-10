@@ -45,4 +45,15 @@ test("只有前台用户开跑才写 MRU", () => {
   assert.equal(shouldRememberWorkspaceOnRun({ automationSource: { id: "auto" } }), false)
   assert.equal(shouldRememberWorkspaceOnRun({ isResume: true }), false)
   assert.equal(shouldRememberWorkspaceOnRun({ isHeartbeat: true }), false)
+  assert.equal(shouldRememberWorkspaceOnRun({ rememberMru: false }), false)
+})
+
+test("删的不是 last 时不改写 lastWorkspaceId", () => {
+  const store = memoryStore()
+  rememberWorkspaceUse("ws-a", store)
+  rememberWorkspaceUse("ws-b", store)
+  assert.equal(store.get("lastWorkspaceId"), "ws-b")
+  const next = nextWorkspaceIdAfterRemove("ws-a", ["ws-b"], store)
+  assert.equal(next, "ws-b")
+  assert.equal(store.get("lastWorkspaceId"), "ws-b")
 })

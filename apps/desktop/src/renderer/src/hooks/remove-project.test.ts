@@ -290,8 +290,9 @@ test("runRemoveProject 不 loadWorkspace、不静默建会话", () => {
   assert.match(lifecycle, /notifySwitchedProject/)
 })
 
-test("切换项目走 workspace.remember 写入 MRU，失败不挡住切换", () => {
+test("切换项目走 workspace.remember 写入 MRU；Unknown workspace 中止，其它失败不挡住", () => {
   const load = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "use-agent-session.ts"), "utf8")
   assert.match(load, /workspace\.remember/)
-  assert.match(load, /remember 失败不得挡住切换/)
+  assert.match(load, /isUnknownWorkspaceRememberError/)
+  assert.match(load, /其它 remember 失败不得挡住切换/)
 })

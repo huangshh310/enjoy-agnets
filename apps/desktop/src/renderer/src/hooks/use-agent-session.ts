@@ -31,6 +31,10 @@ import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
 import { useRightPaneStore } from "../stores/right-pane-store"
 import { useWorkspaceChangeInvalidation } from "./use-workspace-change-invalidation"
+import { useChatReadiness } from "./use-chat-readiness"
+import { planNewSession } from "./plan-new-session"
+import { isUnknownWorkspaceRememberError } from "./unknown-workspace-remember"
+import { landEmptyHome } from "./nav-history/nav-history-controller"
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
@@ -83,6 +87,8 @@ export function useAgentSession() {
     void applySettingsSnapshot(snapshot)
   }, [settingsQuery.data])
 
+  useChatReadiness()
+
   useBootWorkspace(
     Boolean(settingsQuery.data),
     settingsQuery.data?.lastWorkspaceId,
@@ -116,8 +122,14 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
   if (hasIde()) {
     try {
       await getIde().workspace.remember({ workspaceId: workspace.id })
-    } catch {
-      // remember 失败不得挡住切换
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (isUnknownWorkspaceRememberError(message)) {
+        await refreshAllWorkspaces()
+        await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+        return
+      }
+      // 其它 remember 失败不得挡住切换
     }
   }
   const store = useChatStore.getState()
@@ -227,11 +239,11 @@ export async function openFolder() {
 
 export async function startPersistedSession() {
   const workspaceId = useChatStore.getState().workspaceId
-  if (!workspaceId) {
-    await openFolder()
+  if (planNewSession(workspaceId) === "empty_home") {
+    await landEmptyHome()
     return
   }
-  await createAndOpenSession(workspaceId, "新对话")
+  await createAndOpenSession(workspaceId as string, "新对话")
 }
 
 export async function openChangedFile(path: string, opts?: { reveal?: boolean }) {

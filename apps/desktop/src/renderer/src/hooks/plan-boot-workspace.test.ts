@@ -72,6 +72,30 @@ test("S1-7 没有可用 lastWorkspaceId 时切到剩余名单第一个", () => {
   assert.equal(peek.workspaceName, leftover.name)
 })
 
+test("S1-7 启动有项目无 last 时进第一个，不自动创建", () => {
+  resetPointer()
+  const first = { id: "ws-a", name: "A", rootPath: "/a" }
+  const second = { id: "ws-b", name: "B", rootPath: "/b" }
+  let loaded: string | null = null
+  syncBootWorkspace([first, second], null, (row) => {
+    loaded = row.id
+    seedWorkspacePointer({ workspace: row, repositories: [first, second] })
+  })
+  assert.equal(loaded, first.id)
+})
+
+test("S1-7 启动有 last 时进 last，不是名单第一个", () => {
+  resetPointer()
+  const first = { id: "ws-a", name: "A", rootPath: "/a" }
+  const second = { id: "ws-b", name: "B", rootPath: "/b" }
+  let loaded: string | null = null
+  syncBootWorkspace([first, second], second.id, (row) => {
+    loaded = row.id
+    seedWorkspacePointer({ workspace: row, repositories: [first, second] })
+  })
+  assert.equal(loaded, second.id)
+})
+
 test("启动还没有当前工作区时按 lastWorkspaceId 打开", () => {
   resetPointer()
   const workspace = { id: "ws1", name: "A", rootPath: "/a" }

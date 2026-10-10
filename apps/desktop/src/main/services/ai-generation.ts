@@ -37,13 +37,17 @@ async function startAgentKind(
   const messages = request.messages?.length
     ? request.messages
     : [{ role: "user" as const, content: request.prompt ?? "" }]
-  const started = await runAgent(window, {
-    sessionId: request.sessionId,
-    workspaceId: request.workspaceId,
-    modelId: request.modelId,
-    messages,
-    attachments: request.attachments
-  })
+  const started = await runAgent(
+    window,
+    {
+      sessionId: request.sessionId,
+      workspaceId: request.workspaceId,
+      modelId: request.modelId,
+      messages,
+      attachments: request.attachments
+    },
+    { rememberMru: false }
+  )
   rememberGenerationRun({ runId: started.runId, request })
   return { runId: started.runId, kind: "agent" as const }
 }

@@ -44,7 +44,8 @@ export async function runWorkflowAgentStep(input: {
       modelId: profile.modelId,
       persistUser: false,
       messages: [{ role: "user", content: prompt }]
-    })
+    }),
+    { rememberMru: false }
   )
   input.onChildRun?.(started.runId)
   const poll = input.onChildStatus

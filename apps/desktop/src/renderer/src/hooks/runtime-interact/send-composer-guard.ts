@@ -12,8 +12,10 @@ import {
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY,
-  NEED_REMOTE_CONNECTED
+  NEED_REMOTE_CONNECTED,
+  NO_CHAT_ROUTE
 } from "../../lib/usage/classify-thread-error.ts"
+import { peekChatReady } from "../chat-readiness-cache.ts"
 
 type ComposerGuardStore = {
   runtimeId: string
@@ -42,7 +44,10 @@ export function composerSendReady(
   return canBindEngine(input) && engineReadiness(input) === "ready"
 }
 
-export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?: boolean }): boolean {
+export function guardComposerSend(
+  store: ComposerGuardStore,
+  opts?: { ideReady?: boolean; chatReady?: boolean }
+): boolean {
   const ideReady = opts?.ideReady ?? hasIde()
   if (!ideReady) {
     store.setError("The desktop IPC bridge is not available.")
@@ -50,6 +55,11 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
   }
   if (!store.workspaceId || !store.sessionId) {
     store.setError("Open a workspace folder before running an agent.")
+    return false
+  }
+  const chatReady = opts?.chatReady ?? peekChatReady()
+  if (chatReady === false) {
+    store.setError(NO_CHAT_ROUTE)
     return false
   }
   if ((store.workspaceKind ?? "local") === "ssh") {

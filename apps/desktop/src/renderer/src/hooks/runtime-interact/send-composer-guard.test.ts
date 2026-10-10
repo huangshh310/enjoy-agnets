@@ -8,7 +8,8 @@ import {
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY,
-  NEED_REMOTE_CONNECTED
+  NEED_REMOTE_CONNECTED,
+  NO_CHAT_ROUTE
 } from "../../lib/usage/classify-thread-error.ts"
 import {
   resetCliLoginLoopStore,
@@ -42,9 +43,16 @@ function store(partial: {
   }
 }
 
-test("Enjoy Local 无密钥留在 Chat，不假装能发", () => {
+test("没有任何可对话路线时回 no_chat_route，不是红错", () => {
   const chat = store({ runtimeId: "enjoy-local", hasKey: false })
-  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: false }), false)
+  assert.equal(chat.read().error, NO_CHAT_ROUTE)
+  assert.equal(chat.read().picker, false)
+})
+
+test("有其它路线但 Enjoy Local 无密钥仍是 NEED_PROVIDER_KEY", () => {
+  const chat = store({ runtimeId: "enjoy-local", hasKey: false })
+  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: true }), false)
   assert.equal(chat.read().error, NEED_PROVIDER_KEY)
   assert.equal(chat.read().picker, false)
 })

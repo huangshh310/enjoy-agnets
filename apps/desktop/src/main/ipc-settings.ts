@@ -28,6 +28,7 @@ import { getSetting, setSetting } from "./services/database"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
+import { scheduleChatReadinessPush } from "./services/chat-readiness"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
@@ -107,6 +108,7 @@ function registerCoreSettingsIpc() {
       baseURL: input.baseURL,
       modelId: input.modelId
     })
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.setDefaultModel", async (_event, raw) => {
@@ -179,14 +181,17 @@ function registerProviderIpc() {
       reasoningFamily: input.reasoningFamily,
       proxy: input.proxy
     })
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
     await removeProfile(ProviderIdInput.parse(raw).id)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.activateProvider", async (_event, raw) => {
     await activateProfile(ProviderIdInput.parse(raw).id)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.setActiveModel", async (_event, raw) => {
@@ -202,6 +207,7 @@ function registerProviderIpc() {
   })
   ipcMain.handle("settings.setProviderEnabled", async (_event, raw) => {
     await setStoredProviderEnabled(raw)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
 }

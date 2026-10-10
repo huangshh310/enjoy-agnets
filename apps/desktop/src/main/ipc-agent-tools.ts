@@ -30,6 +30,7 @@ import {
   listAgentTools,
   upsertAgentTool
 } from "./services/agent-tools-service"
+import { scheduleChatReadinessPush } from "./services/chat-readiness"
 import { writeSessionRuntime } from "./services/agent-tools-vault"
 import { restoreCliConfig, syncCliConfig } from "./services/agent-tools-sync"
 export const AGENT_TOOLS_CHANNELS = [
@@ -57,7 +58,11 @@ export const AGENT_TOOLS_CHANNELS = [
 
 export function registerAgentToolsIpc() {
   ipcMain.handle("agentTools.list", async () => listAgentTools())
-  ipcMain.handle("agentTools.detect", async () => detectAgentTools())
+  ipcMain.handle("agentTools.detect", async () => {
+    const listed = await detectAgentTools()
+    scheduleChatReadinessPush()
+    return listed
+  })
   ipcMain.handle("agentTools.upsert", async (_event, raw: unknown) => {
     const input = UpsertAgentToolInput.parse(raw)
     return upsertAgentTool(input)
@@ -76,7 +81,9 @@ export function registerAgentToolsIpc() {
   })
   ipcMain.handle("agentTools.login", async (_event, raw: unknown) => {
     const input = LoginAgentToolInput.parse(raw)
-    return loginAgentTool(input.id, input.provider)
+    const result = await loginAgentTool(input.id, input.provider)
+    scheduleChatReadinessPush()
+    return result
   })
   ipcMain.handle("agentTools.openDocs", async (_event, raw: unknown) => {
     const input = AgentToolIdInput.parse(raw)
@@ -100,7 +107,9 @@ export function registerAgentToolsIpc() {
   })
   ipcMain.handle("agentTools.inspect", async (_event, raw: unknown) => {
     const input = InspectAgentToolInput.parse(raw)
-    return inspectAgentTool(input.id, input.refresh)
+    const inspected = await inspectAgentTool(input.id, input.refresh)
+    scheduleChatReadinessPush()
+    return inspected
   })
   ipcMain.handle("agentTools.disposeSession", async (_event, raw: unknown) => {
     const input = DisposeSessionInput.parse(raw)

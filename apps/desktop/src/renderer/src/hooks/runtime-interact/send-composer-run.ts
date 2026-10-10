@@ -16,6 +16,8 @@ import {
 } from "../composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
+import { NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
+import { peekChatReady } from "../chat-readiness-cache.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
@@ -69,8 +71,9 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   store.setRunning(true)
-  if (!guardComposerSend(store)) {
+  if (!guardComposerSend(store, { chatReady: peekChatReady() })) {
     store.setRunning(false)
+    if (useChatStore.getState().error === NO_CHAT_ROUTE) return
     if (prepared?.content) {
       restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     } else if (!store.sessionId) {

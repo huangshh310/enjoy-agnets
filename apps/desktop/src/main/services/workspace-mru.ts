@@ -20,12 +20,14 @@ export function rememberRecentWorkspace(recent: readonly string[], workspaceId: 
   return [workspaceId, ...recent.filter((id) => id !== workspaceId)].slice(0, RECENT_WORKSPACE_CAP)
 }
 
-/** 只有前台用户开跑才写 MRU；心跳 / 续跑 / 自动化不写。 */
+/** 只有前台用户开跑才写 MRU；心跳 / 续跑 / 自动化 / 工作流子步不写。 */
 export function shouldRememberWorkspaceOnRun(input: {
   automationSource?: unknown
   isResume?: boolean
   isHeartbeat?: boolean
+  rememberMru?: boolean
 }): boolean {
+  if (input.rememberMru === false) return false
   return !input.automationSource && !input.isResume && !input.isHeartbeat
 }
 
@@ -53,17 +55,22 @@ export function rememberWorkspaceUse(workspaceId: string, store: WorkspaceMruSto
   store.set(RECENT_WORKSPACE_SETTING, JSON.stringify(recent))
 }
 
-/** 删除后按 MRU 收口，并写回 settings。 */
+/** 删除后按 MRU 收口。只有删的是当前 last 才改写 lastWorkspaceId。 */
 export function nextWorkspaceIdAfterRemove(
   removedId: string,
   remainingIds: readonly string[],
   store: WorkspaceMruStore
 ): string | null {
+  const currentLast = store.get("lastWorkspaceId") ?? ""
   const recent = parseRecentWorkspaceIds(store.get(RECENT_WORKSPACE_SETTING)).filter(
     (id) => id !== removedId && remainingIds.includes(id)
   )
   const next = pickRecentWorkspaceAfterRemove(recent, remainingIds)
   store.set(RECENT_WORKSPACE_SETTING, JSON.stringify(recent))
-  store.set("lastWorkspaceId", next ?? "")
+  if (currentLast === removedId) {
+    store.set("lastWorkspaceId", next ?? "")
+    return next
+  }
+  if (currentLast && remainingIds.includes(currentLast)) return currentLast
   return next
 }
