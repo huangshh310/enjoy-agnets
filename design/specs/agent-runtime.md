@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许：仅 user origin 种子写盘/bash；含元字符的 bash 不记前缀）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许仅 user origin 种子写盘/bash；重启回挂卡进前台；缺 Key 回 `{ok:false,code}`）
 
 ## 当前真相
 
@@ -124,6 +124,8 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：未知 `turn.attention` / `workflow` 让整条 `run.end` / `run.error` 过不了 `safeParse`。正确做法：`TurnOutcome.attention` 用 `TurnAttention.catch("neutral")`，`workflow` 用 `TurnWorkflow.catch("todo")`。
 - **隐患**：补跑超时聊天横幅写成「出错」。自动化侧仍 `failed` + `catch_up_approval_timeout`；聊天侧 `turn.attention=neutral`，走 notice「补跑等待确认超时，未运行」，不出红条。工具行 `approval.resolved.code` 也是该码（中性文案），禁止写成 `run_failed`。
 - **隐患**：HMAC 失败行被结清成 cancelled + `sdkApproved=0` 后，检查点里仍在，走 `planSdkReplay` 回 SDK `approved:false`，run 继续。正确做法：检查点里只要有 HMAC 失败行就 `endRestoredRunWithoutSdkReply`；结清 HMAC 失败行不写 `sdkApproved`。回挂四条取消路径 settle 用 `failed`，不是用户 Stop。
+- **隐患**：重启后 HMAC 通过、检查点还在，Inbox 仍有拍板幽灵行，会话里卡没了、write_file 转圈。根因：`restoreWaitingRuns` 会重发 `approval.required`，但 Composer 已 idle，`belongsToForeground` 要求 `running`，事件进不了 `pendingApproval`；没有 park 时 `nextParks` 也丢掉；`did-finish-load` 还可能早于 `agent.onEvent` 订阅。正确做法：同会话空闲时 `approval.required` / `run.error` 归前台；无 park 也要为回挂审批建停车；开会话时若卡仍空，用 Inbox 活未决回组一张可决策卡。e2e：`approval-restart.spec.ts`。
+- **隐患**：闸按 #130 只拦 `definitely_unusable`；`hasEnjoySecret=false` 且 `verifiedLocal=unknown`（或 `ENJOY_E2E_CHAT_READY` 非法值掉夹具）会放行，随后 `resolveRunSecret` throw 英文 `Add an API key…`，IPC 原句进红条。正确做法：闸规则不动；解析不到 Key 回 `{ok:false, code:no_chat_route}`；classifier 把该英文收成 `no_chat_route`，界面「还差一步」。
 - **隐患**：归档拷贝一份 `abortLiveRun`，`cancelCodingStream` 生产失败被空 catch 吃掉；`cancelInFlightDesktopAct` 无范围，归档 A 会掐 B 的在途 act。正确做法：与 `abortAgent` 共用 `abortActiveRunMemory`；生产环境 log cancel 错误；取消 act 按 session/run 限定。
 - 消息底 ActionChip 与虚线泡「立即纠偏」不是同一件事。Chip 未点击不得自动跑；idle 后自动消费的只是用户主动入队的 followupQueue。`waiting_review` 不要自启下一轮。围栏必须从可见 Markdown 剥离，不要把 `:::enjoy-actions` 渲染进气泡。idle 点 Chip 必须 `takeQuotedContexts` 并进本轮 Prompt，否则引用会漏到下一轮。
 - 用户在 stream 还没结束时点 Allow：必须 `resumeAfterPump`。pending 未清空时不能提前 return 丢掉该标志。consume 结束后用 `decideAfterConsume`：还有 pending 就 park；`resumeAfterPump` 且最后工具已是 `output-available` 则收工，不要只因为点过 Allow / 见过 `approval.required` 再开一轮 ToolLoop。`finally` 里若仍有 pending 不得 `pumpStream`（会把 pending 清空）。

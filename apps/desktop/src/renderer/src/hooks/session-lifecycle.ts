@@ -17,6 +17,7 @@ import {
   parkedComposerPatch
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
+import { applyHydratedLivePending } from "./hydrate-live-pending-approval"
 import { applySessionHydrate } from "./session-hydrate"
 import { bumpSessionHydrateGeneration } from "./session-hydrate-generation"
 import { messagesAfterSessionSwitch } from "./session-hydrate-finish"
@@ -127,6 +128,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     sessionId,
     sessionRunning
   })
+  await applyHydratedLivePending(sessionId)
   useAttentionStore.getState().clearCompleteIfErrored(sessionId)
   queueComposerFocus()
 }

@@ -23,6 +23,17 @@ export function belongsToForeground(
     if (!running) return true
     return !currentRunId || currentRunId === runId
   }
+  // 重启回挂：Composer 已 idle，approval.required / 终态仍要进当前会话。
+  if (isIdleSessionRestoreEvent(event.type) && !running) return true
   if (!running) return false
   return !currentRunId || !runId || currentRunId === runId
+}
+
+function isIdleSessionRestoreEvent(type: StreamEvent["type"]): boolean {
+  return (
+    type === "approval.required" ||
+    type === "approval.resolved" ||
+    type === "run.error" ||
+    type === "run.end"
+  )
 }

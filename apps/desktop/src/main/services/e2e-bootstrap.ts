@@ -9,13 +9,12 @@ import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { e2eChatReadyKind } from "./e2e-chat-readiness"
 import { e2eWorkspaceCount } from "./e2e-workspace-count"
 import { isE2eStub } from "./e2e-stub"
-import { createSession } from "./session-queries"
+import { createSession, listSessions } from "./session-queries"
 import { upsertProfile } from "./secrets"
 import { openWorkspace } from "./workspace"
 import { seedE2eAutomations } from "./e2e-stub-automations"
 import { shouldSeedE2eLedger } from "./e2e-stub-ledger-data"
 import { seedE2eLedgerSession } from "./e2e-stub-ledger"
-import { addKnowledgeSource, indexKnowledgeSource } from "./knowledge-service"
 import { e2eSessionCount } from "./e2e-session-count"
 
 export async function bootstrapE2eStub(): Promise<void> {
@@ -42,8 +41,6 @@ export async function bootstrapE2eStub(): Promise<void> {
   }
   if (shouldSeedE2eLedger()) await seedE2eLedgerSession(first.id)
   seedE2eAutomations()
-  const source = await addKnowledgeSource(first.id, ".")
-  await indexKnowledgeSource(source.id, true)
 }
 
 async function seedE2eWorkspace(root: string, heading: string) {
@@ -69,6 +66,8 @@ async function seedE2eProfile(): Promise<void> {
 }
 
 async function seedE2eSessions(workspaceId: string): Promise<void> {
+  const existing = await listSessions(workspaceId)
+  if (existing.length > 0) return
   const count = e2eSessionCount()
   for (let i = 0; i < count; i += 1) {
     const title = i === 0 ? "New agent" : `Seed session ${String(i).padStart(2, "0")}`

@@ -84,9 +84,16 @@ export async function resolveRunSecret(
   const ready = await hasSecret()
   const secret = await readSecret()
   if (!ready || !secret) {
-    throw new Error("Add an API key in Settings before running an agent.")
+    throw new Error(MISSING_RUN_SECRET)
   }
   return secret
+}
+
+/** 闸已放行但解析密钥时才确定没有 Key。禁止把这句英文 throw 摊进 UI。 */
+export const MISSING_RUN_SECRET = "Add an API key in Settings before running an agent."
+
+export function isMissingRunSecretError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("Add an API key in Settings")
 }
 
 export async function readResponseMessages(result: unknown): Promise<ModelMessage[]> {

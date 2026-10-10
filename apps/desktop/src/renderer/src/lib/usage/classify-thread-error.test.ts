@@ -73,6 +73,12 @@ test("ACP 未登录不是可重试供应商错误", () => {
     classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
     "no_chat_route"
   )
+  assert.equal(
+    classifyThreadError(
+      "Error invoking remote method 'agent.run': Error: Add an API key in Settings before running an agent."
+    ),
+    "no_chat_route"
+  )
   assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "needs_key")
   assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "generic")
   assert.equal(classifyThreadError(NEED_MODEL), "needs_model")

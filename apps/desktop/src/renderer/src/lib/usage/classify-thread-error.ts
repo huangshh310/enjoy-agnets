@@ -95,6 +95,7 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   ) {
     return "needs_key"
   }
+  if (lower.includes("add an api key in settings")) return "no_chat_route"
   if (message === NEED_REMOTE_CONNECTED || lower.includes("remote_disconnected") || message.includes("REMOTE_DISCONNECTED")) {
     return "remote_disconnected"
   }

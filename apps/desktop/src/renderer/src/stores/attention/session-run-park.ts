@@ -43,7 +43,7 @@ export function seedParkFromRunStart(sessionId: string, runId: string, now = Dat
   }
 }
 
-/** 没有 park 时只认 run.start。其它事件保持原表。 */
+/** 没有 park 时认 run.start，以及回挂的 approval.required / run.error。 */
 export function nextParks(
   parks: Record<string, ParkedRun>,
   sessionId: string,
@@ -51,8 +51,14 @@ export function nextParks(
 ): Record<string, ParkedRun> | null {
   const existing = parks[sessionId]
   if (!existing) {
-    if (event.type !== "run.start") return null
-    return { ...parks, [sessionId]: seedParkFromRunStart(sessionId, event.runId) }
+    if (event.type === "run.start") {
+      return { ...parks, [sessionId]: seedParkFromRunStart(sessionId, event.runId) }
+    }
+    if (event.type === "approval.required" || event.type === "run.error") {
+      const seeded = seedParkFromRunStart(sessionId, event.runId)
+      return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
+    }
+    return null
   }
   return { ...parks, [sessionId]: applyEventToPark(existing, event) }
 }

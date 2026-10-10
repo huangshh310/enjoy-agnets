@@ -17,7 +17,12 @@ import {
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { NEED_MODEL, NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
+import {
+  classifyThreadError,
+  NEED_MODEL,
+  NEED_PROVIDER_KEY,
+  NO_CHAT_ROUTE
+} from "../../lib/usage/classify-thread-error.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import {
@@ -202,11 +207,20 @@ async function launchComposerRun(
   } catch (error) {
     dropEmptyPendingAssistant()
     store.setRunning(false)
-    store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
+    store.setError(composerSendError(error))
     if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }
+}
+
+function composerSendError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  const kind = classifyThreadError(raw || SEND_FAILED_RESTORE)
+  if (kind === "no_chat_route") return NO_CHAT_ROUTE
+  if (kind === "needs_model") return NEED_MODEL
+  if (kind === "needs_key") return NEED_PROVIDER_KEY
+  return raw || SEND_FAILED_RESTORE
 }
 
 function currentCaps(store: ChatState) {

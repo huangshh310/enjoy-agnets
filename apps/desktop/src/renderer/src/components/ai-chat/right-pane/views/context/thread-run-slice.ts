@@ -22,23 +22,21 @@ export function citedSourcesFromMessages(messages: SliceMessage[], limit = 5): C
 }
 
 export function toolsFromMessages(messages: SliceMessage[], limit = 8): ThreadToolCall[] {
-  return messages
-    .slice(-3)
-    .flatMap((message) => (message.role === "assistant" ? (message.tools ?? []) : []))
-    .slice(-limit)
+  const last = [...messages].reverse().find((message) => message.role === "assistant")
+  return (last?.tools ?? []).slice(-limit)
 }
 
 export function toolRunKind(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" | "catch_up" {
+  if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
+  if (state === "output-available") return "ok"
   const abort = toolAbortKind(tool)
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"
   if (abort === "neutral") return "catch_up"
-  if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
-  if (state === "output-available") return "ok"
   if (state === "output-error") return "error"
   if (state === "output-denied") return "denied"
   return "running"
