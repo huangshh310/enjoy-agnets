@@ -9,11 +9,25 @@ test("cost_missing 已存在时 015 不报错", () => {
   applyMigrations(db, MIGRATIONS.filter((item) => item.version <= 13))
   db.exec("ALTER TABLE telemetry_metrics ADD COLUMN cost_missing TEXT")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [15])
+  assert.deepEqual(applied, [14, 15])
+  assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), true)
+  assert.equal(columnExists(db, "approvals", "sdk_approval_id"), true)
+})
+
+test("审批 SDK 列已存在时 v14 不报错", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db, MIGRATIONS.filter((item) => item.version <= 13))
+  db.exec("ALTER TABLE approvals ADD COLUMN request_args TEXT")
+  db.exec("ALTER TABLE approvals ADD COLUMN sdk_approved INTEGER")
+  const applied = applyMigrations(db)
+  assert.deepEqual(applied, [14, 15])
+  assert.equal(columnExists(db, "approvals", "request_args"), true)
+  assert.equal(columnExists(db, "approvals", "sdk_approved"), true)
+  assert.equal(columnExists(db, "approvals", "sdk_approval_id"), true)
   assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), true)
 })
 
-test("旧分支把 v14 记成 cost-missing 时补上 #118 的 sdk 列", () => {
+test("旧分支把 v14 记成 cost-missing 时补上审批 SDK 列", () => {
   const db = new DatabaseSync(":memory:")
   applyMigrations(db, MIGRATIONS.filter((item) => item.version <= 13))
   db.exec("ALTER TABLE telemetry_metrics ADD COLUMN cost_missing TEXT")
@@ -21,17 +35,25 @@ test("旧分支把 v14 记成 cost-missing 时补上 #118 的 sdk 列", () => {
     Date.now()
   )
   assert.equal(columnExists(db, "approvals", "sdk_approved"), false)
-  applyMigrations(db)
+  const applied = applyMigrations(db)
+  assert.deepEqual(applied, [15])
   assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), true)
   assert.equal(columnExists(db, "approvals", "request_args"), true)
   assert.equal(columnExists(db, "approvals", "sdk_approved"), true)
   assert.equal(columnExists(db, "approvals", "sdk_reason"), true)
   assert.equal(columnExists(db, "approvals", "resume_code"), true)
+  assert.equal(columnExists(db, "approvals", "sdk_approval_id"), true)
+  const indexes = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'approvals_sdk_identity'")
+    .all() as Array<{ name: string }>
+  assert.equal(indexes.length, 1)
+  assert.deepEqual(applyMigrations(db), [])
 })
 
-test("没有 v14 记账时不提前加 sdk 列，留给 #118", () => {
+test("没有 v14 记账时不提前加 sdk 列", () => {
   const db = new DatabaseSync(":memory:")
-  applyMigrations(db)
-  assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), true)
+  applyMigrations(db, MIGRATIONS.filter((item) => item.version <= 13))
   assert.equal(columnExists(db, "approvals", "sdk_approved"), false)
+  assert.equal(columnExists(db, "approvals", "sdk_approval_id"), false)
+  assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), false)
 })

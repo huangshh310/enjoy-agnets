@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-09（015 列守卫 + 被占用的 v14 补列）
+> 进程边界与安全基线。最后更新：2026-10-10（014 审批 SDK + 015 cost_missing 列守卫；typecheck 不再等上游；renderer 开 no-undef）
 
 ## 当前真相
 
@@ -51,10 +51,10 @@ Main Process（可信）
 - `react` / `react-hooks` plugin **本轮未开**：`set-state-in-effect` 58 条、`exhaustive-deps` 45 条、`refs` 25 条属架构级改造，与 CU-P1 并行做会大面积撞车。开之前先单列一轮。
 - 三条 shadcn 视觉规则（`no-restyle` / `no-raw-colors` / `no-arbitrary-values`）继续只管 `className`，见 `ui` spec。
 - 有意豁免（不是漏开）：`packages/ui/components/ai-elements/**` 关掉未使用参数检查（registry 原文件形态，重排会与上游更新长期冲突）；`**/*.d.ts` 关 `triple-slash-reference`（`env.d.ts` 靠它接 preload 类型）。
-- **渲染进程边界由 lint 强制**：`apps/desktop/src/renderer/**` 上 `no-restricted-imports` 禁 `@enjoy-agents/agent-core` / `@enjoy-agents/agent-harness` / `@enjoy-agents/db` / `@enjoy-agents/knowledge` / `@enjoy-agents/providers` 主入口、`ai`、`electron`，以及 `node:*` / `fs` / `path` / `os` / `child_process` / `net` / `http(s)` 与 `@ai-sdk/*`。
-- 该豁免的例外只有 renderer 的 `*.test.ts`：它们是 `node:test` 源码扫描器，不进 bundle，所以 override 里关掉边界规则。
+- **渲染进程边界由 lint 强制**：`apps/desktop/src/renderer/**` 上 `no-restricted-imports` 禁 `@enjoy-agents/agent-core` / `@enjoy-agents/agent-harness` / `@enjoy-agents/db` / `@enjoy-agents/knowledge` / `@enjoy-agents/providers` 主入口、`ai`、`electron`，以及 `node:*` / `fs` / `path` / `os` / `child_process` / `net` / `http(s)` 与 `@ai-sdk/*`。另开 `no-undef` + `env.browser`：oxlint 默认对 TS 关 no-undef，合入丢 named import 会白屏而 lint 绿。
+- 该豁免的例外只有 renderer 的 `*.test.ts`：它们是 `node:test` 源码扫描器，不进 bundle，所以 override 里关掉边界规则；测试文件同样开 `no-undef`，并加 `env.node`。
 
-**测试（`pnpm test` = `turbo run test`，`test` 依赖 `^typecheck`）**
+**测试（`pnpm test` = `turbo run test`；typecheck / test 不再 `dependsOn: ["^typecheck"]`，避免上游红了下游根本不跑）**
 
 - 每个工作区的 `test` 脚本只准用 glob 自动发现（`node --experimental-strip-types --test "src/**/*.test.ts"`；`packages/ui` 是 `components/**/*.test.ts`）。禁止回退成手写文件清单。desktop 额外 `--import ./src/main/services/test-hooks/register.mjs`：electron 桩 + 无后缀相对 import 补 `.ts`，好让行为测试走 `decideApproval` / `failAgentPump` 等生产路径。
 - 历史教训：手写 376 项清单里留着一个已删除的 `company/billing/billing.test.ts`，`node --test` 在**收集阶段**就 exit 1，整个 desktop 套件一条都没跑，而 CI 只显示「test 失败」这一行。同批还有 20 个测试文件从未被任何脚本引用。
@@ -70,7 +70,7 @@ Main Process（可信）
 ### 数据
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
-- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。015：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。014 留给 #118 的 `approval-sdk-response`。015 的 ADD 有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上 #118 的 `request_args` / `sdk_*` / `resume_code`，不必重建库。向量存在 SQLite，检索在本机。
+- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014 / #118）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`。015（#119）：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。014 / 015 的 ADD 都有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上审批 SDK 列（含 `sdk_approval_id` 与 UNIQUE 索引）和 `cost_missing`，不必重建库。向量存在 SQLite，检索在本机。
 - 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
@@ -109,11 +109,11 @@ Main Process（可信）
 
 ## 已知坑
 
-- [open] `no-inline-styles` / `no-unknown-classes` / `require-static-classes` 仍未打开：玻璃皮肤指针、mascot 与动态 className 会刷屏。2026-10 已开的是 `correctness` 加 `typescript` / `import` / `unicorn`；`react` / `react-hooks`（约 131 条：`set-state-in-effect` 58、`exhaustive-deps` 45、`refs` 25）是架构级改造，留给单独一轮，别和功能 PR 混在一起。
+- [open] `no-inline-styles` / `no-unknown-classes` / `require-static-classes` 仍未打开：玻璃皮肤指针、mascot 与动态 className 会刷屏。2026-10 已开的是 `correctness` 加 `typescript` / `import` / `unicorn`；renderer 另开 `no-undef` + `env.browser`（oxlint 默认对 TS 关 no-undef，合入丢 import 会白屏而 lint 绿）。`react` / `react-hooks`（约 131 条：`set-state-in-effect` 58、`exhaustive-deps` 45、`refs` 25）是架构级改造，留给单独一轮，别和功能 PR 混在一起。
 - `@shadcn/lint` 抱怨项目 `cn`：本仓 `cn` 是 0.2.6，linter 语法要 ≥0.3.2，于是它改用自带 `cn` 0.3.2。lint 校验的 className 合并语义因此与 app 运行时不一致——升 `cn` 之前，三条视觉规则的结论只当参考。详见 `ui` spec。
 - [guard:.oxlintrc.json renderer override] 渲染进程打 `@enjoy-agents/agent-core` 主入口会把 `node:` 打进 bundle：现在 `no-restricted-imports` 直接报错，不再只靠约定。
 - **隐患**：desktop `node:test` 行为测试若静态相对 import 生产模块（`approval-hmac` / `decide-approval` / `fail-agent-pump` / `run-usage` / `consume-run`），守卫会因这些文件 value-import `@enjoy-agents/db` / 合约入口而红。正确做法：纯函数抽到无桶入口的叶子（如 `run-usage-accumulate.ts`）再测，或测试里 `await import(...)` 动态加载；ACP 桶仍只能动态 import，`--experimental-strip-types` 会把 `private readonly` 参数属性剥成非法语法。泵 finally 的缺用量测试必须经过 `consumeRun`，不要只调 `finalizePumpUsage`。
-- **隐患**：#119 早期把 `cost_missing` 写成 v14。本地库若跑过那一刀，`schema_migrations` 已有 version=14，#118 的 `approval-sdk-response` 会被跳过。正确做法：015 的 ADD 先看列在不在；只要 v14 已记账，启动时按列补 `cost_missing` 和 #118 的 `request_args` / `sdk_*` / `resume_code`。#118 合入后它自己的 v14 SQL 仍是裸 ALTER，同步 main 时改成同一套守卫。
+- **隐患**：#119 早期把 `cost_missing` 写成 v14。本地库若跑过那一刀，`schema_migrations` 已有 version=14，#118 的 `approval-sdk-response` 会被跳过。正确做法：v14 与 015 都走 `addColumnIfMissing` / `ensureApprovalSdkColumns`；只要 v14 已记账（无论 name），`repairClaimedV14` 补 `cost_missing` 和审批 SDK 列（含 `sdk_approval_id` + UNIQUE `approvals_sdk_identity`）。两边都幂等，不必重建库。
 
 - Workflow 子 agent：`persistChildRun` 在步骤 `running` checkpoint 之后把 `child_run_id` 写入当前 `run_steps` 行，`getWorkflow` 投影 `childRunId`。`cancelWorkflow` 先看内存 `childRuns`，没有再读库。崩溃发生在 persist running 与 `onChildRun` 之间仍可能漏绑。
 - `settings` KV 表曾是 JSON 垃圾场：vault / harness 密钥 / automations / overrides / runtimes / 压缩状态全塞一张表。2026-09 收敛：vault 与 harness 密钥迁到 `secrets_vault` 专表（惰性迁移旧键）；automations / overrides / session.runtimes 读取统一走 Zod 校验（坏条目丢弃）；压缩状态读侧已有 `SessionCompaction.parse`。仍在 settings 里的 JSON 是小对象（preferences 等），可接受。
@@ -134,4 +134,5 @@ Main Process（可信）
 - `window.open` 只对 `http:` / `https:` 走 `shell.openExternal`，一律 `{ action: "deny" }`。
 - `flushActiveRuns` 与泵的 `parkForApproval` 都顶层静态 import `persistWaitingRun`。
 - SQLite：`PRAGMA busy_timeout = 5000` + `core-indexes` 迁移（sessions/messages/message_parts/runs）。
+- **隐患**：`turbo` 的 `typecheck.dependsOn: ["^typecheck"]` 会让 desktop 等 ipc-contract。上游一红，下游 `formatToolName` 未定义这种 renderer 错根本不跑；CI 的 `pnpm typecheck` 接着失败，`pnpm test` 也被跳过。渲染层源文件在 `tsconfig.web.json` 里（只排除 `*.test.ts`），tsc 能抓，但要等它跑到。正确做法：typecheck / test 不要 `^typecheck`；renderer 开 `no-undef`，让 lint（typecheck 之前）先拦未定义标识符。
 - 泵 / 审批 / 检查点测试不要用 `sleep` 或「队列空了」当 idle。排队自启用 `DrainableQueue.drain()`；`agent.run` 必带 `commandId`，收据在 `holdAgentRun` 之后、`persistUserTurn` 之前写入。

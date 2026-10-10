@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（硬拒 `errorText` 走人话；`advancedCoordsTip` 不露工程词）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（Dock / 线程 / @菜单默认走人话；HMAC 进开发者档）
 
 ## 当前真相
 
@@ -32,7 +32,7 @@
 
 打包 `beforePack`：`scripts/stage-computer-use.cjs` 编出 `native/computer-use/pack/<platform>-<arch>/`。darwin 在有 `CU_CODESIGN_IDENTITY` / `CSC_NAME` / `APPLE_CODESIGN_IDENTITY` 时 `codesign` 真实 helper，并写 `computer-use.identity.json`；没有身份不假装已签名。开发 `swiftc` → `.build/computer-use` 未签名不得报「已就绪」。
 
-右栏 Desktop 只读最近观察（窗名 / appKey / 缩略若有；testid `desktop-rail-card` / `desktop-rail-empty` / `desktop-rail-thumb`）。无观察写「还没有桌面观察」，禁止假装「正在控制」。Execute 下已批目标的 `desktop_act`（click/type/key/move/drag/scroll，**不含 wait**）进入 `deliverAct` 时点亮已有 overlay 窗冷静蓝边 + 「正在操控 · {app}」+「停止」/ Esc（testid `cu-overlay-frame` / `cu-overlay-stop`）。`onAct` 把当前 runId 传进 `beginDesktopActOverlay`（ALS `runWithActiveRunId` 绑活泵 / `executeStoredTool`，再退回 `currentPumpingRunId`）。结束 / 取消 / 失败 / 一键停立刻熄，**不**画空成功条。一键停 / Esc：先熄铬，再 `cancelInFlightDesktopAct`（拒绝在途 act + `child.kill`），再 `abortAgent` **该** runId（已知时不扫全部 ActiveRun）。Deny 待批 `desktop_act` 发生在 `deliverAct` 之前，overlay 本来就没亮。overlay 是铬，不是第二套遥控器；审批仍走 Permission Dock（含二次确认）。探索态（`plan`/`ask`）`createBuiltinAgentTools` 经 `isReadOnlyAgentMode` + `shouldRegisterDesktopControlTools` **不**调 `desktopControlTools()`，不 ensure overlay；能力轨在电脑操控开启时出「桌面仅执行」。视觉真源 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html)；产品锁 [`../references/cu-p0-c-overlay.md`](../references/cu-p0-c-overlay.md)。不宣称像素 1:1。§3.2a TTL 冻结 / resume / 重拍已由 #80 落地；UI 待批文案写「TTL 已冻结」。
+右栏 Desktop 只读最近观察（窗名 / appKey / 缩略若有；testid `desktop-rail-card` / `desktop-rail-empty` / `desktop-rail-thumb`）。无观察写「还没有桌面观察」，禁止假装「正在控制」。Execute 下已批目标的 `desktop_act`（click/type/key/move/drag/scroll，**不含 wait**）进入 `deliverAct` 时点亮已有 overlay 窗冷静蓝边 + 「正在操控 · {app}」+「停止」/ Esc（testid `cu-overlay-frame` / `cu-overlay-stop`）。`onAct` 把当前 runId 传进 `beginDesktopActOverlay`（ALS `runWithActiveRunId` 绑活泵 / `executeStoredTool`，再退回 `currentPumpingRunId`）。结束 / 取消 / 失败 / 一键停立刻熄，**不**画空成功条。一键停 / Esc：先熄铬，再 `cancelInFlightDesktopAct`（拒绝在途 act + `child.kill`），再 `abortAgent` **该** runId（已知时不扫全部 ActiveRun）。Deny 待批 `desktop_act` 发生在 `deliverAct` 之前，overlay 本来就没亮。overlay 是铬，不是第二套遥控器；审批仍走 Permission Dock（含二次确认）。探索态（`plan`/`ask`）`createBuiltinAgentTools` 经 `isReadOnlyAgentMode` + `shouldRegisterDesktopControlTools` **不**调 `desktopControlTools()`，不 ensure overlay；能力轨在电脑操控开启时出「桌面仅执行」。视觉真源 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html)；产品锁 [`../references/cu-p0-c-overlay.md`](../references/cu-p0-c-overlay.md)。不宣称像素 1:1。§3.2a TTL 冻结 / resume / 重拍已由 #80 落地。Dock 默认句是「在「{app}」里{动作}「{控件}」」；TTL / HMAC / bundle id / 裸 action 只在开发者文案档（`enjoy-agents-dev-copy=1`）。
 
 ## 不变量
 
@@ -99,6 +99,7 @@
 - **CU-P1-36 坐标通道**：`desktopActIsBareCoord` 认任一 `x`/`y`/`x2`/`y2`，**不因 elementId 放行**。`normalizeActInput` 仍会把坐标转给执行器，所以审批闸与 `actOnce` 必须共用此谓词。缺省 OFF 是 `denied` + `code=bare_coords_disabled`（闸决策与 `tool.result.result.code` 同一常量）；ON 走 `desktopActAlwaysAsks` + `bypassesSessionAllow`。不要只写英文 `reason` 不带码，renderer 无法画硬拒卡。不要把坐标画成主路径，也不要用失败包里的假观察绕 §3.2a 二次确认。
 - **CU-P1-36 高级坐标铬**：产品页已嵌开关，出厂 OFF。打开后每次 Dock 并划掉本会话/始终允许。不要另开第二套遥控器，也不要把坐标画成主路径。
 - **子循环不认 allow_always**：`WaitForSubagentApproval` 仍是 `allow | deny | allow_session`。父路径 `applyApprovalDecision` 已写簿后，`toSubagentUserDecision` 把 `allow_always` 折成 `allow`，禁止再写会话表。
+- **隐患**：默认 Dock 若再摊 `click · com.apple.notes` / 「本观察 TTL 已冻结（§3.2a）」/ HMAC 令牌，用户听不懂。正确做法：默认只显示名 + 人话动作；工程细节进 `isDevCopyEnabled()`，testid `desktop-approval-app-key` 只在开发者档出现。
 - **testid 拆分**：旧 `approval-always` 曾指本会话。现在本会话是 `approval-session`，持久是 `approval-always-app`。testid 在四选一选项上，不要挂到「继续」。不要把旧 testid 接到 `allow_always`。
 - **H2 write/hit**：审批层按 `desktop_act:<appKey>` 写入、按 `has("desktop_act:"+appKey)` 或 `has("desktop_act:*")` 命中。不要再 `sessionApprovedTools.add("desktop_act")`，也不要按裸工具名放行。
 - **P1-S 错 SoT**：ActiveRun 空 Set 不能当会话记忆；`builtin_tools.anyDesktopSession` 不能当任意桌面。正确做法：会话表 keyed by `sessionId`，run 只拿副本。切会话不清表（policy B）；归档/删除才清。进程退出表没。

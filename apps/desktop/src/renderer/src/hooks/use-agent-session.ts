@@ -2,6 +2,9 @@ import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { StreamEvent, type AskUserAnswers, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { queryClient } from "../lib/query-client"
+import { rememberOpenedWorkspace } from "./remember-opened-workspace"
+import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
@@ -21,6 +24,7 @@ import {
   type ChangedFileRow,
   type ModelOption
 } from "../stores/chat-store"
+import { pickForegroundSession } from "./pick-foreground-session"
 import { resolveApprovalRunId } from "./resolve-approval-run"
 import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
@@ -79,20 +83,14 @@ export function useAgentSession() {
     void applySettingsSnapshot(snapshot)
   }, [settingsQuery.data])
 
-  useEffect(() => {
-    const workspaces = workspacesQuery.data
-    const snapshot = settingsQuery.data
-    if (!workspaces || !snapshot) return
-    if (workspaces.length === 0) {
-      useChatStore.getState().setWorkspace(null)
-      return
+  useBootWorkspace(
+    Boolean(settingsQuery.data),
+    settingsQuery.data?.lastWorkspaceId,
+    workspacesQuery.data,
+    (workspace) => {
+      void loadWorkspace(workspace)
     }
-    const selected =
-      workspaces.find((workspace) => workspace.id === snapshot.lastWorkspaceId) ?? workspaces[0]
-    if (selected && useChatStore.getState().workspaceId !== selected.id) {
-      void loadWorkspace(selected)
-    }
-  }, [workspacesQuery.data, settingsQuery.data])
+  )
 
   const workspaceId = useChatStore((state) => state.workspaceId)
   useWorkspaceChangeInvalidation(workspaceId)
@@ -114,21 +112,32 @@ export function useAgentSession() {
 }
 
 export async function loadWorkspace(workspace: WorkspaceRow) {
+  rememberOpenedWorkspace(workspace)
+  if (hasIde()) {
+    try {
+      await getIde().workspace.remember({ workspaceId: workspace.id })
+    } catch {
+      // remember 失败不得挡住切换
+    }
+  }
   const store = useChatStore.getState()
   await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
   store.setWorkspace(workspace)
   await connectSshIfNeeded(workspace)
   await refreshAllWorkspaces()
+  await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
   const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as Array<{
     id: string
     title: string
   }>
-  const current = sessions.find((session) => session.id === store.sessionId) ?? sessions[0]
-  if (current) {
-    await loadSession(current.id, current.title)
+  const currentId = useChatStore.getState().sessionId
+  const picked = pickForegroundSession(sessions, currentId)
+  if (picked === "keep") return
+  if (picked === "create") {
+    await createAndOpenSession(workspace.id, "新对话")
     return
   }
-  await createAndOpenSession(workspace.id, "新对话")
+  await loadSession(picked.id, picked.title)
 }
 
 export { abortComposerRun }

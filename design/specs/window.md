@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（孤儿续跑等 did-finish-load；单实例失败者 exit）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（Chat 标题走会话题或「新对话」）
 
 ## 当前真相
 
@@ -21,7 +21,7 @@
 - 后退/前进是应用内页面历史，不是 `webContents.goBack()`。每个窗口一份栈，不持久化、不跨窗口共享。新窗口的渲染进程只 seed 当前页，不复制来源窗口的 past/future。拖出标签成新窗口这条路径没有做
 - 鼠标侧键在 `mouseup` 上走应用内栈；`mousedown` 只 `preventDefault`。Windows 另在主进程 `app-command` 上拦住 `browser-backward` / `browser-forward`，避免 Chromium 再 `history.back()`。内容区 150ms 位移：后退向右，前进向左。是否位移在改栈的同一刻决定：当前页 `running`，或目标会话的 parked run 仍在输出，或系统减少动效时，不做位移
 - 删除当前页落到 past 末尾。past 空则回到空的新聊天（不 `session.create`）。空项目页同样只切工作区并清前台会话，不打开第一条会话，也不新建
-- 窗口标题走 `BrowserWindow.setTitle`（Win 任务栏、macOS 程序坞窗口列表和调度中心、Linux 同一套）。Chat 有会话标题时用会话标题，否则用当前工作区名；设置、知识库等模块恢复 `Enjoy Agents`。renderer 只传 `label`（去掉换行，最长 80），main 写成 `{label} — Enjoy Agents`；空串恢复品牌名。renderer 不能传入完整标题。macOS 屏幕左上角菜单栏里的应用名不走 `setTitle`，那是 bundle 名，见 `brand` spec
+- 窗口标题走 `BrowserWindow.setTitle`（Win 任务栏、macOS 程序坞窗口列表和调度中心、Linux 同一套）。Chat 走 `displaySessionTitle`：真会话题，或占位「新对话」/ `New agent`（按界面语言）；不要把库里的 `New agent` 摊给中文用户，也不再用工作区名顶会话题。设置、知识库等模块恢复 `Enjoy Agents`。renderer 只传 `label`（去掉换行，最长 80），main 写成 `{label} — Enjoy Agents`；空串恢复品牌名。renderer 不能传入完整标题。macOS 屏幕左上角菜单栏里的应用名不走 `setTitle`，那是 bundle 名，见 `brand` spec
 - 右侧：有更新时先画「有更新」芯片（`no-drag`，点开发行说明），再接小号昼/夜与语言胶囊（`--toggle-size: 10px`）。Win / Linux 最后才是最小化 / 最大化·还原 / 关闭，线标，顺序从左到右是最小化、缩放、关闭
 - macOS 不画这三颗线标。窗口按钮在左上角，侧栏折叠和历史按钮跟在后面：三颗 12px 圆点，顺序是关闭（红）、最小化（黄）、缩放（绿）。悬停才露出符号；窗口失焦时三颗变灰。renderer 用 `navigator.platform` 判断，不读 `process.platform`。仍然是自绘按钮，不改 `frame: false`，也不开原生标题栏 overlay
 - 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。macOS Dock / Cmd+Tab 另走 `app.dock.setIcon`，窗标选项在 Darwin 上无效。详见 `brand` spec。

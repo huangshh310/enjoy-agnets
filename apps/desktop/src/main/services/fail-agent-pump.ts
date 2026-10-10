@@ -2,7 +2,7 @@
  * 泵失败收口：落库 failed、发 run.error。
  * 用户取消由 abortAgent 先发 abort 事件并标 cancelled，这里不覆盖成 failed。
  */
-import { classifyError } from "@enjoy-agents/agent-core"
+import { classifyError, INTERNAL_STORE_ERROR } from "@enjoy-agents/agent-core"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { persistActiveRun } from "./flush-agent-run"
 import { recordMetric } from "./telemetry-service"
@@ -48,6 +48,9 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     return
   }
   const classified = classifyError(error)
+  if (classified.message === INTERNAL_STORE_ERROR) {
+    console.error("agent pump store error", error)
+  }
   persistActiveRun(run, runId, "failed", classified.message)
   recordMetric({
     runId,

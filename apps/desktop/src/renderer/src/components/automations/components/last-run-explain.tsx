@@ -15,7 +15,7 @@ export function LastRunExplain({
   const tipId = `${testId}-tip`
   if (!tip) {
     return (
-      <p className="mt-0.5 text-caption-1-medium text-text-tertiary" data-testid={testId}>
+      <p className="mt-0.5 text-caption-1-medium text-text-primary" data-testid={testId}>
         {text}
       </p>
     )
@@ -29,7 +29,7 @@ export function LastRunExplain({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="text-left text-caption-1-medium text-text-tertiary"
+            className="text-left text-caption-1-medium text-text-primary"
             data-testid={testId}
             aria-describedby={tipId}
           >

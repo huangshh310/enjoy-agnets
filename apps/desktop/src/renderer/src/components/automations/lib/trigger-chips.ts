@@ -25,10 +25,10 @@ export function listTriggerChips(item: Automation): TriggerChip[] {
 }
 
 function chipFor(item: Automation, kind: AutomationTrigger): TriggerChip {
-  if (kind === "cron") return { kind, text: item.cronExpr?.trim() || "cron", mono: true }
+  if (kind === "cron") return { kind, text: item.cronExpr?.trim() || "", mono: false }
   if (kind === "on_save") return { kind, text: "on_save" }
   if (kind === "webhook") {
-    return { kind, text: `webhook · :${item.webhookPort ?? FALLBACK_WEBHOOK_PORT}`, mono: true }
+    return { kind, text: String(item.webhookPort ?? FALLBACK_WEBHOOK_PORT), mono: false }
   }
   return { kind, text: "manual" }
 }
@@ -42,6 +42,9 @@ export function toggleTrigger(
   current: AutomationTrigger[],
   next: AutomationTrigger
 ): AutomationTrigger[] {
+  if (current.length === 1 && current[0] === "manual" && next !== "manual") {
+    return ORDER.filter((kind) => kind === next)
+  }
   const set = new Set(current)
   if (set.has(next)) {
     if (set.size === 1) return current

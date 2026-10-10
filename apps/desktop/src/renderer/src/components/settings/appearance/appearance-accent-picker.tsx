@@ -3,9 +3,11 @@
  */
 import { cx } from "@/utils/cx"
 import { THEME_ACCENTS, applyThemeAccent, useThemeAccent } from "@renderer/hooks/use-theme-accent"
+import { useT } from "@renderer/i18n"
 import { RiCheckLine } from "@remixicon/react"
 
 export function AppearanceAccentPicker() {
+  const t = useT()
   const currentAccent = useThemeAccent()
 
   return (
@@ -41,7 +43,7 @@ export function AppearanceAccentPicker() {
                 isSelected ? "font-semibold text-text-primary" : "text-text-secondary group-hover:text-text-primary"
               )}
             >
-              {item.name}
+              {t(item.nameKey)}
             </span>
           </button>
         )

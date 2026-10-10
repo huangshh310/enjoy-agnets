@@ -56,10 +56,10 @@ export function StatusProjectPicker({ workspaceRootLabel }: { workspaceRootLabel
         <button
           type="button"
           title={t("chat.searchProjects")}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 hover:bg-background-secondary-hover hover:text-text-primary"
+          className="inline-flex min-w-0 max-w-36 cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 hover:bg-background-secondary-hover hover:text-text-primary"
         >
-          <RiFolder6Line className="size-3.5" aria-hidden />
-          {workspaceRootLabel}
+          <RiFolder6Line className="size-3.5 shrink-0" aria-hidden />
+          <span className="truncate">{workspaceRootLabel}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent

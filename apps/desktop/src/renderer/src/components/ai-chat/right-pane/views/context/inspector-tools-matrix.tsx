@@ -185,7 +185,7 @@ function TurnToolTrace({ tools }: { tools: ThreadToolCall[] }) {
             <RiCommandLine className="size-3 shrink-0 text-text-tertiary" />
             <span className="truncate font-medium text-text-primary">{tool.name}</span>
           </div>
-          <ToolStatusPill kind={toolRunKind(tool.state)} />
+          <ToolStatusPill kind={toolRunKind(tool.state, tool)} />
         </div>
       ))}
     </div>
@@ -199,6 +199,13 @@ function ToolStatusPill({ kind }: { kind: ReturnType<typeof toolRunKind> }) {
       <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-state-success-text">
         <RiCheckLine className="size-2.5" />
         <span>{t("chat.inspectorToolOk")}</span>
+      </span>
+    )
+  }
+  if (kind === "skipped") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+        <span className="size-1.5 rounded-full bg-text-tertiary" />
       </span>
     )
   }

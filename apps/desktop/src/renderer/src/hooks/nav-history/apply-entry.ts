@@ -3,6 +3,7 @@
  */
 import { connectSshIfNeeded, disconnectPreviousSsh } from "@renderer/hooks/ssh-session-switch"
 import { loadSession, selectPersistedSession } from "@renderer/hooks/session-lifecycle"
+import { dropDanglingWorkspacePointer } from "@renderer/hooks/workspace-pointer"
 import { workspaceRowFromNode } from "@renderer/hooks/workspace-row"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { DEFAULT_HISTORY_ID } from "./constants"
@@ -60,15 +61,15 @@ async function openWorkspaceHome(row: ReturnType<typeof workspaceRowFromNode>, s
 async function applyDefault(stale: Stale) {
   await navigateTo("/", undefined, undefined, stale)
   if (stale()) return
-  const store = useChatStore.getState()
-  const alive = store.repositories.some((node) => node.id === store.workspaceId && node.kind === "workspace")
   showEmptyHistoryChat()
-  if (store.workspaceId && !alive) clearDanglingWorkspace()
+  dropDanglingWorkspacePointer()
 }
 
 async function navigateEntry(entry: HistoryEntry, stale: Stale) {
   const params = entry.params
   await navigateTo(params?.to ?? "/", params?.params, params?.search, stale)
+  if (stale()) return
+  dropDanglingWorkspacePointer()
 }
 
 async function navigateTo(
@@ -84,19 +85,5 @@ async function navigateTo(
     to: to as "/",
     params: params as never,
     search: (search ?? {}) as never
-  })
-}
-
-/** 项目已从侧栏消失时只清当前工作区指针，别把其它项目列表一起抹掉。 */
-function clearDanglingWorkspace() {
-  useChatStore.setState({
-    workspaceId: null,
-    workspaceName: "No workspace",
-    workspaceRootLabel: "open a folder",
-    workspaceRootPath: null,
-    workspaceKind: "local",
-    remoteStatus: null,
-    remoteLabel: null,
-    remoteError: null
   })
 }

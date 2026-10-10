@@ -1,5 +1,5 @@
 /**
- * 连接页的端点：区域分段、主 API、主 Base URL、另外两条协议、检测。
+ * 连接页的端点：区域分段、主接口、主地址、另外两条协议、检测。
  * 切主 API 只换展示，不改写用户填过的 URL。
  */
 import type { ReactNode } from "react"
@@ -69,7 +69,7 @@ export function ProviderEndpointFields({
       ) : null}
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-[180px_minmax(0,1fr)]">
-        <Field label={t("settings.providers.primaryApi")}>
+        <Field label={t("settings.providers.primaryApi")} hint={t("settings.providers.primaryApiHint")}>
           <Select value={editor.baseAPI} onValueChange={(value) => onChange({ baseAPI: value as ApiStyle })}>
             <SelectTrigger className="h-9 w-full rounded-2lg">
               <SelectValue />
@@ -78,13 +78,17 @@ export function ProviderEndpointFields({
               {WIRE_STYLES.map((style) => (
                 <SelectItem key={style} value={style}>
                   {t(`settings.providers.${STYLE_KEY[style]}`)}
+                  <span className="ml-1 text-caption-2-regular text-text-secondary">
+                    {t(`settings.providers.${STYLE_KEY[style]}Hint`)}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </Field>
         <EndpointInput
-          label={t("settings.providers.primaryBase")}
+          label={t("settings.providers.baseUrl")}
+          hint={t("settings.providers.baseUrlHint")}
           style={editor.baseAPI}
           value={editor.endpoints[editor.baseAPI] ?? ""}
           mismatch={Boolean(editor.detectMismatch?.[editor.baseAPI])}
@@ -99,6 +103,7 @@ export function ProviderEndpointFields({
             <EndpointInput
               key={style}
               label={t(`settings.providers.${STYLE_KEY[style]}`)}
+              hint={t(`settings.providers.${STYLE_KEY[style]}Hint`)}
               style={style}
               value={editor.endpoints[style] ?? ""}
               mismatch={Boolean(editor.detectMismatch?.[style])}
@@ -135,6 +140,7 @@ function setEndpoint(
 
 function EndpointInput({
   label,
+  hint,
   style,
   value,
   mismatch,
@@ -142,6 +148,7 @@ function EndpointInput({
   onChange
 }: {
   label: string
+  hint?: string
   style: ApiStyle
   value: string
   mismatch: boolean
@@ -151,7 +158,7 @@ function EndpointInput({
   const t = useT()
   const advice = value.trim() ? adviseCatalogUrl(value, style) : { action: "ok" as const }
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint}>
       <Input
         value={value}
         onChange={(event) => onChange(event.target.value)}

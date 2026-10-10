@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import type { AgentToolPublic, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { SettingsSideDrawer } from "@renderer/components/settings/settings-side-drawer"
 import { useT } from "@renderer/i18n"
+import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
 import { AUTOMATION_DRAWER_WIDTH_CLASS } from "../constants"
 import type { AutomationDraft } from "../lib/draft"
 import { webhookPortReady } from "../lib/trigger-chips"
@@ -15,6 +16,8 @@ import { CatchUpToggle } from "./catch-up-toggle"
 import { EnginePills } from "./engine-pills"
 import { MissedRecordsList } from "./missed-records-list"
 import { ModePills } from "./mode-pills"
+import { AutomationProjectField } from "./project-field"
+import { ScheduleFields } from "./schedule-fields"
 import { TriggerPills } from "./trigger-pills"
 import { WebhookFields } from "./webhook-fields"
 
@@ -67,15 +70,23 @@ export function AutomationDrawer({
           <p id="automation-editor-title" className="text-body-medium font-semibold text-text-primary">
             {draft.id ? t("studio.automations.editTitle") : t("studio.automations.createTitle")}
           </p>
-          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("studio.automations.workspaceHint")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-secondary">{t("studio.automations.workspaceHint")}</p>
         </div>
-        <button type="button" onClick={onClose} className="text-caption-1-medium text-text-tertiary" aria-label={t("common.close")}>
+        <button
+          type="button"
+          onClick={onClose}
+          data-testid="automation-drawer-close"
+          data-app-region="no-drag"
+          style={APP_REGION_NO_DRAG_STYLE}
+          className="text-caption-1-medium text-text-tertiary [app-region:no-drag]"
+          aria-label={t("common.close")}
+        >
           <RiCloseLine className="size-4" />
         </button>
       </header>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.nameLabel")}</span>
+          <span className="text-caption-1-medium text-text-primary">{t("studio.automations.nameLabel")}</span>
           <Input
             value={draft.name}
             onChange={(event) => onChange({ name: event.target.value })}
@@ -83,41 +94,29 @@ export function AutomationDrawer({
             className="mt-1"
           />
         </label>
+        <AutomationProjectField />
         <TriggerPills
           value={draft.triggers}
           onChange={(triggers) => onChange({ triggers, trigger: triggers[0] ?? draft.trigger })}
         />
         {draft.triggers.includes("cron") ? (
-          <div className="grid grid-cols-2 gap-2">
-            <label>
-              <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.cronLabel")}</span>
-              <Input
-                value={draft.cronExpr}
-                onChange={(event) => onChange({ cronExpr: event.target.value })}
-                className="mt-1 font-mono"
-              />
-            </label>
-            <label>
-              <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.timeZone")}</span>
-              <Input
-                value={draft.timeZone}
-                onChange={(event) => onChange({ timeZone: event.target.value })}
-                className="mt-1"
-              />
-            </label>
-          </div>
+          <ScheduleFields
+            cronExpr={draft.cronExpr}
+            timeZone={draft.timeZone}
+            onChange={onChange}
+          />
         ) : null}
         {draft.triggers.includes("on_save") ? (
-          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-tertiary">
+          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-secondary">
             {t("studio.automations.onSaveHint")}
           </p>
         ) : null}
         {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
         <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">
+          <span className="text-caption-1-medium text-text-secondary">
             {t("studio.automations.modelLabel")}{" "}
-            <span className="text-text-tertiary/70">{t("studio.automations.modelOptional")}</span>
+            <span className="text-text-secondary">{t("studio.automations.modelOptional")}</span>
           </span>
           <Input
             value={draft.modelId}
@@ -135,7 +134,7 @@ export function AutomationDrawer({
         ) : null}
         {draft.id ? <MissedRecordsList records={records} locale={locale} now={now} /> : null}
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.promptLabel")}</span>
+          <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.promptLabel")}</span>
           <Textarea
             value={draft.prompt}
             onChange={(event) => onChange({ prompt: event.target.value })}
@@ -150,7 +149,7 @@ export function AutomationDrawer({
             {running ? t("studio.automations.running") : t("studio.automations.runNow")}
           </Button>
         ) : (
-          <span className="mr-auto text-caption-2-regular text-text-tertiary">{footerHint(draft.triggers, t)}</span>
+          <span className="mr-auto text-caption-2-regular text-text-secondary">{footerHint(draft.triggers, t)}</span>
         )}
         {draft.id ? (
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>

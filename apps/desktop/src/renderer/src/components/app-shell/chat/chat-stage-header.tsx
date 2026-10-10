@@ -14,6 +14,7 @@ import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { ReviewGateHeader } from "@renderer/components/ai-chat/review-gate/review-gate-header"
 import type { ReviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate.types"
 import { useT } from "@renderer/i18n"
+import { displaySessionTitle } from "@renderer/lib/session-title"
 
 export function ChatStageHeader({
   workspaceName,
@@ -39,21 +40,22 @@ export function ChatStageHeader({
   onToggleEnvironment?: () => void
 }) {
   const t = useT()
+  const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 px-5">
-      <RiFolder6Line className="size-4 text-foreground-icon-secondary" aria-hidden />
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <span className="text-body-medium text-text-secondary">{workspaceName}</span>
+    <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden px-5">
+      <RiFolder6Line className="size-4 shrink-0 text-foreground-icon-secondary" aria-hidden />
+      <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
+        <BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
+          <BreadcrumbItem className="min-w-0 max-w-[40%]">
+            <span className="block truncate text-body-medium text-text-secondary">{workspaceName}</span>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage className="text-body-medium text-text-primary">{sessionTitle}</BreadcrumbPage>
+          <BreadcrumbSeparator className="shrink-0" />
+          <BreadcrumbItem className="min-w-0 flex-1">
+            <BreadcrumbPage className="block truncate text-body-medium text-text-primary">{title}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         {onToggleEnvironment ? (
           <QuietIconButton
             icon={RiDashboard3Line}
@@ -70,14 +72,14 @@ export function ChatStageHeader({
             title={ledgerOpen ? t("chat.collapsePane") : t("sessionOps.ledgerTitle")}
             aria-pressed={ledgerOpen}
             className={cx(
-              "flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-caption-2-medium transition-colors cursor-pointer",
+              "flex h-7 max-w-36 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-caption-2-medium transition-colors cursor-pointer",
               ledgerOpen
                 ? "border-border-button-default bg-background-secondary-default text-text-primary shadow-2xs"
                 : "border-transparent text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
             )}
           >
-            <RiFileList3Line className="size-3.5 text-foreground-icon-secondary" aria-hidden />
-            <span>{t("sessionOps.ledgerTitle")}</span>
+            <RiFileList3Line className="size-3.5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+            <span className="truncate">{t("sessionOps.ledgerTitle")}</span>
           </button>
         ) : null}
         {reviewPhase ? <ReviewGateHeader phase={reviewPhase} /> : null}

@@ -5,16 +5,16 @@ import { useKeybindingCommand } from "@renderer/components/settings/keybindings/
 import { revealRightPane } from "./open-pane"
 import type { RightPaneKind } from "./right-pane.types"
 
-export function useRightPaneShortcuts() {
-  useKeybindingCommand("pane.context", () => openPane("context"))
-  useKeybindingCommand("pane.review", () => openPane("review"))
-  useKeybindingCommand("pane.desktop", () => openPane("desktop"))
-  useKeybindingCommand("pane.terminal", () => openPane("terminal"))
-  useKeybindingCommand("pane.browser", () => openPane("browser"))
-  useKeybindingCommand("pane.files", () => openPane("files"))
-}
-
-function openPane(kind: RightPaneKind): boolean {
-  revealRightPane(kind)
-  return true
+export function useRightPaneShortcuts(enabled = true) {
+  const open = (kind: RightPaneKind) => () => {
+    if (!enabled) return false
+    revealRightPane(kind)
+    return true
+  }
+  useKeybindingCommand("pane.context", open("context"))
+  useKeybindingCommand("pane.review", open("review"))
+  useKeybindingCommand("pane.desktop", open("desktop"))
+  useKeybindingCommand("pane.terminal", open("terminal"))
+  useKeybindingCommand("pane.browser", open("browser"))
+  useKeybindingCommand("pane.files", open("files"))
 }

@@ -17,7 +17,7 @@ export function WebhookFields({
     <div className="space-y-2">
       <div className="grid grid-cols-2 gap-2">
         <label>
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.webhookPort")}</span>
+          <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.webhookPort")}</span>
           <Input
             value={draft.webhookPort}
             onChange={(event) => onChange({ webhookPort: event.target.value })}
@@ -26,7 +26,7 @@ export function WebhookFields({
           />
         </label>
         <label>
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.webhookPath")}</span>
+          <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.webhookPath")}</span>
           <Input
             value={draft.webhookPath}
             onChange={(event) => onChange({ webhookPath: event.target.value })}
@@ -35,9 +35,9 @@ export function WebhookFields({
         </label>
       </div>
       <label className="block">
-        <span className="text-caption-1-medium text-text-tertiary">
+        <span className="text-caption-1-medium text-text-secondary">
           {t("studio.automations.webhookSecret")}{" "}
-          <span className="text-text-tertiary/70">{t("studio.automations.webhookSecretOptional")}</span>
+          <span className="text-text-secondary">{t("studio.automations.webhookSecretOptional")}</span>
         </span>
         <Input
           value={draft.webhookSecret}
@@ -47,7 +47,7 @@ export function WebhookFields({
           autoComplete="off"
         />
       </label>
-      <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-tertiary">
+      <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-secondary">
         {t("studio.automations.webhookListenHint", { port: draft.webhookPort.trim() || "8765" })}
       </p>
     </div>

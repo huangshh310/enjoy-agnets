@@ -18,6 +18,7 @@ import { ComposerOverflowMenu } from "./composer-overflow-menu"
 import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
 import { formatComposerRemoteFootnote } from "@renderer/components/settings/workspace/parse-remote-label"
+import { displayThinkingLabel } from "../thread/thinking-label"
 import { ModelSwitchFootnoteSlot } from "./model-switch/model-switch-footnote-slot"
 import { ComputerUseChip } from "./computer-use-chip"
 import { HostInjectBar } from "./host-inject/host-inject-bar"
@@ -111,7 +112,7 @@ export function ComposerFooter({
         {running ? (
           <span className="flex max-w-[140px] items-center gap-1.5 truncate px-2 font-mono text-caption-2-medium text-accent-500 select-none">
             <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
-            <span className="truncate">{thinkingLabel || t("chat.working")}</span>
+            <span className="truncate">{displayThinkingLabel(thinkingLabel, t)}</span>
           </span>
         ) : null}
         <ComposerOverflowMenu />

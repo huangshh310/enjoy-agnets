@@ -3,6 +3,7 @@
  */
 import { useEffect, useState } from "react"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
 type View = {
@@ -41,7 +42,7 @@ export function DesktopObservationView() {
   return (
     <div data-testid="desktop-rail-card" className="flex h-full flex-col gap-3 overflow-auto p-3">
       <p className="text-body-medium text-text-primary">{view.appName}</p>
-      {view.appKey ? (
+      {view.appKey && isDevCopyEnabled() ? (
         <p className="text-caption-2-medium text-text-tertiary">{t("chat.paneDesktopAppKey", { appKey: view.appKey })}</p>
       ) : null}
       {view.thumbnailDataUrl ? (

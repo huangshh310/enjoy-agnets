@@ -1,8 +1,15 @@
 /**
  * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
+ *
+ * 终端可点链接夹具（给 luna 验悬停）：
+ * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
+ * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  */
 import type { ModelMessage } from "ai"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+
+export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
+export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
 
 export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
@@ -12,6 +19,8 @@ export function isE2eStub(): boolean {
 export function isE2eCostSeed(): boolean {
   return isE2eStub() && process.env.ENJOY_DEV_SEED_COST === "1"
 }
+
+let stubWriteSeq = 0
 
 export { isE2eCuReady } from "./e2e-stub-desktop.ts"
 
@@ -48,12 +57,21 @@ export function lastUserText(messages: ModelMessage[]): string {
 }
 
 export function stubApprovedWrite(messages: ModelMessage[]): boolean {
+  return hasApprovalResponse(messages, true)
+}
+
+/** 拒绝后不得再吐同一张审批卡，否则会撞 approvals.id。 */
+export function stubDeniedApproval(messages: ModelMessage[]): boolean {
+  return hasApprovalResponse(messages, false)
+}
+
+function hasApprovalResponse(messages: ModelMessage[], approved: boolean): boolean {
   return messages.some((message) => {
     if (message.role !== "tool" || !Array.isArray(message.content)) return false
     return message.content.some((part) => {
       if (!part || typeof part !== "object") return false
       const rec = part as { type?: string; approved?: boolean }
-      return rec.type === "tool-approval-response" && rec.approved === true
+      return rec.type === "tool-approval-response" && rec.approved === approved
     })
   })
 }
@@ -64,6 +82,14 @@ export async function* createE2eStubStream(
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  if (stubDeniedApproval(messages)) {
+    yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
+    return
+  }
+  if (hasApprovalResponse(messages, true) && stubDesktopStreamParts(prompt)) {
+    yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
+    return
+  }
   const desktop = stubDesktopStreamParts(prompt)
   if (desktop) {
     for (const part of desktop) yield part
@@ -74,10 +100,11 @@ export async function* createE2eStubStream(
     return
   }
   if (/\bwrite\b/i.test(prompt)) {
+    stubWriteSeq += 1
     yield {
       type: "tool-approval-request",
-      toolCallId: "tool_stub",
-      approvalId: "apr_stub",
+      toolCallId: `tool_stub_${stubWriteSeq}`,
+      approvalId: `apr_stub_${stubWriteSeq}`,
       toolName: "write_file",
       input: { path: "e2e-stub.txt", content: "from stub" }
     }

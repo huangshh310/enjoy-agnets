@@ -1,7 +1,7 @@
 /**
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
-import { AgentToolId, migrateContentToParts, safeValidateUIMessages, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
+import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
   modeForLoadedSession,
   modeForNewSession,
@@ -9,7 +9,7 @@ import {
 } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
-import { getIde, hasIde } from "../lib/ide"
+import { getIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import {
   captureParkedRun,
@@ -17,19 +17,22 @@ import {
   parkedComposerPatch
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
-import { threadFromRows } from "./hydrate-thread"
-import { mergeUserAssets } from "./merge-user-assets"
+import { applySessionHydrate } from "./session-hydrate"
+import { bumpSessionHydrateGeneration } from "./session-hydrate-generation"
+import { messagesAfterSessionSwitch } from "./session-hydrate-finish"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import { clearComposerAssets, listComposerAssets, setComposerAssets } from "./composer-assets"
 import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
-import { workspaceRowFromNode, type WorkspaceRow } from "./workspace-row"
+import { workspaceRowFromNode } from "./workspace-row"
 import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
 import { discardCreatedSession } from "./discard-created-session"
+import { refreshAllWorkspaces } from "./refresh-workspaces"
 
 export type { WorkspaceRow } from "./workspace-row"
+export { refreshAllWorkspaces } from "./refresh-workspaces"
 type SessionRow = {
   id: string
   workspaceId: string
@@ -66,14 +69,19 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
   const store = useChatStore.getState()
-  const sameSession = store.sessionId === sessionId
-  const previous = sameSession ? store.messages : []
+  const { sameSession } = messagesAfterSessionSwitch({
+    currentSessionId: store.sessionId,
+    nextSessionId: sessionId,
+    liveMessages: store.messages
+  })
+  const generation = bumpSessionHydrateGeneration()
   if (!sameSession) {
     if (store.sessionId) {
       parkForegroundRun()
       saveCurrentSessionDraft()
     }
     store.setSession(sessionId, title)
+    store.setMessages([])
     store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
     applyComposerModel(store, sessionId)
     useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
@@ -84,76 +92,31 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
-  restoreUiMessages(rows)
-  store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
+  applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
   parkForegroundRun()
+  const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
+  bumpSessionHydrateGeneration()
   const session = (await getIde().session.create({
     workspaceId,
     title: customTitle
   })) as SessionRow
   if (await discardCreatedSession(session.id, stale)) return
   const store = useChatStore.getState()
+  const typedDuringCreate = store.composer
   const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
   publishCreatedSession(store, session, runtimeId)
+  if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
+    useChatStore.setState({ composer: typedDuringCreate })
+  }
   await bindSessionRuntime(session.id, runtimeId)
   if (await discardCreatedSession(session.id, stale)) return
   await refreshAllWorkspaces()
-}
-
-export async function refreshAllWorkspaces() {
-  if (!hasIde()) return
-  try {
-    const workspaces = (await getIde().workspace.list()) as WorkspaceRow[]
-    const activeWorkspaceId = useChatStore.getState().workspaceId
-    const items = await Promise.all(
-      workspaces.map(async (ws) => {
-        try {
-          const sessions = (await getIde().session.list({ workspaceId: ws.id })) as SessionRow[]
-          return {
-            workspace: {
-              id: ws.id,
-              name: ws.name,
-              rootPath: ws.rootPath,
-              kind: ws.kind,
-              sshStatus: ws.sshStatus,
-              sshHost: ws.sshHost,
-              sshUser: ws.sshUser,
-              remotePath: ws.remotePath
-            },
-            sessions: sessions.map((s) => ({
-              id: s.id,
-              title: s.title,
-              updatedAt: s.updatedAt,
-              workspaceId: s.workspaceId
-            }))
-          }
-        } catch {
-          return {
-            workspace: {
-              id: ws.id,
-              name: ws.name,
-              rootPath: ws.rootPath,
-              kind: ws.kind,
-              sshStatus: ws.sshStatus,
-              sshHost: ws.sshHost,
-              sshUser: ws.sshUser,
-              remotePath: ws.remotePath
-            },
-            sessions: []
-          }
-        }
-      })
-    )
-    useChatStore.getState().hydrateWorkspacesAndSessions(items, activeWorkspaceId)
-  } catch {
-    // ignore refresh errors
-  }
 }
 
 export async function selectPersistedSession(
@@ -257,17 +220,6 @@ function applyComposerModel(store: ReturnType<typeof useChatStore.getState>, ses
     models: store.models
   })
   store.setModel(patch.modelId, patch.modelLabel, patch.provider)
-}
-
-function restoreUiMessages(rows: MessageRow[]) {
-  safeValidateUIMessages(
-    rows.map((row) => ({
-      id: row.id,
-      role: row.role,
-      parts: row.parts && row.parts.length > 0 ? row.parts : migrateContentToParts(row.content),
-      createdAt: row.createdAt
-    }))
-  )
 }
 
 /** 新建会话跟 Composer 当前引擎；非法 id 再回落偏好。 */

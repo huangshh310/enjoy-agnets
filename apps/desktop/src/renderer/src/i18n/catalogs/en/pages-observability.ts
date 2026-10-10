@@ -173,7 +173,7 @@ export const enObservabilityPages = {
   copyContent: "Copy content",
   otelModalTitle: "OpenTelemetry (OTEL) & telemetry export",
   otelModalHint:
-    "Follows Vercel AI SDK 7 telemetry: report model latency, token usage, and span traces to an APM.",
+    "Report model latency, token usage, and span traces to this machine or a collector you choose.",
   telemetryPolicy: "Telemetry policy",
   policyLocal: "Local only",
   policyOtel: "OTEL remote export",
@@ -232,7 +232,7 @@ export const enObservabilityPages = {
   legendTtfo: "TTFO",
   tooltipDuration: "Duration:",
   tooltipTtfo: "TTFO:",
-  throughputTitle: "Token usage & throughput (AI SDK 7)",
+  throughputTitle: "Token usage & throughput",
   promptIn: "Prompt In",
   completionOut: "Completion Out",
   rateToks: "Rate (tok/s)",
@@ -262,7 +262,7 @@ export const enObservabilityPages = {
   copiedJson: "Copied JSON",
   copyJson: "Copy JSON",
   tabOverview: "Overview & waterfall",
-  tabAttributes: "AI SDK 7 / OTEL semantic attributes",
+  tabAttributes: "Runtime attributes",
   tabRaw: "Raw redacted payload",
   totalDuration: "Total duration",
   e2eTime: "End-to-end request time",
@@ -286,7 +286,7 @@ export const enObservabilityPages = {
   providerHint:
     "The upstream model provider returned an error. Check API key quota and model availability.",
   runtimeHint:
-    "The run was intercepted or hit a runtime error. See the AI SDK 7 attribute table or raw JSON for context.",
+    "The run was intercepted or hit a runtime error. See the attribute table or raw JSON for context.",
   attrColName: "OTEL semantic attribute",
   attrColLabel: "Label",
   attrColValue: "Value",

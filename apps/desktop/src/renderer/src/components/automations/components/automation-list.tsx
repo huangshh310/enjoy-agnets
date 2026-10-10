@@ -8,7 +8,6 @@ import { AutomationRow } from "./automation-row"
 export function AutomationList({
   automations,
   missedById,
-  tools,
   locale,
   now,
   onOpen,
@@ -17,7 +16,7 @@ export function AutomationList({
 }: {
   automations: Automation[]
   missedById: Record<string, AutomationMissedRecord[]>
-  tools: AgentToolPublic[]
+  tools?: AgentToolPublic[]
   locale: string
   now: number
   onOpen: (item: Automation) => void
@@ -42,7 +41,6 @@ export function AutomationList({
           records={missedById[item.id] ?? []}
           locale={locale}
           now={now}
-          engineLabel={engineLabel(item.runtimeId, tools, t)}
           onOpen={() => onOpen(item)}
           onToggle={(enabled) => onToggle(item, enabled)}
           onOpenFailed={onOpenFailed}
@@ -50,14 +48,4 @@ export function AutomationList({
       ))}
     </ul>
   )
-}
-
-function engineLabel(
-  runtimeId: string | undefined,
-  tools: AgentToolPublic[],
-  t: (key: string) => string
-): string {
-  const id = runtimeId || "enjoy-local"
-  if (id === "enjoy-local") return t("chat.usage.enjoyLocal")
-  return tools.find((tool) => tool.id === id)?.label ?? id
 }

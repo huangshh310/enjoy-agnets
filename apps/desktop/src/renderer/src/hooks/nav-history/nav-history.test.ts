@@ -4,7 +4,14 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { HISTORY_COALESCE_MS, HISTORY_LIMIT } from "./constants.ts"
-import { backHistory, forgetHistory, forwardHistory, jumpHistory, openHistory } from "./nav-history.ts"
+import {
+  backHistory,
+  forgetHistory,
+  forwardHistory,
+  jumpHistory,
+  openHistory,
+  pruneHistory
+} from "./nav-history.ts"
 import type { HistoryEntry, HistoryStack } from "./nav-history.types.ts"
 
 function page(id: string): HistoryEntry {
@@ -146,6 +153,16 @@ test("删除当前页且 past 为空时落到默认页", () => {
   assert.equal(result.stack.current.id, "home")
   assert.deepEqual(result.stack.past, [])
   assert.deepEqual(result.stack.future, [])
+})
+
+test("剪枝当前页时不回落到 past 的设置页", () => {
+  const settings = page("settings")
+  let state = open(open(stack("settings"), "settings", 0), "session", 1000)
+  state = { ...state, past: [settings], current: page("session") }
+  const result = pruneHistory(state, new Set(["session"]), page("home"))
+  assert.equal(result.removedCurrent, true)
+  assert.equal(result.stack.current.id, "home")
+  assert.deepEqual(result.stack.past.map((entry) => entry.id), ["settings"])
 })
 
 test("越界跳转是空操作", () => {

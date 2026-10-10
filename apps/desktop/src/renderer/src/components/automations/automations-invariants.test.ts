@@ -32,9 +32,9 @@ const banned = ["chat.modeAgent", "chat.modePlan", "chat.modeAsk", "ACP", "ToolL
 
 test("页脚钉死本机诚实句", () => {
   assert.equal(zhStudio.automations.localOnly, "仅在本机运行，关闭应用则暂停")
-  assert.equal(enStudio.automations.localOnly, "仅在本机运行，关闭应用则暂停")
-  assert.equal(zhStudio.automations.webhookLocalOnly, "webhook 仅本机端口，非公网")
-  assert.equal(enStudio.automations.webhookLocalOnly, "webhook 仅本机端口，非公网")
+  assert.equal(enStudio.automations.localOnly, "Runs on this machine only. Closing the app pauses it.")
+  assert.equal(zhStudio.automations.webhookLocalOnly, "本机推送只听本机端口，不上公网")
+  assert.equal(enStudio.automations.webhookLocalOnly, "Local push listens on this machine only")
   const footer = readFileSync(join(dir, "components/automation-footer.tsx"), "utf8")
   assert.ok(footer.includes("studio.automations.localOnly"))
   assert.ok(footer.includes("studio.automations.webhookLocalOnly"))
@@ -109,6 +109,25 @@ test("设置能力句钉死默认不补跑", () => {
   const settings = readFileSync(join(dir, "../../i18n/catalogs/zh/settings.ts"), "utf8")
   assert.match(settings, /默认不补跑，可在单条自动化里开启补跑最近一次/)
   assert.doesNotMatch(settings, /关掉应用不会补跑/)
+})
+
+test("定时用可读预设，删除要确认，项目选择器只高亮一项", () => {
+  const drawer = readFileSync(join(dir, "components/automation-drawer.tsx"), "utf8")
+  assert.match(drawer, /ScheduleFields/)
+  assert.match(drawer, /AutomationProjectField/)
+  assert.doesNotMatch(drawer, /font-mono/)
+  const page = readFileSync(join(dir, "automations-page.tsx"), "utf8")
+  assert.match(page, /ConfirmDialog/)
+  assert.match(page, /common\.delete/)
+  assert.match(page, /discardTitle/)
+  assert.match(page, /keepEditing/)
+  assert.match(page, /showAppToast/)
+  assert.match(page, /isDraftDirty/)
+  assert.equal(zhStudio.automations.deleteTitle, "删除这条自动化？")
+  assert.equal(zhStudio.automations.discardTitle, "放弃未保存的修改？")
+  const picker = readFileSync(join(dir, "components/project-field.tsx"), "utf8")
+  assert.match(picker, /aria-pressed=\{selected\}/)
+  assert.match(picker, /uniqueWorkspaces/)
 })
 
 test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际或取消时间", () => {

@@ -26,10 +26,16 @@ export async function waitForSubagentApproval(
     })
     return "deny"
   }
-  const approvalId = createId("apr")
   const parked = await parkToolArgs(toolName, asParkArgs(args))
+  const approvalId = rememberApproval({
+    runId,
+    approvalId: createId("apr"),
+    toolCallId,
+    name: toolName,
+    args: parked,
+    requestArgs: args
+  }).id
   run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args: parked })
-  rememberApproval({ runId, approvalId, toolCallId, name: toolName, args: parked })
   checkpointActiveRun(run)
   emitEvent(run.window, {
     type: "approval.required",

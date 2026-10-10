@@ -9,17 +9,18 @@ export type ThemeAccent = "blue" | "emerald" | "amber" | "purple" | "slate"
 export interface ThemeAccentConfig {
   id: ThemeAccent
   name: string
+  nameKey: "common.accentBlue" | "common.accentGreen" | "common.accentAmber" | "common.accentPurple" | "common.accentSlate"
   color: string
   c500: string
   c600: string
 }
 
 export const THEME_ACCENTS: ThemeAccentConfig[] = [
-  { id: "blue", name: "Signal Blue", color: "#3b82f6", c500: "#3b82f6", c600: "#2563eb" },
-  { id: "emerald", name: "Terminal Green", color: "#10b981", c500: "#10b981", c600: "#059669" },
-  { id: "amber", name: "Claude Amber", color: "#f59e0b", c500: "#f59e0b", c600: "#d97706" },
-  { id: "purple", name: "Cosmic Purple", color: "#8b5cf6", c500: "#8b5cf6", c600: "#7c3aed" },
-  { id: "slate", name: "Graphite Slate", color: "#64748b", c500: "#64748b", c600: "#475569" }
+  { id: "blue", name: "Blue", nameKey: "common.accentBlue", color: "#3b82f6", c500: "#3b82f6", c600: "#2563eb" },
+  { id: "emerald", name: "Green", nameKey: "common.accentGreen", color: "#10b981", c500: "#10b981", c600: "#059669" },
+  { id: "amber", name: "Amber", nameKey: "common.accentAmber", color: "#f59e0b", c500: "#f59e0b", c600: "#d97706" },
+  { id: "purple", name: "Purple", nameKey: "common.accentPurple", color: "#8b5cf6", c500: "#8b5cf6", c600: "#7c3aed" },
+  { id: "slate", name: "Slate", nameKey: "common.accentSlate", color: "#64748b", c500: "#64748b", c600: "#475569" }
 ]
 
 export const THEME_ACCENT_STORAGE_KEY = "boardui:accent"

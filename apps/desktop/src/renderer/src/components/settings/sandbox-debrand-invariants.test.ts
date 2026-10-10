@@ -93,7 +93,7 @@ test("设置词表这些键不含 Vercel，占位不是 vercel token", () => {
   assert.ok(!lookup(zh, "settings.harness.tokenPlaceholder").toLowerCase().includes("vercel"))
   assert.equal(lookup(zh, "settings.harness.isolationToken"), "隔离令牌")
   assert.equal(lookup(zh, "settings.harness.saveToken"), "保存隔离令牌")
-  assert.equal(lookup(zh, "settings.providers.official"), "AI SDK 兼容")
+  assert.equal(lookup(zh, "settings.providers.official"), "标准协议")
   for (const text of [...catalogStrings(zhSettings), ...catalogStrings(enSettings)]) {
     assert.ok(!/vercel/i.test(text), `settings catalog still says Vercel: ${text}`)
   }
