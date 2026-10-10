@@ -11,7 +11,7 @@ export function SetupGuideReplay() {
   return (
     <SettingsCard title={t("settings.setupGuide.replayTitle")}>
       <SettingsRow title={t("settings.setupGuide.replay")} description={t("settings.setupGuide.replayDesc")}>
-        <Button type="button" variant="outline" onClick={replaySetupGuide}>
+        <Button type="button" variant="outline" data-testid="setup-guide-replay" onClick={replaySetupGuide}>
           {t("settings.setupGuide.replay")}
         </Button>
       </SettingsRow>

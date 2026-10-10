@@ -66,7 +66,13 @@ export function SetupGuideFooter({
           {t(secondaryKey)}
         </Button>
       ) : null}
-      <Button type="button" autoFocus={autoFocusPrimary} className={GUIDE_BUTTON_CLASS} onClick={onNext}>
+      <Button
+        type="button"
+        data-testid="setup-guide-primary"
+        autoFocus={autoFocusPrimary}
+        className={GUIDE_BUTTON_CLASS}
+        onClick={onNext}
+      >
         {primary}
       </Button>
     </div>

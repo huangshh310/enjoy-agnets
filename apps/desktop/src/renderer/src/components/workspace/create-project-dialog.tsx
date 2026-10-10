@@ -123,6 +123,7 @@ export function CreateProjectDialog({
       }}
     >
       <DialogContent
+        data-testid="create-project-dialog"
         className={`${step === 2 && projectType === "remote" ? "max-w-[380px]" : "max-w-md"} p-6 overflow-hidden rounded-3xl bg-background-primary-default shadow-card border border-border-button-default`}
       >
         <DialogHeader className="mb-2">
