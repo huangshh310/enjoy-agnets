@@ -56,6 +56,7 @@ test("扩展页 copy 不含 Registry、本机 CLI、ACP、已同步到助手", (
   assert.equal(zh.settings.extensions.curatedTitle, "精选")
   assert.equal(zh.settings.extensions.curatedDesc, "精选推荐，点一下就能加到本机，不另开商店。")
   assert.equal(zh.settings.extensions.openMcp, "打开 MCP")
+  assert.equal(zh.settings.extensions.skillsTitle, "技能")
   assert.equal(zh.settings.extensions.openSkills, "打开技能")
   assert.equal(zh.settings.extensions.written, "已写入 Enjoy · 下一轮可注入")
   assert.equal(zh.settings.extensions.catalogFailTitle, "精选暂时加载不了")

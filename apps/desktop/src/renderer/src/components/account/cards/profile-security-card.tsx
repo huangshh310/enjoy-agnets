@@ -6,6 +6,7 @@ import { cx } from "@/utils/cx"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { isApplePlatform } from "@renderer/components/settings/keybindings/keybinding-format"
 import { profileOsName, vaultCopyKey, vaultFace } from "../lib/profile-face-copy"
 import type { ExtendedUserProfile } from "../types/profile.types"
 
@@ -38,7 +39,7 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
               protectedVault ? "bg-accent-500" : "bg-text-tertiary"
             )}
           />
-          {t(vaultCopyKey(face))}
+          {t(vaultCopyKey(face, isApplePlatform()))}
         </span>
       </div>
 

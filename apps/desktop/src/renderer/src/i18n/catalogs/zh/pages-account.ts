@@ -25,8 +25,10 @@ export const zhAccountPages = {
   security: {
     title: "密钥与本机保护",
     vaultProtected: "密钥存在系统钥匙串",
+    vaultProtectedOther: "密钥存在系统密钥库",
     vaultNeutral: "密钥由本机保管",
     vaultEmpty: "未写入密钥",
+    vaultSavedShort: "密钥已保存",
     vaultTitle: "本机加密存储",
     vaultDesc: "密钥由本机保管，此页只显示是否已保存，不会露出明文。",
     endpointLabel: "当前设备",

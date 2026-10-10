@@ -25,9 +25,9 @@ export function TelemetrySettings() {
 
   return (
     <div data-testid="page-telemetry" className="flex flex-col gap-6">
-      <SettingsHub icon={RiShieldKeyholeLine} title={t("nav.telemetry")} description={collectDesc} />
+      <SettingsHub icon={RiShieldKeyholeLine} title={t("nav.telemetry")} />
 
-      <SettingsCard title={t("settings.telemetry.collectTitle")}>
+      <SettingsCard>
         <SettingsRow title={t("settings.telemetry.collectTitle")} description={collectDesc}>
           {avgTtfo != null ? (
             <span className="text-caption-1-medium text-text-secondary">

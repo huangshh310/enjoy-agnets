@@ -831,7 +831,7 @@ export const zhChat = {
   desktopChip: "桌面",
   overlayControlling: "正在操控 · {app}",
   overlayStop: "停止",
-  overlayEscHint: "Esc 停一手势",
+  overlayEscHint: "按 Esc 停止",
   overlayFallbackApp: "桌面",
   surfaceDesktopExecuteOnly: "桌面仅执行",
   alwaysInWorkspace: "本工作区始终允许",

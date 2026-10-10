@@ -16,7 +16,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { profileOsName, vaultCopyKey, vaultFace } from "../lib/profile-face-copy"
+import { profileOsName, vaultChipKey, vaultFace } from "../lib/profile-face-copy"
 import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { GlassCover } from "../glass/glass-cover"
 import { ProfileSharePosterDialog } from "./profile-share-poster-dialog"
@@ -150,7 +150,7 @@ export function ProfileHeroBanner({
               <RiShieldLine className="size-3.5 text-text-tertiary" />
             )}
             <span className={cx("font-semibold", protectedVault ? "text-state-success-text dark:text-state-success-text" : "text-text-tertiary")}>
-              {t(vaultCopyKey(face))}
+              {t(vaultChipKey(face))}
             </span>
           </div>
 

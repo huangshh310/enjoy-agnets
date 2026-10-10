@@ -3,8 +3,12 @@
  * 开发者指标档（pages.observability.*）豁免。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { zh } from "./catalogs/zh/index.ts"
+import { chordGlyphs } from "../components/settings/keybindings/keybinding-format.ts"
 
 const DEV_COPY_ALLOWLIST = new Set([
   "chat.hmacBoundNotice",
@@ -46,7 +50,10 @@ const CEND_JARGON = [
   "帮助改进 Enjoy",
   "不上传",
   "只存在本机",
-  "只在本机"
+  "只在本机",
+  "Esc 停一手势",
+  "停一手势",
+  "PATH 上没有二进制"
 ]
 
 test("C 端词表不含本轮清扫掉的行话；开发者指标档豁免", () => {
@@ -69,7 +76,12 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
     pages: {
       inbox: Record<string, string>
       account: {
-        security: { vaultTitle: string; vaultProtected: string; thisComputer: string }
+        security: {
+          vaultTitle: string
+          vaultProtected: string
+          vaultProtectedOther: string
+          thisComputer: string
+        }
         heatmap: Record<string, string>
         hero: { contributions: string; yearSpend: string }
       }
@@ -79,7 +91,7 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
       telemetry: Record<string, string>
       workspace: Record<string, string>
       agentTools: { tabRegistry: string }
-      registry: { title: string }
+      registry: { title: string; notReadyHint: string }
       extensions: Record<string, string>
       shortcuts: { terminalDesc: string; send: string }
       computerUse: { guideStart: string }
@@ -101,15 +113,21 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   assert.equal(pages.settings.telemetry.helpImprove, pages.settings.telemetry.recordLocal)
   assert.equal(pages.settings.telemetry.collectDesc.includes("默认记录在这台电脑上"), true)
   assert.equal(pages.settings.telemetry.collectDescOtel.includes("同时发送到你配置的地址"), true)
-  assert.equal(pages.settings.workspace.strictlyJailed, "隔离执行：助手只能改这个项目里的文件")
+  assert.equal(pages.settings.workspace.strictlyJailed, "助手只能改这个项目里的文件")
   assert.equal(pages.settings.workspace.allowOutside, "允许访问项目外的文件")
   assert.equal(pages.settings.workspace.monorepo, "这个仓库里有多个子项目")
   assert.equal(pages.settings.agentTools.tabRegistry, "助手目录")
   assert.equal(pages.settings.registry.title, "助手目录")
+  assert.equal(
+    pages.settings.registry.notReadyHint,
+    "这台电脑上还没装。能一键安装的点「一键安装」，否则复制命令自己装。"
+  )
   assert.equal(pages.settings.extensions.openMcp, "打开 MCP")
   assert.equal(pages.settings.extensions.openSkills, "打开技能")
+  assert.equal(pages.settings.extensions.skillsTitle, "技能")
   assert.equal(pages.pages.account.security.vaultTitle, "本机加密存储")
   assert.equal(pages.pages.account.security.vaultProtected, "密钥存在系统钥匙串")
+  assert.equal(pages.pages.account.security.vaultProtectedOther, "密钥存在系统密钥库")
   assert.equal(pages.pages.account.security.thisComputer, "这台电脑 · {os}")
   assert.equal(pages.pages.account.hero.contributions, "本年花费约")
   assert.equal(pages.pages.account.hero.yearSpend, "本年花费约 {amount}")
@@ -124,6 +142,18 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
     "执行态操控桌面时显示冷静蓝边与「正在操控」顶栏。按 Esc 或顶栏「停止」立刻停下。"
   )
   assert.equal(pages.pages.mcp.registerServer, "添加服务")
+  assert.equal((zh as { chat: { overlayEscHint: string } }).chat.overlayEscHint, "按 Esc 停止")
+})
+
+test("侧栏快速搜索用平台键位，不写死 ⌘L", () => {
+  const sidebar = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "../components/ai-chat/ai-chat-sidebar.tsx"),
+    "utf8"
+  )
+  assert.equal(sidebar.includes("⌘L"), false)
+  assert.equal(sidebar.includes("chordGlyphs"), true)
+  assert.deepEqual(chordGlyphs("mod+l", false), ["Ctrl", "L"])
+  assert.deepEqual(chordGlyphs("mod+l", true), ["⌘", "L"])
 })
 
 const wordBoundaryTerms = new Set([

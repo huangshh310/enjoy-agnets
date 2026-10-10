@@ -27,6 +27,8 @@ export const zhCommon = {
   disabled: "已关闭",
   on: "开",
   off: "关",
+  yes: "是",
+  no: "否",
   unset: "未设置",
   never: "永不",
   auto: "自动",

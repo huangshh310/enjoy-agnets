@@ -843,7 +843,7 @@ export const enChat = {
   desktopChip: "Desktop",
   overlayControlling: "Controlling · {app}",
   overlayStop: "Stop",
-  overlayEscHint: "Esc to stop",
+  overlayEscHint: "Press Esc to stop",
   overlayFallbackApp: "Desktop",
   surfaceDesktopExecuteOnly: "Desktop in Execute only",
   alwaysInWorkspace: "Always in workspace",

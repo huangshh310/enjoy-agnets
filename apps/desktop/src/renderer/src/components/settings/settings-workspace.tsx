@@ -125,7 +125,9 @@ export function WorkspaceSettings() {
               <span className="text-caption-2-medium text-text-tertiary">{t("common.off")}</span>
             </SettingsRow>
             <SettingsRow title={t("settings.workspace.monorepo")} description={t("settings.workspace.monorepoDesc")}>
-              <span className="text-caption-2-medium text-text-tertiary">{t("settings.workspace.advanced")}</span>
+              <span className="text-caption-2-medium text-text-tertiary">
+                {workspaceLooksLikeMonorepo(repositories) ? t("common.yes") : t("common.no")}
+              </span>
             </SettingsRow>
           </SettingsCard>
           <WorkspaceExclusionsCard workspaceId={workspaceId} />
@@ -133,4 +135,9 @@ export function WorkspaceSettings() {
       </details>
     </div>
   )
+}
+
+/** 本版没有 monorepo 偏好，也没有子项目探测。未识别就是否，不要写「高级」。 */
+export function workspaceLooksLikeMonorepo(_repositories: Array<{ kind: string }>): boolean {
+  return false
 }

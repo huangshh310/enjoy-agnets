@@ -27,6 +27,8 @@ export const enCommon = {
   disabled: "Disabled",
   on: "On",
   off: "Off",
+  yes: "Yes",
+  no: "No",
   unset: "Unset",
   never: "Never",
   auto: "Auto",

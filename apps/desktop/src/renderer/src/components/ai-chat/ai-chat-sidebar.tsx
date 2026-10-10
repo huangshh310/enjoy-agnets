@@ -12,8 +12,11 @@ import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar
 import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos"
 import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
+import { chordGlyphs } from "@renderer/components/settings/keybindings/keybinding-format"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+
+const QUICK_SEARCH_CHORD = "mod+l"
 
 
 export function AiChatSidebar({
@@ -126,11 +129,12 @@ function SidebarHeader({
 
 function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand?: () => void }) {
   const t = useT()
+  const searchKeys = chordGlyphs(QUICK_SEARCH_CHORD).join(" ")
   return (
     <button
       type="button"
       aria-label={t("common.quickSearch")}
-      title={collapsed ? t("common.quickSearchKbd", { key: "⌘L" }) : undefined}
+      title={collapsed ? t("common.quickSearchKbd", { key: searchKeys }) : undefined}
       onClick={() => {
         if (collapsed) onExpand?.()
         openQuickSearch()
@@ -145,7 +149,7 @@ function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand?: (
         <span className="flex-1 text-left text-body-medium whitespace-nowrap text-text-secondary">{t("common.quickSearch")}</span>
       </Collapsible>
       <Collapsible collapsed={collapsed}>
-        <Kbd>⌘L</Kbd>
+        <Kbd>{searchKeys}</Kbd>
       </Collapsible>
     </button>
   )

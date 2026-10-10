@@ -25,8 +25,10 @@ export const enAccountPages = {
   security: {
     title: "Keys on this computer",
     vaultProtected: "Key is in the system keychain",
+    vaultProtectedOther: "Key is in the system credential store",
     vaultNeutral: "Keys stay on this computer",
     vaultEmpty: "No key stored",
+    vaultSavedShort: "Key saved",
     vaultTitle: "Encrypted on this device",
     vaultDesc: "Keys stay on this machine. This page only shows whether one is saved, never the secret itself.",
     endpointLabel: "This computer",

@@ -37,14 +37,14 @@ export function overlayChromeCopy(locale: "zh" | "en", appName: string): Overlay
     return {
       title: `Controlling · ${app}`,
       stopLabel: "Stop",
-      escHint: "Esc to stop",
+      escHint: "Press Esc to stop",
       lang: "en"
     }
   }
   return {
     title: `正在操控 · ${app}`,
     stopLabel: "停止",
-    escHint: "Esc 停一手势",
+    escHint: "按 Esc 停止",
     lang: "zh-CN"
   }
 }

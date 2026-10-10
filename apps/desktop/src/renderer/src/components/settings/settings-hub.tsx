@@ -28,7 +28,7 @@ export function SettingsHub({
   icon: IconComponent
   title: string
   badge?: string
-  description: string
+  description?: string
   action?: ReactNode
   pulses?: SettingsPulse[]
   children?: ReactNode
@@ -56,7 +56,9 @@ export function SettingsHub({
                 </span>
               ) : null}
             </div>
-            <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{description}</p>
+            {description ? (
+              <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{description}</p>
+            ) : null}
           </div>
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
