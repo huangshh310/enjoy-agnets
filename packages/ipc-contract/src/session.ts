@@ -56,7 +56,7 @@ export const SessionIdInput = z
   .strict()
 export type SessionIdInput = z.infer<typeof SessionIdInput>
 
-/** 归档前会走一遍 deny 待批；deniedApprovals 缺省=旧客户端。 */
+/** 归档前结清未决审批为 cancelled；deniedApprovals 是结清条数，缺省=旧客户端。 */
 export const SessionArchiveResult = z.object({
   id: z.string(),
   archivedAt: z.number().int(),

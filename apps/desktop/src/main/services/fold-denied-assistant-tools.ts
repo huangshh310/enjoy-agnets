@@ -1,5 +1,5 @@
 /**
- * 归档 deny 后把库里助手信封的 approval-requested 折成 output-denied。
+ * 归档 / Stop 结清后把库里助手信封的审批中工具折成已停止（cancelled）或已拒绝（deny）。
  * 不解档时不得再弹出一张死卡。
  */
 import { foldToolEvent, parseAssistantPayload, serializeAssistantPayload } from "@enjoy-agents/ipc-contract"
@@ -10,6 +10,7 @@ export function foldDeniedAssistantTool(input: {
   sessionId: string
   runId: string
   toolCallId: string
+  decision?: "deny" | "cancelled"
 }): boolean {
   const db = getDatabase()
   const rows = db
@@ -26,7 +27,7 @@ export function foldDeniedAssistantTool(input: {
       type: "approval.resolved",
       runId: input.runId,
       toolCallId: input.toolCallId,
-      decision: "deny"
+      decision: input.decision ?? "cancelled"
     })
     persistMessage(
       input.sessionId,

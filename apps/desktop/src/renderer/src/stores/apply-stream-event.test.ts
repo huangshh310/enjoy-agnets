@@ -109,6 +109,21 @@ function hydratedPendingAssistant(): ThreadMessage[] {
   ]
 }
 
+test("Stop 结清 cancelled：工具行走已停止，不是已拒绝", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "cancelled"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(patch.pendingApproval, null)
+  assert.equal(tool.state, "output-error")
+  assert.equal(mapToolStatus(tool.state, tool), "stopped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
 test("切走再切回后的非流式助手：deny 立刻折成未执行，不转圈、不计入已运行", () => {
   const hydrated = hydratedPendingAssistant()
   assert.equal(hydrated[1]?.streaming, undefined)

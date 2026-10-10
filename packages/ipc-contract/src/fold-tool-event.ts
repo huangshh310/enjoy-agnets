@@ -4,6 +4,7 @@
 import type { StreamEvent } from "./index"
 import type { ThreadToolCall } from "./assistant-payload"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
+import { USER_ABORTED_CODE } from "./desktop-notify.ts"
 
 export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void {
   if (event.type === "tool.start") {
@@ -56,10 +57,14 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   }
   if (event.type === "approval.resolved") {
     const current = tools.find((tool) => tool.id === event.toolCallId)
+    const cancelled = event.decision === "cancelled"
     upsertTool(tools, {
       id: event.toolCallId,
-      state: event.decision === "deny" ? "output-denied" : "input-available",
-      result: mergeResultDecision(current?.result, { decision: event.decision })
+      state: cancelled ? "output-error" : event.decision === "deny" ? "output-denied" : "input-available",
+      result: mergeResultDecision(current?.result, {
+        decision: event.decision,
+        ...(cancelled ? { code: USER_ABORTED_CODE } : {})
+      })
     })
   }
 }
@@ -72,7 +77,12 @@ export function sealAbandonedTools(
   if (!tools) return tools
   return tools.map((tool) => {
     if (opts?.aborted && tool.state === "approval-requested") {
-      return { ...tool, state: "output-denied" as const }
+      const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+      return {
+        ...tool,
+        state: "output-error" as const,
+        result: { ...prev, code: USER_ABORTED_CODE, decision: "cancelled" }
+      }
     }
     if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
     if (opts?.aborted) {
@@ -81,7 +91,7 @@ export function sealAbandonedTools(
         ...tool,
         state: "output-error" as const,
         errorText: undefined,
-        result: { ...prev, code: "user_aborted" }
+        result: { ...prev, code: USER_ABORTED_CODE }
       }
     }
     return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }

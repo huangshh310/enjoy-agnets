@@ -12,9 +12,11 @@ import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { claimCatchUpFail } from "./claim-catchup-fail"
 import { isCatchUpApprovalTimeout } from "./automations-catchup-timeout"
 import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
+import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
+  settlePendingApprovalsForRun(runId, run.window)
   if (!claimCatchUpFail(run)) return
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)

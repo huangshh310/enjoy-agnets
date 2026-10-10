@@ -4,6 +4,7 @@
  */
 import { z } from "zod"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
+import { USER_ABORTED_CODE } from "./desktop-notify.ts"
 import { isWriteTypeToolName } from "./tool-names.ts"
 
 export const TurnWorkflow = z.enum(["todo", "in_progress", "needs_review"])
@@ -40,11 +41,15 @@ export function sealTurnTools<T extends TurnToolSnapshot>(
 ): T[] {
   return tools.map((tool) => {
     if (opts?.aborted && tool.state === "approval-requested") {
-      return { ...tool, state: "output-denied" }
+      return {
+        ...tool,
+        state: "output-error",
+        result: { code: USER_ABORTED_CODE, decision: "cancelled" }
+      }
     }
     if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
     if (opts?.aborted) {
-      return { ...tool, state: "output-error", errorText: undefined, result: { code: "user_aborted" } }
+      return { ...tool, state: "output-error", errorText: undefined, result: { code: USER_ABORTED_CODE } }
     }
     return { ...tool, state: "output-error", errorText: tool.errorText ?? SEALED_ERROR }
   })

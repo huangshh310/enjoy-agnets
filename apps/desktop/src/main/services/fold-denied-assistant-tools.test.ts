@@ -1,5 +1,5 @@
 /**
- * 归档 deny 必须把助手信封里的审批中工具折成 output-denied。
+ * 归档 / Stop 结清必须把助手信封里的审批中工具折成已停止。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
@@ -35,7 +35,7 @@ function seedSession(sessionId: string, runId: string) {
   }
 }
 
-test("归档 deny 后助手工具从 approval-requested 变成 output-denied", () => {
+test("归档结清后助手工具从 approval-requested 变成已停止", () => {
   const sessionId = "ses_fold_deny"
   const runId = "run_fold_deny"
   seedSession(sessionId, runId)
@@ -60,9 +60,13 @@ test("归档 deny 后助手工具从 approval-requested 变成 output-denied", (
     .prepare("SELECT content FROM messages WHERE session_id = ? AND role = 'assistant'")
     .get(sessionId) as { content: string }
   const payload = parseAssistantPayload(row.content)
-  assert.equal(payload.tools?.[0]?.state, "output-denied")
+  assert.equal(payload.tools?.[0]?.state, "output-error")
   assert.equal(
-    (payload.tools?.[0]?.result as { decision?: string } | undefined)?.decision,
-    "deny"
+    (payload.tools?.[0]?.result as { decision?: string; code?: string } | undefined)?.decision,
+    "cancelled"
+  )
+  assert.equal(
+    (payload.tools?.[0]?.result as { decision?: string; code?: string } | undefined)?.code,
+    "user_aborted"
   )
 })

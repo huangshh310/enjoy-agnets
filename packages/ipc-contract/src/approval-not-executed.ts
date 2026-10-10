@@ -50,7 +50,7 @@ export function readApprovalNotExecutedCode(value: unknown): string | undefined 
   return undefined
 }
 
-const APPROVAL_DECISIONS = new Set(["allow", "deny", "allow_session", "allow_always"])
+const APPROVAL_DECISIONS = new Set(["allow", "deny", "allow_session", "allow_always", "cancelled"])
 
 export type NotExecutedTool = {
   state?: string
@@ -81,6 +81,7 @@ export function isStaleObservationAfterAllow(tool: NotExecutedTool | undefined):
 export function isToolNotExecuted(tool: NotExecutedTool | undefined): boolean {
   if (!tool) return false
   if (tool.state === "output-denied") return true
+  if (readApprovalDecision(tool.result) === "cancelled") return true
   if (isApprovalNotExecutedText(tool.errorText) || isApprovalNotExecutedCode(tool.errorText)) return true
   return Boolean(readApprovalNotExecutedCode(tool.result))
 }

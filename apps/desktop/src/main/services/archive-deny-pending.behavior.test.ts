@@ -1,5 +1,5 @@
 /**
- * 归档会话前走普通 deny：清掉未决审批，并回 deniedApprovals。
+ * 归档会话前结清未决审批为 cancelled，并回 deniedApprovals。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
@@ -40,7 +40,7 @@ function seedSession(sessionId: string): void {
   ).run(sessionId, "ws_archive", "to archive", 1, 1)
 }
 
-test("归档带未决审批的会话：走 deny，清 pending，回 deniedApprovals", async () => {
+test("归档带未决审批的会话：走 cancelled，清 pending，回 deniedApprovals", async () => {
   const runId = "run_archive_deny"
   const sessionId = "ses_archive_deny"
   const events: SentEvent[] = []
@@ -97,23 +97,24 @@ test("归档带未决审批的会话：走 deny，清 pending，回 deniedApprov
   assert.equal(result.deniedApprovals, 1)
   assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
   assert.equal(getActiveRun(runId), undefined)
-  assert.ok(events.some((event) => event.type === "approval.resolved" && event.decision === "deny"))
+  assert.ok(events.some((event) => event.type === "approval.resolved" && event.decision === "cancelled"))
   const abortEvent = events.find((event) => event.type === "run.error")
   assert.equal(abortEvent?.turn?.attention, "neutral")
   assert.equal(abortEvent?.sessionId, sessionId)
   const stored = getApproval(getDatabase(), "apr_archive_deny")
-  assert.equal(stored?.decision, "deny")
+  assert.equal(stored?.decision, "cancelled")
   assert.equal(stored?.sdkApproved, 0)
   deleteActiveRun(runId)
 })
 
-test("活泵还在且 decide 失败：归档不绕过 denyStored", async () => {
+test("活泵还在：归档结清写 cancelled，不走用户 deny", async () => {
   const runId = "run_archive_live_fail"
   const sessionId = "ses_archive_live_fail"
+  const events: SentEvent[] = []
   seedSession(sessionId)
   holdAgentRun({
     runId,
-    window: recordWindow([]),
+    window: recordWindow(events),
     workspaceRoot: "/tmp",
     messages: [],
     input: {
@@ -137,14 +138,14 @@ test("活泵还在且 decide 失败：归档不绕过 denyStored", async () => {
   })
   run.pendingApprovals.push({
     approvalId: "apr_archive_live_fail",
-    toolCallId: "tool_wrong",
+    toolCallId: "tool_archive_live",
     name: "write_file",
     args: { path: "note.txt" }
   })
-  await assert.rejects(
-    () => denyPendingApprovalsForSession(sessionId, run.window),
-    /tampered|no longer active|No matching/i
-  )
-  assert.ok(getActiveRun(runId))
+  const denied = await denyPendingApprovalsForSession(sessionId, run.window)
+  assert.equal(denied, 1)
+  assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
+  assert.equal(getApproval(getDatabase(), "apr_archive_live_fail")?.decision, "cancelled")
+  assert.ok(events.some((event) => event.type === "approval.resolved" && event.decision === "cancelled"))
   deleteActiveRun(runId)
 })

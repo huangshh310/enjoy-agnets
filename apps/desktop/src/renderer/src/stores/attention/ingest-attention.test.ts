@@ -156,6 +156,23 @@ test("未执行类 run.error 不当出错，徽标清掉", () => {
   assert.equal(stripApprovalCount(finished), 0)
 })
 
+test("approval.resolved cancelled 同样收束未决审批槽", () => {
+  const active = ingestAttentionEvent([], {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const resolved = ingestAttentionEvent(active, {
+    event: { type: "approval.resolved", runId: "run_b", toolCallId: "tc_1", decision: "cancelled" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(resolved[0]?.status, "resolved")
+  assert.equal(stripApprovalCount(resolved), 0)
+})
+
 test("approval.resolved 收束该会话未决审批槽", () => {
   const active = ingestAttentionEvent([], {
     event: approval(),

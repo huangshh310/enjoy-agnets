@@ -11,6 +11,7 @@ import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { deleteActiveRun, emitEvent, getActiveRun, settleRun } from "./agent-run-state"
 import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
+import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export function abortActiveRunMemory(
   runId: string,
@@ -20,6 +21,7 @@ export function abortActiveRunMemory(
   clearCatchUpApprovalTimeout(runId)
   if (run) {
     run.userCancelled = true
+    settlePendingApprovalsForRun(runId, run.window)
     run.tools = sealAbandonedTools(run.tools, { aborted: true }) ?? run.tools
     persistActiveRun(run, runId, "cancelled")
     clearSteer(run.input.sessionId)

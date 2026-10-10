@@ -75,7 +75,7 @@ test("收工封口：input-available 也封成 output-error，approval-requested
   assert.equal(sealed?.[1]?.state, "approval-requested")
 })
 
-test("用户停封口：input-available 标 user_aborted，审批中折成未执行", () => {
+test("用户停封口：input-available 标 user_aborted，审批中标 cancelled 已停止", () => {
   const sealed = sealAbandonedTools(
     [
       { id: "t1", name: "write_file", state: "input-available", args: { path: "e2e-stub.txt" } },
@@ -85,7 +85,23 @@ test("用户停封口：input-available 标 user_aborted，审批中折成未执
   )
   assert.equal(sealed?.[0]?.state, "output-error")
   assert.deepEqual(sealed?.[0]?.result, { code: "user_aborted" })
-  assert.equal(sealed?.[1]?.state, "output-denied")
+  assert.equal(sealed?.[1]?.state, "output-error")
+  assert.deepEqual(sealed?.[1]?.result, { code: "user_aborted", decision: "cancelled" })
+})
+
+test("approval.resolved cancelled 折成已停止，不是已拒绝", () => {
+  const tools: ThreadToolCall[] = [
+    { id: "t1", name: "write_file", state: "approval-requested", args: { path: "note.txt" } }
+  ]
+  foldToolEvent(tools, {
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled"
+  })
+  assert.equal(tools[0]?.state, "output-error")
+  assert.equal((tools[0]?.result as { decision?: string; code?: string }).decision, "cancelled")
+  assert.equal((tools[0]?.result as { decision?: string; code?: string }).code, "user_aborted")
 })
 
 test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {

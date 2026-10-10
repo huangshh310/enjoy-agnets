@@ -34,6 +34,13 @@ test("用户停：没有写类已执行则中性已停止，不算出错", () =>
     }),
     { workflow: "in_progress", attention: "neutral" }
   )
+  assert.deepEqual(
+    decideTurnOutcome({
+      ended: "abort",
+      tools: [{ name: "write_file", state: "approval-requested" }]
+    }),
+    { workflow: "in_progress", attention: "neutral" }
+  )
 })
 
 test("纯聊天 / 只读轮：完成但不进待验收", () => {

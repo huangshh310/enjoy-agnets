@@ -69,7 +69,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("approval.resolved"),
     runId: z.string(),
     toolCallId: z.string(),
-    decision: z.enum(["allow", "deny", "allow_session", "allow_always"]),
+    /** 用户 deny 与系统 cancelled（Stop / 归档 / 超时）分开，禁止把停当成拒绝。 */
+    decision: z.enum(["allow", "deny", "allow_session", "allow_always", "cancelled"]),
     ...Envelope
   }),
   z.object({

@@ -51,6 +51,19 @@ test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
   }
 })
 
+test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled"
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success && parsed.data.type === "approval.resolved") {
+    assert.equal(parsed.data.decision, "cancelled")
+  }
+})
+
 test("未知 type 被拒绝", () => {
   const parsed = StreamEvent.safeParse({ type: "not.a.thing", runId: "r1" })
   assert.equal(parsed.success, false)

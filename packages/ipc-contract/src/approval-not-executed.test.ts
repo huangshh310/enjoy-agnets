@@ -46,6 +46,20 @@ test("未执行：deny 态、回放码、参数不一致、resumeCode 都算", (
   )
   assert.equal(isToolNotExecuted({ state: "output-available" }), false)
   assert.equal(isToolNotExecuted({ state: "output-error", errorText: "Explore mode is read-only." }), false)
+  assert.equal(
+    isToolNotExecuted({
+      state: "output-error",
+      result: { code: "user_aborted", decision: "cancelled" }
+    }),
+    true
+  )
+  assert.equal(
+    isToolNotExecuted({
+      state: "output-error",
+      result: { code: "user_aborted" }
+    }),
+    false
+  )
 })
 
 test("stale_observation + allow 不是用户拒绝", () => {
