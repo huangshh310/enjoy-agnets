@@ -18,7 +18,7 @@ import { runUsageCostMigration } from "./run-usage-cost.ts"
 import { approvalSdkResponseMigration } from "./approval-sdk-response.ts"
 import { costMissingMigration } from "./cost-missing.ts"
 import { mcpCuratedMigration } from "./mcp-curated.ts"
-import { repairClaimedV14, tableExists } from "./column-guard.ts"
+import { ensureCuratedPresetIdColumn, repairClaimedV14, tableExists } from "./column-guard.ts"
 import type { Migration } from "./types.ts"
 
 // 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
@@ -94,6 +94,7 @@ export function applyMigrations(sqlite: DatabaseSync, migrations = MIGRATIONS): 
     }
   }
   repairClaimedV14(sqlite)
+  ensureCuratedPresetIdColumn(sqlite)
   return applied
 }
 

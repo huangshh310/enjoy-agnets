@@ -5,6 +5,7 @@ import { applyMigrations, MIGRATIONS } from "./runner.ts"
 import {
   columnExists,
   ensureApprovalsSdkIdentityIndex,
+  ensureCuratedPresetIdColumn,
   repairClaimedV14
 } from "./column-guard.ts"
 
@@ -67,6 +68,17 @@ test("库里有重复三元组时建 UNIQUE 不挡住启动", () => {
   `)
   assert.doesNotThrow(() => repairClaimedV14(db))
   assert.doesNotThrow(() => ensureApprovalsSdkIdentityIndex(db))
+})
+
+test("v16 已记账但缺 curated_preset_id 时迁移后补列", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  db.exec("ALTER TABLE mcp_servers DROP COLUMN curated_preset_id")
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), false)
+  assert.deepEqual(applyMigrations(db), [])
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), true)
+  ensureCuratedPresetIdColumn(db)
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), true)
 })
 
 test("没有 v14 记账时不提前加 sdk 列", () => {
