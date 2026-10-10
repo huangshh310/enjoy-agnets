@@ -6,7 +6,11 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
 import { setSetting } from "./database"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
-import { e2eChatReadyKind } from "./e2e-chat-readiness"
+import {
+  e2eChatReadyKind,
+  e2eChatReadySkipsBootstrapProfile,
+  e2eChatReadySkipsDefaultModel
+} from "./e2e-chat-readiness"
 import { e2eWorkspaceCount } from "./e2e-workspace-count"
 import { isE2eStub } from "./e2e-stub"
 import { createSession } from "./session-queries"
@@ -24,7 +28,9 @@ export async function bootstrapE2eStub(): Promise<void> {
   if (!root) return
   const first = await seedE2eWorkspace(root, "e2e workspace")
   setSetting("lastWorkspaceId", first.id)
-  setSetting("defaultModelId", "stub-e2e")
+  if (!e2eChatReadySkipsDefaultModel(e2eChatReadyKind())) {
+    setSetting("defaultModelId", "stub-e2e")
+  }
   await seedE2eProfile()
   try {
     await seedE2eChatReadyRoute({
@@ -54,7 +60,9 @@ async function seedE2eWorkspace(root: string, heading: string) {
 
 /** ENJOY_E2E_SKIP_PROFILE=1：有项目但没有可对话路线，用来拍无密钥发送。 */
 async function seedE2eProfile(): Promise<void> {
-  if (process.env.ENJOY_E2E_SKIP_PROFILE === "1" || e2eChatReadyKind() === "none") return
+  if (process.env.ENJOY_E2E_SKIP_PROFILE === "1" || e2eChatReadySkipsBootstrapProfile(e2eChatReadyKind())) {
+    return
+  }
   try {
     await upsertProfile({
       name: "E2E Stub",

@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide.ts"
-import { consumeAdoptedHint, notifyAdoptedDefaultRoute } from "./adopted-default-route-toast.ts"
+import { markAdoptToastRendererReady, queueAdoptedDefaultRoute } from "./adopted-default-route-toast.ts"
 import { applyDefaultChatRoute } from "./apply-default-chat-route.ts"
 import { rememberChatReadiness } from "./chat-readiness-cache.ts"
 
@@ -16,13 +16,15 @@ function acceptReadiness(raw: unknown): ChatReadiness | undefined {
   if (!parsed.success) return undefined
   rememberChatReadiness(parsed.data)
   applyDefaultChatRoute(parsed.data)
-  const name = consumeAdoptedHint(parsed.data.adoptedHint?.name)
-  if (name) notifyAdoptedDefaultRoute(name)
+  queueAdoptedDefaultRoute(parsed.data.adoptedHint?.name)
   return parsed.data
 }
 
 export function useChatReadiness() {
   const client = useQueryClient()
+  useEffect(() => {
+    markAdoptToastRendererReady()
+  }, [])
   const query = useQuery({
     queryKey: CHAT_READINESS_QUERY_KEY,
     enabled: hasIde(),

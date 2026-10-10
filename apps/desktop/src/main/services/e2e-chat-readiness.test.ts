@@ -2,12 +2,17 @@
  * E2E 路线夹具：没开 stub / 打包态不得冒充 ready。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { chatRouteAllowsSend, isVerifiedLocalModel } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
   applyE2eStubEngine,
   e2eChatReadiness,
   e2eChatReadySeedAllowed,
+  e2eChatReadySkipsBootstrapProfile,
+  e2eChatReadySkipsDefaultModel,
   e2eStubEngineInspect
 } from "./e2e-chat-readiness.ts"
 
@@ -59,6 +64,26 @@ test("stub + key 带可发默认路线，不含秘密", () => {
     true
   )
   assert.equal(JSON.stringify(snap).includes("sk-"), false)
+})
+
+test("stub + key-no-model 有密钥档案、默认路线没有模型", () => {
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key-no-model" })
+  assert.equal(snap?.ready, true)
+  assert.equal(snap?.hasEnjoySecret, true)
+  assert.equal(snap?.defaultRoute?.profileId, "e2e")
+  assert.equal(snap?.defaultRoute?.modelId, undefined)
+  assert.equal(e2eChatReadySkipsDefaultModel("key-no-model"), true)
+  assert.equal(e2eChatReadySkipsBootstrapProfile("key-no-model"), true)
+  assert.equal(e2eChatReadySkipsDefaultModel("key"), false)
+  assert.equal(e2eChatReadySkipsBootstrapProfile("none"), true)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: snap?.defaultRoute?.runtimeId ?? "",
+      hasEnjoySecret: snap?.hasEnjoySecret ?? false,
+      verifiedLocal: false
+    }),
+    true
+  )
 })
 
 test("stub + none 引擎数不能冒充可以开始", () => {
@@ -162,4 +187,15 @@ test("stub + engine 默认路线是已登录 CLI，闸放行", () => {
     }),
     true
   )
+})
+
+test("key-no-model 种密钥档案、不写 defaultModelId、也不种 Ollama", () => {
+  const dir = dirname(fileURLToPath(import.meta.url))
+  const seed = readFileSync(join(dir, "e2e-chat-ready-seed.ts"), "utf8")
+  const boot = readFileSync(join(dir, "e2e-bootstrap.ts"), "utf8")
+  assert.match(seed, /key-no-model/)
+  assert.match(seed, /SEEN_NO_USABLE_CHAT_ROUTE_KEY/)
+  assert.match(seed, /kind === "key" \? E2E_CHAT_READY_MODEL_ID : ""/)
+  assert.match(boot, /e2eChatReadySkipsDefaultModel/)
+  assert.match(boot, /e2eChatReadySkipsBootstrapProfile/)
 })
