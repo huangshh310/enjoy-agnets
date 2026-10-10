@@ -7,6 +7,7 @@ import { getDatabase } from "./database"
 import type { BrowserWindow } from "electron"
 import { stampSessionArchived, stampSessionUnarchived } from "./session-archive-stamp"
 import { abortLiveRunsForSession, denyPendingApprovalsForSession } from "./archive-deny-pending"
+import { countPendingApprovalsForSession } from "./settle-run-approvals"
 
 export function listArchivedSessions() {
   return getDatabase()
@@ -22,8 +23,10 @@ export function listArchivedSessions() {
 }
 
 export async function archiveSession(sessionId: string, window?: BrowserWindow) {
+  const pendingBefore = countPendingApprovalsForSession(sessionId)
   await abortLiveRunsForSession(sessionId)
-  const deniedApprovals = await denyPendingApprovalsForSession(sessionId, window)
+  await denyPendingApprovalsForSession(sessionId, window)
+  const deniedApprovals = pendingBefore
   const now = Date.now()
   const changes = stampSessionArchived(getDatabase(), sessionId, now)
   if (changes === 0) throw new Error("Unknown or already archived session.")

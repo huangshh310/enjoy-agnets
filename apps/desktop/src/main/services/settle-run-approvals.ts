@@ -33,6 +33,10 @@ export function settlePendingApprovalsForSession(sessionId: string, window?: Bro
   return settled
 }
 
+export function countPendingApprovalsForSession(sessionId: string): number {
+  return collectPendingForSession(sessionId).length
+}
+
 function collectPendingForRun(runId: string): PendingSettle[] {
   const seen = new Set<string>()
   const out: PendingSettle[] = []

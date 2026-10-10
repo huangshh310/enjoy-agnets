@@ -1,5 +1,5 @@
 /**
- * 重启回挂：库行缺 args 时回读 requestArgs；仍空则不弹允许卡。
+ * 重启回挂：库行 args 为 null/undefined 时回读 requestArgs；{} 是合法零参。
  */
 
 export function parseStoredApprovalArgs(row?: {

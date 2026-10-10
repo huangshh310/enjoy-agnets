@@ -5,10 +5,10 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { parseStoredApprovalArgs } from "./restore-approval-args.ts"
 
-test("库行 args 空时用 requestArgs 回填", () => {
+test("库行 args 缺时用 requestArgs 回填", () => {
   assert.deepEqual(
     parseStoredApprovalArgs({
-      args: "{}",
+      args: null,
       requestArgs: JSON.stringify({ path: "e2e-stub.txt" })
     }),
     { path: "e2e-stub.txt" }
