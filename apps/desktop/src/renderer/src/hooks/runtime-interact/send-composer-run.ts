@@ -159,15 +159,15 @@ async function launchComposerRun(
       payload.executePlan,
       payload.computerUseOnce
     )
-    const gated = applyComposerRunGate(result, payload.content, store.composer)
-    if (!gated.ok) {
+    const blocked = agentRunBlockedCode(result)
+    if (blocked) {
       dropEmptyPendingAssistant()
       store.setRunning(false)
-      store.setError(gated.code)
-      store.setComposer(gated.composer)
+      store.setError(blocked)
+      if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
       return
     }
-    const runId = gated.runId
+    const runId = requireAgentRunId(result)
     if (!claimComposerRun(sessionId, runId)) {
       abortOrphanedRun(runId)
       return
