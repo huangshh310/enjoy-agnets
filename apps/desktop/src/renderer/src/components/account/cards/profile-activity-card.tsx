@@ -6,7 +6,8 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { ProfileActivityHeatmap } from "../charts/profile-activity-heatmap"
 import { growthBadgeClass } from "../constants"
-import { formatContributionUsd } from "../lib/profile-metrics"
+import { hasGrowthBase } from "../lib/profile-face-copy"
+import { formatSpendUsd } from "../lib/profile-metrics"
 import type { HeatmapCellData, HeatmapPeriod, ProfileMetricSummary } from "../types/profile.types"
 
 interface ProfileActivityCardProps {
@@ -28,24 +29,28 @@ export function ProfileActivityCard({
     <div className="flex select-none flex-col rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-card">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div>
-            <span className="text-caption-2-medium font-medium text-text-tertiary">
-              {t("pages.account.hero.contributions")}
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-title-2-semibold tracking-tight text-text-primary">
-                {formatContributionUsd(summary.contributionsCount)}
+          {summary.yearSpendUsd != null ? (
+            <div>
+              <span className="text-caption-2-medium font-medium text-text-tertiary">
+                {t("pages.account.hero.contributions")}
               </span>
-              <span
-                className={cx(
-                  "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
-                  growthBadgeClass(summary.contributionsGrowth, "success")
-                )}
-              >
-                {summary.contributionsGrowth}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-title-2-semibold tracking-tight text-text-primary">
+                  {formatSpendUsd(summary.yearSpendUsd)}
+                </span>
+                {hasGrowthBase(summary.contributionsGrowth) ? (
+                  <span
+                    className={cx(
+                      "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
+                      growthBadgeClass(summary.contributionsGrowth, "success")
+                    )}
+                  >
+                    {summary.contributionsGrowth}
+                  </span>
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
 
         {/* 活跃度周期切换 */}
@@ -56,13 +61,13 @@ export function ProfileActivityCard({
               type="button"
               onClick={() => onPeriodChange(item)}
               className={cx(
-                "cursor-pointer rounded-md px-2 py-0.5 capitalize transition-all",
+                "cursor-pointer rounded-md px-2 py-0.5 transition-all",
                 heatmapPeriod === item
                   ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-tertiary hover:text-text-primary"
               )}
             >
-              {item}
+              {t(`pages.account.heatmap.${item}`)}
             </button>
           ))}
         </div>

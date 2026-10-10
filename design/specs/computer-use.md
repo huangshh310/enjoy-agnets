@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（Dock / 线程 / @菜单默认走人话；HMAC 进开发者档）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-10（overlay 顶栏「按 Esc 停止」）
 
 ## 当前真相
 

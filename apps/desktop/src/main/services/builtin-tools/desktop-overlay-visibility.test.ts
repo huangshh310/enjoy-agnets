@@ -32,7 +32,7 @@ test("顶栏文案与 SoT 一致，空 app 用桌面回退", () => {
   assert.deepEqual(overlayChromeCopy("zh", "计算器"), {
     title: "正在操控 · 计算器",
     stopLabel: "停止",
-    escHint: "Esc 停一手势",
+    escHint: "按 Esc 停止",
     lang: "zh-CN"
   })
   assert.equal(overlayChromeCopy("zh", "  ").title, "正在操控 · 桌面")

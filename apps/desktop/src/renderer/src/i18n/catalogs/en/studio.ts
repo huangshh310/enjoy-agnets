@@ -327,7 +327,7 @@ export const enStudio = {
     cronThursday: "Thursday",
     cronFriday: "Friday",
     cronSaturday: "Saturday",
-    failedBar: "Open Inbox Failed · not Needs review",
+    failedBar: "Open Failed in Messages · not Needs acceptance",
     disableAria: "Turn automation off",
     enableAria: "Turn automation on"
   },

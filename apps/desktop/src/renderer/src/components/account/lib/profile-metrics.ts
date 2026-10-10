@@ -28,9 +28,19 @@ export function formatTokenAmount(tokens: number): string {
   return `${Math.round(tokens)}`
 }
 
-/** BoardUI 年度贡献：美元字面 + 千分位，例如 $7,462。 */
+/** 真实花费：有小数留两位，整数不补 .00。 */
+export function formatSpendUsd(usd: number): string {
+  const rounded = Math.round(Math.max(0, usd) * 100) / 100
+  const digits = Number.isInteger(rounded) ? 0 : 2
+  return `$${rounded.toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: 2
+  })}`
+}
+
+/** 兼容旧测试：条数不当花费。新花费行走 formatSpendUsd。 */
 export function formatContributionUsd(count: number): string {
-  return `$${Math.max(0, Math.round(count)).toLocaleString("en-US")}`
+  return formatSpendUsd(count)
 }
 
 /** 将毫秒耗时格式化为紧凑时长；无效值返回破折号。 */
@@ -123,12 +133,41 @@ function yearBounds(now: Date, yearOffset: number): { start: number; end: number
   }
 }
 
-/** 环比胶囊文案。双 0 为 0%；基数为 0 且当期 > 0 为 +100%。 */
+/** 环比胶囊。没有上年/上月基数时不编 +100%。 */
 export function growthLabel(current: number, previous: number): string {
-  if (previous <= 0) return current <= 0 ? "0%" : "+100%"
+  if (previous <= 0) return ""
   const percent = ((current - previous) / previous) * 100
   const sign = percent >= 0 ? "+" : ""
   return `${sign}${percent.toFixed(1)}%`
+}
+
+/**
+ * 本年真实花费：只加有限的 estimatedCostUsd。没有来源返回 null，不编 $0。
+ * TODO(kai): 跟进 PR 提供本年 estimatedCostUsd + unknownCount；未知花费不得画 $0。
+ */
+export function yearSpendUsdFromMetrics(
+  metrics: TelemetryMetric[],
+  now = new Date()
+): number | null {
+  const thisYear = yearBounds(now, 0)
+  return sumEstimatedCostUsd(metrics, thisYear.start, thisYear.end)
+}
+
+function sumEstimatedCostUsd(
+  metrics: TelemetryMetric[],
+  start: number,
+  end: number
+): number | null {
+  let sum = 0
+  let found = false
+  for (const metric of metrics) {
+    if (metric.createdAt < start || metric.createdAt >= end) continue
+    const usd = metric.estimatedCostUsd
+    if (typeof usd !== "number" || !Number.isFinite(usd)) continue
+    sum += usd
+    found = true
+  }
+  return found ? sum : null
 }
 
 /** 年度 KPI：只来自 metrics，缺数据不回落假数。 */
@@ -157,10 +196,14 @@ export function buildSummary(
     }
   }
 
+  const yearSpendUsd = yearSpendUsdFromMetrics(metrics, now)
+  const lastYearSpend = sumEstimatedCostUsd(metrics, lastYear.start, lastYear.end)
   const streak = computeTopStreak(buildHeatmap(metrics, "yearly", now))
   return {
     contributionsCount: thisYearCount,
-    contributionsGrowth: growthLabel(thisYearCount, lastYearCount),
+    contributionsGrowth:
+      yearSpendUsd == null || lastYearSpend == null ? "" : growthLabel(yearSpendUsd, lastYearSpend),
+    yearSpendUsd,
     lifetimeTokens: formatTokenAmount(totalTokens),
     peakTokens: formatTokenAmount(peak),
     longestTaskDuration: longest > 0 ? formatDurationMs(longest) : "—",

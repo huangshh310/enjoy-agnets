@@ -44,7 +44,7 @@ export function ExtensionsPage() {
         title: t(EXTENSIONS_COPY.mcpTitle),
         countLabel: t(EXTENSIONS_COPY.configured, { count: mcpCount }),
         addHref: mcpHubHref(),
-        addLabel: t(EXTENSIONS_COPY.add),
+        addLabel: t(EXTENSIONS_COPY.openMcp),
         configured: configuredNames(servers)
       },
       {
@@ -52,7 +52,7 @@ export function ExtensionsPage() {
         title: t(EXTENSIONS_COPY.skillsTitle),
         countLabel: t(EXTENSIONS_COPY.configured, { count: skillCount }),
         addHref: skillsHubHref(),
-        addLabel: t(EXTENSIONS_COPY.add),
+        addLabel: t(EXTENSIONS_COPY.openSkills),
         configured: configuredNames(sources)
       }
     ]

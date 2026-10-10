@@ -23,25 +23,37 @@ export const enAccountPages = {
   },
 
   security: {
-    title: "Credential encryption & hardware security",
-    vaultProtected: "Key in vault",
+    title: "Keys on this computer",
+    vaultProtected: "Key is in the system keychain",
+    vaultProtectedOther: "Key is in the system credential store",
+    vaultNeutral: "Keys stay on this computer",
     vaultEmpty: "No key stored",
-    vaultTitle: "Main-process vault · no plaintext",
+    vaultSavedShort: "Key saved",
+    vaultTitle: "Encrypted on this device",
     vaultDesc: "Keys stay on this machine. This page only shows whether one is saved, never the secret itself.",
-    endpointLabel: "Current endpoint",
-    currentDevice: "This device"
+    endpointLabel: "This computer",
+    currentDevice: "This computer",
+    thisComputer: "This computer · {os}",
+    thisComputerOnly: "This computer"
   },
 
   hero: {
     share: "Share",
     copied: "Copied",
     edit: "Edit",
-    avatarHint: "Click to customize your Blobatar avatar",
-    contributions: "Contributions this year",
-    lifetimeTokens: "Lifetime tokens",
-    peakTokens: "Peak tokens",
+    avatarHint: "Click to customize your avatar",
+    contributions: "About this year",
+    yearSpend: "About {amount} this year",
+    lifetimeTokens: "Lifetime use",
+    peakTokens: "Peak use",
     longestTask: "Longest task",
-    topStreak: "Top streak"
+    topStreak: "Longest streak",
+    peakHint: "Highest in one turn",
+    streakHint: "Days in a row with activity",
+    spendHint: "Estimate from local records",
+    tokensHint: "All chat usage so far",
+    agentsHint: "Assistant runs",
+    longestHint: "Longest single task"
   },
 
   heatmap: {
@@ -49,9 +61,9 @@ export const enAccountPages = {
     count: "{n}×",
     tooltip: "{date}: {n} activities",
     periodHintSuffix: "of activity",
-    weekly: "Last 8 weeks",
-    monthly: "Last 20 weeks",
-    yearly: "Last 1 year",
+    weekly: "Week",
+    monthly: "Month",
+    yearly: "Year",
     start: "Start",
     today: "Today",
     less: "Less",

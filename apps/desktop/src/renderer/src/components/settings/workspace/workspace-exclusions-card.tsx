@@ -145,7 +145,7 @@ export function WorkspaceExclusionsCard({ workspaceId }: { workspaceId?: string 
             <span>Node / TypeScript / Web</span>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium text-text-secondary">
-            <span>pnpm monorepo</span>
+            <span>多个子项目</span>
           </div>
         </div>
       </SettingsRow>

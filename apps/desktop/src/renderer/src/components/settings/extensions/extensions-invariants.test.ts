@@ -54,10 +54,13 @@ test("扩展页 copy 不含 Registry、本机 CLI、ACP、已同步到助手", (
   for (const term of EXTENSIONS_FORBIDDEN_TERMS) {
     assert.equal(blob.includes(term), false, `forbidden: ${term}`)
   }
-  assert.match(zh.settings.extensions.footnote, /#\/mcp/)
-  assert.match(zh.settings.extensions.footnote, /#\/skills/)
-  assert.match(en.settings.extensions.footnote, /#\/mcp/)
-  assert.match(en.settings.extensions.footnote, /#\/skills/)
+  assert.doesNotMatch(zh.settings.extensions.footnote, /#\/mcp|#\/skills|真源|curated/)
+  assert.doesNotMatch(en.settings.extensions.footnote, /#\/mcp|#\/skills/)
+  assert.equal(zh.settings.extensions.curatedTitle, "精选")
+  assert.equal(zh.settings.extensions.curatedDesc, "精选推荐，点一下就能加到本机，不另开商店。")
+  assert.equal(zh.settings.extensions.openMcp, "打开 MCP")
+  assert.equal(zh.settings.extensions.skillsTitle, "技能")
+  assert.equal(zh.settings.extensions.openSkills, "打开技能")
   assert.equal(zh.settings.extensions.written, "已写入 Enjoy · 下一轮可注入")
   assert.equal(zh.settings.extensions.catalogFailTitle, "精选暂时加载不了")
   assert.equal(zh.settings.extensions.addToMcp, "添加到 MCP")
