@@ -52,7 +52,7 @@ export async function consumeApprovalRequired(
       toolCallId,
       name: event.name,
       args,
-      requestArgs
+      requestArgs: resolved.args
     }),
     { toolCallId, name: event.name, args }
   )

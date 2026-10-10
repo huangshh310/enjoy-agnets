@@ -22,7 +22,7 @@ test("已有 tool.start 入参：缺 args 的卡回填真 path", () => {
 test("回填不了：不弹允许卡，返回 approval_args_missing", () => {
   const resolved = resolveApprovalArgs({
     name: "write_file",
-    args: {},
+    args: undefined,
     toolCallId: "tool_missing",
     tools: []
   })
@@ -32,13 +32,25 @@ test("回填不了：不弹允许卡，返回 approval_args_missing", () => {
   assert.match(resolved.message, /没拿到这次操作的参数/)
 })
 
-test("desktop_act 空对象也算缺参，禁止拿 {} 判敏感", () => {
-  assert.equal(isMissingApprovalArgs({}), true)
+test("零参 {} 不是缺参，主循环直接过", () => {
+  assert.equal(isMissingApprovalArgs({}), false)
+  assert.equal(isMissingApprovalArgs(undefined), true)
+  assert.equal(isMissingApprovalArgs(null), true)
   const resolved = resolveApprovalArgs({
-    name: "desktop_act",
+    name: "list_tables",
     args: {},
-    toolCallId: "tool_desk",
-    tools: [{ id: "tool_desk", name: "desktop_act", state: "input-available" }]
+    toolCallId: "tool_list",
+    tools: []
+  })
+  assert.deepEqual(resolved, { ok: true, args: {} })
+})
+
+test("回填时工具名对不上不算命中", () => {
+  const resolved = resolveApprovalArgs({
+    name: "write_file",
+    args: undefined,
+    toolCallId: "tool_1",
+    tools: [{ id: "tool_1", name: "read_file", state: "input-available", args: { path: "x.ts" } }]
   })
   assert.equal(resolved.ok, false)
 })

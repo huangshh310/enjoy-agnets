@@ -9,13 +9,20 @@ import {
 
 export { APPROVAL_ARGS_MISSING, APPROVAL_ARGS_MISSING_COPY as APPROVAL_ARGS_MISSING_MESSAGE }
 
+/** 只有 undefined/null 算缺参。主循环 SDK 的 `{}`（零参工具）直接过。 */
 export function isMissingApprovalArgs(args: unknown): boolean {
-  if (args == null) return true
-  return typeof args === "object" && !Array.isArray(args) && Object.keys(args).length === 0
+  return args == null
 }
 
-export function backfillApprovalArgs(tools: ThreadToolCall[], toolCallId: string): unknown {
-  return tools.find((tool) => tool.id === toolCallId)?.args
+export function backfillApprovalArgs(
+  tools: ThreadToolCall[],
+  toolCallId: string,
+  name?: string
+): unknown {
+  const tool = tools.find((item) => item.id === toolCallId)
+  if (!tool) return undefined
+  if (name && tool.name && tool.name !== name) return undefined
+  return tool.args
 }
 
 export function resolveApprovalArgs(input: {
@@ -25,7 +32,7 @@ export function resolveApprovalArgs(input: {
   tools: ThreadToolCall[]
 }): { ok: true; args: unknown } | { ok: false; code: string; message: string } {
   const filled = isMissingApprovalArgs(input.args)
-    ? backfillApprovalArgs(input.tools, input.toolCallId)
+    ? backfillApprovalArgs(input.tools, input.toolCallId, input.name)
     : input.args
   if (isMissingApprovalArgs(filled)) {
     return { ok: false, code: APPROVAL_ARGS_MISSING, message: APPROVAL_ARGS_MISSING_COPY }
