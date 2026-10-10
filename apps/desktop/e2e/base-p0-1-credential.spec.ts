@@ -1,5 +1,6 @@
 /**
  * 凭证三态与首发夹具。走 ENJOY_E2E_CREDENTIAL / ENJOY_E2E_SEND，不走 setError 桥。
+ * 列表断言收窄到 providers-configured-list，避免侧栏同名。
  */
 import { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
