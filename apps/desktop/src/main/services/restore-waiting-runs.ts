@@ -60,7 +60,12 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
       continue
     }
     const partitioned = partitionHmacRows(row.id, listApprovalsForRun(db, row.id))
-    const unverifiableDecided = partitioned.decidedPassed.filter((item) => !canReplayDecided(item))
+    const checkpointPendingIds = new Set(
+      (extras.pendingApprovals ?? []).map((item) => item.approvalId)
+    )
+    const unverifiableDecided = partitioned.decidedPassed.filter((item) =>
+      isUnverifiableCheckpointPending(item, checkpointPendingIds)
+    )
     if (partitioned.hmacFailed.length > 0 || unverifiableDecided.length > 0) {
       // HMAC 失败：已决行的审计不盖。unsent：只补 restart_unverifiable_decision。
       for (const item of partitioned.hmacFailed) {
@@ -110,7 +115,7 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
 }
 
 async function restoreOneWaiting(input: {
-  row: { id: string; sessionId: string; workspaceId: string | null; modelId: string | null }
+  row: { id: string; sessionId: string; workspaceId: string | null; modelId: string | null; createdAt: number }
   extras: ReturnType<typeof parseWaitingExtras>
   checkpoint: NonNullable<ReturnType<typeof parseGenerationCheckpoint>>
   prefs: ReturnType<typeof readPreferences>
@@ -149,7 +154,7 @@ async function restoreOneWaiting(input: {
     workspaceRoot: workspace.rootPath,
     secret,
     messages,
-    ...readLatestAssistantSnapshot(row.sessionId)
+    ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt })
   })
   hydrateActiveRunUsage(row.id)
   const run = getActiveRun(row.id)
@@ -207,6 +212,13 @@ function partitionHmacRows(
 
 function canReplayDecided(row: ApprovalRow): boolean {
   return planSdkReplay(row, row.id, resolvedSdkApprovalId(row), row.decision ?? "deny").action === "replay"
+}
+
+/** 只审检查点里仍等 SDK 的未决；历史已回 SDK 的 desktop_act allow 不得毒死整轮。 */
+function isUnverifiableCheckpointPending(row: ApprovalRow, checkpointPendingIds: Set<string>): boolean {
+  if (!checkpointPendingIds.has(row.id)) return false
+  if (row.sdkApproved != null) return false
+  return !canReplayDecided(row)
 }
 
 /** 回挂对不上：未决 cancelled（restart），run 记停止，发诚实收工码。 */

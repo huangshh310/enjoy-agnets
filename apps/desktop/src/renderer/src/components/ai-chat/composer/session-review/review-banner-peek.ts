@@ -7,7 +7,7 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export function reviewBannerPeek(
   files: SessionReviewFile[],
-  opts: { stopped?: boolean; placeholder?: boolean; wroteThisTurnOnly?: boolean },
+  opts: { stopped?: boolean; placeholder?: boolean; wroteThisTurnOnly?: boolean; maybeChanged?: boolean },
   t: Translate
 ): string {
   if (files.length > 0 && opts.stopped) {
@@ -25,6 +25,6 @@ export function reviewBannerPeek(
     return t("chat.stackedFilesChangedNamed", { n: 1, name })
   }
   if (files.length > 0) return t("chat.stackedFilesChanged", { n: files.length })
-  if (opts.placeholder) return t("chat.sessionReviewCommandPlaceholder")
+  if (opts.maybeChanged || opts.placeholder) return t("chat.sessionReviewMaybeChanged")
   return t("chat.environmentChanges")
 }

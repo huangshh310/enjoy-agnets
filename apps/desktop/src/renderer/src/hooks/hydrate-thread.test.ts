@@ -87,6 +87,23 @@ test("重新打开后：库里 output-error + 拒绝码仍是未执行，不是�
   assert.notEqual(mapToolStatus(tool.state, tool), "running")
 })
 
+test("已结束会话回灌：approval-requested 中性封口，不转圈", () => {
+  const content = JSON.stringify({
+    v: 1,
+    content: "",
+    tools: [{ id: "tool_pending", name: "write_file", state: "approval-requested", args: { path: "a.ts" } }]
+  })
+  const [sealed] = threadFromRows([{ id: "msg_ended", role: "assistant", content, createdAt: 1 }])
+  assert.equal(sealed?.tools?.[0]?.state, "output-error")
+  assert.deepEqual(sealed?.tools?.[0]?.result, { decision: "cancelled" })
+  assert.equal(mapToolStatus(sealed!.tools![0]!.state, sealed!.tools![0]), "skipped")
+  const [live] = threadFromRows(
+    [{ id: "msg_ended", role: "assistant" as const, content, createdAt: 1 }],
+    { sealAbandoned: false }
+  )
+  assert.equal(live?.tools?.[0]?.state, "approval-requested")
+})
+
 test("仍在跑的会话回灌：不把 input-available 封成出错", () => {
   const content = JSON.stringify({
     v: 1,

@@ -3,12 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   StreamEvent,
   readWorkspaceChangesResult,
-  type AskUserAnswers,
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+<<<<<<< HEAD
 import { readWorkspaceFile } from "../lib/read-workspace-file"
 import { queryClient } from "../lib/query-client"
+=======
+>>>>>>> b4b0452a (fix: 回挂四条 must：待验收收窄回退、reattach 静默、历史 desktop_act 不毒死、助手行只认本轮)
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
 import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
@@ -16,11 +18,6 @@ import { applyDefaultChatRoute } from "./apply-default-chat-route"
 import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
-import { approvalDecideUiError } from "./approval-decide-failure"
-import { en } from "../i18n/catalogs/en/index.ts"
-import { zh } from "../i18n/catalogs/zh/index.ts"
-import { resolveLocale, type LanguagePref } from "../i18n/locale.ts"
-import { translate } from "../i18n/lookup.ts"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { pickActiveModel } from "./pick-active-model"
 import {
@@ -34,7 +31,6 @@ import type { WorkspaceRow } from "./workspace-row"
 import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
 import { useChatStore, type ModelOption } from "../stores/chat-store"
 import { pickForegroundSession } from "./pick-foreground-session"
-import { resolveApprovalRunId } from "./resolve-approval-run"
 import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
@@ -165,8 +161,10 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
 export { abortComposerRun }
 export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
 export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersistedSession }
+export { decidePendingApproval, decidePendingApprovalOrThrow } from "./decide-pending-approval"
 export type { WorkspaceRow } from "./workspace-row"
 
+<<<<<<< HEAD
 export async function decidePendingApproval(
   decision: "allow" | "deny" | "allow_session" | "allow_always",
   answers?: AskUserAnswers
@@ -204,6 +202,8 @@ export async function decidePendingApprovalOrThrow(
   }
 }
 
+=======
+>>>>>>> b4b0452a (fix: 回挂四条 must：待验收收窄回退、reattach 静默、历史 desktop_act 不毒死、助手行只认本轮)
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()
   const profileName = snapshot.preferences.accountProfile?.name?.trim()
@@ -351,16 +351,6 @@ function followOpenReviewFile(path: string) {
     return
   }
   void openChangedFile(path, { reveal: false })
-}
-
-function translateDecideError(path: string): string {
-  const language = (
-    queryClient.getQueryData(["settings"]) as
-      | { preferences?: { language?: LanguagePref } }
-      | undefined
-  )?.preferences?.language ?? "zh"
-  const messages = resolveLocale(language) === "en" ? en : zh
-  return translate(messages, path)
 }
 
 async function tryReadFile(workspaceId: string, path: string): Promise<string | null> {

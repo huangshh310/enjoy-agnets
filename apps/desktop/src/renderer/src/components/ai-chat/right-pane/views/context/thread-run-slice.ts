@@ -42,7 +42,7 @@ export function toolRunKind(
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"
   if (abort === "neutral") return "catch_up"
-  if (readApprovalDecision(tool?.result) === "cancelled") return "restart"
+  if (readApprovalDecision(tool?.result) === "cancelled") return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"
   if (state === "output-denied") return "denied"

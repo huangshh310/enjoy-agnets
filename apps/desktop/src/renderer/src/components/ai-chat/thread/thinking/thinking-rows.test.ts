@@ -40,7 +40,7 @@ test("补跑超时工具行走中性文案，不是拒绝或出错", () => {
   assert.notEqual(headline, "chat.toolDenied")
 })
 
-test("回挂 cancelled 无码也走重启后已中断，不是已拒绝", () => {
+test("cancelled 无码不走重启后已中断，也不是已拒绝", () => {
   const headline = thinkingHeadline(
     false,
     [
@@ -54,7 +54,7 @@ test("回挂 cancelled 无码也走重启后已中断，不是已拒绝", () => 
     null,
     t
   )
-  assert.equal(headline, "chat.restartAbandoned")
+  assert.notEqual(headline, "chat.restartAbandoned")
   assert.notEqual(headline, "chat.toolDenied")
 })
 

@@ -69,7 +69,7 @@ export function thinkingHeadline(
       return t("studio.automations.catchUpTimeout")
     }
     if (tools.every((tool) => readApprovalDecision(tool.result) === "cancelled")) {
-      return t("chat.restartAbandoned")
+      return t("chat.ranTools", { count: tools.length })
     }
     return t("chat.toolDenied")
   }

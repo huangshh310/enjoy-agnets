@@ -5,6 +5,7 @@
  */
 import {
   getApproval,
+  getRun,
   isSupersededSdkApprovalId,
   planSdkReplay,
   resolvedSdkApprovalId,
@@ -146,7 +147,10 @@ export function endRestoredRunWithoutSdkReply(
   const target = window ?? run?.window
   const sid = sessionId ?? run?.input.sessionId
   settlePendingApprovalsForRun(runId, target, "restart")
-  if (sid) persistSealedAssistantTools(sid)
+  if (sid) {
+    const createdAt = getRun(getDatabase(), runId)?.createdAt
+    persistSealedAssistantTools(sid, createdAt != null ? { runCreatedAt: createdAt } : undefined)
+  }
   writeCancelledRestoreError(runId, RESTORE_NO_MATCHING_CODE)
   if (target) {
     emitEvent(target, {

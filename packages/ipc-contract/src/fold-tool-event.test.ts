@@ -65,14 +65,15 @@ test("带 resumeCode 的 tool.result 也折成 output-denied", () => {
   assert.equal(tools[0]?.state, "output-denied")
 })
 
-test("收工封口：input-available 封成 output-error；未决 approval-requested 保持 pending", () => {
+test("已结束 run 回灌：input-available 与 approval-requested 都中性封口", () => {
   const sealed = sealAbandonedTools([
     { id: "t1", name: "write_file", state: "input-available" },
     { id: "t2", name: "write_file", state: "approval-requested" }
   ])
   assert.equal(sealed?.[0]?.state, "output-error")
   assert.equal(sealed?.[0]?.errorText, "No result received.")
-  assert.equal(sealed?.[1]?.state, "approval-requested")
+  assert.equal(sealed?.[1]?.state, "output-error")
+  assert.deepEqual(sealed?.[1]?.result, { decision: "cancelled" })
 })
 
 test("已允许但没 result：重启封口改成 cancelled，不得留 allow 当失败", () => {

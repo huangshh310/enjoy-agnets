@@ -71,7 +71,7 @@ test("允许写盘：待验收 + 已完成；ACP 已执行态也算", () => {
   assert.deepEqual(result, { workflow: "needs_review", complete: true, error: false })
 })
 
-test("用户停：没产出 write 则不算已改，已停止不是完成", () => {
+test("用户停：写类已开始则待验收，已停止不是完成", () => {
   const turn = decideTurnOutcome({
     ended: "abort",
     tools: [{ name: "write_file", state: "input-available" }]
@@ -82,5 +82,5 @@ test("用户停：没产出 write 则不算已改，已停止不是完成", () =
     message: "Aborted by user.",
     turn
   })
-  assert.deepEqual(result, { workflow: "in_progress", complete: false, error: false })
+  assert.deepEqual(result, { workflow: "needs_review", complete: false, error: false })
 })

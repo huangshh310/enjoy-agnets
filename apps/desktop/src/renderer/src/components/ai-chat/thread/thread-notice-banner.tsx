@@ -17,9 +17,11 @@ export function ThreadNoticeBanner() {
   const kind = classifyThreadError(notice)
   const stopped = kind === "stopped"
   const restoreMismatch = kind === "restore_no_matching"
+  const restoreInterrupted = kind === "restore_interrupted"
+  const restoreFamily = restoreMismatch || restoreInterrupted
   const catchUpTimeout = kind === "catch_up_timeout"
   const resume = kind === "resume_fallback"
-  const title = restoreMismatch
+  const title = restoreFamily
     ? t("chat.restartAbandoned")
     : stopped
       ? t("chat.runStopped")
@@ -28,11 +30,13 @@ export function ThreadNoticeBanner() {
         : resume
           ? t("chat.acpResumeFallbackTitle")
           : notice
-  const detail = restoreMismatch
-    ? t("chat.restoreNoMatching")
-    : resume
-      ? t("chat.acpResumeFallbackHint")
-      : undefined
+  const detail = restoreInterrupted
+    ? t("chat.restoreInterrupted")
+    : restoreMismatch
+      ? t("chat.restoreNoMatching")
+      : resume
+        ? t("chat.acpResumeFallbackHint")
+        : undefined
 
   function handleResend() {
     const lastUser = [...messages].reverse().find((row) => row.role === "user")
@@ -48,14 +52,14 @@ export function ThreadNoticeBanner() {
       <span
         className={cx(
           "mt-1.5 size-2 shrink-0 rounded-full",
-          stopped || restoreMismatch || catchUpTimeout ? "bg-text-tertiary" : "bg-status-yellow-text"
+          stopped || restoreFamily || catchUpTimeout ? "bg-text-tertiary" : "bg-status-yellow-text"
         )}
         aria-hidden
       />
       <div className="min-w-0 flex-1">
         <p className="text-caption-1-medium text-text-primary">{title}</p>
         {detail ? <p className="mt-0.5 text-caption-2-regular text-text-secondary">{detail}</p> : null}
-        {restoreMismatch ? (
+        {restoreFamily ? (
           <button
             type="button"
             data-testid="thread-resend"

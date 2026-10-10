@@ -74,7 +74,7 @@ test("SLOW_TOOL 允许后立刻 kill-9：不重跑，中性中断 + 横幅，不
     const window = await firstWindow(second)
     await expect(window.locator("body")).toContainText("重启后已中断", { timeout: 20_000 })
     await expect(window.locator('[data-testid="thread-notice-banner"]')).toBeVisible({ timeout: 20_000 })
-    await expect(window.locator("body")).toContainText("重启后对不上原来的审批，这一轮已结束。")
+    await expect(window.locator("body")).toContainText("重启时这一步还没跑完，已经停下。")
     await expect(window.locator('[data-testid="thread-resend"]')).toBeVisible()
     await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
     await expect(window.locator("body")).not.toContainText("1 个文件已改")

@@ -87,8 +87,12 @@ export function sealAbandonedTools(
           result: { ...prev, code: sealCode, decision: "cancelled" }
         }
       }
-      // 冷启动等待回挂：未决行保持 pending，禁止先封成红失败。
-      return tool
+      // 已结束 run 回灌：中性封口，不转圈。活着的 waiting/running 走 sealAbandoned:false。
+      return {
+        ...tool,
+        state: "output-error" as const,
+        result: { ...prev, decision: "cancelled" }
+      }
     }
     if (sealCode && tool.state === "output-error") {
       return upgradeHydrateRedSeal(tool, sealCode)

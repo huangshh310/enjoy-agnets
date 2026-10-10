@@ -3,6 +3,8 @@
  */
 import { create } from "zustand"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
+import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-restart-notice"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
@@ -196,7 +198,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
   setPreparingHint: (preparingHint) => set({ preparingHint }),
-  setNotice: (notice) => set({ notice }),
+  setNotice: (notice) => {
+    const sessionId = get().sessionId
+    if (sessionId && isRestoreFamilyCode(notice)) rememberRestartNotice(sessionId, notice)
+    if (sessionId && notice === null && isRestoreFamilyCode(get().notice)) consumeRestartNotice(sessionId)
+    set({ notice })
+  },
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
   setRemoteStatus: (remoteStatus, remoteLabel, remoteError) =>
     set((state) => ({

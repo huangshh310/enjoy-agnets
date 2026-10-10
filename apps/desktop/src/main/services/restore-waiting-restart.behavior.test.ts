@@ -416,3 +416,64 @@ test("desktop_act 已决 deny：回放 approved:false 并续跑", async () => {
   assert.equal((part as { approved?: boolean } | undefined)?.approved, false)
   deleteActiveRun(runId)
 })
+
+test("历史 desktop_act allow 已回 SDK + 当前未决 write_file：只回挂写盘卡", async () => {
+  resetRestoreWaitingOnceForTests()
+  const runId = "run_probe_o"
+  const sessionId = "ses_probe_o"
+  const historicalId = "apr_probe_o_desktop"
+  const pendingId = "apr_probe_o_write"
+  const events: SentEvent[] = []
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_probe_o", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(sessionId, "ws_probe_o", "probe-o", 1, 1)
+  insertRun(db, {
+    id: runId,
+    sessionId,
+    workspaceId: "ws_probe_o",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: JSON.stringify({
+      version: 1,
+      request: {
+        kind: "agent",
+        sessionId,
+        modelId: "m",
+        messages: [{ role: "user", content: "write after click" }]
+      },
+      pendingApprovals: [{ approvalId: pendingId, toolCallId: `tool_${pendingId}`, name: "write_file" }]
+    }),
+    error: null
+  })
+  const historical = rememberApproval({
+    runId,
+    approvalId: historicalId,
+    toolCallId: `tool_${historicalId}`,
+    name: "desktop_act",
+    args: { action: "click", appName: "备忘录" }
+  })
+  assert.ok(historical.action === "insert" || historical.action === "reuse")
+  setApprovalDecision(db, historicalId, "allow")
+  setApprovalSdkResponse(db, historicalId, { approved: true, reason: "user allow" })
+  const pending = rememberApproval({
+    runId,
+    approvalId: pendingId,
+    toolCallId: `tool_${pendingId}`,
+    name: "write_file",
+    args: { path: "note.txt", content: "from stub" }
+  })
+  assert.ok(pending.action === "insert" || pending.action === "reuse")
+  await restoreWaitingRuns(recordWindow(events))
+  assert.notEqual(getRun(db, runId)?.status, "cancelled")
+  assert.equal(getApproval(db, historicalId)?.decision, "allow")
+  assert.equal(getApproval(db, pendingId)?.decision, null)
+  assert.ok(getActiveRun(runId))
+  assert.ok(events.some((event) => event.type === "approval.required" && event.approvalId === pendingId))
+  deleteActiveRun(runId)
+})

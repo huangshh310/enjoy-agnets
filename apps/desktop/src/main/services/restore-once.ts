@@ -29,3 +29,7 @@ export function resetRestoreWaitingOnceForTests(): void {
   waitingClaimed = false
   waitingSettled = false
 }
+
+export function resetRestoreRunningOnceForTests(): void {
+  runningClaimed = false
+}

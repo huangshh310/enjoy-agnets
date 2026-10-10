@@ -637,6 +637,7 @@ export const enChat = {
   moreActions: "More",
   viewRawJson: "View raw contents",
   restoreNoMatching: "This run could not match the original approval after restart, so it ended.",
+  restoreInterrupted: "This step was still running when the app restarted, so it stopped.",
   restartAbandoned: "Interrupted after restart",
   resendLastPrompt: "Resend",
   approvalDecideHmac: "The approval signature did not match.",
@@ -687,6 +688,7 @@ export const enChat = {
   sessionReviewCollapse: "Collapse files",
   sessionReviewOpenFile: "Review {name}",
   sessionReviewNoDiff: "No line changes",
+  sessionReviewMaybeChanged: "Files may have changed — please review",
   sessionReviewCommandPlaceholder:
     "This turn ran commands and may have changed files. Check Review to confirm.",
   sessionReviewDefaultModel: "Enjoy Agents",

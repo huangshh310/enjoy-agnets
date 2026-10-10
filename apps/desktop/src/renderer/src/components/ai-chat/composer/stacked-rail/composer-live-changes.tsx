@@ -58,6 +58,7 @@ export function ComposerLiveChanges() {
     {
       stopped,
       placeholder: showGate,
+      maybeChanged: showGate && files.length === 0,
       wroteThisTurnOnly: model.pick.wroteThisTurnOnly
     },
     t

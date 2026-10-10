@@ -1,6 +1,7 @@
 /**
  * running 中途被杀：不能判断工具有没有半执行，禁止重跑。
  * 启动时先封工具行，窗口起来再发回挂家族 run.error。
+ * 工单走 decideTurnOutcome(sealed tools)，禁止无条件写成 todo。
  */
 import type { BrowserWindow } from "electron"
 import {
@@ -8,6 +9,7 @@ import {
   sealAbandonedTools,
   serializeAssistantPayload
 } from "@enjoy-agents/ipc-contract"
+import { decideTurnOutcome, type TurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import { RESTART_ABANDONED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { RESTORE_INTERRUPTED_RUNNING } from "@enjoy-agents/ipc-contract/restore-codes"
 import { getRun, updateRun, type RunRow } from "@enjoy-agents/db"
@@ -15,21 +17,23 @@ import { emitEvent } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { persistMessage } from "./persist-session"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
+import { assistantBelongsToRun } from "./restore-assistant-snapshot"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
-const pendingEmit = new Set<string>()
+const pendingEmit = new Map<string, TurnOutcome>()
 
 export function queueInterruptedRunningSettle(row: RunRow): void {
   settlePendingApprovalsForRun(row.id, undefined, "restart")
-  persistSealedAssistantTools(row.sessionId)
+  const original = persistSealedAssistantTools(row.sessionId, { runCreatedAt: row.createdAt })
   writeCancelledRestoreError(row.id, RESTORE_INTERRUPTED_RUNNING)
-  persistSessionWorkflow(row.sessionId, "todo")
-  pendingEmit.add(row.id)
+  const turn = decideTurnOutcome({ ended: "archive", tools: original })
+  persistSessionWorkflow(row.sessionId, turn.workflow)
+  pendingEmit.set(row.id, turn)
 }
 
 export function emitQueuedInterruptedRunning(window: BrowserWindow): void {
   const db = getDatabase()
-  for (const runId of pendingEmit) {
+  for (const [runId, turn] of pendingEmit) {
     const row = getRun(db, runId)
     if (!row) continue
     emitEvent(window, {
@@ -38,7 +42,7 @@ export function emitQueuedInterruptedRunning(window: BrowserWindow): void {
       sessionId: row.sessionId,
       message: RESTORE_INTERRUPTED_RUNNING,
       code: RESTORE_INTERRUPTED_RUNNING,
-      turn: { workflow: "todo", attention: "neutral" }
+      turn
     })
   }
   pendingEmit.clear()
@@ -60,16 +64,28 @@ export function writeCancelledRestoreError(runId: string, restoreCode: string): 
   updateRun(db, runId, { status: "cancelled", error: restoreCode })
 }
 
-/** waiting 放弃与 running 中途共用：把助手工具行封成 restart_abandoned。 */
-export function persistSealedAssistantTools(sessionId: string): void {
-  const rows = getDatabase()
+/** waiting 放弃与 running 中途共用：只封本轮助手行，返回封口前的工具给收工判定。 */
+export function persistSealedAssistantTools(
+  sessionId: string,
+  opts?: { runCreatedAt?: number }
+): Array<{ name: string; state?: string; result?: unknown; errorText?: string }> {
+  const db = getDatabase()
+  const latestUser = db
     .prepare(
-      "SELECT id, content FROM messages WHERE session_id = ? AND role = 'assistant' ORDER BY created_at DESC"
+      "SELECT created_at as createdAt FROM messages WHERE session_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 1"
     )
-    .all(sessionId) as Array<{ id: string; content: string }>
+    .get(sessionId) as { createdAt: number } | undefined
+  const rows = db
+    .prepare(
+      "SELECT id, content, created_at as createdAt FROM messages WHERE session_id = ? AND role = 'assistant' ORDER BY created_at DESC"
+    )
+    .all(sessionId) as Array<{ id: string; content: string; createdAt: number }>
+  let original: Array<{ name: string; state?: string; result?: unknown; errorText?: string }> = []
   for (const row of rows) {
+    if (!assistantBelongsToRun(row.createdAt, latestUser?.createdAt, opts?.runCreatedAt)) continue
     const payload = parseAssistantPayload(row.content)
     const tools = payload.tools ?? []
+    if (original.length === 0) original = tools
     const sealed = sealAbandonedTools(tools, { code: RESTART_ABANDONED_CODE }) ?? tools
     if (JSON.stringify(sealed) === JSON.stringify(tools)) continue
     persistMessage(
@@ -80,4 +96,5 @@ export function persistSealedAssistantTools(sessionId: string): void {
       row.id
     )
   }
+  return original
 }

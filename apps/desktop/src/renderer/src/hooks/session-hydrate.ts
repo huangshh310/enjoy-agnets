@@ -40,6 +40,7 @@ export function applySessionHydrate(input: {
   if (!ok) return false
   const store = useChatStore.getState()
   const notice = noticeAfterRestartHydrate({
+    sessionId: input.sessionId,
     sameSession: input.sameSession,
     running,
     notice: store.notice,

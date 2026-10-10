@@ -1,7 +1,11 @@
 /**
  * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
-import { isRestoreFamilyCode, RESTORE_NO_MATCHING_CODE } from "@enjoy-agents/ipc-contract/restore-codes"
+import {
+  isRestoreFamilyCode,
+  RESTORE_INTERRUPTED_RUNNING,
+  RESTORE_NO_MATCHING_CODE
+} from "@enjoy-agents/ipc-contract/restore-codes"
 import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 export { NO_CHAT_ROUTE }
@@ -24,6 +28,7 @@ export type ThreadErrorKind =
   | "send_restore"
   | "stopped"
   | "restore_no_matching"
+  | "restore_interrupted"
   | "run_failed"
   | "catch_up_timeout"
   | "generic"
@@ -67,6 +72,7 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   ) {
     return "stopped"
   }
+  if (message === RESTORE_INTERRUPTED_RUNNING) return "restore_interrupted"
   if (isRestoreFamilyCode(message)) return "restore_no_matching"
   if (message === RUN_FAILED) return "run_failed"
   if (message === CATCH_UP_APPROVAL_TIMEOUT) return "catch_up_timeout"
@@ -130,6 +136,7 @@ type Translate = (path: string, vars?: Record<string, string | number>) => strin
 /** 机器码走人话键；禁止把 restore_no_matching_approval / run_failed 等原文摊进横幅。 */
 export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined {
   if (kind === "restore_no_matching") return "chat.restoreNoMatching"
+  if (kind === "restore_interrupted") return "chat.restoreInterrupted"
   if (kind === "run_failed") return "chat.runFailed"
   if (kind === "catch_up_timeout") return "studio.automations.catchUpTimeout"
   if (kind === "store") return "chat.errorGenericHint"

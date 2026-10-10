@@ -1,11 +1,12 @@
 /**
  * 冷启动回灌：最新助手行已封 restart_abandoned 时补回挂 notice。
- * running 中途的 run.error 可能早于 loadSession，idle patch 会抹掉横幅。
+ * 只用已记住的真实码，禁止每次冷启动都发明 restore_interrupted_running。
+ * 第一次展示后记成 consumed，关掉或下次启动不再弹。
  */
 import { RESTART_ABANDONED_CODE, toolHasResultCode } from "@enjoy-agents/ipc-contract/desktop-notify"
 import {
   isRestoreFamilyCode,
-  RESTORE_INTERRUPTED_RUNNING
+  type RestoreFamilyCode
 } from "@enjoy-agents/ipc-contract/restore-codes"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 
@@ -14,21 +15,98 @@ type HydrateNoticeMessage = {
   tools?: ThreadToolCall[]
 }
 
+const memory = new Map<string, { code: RestoreFamilyCode; consumed: boolean }>()
+
+function storage(): Storage | null {
+  try {
+    const local = globalThis.localStorage
+    return local ?? null
+  } catch {
+    return null
+  }
+}
+
+function storageKey(sessionId: string): string {
+  return `enjoy.restartNotice.${sessionId}`
+}
+
+function readStored(sessionId: string): { code: RestoreFamilyCode; consumed: boolean } | undefined {
+  const hit = memory.get(sessionId)
+  if (hit) return hit
+  const raw = storage()?.getItem(storageKey(sessionId))
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw) as { code?: string; consumed?: boolean }
+    if (!isRestoreFamilyCode(parsed.code)) return undefined
+    const row = { code: parsed.code, consumed: parsed.consumed === true }
+    memory.set(sessionId, row)
+    return row
+  } catch {
+    return undefined
+  }
+}
+
+function writeStored(sessionId: string, row: { code: RestoreFamilyCode; consumed: boolean }): void {
+  memory.set(sessionId, row)
+  try {
+    storage()?.setItem(storageKey(sessionId), JSON.stringify(row))
+  } catch {
+    // 无 localStorage 时只留内存，测试与无窗环境够用。
+  }
+}
+
+export function rememberRestartNotice(sessionId: string, code: string): void {
+  if (!sessionId || !isRestoreFamilyCode(code)) return
+  const prev = readStored(sessionId)
+  writeStored(sessionId, { code, consumed: prev?.consumed === true })
+}
+
+export function consumeRestartNotice(sessionId: string): void {
+  if (!sessionId) return
+  const prev = readStored(sessionId)
+  if (!prev) return
+  writeStored(sessionId, { ...prev, consumed: true })
+}
+
+export function lastRestartNotice(sessionId: string): RestoreFamilyCode | undefined {
+  return readStored(sessionId)?.code
+}
+
+export function isRestartNoticeConsumed(sessionId: string): boolean {
+  return readStored(sessionId)?.consumed === true
+}
+
+export function resetRestartNoticeForTest(): void {
+  memory.clear()
+}
+
 export function latestAssistantRestartAbandoned(messages: HydrateNoticeMessage[]): boolean {
   const last = [...messages].reverse().find((message) => message.role === "assistant")
   return Boolean(last?.tools?.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE)))
 }
 
 export function noticeAfterRestartHydrate(input: {
+  sessionId?: string
   sameSession: boolean
   running: boolean
   notice: string | null
   messages: HydrateNoticeMessage[]
 }): string | null {
-  if (input.notice) return input.notice
+  const sessionId = input.sessionId ?? ""
   if (input.sameSession || input.running) return input.notice
+  if (input.notice) {
+    if (isRestoreFamilyCode(input.notice) && sessionId) {
+      rememberRestartNotice(sessionId, input.notice)
+      consumeRestartNotice(sessionId)
+    }
+    return input.notice
+  }
+  if (!sessionId || isRestartNoticeConsumed(sessionId)) return input.notice
   if (!latestAssistantRestartAbandoned(input.messages)) return input.notice
-  return RESTORE_INTERRUPTED_RUNNING
+  const code = lastRestartNotice(sessionId)
+  if (!isRestoreFamilyCode(code)) return input.notice
+  consumeRestartNotice(sessionId)
+  return code
 }
 
 export function keepRestoreFamilyNotice(notice: string | null | undefined): string | null {

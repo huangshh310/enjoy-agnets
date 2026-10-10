@@ -16,6 +16,7 @@ const t = (key: string, vars?: Record<string, string | number>) => {
   if (key === "chat.stackedFilesChangedNamed") return `${vars?.n} 个文件已改 · ${vars?.name}`
   if (key === "chat.stackedFilesChanged") return `${vars?.n} 个文件已改`
   if (key === "chat.sessionReviewStopped") return `中途停下，已改 ${vars?.n} 个文件，请验收`
+  if (key === "chat.sessionReviewMaybeChanged") return "可能改了文件，请核对"
   if (key === "chat.sessionReviewCommandPlaceholder") {
     return "这一轮运行了命令，可能改了文件，请到「审查」里核对。"
   }
@@ -35,11 +36,9 @@ test("写盘后停/出错用中途停下", () => {
   )
 })
 
-test("真的没有 path 才用占位句", () => {
-  assert.equal(
-    reviewBannerPeek([], { placeholder: true }, t),
-    "这一轮运行了命令，可能改了文件，请到「审查」里核对。"
-  )
+test("没有确定已改的 path：可能改了，不是已改 N 个", () => {
+  assert.equal(reviewBannerPeek([], { placeholder: true }, t), "可能改了文件，请核对")
+  assert.equal(reviewBannerPeek([], { maybeChanged: true }, t), "可能改了文件，请核对")
 })
 
 test("git 仓已提交/还原：回落本轮 path 加「本轮写过」", () => {

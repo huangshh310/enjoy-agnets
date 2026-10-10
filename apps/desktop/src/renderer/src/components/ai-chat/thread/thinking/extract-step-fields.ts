@@ -172,8 +172,7 @@ export function mapToolStatus(
   if (abort === "error") return "error"
   if (abort === "neutral") return "skipped"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
-  // 回挂结清 cancelled：禁止画「已拒绝」。已拒绝只留给用户点 deny。
-  if (readApprovalDecision(tool?.result) === "cancelled") return "restart"
+  if (readApprovalDecision(tool?.result) === "cancelled") return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"
   if (state === "input-streaming" || state === "input-available" || state === "approval-requested") {
