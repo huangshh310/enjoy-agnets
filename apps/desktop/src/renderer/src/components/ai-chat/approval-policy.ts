@@ -31,7 +31,7 @@ export const APPROVAL_PRESETS = [
   {
     id: "allow-all" as const,
     colorClass: "text-status-yellow-text dark:text-status-yellow-text",
-    bgClass: "bg-status-yellow-background/10 border-status-yellow-text/25 hover:bg-status-yellow-background/15 dark:bg-status-yellow-background/15 dark:border-status-yellow-text/30",
+    bgClass: "bg-status-yellow-background border-status-yellow-text/40 hover:bg-status-yellow-background/80 dark:bg-status-yellow-background dark:border-status-yellow-text/40",
     iconColor: "text-status-yellow-text dark:text-status-yellow-text"
   }
 ]
@@ -60,6 +60,18 @@ export const CUSTOM_PRESET_TONE = {
 export function toneForPolicy(kind: ApprovalPolicyKind) {
   if (kind === "custom") return CUSTOM_PRESET_TONE
   return APPROVAL_PRESETS.find((item) => item.id === kind) ?? CUSTOM_PRESET_TONE
+}
+
+const CHIP_HINT = {
+  "allow-reads": "chat.approvalChipHintReads",
+  "allow-edits": "chat.approvalChipHintEdits",
+  "allow-all": "chat.approvalChipHintAll",
+  custom: "chat.approvalCycleHint"
+} as const
+
+/** 盾牌悬停白话：三档各一句，禁止工具名。 */
+export function chipHintForPolicy(kind: ApprovalPolicyKind) {
+  return CHIP_HINT[kind]
 }
 
 const FLAG_DEFS = [

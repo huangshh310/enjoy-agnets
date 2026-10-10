@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
-import { classifyApprovalPolicy, toneForPolicy } from "./approval-policy"
+import { chipHintForPolicy, classifyApprovalPolicy, toneForPolicy } from "./approval-policy"
 import { ApprovalPolicyMenuBody, PRESET_ICONS, titleCase } from "./approval-policy-menu"
 import { useApprovalPolicyEditor } from "./use-approval-policy-editor"
 
@@ -50,7 +50,7 @@ function PolicyTrigger({
     <button
       type="button"
       aria-label={t("chat.approvalAria")}
-      title={t("chat.approvalCycleHint")}
+      title={t(chipHintForPolicy(kind))}
       className={cx(
         "group flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-caption-2-medium outline-none transition-all shadow-2xs cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",

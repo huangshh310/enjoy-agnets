@@ -58,7 +58,7 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
   const row = read("ai-chat/sidebar/sidebar-session-row.tsx")
   assert.match(row, /title=\{label\}/)
   const policy = read("ai-chat/approval-policy-toggle.tsx")
-  assert.match(policy, /chat\.approvalCycleHint/)
+  assert.match(policy, /chipHintForPolicy\(kind\)/)
   assert.match(policy, /titleCase\(kind, t\)/)
   const header = read("ai-chat/right-pane/views/review/header/review-header.tsx")
   const scope = read("ai-chat/right-pane/views/review/header/review-scope-dropdown.tsx")

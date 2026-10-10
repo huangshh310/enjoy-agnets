@@ -31,6 +31,7 @@ test("三档芯片都有文案，包括全部", () => {
   const menu = readFileSync(join(dir, "approval-policy-menu.tsx"), "utf8")
   assert.match(toggle, /kind === "custom" \? t\("common\.permissionCustom"\) : titleCase\(kind, t\)/)
   assert.doesNotMatch(toggle, /kind === "allow-all" \? null/)
+  assert.match(toggle, /chipHintForPolicy\(kind\)/)
   assert.match(menu, /return t\("chat\.approvalAll"\)/)
   assert.match(menu, /if \(kind === "allow-reads"\) return t\("chat\.approvalReads"\)/)
   assert.match(menu, /if \(kind === "allow-edits"\) return t\("chat\.approvalEdits"\)/)
