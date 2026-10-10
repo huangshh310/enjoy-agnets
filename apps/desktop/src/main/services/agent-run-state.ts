@@ -3,7 +3,8 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { sessionAllowScopeFor, sessionTableAllowsTool } from "@enjoy-agents/agent-core"
+import { sessionAllowScopeFor } from "../../../../../packages/agent-core/src/policies/session-allow-scope.ts"
+import { sessionTableAllowsTool } from "../../../../../packages/agent-core/src/tool-approval.ts"
 import { seedRunSessionAllow } from "./conversation-session-allow"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
