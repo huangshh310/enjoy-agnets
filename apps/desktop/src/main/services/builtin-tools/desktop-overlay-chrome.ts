@@ -111,7 +111,7 @@ export async function stopDesktopActOverlay(): Promise<void> {
     previewOnly: wasPreview,
     runs: listActiveRuns().map((item) => ({ runId: item.runId, pumping: item.run.pumping })),
     endOverlay: endDesktopActOverlay,
-    cancelInFlight: cancelInFlightDesktopAct,
+    cancelInFlight: () => cancelInFlightDesktopAct({ runId }),
     abortAgent: (id) => abortAgent({ runId: id })
   })
 }
