@@ -120,7 +120,8 @@ export function endRestoredRunWithoutSdkReply(db: AppDatabase, runId: string, wi
       type: "run.error",
       runId,
       message: RESTORE_NO_MATCHING_CODE,
-      code: RESTORE_NO_MATCHING_CODE
+      code: RESTORE_NO_MATCHING_CODE,
+      preOutput: false
     })
   }
 }

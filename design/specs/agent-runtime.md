@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（#135：首字前失败回滚本轮气泡；`preOutput`；`clientRequestId`）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（#136：非回滚 `run.error` 显式 `preOutput: false`；#135：首字前失败回滚本轮气泡；`clientRequestId`）
 
 ## 当前真相
 
@@ -123,6 +123,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：写后 Stop（尤其非 git 仓）顶栏/横幅已是待验收，Inbox 列空。根因：落库曾异步且可吞错，Inbox 又用 renderer 树或 git dirty 自算。正确做法：`persistSessionWorkflow` 同步写 `workflow_status`，写失败 `console.error` 不得静默；Inbox 只读 `sessions.needsReview` 再与会话列表求交。测试：`list-sessions-needs-review.behavior.test.ts`（非 git + git 中途停下都有行）。
 - **隐患**：未知 `turn.attention` / `workflow` 让整条 `run.end` / `run.error` 过不了 `safeParse`。正确做法：`TurnOutcome.attention` 用 `TurnAttention.catch("neutral")`，`workflow` 用 `TurnWorkflow.catch("todo")`。
 - **隐患**：`provider_unreachable` / `provider_forbidden` 每次重试都留下用户 `hello` + 空助手。根因：用户句在 `run.start` 前落库，失败不删；cite 的 `source.added` 若算产出还会挡住回滚。正确做法：`PRE_OUTPUT_FAILURE_CODES` 且 `producedOutput=false` 时事务删本轮消息并复原会话字段；开泵前 cite 不算产出；`run.error.preOutput===true` 才撕乐观泡。前台写 `attention=neutral`，后台才进 Inbox 失败。
+- **隐患**：`run.error.preOutput` 用 `.catch(false)` 后，Zod 输出型变成必填 boolean，`emitEvent` 漏字段会让三端 typecheck 挂（#136 CI）。正确做法：回滚写 `preOutput: true`，其余 `run.error` 显式 `false`；`shouldRollbackPreOutput` 收成对象后再取 `code`。
 - **隐患**：补跑超时聊天横幅写成「出错」。自动化侧仍 `failed` + `catch_up_approval_timeout`；聊天侧 `turn.attention=neutral`，走 notice「补跑等待确认超时，未运行」，不出红条。工具行 `approval.resolved.code` 也是该码（中性文案），禁止写成 `run_failed`。
 - **隐患**：HMAC 失败行被结清成 cancelled + `sdkApproved=0` 后，检查点里仍在，走 `planSdkReplay` 回 SDK `approved:false`，run 继续。正确做法：检查点里只要有 HMAC 失败行就 `endRestoredRunWithoutSdkReply`；结清 HMAC 失败行不写 `sdkApproved`。回挂四条取消路径 settle 用 `failed`，不是用户 Stop。
 - **隐患**：归档拷贝一份 `abortLiveRun`，`cancelCodingStream` 生产失败被空 catch 吃掉；`cancelInFlightDesktopAct` 无范围，归档 A 会掐 B 的在途 act。正确做法：与 `abortAgent` 共用 `abortActiveRunMemory`；生产环境 log cancel 错误；取消 act 按 session/run 限定。

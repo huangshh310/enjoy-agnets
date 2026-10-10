@@ -185,6 +185,7 @@ async function runKind(
         type: "run.error",
         runId,
         message: classified.message,
+        preOutput: false,
         turn: { workflow: "in_progress", attention: "error" }
       },
       request.sessionId
