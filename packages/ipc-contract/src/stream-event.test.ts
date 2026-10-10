@@ -51,6 +51,33 @@ test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
   }
 })
 
+test("approval.resolved.code 只认 user_aborted / run_failed", () => {
+  const aborted = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "user_aborted"
+  })
+  const failed = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "run_failed"
+  })
+  const other = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "timeout"
+  })
+  assert.equal(aborted.success, true)
+  assert.equal(failed.success, true)
+  assert.equal(other.success, false)
+})
+
 test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
   const parsed = StreamEvent.safeParse({
     type: "approval.resolved",

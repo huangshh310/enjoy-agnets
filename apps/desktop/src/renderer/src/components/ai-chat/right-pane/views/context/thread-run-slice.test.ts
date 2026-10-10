@@ -44,4 +44,18 @@ test("toolRunKind maps SDK states", () => {
     }),
     "stopped"
   )
+  assert.equal(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { code: "run_failed", decision: "cancelled" }
+    }),
+    "error"
+  )
+  assert.notEqual(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { code: "run_failed", decision: "cancelled" }
+    }),
+    "denied"
+  )
 })

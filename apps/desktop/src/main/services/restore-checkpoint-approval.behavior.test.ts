@@ -1,5 +1,5 @@
 /**
- * 重启回挂：检查点 pending 对不上 HMAC 未决表时的四支行为。
+ * 重启回挂：检查点 pending 对不上 HMAC 未决表时的行为。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
@@ -15,12 +15,19 @@ const {
   holdAgentRun,
   insertApproval,
   insertRun,
-  RESTORE_NO_MATCHING_APPROVAL,
+  RESTORE_NO_MATCHING_CODE,
   resolveRestoredOrphanApproval,
   supersededSdkApprovalId
 } = await import("./restore-checkpoint-approval.behavior.load.ts")
 
-type SentEvent = { type: string; approvalId?: string; message?: string }
+type SentEvent = {
+  type: string
+  approvalId?: string
+  message?: string
+  code?: string
+  decision?: string
+  toolCallId?: string
+}
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -76,6 +83,23 @@ function hold(runId: string, sessionId: string, events: SentEvent[]): void {
   })
 }
 
+function applyOne(
+  runId: string,
+  sessionId: string,
+  row: Parameters<typeof insertApproval>[1],
+  item: { approvalId: string; toolCallId: string; name: string }
+) {
+  const events: SentEvent[] = []
+  hold(runId, sessionId, events)
+  insertApproval(getDatabase(), row)
+  const applied = applyRestoredOrphanApprovals({
+    runId,
+    items: [item],
+    window: recordWindow(events)
+  })
+  return { applied, events }
+}
+
 test("已决行：getApproval 后回放用 sdk_approval_id，不是内部 id", () => {
   const db = getDatabase()
   insertApproval(db, {
@@ -91,7 +115,11 @@ test("已决行：getApproval 后回放用 sdk_approval_id，不是内部 id", (
     sdkReason: "user deny",
     sdkApprovalId: "apr_sdk_lookup"
   })
-  const resolved = resolveRestoredOrphanApproval(db, "apr_internal_lookup")
+  const resolved = resolveRestoredOrphanApproval(db, {
+    approvalId: "apr_internal_lookup",
+    runId: "run_lookup",
+    toolCallId: "tool_lookup"
+  })
   assert.equal(resolved.kind, "replay")
   if (resolved.kind !== "replay") return
   assert.equal(resolved.sdkApprovalId, "apr_sdk_lookup")
@@ -176,11 +204,132 @@ test("库无行：不拿内部 id 回 SDK，诚实结束该 run", () => {
   assert.equal(applied.ended, true)
   assert.equal(applied.replies.length, 0)
   assert.equal(getActiveRun(runId), undefined)
-  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
-  assert.equal(getRun(getDatabase(), runId)?.error, RESTORE_NO_MATCHING_APPROVAL)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.error, RESTORE_NO_MATCHING_CODE)
   assert.equal(
     events.some((event) => event.type === "tool-approval-response" || event.approvalId === "apr_ghost_internal"),
     false
   )
-  assert.ok(events.some((event) => event.type === "run.error" && event.message === RESTORE_NO_MATCHING_APPROVAL))
+  assert.ok(
+    events.some(
+      (event) =>
+        event.type === "run.error" &&
+        event.message === RESTORE_NO_MATCHING_CODE &&
+        event.code === RESTORE_NO_MATCHING_CODE
+    )
+  )
+})
+
+test("desktop_act + sdkApproved=1：planSdkReplay fail closed，不回 approved:true", () => {
+  const runId = "run_desktop_allow"
+  const { applied, events } = applyOne(
+    runId,
+    "ses_desktop_allow",
+    {
+      id: "apr_desktop_allow",
+      runId,
+      toolCallId: "tool_desktop_allow",
+      name: "desktop_act",
+      args: "{}",
+      hmac: "h",
+      decision: "allow",
+      createdAt: Date.now(),
+      sdkApproved: 1,
+      sdkApprovalId: "apr_sdk_desktop_allow"
+    },
+    { approvalId: "apr_desktop_allow", toolCallId: "tool_desktop_allow", name: "desktop_act" }
+  )
+  assert.equal(applied.ended, true)
+  assert.equal(applied.replies.length, 0)
+  assert.equal(applied.replies.some((reply) => reply.approved === true), false)
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.equal(getActiveRun(runId), undefined)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+})
+
+test("sdkApproved=null + decision=allow：planSdkReplay fail closed，不回 approved:false 却标 allow", () => {
+  const runId = "run_unsent_allow"
+  const { applied, events } = applyOne(
+    runId,
+    "ses_unsent_allow",
+    {
+      id: "apr_unsent_allow",
+      runId,
+      toolCallId: "tool_unsent_allow",
+      name: "write_file",
+      args: "{}",
+      hmac: "h",
+      decision: "allow",
+      createdAt: Date.now(),
+      sdkApproved: null,
+      sdkApprovalId: "apr_sdk_unsent_allow"
+    },
+    { approvalId: "apr_unsent_allow", toolCallId: "tool_unsent_allow", name: "write_file" }
+  )
+  assert.equal(applied.ended, true)
+  assert.equal(applied.replies.length, 0)
+  assert.equal(
+    events.some((event) => event.type === "tool.result" && event.decision === "allow"),
+    false
+  )
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+})
+
+test("resume_code=stale_observation：planSdkReplay fail closed，不回放", () => {
+  const runId = "run_stale_obs"
+  const { applied, events } = applyOne(
+    runId,
+    "ses_stale_obs",
+    {
+      id: "apr_stale_obs",
+      runId,
+      toolCallId: "tool_stale_obs",
+      name: "desktop_act",
+      args: "{}",
+      hmac: "h",
+      decision: "allow",
+      createdAt: Date.now(),
+      sdkApproved: 0,
+      resumeCode: "stale_observation",
+      sdkApprovalId: "apr_sdk_stale_obs"
+    },
+    { approvalId: "apr_stale_obs", toolCallId: "tool_stale_obs", name: "desktop_act" }
+  )
+  assert.equal(applied.ended, true)
+  assert.equal(applied.replies.length, 0)
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+})
+
+test("runId / toolCallId 对不上：fail closed，不回放", () => {
+  const runId = "run_identity"
+  const { applied, events } = applyOne(
+    runId,
+    "ses_identity",
+    {
+      id: "apr_identity",
+      runId,
+      toolCallId: "tool_other_identity",
+      name: "write_file",
+      args: "{}",
+      hmac: "h",
+      decision: "deny",
+      createdAt: Date.now(),
+      sdkApproved: 0,
+      sdkReason: "other tool",
+      sdkApprovalId: "apr_sdk_identity"
+    },
+    { approvalId: "apr_identity", toolCallId: "tool_identity", name: "write_file" }
+  )
+  assert.equal(applied.ended, true)
+  assert.equal(applied.replies.length, 0)
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.equal(getActiveRun(runId), undefined)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  const wrongRun = resolveRestoredOrphanApproval(getDatabase(), {
+    approvalId: "apr_identity",
+    runId: "run_not_this",
+    toolCallId: "tool_other_identity"
+  })
+  assert.equal(wrongRun.kind, "fail_closed")
 })

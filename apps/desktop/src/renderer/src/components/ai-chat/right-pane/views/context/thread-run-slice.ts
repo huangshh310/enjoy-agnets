@@ -6,6 +6,7 @@ import {
   isStaleObservationAfterAllow,
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
 
 export type SliceMessage = {
   role: string
@@ -31,18 +32,13 @@ export function toolRunKind(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" {
-  if (isUserAbortedTool(tool)) return "stopped"
+  const abort = toolAbortKind(tool)
+  if (abort === "stopped") return "stopped"
+  if (abort === "error") return "error"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-available") return "ok"
   if (state === "output-error") return "error"
   if (state === "output-denied") return "denied"
   return "running"
-}
-
-function isUserAbortedTool(tool?: Pick<ThreadToolCall, "result" | "errorText">): boolean {
-  if (!tool) return false
-  if (tool.errorText === "user_aborted") return true
-  const result = tool.result
-  return Boolean(result && typeof result === "object" && (result as { code?: string }).code === "user_aborted")
 }

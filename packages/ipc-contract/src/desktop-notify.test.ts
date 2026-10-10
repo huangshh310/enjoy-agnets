@@ -9,7 +9,8 @@ import {
   isUserAbortMessage,
   formatCatchUpApprovalNotice,
   noticeForAgentEvent,
-  redactDesktopApprovalNotify
+  redactDesktopApprovalNotify,
+  toolAbortKind
 } from "./desktop-notify.ts"
 
 const DIRTY_ARGS = {
@@ -148,6 +149,14 @@ test("出错通知不抄 run.error.message", () => {
 test("用户停通知标题是已停止，不是已完成", () => {
   const copy = noticeForAgentEvent({ type: "run.error", message: USER_ABORT_MESSAGE }, true)
   assert.deepEqual(copy, { title: "已停止", body: "你停止了这一轮。" })
+})
+
+test("toolAbortKind：user_aborted 已停止，run_failed 出错不是已拒绝", () => {
+  assert.equal(toolAbortKind({ errorText: "user_aborted" }), "stopped")
+  assert.equal(toolAbortKind({ result: { code: "user_aborted" } }), "stopped")
+  assert.equal(toolAbortKind({ result: { code: "run_failed", decision: "cancelled" } }), "error")
+  assert.equal(toolAbortKind({ errorText: "run_failed" }), "error")
+  assert.equal(toolAbortKind({ result: { code: "APPROVAL_REPLAY_DENIED" } }), undefined)
 })
 
 function assertDoesNotLeak(body: string): void {

@@ -4,22 +4,19 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
-import { listPendingApprovals, listRuns, resolvedSdkApprovalId, setApprovalDecision, updateRun } from "@enjoy-agents/db"
+import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
-import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { getActiveRun, holdAgentRun } from "./agent-run-state"
 import { claimRestoreWaitingOnce } from "./restore-once"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
-import { assertApprovalHmac, recordSdkApprovalResponse } from "./approval-hmac"
+import { assertApprovalHmac } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
-import { parseStoredApprovalArgs } from "./restore-approval-args"
-import { APPROVAL_ARGS_MISSING, APPROVAL_ARGS_MISSING_MESSAGE } from "./resolve-approval-args"
-import { approvalResponseMessage } from "./approval-response-message"
-import { applyRestoredOrphanApprovals } from "./restore-checkpoint-approval"
+import { restoreHeldWaitingApprovals } from "./restore-waiting-approvals"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -94,57 +91,15 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
             toolCallId: item.toolCallId,
             name: item.name
           }))
-      const keep: typeof run.pendingApprovals = []
-      const orphans: typeof run.pendingApprovals = []
-      for (const item of run.pendingApprovals) {
-        const rowArgs = pending.find((approval) => approval.id === item.approvalId)
-        const args = parseStoredApprovalArgs(rowArgs)
-        if (args != null) {
-          keep.push({ ...item, args })
-          emitEvent(window, {
-            type: "approval.required",
-            runId: row.id,
-            approvalId: item.approvalId,
-            toolCallId: item.toolCallId,
-            name: item.name,
-            args
-          })
-          continue
-        }
-        if (rowArgs) {
-          setApprovalDecision(db, rowArgs.id, "deny")
-          recordSdkApprovalResponse(rowArgs.id, {
-            approved: false,
-            reason: APPROVAL_ARGS_MISSING_MESSAGE,
-            resumeCode: APPROVAL_ARGS_MISSING
-          })
-          run.messages.push(
-            approvalResponseMessage({
-              approvalId: resolvedSdkApprovalId(rowArgs),
-              approved: false,
-              reason: APPROVAL_ARGS_MISSING_MESSAGE
-            })
-          )
-          emitEvent(window, {
-            type: "tool.result",
-            runId: row.id,
-            toolCallId: item.toolCallId,
-            name: item.name,
-            result: { code: APPROVAL_ARGS_MISSING },
-            error: APPROVAL_ARGS_MISSING_MESSAGE
-          })
-          continue
-        }
-        orphans.push(item)
-      }
-      const orphaned = applyRestoredOrphanApprovals({
+      const restored = restoreHeldWaitingApprovals({
         runId: row.id,
-        items: orphans,
+        hmacPending: pending,
+        items: run.pendingApprovals,
         window
       })
-      if (orphaned.ended) continue
-      run.pendingApprovals = keep
-      if (keep.length === 0) {
+      if (restored.ended) continue
+      run.pendingApprovals = restored.keep
+      if (restored.keep.length === 0) {
         run.resumeAfterPump = true
         if (!run.pumping) {
           const { pumpStream } = await import("./agent-pump.ts")

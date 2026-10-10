@@ -6,6 +6,6 @@ export { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state.t
 export { getDatabase } from "./database.ts"
 export {
   applyRestoredOrphanApprovals,
-  RESTORE_NO_MATCHING_APPROVAL,
+  RESTORE_NO_MATCHING_CODE,
   resolveRestoredOrphanApproval
 } from "./restore-checkpoint-approval.ts"

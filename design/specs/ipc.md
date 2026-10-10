@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approval.resolved.code`；BASE-P0-1：`ready` ⇒ 发送闸放行；出站闸丢掉返回 null；终态丢掉仍 settle）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approval.resolved.code` 只认 `user_aborted` / `run_failed`；BASE-P0-1：`ready` ⇒ 发送闸放行；出站闸丢掉返回 null；终态丢掉仍 settle）
 
 ## 当前真相
 

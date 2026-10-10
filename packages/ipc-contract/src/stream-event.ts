@@ -4,6 +4,7 @@
  */
 import { z } from "zod"
 import { AutomationRunSource } from "./automations-missed.ts"
+import { APPROVAL_RESOLVED_CODES } from "./desktop-notify.ts"
 import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
@@ -79,7 +80,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     /** 用户 deny 与系统 cancelled（Stop / 归档 / 超时）分开，禁止把停当成拒绝。 */
     decision: z.enum(["allow", "deny", "allow_session", "allow_always", "cancelled"]),
     /** Stop 默认 `user_aborted`；泵真实出错传 `run_failed`，禁止默认同 Stop。 */
-    code: z.string().optional(),
+    code: z.enum(APPROVAL_RESOLVED_CODES).optional(),
     ...Envelope
   }),
   z.object({

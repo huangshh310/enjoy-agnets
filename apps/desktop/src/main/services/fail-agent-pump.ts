@@ -16,7 +16,7 @@ import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
-  settlePendingApprovalsForRun(runId, run.window, "failed")
+  settlePendingApprovalsForRun(runId, run.window, run.userCancelled ? "aborted" : "failed")
   if (!claimCatchUpFail(run)) return
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)
