@@ -3,7 +3,9 @@
  */
 import { create } from "zustand"
 
-type Reveal = { path: string; line: number } | null
+import type { SourceOpenView } from "./source-row-action.ts"
+
+type Reveal = { path: string; line: number; view: SourceOpenView } | null
 
 type SourceFileRevealState = {
   reveal: Reveal

@@ -4,6 +4,7 @@
 import { getIde } from "@renderer/lib/ide"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { pathsFromLastTurn } from "../../right-pane/views/review/last-turn-paths.ts"
 import { planSourceRowClick } from "./source-row-action.ts"
 import { useSourceFileReveal } from "./source-file-reveal.ts"
 import type { TurnSourceChip } from "./source-chip.ts"
@@ -12,11 +13,14 @@ export type OpenSourceRowResult = "opened" | "expand" | "none"
 
 export async function openSourceRow(chip: TurnSourceChip): Promise<OpenSourceRowResult> {
   const exists = await workspaceFileExists(chip.path)
-  const plan = planSourceRowClick(chip, exists)
+  const thisTurn = pathsFromLastTurn(useChatStore.getState().messages)
+  const plan = planSourceRowClick(chip, exists, thisTurn)
   if (plan.action === "open") {
-    if (plan.startLine != null) {
-      useSourceFileReveal.getState().setReveal({ path: plan.path, line: plan.startLine })
-    }
+    useSourceFileReveal.getState().setReveal({
+      path: plan.path,
+      line: plan.startLine ?? 1,
+      view: plan.view
+    })
     await openChangedFile(plan.path)
     return "opened"
   }

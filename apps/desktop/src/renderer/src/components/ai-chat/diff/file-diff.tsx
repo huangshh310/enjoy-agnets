@@ -67,6 +67,7 @@ export function FileDiff({
 
   return (
     <div
+      data-testid={fill ? "source-file-diff" : undefined}
       className={cx(
         "overflow-hidden font-mono",
         fill && "flex h-full min-h-0 flex-1 flex-col",

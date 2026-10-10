@@ -5,10 +5,24 @@ import { isHttpSource } from "./source-path.ts"
 import { sourceBadgeKind } from "./source-detail.ts"
 import type { TurnSourceChip } from "./source-chip.ts"
 
+export type SourceOpenView = "diff" | "preview"
+
 export type SourceRowPlan =
-  | { action: "open"; path: string; startLine?: number }
+  | { action: "open"; path: string; startLine?: number; view: SourceOpenView }
   | { action: "expand" }
   | { action: "none" }
+
+/** 本轮写过才走差异；知识库 / 只读来源一律查看文件，禁止把未改文件画成 +N。 */
+export function planSourceOpenView(
+  chip: Pick<TurnSourceChip, "path">,
+  thisTurnChangedPaths: readonly string[]
+): SourceOpenView {
+  const path = chip.path?.trim().replaceAll("\\", "/")
+  if (path && thisTurnChangedPaths.some((item) => item.replaceAll("\\", "/") === path)) {
+    return "diff"
+  }
+  return "preview"
+}
 
 /** 工作区内相对路径才允许打开；盘符 / `..` / URL 就地展开。 */
 export function isWorkspaceRelPath(path?: string): boolean {
@@ -30,17 +44,33 @@ export function sourceChipStableId(input: {
   return (input.sourceId ?? "").trim()
 }
 
-export function planSourceRowClick(chip: TurnSourceChip, fileExists: boolean): SourceRowPlan {
+export function planSourceRowClick(
+  chip: TurnSourceChip,
+  fileExists: boolean,
+  thisTurnChangedPaths: readonly string[] = []
+): SourceRowPlan {
   const badge = sourceBadgeKind(chip.kind)
   if (badge === "skill" || badge === "mcp") return { action: "none" }
   const path = chip.path?.trim()
   if (badge === "knowledge") {
     if (path && isWorkspaceRelPath(path) && fileExists) {
-      return { action: "open", path, startLine: chip.startLine }
+      return {
+        action: "open",
+        path,
+        startLine: chip.startLine,
+        view: planSourceOpenView(chip, thisTurnChangedPaths)
+      }
     }
     return path || chip.snippet?.trim() ? { action: "expand" } : { action: "none" }
   }
-  if (path) return { action: "open", path, startLine: chip.startLine }
+  if (path) {
+    return {
+      action: "open",
+      path,
+      startLine: chip.startLine,
+      view: planSourceOpenView(chip, thisTurnChangedPaths)
+    }
+  }
   return { action: "none" }
 }
 

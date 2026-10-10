@@ -86,6 +86,11 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     const selected = window.locator('[data-testid="turn-source-row"][data-selected="true"]')
     await expect(selected).toHaveCount(1)
     await expect(selected).toHaveAttribute("data-path", "untracked.txt")
+    const theme = window.getByRole("button", { name: "深色" })
+    await expect(theme).toBeVisible()
+    const themeBox = await theme.boundingBox()
+    const sheetBox = await sheet.boundingBox()
+    expect(themeBox && sheetBox && themeBox.y + themeBox.height <= sheetBox.y + 1).toBeTruthy()
     await snap(window, "knowledge-source-chip")
     await snapSheet(sheet, "knowledge-source-drawer-sheet")
 
@@ -106,7 +111,38 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
       )
       .toBe(false)
     await expect(window.locator('[data-testid="source-file-path"]')).toContainText("readme.md")
-    await expect(window.locator('[data-source-line="1"]')).toBeVisible()
+    await expect(window.locator('[data-testid="source-file-view-mode"]')).toContainText("查看文件")
+    const preview = window.locator('[data-testid="source-file-preview"]')
+    await expect(preview).toBeVisible()
+    await expect(preview).not.toContainText("@@")
+    await expect(preview).not.toContainText("+")
+    await expect(window.locator('[data-testid="source-file-diff"]')).toHaveCount(0)
+    await expect(window.locator('[data-source-highlight="true"]')).toBeVisible()
+    await expect
+      .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.view ?? ""), { timeout: 4_000 })
+      .toBe("preview")
+    await snap(window, "knowledge-source-file-preview")
+
+    writeFileSync(join(workspace, "note.txt"), "changed this turn\n")
+    await window.evaluate(() => {
+      window.__enjoyE2e?.injectThisTurnWrite("note.txt")
+    })
+    await window.evaluate(() => {
+      window.__enjoyE2e?.injectSheetChip({
+        id: "file:note.txt",
+        kind: "file",
+        label: "note.txt",
+        path: "note.txt",
+        startLine: 1
+      })
+    })
+    const noteRow = window.locator('[data-testid="turn-source-row"][data-path="note.txt"]')
+    await expect(noteRow).toBeVisible()
+    await noteRow.click()
+    await expect(window.locator('[data-testid="source-file-diff"]')).toBeVisible({ timeout: 8_000 })
+    await expect(window.locator('[data-testid="source-file-diff"]')).toContainText("@@")
+    await expect(window.locator('[data-testid="source-file-preview"]')).toHaveCount(0)
+    await snap(window, "knowledge-source-file-diff")
 
     const readmeChip = window.locator(
       '[data-testid="turn-source-chip-knowledge"][data-source-path="readme.md"]'
@@ -148,6 +184,11 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect(sheet.getByText(FOOTER)).toBeVisible()
     await snap(window, "knowledge-source-drawer-dark")
     await snapSheet(sheet, "knowledge-source-drawer-sheet-dark")
+    const darkReadme = window.locator('[data-testid="turn-source-row"][data-path="readme.md"]')
+    await darkReadme.click()
+    await expect(window.locator('[data-testid="source-file-preview"]')).toBeVisible({ timeout: 8_000 })
+    await expect(window.locator('[data-testid="source-file-diff"]')).toHaveCount(0)
+    await snap(window, "knowledge-source-file-preview-dark")
   } finally {
     await closeApp(app)
   }

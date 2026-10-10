@@ -26,8 +26,20 @@ export function AiChatCodePane({
   useEffect(() => {
     if (!reveal || reveal.path !== path) return
     const root = scrollerRef.current
-    const target = root?.querySelector(`[data-source-line="${reveal.line}"]`)
-    target?.scrollIntoView({ block: "center" })
+    if (!root) return
+    for (const node of root.querySelectorAll("[data-source-highlight]")) {
+      node.removeAttribute("data-source-highlight")
+      node.classList.remove("bg-accent-500/10")
+    }
+    const from = reveal.line
+    const to = reveal.line + 2
+    for (let line = from; line <= to; line += 1) {
+      const target = root.querySelector(`[data-source-line="${line}"]`)
+      if (!(target instanceof HTMLElement)) continue
+      target.setAttribute("data-source-highlight", "true")
+      target.classList.add("bg-accent-500/10")
+    }
+    root.querySelector(`[data-source-line="${from}"]`)?.scrollIntoView({ block: "center" })
   }, [html, path, reveal, value])
 
   return (

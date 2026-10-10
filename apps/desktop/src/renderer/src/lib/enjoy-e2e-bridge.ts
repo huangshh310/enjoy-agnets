@@ -38,9 +38,11 @@ export type EnjoyE2eBridge = {
   getSelectedFile: () => {
     path: string | null
     line: number | null
+    view: "diff" | "preview" | null
     rightPanelCollapsed: boolean
   }
   injectSheetChip: (chip: TurnSourceChip) => void
+  injectThisTurnWrite: (path: string) => void
 }
 
 declare global {
@@ -94,6 +96,7 @@ export function installEnjoyE2eBridge(): void {
       return {
         path: chat.selectedFilePath,
         line: reveal?.line ?? null,
+        view: reveal?.view ?? null,
         rightPanelCollapsed: chat.rightPanelCollapsed
       }
     },
@@ -104,6 +107,27 @@ export function installEnjoyE2eBridge(): void {
         activeId: sheet.activeId,
         ledgerEntry: sheet.ledgerEntry
       })
+    },
+    injectThisTurnWrite(path) {
+      const store = useChatStore.getState()
+      const messages = store.messages
+      const last = messages.at(-1)
+      if (!last || last.role !== "assistant") return
+      store.setMessages([
+        ...messages.slice(0, -1),
+        {
+          ...last,
+          tools: [
+            ...(last.tools ?? []),
+            {
+              id: `e2e-write-${path}`,
+              name: "write_file",
+              state: "output-available",
+              args: { path }
+            }
+          ]
+        }
+      ])
     }
   }
 }

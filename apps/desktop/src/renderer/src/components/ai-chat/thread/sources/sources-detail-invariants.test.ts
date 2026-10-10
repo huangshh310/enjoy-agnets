@@ -80,7 +80,10 @@ test("芯片与 +N 只开 sheet，不立刻跳审查 / 知识 / 技能", () => {
 test("sheet 是右/底面板，不上 InlineCitations；无芯片且无账本行不渲染", () => {
   assert.ok(files.sheet.includes("turn-sources-sheet"))
   assert.ok(files.sheet.includes("md:right-3"))
+  assert.ok(files.sheet.includes("md:top-12"))
   assert.ok(files.sheet.includes("bottom-3"))
+  assert.doesNotMatch(files.sheet, /md:inset-y-3/)
+  assert.doesNotMatch(files.sheet, /md:top-3(?!\d)/)
   assert.ok(files.sheet.includes("chips.length === 0 && !ledgerEntry"))
   assert.ok(files.sheet.includes("turn-sources-empty"))
   assert.ok(files.sheet.includes("sourcesEmptyTitle"))
@@ -109,6 +112,7 @@ test("sheet 是右/底面板，不上 InlineCitations；无芯片且无账本行
 
 test("文件行打开审查；知识库行打开或展开；网页 URL 不进名单", () => {
   assert.ok(files.open.includes("planSourceRowClick"))
+  assert.ok(files.open.includes("planSourceOpenView") || files.open.includes("pathsFromLastTurn"))
   assert.ok(files.open.includes("openChangedFile"))
   assert.ok(files.sheet.includes("openSourceRow"))
   assert.ok(files.row.includes("canActivateSourceRow"))

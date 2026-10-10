@@ -980,6 +980,7 @@ export const zhChat = {
   reviewScopeBranch: "分支",
   reviewScopeCheckpoints: "检查点",
   reviewScopeCheckpointsDesc: "Agent 写盘快照，还原不移动当前分支",
+  reviewViewFile: "查看文件",
   reviewCheckpointsTitle: "写盘检查点",
   reviewCheckpointsHint: "不进你的分支，只对齐工作区文件；暂存区保持原样",
   reviewCheckpointsEmpty: "还没有检查点",

@@ -88,8 +88,8 @@ function SheetPanel({
       className={cx(
         "absolute flex flex-col overflow-hidden border border-border-button-default bg-background-primary-default shadow-card",
         "inset-x-3 bottom-3 top-auto max-h-[min(70vh,32rem)] rounded-3xl animate-in slide-in-from-bottom duration-200",
-        "md:right-3 md:left-auto md:top-3 md:w-[min(20rem,calc(100vw-1.5rem))] md:slide-in-from-right",
-        empty ? "md:inset-y-auto md:max-h-none" : "md:inset-y-3 md:max-h-none"
+        "md:right-3 md:left-auto md:top-12 md:w-[min(20rem,calc(100vw-1.5rem))] md:slide-in-from-right",
+        empty ? "md:inset-y-auto md:max-h-none" : "md:bottom-3 md:max-h-none"
       )}
     >
       <header className="flex items-start justify-between gap-3 border-b border-separator-border px-4 py-3">

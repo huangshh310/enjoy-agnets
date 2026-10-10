@@ -993,6 +993,7 @@ export const enChat = {
   reviewScopeBranch: "Branch",
   reviewScopeCheckpoints: "Checkpoints",
   reviewScopeCheckpointsDesc: "Write snapshots from the agent; restore does not move your branch",
+  reviewViewFile: "View file",
   reviewCheckpointsTitle: "Write checkpoints",
   reviewCheckpointsHint: "Not on your branch. Restores worktree files only; staged files stay as they are.",
   reviewCheckpointsEmpty: "No checkpoints yet",
