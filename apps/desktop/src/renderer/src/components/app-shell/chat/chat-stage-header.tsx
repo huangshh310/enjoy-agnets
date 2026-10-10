@@ -59,6 +59,7 @@ export function ChatStageHeader({
         {onToggleEnvironment ? (
           <QuietIconButton
             icon={RiDashboard3Line}
+            data-testid="environment-toggle"
             aria-label={t("chat.environmentToggle")}
             aria-pressed={Boolean(environmentOpen)}
             onClick={onToggleEnvironment}
@@ -68,6 +69,7 @@ export function ChatStageHeader({
         {hasLedger && onToggleLedger ? (
           <button
             type="button"
+            data-testid="run-ledger-toggle"
             onClick={onToggleLedger}
             title={ledgerOpen ? t("chat.collapsePane") : t("sessionOps.ledgerTitle")}
             aria-pressed={ledgerOpen}
