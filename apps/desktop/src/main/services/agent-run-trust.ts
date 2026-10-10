@@ -10,6 +10,9 @@ export type TrustedRunAgentOptions = {
   rememberMru?: boolean
 }
 
+/** 工作流子步与 ai.generate：不写 MRU，也不走发送闸。 */
+export const BACKGROUND_AGENT_TRUST = { rememberMru: false } as const satisfies TrustedRunAgentOptions
+
 export function stripUntrustedAutomationFlags(input: RunAgentInput): RunAgentInput {
   if (!input.denyAnyDesktop && !input.automationSource) return input
   return { ...input, denyAnyDesktop: undefined, automationSource: undefined }

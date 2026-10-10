@@ -415,6 +415,8 @@ export const zhChat = {
   handoffConfirmFailed: "引擎交接没写上。请再确认一次，或取消后停在原来的引擎。",
   openCliLogin: "打开登录",
   addProviderKey: "去连接模型",
+  noChatRouteNotice: "还差一步：连一个模型，才能发消息。草稿会留着。",
+  goConnect: "去连接",
   agentOpenSettings: "去设置看路径",
   agentInstall: "一键安装",
   agentInstalling: "正在安装…",

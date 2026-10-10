@@ -6,6 +6,7 @@ import {
   isEmptyAssistantTurn,
   isTodoContinueUserMessage
 } from "../components/ai-chat/composer/todo-continue-message"
+import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
@@ -195,6 +196,6 @@ async function startTurnIpc(
 }
 
 async function claimStartedRun(sessionId: string | null, started: Promise<unknown>) {
-  const result = (await started) as { runId: string }
-  if (!claimComposerRun(sessionId, result.runId)) abortOrphanedRun(result.runId)
+  const runId = requireAgentRunId(await started)
+  if (!claimComposerRun(sessionId, runId)) abortOrphanedRun(runId)
 }

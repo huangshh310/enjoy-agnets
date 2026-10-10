@@ -43,24 +43,17 @@ function store(partial: {
   }
 }
 
-test("没有任何可对话路线时回 no_chat_route，不是红错", () => {
+test("本轮 enjoy-local 没密钥时回 no_chat_route，不是红错", () => {
   const chat = store({ runtimeId: "enjoy-local", hasKey: false })
-  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: false }), false)
+  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: true }), false)
   assert.equal(chat.read().error, NO_CHAT_ROUTE)
   assert.equal(chat.read().picker, false)
 })
 
-test("有其它路线但 Enjoy Local 无密钥仍是 NEED_PROVIDER_KEY", () => {
-  const chat = store({ runtimeId: "enjoy-local", hasKey: false })
-  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: true }), false)
-  assert.equal(chat.read().error, NEED_PROVIDER_KEY)
-  assert.equal(chat.read().picker, false)
-})
-
-test("Enjoy Local 有密钥但还没模型时不打 agent.run", () => {
+test("Enjoy Local 有密钥但还没模型时也回 no_chat_route，禁止空按", () => {
   const chat = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
   assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
-  assert.equal(chat.read().error, null)
+  assert.equal(chat.read().error, NO_CHAT_ROUTE)
 })
 
 test("已装未登录 CLI 打开 Picker，不打 agent.run", () => {

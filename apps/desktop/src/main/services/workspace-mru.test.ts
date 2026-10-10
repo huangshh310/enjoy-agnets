@@ -48,6 +48,16 @@ test("只有前台用户开跑才写 MRU", () => {
   assert.equal(shouldRememberWorkspaceOnRun({ rememberMru: false }), false)
 })
 
+test("stale last 一并改写成 MRU 下一项", () => {
+  const store = memoryStore({
+    lastWorkspaceId: "ws-gone",
+    [RECENT_WORKSPACE_SETTING]: JSON.stringify(["ws-gone", "ws-a"])
+  })
+  const next = nextWorkspaceIdAfterRemove("ws-x", ["ws-a", "ws-b"], store)
+  assert.equal(next, "ws-a")
+  assert.equal(store.get("lastWorkspaceId"), "ws-a")
+})
+
 test("删的不是 last 时不改写 lastWorkspaceId", () => {
   const store = memoryStore()
   rememberWorkspaceUse("ws-a", store)

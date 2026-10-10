@@ -418,6 +418,8 @@ export const enChat = {
   handoffConfirmFailed: "Engine handoff was not saved. Confirm again, or cancel and stay on the current engine.",
   openCliLogin: "Open sign-in",
   addProviderKey: "Connect a model",
+  noChatRouteNotice: "One more step: connect a model before sending. Your draft stays.",
+  goConnect: "Connect",
   agentOpenSettings: "Open path settings",
   agentInstall: "Install",
   agentInstalling: "Installing…",

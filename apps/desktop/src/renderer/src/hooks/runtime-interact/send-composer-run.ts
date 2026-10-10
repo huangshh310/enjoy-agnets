@@ -16,8 +16,8 @@ import {
 } from "../composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
+import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
-import { peekChatReady } from "../chat-readiness-cache.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
@@ -71,7 +71,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   store.setRunning(true)
-  if (!guardComposerSend(store, { chatReady: peekChatReady() })) {
+  if (!guardComposerSend(store)) {
     store.setRunning(false)
     if (useChatStore.getState().error === NO_CHAT_ROUTE) return
     if (prepared?.content) {
@@ -150,18 +150,25 @@ async function launchComposerRun(
 ) {
   const sessionId = store.sessionId
   try {
-    const result = (await startComposerRun(
+    const result = await startComposerRun(
       store,
       payload.content,
       messages,
       payload.assetIds,
       payload.executePlan,
       payload.computerUseOnce
-    )) as {
-      runId: string
+    )
+    const blocked = agentRunBlockedCode(result)
+    if (blocked) {
+      dropEmptyPendingAssistant()
+      store.setRunning(false)
+      store.setError(blocked)
+      if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
+      return
     }
-    if (!claimComposerRun(sessionId, result.runId)) {
-      abortOrphanedRun(result.runId)
+    const runId = requireAgentRunId(result)
+    if (!claimComposerRun(sessionId, runId)) {
+      abortOrphanedRun(runId)
       return
     }
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())

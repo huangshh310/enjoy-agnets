@@ -72,5 +72,6 @@ export function nextWorkspaceIdAfterRemove(
     return next
   }
   if (currentLast && remainingIds.includes(currentLast)) return currentLast
+  store.set("lastWorkspaceId", next ?? "")
   return next
 }

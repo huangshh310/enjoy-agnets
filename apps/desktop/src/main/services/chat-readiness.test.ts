@@ -25,17 +25,36 @@ test("只有探测到的本机模型时 ready", () => {
     ["ollama"]
   )
   assert.equal(snap.ready, true)
-  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama" }])
+  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: true }])
 })
 
-test("只有已启用的本机档案时 ready（e2e stub）", () => {
+test("已启用本机档案但没 ping 不算 ready", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
     [{ id: "prv_ollama", kind: "ollama", enabled: true, hasKey: false, requiresKey: false }],
     []
   )
-  assert.equal(snap.ready, true)
-  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama" }])
+  assert.equal(snap.ready, false)
+  assert.deepEqual(snap.localModels, [])
+})
+
+test("远端 Ollama 不 ping，verified:false，不算 ready", () => {
+  const snap = assembleChatReadiness(
+    [{ id: "enjoy-local", status: "ready" }],
+    [
+      {
+        id: "prv_remote",
+        kind: "ollama",
+        enabled: true,
+        hasKey: false,
+        requiresKey: false,
+        baseURL: "http://10.0.0.8:11434"
+      }
+    ],
+    []
+  )
+  assert.equal(snap.ready, false)
+  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
 })
 
 test("只有已存 API 密钥时 ready，载荷不含密钥", () => {

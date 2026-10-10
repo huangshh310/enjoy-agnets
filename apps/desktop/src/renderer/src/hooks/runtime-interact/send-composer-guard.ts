@@ -15,7 +15,6 @@ import {
   NEED_REMOTE_CONNECTED,
   NO_CHAT_ROUTE
 } from "../../lib/usage/classify-thread-error.ts"
-import { peekChatReady } from "../chat-readiness-cache.ts"
 
 type ComposerGuardStore = {
   runtimeId: string
@@ -57,11 +56,6 @@ export function guardComposerSend(
     store.setError("Open a workspace folder before running an agent.")
     return false
   }
-  const chatReady = opts?.chatReady ?? peekChatReady()
-  if (chatReady === false) {
-    store.setError(NO_CHAT_ROUTE)
-    return false
-  }
   if ((store.workspaceKind ?? "local") === "ssh") {
     const status = store.remoteStatus ?? "disconnected"
     if (status === "connecting" || status === "failed" || status === "disconnected" || status === "idle") {
@@ -70,12 +64,10 @@ export function guardComposerSend(
     }
   }
   if (store.runtimeId === "enjoy-local") {
-    if (!store.hasKey) {
-      store.setError(NEED_PROVIDER_KEY)
+    if (!store.hasKey || !store.modelId) {
+      store.setError(NO_CHAT_ROUTE)
       return false
     }
-    // 档案已亮、models.list 还没写进 store 时不要打 agent.run，否则主进程抛 Choose a model。
-    if (!store.modelId) return false
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)

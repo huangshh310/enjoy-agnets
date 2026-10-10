@@ -52,6 +52,10 @@ test("ACP 未登录不是可重试供应商错误", () => {
     "auth"
   )
   assert.equal(classifyThreadError(NO_CHAT_ROUTE), "no_chat_route")
+  assert.equal(
+    classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
+    "no_chat_route"
+  )
   assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "needs_key")
   assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "generic")
   assert.equal(classifyThreadError(NEED_PROVIDER_KEY), "needs_key")

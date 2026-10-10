@@ -65,7 +65,7 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     return "send_restore"
   }
   if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
-  if (message === NO_CHAT_ROUTE) return "no_chat_route"
+  if (message === NO_CHAT_ROUTE || message.includes(NO_CHAT_ROUTE)) return "no_chat_route"
   if (
     message === NEED_PROVIDER_KEY ||
     lower.includes("add a provider api key") ||

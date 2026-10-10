@@ -43,8 +43,10 @@ export async function listAgentTools(): Promise<AgentToolPublic[]> {
 }
 
 export async function detectAgentTools(): Promise<AgentToolPublic[]> {
+  // 先列再清缓存：readiness 推送合并上次已登录 id，避免 detect 把引擎闪成未登录。
+  const listed = await listAgentTools()
   invalidateAccountCache()
-  return listAgentTools()
+  return listed
 }
 
 export async function upsertAgentTool(input: {

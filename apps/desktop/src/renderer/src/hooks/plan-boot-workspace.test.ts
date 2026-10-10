@@ -96,6 +96,23 @@ test("S1-7 启动有 last 时进 last，不是名单第一个", () => {
   assert.equal(loaded, second.id)
 })
 
+test("启动 last 已失效时按 recentWorkspaceIds 顺序，不取名单第一个", () => {
+  resetPointer()
+  const first = { id: "ws-c", name: "C", rootPath: "/c" }
+  const second = { id: "ws-a", name: "A", rootPath: "/a" }
+  let loaded: string | null = null
+  syncBootWorkspace(
+    [first, second],
+    "ws-gone",
+    (row) => {
+      loaded = row.id
+      seedWorkspacePointer({ workspace: row, repositories: [first, second] })
+    },
+    ["ws-gone", "ws-a", "ws-c"]
+  )
+  assert.equal(loaded, second.id)
+})
+
 test("启动还没有当前工作区时按 lastWorkspaceId 打开", () => {
   resetPointer()
   const workspace = { id: "ws1", name: "A", rootPath: "/a" }

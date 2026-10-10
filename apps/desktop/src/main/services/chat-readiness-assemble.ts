@@ -5,6 +5,7 @@ import {
   apiKeyRoutes,
   buildChatReadiness,
   countAvailableEngines,
+  isLoopbackModelBaseUrl,
   localModelRoutes,
   signedInEngineRoutes,
   type AvailableEngineTool,
@@ -18,12 +19,17 @@ export function assembleChatReadiness(
   live: readonly ("ollama" | "lmstudio")[],
   loggedInIds: ReadonlySet<string> = new Set()
 ): ChatReadiness {
-  const enabledLocal = providers
-    .filter((row) => row.enabled !== false && (row.kind === "ollama" || row.kind === "lmstudio"))
+  const remoteUnverified = providers
+    .filter(
+      (row) =>
+        row.enabled !== false &&
+        (row.kind === "ollama" || row.kind === "lmstudio") &&
+        !isLoopbackModelBaseUrl(row.baseURL)
+    )
     .map((row) => row.kind)
   return buildChatReadiness({
     engines: signedInEngineRoutes(tools, loggedInIds),
-    localModels: localModelRoutes(live, enabledLocal),
+    localModels: localModelRoutes(live, remoteUnverified),
     apiKeys: apiKeyRoutes(providers),
     engineCount: countAvailableEngines(tools)
   })

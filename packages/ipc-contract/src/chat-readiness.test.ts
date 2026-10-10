@@ -1,13 +1,16 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  AgentRunResult,
   ChatReadiness,
   NO_CHAT_ROUTE,
   apiKeyRoutes,
   buildChatReadiness,
   countAvailableEngines,
+  isLoopbackModelBaseUrl,
   localModelRoutes,
   missingChatRouteCode,
+  requireAgentRunId,
   showsAvailableEngine,
   signedInEngineRoutes
 } from "./chat-readiness.ts"
@@ -27,12 +30,12 @@ test("只有已登录外置引擎时 ready", () => {
 test("只有探测到的本机模型时 ready", () => {
   const snap = buildChatReadiness({
     engines: [],
-    localModels: [{ kind: "local_model", service: "ollama" }],
+    localModels: [{ kind: "local_model", service: "ollama", verified: true }],
     apiKeys: [],
     engineCount: 1
   })
   assert.equal(snap.ready, true)
-  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama" }])
+  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: true }])
 })
 
 test("只有已存 API 密钥时 ready，载荷不含密钥", () => {
@@ -110,11 +113,30 @@ test("API 密钥路线只要存在与预设 id，不含密钥", () => {
   assert.equal(JSON.stringify(routes).includes("sk-"), false)
 })
 
-test("本机模型：现场探测或已启用档案都算；去重", () => {
-  assert.deepEqual(localModelRoutes(["ollama"], ["lmstudio", "openai"]), [
-    { kind: "local_model", service: "ollama" },
-    { kind: "local_model", service: "lmstudio" }
+test("本机模型：只认 ping 通过；远端档案 verified:false 不算 ready", () => {
+  assert.deepEqual(localModelRoutes(["ollama"], ["lmstudio"]), [
+    { kind: "local_model", service: "ollama", verified: true },
+    { kind: "local_model", service: "lmstudio", verified: false }
   ])
+  const remoteOnly = buildChatReadiness({
+    engines: [],
+    localModels: [{ kind: "local_model", service: "ollama", verified: false }],
+    apiKeys: [],
+    engineCount: 1
+  })
+  assert.equal(remoteOnly.ready, false)
+  assert.equal(isLoopbackModelBaseUrl("http://127.0.0.1:11434"), true)
+  assert.equal(isLoopbackModelBaseUrl("http://10.0.0.8:11434"), false)
+})
+
+test("agent.run 结果是 { ok, runId|code }；发送闸码在枚举里", () => {
+  assert.deepEqual(AgentRunResult.parse({ ok: true, runId: "run_1" }), { ok: true, runId: "run_1" })
+  assert.deepEqual(AgentRunResult.parse({ ok: false, code: NO_CHAT_ROUTE }), {
+    ok: false,
+    code: NO_CHAT_ROUTE
+  })
+  assert.equal(requireAgentRunId({ ok: true, runId: "run_1" }), "run_1")
+  assert.throws(() => requireAgentRunId({ ok: false, code: NO_CHAT_ROUTE }), /no_chat_route/)
 })
 
 test("missingChatRouteCode 只在没有任何路线时给出 no_chat_route", () => {

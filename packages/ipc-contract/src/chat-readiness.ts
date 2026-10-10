@@ -1,6 +1,6 @@
 /**
- * 可对话路线真源：向导末屏与无密钥发送闸共用。
- * 引擎就绪 ≠ 可以开始；enjoy-local 没连模型不算 ready。
+ * 可对话路线真源：向导末屏与提示共用。发送闸看本轮选中路线，不读全局 ready。
+ * 引擎就绪 ≠ 可以开始；本机模型必须 ping 通过（verified:true）才算 ready。
  */
 import { z } from "zod"
 
@@ -22,10 +22,42 @@ export type ChatEngineRoute = z.infer<typeof ChatEngineRoute>
 export const ChatLocalModelRoute = z
   .object({
     kind: z.literal("local_model"),
-    service: z.enum(["ollama", "lmstudio"])
+    service: z.enum(["ollama", "lmstudio"]),
+    /** 现场 ping 通过才为 true。远端档案（非 127.0.0.1）不 ping，为 false，不算 ready。 */
+    verified: z.boolean().optional()
   })
   .strict()
 export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
+
+/** 发送闸稳定码。main `agent.run` 失败回 `{ ok:false, code }`，不要 throw 以免 IPC 加前缀。 */
+export const SendGateCode = z.enum([NO_CHAT_ROUTE])
+export type SendGateCode = z.infer<typeof SendGateCode>
+
+export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()
+export type AgentRunOk = z.infer<typeof AgentRunOk>
+
+export const AgentRunBlocked = z.object({ ok: z.literal(false), code: SendGateCode }).strict()
+export type AgentRunBlocked = z.infer<typeof AgentRunBlocked>
+
+export const AgentRunResult = z.discriminatedUnion("ok", [AgentRunOk, AgentRunBlocked])
+export type AgentRunResult = z.infer<typeof AgentRunResult>
+
+export function agentRunBlockedCode(result: unknown): SendGateCode | null {
+  const parsed = AgentRunResult.safeParse(result)
+  return parsed.success && !parsed.data.ok ? parsed.data.code : null
+}
+
+/** 工作流 / 自动化读 runId；被闸时抛稳定码，不要当成功。 */
+export function requireAgentRunId(result: unknown): string {
+  const parsed = AgentRunResult.safeParse(result)
+  if (parsed.success) {
+    if (!parsed.data.ok) throw new Error(parsed.data.code)
+    return parsed.data.runId
+  }
+  const runId = (result as { runId?: unknown })?.runId
+  if (typeof runId === "string" && runId.length > 0) return runId
+  throw new Error("agent.run returned no runId")
+}
 
 export const ChatApiKeyRoute = z
   .object({
@@ -64,6 +96,8 @@ export type PublicKeyProvider = {
   enabled?: boolean
   hasKey?: boolean
   requiresKey?: boolean
+  /** 用来判断远端 Ollama / LM Studio，不进快照。 */
+  baseURL?: string
 }
 
 /** 已装 / 已探测到的引擎数。enjoy-local 算一台引擎，但不等于可以对话。 */
@@ -77,12 +111,17 @@ export function countAvailableEngines(tools: readonly AvailableEngineTool[]): nu
   return tools.filter(showsAvailableEngine).length
 }
 
+export function isVerifiedLocalModel(route: ChatLocalModelRoute): boolean {
+  return route.verified !== false
+}
+
 export function chatReadyFromRoutes(input: {
   engines: readonly ChatEngineRoute[]
   localModels: readonly ChatLocalModelRoute[]
   apiKeys: readonly ChatApiKeyRoute[]
 }): boolean {
-  return input.engines.length + input.localModels.length + input.apiKeys.length > 0
+  const locals = input.localModels.filter(isVerifiedLocalModel)
+  return input.engines.length + locals.length + input.apiKeys.length > 0
 }
 
 export function buildChatReadiness(input: {
@@ -124,17 +163,39 @@ export function apiKeyRoutes(providers: readonly PublicKeyProvider[]): ChatApiKe
     .map((row) => ({ kind: "api_key" as const, providerId: row.id, presetId: row.kind }))
 }
 
-/** 现场探测 ∪ 已启用的本机档案（e2e stub 的 Ollama 也算）。 */
+/** 只认 127.0.0.1 / ::1；localhost 与局域网不算，不 ping。空地址当本机默认。 */
+export function isLoopbackModelBaseUrl(url: string | undefined): boolean {
+  if (!url?.trim()) return true
+  try {
+    const host = new URL(url).hostname.replace(/^\[|\]$/g, "")
+    return host === "127.0.0.1" || host === "::1"
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 本机路线：现场 ping 通过 → verified:true。
+ * 远端档案（非 127.0.0.1）不 ping → verified:false，不算 ready。
+ * 已启用但没 ping 过的本机档案不算路线（禁止靠档案冒充就绪）。
+ */
 export function localModelRoutes(
   live: readonly ("ollama" | "lmstudio")[],
-  enabledKinds: readonly string[]
+  remoteUnverified: readonly string[] = []
 ): ChatLocalModelRoute[] {
-  const services = new Set<"ollama" | "lmstudio">()
-  for (const service of live) services.add(service)
-  for (const kind of enabledKinds) {
-    if (kind === "ollama" || kind === "lmstudio") services.add(kind)
+  const routes: ChatLocalModelRoute[] = []
+  const seen = new Set<"ollama" | "lmstudio">()
+  for (const service of live) {
+    seen.add(service)
+    routes.push({ kind: "local_model", service, verified: true })
   }
-  return [...services].map((service) => ({ kind: "local_model" as const, service }))
+  for (const kind of remoteUnverified) {
+    if (kind !== "ollama" && kind !== "lmstudio") continue
+    if (seen.has(kind)) continue
+    seen.add(kind)
+    routes.push({ kind: "local_model", service: kind, verified: false })
+  }
+  return routes
 }
 
 export function missingChatRouteCode(ready: boolean): typeof NO_CHAT_ROUTE | null {

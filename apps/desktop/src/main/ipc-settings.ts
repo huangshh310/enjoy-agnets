@@ -25,6 +25,7 @@ import {
 } from "./ipc-provider-probe"
 import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
 import { getSetting, setSetting } from "./services/database"
+import { parseRecentWorkspaceIds, RECENT_WORKSPACE_SETTING } from "./services/workspace-mru.ts"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
@@ -88,6 +89,7 @@ async function settingsSnapshot() {
     baseURL: secret?.baseURL ?? null,
     defaultModelId: active?.modelId || getSetting("defaultModelId") || "",
     lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
+    recentWorkspaceIds: parseRecentWorkspaceIds(getSetting(RECENT_WORKSPACE_SETTING)),
     providers: await listPublicProviders(),
     preferences: readPreferences(),
     keybindingIssues: readKeybindingIssues(),
@@ -138,6 +140,7 @@ function registerCoreSettingsIpc() {
   })
   ipcMain.handle("settings.setHarness", async (_event, raw) => {
     writeHarnessSecret(SetHarnessInput.parse(raw))
+    scheduleChatReadinessPush()
     return { ok: true, harness: await harnessPublicStatus(readPreferences().harnessId) }
   })
   ipcMain.handle("settings.composerPresets", async () => listComposerPresets())

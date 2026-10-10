@@ -3,11 +3,18 @@
  */
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide.ts"
 import { rememberChatReadiness } from "./chat-readiness-cache.ts"
 
 export const CHAT_READINESS_QUERY_KEY = ["chat-readiness"] as const
+
+function acceptReadiness(raw: unknown): ChatReadiness | undefined {
+  const parsed = ChatReadiness.safeParse(raw)
+  if (!parsed.success) return undefined
+  rememberChatReadiness(parsed.data)
+  return parsed.data
+}
 
 export function useChatReadiness() {
   const client = useQueryClient()
@@ -15,8 +22,8 @@ export function useChatReadiness() {
     queryKey: CHAT_READINESS_QUERY_KEY,
     enabled: hasIde(),
     queryFn: async () => {
-      const snap = (await getIde().chat.readiness({})) as ChatReadiness
-      rememberChatReadiness(snap)
+      const snap = acceptReadiness(await getIde().chat.readiness({}))
+      if (!snap) throw new Error("chat.readiness snapshot rejected")
       return snap
     }
   })
@@ -26,12 +33,16 @@ export function useChatReadiness() {
   useEffect(() => {
     if (!hasIde()) return undefined
     const stop = getIde().chat.onReadiness((payload) => {
-      const snap = payload as ChatReadiness
-      rememberChatReadiness(snap)
-      client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+      const snap = acceptReadiness(payload)
+      if (snap) client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
     })
+    const onFocus = () => {
+      void client.invalidateQueries({ queryKey: CHAT_READINESS_QUERY_KEY })
+    }
+    window.addEventListener("focus", onFocus)
     return () => {
       stop()
+      window.removeEventListener("focus", onFocus)
     }
   }, [client])
   return query

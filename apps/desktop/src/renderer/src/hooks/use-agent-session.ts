@@ -33,7 +33,7 @@ import { useRightPaneStore } from "../stores/right-pane-store"
 import { useWorkspaceChangeInvalidation } from "./use-workspace-change-invalidation"
 import { useChatReadiness } from "./use-chat-readiness"
 import { planNewSession } from "./plan-new-session"
-import { isUnknownWorkspaceRememberError } from "./unknown-workspace-remember"
+import { rememberWorkspaceOnLoad } from "./unknown-workspace-remember"
 import { landEmptyHome } from "./nav-history/nav-history-controller"
 
 export function useAgentSession() {
@@ -92,6 +92,7 @@ export function useAgentSession() {
   useBootWorkspace(
     Boolean(settingsQuery.data),
     settingsQuery.data?.lastWorkspaceId,
+    settingsQuery.data?.recentWorkspaceIds,
     workspacesQuery.data,
     (workspace) => {
       void loadWorkspace(workspace)
@@ -120,17 +121,14 @@ export function useAgentSession() {
 export async function loadWorkspace(workspace: WorkspaceRow) {
   rememberOpenedWorkspace(workspace)
   if (hasIde()) {
-    try {
-      await getIde().workspace.remember({ workspaceId: workspace.id })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      if (isUnknownWorkspaceRememberError(message)) {
+    const outcome = await rememberWorkspaceOnLoad({
+      remember: () => getIde().workspace.remember({ workspaceId: workspace.id }),
+      onUnknown: async () => {
         await refreshAllWorkspaces()
         await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
-        return
       }
-      // 其它 remember 失败不得挡住切换
-    }
+    })
+    if (outcome === "abort") return
   }
   const store = useChatStore.getState()
   await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
