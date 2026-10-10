@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { AgentToolPublic, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
+import { handleDrawerClosePointer } from "@renderer/components/settings/settings-drawer-close"
 import { SettingsSideDrawer } from "@renderer/components/settings/settings-side-drawer"
 import { useT } from "@renderer/i18n"
 import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
@@ -74,11 +75,12 @@ export function AutomationDrawer({
         </div>
         <button
           type="button"
+          onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
           onClick={onClose}
           data-testid="automation-drawer-close"
           data-app-region="no-drag"
           style={APP_REGION_NO_DRAG_STYLE}
-          className="text-caption-1-medium text-text-tertiary [app-region:no-drag]"
+          className="inline-flex size-8 items-center justify-center rounded-lg text-caption-1-medium text-text-tertiary [app-region:no-drag]"
           aria-label={t("common.close")}
         >
           <RiCloseLine className="size-4" />

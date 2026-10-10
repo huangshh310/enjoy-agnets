@@ -31,7 +31,7 @@ export function ComposerOverflowMenu() {
       >
         <div className="border-b border-separator-border/60 px-1 pb-2 mb-1.5">
           <p className="text-caption-1-semibold text-text-primary">{t("chat.composerOverflow")}</p>
-          <p className="mt-0.5 text-caption-2-regular leading-normal text-text-tertiary">{t("chat.composerOverflowHint")}</p>
+          <p className="mt-0.5 text-caption-2-regular leading-normal text-text-secondary">{t("chat.composerOverflowHint")}</p>
         </div>
         <SessionGoalChip layout="menu" />
         <SessionHeartbeatForm />

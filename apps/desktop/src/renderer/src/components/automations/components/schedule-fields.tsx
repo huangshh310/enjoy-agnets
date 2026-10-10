@@ -2,10 +2,12 @@
  * 定时：每天 / 工作日 / 每周 + 时间；高级才露 cron。
  */
 import { useState } from "react"
+import { RiCalendarScheduleLine } from "@remixicon/react"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import { useI18n, useT } from "@renderer/i18n"
-import { formatClock } from "../lib/format-cron"
+import { joinSegments } from "@renderer/lib/join-segments"
+import { cronChipLabel } from "../lib/cron-chip-label"
 import {
   clockValue,
   cronFromSchedule,
@@ -47,7 +49,8 @@ export function ScheduleFields({
   const { locale } = useI18n()
   const parsed = scheduleFromCron(cronExpr)
   const [advanced, setAdvanced] = useState(parsed.preset === "advanced")
-  const preview = previewLine(parsed.preset === "advanced" && advanced ? "advanced" : parsed.preset, parsed, t)
+  const readable = cronChipLabel(cronExpr, t)
+  const preview = joinSegments(readable.label, formatTimezoneLabel(timeZone, locale))
 
   return (
     <div className="space-y-2" data-testid="automation-schedule">
@@ -108,57 +111,48 @@ export function ScheduleFields({
           </label>
         </div>
       )}
-      <p className="text-caption-2-regular text-text-secondary" data-testid="automation-schedule-preview">
-        {preview} · {formatTimezoneLabel(timeZone, locale)}
-      </p>
-      <button
-        type="button"
-        data-testid="automation-schedule-advanced"
-        onClick={() => setAdvanced((open) => !open)}
-        className="text-caption-2-medium text-text-secondary hover:text-text-primary"
-      >
-        {t("studio.automations.scheduleAdvanced")}
-      </button>
+      <div className="flex flex-col gap-2">
+        <p
+          className="flex items-start gap-1.5 text-caption-2-regular text-text-secondary"
+          data-testid="automation-schedule-preview"
+        >
+          <RiCalendarScheduleLine className="mt-0.5 size-3.5 shrink-0 text-text-secondary" aria-hidden />
+          <span className="min-w-0 break-words">{preview}</span>
+        </p>
+        <button
+          type="button"
+          data-testid="automation-schedule-advanced"
+          onClick={() => setAdvanced((open) => !open)}
+          className="w-fit text-caption-2-medium text-text-secondary hover:text-text-primary"
+        >
+          {t("studio.automations.scheduleAdvanced")}
+        </button>
+      </div>
       {advanced ? (
-        <div className="grid grid-cols-2 gap-2">
-          <label>
-            <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.cronLabel")}</span>
+        <div className="flex flex-col gap-3">
+          <label className="block space-y-1">
+            <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.cronExprCustom")}</span>
             <Input
               value={cronExpr}
               onChange={(event) => onChange({ cronExpr: event.target.value })}
-              className="mt-1 font-mono"
+              className="font-mono"
+              data-testid="automation-cron-expr"
             />
+            <span className="block text-caption-2-regular text-text-secondary" data-testid="automation-cron-readable">
+              {readable.label}
+            </span>
           </label>
-          <label>
+          <div className="space-y-1" data-testid="automation-timezone-field">
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.timeZone")}</span>
             <p
               data-testid="automation-timezone-advanced"
-              className="mt-1 text-caption-1-medium text-text-primary"
+              className="text-caption-1-medium text-text-primary"
             >
               {formatTimezoneAdvanced(timeZone, locale)}
             </p>
-            <Input
-              value={timeZone}
-              onChange={(event) => onChange({ timeZone: event.target.value })}
-              className="mt-1"
-            />
-          </label>
+          </div>
         </div>
       ) : null}
     </div>
   )
-}
-
-function previewLine(
-  preset: SchedulePreset,
-  parsed: ReturnType<typeof scheduleFromCron>,
-  t: (key: string, vars?: Record<string, string | number>) => string
-): string {
-  const time = formatClock(parsed.hour, parsed.minute)
-  if (preset === "daily") return t("studio.automations.cronDaily", { time })
-  if (preset === "weekdays") return t("studio.automations.cronWeekdays", { time })
-  if (preset === "weekly") {
-    return t("studio.automations.cronWeekly", { day: t(DAY_KEYS[parsed.dow] ?? DAY_KEYS[1]), time })
-  }
-  return t("studio.automations.cronCustom")
 }

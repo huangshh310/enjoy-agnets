@@ -33,6 +33,19 @@ export function isSettingsDrawerOpen(
   return Boolean(root?.querySelector(SETTINGS_DRAWER_OPEN_SEL))
 }
 
+/**
+ * 关闭钮用 pointerdown：先 preventDefault 保住这次点，避免输入框失焦重渲把 click 吞掉。
+ * 只认主键，不要让右键/中键关抽屉。
+ */
+export function handleDrawerClosePointer(
+  event: { button?: number; preventDefault: () => void },
+  onClose: () => void
+): void {
+  if (event.button != null && event.button !== 0) return
+  event.preventDefault()
+  onClose()
+}
+
 /** 设置 / Inbox 的 Esc 回工位：已处理、或抽屉开着，都不离开。 */
 export function shouldLeaveSettingsOnEscape(input: {
   key?: string

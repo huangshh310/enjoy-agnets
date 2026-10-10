@@ -2,6 +2,7 @@
  * 溢出菜单里的会话心跳。到点只对当前会话发一句，不新建会话。
  */
 import { useEffect, useState } from "react"
+import { RiCalendarScheduleLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -27,8 +28,11 @@ export function SessionHeartbeatForm() {
         void submit(sessionId, draft, t, setDraft, setError, setSaving)
       }}
     >
-      <p className="text-caption-1-semibold text-text-primary">{t("chat.heartbeatTitle")}</p>
-      <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("chat.heartbeatHint")}</p>
+      <p className="inline-flex items-center gap-1.5 text-caption-1-semibold text-text-primary">
+        <RiCalendarScheduleLine className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
+        {t("chat.heartbeatTitle")}
+      </p>
+      <p className="mt-0.5 text-caption-2-regular text-text-secondary">{t("chat.heartbeatHint")}</p>
       {draft.paused ? <p className="mt-1 text-caption-2-regular text-text-secondary">{t("chat.heartbeatPaused")}</p> : null}
       <HeartbeatFields draft={draft} t={t} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
       {error ? <p className="mt-1 text-caption-2-regular text-text-error-primary">{error}</p> : null}

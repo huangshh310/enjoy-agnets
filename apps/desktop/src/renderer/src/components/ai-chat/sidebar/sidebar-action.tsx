@@ -29,10 +29,23 @@ export function SidebarAction({
       type="button"
       data-testid={testId}
       onClick={onClick}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return
+        event.currentTarget.dataset.pointerReturn = ""
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return
+        delete event.currentTarget.dataset.pointerReturn
+      }}
+      onBlur={(event) => {
+        delete event.currentTarget.dataset.pointerReturn
+      }}
       aria-label={label}
       title={collapsed ? label : undefined}
       className={cx(
-        "flex items-center overflow-hidden rounded-2lg p-2 text-left transition-all duration-200 ease-in-out cursor-pointer",
+        "flex items-center overflow-hidden rounded-2lg p-2 text-left outline-none transition-all duration-200 ease-in-out cursor-pointer",
+        "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+        "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0",
         active
           ? "bg-accent-500/10 text-accent-600 dark:text-accent-400 font-semibold shadow-2xs"
           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",

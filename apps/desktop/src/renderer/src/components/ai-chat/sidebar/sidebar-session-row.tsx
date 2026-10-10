@@ -28,8 +28,10 @@ export function SidebarSessionRow({
   nameClassName = "text-caption-2-medium",
   surface = "tree"
 }: SidebarSessionRowProps) {
+  const t = useT()
   const activity = useSessionActivity(sessionId)
   const statusMeta = getWorkflowStatusMeta(workflowStatus)
+  const label = displaySessionTitle(name, t("chat.newAgent"))
 
   return (
     <div
@@ -47,6 +49,7 @@ export function SidebarSessionRow({
       <button
         type="button"
         onClick={onSelect}
+        title={label}
         className="flex min-w-[6rem] flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-2 py-0.5 text-left"
       >
         <SessionAgentMark sessionId={sessionId} />
@@ -56,7 +59,7 @@ export function SidebarSessionRow({
           </span>
         ) : null}
         {statusMeta ? <WorkflowStatusGlyph status={statusMeta.status} className={statusMeta.colorClass} /> : null}
-        <SessionRowIdentity name={name} nameClassName={nameClassName} />
+        <SessionRowIdentity label={label} nameClassName={nameClassName} />
         {changesSummary && (changesSummary.additions > 0 || changesSummary.deletions > 0) ? (
           <span
             title="工作区未提交"
@@ -91,14 +94,12 @@ export function SidebarSessionRow({
 
 /** 主行只写会话题。引擎身份走左侧 SessionAgentMark，不要把品牌/供应商名当会话名。 */
 function SessionRowIdentity({
-  name,
+  label,
   nameClassName
 }: {
-  name: string
+  label: string
   nameClassName?: string
 }) {
-  const t = useT()
-  const label = displaySessionTitle(name, t("chat.newAgent"))
   return (
     <span className={cx("min-w-[4.5rem] flex-1 truncate", nameClassName)} title={label}>
       {label}

@@ -233,6 +233,7 @@ export const enStudio = {
     webhook: "Local push",
     triggerHint: "Choose when it runs",
     cronLabel: "Schedule",
+    cronExprCustom: "Custom expression",
     scheduleDaily: "Daily",
     scheduleWeekdays: "Weekdays",
     scheduleWeekly: "Weekly",
