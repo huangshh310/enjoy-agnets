@@ -45,6 +45,9 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     })
     await window.setViewportSize({ width: 1440, height: 900 })
     await window.evaluate(() => document.documentElement.setAttribute("data-skin", "glass"))
+    await window
+      .waitForSelector('button:has-text("跳过设置"), [data-testid="composer-input"]', { timeout: 20_000 })
+      .catch(() => undefined)
     const skipGuide = window.getByRole("button", { name: "跳过设置" })
     if ((await skipGuide.count()) > 0) await skipGuide.click()
 

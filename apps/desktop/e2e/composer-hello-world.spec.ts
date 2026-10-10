@@ -125,9 +125,16 @@ async function readyWindow(app: { firstWindow: () => Promise<Page> }) {
     timeout: 20_000
   })
   await window.setViewportSize({ width: 1440, height: 900 })
+  await dismissSetupGuide(window)
+  return window
+}
+
+async function dismissSetupGuide(window: Page) {
+  await window
+    .waitForSelector('button:has-text("跳过设置"), [data-testid="composer-input"]', { timeout: 20_000 })
+    .catch(() => undefined)
   const skipGuide = window.getByRole("button", { name: "跳过设置" })
   if ((await skipGuide.count()) > 0) await skipGuide.click()
-  return window
 }
 
 async function waitSendReady(window: Page) {
