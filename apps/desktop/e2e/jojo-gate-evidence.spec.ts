@@ -135,17 +135,27 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
       return "ok"
     })
     expect(deco).toBe("ok")
-    const divider = window.locator('[data-testid="review-split-separator"]')
-    const box = (await divider.boundingBox()) ?? (await window.locator('[data-testid="review-file-list-empty"]').boundingBox())
-    if (box) {
+    const midBox = await window.locator('[data-testid="review-diff-empty"]').boundingBox()
+    const fileBox = await window.locator('[data-testid="review-file-list-empty"]').boundingBox()
+    const gutter = midBox && fileBox
+      ? {
+          x: Math.max(0, midBox.x + midBox.width - 24),
+          y: Math.max(0, Math.min(midBox.y, fileBox.y)),
+          width: 96,
+          height: Math.min(Math.max(midBox.height, fileBox.height) + 80, 360)
+        }
+      : fileBox
+        ? {
+            x: Math.max(0, fileBox.x - 48),
+            y: Math.max(0, fileBox.y),
+            width: 96,
+            height: Math.min(fileBox.height + 80, 360)
+          }
+        : null
+    if (gutter) {
       await window.screenshot({
         path: join(shots, "luna_review_divider_light_zoom.png"),
-        clip: {
-          x: Math.max(0, box.x - 40),
-          y: Math.max(0, box.y),
-          width: Math.min(120, box.width + 80),
-          height: Math.min(box.height + 80, 360)
-        }
+        clip: gutter
       })
     }
     await expect(window.locator('[data-testid="chat-breadcrumb-project"]')).toBeVisible()
