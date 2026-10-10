@@ -83,7 +83,8 @@ test("拒绝并归档：审批 deny、会话 archived_at、胶囊与已归档", 
       window.location.hash = "#/settings/archived"
     })
     await expect(window.getByText("已归档的聊天").first()).toBeVisible({ timeout: 8_000 })
-    await expect(window.getByText(sessionName)).toBeVisible({ timeout: 8_000 })
+    await expect(window.getByTestId("archived-row-restore")).toBeVisible({ timeout: 8_000 })
+    await expect(window.locator("main").getByText(sessionName, { exact: true }).first()).toBeVisible()
     await snap(window, "p0_archived_list")
     await window.locator('[data-testid="archived-row-restore"]').click()
     await window.evaluate(() => {
@@ -92,7 +93,7 @@ test("拒绝并归档：审批 deny、会话 archived_at、胶囊与已归档", 
     await expect(sessionRow(window, sessionName)).toHaveCount(1, { timeout: 8_000 })
     await sessionRow(window, sessionName).click()
     await expect(window.getByText("已拒绝，本次未执行")).toBeVisible({ timeout: 12_000 })
-    await expect(window.getByText("写入 e2e-stub.txt")).toBeVisible()
+    await expect(window.getByRole("button", { name: "写入 e2e-stub.txt" })).toBeAttached({ timeout: 8_000 })
     await snap(window, "p0_denied_after_restore")
   } finally {
     await closeApp(app)

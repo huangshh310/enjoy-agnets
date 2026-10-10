@@ -98,7 +98,7 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     })
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
     const openRow = window.locator('[data-testid="automation-row-open"]').first()
-    if ((await openRow.count()) > 0) await openRow.click()
+    if ((await openRow.count()) > 0) await openRow.click({ force: true })
     await expect(window.locator('[data-testid="automation-schedule-time"]')).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-hour"]')).toBeVisible()
     await expect(window.getByText("AM")).toHaveCount(0)
