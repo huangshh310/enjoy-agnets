@@ -130,7 +130,7 @@ function mapToolPart(part: Record<string, unknown>, runId: string): StreamEvent 
       toolCallId,
       approvalId: String(part.approvalId ?? ""),
       name,
-      args
+      args: args ?? {}
     }
   }
   return null

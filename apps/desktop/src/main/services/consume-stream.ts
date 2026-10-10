@@ -113,7 +113,7 @@ async function consumeApprovalRequired(
   if (applied.kind === "open_card") {
     persistFromEvent(input.tools, event, input.transcript)
     input.onApproval(applied.pending)
-    input.emit({ ...event, approvalId: applied.pending.approvalId, toolCallId, args })
+    input.emit({ ...event, approvalId: applied.pending.approvalId, toolCallId, args: args ?? {} })
     return emitCheckpoint("approval.required", lastCheckpointAt, input.onCheckpoint)
   }
   replayDecidedApproval(applied, { event, toolCallId, args, input })

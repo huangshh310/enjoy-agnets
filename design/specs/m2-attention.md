@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（收工判定在 main 的 `turn`；前景/后台同一结果；出错只出 error）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（待验收只看本轮写工具，不看 git dirty）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -173,7 +173,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：Inbox「未读」出现大量「运行中」→ 合成 running 被标成未读。正确做法：`synthesize-running-inbox.ts` 固定 `read: true`；`inboxNavCounts.unread` 只计 `!read`。running 不得加成 Attention kind。
 - **隐患**：导航仍按「智能体 / 系统」或「全部 / 运行中」筛 → 旧 IA 残留。正确做法：筛 `InboxCategory` 的 approval / needs_review / failed。
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。
-- **隐患**：一轮 `run.end` 直接标 `done`、刷 complete Inbox，或把失败/取消也一律 `needs_review`；写盘被拒绝后仍弹「已完成」并进待验收；只读 hello / cite `readme.md` 也进待验收；后台会话仍按旧逻辑进待验收。正确做法：main `decideTurnOutcome` 算一次，挂到 `run.end`/`run.error.turn` 并写 `workflowStatus`；renderer 只消费。只读 / 无写类 → `todo` + `complete`。全未执行 → `todo` + `neutral`。写类 `output-error`（无未执行码）或 abort 时已封口的 `input-available` → 可能已改盘，进待验收。`run.error` / 用户 abort → `in_progress` + `error`，收掉同会话 complete，禁止和「已完成」「待验收」叠出。取消后泵不得再发 `run.end`。只有人点「通过」才能 `done`。产品锁：[../references/m-cbd-f1-review-taxonomy.md](../references/m-cbd-f1-review-taxonomy.md)。
+- **隐患**：一轮 `run.end` 直接标 `done`、刷 complete Inbox，或把失败/取消也一律 `needs_review`；写盘被拒绝后仍弹「已完成」并进待验收；只读 hello / cite `readme.md` 也进待验收；工作区已有未提交时 hello 也进待验收并数整仓脏文件；后台会话仍按旧逻辑进待验收。正确做法：main `decideTurnOutcome` 算一次，挂到 `run.end`/`run.error.turn` 并写 `workflowStatus`；renderer 只消费。待验收 **只**看本轮写类是否已执行，禁止看 git dirty。打回/通过横幅只数本轮写盘 path。只读 / 无写类 → `todo` + `complete`。全未执行 → `todo` + `neutral`。写类 `output-error`（无未执行码）或 abort 时已封口的 `input-available` → 可能已改盘，进待验收。`run.error` / 用户 abort → `in_progress` + `error`，收掉同会话 complete，禁止和「已完成」「待验收」叠出。取消后泵不得再发 `run.end`。只有人点「通过」才能 `done`。产品锁：[../references/m-cbd-f1-review-taxonomy.md](../references/m-cbd-f1-review-taxonomy.md)。
 - **隐患**：complete 10s TTL 未过又来一张审批，Strip 会同时亮「需处理」和「已完成」。正确做法：新审批进场先 `resolveTerminalSlots`（只收 complete）。拒绝只走 `approval.resolved`，不要把 deny 折成 `run.error` 计需处理。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。侧栏未决审批只加红点，禁止 `focusAttention` 把用户拽回待批会话（Strip / Inbox / handoff 才跳）。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。

@@ -60,7 +60,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     toolCallId: z.string(),
     approvalId: z.string(),
     name: z.string(),
-    args: z.unknown(),
+    args: z.unknown().optional(),
     /** 自动化补跑 / 准点来源；缺省不是自动化。 */
     automationSource: AutomationRunSource.optional(),
     ...Envelope

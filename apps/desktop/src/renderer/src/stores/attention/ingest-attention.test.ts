@@ -37,6 +37,22 @@ function slot(partial: Partial<AttentionItem> & Pick<AttentionItem, "id" | "sess
   }
 }
 
+test("缺 args 的 approval.required 仍占审批槽", () => {
+  const items = ingestAttentionEvent([], {
+    event: {
+      type: "approval.required",
+      runId: "run_b",
+      toolCallId: "tc_1",
+      approvalId: "apr_1",
+      name: "write_file"
+    },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  assert.equal(items.find((item) => item.kind === "pending_approval")?.status, "active")
+})
+
 test("approval.required 按工具分成 pending_approval / ask_user", () => {
   assert.equal(attentionKindFromEvent(approval()), "pending_approval")
   assert.equal(attentionKindFromEvent(approval("ask_user_questions")), "ask_user")

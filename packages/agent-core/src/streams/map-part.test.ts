@@ -94,6 +94,28 @@ test("人工审批 request 才映射为 approval.required", () => {
   )
 })
 
+test("审批 request 缺 args 仍映射，补成空对象", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "tool-approval-request",
+        approvalId: "apr_empty",
+        toolCallId: "tool_empty",
+        toolName: "write_file"
+      },
+      "run_1"
+    ),
+    {
+      type: "approval.required",
+      runId: "run_1",
+      toolCallId: "tool_empty",
+      approvalId: "apr_empty",
+      name: "write_file",
+      args: {}
+    }
+  )
+})
+
 test("SDK 自动放行的 approval request 不弹卡", () => {
   assert.equal(
     mapStreamPart(

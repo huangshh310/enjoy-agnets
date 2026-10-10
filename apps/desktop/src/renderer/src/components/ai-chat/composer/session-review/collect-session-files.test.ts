@@ -42,13 +42,13 @@ test("运行中 Git 未跟上仍列出本轮写盘", () => {
   assert.equal(files[0]?.path, "src/a.ts")
 })
 
-test("本轮都已提交时回落其余未提交改动", () => {
+test("本轮都已提交时不回落工作区其它未提交", () => {
   const files = pickReviewFiles(
     ["src/a.ts"],
     [{ path: "notes.md", status: "untracked", additions: 1, deletions: 0 }],
     false
   )
-  assert.equal(files[0]?.path, "notes.md")
+  assert.deepEqual(files, [])
 })
 
 test("磁盘上已有文件但本轮没有已执行写盘，不算本轮改动", () => {
@@ -58,17 +58,17 @@ test("磁盘上已有文件但本轮没有已执行写盘，不算本轮改动",
     false
   )
   assert.equal(pick.fromLastTurn, false)
-  assert.equal(pick.files[0]?.path, "e2e-stub.txt")
+  assert.deepEqual(pick.files, [])
 })
 
-test("没有本轮写盘时回落工作区改动，并标记非本轮", () => {
+test("没有本轮写盘时不把整仓未提交算进横幅", () => {
   const pick = describeReviewFiles(
     [],
     [{ path: "notes.md", status: "untracked", additions: 1, deletions: 0 }],
     false
   )
   assert.equal(pick.fromLastTurn, false)
-  assert.equal(pick.files[0]?.path, "notes.md")
+  assert.deepEqual(pick.files, [])
 })
 
 test("本轮仍 dirty 时 fromLastTurn 为 true", () => {

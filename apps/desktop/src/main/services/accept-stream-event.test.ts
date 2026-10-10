@@ -69,3 +69,18 @@ test("run.end / run.error 的 turn 过 safeParse，不会被剥掉", () => {
   assert.equal(denied?.type, "run.end")
   if (denied?.type === "run.end") assert.equal(denied.turn?.attention, "neutral")
 })
+
+test("approval.required 缺 args 仍过闸，不丢掉整条", () => {
+  const event = acceptStreamEvent({
+    type: "approval.required",
+    runId: "r1",
+    toolCallId: "tool_1",
+    approvalId: "apr_1",
+    name: "write_file"
+  })
+  assert.equal(event?.type, "approval.required")
+  if (event?.type === "approval.required") {
+    assert.equal(event.name, "write_file")
+    assert.equal(event.args, undefined)
+  }
+})

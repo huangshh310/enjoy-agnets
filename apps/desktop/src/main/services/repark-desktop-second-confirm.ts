@@ -42,7 +42,7 @@ export async function reparkDesktopSecondConfirm(input: {
     approvalId,
     toolCallId: next.toolCallId,
     name: next.name,
-    args: parked
+    args: parked ?? {}
   })
 }
 

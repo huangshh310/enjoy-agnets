@@ -1,6 +1,7 @@
 /**
- * 把上一轮写盘 path 与 Git 行统计对齐，供改动条展示。
- * 运行中没有 Git 命中时仍列出文件，增减为 0；停跑后只留仍在 workspace.changes 里的。
+ * 把上一轮写盘 path 与 Git 行统计对齐，供改动条 / 打回通过横幅展示。
+ * 只列本轮已执行（或可能已改盘）的写盘 path。禁止把整仓未提交回落进来。
+ * 运行中没有 Git 命中时仍列出本轮文件，增减为 0；停跑后只留本轮仍 dirty 的。
  */
 import type { ChangedFileRow } from "@renderer/stores/chat-store.types"
 import type { SessionReviewFile } from "./session-review.types"
@@ -47,27 +48,19 @@ export type ReviewFilePick = {
 }
 
 /**
- * 运行中先列本轮写盘；停跑后只留仍 dirty 的。本轮都已提交则回落其余未提交。
+ * 运行中先列本轮写盘；停跑后只留本轮仍 dirty 的。
+ * 没有本轮写盘、或本轮都已提交：空列表。审查栏才看整仓 git。
  */
 export function describeReviewFiles(
   lastTurnPaths: string[],
   changes: ChangedFileRow[],
   running: boolean
 ): ReviewFilePick {
-  if (lastTurnPaths.length > 0) {
-    if (running) {
-      return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
-    }
-    const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
-    if (dirty.length > 0) return { files: dirty, fromLastTurn: true }
+  if (lastTurnPaths.length === 0) return { files: [], fromLastTurn: false }
+  if (running) {
+    return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
   }
-  return {
-    files: collectSessionFiles(
-      changes.map((row) => row.path),
-      changes
-    ),
-    fromLastTurn: false
-  }
+  return { files: collectDirtySessionFiles(lastTurnPaths, changes), fromLastTurn: true }
 }
 
 export function pickReviewFiles(

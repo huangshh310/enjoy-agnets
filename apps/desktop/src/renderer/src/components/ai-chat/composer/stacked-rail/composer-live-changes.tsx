@@ -30,8 +30,6 @@ export function ComposerLiveChanges() {
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const sessionId = useChatStore((state) => state.sessionId)
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
   const model = useSessionReviewModel()
   const preview = useOpenSessionPreview()
   const [undoOpen, setUndoOpen] = useState(false)
@@ -46,6 +44,8 @@ export function ComposerLiveChanges() {
   if (!showGate && !model.showReview) return null
 
   const files = model.files
+  const additions = files.reduce((sum, file) => sum + file.additions, 0)
+  const deletions = files.reduce((sum, file) => sum + file.deletions, 0)
   const peek =
     files.length > 0
       ? t("chat.stackedFilesChanged", { n: files.length })

@@ -39,7 +39,7 @@ export async function waitSecondConfirmApproval(
     approvalId,
     toolCallId,
     name: "desktop_act",
-    args
+    args: args ?? {}
   })
   armCatchUpPark(run, runId)
   return run.approvalGate.wait(approvalId)
