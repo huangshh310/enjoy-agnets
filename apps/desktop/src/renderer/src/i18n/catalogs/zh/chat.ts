@@ -521,6 +521,7 @@ export const zhChat = {
   otherChats: "其他对话",
   archivedToast: "已归档「{title}」",
   restoredToast: "已恢复到侧栏",
+  undoArchiveFailed: "撤销失败，可在「已归档的聊天」里恢复",
   statusTodo: "待办",
   statusInProgress: "进行中",
   statusNeedsReview: "待验收",

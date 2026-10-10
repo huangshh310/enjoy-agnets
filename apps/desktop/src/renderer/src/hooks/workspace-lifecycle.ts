@@ -1,5 +1,6 @@
 /**
- * 项目移除与会话归档：刷新侧栏。当前页被拿掉时交给历史栈。
+ * 项目移除与会话归档：刷新侧栏。
+ * 归档当前会话改选相邻项，剪掉历史条目但不 travel（避免跳进设置 / 已归档）。
  */
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
@@ -9,7 +10,10 @@ import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
 import { connectSshIfNeeded } from "./ssh-session-switch"
 import { sessionTitleFromStore } from "./archive-session-copy"
 import { notifySessionArchived, notifySessionRestored } from "./archive-session-toast"
+import { undoArchivedSession } from "./archive-session-undo"
 import { notifySwitchedProject } from "./switched-project-toast"
+import { pickAdjacentSessionId, visibleSessionIdsForArchive } from "./adjacent-session"
+import { selectPersistedSession } from "./session-lifecycle"
 import { landEmptyHome, pruneHistoryPages, releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
 import { showEmptyHistoryChat } from "@renderer/hooks/nav-history/show-empty-chat"
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
@@ -18,13 +22,31 @@ import type { WorkspaceRow } from "./workspace-row"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
-  const title = sessionTitleFromStore(sessionId, useChatStore.getState().repositories)
+  const store = useChatStore.getState()
+  const title = sessionTitleFromStore(sessionId, store.repositories)
+  const wasCurrent = store.sessionId === sessionId
+  const visibleIds = visibleSessionIdsForArchive(
+    store.repositories,
+    store.sidebarGrouping,
+    store.sessionSortOrder,
+    sessionId
+  )
+  const adjacentId = wasCurrent ? pickAdjacentSessionId(visibleIds, sessionId) : null
   await getIde().session.archive({ sessionId })
+  if (wasCurrent) await landAfterArchive(adjacentId)
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
-  await releaseHistoryPages([historySessionId(sessionId)])
-  notifySessionArchived(sessionId, title, () => void unarchiveSession(sessionId))
+  pruneHistoryPages([historySessionId(sessionId)])
+  notifySessionArchived(sessionId, title, () => void undoArchivedSession(sessionId, wasCurrent))
+}
+
+async function landAfterArchive(adjacentId: string | null) {
+  if (adjacentId) {
+    await selectPersistedSession(adjacentId)
+    return
+  }
+  await landEmptyHome()
 }
 
 export async function unarchiveSession(sessionId: string) {

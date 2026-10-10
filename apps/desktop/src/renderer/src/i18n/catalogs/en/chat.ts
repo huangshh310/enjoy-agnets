@@ -527,6 +527,7 @@ export const enChat = {
   otherChats: "Other chats",
   archivedToast: "Archived “{title}”",
   restoredToast: "Restored to sidebar",
+  undoArchiveFailed: "Couldn't undo. Restore it from Archived chats.",
   statusTodo: "To-do",
   statusInProgress: "In progress",
   statusNeedsReview: "Needs acceptance",

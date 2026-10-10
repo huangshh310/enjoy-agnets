@@ -18,3 +18,7 @@ export function archivedToastMessage(title: string, t: ArchiveToastTranslate): s
 export function restoredToastMessage(t: ArchiveToastTranslate): string {
   return t("chat.restoredToast")
 }
+
+export function undoArchiveFailedMessage(t: ArchiveToastTranslate): string {
+  return t("chat.undoArchiveFailed")
+}

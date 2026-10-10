@@ -11,10 +11,16 @@ import { queryClient } from "../lib/query-client.ts"
 import {
   archivedToastMessage,
   restoredToastMessage,
+  undoArchiveFailedMessage,
   type ArchiveToastTranslate
 } from "./archive-session-copy.ts"
 
-export { archivedToastMessage, restoredToastMessage, sessionTitleFromStore } from "./archive-session-copy.ts"
+export {
+  archivedToastMessage,
+  restoredToastMessage,
+  sessionTitleFromStore,
+  undoArchiveFailedMessage
+} from "./archive-session-copy.ts"
 export type { ArchiveToastTranslate }
 
 export function currentArchiveTranslate(): ArchiveToastTranslate {
@@ -47,5 +53,22 @@ export function notifySessionRestored(): void {
     id: "session-restored",
     testId: "session-restored-toast",
     tone: "success"
+  })
+}
+
+export function notifyUndoArchiveFailed(): void {
+  const t = currentArchiveTranslate()
+  showAppToast(undoArchiveFailedMessage(t), {
+    id: "session-undo-failed",
+    testId: "session-undo-failed-toast",
+    tone: "error",
+    action: {
+      label: t("nav.archived"),
+      onClick: () => {
+        void import("@renderer/router").then(({ router }) => {
+          void router.navigate({ to: "/settings/$section", params: { section: "archived" } })
+        })
+      }
+    }
   })
 }
