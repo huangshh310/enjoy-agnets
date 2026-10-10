@@ -15,7 +15,7 @@ export const enMcpPages = {
   trustedCount: "Trusted",
   refreshTitle: "Refresh servers and connection status",
   refresh: "Refresh",
-  registerServer: "Register Server",
+  registerServer: "Add a server",
   registeredCount: "Registered servers ({n})",
   searchServers: "Search server name...",
   emptyTitle: "No MCP servers configured yet",

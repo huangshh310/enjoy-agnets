@@ -21,7 +21,7 @@ export const enInboxPages = {
   markAllRead: "Mark all read",
   clearRead: "Clear read",
   empty: "Nothing to handle",
-  emptyHint: "Only decide, review, and failed. Running stays in the sidebar; completed stays out.",
+  emptyHint: "Only decide, waiting for review, and failed. Running stays in the sidebar; completed stays out.",
   groupToday: "Today",
   groupYesterday: "Yesterday",
   groupEarlier: "Earlier",
@@ -34,9 +34,9 @@ export const enInboxPages = {
   markRead: "Mark read",
   markUnread: "Mark unread",
   readerEmpty: "Select a message",
-  readerEmptyHint: "Open a session archive from the timeline. Allow / Deny only live in the permission dock.",
+  readerEmptyHint: "Click a row on the left to open the chat.",
   sessionLabel: "Session",
-  workspaceLabel: "Workspace",
+  workspaceLabel: "Project",
   occurredTime: "Time",
   sourceType: "Category",
   statusLabel: "Status",
@@ -64,7 +64,7 @@ export const enInboxPages = {
   executionFailed: "Execution failed",
   taskCompleted: "Delivered",
   taskRunning: "Running",
-  footerHint: "Note: Permission decisions and file approvals live in the session dock. Click 'Open session' above to jump directly to the thread.",
+  footerHint: "Approve or decline in the chat.",
   actions: {
     openSession: "Open session"
   }

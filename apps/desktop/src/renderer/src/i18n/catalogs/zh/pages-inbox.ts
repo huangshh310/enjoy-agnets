@@ -21,7 +21,7 @@ export const zhInboxPages = {
   markAllRead: "全部标为已读",
   clearRead: "清理已读",
   empty: "还没有要处理的消息",
-  emptyHint: "只列拍板、待验收和失败。运行中在侧栏「进行中」，完成不进默认 Inbox。",
+  emptyHint: "只列要拍板、待验收和失败的。进行中的在侧栏，已完成的不进这里。",
   groupToday: "今天",
   groupYesterday: "昨天",
   groupEarlier: "更早",
@@ -34,9 +34,9 @@ export const zhInboxPages = {
   markRead: "标为已读",
   markUnread: "标为未读",
   readerEmpty: "选择一条消息",
-  readerEmptyHint: "从左侧时间线打开会话档案。决策只在对话里的权限停靠完成。",
+  readerEmptyHint: "点左边一条打开对话。",
   sessionLabel: "所属会话",
-  workspaceLabel: "所属工作区",
+  workspaceLabel: "所属项目",
   occurredTime: "发生时间",
   sourceType: "通知分类",
   statusLabel: "当前状态",
@@ -64,7 +64,7 @@ export const zhInboxPages = {
   executionFailed: "执行失败",
   taskCompleted: "已完成交付",
   taskRunning: "正在执行中",
-  footerHint: "提示：文件改动与终端命令的审批决策均在对话界面的权限停靠面板中完成，点击右上角「打开会话」即可直接跳转进入对应会话。",
+  footerHint: "在对话里点批准或拒绝。",
   actions: {
     openSession: "打开会话"
   }

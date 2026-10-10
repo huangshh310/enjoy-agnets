@@ -14,7 +14,7 @@ export const zhMcpPages = {
   trustedCount: "已信任",
   refreshTitle: "刷新服务与连接状态",
   refresh: "刷新",
-  registerServer: "注册 Server",
+  registerServer: "添加服务",
   registeredCount: "已注册服务（{n}）",
   searchServers: "搜索服务名称…",
   emptyTitle: "暂未配置任何 MCP Server",

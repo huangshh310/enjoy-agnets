@@ -213,7 +213,7 @@ export const zhSettings = {
     searchPlaceholder: "搜索快捷键…",
     groupGlobal: "全局与导航",
     groupViews: "右侧舞台与开发面板",
-    groupChat: "对话与输入",
+    groupChat: "对话与输入框",
     empty: "未找到快捷键",
     emptyHint: "试试其他关键词（如 terminal、files、git、search）。",
     quickSearch: "快速搜索",
@@ -222,18 +222,18 @@ export const zhSettings = {
     quickSearchAltDesc: "打开命令面板，执行快捷操作。",
     openSettings: "打开设置",
     openSettingsDesc: "从应用任意位置进入通用设置页。",
-    backWorkspace: "返回工作区 / 关闭",
-    backWorkspaceDesc: "回到主 Agent 工作区，或关闭当前次级界面。",
+    backWorkspace: "返回项目 / 关闭",
+    backWorkspaceDesc: "回到主对话，或关闭当前次级界面。",
     filesTree: "文件与代码预览",
-    filesTreeDesc: "在右侧打开工作区文件树与代码检视。",
+    filesTreeDesc: "在右侧打开项目文件树与代码检视。",
     reviewDiff: "审查",
     reviewDiffDesc: "打开右侧审查栏，查看文件修改与改动。",
     terminal: "内置终端",
-    terminalDesc: "切换工作区隔离的 PTY 终端。",
+    terminalDesc: "打开或收起项目里的终端。",
     browser: "应用内浏览器预览",
     browserDesc: "打开实时 Web 应用预览。",
-    send: "发送消息 / 运行 Agent",
-    sendDesc: "提交提示并启动 Agent 执行循环。",
+    send: "发送消息 / 运行助手",
+    sendDesc: "提交提示并启动助手执行。",
     newLine: "输入框换行",
     newLineDesc: "在对话输入框中插入换行而不发送。",
     paste: "粘贴图片或文件",
@@ -494,7 +494,7 @@ export const zhSettings = {
     done: "完成",
     tabEngines: "本机 CLI",
     tabSubscriptions: "订阅与额度",
-    tabRegistry: "Registry",
+    tabRegistry: "公开目录",
     tabSandbox: "进阶沙箱",
     tabDefaults: "默认项",
     hubTitle: "本机 CLI",
@@ -573,7 +573,7 @@ export const zhSettings = {
   },
 
   registry: {
-    title: "Registry",
+    title: "公开目录",
     desc: "浏览可用的本机编程助手。可一键安装或复制官方安装命令。自行添加时，只能选我们支持的助手程序，不能指定电脑上的任意软件。",
     sourceOfficial: "官方目录",
     emptyDetail: "从左侧选一个智能体。",
@@ -619,7 +619,7 @@ export const zhSettings = {
 
   runtimeCaps: {
     title: "能力矩阵",
-    desc: "静态能力，不是已安装或已登录。未声明的能力不会出现在 Composer。点行可跳到对应卡片。",
+    desc: "静态能力，不是已安装或已登录。未声明的能力不会出现在输入框。点行可跳到对应卡片。",
     docsTitle: "能力说明",
     docsHint: "静态能力表与配置归属，默认收起，不挡安装和登录。",
     yes: "支持",
@@ -672,7 +672,7 @@ export const zhSettings = {
     model: "默认模型",
     modelDesc: "与输入框同一选择器，用于新运行。",
     mode: "新对话默认模式",
-    modeDesc: "只影响新开的对话；当前对话在 Composer 切换。",
+    modeDesc: "只影响新开的对话；当前对话在输入框切换。",
     explore: "探索",
     exploreDesc: "先读后想，不改项目。适合摸清问题。",
     execute: "执行",
@@ -694,8 +694,8 @@ export const zhSettings = {
   harness: {
     cardTitle: "编码运行时",
     advancedTitle: "进阶沙箱",
-    pageDesc: "隔离运行时 + 隔离令牌。不出现在 Composer 引擎导轨。",
-    runtimeDesc: "仅 Enjoy 本地可选用。进阶沙箱不出现在 Composer 引擎导轨。需要沙箱隔离令牌 + 模型供应商 Key。",
+    pageDesc: "隔离运行时 + 隔离令牌。不出现在助手导轨。",
+    runtimeDesc: "仅 Enjoy 本地可选用。进阶沙箱不出现在助手导轨。需要沙箱隔离令牌 + 模型供应商 Key。",
     sandboxBadge: "当前提供商 · 云隔离（默认）",
     providerLine: "当前提供商 · 云隔离（默认）",
     adapterDesc:
@@ -783,7 +783,7 @@ export const zhSettings = {
     securityTitle: "安全与路径隔离",
     jailTitle: "根目录隔离不变量",
     jailBody:
-      "所有 Agent 操作（文件读写、代码改动、终端执行与 Git 提交）都严格限制在此工作区目录内。路径穿越（例如 .. 逃逸）会被主进程无条件拦截。",
+      "助手只能改这个文件夹里的文件。想写到外面会被拦住。",
     sshOpen: "远程 SSH…",
     sshHost: "主机",
     sshUser: "用户",
@@ -845,7 +845,7 @@ export const zhSettings = {
     configured: "已配置 {count}",
     add: "添加",
     curatedTitle: "精选",
-    curatedDesc: "只读 curated。添加到现有真源，不新开商店。",
+    curatedDesc: "这里是我们挑过的扩展。加到现有的 MCP 或技能里，不另开商店。",
     addToMcp: "添加到 MCP",
     addToSkills: "添加到技能",
     written: "已写入 Enjoy · 下一轮可注入",
@@ -853,7 +853,7 @@ export const zhSettings = {
     catalogFailDesc: "本机已配置不受影响。不要用假卡片填满这里。",
     retry: "重试",
     footnote:
-      "助手自带原生插件（Claude hooks / DSH Cordis / OpenCode 等）请在各 CLI 内管理。MCP 与 Skills 以 Enjoy #/mcp · #/skills 为真源，会话透传给当前助手。"
+      "助手自己的插件请在各助手里管理。MCP 和技能以 Enjoy 里的列表为准，对话时交给当前助手。"
   },
 
   knowledge: {
@@ -915,11 +915,15 @@ export const zhSettings = {
     customProvider: "自定义供应商"
   },
 
+  skills: {
+    openHub: "打开技能中心"
+  },
+
   mcp: {
     hubTitle: "模型上下文协议（MCP）中枢",
     hubBadge: "JSON-RPC 2.0",
     hubDesc: "连接外部工具服务器、数据库查询引擎与实时应用界面的标准化协议。",
-    openHub: "打开 MCP 中枢",
+    openHub: "打开 MCP 中心",
     policies: "安全与沙箱策略",
     untrusted: "默认不信任",
     untrustedDesc: "新添加的 MCP 服务器以不信任模式启动。工具调用需明确人工确认。",
@@ -960,9 +964,9 @@ export const zhSettings = {
   },
 
   telemetry: {
-    hubTitle: "本地优先遥测与可观测性",
-    hubBadge: "零外部泄露",
-    hubDesc: "跟踪 token 吞吐、延迟（TTFO）、成功率与工具轨迹，并严格本地脱敏。",
+    hubTitle: "运行观测与隐私",
+    hubBadge: "只留在这台电脑",
+    hubDesc: "看本机调用要多久、第一个字何时出现、成功率和工具轨迹。敏感内容已脱敏。",
     open: "打开可观测性",
     exportMode: "遥测与导出模式",
     storage: "指标存储策略",
@@ -1339,7 +1343,7 @@ export const zhSettings = {
     bridgeTip: "安装后，复制上方配对码。点击 Enjoy 浏览器扩展图标 → 设置，在小弹窗中粘贴配对码，再点击授权完成连接。",
     desktopSection: "电脑操控",
     computerUseTitle: "电脑操控",
-    computerUseDesc: "本机执行器看屏、点选、打字。不进云端虚拟桌面，不是 Registry 插件。目前仅 macOS 为支持路径。Windows / Linux 尚未标为可用，须等真机 GUI 冒烟后再开。",
+    computerUseDesc: "在这台电脑上看屏、点选、打字。不进云端虚拟桌面，也不是插件。目前只有 macOS 可用。",
     ready: "就绪",
     notReady: "未就绪",
     blockMissing: "还不能点击。本机还没有桌面执行器。",
@@ -1391,7 +1395,7 @@ export const zhSettings = {
     appsCount: "已允许 {count} 个应用",
     noApps: "暂无允许应用",
     screenVisualsTitle: "屏幕视觉反馈",
-    screenVisualsDesc: "执行态操控桌面时显示冷静蓝边与「正在操控」顶栏；支持 Esc 键或顶栏「停止」100ms 紧急掐断。无观察不装在控。",
+    screenVisualsDesc: "执行时会显示蓝边和「正在操控」顶栏。按 Esc 或顶栏「停止」立刻停下。",
     protectedSurfacesTitle: "系统受保护禁区",
     protectedSurfacesDesc: "钥匙串、系统偏好设置、密码输入与支付安全窗口已由底层执行器硬编码保护，任何桌面动作均强制人工二次审批，绝不自动放行。",
     perceptionInspect: "测试屏幕感知",
@@ -1410,7 +1414,7 @@ export const zhSettings = {
     badgePermissions: "未授权",
     badgeUnavailable: "未确认",
     badgeNoDisplay: "无桌面",
-    switchDesc: "关掉时，普通发送不会带上桌面工具。在消息开头写 /computer-use，只让这一轮可以操控，并且不会把总开关打开。",
+    switchDesc: "关掉后，普通发送不会带上桌面操作。只有你明确提起桌面时，这一轮才能操控，而且不会把总开关打开。",
     permissions: "系统权限",
     checking: "正在确认即将启动的执行器…",
     notVerified: "尚未在真机上验收",
@@ -1432,7 +1436,7 @@ export const zhSettings = {
     compact: "紧凑",
     large: "大",
     guideTitle: "入门",
-    guideStart: "在执行模式里用 @桌面 发起，或在消息开头写 /computer-use。",
+    guideStart: "在执行模式里用 @桌面 发起。",
     guideApprove: "第一次动作会停在审批卡上。始终允许只记住这个应用，坐标和敏感窗口仍会再问。",
     guideStop: "蓝边上的停止，或 Esc，会打断当前这一下。关掉预览不会停止。",
     appsnapFoot: "AppSnap 只把窗口图贴进输入框，不授予操控。",

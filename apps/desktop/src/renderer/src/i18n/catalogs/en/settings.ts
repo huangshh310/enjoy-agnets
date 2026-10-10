@@ -213,7 +213,7 @@ export const enSettings = {
     searchPlaceholder: "Search shortcuts...",
     groupGlobal: "Global & Navigation",
     groupViews: "Right Stage & Development Panes",
-    groupChat: "Chat & Composer Operations",
+    groupChat: "Chat & input",
     empty: "No shortcuts found",
     emptyHint: "Try a different search keyword (e.g. terminal, files, git, search).",
     quickSearch: "Quick Search",
@@ -222,19 +222,19 @@ export const enSettings = {
     quickSearchAltDesc: "Open the command palette to run a shortcut action.",
     openSettings: "Open Settings",
     openSettingsDesc: "Navigate to the General settings page from anywhere in the app.",
-    backWorkspace: "Back to Workspace / Close",
-    backWorkspaceDesc: "Return to the main agent workspace or dismiss active secondary modals.",
+    backWorkspace: "Back to project / Close",
+    backWorkspaceDesc: "Return to the main chat or dismiss the current secondary view.",
     filesTree: "Files & Code Preview",
-    filesTreeDesc: "Open the workspace file tree and code inspector in the right pane.",
+    filesTreeDesc: "Open the project file tree and code inspector in the right pane.",
     reviewDiff: "Review",
     reviewDiffDesc: "Open the review pane to inspect file changes.",
     terminal: "Integrated Terminal",
-    terminalDesc: "Toggle the workspace-jailed PTY terminal shell.",
+    terminalDesc: "Open or hide the project terminal.",
     browser: "In-App Browser Preview",
     browserDesc: "Open the live web application preview surface.",
-    send: "Send Message / Run Agent",
-    sendDesc: "Submit the prompt and start the agent execution loop.",
-    newLine: "New Line in Composer",
+    send: "Send message / run assistant",
+    sendDesc: "Submit the prompt and start the assistant.",
+    newLine: "New line in the input",
     newLineDesc: "Insert a line break inside the chat input textarea without sending.",
     paste: "Paste Image or Files",
     pasteDesc: "Paste clipboard screenshots or files directly into the attachment queue.",
@@ -494,7 +494,7 @@ export const enSettings = {
     done: "Done",
     tabEngines: "Local CLIs",
     tabSubscriptions: "Subscriptions & Quotas",
-    tabRegistry: "Registry",
+    tabRegistry: "Public catalog",
     tabSandbox: "Sandbox",
     tabDefaults: "Defaults",
     hubTitle: "Local CLIs",
@@ -573,7 +573,7 @@ export const enSettings = {
   },
 
   registry: {
-    title: "Registry",
+    title: "Public catalog",
     desc: "Browse available local coding assistants. Install in one click, or copy the official install command. When adding your own, you can only pick assistants we support — not any program on your computer.",
     sourceOfficial: "Official catalog",
     emptyDetail: "Select an agent on the left.",
@@ -619,7 +619,7 @@ export const enSettings = {
 
   runtimeCaps: {
     title: "Capability matrix",
-    desc: "Static capabilities, not install or sign-in state. Undeclared capabilities never appear in Composer. Click a row to jump to its card.",
+    desc: "Static capabilities, not install or sign-in state. Undeclared capabilities never appear in the input. Click a row to jump to its card.",
     docsTitle: "Capability notes",
     docsHint: "Static matrix and ownership table. Collapsed so install and sign-in stay first.",
     yes: "Supported",
@@ -672,7 +672,7 @@ export const enSettings = {
     model: "Default model",
     modelDesc: "Same picker as the composer. Used for new runs.",
     mode: "Default mode for new chats",
-    modeDesc: "Only new chats. Switch the current chat in Composer.",
+    modeDesc: "Only new chats. Switch the current chat in the input.",
     explore: "Explore",
     exploreDesc: "Read and think first. Does not change the project.",
     execute: "Execute",
@@ -694,9 +694,9 @@ export const enSettings = {
   harness: {
     cardTitle: "Coding runtime",
     advancedTitle: "Advanced sandbox",
-    pageDesc: "Isolation runtime + isolation token. Never appears on the Composer engine rail.",
+    pageDesc: "Isolation runtime + isolation token. Never appears on the assistant rail.",
     runtimeDesc:
-      "Only when Composer is on Enjoy Local. Advanced sandbox never appears on the engine rail. Needs a sandbox isolation token + a model provider key.",
+      "Only when the assistant is Enjoy Local. Advanced sandbox never appears on the engine rail. Needs a sandbox isolation token + a model provider key.",
     sandboxBadge: "Current provider · cloud isolation (default)",
     providerLine: "Current provider · cloud isolation (default)",
     adapterDesc:
@@ -787,7 +787,7 @@ export const enSettings = {
     securityTitle: "Security & Path Isolation",
     jailTitle: "Root Jail Invariant",
     jailBody:
-      "All agent operations (file reads, writes, code diffs, terminal execution, and Git commits) are strictly confined to this workspace directory. Path traversal attempts (e.g. .. escapes) are unconditionally blocked by the main process host.",
+      "The assistant can only change files in this folder. Writes outside it are blocked.",
     sshOpen: "Remote SSH…",
     sshHost: "Host",
     sshUser: "User",
@@ -848,16 +848,16 @@ export const enSettings = {
     skillsTitle: "Skills",
     configured: "{count} configured",
     add: "Add",
-    curatedTitle: "Curated",
-    curatedDesc: "Read-only curated list. Add into Enjoy #/mcp and #/skills — not a second editor.",
+    curatedTitle: "Picked for you",
+    curatedDesc: "A short list we picked. Add them into your existing MCP or skills — not a second store.",
     addToMcp: "Add to MCP",
     addToSkills: "Add to Skills",
     written: "Written to Enjoy · injects on the next turn",
-    catalogFailTitle: "Curated list is unavailable",
+    catalogFailTitle: "Picked list is unavailable",
     catalogFailDesc: "Configured items on this machine are unchanged. Do not fill this area with fake installed cards.",
     retry: "Retry",
     footnote:
-      "Native plugins that ship with an assistant (Claude hooks / DSH Cordis / OpenCode, etc.) are managed inside each CLI. MCP and Skills use Enjoy #/mcp · #/skills as the source of truth and pass through to the current assistant."
+      "Plugins that ship with an assistant are managed inside that assistant. MCP and skills follow the lists in Enjoy and pass through to the current assistant."
   },
 
   knowledge: {
@@ -919,11 +919,15 @@ export const enSettings = {
     customProvider: "Custom Provider"
   },
 
+  skills: {
+    openHub: "Open Skills Center"
+  },
+
   mcp: {
     hubTitle: "Model Context Protocol (MCP) Hub",
     hubBadge: "JSON-RPC 2.0",
     hubDesc: "Standardized protocol for connecting external tool servers, database query engines, and live app surfaces.",
-    openHub: "Open MCP Hub",
+    openHub: "Open MCP Center",
     policies: "Security & Sandboxing Policies",
     untrusted: "Untrusted by default",
     untrustedDesc: "Newly added MCP servers start in untrusted mode. Tool calls require explicit human confirmation.",
@@ -964,9 +968,9 @@ export const enSettings = {
   },
 
   telemetry: {
-    hubTitle: "Local-first Telemetry & Observability",
-    hubBadge: "Zero External Leaks",
-    hubDesc: "Tracks token throughput, latency (TTFO), success rates, and tool traces with strict local redaction.",
+    hubTitle: "Telemetry & Privacy",
+    hubBadge: "Stays on this machine",
+    hubDesc: "See how long local calls take, when the first word appears, success rate, and tool traces. Sensitive text is redacted.",
     open: "Open Observability",
     exportMode: "Telemetry & Export Mode",
     storage: "Metrics storage policy",
@@ -1346,7 +1350,7 @@ export const enSettings = {
     bridgeTip: "After installing, copy the pairing code above. Click the Enjoy browser extension icon → Settings, paste the code, then authorize to connect.",
     desktopSection: "Computer use",
     computerUseTitle: "Computer use",
-    computerUseDesc: "A local helper watches the screen, clicks, and types. Not a cloud desktop, not a Registry plugin. macOS is the supported path. Windows and Linux are not marked available until real-machine GUI smoke.",
+    computerUseDesc: "A helper on this computer watches the screen, clicks, and types. Not a cloud desktop, and not a plugin. macOS is available today.",
     ready: "Ready",
     notReady: "Not ready",
     blockMissing: "Can't click yet. This machine has no desktop helper.",
@@ -1398,7 +1402,7 @@ export const enSettings = {
     appsCount: "{count} apps allowed",
     noApps: "No apps allowed",
     screenVisualsTitle: "Screen Action Visuals",
-    screenVisualsDesc: "During Execute desktop acts, show a calm blue border and a Controlling bar. 100ms Emergency stop via Esc or top Controlling bar. Idle never pretends to control.",
+    screenVisualsDesc: "While controlling, show a blue edge and a Controlling bar. Press Esc or Stop in the top bar to stop immediately.",
     protectedSurfacesTitle: "Protected System Zones",
     protectedSurfacesDesc: "Keychain, System Preferences, password inputs, and payment windows are permanently protected at the driver layer; automated actions are strictly intercepted for manual review.",
     perceptionInspect: "Inspect Perception",
@@ -1417,7 +1421,7 @@ export const enSettings = {
     badgePermissions: "Not granted",
     badgeUnavailable: "Unconfirmed",
     badgeNoDisplay: "No display",
-    switchDesc: "While this is off, a normal send does not register desktop tools. Start a message with /computer-use to allow them for that turn only. The switch stays off.",
+    switchDesc: "While this is off, a normal send does not register desktop tools. Mention the desktop to allow them for that turn only. The switch stays off.",
     permissions: "System permissions",
     checking: "Checking the helper that is about to start…",
     notVerified: "Not verified on a real machine yet",
@@ -1439,7 +1443,7 @@ export const enSettings = {
     compact: "Compact",
     large: "Large",
     guideTitle: "Getting started",
-    guideStart: "Start with @Desktop in Execute, or begin a message with /computer-use.",
+    guideStart: "Start with @Desktop in Execute.",
     guideApprove: "The first action stops on an approval card. Always allow remembers that app. Coordinates and sensitive windows still ask.",
     guideStop: "Stop on the blue edge, or Esc, interrupts the current action. Hiding the preview does not stop it.",
     appsnapFoot: "AppSnap only pastes a window image into the composer. It does not grant control.",

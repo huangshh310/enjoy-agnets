@@ -250,6 +250,48 @@ test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
   }
 })
 
+test("巡检人话：收件箱与设置页禁词", () => {
+  const z = zh as {
+    pages: {
+      inbox: Record<string, string>
+      mcp: Record<string, string>
+      observability: Record<string, string>
+    }
+    settings: {
+      agentTools: { tabRegistry: string }
+      registry: { title: string }
+      computerUse: { switchDesc: string; guideStart: string }
+      builtinTools: { screenVisualsDesc: string; computerUseDesc: string }
+      extensions: { curatedDesc: string; footnote: string }
+      workspace: { jailBody: string }
+      shortcuts: { terminalDesc: string; send: string }
+    }
+  }
+  assert.equal(
+    z.pages.inbox.emptyHint,
+    "只列要拍板、待验收和失败的。进行中的在侧栏，已完成的不进这里。"
+  )
+  assert.equal(z.pages.inbox.readerEmptyHint, "点左边一条打开对话。")
+  assert.equal(z.pages.inbox.footerHint, "在对话里点批准或拒绝。")
+  const inboxBlob = JSON.stringify(z.pages.inbox)
+  assert.doesNotMatch(inboxBlob, /Inbox|会话档案|权限停靠/)
+  assert.equal(z.settings.agentTools.tabRegistry, "公开目录")
+  assert.equal(z.settings.registry.title, "公开目录")
+  assert.doesNotMatch(z.settings.computerUse.switchDesc, /\/computer-use/)
+  assert.doesNotMatch(z.settings.computerUse.guideStart, /\/computer-use/)
+  assert.doesNotMatch(z.settings.builtinTools.screenVisualsDesc, /无观察不装在控/)
+  assert.doesNotMatch(z.settings.builtinTools.computerUseDesc, /Registry/)
+  assert.doesNotMatch(z.settings.extensions.curatedDesc, /curated|真源|#\/mcp|#\/skills/)
+  assert.doesNotMatch(z.settings.extensions.footnote, /curated|真源|#\/mcp|#\/skills/)
+  assert.doesNotMatch(z.settings.workspace.jailBody, /路径穿越|主进程|monorepo/)
+  assert.doesNotMatch(z.settings.shortcuts.terminalDesc, /PTY/)
+  assert.doesNotMatch(z.settings.shortcuts.send, /Agent|Composer/)
+  assert.doesNotMatch(z.pages.mcp.registerServer, /Server/)
+  assert.doesNotMatch(z.pages.observability.localApm, /APM/)
+  assert.doesNotMatch(z.pages.observability.allHealthy, /^pages\./)
+  assert.equal(z.pages.observability.allHealthy, "全部正常")
+})
+
 test("用户可见词表不含供应商密钥，统一连接模型 / API 密钥", () => {
   for (const { key, value } of flattenEntries(zh)) {
     assert.doesNotMatch(value, /供应商密钥/, `zh ${key} uses banned copy: ${value}`)
