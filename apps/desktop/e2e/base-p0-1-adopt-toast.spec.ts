@@ -1,13 +1,19 @@
 /**
- * none 夹具：起始无路线；UI 存密钥后同会话 ready + adoptedHint 只出一次。
+ * none 夹具：起始无路线；UI 存密钥后同会话 ready + adoptedHint，toast 只出一次。
  */
 import { expect, test } from "@playwright/test"
 import {
   canLaunchElectron,
+  hideOverlays,
   launchEnjoy,
   openAddKeyForm,
-  openConnectModelStep
+  openConnectModelStep,
+  snap,
+  snapThemes
 } from "./base-p0-1-launch"
+
+const TOAST_ID = "adopted-default-route-toast"
+const TOAST_ZH = "之后的新对话默认用"
 
 test("none → 保存密钥后同会话 ready，adoptedHint 只出一次", async () => {
   test.setTimeout(180_000)
@@ -40,9 +46,13 @@ test("none → 保存密钥后同会话 ready，adoptedHint 只出一次", async
         { timeout: 15_000 }
       )
       .toBe(true)
-    const toast = window.getByTestId("adopted-default-route-toast")
+    const toast = window.getByTestId(TOAST_ID)
     await expect(toast).toBeVisible({ timeout: 8_000 })
+    await expect(toast).toContainText(TOAST_ZH)
     await expect(toast).toHaveCount(1)
+    await hideOverlays(window)
+    await snap(window, "p0-1-adopt-default-route-toast")
+    await snapThemes(window, "p0-1-adopt-default-route-toast")
     await window.evaluate(() => {
       window.dispatchEvent(new Event("focus"))
     })
@@ -51,7 +61,7 @@ test("none → 保存密钥后同会话 ready，adoptedHint 只出一次", async
         timeout: 8_000
       })
       .toBe(true)
-    await expect(window.getByTestId("adopted-default-route-toast")).toHaveCount(1)
+    await expect(window.getByTestId(TOAST_ID)).toHaveCount(1)
   } finally {
     await app.close()
   }

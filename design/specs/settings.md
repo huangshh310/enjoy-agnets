@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#135：none 不冻结；luna forbidden/billing 琥珀态；列表「改密钥」`openEdit`；聊天改密钥 `from=chat`）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#135：none 不冻结，同会话 adopt toast；luna forbidden/billing 琥珀态；列表「改密钥」`openEdit`）
 
 ## 当前真相
 
@@ -90,7 +90,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
-- **隐患**：`CHAT_READY=none` 冻结空快照时，向导存密钥后 `hasEnjoySecret` 已 true 但 `ready` 仍 false、`apiKeys` 空，adopt toast 要重启才出。正确做法：`none` 只种起始无路线，之后从真 vault 组装。未设 `CHAT_READY` 不要注入 live ollama，否则首张已 ready 只盖章不 toast。
+- **隐患**：`CHAT_READY=none` 冻结空快照时，向导存密钥后 `hasEnjoySecret` 已 true 但 `ready` 仍 false、`apiKeys` 空，adopt toast 要重启才出。正确做法：`none` 只种起始无路线，之后从真 vault 组装。`ENJOY_E2E_CREDENTIAL=ok` 时同会话 UI 存钥即可 `ready` + `adoptedHint`（toast 只出一次）。未设 `CHAT_READY` 不要注入 live ollama，否则首张已 ready 只盖章不 toast。e2e `e2e/base-p0-1-adopt-toast.spec.ts`。
 - **隐患**：去添加密钥时 `pauseAt` 把向导 `open` 设成 false，Radix Dialog `onOpenChange(false)` 会当成用户关掉并 `finish()`，向导被标完成、resume 清掉。正确做法：`onOpenChange` 见 `paused` 不要 finish。
 - **隐患**：1100×700 设置侧栏看不到「项目与扩展」。根因：情境栏父级不裁剪高度，Radix ScrollArea 失效。正确做法：见 `ui` spec；e2e `settings-nav-scroll.spec.ts`。
 - **隐患**：自动化抽屉 X / Esc / 遮罩静默丢改动。正确做法：`isDraftDirty` 对照打开快照；脏则 Confirm「放弃未保存的修改？」；确认框开着抽屉不抢 Esc（`isAppDialogOpen`）。
