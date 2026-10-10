@@ -4,7 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
-import { listPendingApprovals, listRuns, setApprovalDecision, updateRun } from "@enjoy-agents/db"
+import { listPendingApprovals, listRuns, resolvedSdkApprovalId, setApprovalDecision, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
@@ -19,7 +19,7 @@ import { hydrateActiveRunUsage } from "./run-usage"
 import { parseStoredApprovalArgs } from "./restore-approval-args"
 import { APPROVAL_ARGS_MISSING, APPROVAL_ARGS_MISSING_MESSAGE } from "./resolve-approval-args"
 import { approvalResponseMessage } from "./approval-response-message"
-import { resolvedSdkApprovalId } from "@enjoy-agents/db"
+import { applyRestoredOrphanApprovals } from "./restore-checkpoint-approval"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -41,13 +41,18 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         return false
       }
     })
-    if (pending.length === 0 || !row.workspaceId) {
+    if (!row.workspaceId) {
       updateRun(db, row.id, { status: "cancelled", error: "No pending approval after restart." })
       continue
     }
     const checkpoint = parseGenerationCheckpoint(row.checkpoint)
     if (!checkpoint?.request) {
       updateRun(db, row.id, { status: "cancelled", error: "Missing generation checkpoint." })
+      continue
+    }
+    const checkpointPendings = extras.pendingApprovals ?? []
+    if (pending.length === 0 && checkpointPendings.length === 0) {
+      updateRun(db, row.id, { status: "cancelled", error: "No pending approval after restart." })
       continue
     }
     try {
@@ -90,20 +95,32 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
             name: item.name
           }))
       const keep: typeof run.pendingApprovals = []
+      const orphans: typeof run.pendingApprovals = []
       for (const item of run.pendingApprovals) {
         const rowArgs = pending.find((approval) => approval.id === item.approvalId)
         const args = parseStoredApprovalArgs(rowArgs)
-        if (args == null) {
-          const approvalId = rowArgs?.id ?? item.approvalId
-          if (rowArgs) setApprovalDecision(db, rowArgs.id, "deny")
-          recordSdkApprovalResponse(approvalId, {
+        if (args != null) {
+          keep.push({ ...item, args })
+          emitEvent(window, {
+            type: "approval.required",
+            runId: row.id,
+            approvalId: item.approvalId,
+            toolCallId: item.toolCallId,
+            name: item.name,
+            args
+          })
+          continue
+        }
+        if (rowArgs) {
+          setApprovalDecision(db, rowArgs.id, "deny")
+          recordSdkApprovalResponse(rowArgs.id, {
             approved: false,
             reason: APPROVAL_ARGS_MISSING_MESSAGE,
             resumeCode: APPROVAL_ARGS_MISSING
           })
           run.messages.push(
             approvalResponseMessage({
-              approvalId: rowArgs ? resolvedSdkApprovalId(rowArgs) : approvalId,
+              approvalId: resolvedSdkApprovalId(rowArgs),
               approved: false,
               reason: APPROVAL_ARGS_MISSING_MESSAGE
             })
@@ -118,16 +135,14 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
           })
           continue
         }
-        keep.push({ ...item, args })
-        emitEvent(window, {
-          type: "approval.required",
-          runId: row.id,
-          approvalId: item.approvalId,
-          toolCallId: item.toolCallId,
-          name: item.name,
-          args
-        })
+        orphans.push(item)
       }
+      const orphaned = applyRestoredOrphanApprovals({
+        runId: row.id,
+        items: orphans,
+        window
+      })
+      if (orphaned.ended) continue
       run.pendingApprovals = keep
       if (keep.length === 0) {
         run.resumeAfterPump = true
