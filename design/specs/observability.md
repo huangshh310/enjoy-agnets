@@ -1,12 +1,12 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-10（默认面：本机记录开关；无 clear 不画清除钮；OTEL 句只在开发者档）
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-10（默认面不承诺「不上传」；otel 才说发到配置地址）
 
 ## 当前真相
 
 默认 `telemetryPolicy=local`。记录 kind / status / token / 耗时 / TTFO / tokens/s / 错误分类。prompt、文件内容、工具完整参数、API Key、`runtimeContext` 经 `redactMetric` 脱敏。外部 OTEL 默认关，需用户显式 `observability.setPolicy` 并配置合法 `http(s)` endpoint 才会 POST OTLP JSON。CSV 导出含 `ttfoMs` / `tokensPerSecond`。诊断页展示 TTFO。
 
-`#/settings/telemetry` 默认面（jojo）：两块——收集说明 + 本机记录开关。默认政策 `local` 只写 SQLite、**不上传** Enjoy 云，文案钉死「只存在本机，不上传」。开关「记录本机运行数据（只存在本机，不上传）」接线 `telemetryPolicy`：开=`local`（若开发者档已是 `otel` 则保持）、关=`off`。**没有**匿名上传到 Enjoy 的独立设置，禁止写「帮助改进 / 匿名使用统计」。OTEL 导出句与端点配置**只在** `enjoy-agents-dev-copy=1`。没有 `observability.clear` IPC，默认面**不画**「清除本地记录」（TODO kai）。默认面若出数字，只走「平均首字时间 {n} 秒」。Local APM / TTFO / P95 / tok/s 整面板只在开发者档。页面本身不藏，开关始终可见。
+`#/settings/telemetry` 默认面（jojo）：两块——收集说明 + 记录开关。开关「记录运行数据」，说明「默认记录在这台电脑上。」接线 `telemetryPolicy`：开=`local`（若已是 `otel` 则保持）、关=`off`。kai **尚未**用测试钉死 `local` 零出站，默认面**禁止**写「不上传 / 只存在本机」当承诺（TODO kai 跟进 PR）。`policy=otel` 时默认面加一句「同时发送到你配置的地址」，**端点原文只在** `enjoy-agents-dev-copy=1`。**没有**匿名上传到 Enjoy 的独立设置，禁止写「帮助改进 / 匿名使用统计」。没有 `observability.clear` IPC，默认面**不画**「清除本地记录」（TODO kai 跟进 PR）。默认面若出数字，只走「平均首字时间 {n} 秒」。Local APM / TTFO / P95 / tok/s 整面板只在开发者档。页面本身不藏，开关始终可见。
 
 路由：`#/observability` 进 `#/settings/telemetry`。开发者档仍可换轨看板：Stage 用 `fill` + `hideChrome`。左侧情境栏提供本地执行监控、模型路由、链路明细与事件回放 4 大导航入口，主舞台提供四大核心视图模式：
 1. **监控与图表大盘 (Dashboard)**：支持时间范围窗口切片（1h / 6h / 24h / 7d / 全部）与本地实时探针状态指示；顶栏提供快捷状态分段胶囊（全部/成功/异常/慢调用）与模型联动筛选；4 大核心 KPI 指标卡嵌入原生 SVG Sparkline 迷你时序走势微图并集成 P50/P95 延迟、峰值速率与 Token 输入输出细分；配备 **AI APM 智能性能洞察与优化诊断卡片 (ObservabilityInsightsCard)**，基于采样自动诊断长尾瓶颈、异常归因与流式效率；全面采用 Recharts `ResponsiveContainer` 矢量自适应渲染带 P95 阈值标线的耗时与 TTFO 双轨平滑贝塞尔面积图、带平均基准线的 Prompt/Completion 堆叠柱与 TPS 吞吐复合图；多维分布矩阵重构为平衡 Bento 网格，包含模型负载与 Token 消耗全景（支持交互过滤）、系统健康度 Donut 环形图、异常根因分析排行、工作负载场景与延迟 SLA 阶梯分布；底部配备**慢调用与异常瓶颈聚焦看板 (ObservabilitySlowTraces)**，支持双视角（慢调用异常聚焦 / 最近执行流）与一键直达火焰图时间线（`Flame Chart`）与 Span 甘特树全景诊断；
@@ -33,8 +33,9 @@
 
 ## 已知坑
 
-- 没有 `observability.clear` IPC。默认面不得画「清除本地记录」确认钮假装能删。等 kai 补频道后再放。
-- 资料页花费只认本年有限的 `estimatedCostUsd` 求和。条数不当美元；没有费用来源整行不画，禁止 `$0` 占位。
+- 没有 `observability.clear` IPC。默认面不得画「清除本地记录」确认钮假装能删。等 kai 跟进 PR 补频道后再放。
+- 资料页花费只认本年有限的 `estimatedCostUsd` 求和。条数不当美元；没有费用来源整行不画，禁止 `$0` 占位。kai 跟进 PR 会给本年 `estimatedCostUsd` + `unknownCount`，未知花费仍不得画 `$0`。
+- kai 尚未验证 `telemetryPolicy=local` 零出站。默认面禁止把「不上传 / 只存在本机」写成承诺，等跟进 PR 补代码级测试后再改口。
 - `@ai-sdk/otel` 不是默认依赖；本仓用 `toOtlpJson` 自建载荷。`otelEndpointAllowed` 拒绝空值、非法 URL、localhost / 内网 / link-local / metadata host，未配置时 `maybeExportOtel` 直接返回。
 - `listReplayEvents` 必须先 `summarizeReplayEvents`；缓冲里仍有完整 `StreamEvent`，不要把原文经 IPC 交给 renderer。
 - Agent 首 token 以第一次 `text.delta` 计 TTFO；没有可见文本的工具轮次可以没有 `ttfoMs`。

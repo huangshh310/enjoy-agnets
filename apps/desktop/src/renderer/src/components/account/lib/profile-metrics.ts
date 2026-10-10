@@ -141,7 +141,10 @@ export function growthLabel(current: number, previous: number): string {
   return `${sign}${percent.toFixed(1)}%`
 }
 
-/** 本年真实花费：只加有限的 estimatedCostUsd。没有来源返回 null，不编 $0。 */
+/**
+ * 本年真实花费：只加有限的 estimatedCostUsd。没有来源返回 null，不编 $0。
+ * TODO(kai): 跟进 PR 提供本年 estimatedCostUsd + unknownCount；未知花费不得画 $0。
+ */
 export function yearSpendUsdFromMetrics(
   metrics: TelemetryMetric[],
   now = new Date()

@@ -1,5 +1,5 @@
 /**
- * Settings → 遥测与隐私：默认面只留收集说明与本机记录开关。
+ * Settings → 遥测与隐私：默认面只留收集说明与记录开关。
  * 指标大盘（Local APM / TTFO / P95）只在开发者文案档出现。
  */
 import { RiShieldKeyholeLine } from "@remixicon/react"
@@ -10,6 +10,7 @@ import { SettingsCard, SettingsRow } from "./settings-row"
 import { SettingsHub } from "./settings-hub"
 import { usePrefUpdate } from "./settings-pref"
 import { TelemetryDevPanel } from "./settings-telemetry-dev"
+import { telemetryFaceKeys } from "./settings-telemetry-copy"
 import { useT } from "@renderer/i18n"
 
 export function TelemetrySettings() {
@@ -19,8 +20,8 @@ export function TelemetrySettings() {
   const policy = preferences?.telemetryPolicy ?? "local"
   const recording = policy !== "off"
   const avgTtfo = formatAvgTtfoSeconds(obs.metrics)
-  // 默认面只描述默认政策 local：只存在本机，不上传。OTEL 导出句只在开发者档。
-  const collectDesc = t("settings.telemetry.collectDesc")
+  const face = telemetryFaceKeys(policy)
+  const collectDesc = t(`settings.telemetry.${face.collect}`)
 
   return (
     <div data-testid="page-telemetry" className="flex flex-col gap-6">
@@ -39,7 +40,7 @@ export function TelemetrySettings() {
       <SettingsCard>
         <SettingsRow
           title={t("settings.telemetry.recordLocal")}
-          description={t("settings.telemetry.recordLocalDesc")}
+          description={t(`settings.telemetry.${face.recordDesc}`)}
         >
           <Switch
             checked={recording}
@@ -51,7 +52,7 @@ export function TelemetrySettings() {
         </SettingsRow>
       </SettingsCard>
 
-      {/* TODO(kai): 有 observability.clear IPC 后再在默认面放「清除本地记录」。现在没有接口，不画假按钮。 */}
+      {/* TODO(kai): 跟进 PR 补 observability.clear 后再放「清除本地记录」。现在没有接口，不画假按钮。 */}
 
       {isDevCopyEnabled() ? <TelemetryDevPanel /> : null}
     </div>

@@ -43,7 +43,10 @@ const CEND_JARGON = [
   "Monthly",
   "Yearly",
   "匿名使用统计",
-  "帮助改进 Enjoy"
+  "帮助改进 Enjoy",
+  "不上传",
+  "只存在本机",
+  "只在本机"
 ]
 
 test("C 端词表不含本轮清扫掉的行话；开发者指标档豁免", () => {
@@ -89,13 +92,15 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   )
   assert.equal(pages.pages.inbox.decideHint, "在对话里点批准或拒绝。")
   assert.equal(pages.pages.inbox.openHint, "点左边一条打开对话。")
+  assert.equal(pages.settings.telemetry.recordLocal, "记录运行数据")
+  assert.equal(pages.settings.telemetry.recordLocalDesc, "默认记录在这台电脑上。")
   assert.equal(
-    pages.settings.telemetry.recordLocal,
-    "记录本机运行数据（只存在本机，不上传）"
+    pages.settings.telemetry.recordLocalDescOtel,
+    "默认记录在这台电脑上。同时发送到你配置的地址。"
   )
-  assert.equal(pages.settings.telemetry.recordLocalDesc, "打开后记下调用耗时和用量。关掉就不再记。")
   assert.equal(pages.settings.telemetry.helpImprove, pages.settings.telemetry.recordLocal)
-  assert.equal(pages.settings.telemetry.collectDesc.includes("只存在本机，不上传"), true)
+  assert.equal(pages.settings.telemetry.collectDesc.includes("默认记录在这台电脑上"), true)
+  assert.equal(pages.settings.telemetry.collectDescOtel.includes("同时发送到你配置的地址"), true)
   assert.equal(pages.settings.workspace.strictlyJailed, "隔离执行：助手只能改这个项目里的文件")
   assert.equal(pages.settings.workspace.allowOutside, "允许访问项目外的文件")
   assert.equal(pages.settings.workspace.monorepo, "这个仓库里有多个子项目")
