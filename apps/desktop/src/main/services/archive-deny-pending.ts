@@ -5,17 +5,53 @@
 import type { BrowserWindow } from "electron"
 import { listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
 import { decideApproval } from "./decide-approval"
-import { emitEvent, getActiveRun, listActiveRuns } from "./agent-run-state"
+import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
+import { USER_ABORT_MESSAGE } from "./claim-run-end"
+import { persistActiveRun } from "./flush-agent-run"
+import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
+import { clearSteer } from "./runtime-interact/steering-queue"
+import { deleteActiveRun, emitEvent, getActiveRun, listActiveRuns, settleRun } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { recordSdkApprovalResponse } from "./approval-hmac"
 
 type PendingDeny = { runId: string; approvalId: string; toolCallId: string }
 
 export async function abortLiveRunsForSession(sessionId: string): Promise<void> {
-  const { abortAgent } = await import("./agent-runner")
   for (const { runId, run } of listActiveRuns()) {
     if (run.input.sessionId !== sessionId) continue
-    await abortAgent({ runId })
+    abortLiveRun(runId, run)
+    await cancelLiveStreamBestEffort(runId)
+  }
+}
+
+/** 不经 agent-runner：避免测试 strip-types 拉进 ACP 参数属性。 */
+function abortLiveRun(runId: string, run: NonNullable<ReturnType<typeof getActiveRun>>): void {
+  clearCatchUpApprovalTimeout(runId)
+  run.userCancelled = true
+  persistActiveRun(run, runId, "cancelled")
+  clearSteer(run.input.sessionId)
+  settleRun(runId, { status: "error", summary: USER_ABORT_MESSAGE })
+  const turn = turnOutcomeForRun(run, "abort")
+  persistTurnWorkflow(run.input.sessionId, turn)
+  emitEvent(run.window, { type: "run.error", runId, message: USER_ABORT_MESSAGE, turn })
+  run.abort.abort()
+  deleteActiveRun(runId)
+}
+
+async function cancelLiveStreamBestEffort(runId: string): Promise<void> {
+  try {
+    const { cancelCodingStream } = await import("./open-coding-stream")
+    await cancelCodingStream(runId)
+  } catch {
+    // 测试环境可能加载不了 ACP client；内存泵已经 abort。
+  }
+  try {
+    const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
+    const { cancelInFlightDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
+    endDesktopActOverlay()
+    cancelInFlightDesktopAct()
+  } catch {
+    // overlay 未装
   }
 }
 
