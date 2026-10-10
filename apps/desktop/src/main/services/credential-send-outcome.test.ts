@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { httpStatusOf, structuredErrorTypeOf } from "./credential-send-outcome.ts"
+import { httpStatusOf, structuredErrorTypeOf } from "./credential-status.ts"
 
 test("结构化状态拆 RetryError.lastError 与 cause", () => {
   const inner = Object.assign(new Error("401"), { status: 401, type: "authentication_error" })
