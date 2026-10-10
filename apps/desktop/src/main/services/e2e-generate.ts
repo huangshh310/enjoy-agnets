@@ -18,7 +18,11 @@ export async function startE2eGeneration(
 ) {
   const runId = existingRunId ?? createId("run")
   rememberGenerationRun({ runId, request })
-  stampAndSend(window, { type: "run.start", runId, sessionId: request.sessionId }, request.sessionId)
+  stampAndSend(
+    window,
+    { type: "run.start", runId, sessionId: request.sessionId, kind: request.kind },
+    request.sessionId
+  )
   // 先返回 runId，让 renderer 订上事件再吐 structured.delta，否则 Extract 永远等不到 stub-card。
   setTimeout(() => {
     void finishE2eGeneration(window, runId, request)

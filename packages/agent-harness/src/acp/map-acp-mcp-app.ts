@@ -2,11 +2,33 @@
  * ACP tool_call 内容里的 MCP App HTML / ui 资源 → mcp.app 事件。
  * iframe 仍走宿主消毒；不把 CLI 私有 Plugin JS 跑进 Enjoy。
  */
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import {
+  MCP_APP_SRC_DOC_MAX,
+  MCP_APP_TITLE_MAX,
+  type StreamEvent
+} from "@enjoy-agents/ipc-contract/stream-event"
 
 export function mapAcpMcpApps(rec: Record<string, unknown>, runId: string): StreamEvent[] {
   const events: StreamEvent[] = []
   for (const app of extractAcpMcpApps(rec.content ?? rec.rawOutput ?? rec.output)) {
+    const title = app.title ? app.title.slice(0, MCP_APP_TITLE_MAX) : undefined
+    if (app.srcDoc.length > MCP_APP_SRC_DOC_MAX) {
+      events.push({
+        type: "mcp.app",
+        runId,
+        serverId: app.serverId,
+        resourceUri: app.resourceUri,
+        phase: "error",
+        title
+      })
+      events.push({
+        type: "generation.warning",
+        runId,
+        code: "mcp_app_srcdoc_too_large",
+        message: `MCP App srcDoc exceeds ${MCP_APP_SRC_DOC_MAX} characters`
+      })
+      continue
+    }
     events.push({
       type: "mcp.app",
       runId,
@@ -14,7 +36,7 @@ export function mapAcpMcpApps(rec: Record<string, unknown>, runId: string): Stre
       resourceUri: app.resourceUri,
       phase: "open",
       srcDoc: app.srcDoc,
-      title: app.title
+      title
     })
   }
   return events

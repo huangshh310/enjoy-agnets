@@ -1,6 +1,6 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-09（costStatus / costMissing 透传到 renderer）
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-10（dev:cost 写会话模型，Qwen 档案不激活）
 
 ## 当前真相
 

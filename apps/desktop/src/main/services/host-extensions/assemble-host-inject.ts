@@ -1,7 +1,12 @@
 /**
  * 把能力 + 已启用/已投影名收成 HostInjectSnapshot。纯函数，单测不碰 SQLite。
  */
-import type { HostInjectSkip, HostInjectSnapshot } from "@enjoy-agents/ipc-contract/host-inject"
+import {
+  clampHostInjectSnapshot,
+  clampHostNames,
+  type HostInjectSkip,
+  type HostInjectSnapshot
+} from "@enjoy-agents/ipc-contract/host-inject"
 import { capabilitiesFor } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 
 export function assembleHostInject(input: {
@@ -15,10 +20,10 @@ export function assembleHostInject(input: {
   skillsMounted?: boolean
 }): HostInjectSnapshot {
   const cap = capabilitiesFor(input.runtimeId)
-  const mcpEnabled = uniqueNames(input.mcpEnabled)
-  const skillEnabled = uniqueNames(input.skillEnabled)
+  const mcpEnabled = clampHostNames(input.mcpEnabled)
+  const skillEnabled = clampHostNames(input.skillEnabled)
   if (cap.hostMcp === "none") {
-    return {
+    return clampHostInjectSnapshot({
       runtimeId: input.runtimeId,
       mcp: {
         capability: "none",
@@ -27,18 +32,18 @@ export function assembleHostInject(input: {
         skipped: mcpEnabled.map((name) => ({ name, reason: "unsupported" }))
       },
       skills: assembleSkillsLane(cap.hostSkills, skillEnabled, input)
-    }
+    })
   }
-  return {
+  return clampHostInjectSnapshot({
     runtimeId: input.runtimeId,
     mcp: {
       capability: cap.hostMcp,
       enabled: mcpEnabled,
-      injected: uniqueNames(input.mcpInjected),
+      injected: clampHostNames(input.mcpInjected),
       skipped: [...(input.mcpSkipped ?? [])]
     },
     skills: assembleSkillsLane(cap.hostSkills, skillEnabled, input)
-  }
+  })
 }
 
 function assembleSkillsLane(
@@ -62,21 +67,9 @@ function assembleSkillsLane(
   return {
     capability,
     enabled,
-    injected: uniqueNames(input.skillInjected),
+    injected: clampHostNames(input.skillInjected),
     skipped: [...(input.skillSkipped ?? [])],
     mounted: Boolean(input.skillsMounted)
   }
 }
 
-function uniqueNames(names: readonly string[]): string[] {
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const raw of names) {
-    const name = raw.trim()
-    if (!name || seen.has(name)) continue
-    seen.add(name)
-    out.push(name)
-    if (out.length >= 128) break
-  }
-  return out
-}

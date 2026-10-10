@@ -199,6 +199,7 @@ function emitRunStart(
     type: "run.start",
     runId,
     sessionId: input.sessionId,
+    kind: "agent",
     ...(echoed ? { prompt: echoed } : {})
   })
 }
