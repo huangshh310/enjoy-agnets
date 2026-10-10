@@ -12,7 +12,7 @@ export function RightPanePicker({ onPick }: { onPick: (kind: RightPaneKind) => v
   const { data } = useSettingsSnapshot()
   const tools = getRightPaneTools(t, data?.preferences.keybindings ?? [])
   return (
-    <div className="flex flex-1 flex-col justify-center px-8">
+    <div className="relative z-10 flex flex-1 flex-col justify-center bg-background-primary-default px-8">
       <ul className="mx-auto flex w-full max-w-[280px] flex-col gap-0.5">
         {tools.map((tool) => {
           const Icon = tool.icon

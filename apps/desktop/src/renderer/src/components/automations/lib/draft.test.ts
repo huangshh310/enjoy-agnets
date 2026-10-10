@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { Automation } from "@enjoy-agents/ipc-contract"
-import { draftFromAutomation, draftToUpsert, emptyAutomationDraft } from "./draft.ts"
+import { draftFromAutomation, draftToUpsert, emptyAutomationDraft, isDraftDirty } from "./draft.ts"
 
 const defaults = { runtimeId: "enjoy-local", timeZone: "Asia/Shanghai" }
 
@@ -37,4 +37,11 @@ test("离开 cron 保存时清掉补跑开关", () => {
     draftToUpsert({ ...withCatchUp, triggers: ["manual"], trigger: "manual" }).catchUpMissed,
     false
   )
+})
+
+test("干净草稿关抽屉不算脏，改名才算", () => {
+  const baseline = emptyAutomationDraft(defaults)
+  assert.equal(isDraftDirty(baseline, baseline), false)
+  assert.equal(isDraftDirty({ ...baseline, name: "晨间" }, baseline), true)
+  assert.equal(isDraftDirty({ ...baseline, triggers: ["cron"], trigger: "cron" }, baseline), true)
 })

@@ -68,6 +68,25 @@ export function draftFromAutomation(
   }
 }
 
+export function isDraftDirty(current: AutomationDraft, baseline: AutomationDraft): boolean {
+  return (
+    current.name !== baseline.name ||
+    current.prompt !== baseline.prompt ||
+    current.trigger !== baseline.trigger ||
+    current.triggers.join("\0") !== baseline.triggers.join("\0") ||
+    current.cronExpr !== baseline.cronExpr ||
+    current.timeZone !== baseline.timeZone ||
+    current.webhookPort !== baseline.webhookPort ||
+    current.webhookPath !== baseline.webhookPath ||
+    current.webhookSecret !== baseline.webhookSecret ||
+    current.runtimeId !== baseline.runtimeId ||
+    current.modelId !== baseline.modelId ||
+    current.mode !== baseline.mode ||
+    current.enabled !== baseline.enabled ||
+    current.catchUpMissed !== baseline.catchUpMissed
+  )
+}
+
 export function draftToUpsert(draft: AutomationDraft) {
   const port = Number(draft.webhookPort)
   return {

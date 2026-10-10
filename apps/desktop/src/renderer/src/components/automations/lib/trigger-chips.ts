@@ -42,6 +42,9 @@ export function toggleTrigger(
   current: AutomationTrigger[],
   next: AutomationTrigger
 ): AutomationTrigger[] {
+  if (current.length === 1 && current[0] === "manual" && next !== "manual") {
+    return ORDER.filter((kind) => kind === next)
+  }
   const set = new Set(current)
   if (set.has(next)) {
     if (set.size === 1) return current

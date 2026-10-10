@@ -2,7 +2,6 @@
  * 非 Chat 模块的情境栏：搜索 + 分组列表。
  */
 import { RiCloseLine, RiSearchLine } from "@remixicon/react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useT } from "@renderer/i18n"
 import { useMemo } from "react"
 import { filterModuleNavGroups } from "./filter-module-nav"
@@ -24,8 +23,8 @@ export function ModuleNav() {
   )
 
   return (
-    <div className="flex h-full min-h-0 flex-col px-2.5 py-2">
-      <label className="relative mb-2.5 flex h-9 items-center gap-2 rounded-xl border border-border-button-default/60 bg-background-tertiary-default/80 px-3 focus-within:border-accent-500 focus-within:bg-background-primary-default focus-within:ring-2 focus-within:ring-accent-500/20">
+    <div className="flex h-full min-h-0 flex-col px-2.5 py-1.5">
+      <label className="relative mb-1.5 flex h-8 items-center gap-2 rounded-xl border border-border-button-default/60 bg-background-tertiary-default/80 px-3 focus-within:border-accent-500 focus-within:bg-background-primary-default focus-within:ring-2 focus-within:ring-accent-500/20">
         <RiSearchLine className="size-4 shrink-0 text-text-tertiary" aria-hidden />
         <input
           type="search"
@@ -44,9 +43,9 @@ export function ModuleNav() {
           </button>
         ) : null}
       </label>
-      <ScrollArea className="min-h-0 flex-1">
+      <div data-testid="module-nav-scroll" className="min-h-0 flex-1 overflow-y-auto">
         <ModuleNavList groups={visibleGroups} selectedId={selectedId} onSelect={onSelect} />
-      </ScrollArea>
+      </div>
     </div>
   )
 }

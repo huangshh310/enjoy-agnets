@@ -87,8 +87,8 @@ export function ProviderEndpointFields({
           </Select>
         </Field>
         <EndpointInput
-          label={t("settings.providers.primaryBase")}
-          hint={t("settings.providers.primaryBaseHint")}
+          label={t("settings.providers.baseUrl")}
+          hint={t("settings.providers.baseUrlHint")}
           style={editor.baseAPI}
           value={editor.endpoints[editor.baseAPI] ?? ""}
           mismatch={Boolean(editor.detectMismatch?.[editor.baseAPI])}
