@@ -287,6 +287,7 @@ export const zhChat = {
 
   approvalSection: "审批策略",
   approvalAria: "工具审批策略",
+  approvalCycleHint: "工具审批策略 · Shift+Tab 空输入时切换",
   approvalReads: "读取",
   approvalReadsDesc: "编辑、提交和终端操作前暂停",
   approvalEdits: "编辑",

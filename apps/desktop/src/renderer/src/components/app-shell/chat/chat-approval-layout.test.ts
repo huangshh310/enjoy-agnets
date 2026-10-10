@@ -53,6 +53,12 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
   assert.doesNotMatch(menu, /session-row-menu-archive[\s\S]*text-text-secondary/)
   const action = read("ai-chat/sidebar/sidebar-action.tsx")
   assert.match(action, /focus-visible:ring-2 focus-visible:ring-border-focus-ring/)
+  assert.match(action, /data-\[pointer-return\]:focus-visible:ring-0/)
+  assert.match(action, /dataset\.pointerReturn/)
+  const row = read("ai-chat/sidebar/sidebar-session-row.tsx")
+  assert.match(row, /title=\{label\}/)
+  const policy = read("ai-chat/approval-policy-toggle.tsx")
+  assert.match(policy, /chat\.approvalCycleHint/)
 })
 
 test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {

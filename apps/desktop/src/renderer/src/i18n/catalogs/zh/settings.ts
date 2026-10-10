@@ -211,7 +211,7 @@ export const zhSettings = {
     steer: "立即纠偏",
     steerDesc: "运行中把当前草稿立刻交给下一步检查点。",
     cyclePermission: "循环切换审批风险档",
-    cyclePermissionDesc: "在只读、写代码、全放行三档审批策略间快速轮转（光标在输入框外生效）。",
+    cyclePermissionDesc: "在只读、写代码、全放行三档审批策略间快速轮转。Composer 为空或焦点不在其它输入框时生效；有字时 Shift+Tab 后退焦点。",
     threadFind: "在本会话查找",
     threadFindDesc: "打开当前对话的查找条，上一条 / 下一条跳转匹配。",
     context: "上下文",
