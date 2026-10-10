@@ -102,6 +102,8 @@ export function ScheduleFields({
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.scheduleTime")}</span>
             <Input
               type="time"
+              lang={locale.startsWith("zh") ? "zh-CN" : "en-GB"}
+              step={60}
               value={clockValue(parsed.hour, parsed.minute)}
               onChange={(event) => {
                 const next = parseClockValue(event.target.value)
@@ -109,6 +111,7 @@ export function ScheduleFields({
                 onChange({ cronExpr: cronFromSchedule({ ...parsed, ...next }) })
               }}
               className="mt-1 w-32"
+              data-testid="automation-schedule-time"
             />
           </label>
         </div>

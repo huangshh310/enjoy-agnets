@@ -10,7 +10,6 @@ import { useRightPaneShortcuts } from "@renderer/components/ai-chat/right-pane/u
 import { useRightPaneWidth } from "@renderer/components/ai-chat/right-pane/use-right-pane-width"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { AppModuleId } from "../app-shell.types"
-import { AttentionStrip } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStage } from "../chat/chat-stage"
 import { InspectorPane } from "./inspector-pane"
 import { isConversationSurface } from "./inspector-conversation"
@@ -77,7 +76,6 @@ export function StageSplit({
           <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
             <Outlet />
           </div>
-          <AttentionStrip />
         </div>
         </HistoryPageSlide>
       </Panel>

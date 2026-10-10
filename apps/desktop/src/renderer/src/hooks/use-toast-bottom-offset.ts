@@ -1,10 +1,11 @@
 /**
- * 订阅 [data-toast-clearance]，按实测顶边更新 toast 底边。一条规则，全应用共用。
+ * 订阅 Composer / Dock / 页脚 [data-toast-clearance]，写入 CSS 变量并回传底边。
  */
 import { useEffect, useState } from "react"
 import { APP_TOAST_BOTTOM_OFFSET } from "@/components/ui/sonner"
 import {
   APP_TOAST_CLEARANCE_GAP,
+  applyToastBottomCssVar,
   TOAST_CLEARANCE_SELECTOR,
   toastBottomOffsetFromClearance
 } from "../lib/toast-bottom-offset"
@@ -36,7 +37,9 @@ function subscribeToastClearance(setOffset: (value: number) => void): () => void
     for (const node of watched) if (!next.has(node)) ro.unobserve(node)
     for (const node of next) if (!watched.has(node)) ro.observe(node)
     watched = next
-    setOffset(readToastBottomOffset())
+    const nextOffset = readToastBottomOffset()
+    applyToastBottomCssVar(nextOffset, document.documentElement)
+    setOffset(nextOffset)
   }
   let frame = 0
   const schedule = () => {

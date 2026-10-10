@@ -50,7 +50,22 @@ export function AutomationRow({
           onClick={onOpen}
           data-testid="automation-row-open"
           aria-label={automation.name}
-          className="absolute inset-0 cursor-pointer"
+          onPointerDown={(event) => {
+            if (event.button !== 0) return
+            event.currentTarget.dataset.pointerReturn = ""
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return
+            delete event.currentTarget.dataset.pointerReturn
+          }}
+          onBlur={(event) => {
+            delete event.currentTarget.dataset.pointerReturn
+          }}
+          className={cx(
+            "absolute inset-0 cursor-pointer outline-none",
+            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focus-ring",
+            "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0"
+          )}
         />
         <div className="pointer-events-none relative z-10 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">

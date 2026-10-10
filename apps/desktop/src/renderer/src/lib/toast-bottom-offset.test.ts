@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { APP_TOAST_CLEARANCE_GAP, toastBottomOffsetFromClearance } from "./toast-bottom-offset.ts"
+import {
+  APP_TOAST_CLEARANCE_GAP,
+  applyToastBottomCssVar,
+  isDockedClearance,
+  TOAST_BOTTOM_CSS_VAR,
+  toastBottomOffsetFromClearance
+} from "./toast-bottom-offset.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 const FALLBACK = 56
@@ -24,6 +30,7 @@ test("居中空会话 Composer 不抬 toast", () => {
     }),
     FALLBACK
   )
+  assert.equal(isDockedClearance({ top: 320, bottom: 520 }, 900), false)
 })
 
 test("贴底 Composer 按实测顶边抬高，清掉桌面芯片", () => {
@@ -77,13 +84,39 @@ test("多个贴底节点取最高顶边，居中节点忽略", () => {
   )
 })
 
-test("Composer / 状态栏 / 自动化页脚都挂 data-toast-clearance", () => {
+test("高 Composer 顶边越过中线仍按贴底抬，不回落 56", () => {
+  const offset = toastBottomOffsetFromClearance({
+    viewportHeight: 700,
+    rects: [{ top: 240, bottom: 656 }],
+    fallback: FALLBACK
+  })
+  assert.equal(isDockedClearance({ top: 240, bottom: 656 }, 700), true)
+  assert.equal(offset, 700 - 240 + APP_TOAST_CLEARANCE_GAP)
+  assert.ok(offset > FALLBACK)
+})
+
+test("写入 CSS 变量供 Toaster 与检查用", () => {
+  const props: Record<string, string> = {}
+  applyToastBottomCssVar(188, {
+    style: { setProperty: (name, value) => {
+      props[name] = value
+    } }
+  })
+  assert.equal(props[TOAST_BOTTOM_CSS_VAR], "188px")
+})
+
+test("Composer 簇 / 状态栏 / 自动化页脚都挂 data-toast-clearance", () => {
+  const cluster = readFileSync(
+    join(dir, "../components/app-shell/chat/chat-composer-cluster.tsx"),
+    "utf8"
+  )
   const composer = readFileSync(join(dir, "../components/ai-chat/ai-chat-composer.tsx"), "utf8")
   const status = readFileSync(join(dir, "../components/ai-chat/ai-chat-status-bar.tsx"), "utf8")
   const footer = readFileSync(
     join(dir, "../components/automations/components/automation-footer.tsx"),
     "utf8"
   )
+  assert.match(cluster, /data-toast-clearance/)
   assert.match(composer, /data-toast-clearance/)
   assert.match(status, /data-toast-clearance/)
   assert.match(footer, /data-toast-clearance/)

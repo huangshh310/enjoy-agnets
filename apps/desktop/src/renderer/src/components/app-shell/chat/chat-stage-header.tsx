@@ -11,6 +11,7 @@ import {
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
+import { AttentionCompleteStatus } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ReviewGateHeader } from "@renderer/components/ai-chat/review-gate/review-gate-header"
 import type { ReviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate.types"
 import { useT } from "@renderer/i18n"
@@ -43,7 +44,7 @@ export function ChatStageHeader({
   const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden px-5">
-      <RiFolder6Line className="size-4 shrink-0 text-foreground-icon-secondary" aria-hidden />
+      <RiFolder6Line className="size-4 shrink-0 text-text-secondary" aria-hidden />
       <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
         <BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
           <BreadcrumbItem className="min-w-0 max-w-[40%]">
@@ -56,6 +57,7 @@ export function ChatStageHeader({
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        <AttentionCompleteStatus />
         {onToggleEnvironment ? (
           <QuietIconButton
             icon={RiDashboard3Line}
@@ -63,7 +65,11 @@ export function ChatStageHeader({
             aria-label={t("chat.environmentToggle")}
             aria-pressed={Boolean(environmentOpen)}
             onClick={onToggleEnvironment}
-            className={environmentOpen ? "bg-background-secondary-default text-text-primary" : undefined}
+            className={
+              environmentOpen
+                ? "bg-background-secondary-default text-text-primary"
+                : "text-text-secondary"
+            }
           />
         ) : null}
         {hasLedger && onToggleLedger ? (
@@ -77,10 +83,10 @@ export function ChatStageHeader({
               "flex h-7 max-w-36 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-caption-2-medium transition-colors cursor-pointer",
               ledgerOpen
                 ? "border-border-button-default bg-background-secondary-default text-text-primary shadow-2xs"
-                : "border-transparent text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
+                : "border-transparent text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
             )}
           >
-            <RiFileList3Line className="size-3.5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+            <RiFileList3Line className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
             <span className="truncate">{t("sessionOps.ledgerTitle")}</span>
           </button>
         ) : null}
@@ -90,7 +96,11 @@ export function ChatStageHeader({
           aria-label={rightPanelCollapsed ? t("chat.expandPane") : t("chat.collapsePane")}
           aria-pressed={!rightPanelCollapsed}
           onClick={onToggleRightPane}
-          className={!rightPanelCollapsed ? "bg-background-secondary-default text-text-primary" : undefined}
+          className={
+            !rightPanelCollapsed
+              ? "bg-background-secondary-default text-text-primary"
+              : "text-text-secondary"
+          }
         />
       </div>
     </header>

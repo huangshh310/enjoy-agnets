@@ -15,7 +15,7 @@ export function ChatComposerCluster(props: {
   onSend: () => void
 }) {
   return (
-    <div className={cx("flex shrink-0 flex-col", props.className)}>
+    <div className={cx("flex shrink-0 flex-col", props.className)} data-toast-clearance="">
       <PermissionDock />
       <ComposerPreparingHint />
       <ChatComposer

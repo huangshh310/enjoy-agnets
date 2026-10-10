@@ -25,6 +25,7 @@ import { ShortcutSheet } from "@renderer/components/ai-chat/shortcut-sheet"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
+import { AttentionNeedsBar } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStageHeader } from "./chat-stage-header"
 import { useTaskbarTitle } from "./use-taskbar-title"
 import { EmptySessionStart } from "./empty-session-start"
@@ -183,6 +184,7 @@ function ChatThreadBody(props: {
           })
         }}
       />
+      <AttentionNeedsBar />
       {props.empty ? (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <EmptySessionStart

@@ -23,4 +23,7 @@ test("Toaster 与单条 toast 都能接到悬停，暂停走 sonner expanded", (
   const app = read("../components/layout/app-toaster.tsx")
   assert.match(app, /useToastBottomOffset/)
   assert.match(app, /offsetBottom/)
+  const hook = read("../hooks/use-toast-bottom-offset.ts")
+  assert.match(hook, /applyToastBottomCssVar/)
+  assert.match(hook, /TOAST_CLEARANCE_SELECTOR/)
 })

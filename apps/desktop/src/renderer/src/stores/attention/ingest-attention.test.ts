@@ -209,7 +209,11 @@ test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", ()
   assert.equal(isStripCompact(item, "ses_b", true, true), false)
 })
 
-test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () => {
+test("已完成约 4s 自消", () => {
+  assert.equal(COMPLETE_TTL_MS, 4_000)
+})
+
+test("点 complete 直接 resolved；dismiss 写 dismissed；约 4s 后过期", () => {
   const done = ingestAttentionEvent([], {
     event: { type: "run.end", runId: "run_b" },
     sessionId: "ses_b",

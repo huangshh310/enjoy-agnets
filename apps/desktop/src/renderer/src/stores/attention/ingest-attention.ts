@@ -6,8 +6,8 @@ import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approva
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
 
-/** complete 短时展示后自消，不计入红点。 */
-export const COMPLETE_TTL_MS = 10_000
+/** complete 约 4s 后自消，不计入红点。 */
+export const COMPLETE_TTL_MS = 4_000
 
 export const KIND_PRIORITY: Record<AttentionKind, number> = {
   pending_approval: 0,

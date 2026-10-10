@@ -156,6 +156,17 @@ test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {
   assert.match(row, /pointer-events-auto/)
   assert.match(row, /LastRunExplain/)
   assert.match(row, /RiCalendarScheduleLine/)
+  assert.match(row, /focus-visible:ring-border-focus-ring/)
+  assert.match(row, /data-\[pointer-return\]:focus-visible:ring-0/)
+})
+
+test("抽屉时间 24 小时，中文不带 AM/PM", () => {
+  const schedule = readFileSync(join(dir, "components/schedule-fields.tsx"), "utf8")
+  const clock = readFileSync(join(dir, "lib/last-run-label.ts"), "utf8")
+  assert.match(schedule, /lang=\{locale.startsWith\("zh"\) \? "zh-CN" : "en-GB"\}/)
+  assert.match(clock, /padStart\(2, "0"\)/)
+  assert.doesNotMatch(clock, /toLocaleTimeString/)
+  assert.doesNotMatch(clock, /hour12/)
 })
 
 test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际或取消时间", () => {

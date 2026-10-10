@@ -52,6 +52,10 @@ test("中英词表与预览同文，不用 Citations / Sources 抽屉", () => {
   assert.equal(zhChat.sourcesSheetKindSkill, "技能")
   assert.equal(zhChat.sourcesSheetKindMcp, "MCP")
   assert.equal(zhChat.sourcesSheetMeta, "{n} 项 · 暂不支持网页来源")
+  assert.equal(
+    zhChat.sourcesSheetFooter,
+    "选中的文件可以回看；来自挂载或 MCP 的内容没有文件路径，无法回看。"
+  )
   assert.equal(enChat.sourcesSheetTitle, "This turn")
   assert.doesNotMatch(zhChat.sourcesSheetTitle, /引用|Citations/i)
   assert.doesNotMatch(enChat.sourcesSheetTitle, /Citations|Sources drawer|InlineCitations/i)

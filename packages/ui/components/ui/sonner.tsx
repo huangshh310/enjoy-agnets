@@ -1,6 +1,6 @@
 /**
  * 全局 Toaster：sonner unstyled，皮只走 BoardUI token。
- * 底边由调用方按 clearance 实测传入；回落 APP_TOAST_BOTTOM_OFFSET。
+ * 底边由调用方按 Composer/Dock 实测传入（--app-toast-bottom-offset）；回落 APP_TOAST_BOTTOM_OFFSET。
  * sonner 2 用 ol mouseenter → expanded 暂停计时，ol/toast 必须能点到。
  */
 import { Toaster as SonnerToaster } from "sonner"
