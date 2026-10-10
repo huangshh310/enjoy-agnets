@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef } from "react"
 import { cx } from "@/utils/cx"
+import { highlightLineBounds } from "./thread/sources/source-cite-range"
 import { useSourceFileReveal } from "./thread/sources/source-file-reveal"
 import { languageFromPath } from "./syntax/language"
 import { SHIKI_TOKEN_VARS, useShikiHtml } from "./syntax/use-shiki-html"
@@ -31,8 +32,10 @@ export function AiChatCodePane({
       node.removeAttribute("data-source-highlight")
       node.classList.remove("bg-accent-500/10")
     }
-    const from = reveal.line
-    const to = reveal.line + 2
+    const { start: from, end: to } = highlightLineBounds(
+      { start: reveal.line, end: reveal.endLine ?? reveal.line },
+      value
+    )
     for (let line = from; line <= to; line += 1) {
       const target = root.querySelector(`[data-source-line="${line}"]`)
       if (!(target instanceof HTMLElement)) continue

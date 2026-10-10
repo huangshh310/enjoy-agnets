@@ -36,6 +36,7 @@ export async function citeKnowledge(options: {
       title: hit.path,
       path: hit.path,
       startLine: hit.startLine,
+      endLine: hit.endLine,
       snippet: hit.snippet
     })
   }
@@ -52,5 +53,6 @@ export type CitedSource = {
   title: string
   path: string
   startLine?: number
+  endLine?: number
   snippet?: string
 }

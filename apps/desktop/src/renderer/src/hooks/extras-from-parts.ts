@@ -43,6 +43,7 @@ export function extrasFromParts(parts: unknown[] | undefined): RestoredExtras {
         title: String(record.title ?? ""),
         path: String(record.path ?? ""),
         startLine: typeof record.startLine === "number" ? record.startLine : undefined,
+        endLine: typeof record.endLine === "number" ? record.endLine : undefined,
         snippet: typeof record.snippet === "string" ? record.snippet : undefined
       })
     }

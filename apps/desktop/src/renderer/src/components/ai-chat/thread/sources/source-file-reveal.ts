@@ -5,7 +5,7 @@ import { create } from "zustand"
 
 import type { SourceOpenView } from "./source-row-action.ts"
 
-type Reveal = { path: string; line: number; view: SourceOpenView } | null
+type Reveal = { path: string; line: number; endLine?: number; view: SourceOpenView } | null
 
 type SourceFileRevealState = {
   reveal: Reveal

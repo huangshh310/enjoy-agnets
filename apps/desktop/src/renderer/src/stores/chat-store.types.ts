@@ -29,6 +29,7 @@ export type ThreadSource = {
   title: string
   path: string
   startLine?: number
+  endLine?: number
   snippet?: string
 }
 

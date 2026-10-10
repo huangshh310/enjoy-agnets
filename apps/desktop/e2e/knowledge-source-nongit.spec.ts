@@ -86,10 +86,10 @@ test("非 git：知识库行打开查看文件，缺失展开，审查文件名�
       })
       .toBe("preview")
     await assertPlainPreview(window, "readme.md")
-    await expect(window.locator('[data-source-highlight="true"]').first()).toHaveAttribute(
-      "data-source-line",
-      "1"
-    )
+    const highlighted = window.locator('[data-source-highlight="true"]')
+    await expect(highlighted).toHaveCount(2)
+    await expect(highlighted.first()).toHaveAttribute("data-source-line", "1")
+    await expect(window.locator('[data-source-line="3"][data-source-highlight="true"]')).toHaveCount(0)
     await snap(window, "knowledge-source-file-preview-nongit")
 
     await readmeChip.click()

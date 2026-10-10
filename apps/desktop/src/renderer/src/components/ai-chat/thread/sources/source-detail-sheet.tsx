@@ -29,7 +29,7 @@ export function SourceDetailSheet({
   if (chips.length === 0 && !ledgerEntry) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-x-0 bottom-0 top-12 z-50">
       <SheetScrim onClose={onClose} />
       <SheetPanel chips={chips} activeId={activeId} ledgerEntry={ledgerEntry} onClose={onClose} />
     </div>,
@@ -55,6 +55,7 @@ function SheetScrim({ onClose }: { onClose: () => void }) {
   return (
     <button
       type="button"
+      data-testid="turn-sources-scrim"
       className="absolute inset-0 cursor-pointer bg-black/10 transition-opacity"
       onClick={onClose}
       aria-label={t("chat.sourcesSheetClose")}
@@ -88,7 +89,7 @@ function SheetPanel({
       className={cx(
         "absolute flex flex-col overflow-hidden border border-border-button-default bg-background-primary-default shadow-card",
         "inset-x-3 bottom-3 top-auto max-h-[min(70vh,32rem)] rounded-3xl animate-in slide-in-from-bottom duration-200",
-        "md:right-3 md:left-auto md:top-12 md:w-[min(20rem,calc(100vw-1.5rem))] md:slide-in-from-right",
+        "md:right-3 md:left-auto md:top-0 md:w-[min(20rem,calc(100vw-1.5rem))] md:slide-in-from-right",
         empty ? "md:inset-y-auto md:max-h-none" : "md:bottom-3 md:max-h-none"
       )}
     >

@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-10-10（知识库行打开查看文件，不进审查栏）
+> 用户显式选择的本地 RAG。最后更新：2026-10-10（引用行高亮对齐范围；抽屉遮罩避开标题栏）
 
 ## 当前真相
 
@@ -13,7 +13,7 @@
 2. **记忆层 Bento (Memory Layer Bento)**：非对称 2:1:1。脉冲 0 块主文案「还不能问」；透镜开关决定本次检索范围，星标写入工作区 `localStorage` 默认范围；健康卡折叠不可用源，缺失源禁用 Index Now。
 3. **索引管理面板**：默认收起，在舞台与 Bento **下方页内**展开（`rounded-3xl shadow-card`），不是遮罩 overlay。面板 `min-h-[28rem]` / `max-h-[min(40rem,75vh)]`，工具栏固定，文件空态与列表吃剩余高度并内部滚动。来源 Rebuild 在 Indexing 卡住时仍可点。预览 / View Files 先写 `selectedPath`。
 4. 区域组件：`components/retrieval/`、`components/bento/`、`components/drawer/`、`components/table/`、`knowledge-add-modal.tsx`、`knowledge-file-preview-modal.tsx`。
-5. 聊天 `SourceList` 点引用导航 `#/knowledge`（`path` / `q` / `snippet` / `startLine`），命中卡 `data-testid=knowledge-cited-hit`。助手气泡底脚知识库 cite 是独立 `knowledge` 芯片（书标 +「知识库」），点开「本轮来源」选中该行。工作区里还在的文件点行打开右侧**文件栏**只读「查看文件」（`AiChatCodePane`，无 `+` / `@@`），滚到引用行并高亮；**禁止**打开审查栏（有 git 也不走 DIFF，非 git 更不得停在「这个文件夹没有用 Git 管理」）。找不到或不在工作区则就地展开片段，抽屉保持打开。本轮写过的 `file` 芯片且工作区是 git 才走审查差异。图标表在 `thread/sources/source-badge.ts`，缺 kind 回落问号，禁止 undefined 白屏。
+5. 聊天 `SourceList` 点引用导航 `#/knowledge`（`path` / `q` / `snippet` / `startLine`），命中卡 `data-testid=knowledge-cited-hit`。助手气泡底脚知识库 cite 是独立 `knowledge` 芯片（书标 +「知识库」），点开「本轮来源」选中该行。工作区里还在的文件点行打开右侧**文件栏**只读「查看文件」（`AiChatCodePane`，无 `+` / `@@`），滚到引用行并只高亮 `citedLineRange`（snippet / endLine，丢掉末尾空行）；出处标 `L1` 或 `L1–3`。**禁止**打开审查栏（有 git 也不走 DIFF，非 git 更不得停在「这个文件夹没有用 Git 管理」）。找不到或不在工作区则就地展开片段，抽屉保持打开。本轮写过的 `file` 芯片且工作区是 git 才走审查差异。图标表在 `thread/sources/source-badge.ts`，缺 kind 回落问号，禁止 undefined 白屏。
 
 ## 不变量
 

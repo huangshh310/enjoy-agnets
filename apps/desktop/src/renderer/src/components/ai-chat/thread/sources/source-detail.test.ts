@@ -46,6 +46,21 @@ test("类型标只有文件 / 技能 / MCP，文档并进文件", () => {
 test("行列：名称是短名，出处是 path 或服务器", () => {
   assert.equal(sourceRowName(fileChip), "login.ts")
   assert.equal(sourceRowProvenance(fileChip, mcp), "src/auth/login.ts · L42")
+  assert.equal(
+    sourceRowProvenance(
+      {
+        id: "k1",
+        kind: "knowledge",
+        label: "readme.md",
+        path: "readme.md",
+        startLine: 1,
+        endLine: 3,
+        snippet: "# e2e workspace\nhello knowledge\n"
+      },
+      mcp
+    ),
+    "readme.md · L1–2"
+  )
   assert.equal(sourceRowName(docChip), "登录流程说明")
   assert.equal(sourceRowProvenance(docChip, mcp), "docs/login.md")
   assert.equal(sourceRowName(skillChip), "读代码")

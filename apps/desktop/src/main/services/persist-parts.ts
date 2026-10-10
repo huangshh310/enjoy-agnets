@@ -22,6 +22,7 @@ export function partsFromExtras(content: string, extras: AssistantExtras): UIMes
       title: source.title,
       path: source.path,
       startLine: source.startLine,
+      endLine: source.endLine,
       snippet: source.snippet
     })
   }

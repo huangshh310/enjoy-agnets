@@ -32,6 +32,7 @@ export function collectTurnSources(
           }),
           path: source.path,
           startLine: source.startLine,
+          endLine: source.endLine,
           title: source.title,
           snippet: source.snippet,
           fromKnowledge: true
@@ -80,6 +81,7 @@ function toChip(
     id: string
     path?: string
     startLine?: number
+    endLine?: number
     title?: string
     snippet?: string
     toolName?: string
@@ -95,6 +97,7 @@ function toChip(
     label: "",
     path: input.path,
     startLine: input.startLine,
+    endLine: input.endLine,
     title: input.title,
     snippet: input.snippet,
     fromEnjoy: input.fromEnjoy

@@ -5,6 +5,7 @@ import { getIde } from "@renderer/lib/ide"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { pathsFromLastTurn } from "../../right-pane/views/review/last-turn-paths.ts"
+import { citedLineRange } from "./source-cite-range.ts"
 import { planSourceRowClick, resolveSourceOpenView } from "./source-row-action.ts"
 import { useSourceFileReveal } from "./source-file-reveal.ts"
 import type { TurnSourceChip } from "./source-chip.ts"
@@ -17,9 +18,11 @@ export async function openSourceRow(chip: TurnSourceChip): Promise<OpenSourceRow
   const plan = planSourceRowClick(chip, exists, thisTurn)
   if (plan.action === "open") {
     const view = resolveSourceOpenView(plan.view, useChatStore.getState().gitRepo)
+    const range = citedLineRange(chip)
     useSourceFileReveal.getState().setReveal({
       path: plan.path,
-      line: plan.startLine ?? 1,
+      line: range?.start ?? plan.startLine ?? 1,
+      endLine: range?.end,
       view
     })
     await openChangedFile(plan.path, { reveal: view === "preview" ? "files" : "review" })

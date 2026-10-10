@@ -21,7 +21,7 @@ export function SourceFilePreview({ path, content }: { path: string; content: st
         </div>
         <span
           data-testid="source-file-view-mode"
-          className="shrink-0 rounded border border-border-button-default bg-background-primary-default px-1.5 py-0.5 text-caption-2-medium font-medium text-text-primary"
+          className="shrink-0 text-caption-2-regular text-text-primary"
         >
           {t("chat.reviewViewFile")}
         </span>
