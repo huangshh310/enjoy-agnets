@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-10-09（COST-P3 会话估算走 `session.estimatedCost`）
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-10-09（costStatus 透传 + `dev:cost`）
 
 ## 当前真相
 
@@ -22,7 +22,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 |---|---|---|---|
 | L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 模型浮层顶 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）。`preferences.usageNumber` 默认 `used`；`remaining` 时 Composer `UsagePill`、设置行 `AgentToolMiniQuota`、以及引擎胶囊悬停文案的数字是 `100 - 已用`（悬停跟同一数字，避免药丸写剩余、提示仍写已用）。没有官方数字不显示，也不编剩余值。条宽、色阶、`quiet` 和订阅页的条仍按已用百分比，不倒过来。设置 → 通用可切换。不遮邮箱 |
 | L2 | 自营积分 | 无真实 API | 账单页诚实空态；不画假条、不挂演示套餐 |
-| L3 | 本轮 token / 上下文 % | 与 Context 共用 `estimateContextWindowStats`（按当前 runtime 投影） | Composer 底 `SessionMeter` + Limits 卡；无用量则隐藏。ACP 不计 Enjoy 常驻规则，但 `hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板。**花费悬停**走 `session.estimatedCost`（已知估算合计 + 未知次数）；铬条仍是 token，mike 接线 |
+| L3 | 本轮 token / 上下文 % | 与 Context 共用 `estimateContextWindowStats`（按当前 runtime 投影） | Composer 底 `SessionMeter` + Limits 卡；无用量则隐藏。ACP 不计 Enjoy 常驻规则，但 `hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板。**花费悬停**走 `session.estimatedCost`（`knownUsd` + `unknownCount` + 可选 `missing` + `runs[].status` / `missing`：`estimated` / `unknown` / `local_unbilled` / `not_reported` / `reported`）；铬条仍是 token，mike 接线。本机复检夹具：`pnpm --filter @enjoy-agents/desktop dev:cost`（`ENJOY_DEV_SEED_COST=1` + 隔离 userData，打包不写）。侧栏种 DeepSeek 估算 / Haiku 分档未知 / 通义千问无单价与自填单价 / Claude CLI 两组累计 / Ollama 不计费 / 泵前失败不进未知 / 混合部分未知；新对话默认 `deepseek-flash`，stub `finish` 带 `totalUsage` |
 | L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |
 
 额度条支持 Cursor / Grok / Antigravity 以及通过官方 CLI 凭据探针接入的 Claude（5h 会话 / 7d 周度窗口，来自 macOS Keychain 或 ~/.claude/.credentials.json 调取 api.anthropic.com/api/oauth/usage）与 Codex（5h 会话 / 周度窗口 / 速率限制重置额度 credits，来自 ~/.codex/auth.json 调取 chatgpt.com/backend-api/wham/usage）。Enjoy 本地与未登录/无额度 API 助手：**不画空条**，诚实展示空态或「该 CLI 暂无公开额度 API」。禁止 `Math.max(%, 2)` 假填充、90/95/100 占位、遥测伪造假数据。
@@ -56,6 +56,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 设置：`settings/agent-tools/subscriptions-dashboard.tsx`、`agent-subscription-card.tsx`、`subscription-quota-meter.tsx`、`agent-subscription-donut.tsx`、`usage-trend-sparkline.tsx`、`rate-limit-resets-card.tsx`、`drawer-trust/`
 - 能力矩阵 UI：`settings/agent-tools/capability-matrix.tsx` + `config-boundary-table.tsx`（包在 `agent-capability-docs.tsx` 的 `<details>` 里，默认收起）。注意 `settings-capabilities.tsx` 是另一回事（模型 vision/tools 矩阵），别照代码入口找错。
 - L3 明细：`ai-chat/agent-limits/`
+- 复检夹具：`main/services/cost-seed.ts` / `cost-seed-write.ts` / `dev-cost-seed.ts` / `scripts/dev-cost.mjs`（`pnpm --filter @enjoy-agents/desktop dev:cost`）
 - L4：`thread/thread-error-banner.tsx`、`usage/quota-exhausted-card.tsx`
 - 本机记录：`main/services/cli-transcript-usage/`、`observability/components/cli-usage/`
 

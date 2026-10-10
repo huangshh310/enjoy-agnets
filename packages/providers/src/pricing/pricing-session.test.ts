@@ -79,6 +79,7 @@ test("空 usage_json 的已完成本地 run 是 unknown，不是零用量跳过"
     ]
   })
   assert.equal(sum.unknownCount, 1)
+  assert.deepEqual(sum.missing, ["usage"])
   assert.equal(sum.runs?.some((run) => run.runId === "empty" && run.status === "unknown"), true)
   assert.equal(sum.runs?.some((run) => run.runId === "zero"), false)
 })

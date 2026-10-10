@@ -7,10 +7,26 @@ import { streamPayloadForDeniedToolPart } from "../computer-use/desktop-act-hone
 import { withCommandDisplay } from "../tools/command-display.ts"
 import { mapUsageTokens } from "./map-usage.ts"
 
+/** ACP / Enjoy 已是 StreamEvent。只放行已知类型，禁止「点号就过」。 */
+const ENJOY_TYPES = new Set([
+  "text.delta",
+  "reasoning.delta",
+  "tool.start",
+  "tool.args.delta",
+  "tool.result",
+  "file.changed",
+  "approval.required",
+  "session.title",
+  "session.config",
+  "usage.updated",
+  "generation.warning",
+  "commands.update",
+  "mcp.app"
+])
+
 export function mapStreamPart(part: Record<string, unknown>, runId: string): StreamEvent | null {
   const type = String(part.type ?? "")
-  // Enjoy / ACP 已经是 StreamEvent（点号）；SDK 部件是连字符。
-  if (type.includes(".")) return part as StreamEvent
+  if (ENJOY_TYPES.has(type)) return part as StreamEvent
   const text = readPartText(part)
 
   if (type === "text-delta") {

@@ -30,6 +30,7 @@ export function recordMetric(input: {
   reasoningTokens?: number
   estimatedCostUsd?: number
   costStatus?: string
+  costMissing?: string[]
   durationMs?: number
   ttfoMs?: number
   tokensPerSecond?: number
@@ -50,6 +51,7 @@ export function recordMetric(input: {
     reasoningTokens: input.reasoningTokens ?? null,
     estimatedCostUsd: input.estimatedCostUsd ?? null,
     costStatus: input.costStatus ?? null,
+    costMissing: input.costMissing ?? null,
     durationMs: input.durationMs ?? null,
     ttfoMs: input.ttfoMs ?? null,
     tokensPerSecond: input.tokensPerSecond ?? null,

@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（v14 UNIQUE 建失败不卡启动）
+> 进程边界与安全基线。最后更新：2026-10-10（合入 main #125–#127；014/015 列守卫仍幂等；UNIQUE 建失败不卡启动）
 
 ## 当前真相
 
@@ -70,7 +70,7 @@ Main Process（可信）
 ### 数据
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
-- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`；`cost_missing` 留给 015（#119），不要占 014。向量存在 SQLite，检索在本机。
+- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014 / #118）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`。015（#119）：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。014 / 015 的 ADD 都有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上审批 SDK 列（含 `sdk_approval_id` 与 UNIQUE 索引）和 `cost_missing`，不必重建库。向量存在 SQLite，检索在本机。
 - 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
@@ -113,6 +113,7 @@ Main Process（可信）
 - `@shadcn/lint` 抱怨项目 `cn`：本仓 `cn` 是 0.2.6，linter 语法要 ≥0.3.2，于是它改用自带 `cn` 0.3.2。lint 校验的 className 合并语义因此与 app 运行时不一致——升 `cn` 之前，三条视觉规则的结论只当参考。详见 `ui` spec。
 - [guard:.oxlintrc.json renderer override] 渲染进程打 `@enjoy-agents/agent-core` 主入口会把 `node:` 打进 bundle：现在 `no-restricted-imports` 直接报错，不再只靠约定。
 - **隐患**：desktop `node:test` 行为测试若静态相对 import 生产模块（`approval-hmac` / `decide-approval` / `fail-agent-pump` / `run-usage` / `consume-run`），守卫会因这些文件 value-import `@enjoy-agents/db` / 合约入口而红。正确做法：纯函数抽到无桶入口的叶子（如 `run-usage-accumulate.ts`）再测，或测试里 `await import(...)` 动态加载；ACP 桶仍只能动态 import，`--experimental-strip-types` 会把 `private readonly` 参数属性剥成非法语法。泵 finally 的缺用量测试必须经过 `consumeRun`，不要只调 `finalizePumpUsage`。
+- **隐患**：#119 早期把 `cost_missing` 写成 v14。本地库若跑过那一刀，`schema_migrations` 已有 version=14，#118 的 `approval-sdk-response` 会被跳过。正确做法：v14 与 015 都走 `addColumnIfMissing` / `ensureApprovalSdkColumns`；只要 v14 已记账（无论 name），`repairClaimedV14` 补 `cost_missing` 和审批 SDK 列（含 `sdk_approval_id` + UNIQUE `approvals_sdk_identity`）。两边都幂等，不必重建库。
 
 - Workflow 子 agent：`persistChildRun` 在步骤 `running` checkpoint 之后把 `child_run_id` 写入当前 `run_steps` 行，`getWorkflow` 投影 `childRunId`。`cancelWorkflow` 先看内存 `childRuns`，没有再读库。崩溃发生在 persist running 与 `onChildRun` 之间仍可能漏绑。
 - `settings` KV 表曾是 JSON 垃圾场：vault / harness 密钥 / automations / overrides / runtimes / 压缩状态全塞一张表。2026-09 收敛：vault 与 harness 密钥迁到 `secrets_vault` 专表（惰性迁移旧键）；automations / overrides / session.runtimes 读取统一走 Zod 校验（坏条目丢弃）；压缩状态读侧已有 `SessionCompaction.parse`。仍在 settings 里的 JSON 是小对象（preferences 等），可接受。
@@ -133,6 +134,6 @@ Main Process（可信）
 - `window.open` 只对 `http:` / `https:` 走 `shell.openExternal`，一律 `{ action: "deny" }`。
 - `flushActiveRuns` 与泵的 `parkForApproval` 都顶层静态 import `persistWaitingRun`。
 - SQLite：`PRAGMA busy_timeout = 5000` + `core-indexes` 迁移（sessions/messages/message_parts/runs）。
-- **隐患**：旧 #119 曾把 v14 记成 `cost-missing`，本 PR 的审批 SDK 列才是 014。裸 `ALTER TABLE … ADD COLUMN` 在列已在或记账名对不上时会炸。正确做法：`addColumnIfMissing` / `ensureApprovalSdkColumns`；`schema_migrations` 已有 version=14（无论 name）时走 `repairClaimedV14` 补列，不要再插一条 014，也不要把 `cost_missing` 塞进本 PR。`repairClaimedV14` 每次启动都会尝试建 UNIQUE；库里若已有重复三元组，`CREATE UNIQUE INDEX` 会抛并把启动卡死。正确做法：`ensureApprovalsSdkIdentityIndex` 包 try，打日志后继续启动，不要让重复行挡住 boot。
+- **隐患**：旧库把 v14 记成 `cost-missing` 时，裸 `ALTER TABLE … ADD COLUMN` 会炸。正确做法：`addColumnIfMissing` / `ensureApprovalSdkColumns`；`schema_migrations` 已有 version=14（无论 name）时走 `repairClaimedV14` 补列，不要再插一条 014。`cost_missing` 走 015，列已在就跳过。`repairClaimedV14` 每次启动都会尝试建 UNIQUE；库里若已有重复三元组，`CREATE UNIQUE INDEX` 会抛并把启动卡死。正确做法：`ensureApprovalsSdkIdentityIndex` 包 try，打日志后继续启动，不要让重复行挡住 boot。
 - **隐患**：`turbo` 的 `typecheck.dependsOn: ["^typecheck"]` 会让 desktop 等 ipc-contract。上游一红，下游 `formatToolName` 未定义这种 renderer 错根本不跑；CI 的 `pnpm typecheck` 接着失败，`pnpm test` 也被跳过。渲染层源文件在 `tsconfig.web.json` 里（只排除 `*.test.ts`），tsc 能抓，但要等它跑到。正确做法：typecheck / test 不要 `^typecheck`；renderer 开 `no-undef`，让 lint（typecheck 之前）先拦未定义标识符。
 - 泵 / 审批 / 检查点测试不要用 `sleep` 或「队列空了」当 idle。排队自启用 `DrainableQueue.drain()`；`agent.run` 必带 `commandId`，收据在 `holdAgentRun` 之后、`persistUserTurn` 之前写入。

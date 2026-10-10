@@ -1,6 +1,6 @@
 /**
- * ALTER ADD COLUMN 的存在性守卫。旧 #119 曾占用 v14，合入后要能补列、不能重加。
- * #119 的 cost_missing 是 015；本 PR 的审批 SDK 列留在 014。
+ * ALTER ADD COLUMN 的存在性守卫。旧 #119 曾占用 v14，合入 #118 后要能补列、不能重加。
+ * #118 的审批 SDK 列是 014；#119 的 cost_missing 是 015。
  */
 import type { DatabaseSync } from "node:sqlite"
 
@@ -67,12 +67,13 @@ function indexExists(sqlite: DatabaseSync, name: string): boolean {
   return Boolean(row?.name)
 }
 
-/** v14 已被记过（旧 cost-missing 或本迁移）时，把缺的审批列补齐。 */
+/** v14 已被记过（旧 cost-missing 或 #118）时，把两边缺的列补齐。 */
 export function repairClaimedV14(sqlite: DatabaseSync): void {
   if (!tableExists(sqlite, "schema_migrations")) return
   const row = sqlite
     .prepare("SELECT name FROM schema_migrations WHERE version = 14")
     .get() as { name?: string } | undefined
   if (!row) return
+  addColumnIfMissing(sqlite, "telemetry_metrics", "cost_missing", "TEXT")
   ensureApprovalSdkColumns(sqlite)
 }

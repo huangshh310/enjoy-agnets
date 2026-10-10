@@ -55,6 +55,7 @@ function recordCompletedRunMetric(runId: string, run: ActiveRun): void {
     reasoningTokens: run.reasoningTokens,
     estimatedCostUsd: estimate?.status === "estimated" ? estimate.usd : undefined,
     costStatus: estimate?.status,
+    costMissing: estimate?.missing,
     durationMs,
     ttfoMs: ttfoMs(run.startedAt, run.firstTokenAt),
     tokensPerSecond: tokensPerSecond(run.outputTokens, durationMs)

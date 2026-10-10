@@ -125,6 +125,51 @@ test("SDK 嵌套 toolCall + isAutomatic 也不弹卡", () => {
   )
 })
 
+test("未知的点号类型会被丢弃", () => {
+  assert.equal(mapStreamPart({ type: "not.a.thing", runId: "run_1", text: "nope" }, "run_1"), null)
+  assert.equal(mapStreamPart({ type: "evil.inject", runId: "run_1" }, "run_1"), null)
+})
+
+test("合入 #126/#127 后审批与 tool.result 仍走白名单，不靠点号启发式", () => {
+  const required = {
+    type: "approval.required",
+    runId: "run_1",
+    toolCallId: "tool_1",
+    approvalId: "apr_1",
+    name: "write_file",
+    args: { path: "e2e-stub.txt" }
+  }
+  const result = {
+    type: "tool.result",
+    runId: "run_1",
+    toolCallId: "tool_1",
+    name: "write_file",
+    result: { ok: true, path: "e2e-stub.txt" }
+  }
+  assert.deepEqual(mapStreamPart(required, "run_1"), required)
+  assert.deepEqual(mapStreamPart(result, "run_1"), result)
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "tool-result",
+        toolCallId: "tool_stub_1",
+        toolName: "write_file",
+        input: { path: "e2e-stub.txt" },
+        output: { ok: true, path: "e2e-stub.txt" }
+      },
+      "run_1"
+    ),
+    {
+      type: "tool.result",
+      runId: "run_1",
+      toolCallId: "tool_stub_1",
+      name: "write_file",
+      result: { ok: true, path: "e2e-stub.txt" },
+      args: { path: "e2e-stub.txt" }
+    }
+  )
+})
+
 test("passes through Enjoy StreamEvent from ACP", () => {
   assert.deepEqual(mapStreamPart({ type: "text.delta", runId: "run_1", text: "hi" }, "run_1"), {
     type: "text.delta",

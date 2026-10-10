@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（stub 允许写盘后先吐 tool-result；repark 换新内部 id 并迁走 sdk_approval_id）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（StreamEvent 显式白名单；合入 main #125–#127：stub 允许写盘先吐 tool-result，repark 换新内部 id）
 
 ## 当前真相
 
@@ -99,7 +99,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：ACP `usage_update.used` 是当前上下文占用快照、`cost` 是会话累计（RFD https://agentclientprotocol.com/rfds/session-usage 「Cumulative session cost」），一泵里可以多次推送（开会话 / 每轮 prompt / 上下文变化都会发）。按泵相加会让 `usage_json` 和指标 token 虚高；按 run 把累计 `reportedUsd` 再加总会让会话费用乘上 N。正确做法：ACP token / 花费取最新一次；会话 `reportedUsd` 按 `(runtimeId, acpSessionId)` 分组，每组取最后一个累计值再相加，缺这两个 id 的旧行仍按整段取最后一次。不要存差值。`endedAt` 用真实结束时间，不要用 `updatedAt`。会话合计和 `runs[]` 都不要把 ACP token 当成本次消耗。只有本地内核 SDK `finish` 才累加 token；分档看 `finish-step` 的单步 input。握手前就 finalize、或 hydrate 带回旧 id 之后又 fellBack，会把 `acpSessionId` 停在旧值。正确做法：`onSessionBound` 写 `run.acpSessionId`，以最新一次绑定为准。
 - **隐患**：单步 `finish-step` 也走 `onUsage` 会把 `sawUsage` 置真。泵跑了几步后被取消、没到 `finish` 时，`finalizePumpUsage` 不标 incomplete，但合计只从 `finish` 来，这几步 token 丢掉；第一泵还会被当成零用量跳过。正确做法：`sawUsage` 只在 `usage.updated`（`fromTotalUsage`）置真。
 - **隐患**：`step.end` 没带 input 时直接跳过，会信只覆盖了部分步骤的 `maxStepInputTokens`。正确做法：记 `stepInputIncomplete`，写入 usage_json，跨泵 / hydrate 保留；有 `tierContext` 就 `missing: ["tier"]`。一个泵都没跑的 completed 空 `usage_json` 也按 unknown，不要当成 0 token 跳过。`persistActiveRun` 不得对 failed/cancelled 且没泵过的 run 标 incomplete（开流 401 / 泵前取消不计入 unknown）。
-- **隐患**：ACP 流 yield 的已是 `usage.updated` / `generation.warning`，`mapStreamPart` 旧白名单没有这两项会丢掉，ACP 一律 incomplete、拿不到 `reportedCostUsd`。正确做法：点号类型当 StreamEvent 原样放行。
+- **隐患**：ACP 流 yield 的已是 `usage.updated` / `generation.warning`，`mapStreamPart` 旧白名单没有这两项会丢掉，ACP 一律 incomplete、拿不到 `reportedCostUsd`。正确做法：显式白名单（原 7 种 + `session.title` / `session.config` / `usage.updated` / `generation.warning` + 仍走这条路的 `commands.update` / `mcp.app`），禁止「类型里带点号就放行」。未知点号类型丢弃。合入 main #126/#127 后没有新的 StreamEvent type；`approval.required` / `tool.result` 仍在白名单，`approval.resolved` / `run.start` 走出站 `StreamEvent.safeParse`。`emitEvent` / `stampAndSend` / `stampAndBroadcast` 再 `safeParse`，失败丢弃并打开发态日志。
 - Composer `/compact` 走 Enjoy `session.compact`（压缩发给模型的 SQLite 历史，UI 气泡不删）。不要把 `/compact` 当用户句发出去；会话太短会抛 `COMPACTION_TOO_SHORT`，UI 翻词表。ACP `compact=cli` 仍用这条宿主压缩，不是引擎原生 slash。
 - 纠偏不能 `abort` 当前工具。`agent.steer` 只入队；`prepareStep` 仅 `stepNumber > 0` 才 drain+注入（SDK 跨步保留）/ 泵结束才 absorb。step 0 若仍 `pullSteeringMessages()` 会把队列抽空却不注入。`prepareStep` 与 `run.messages` 可能同引用，必须 `mergeSteeringMessages` 去重，禁止再拼一套。没有 ActiveRun：已 idle 立刻 `agent.run`；UI 仍 running 才进 followup 等自启。fail / 收工 / Stop 都 `clearSteer`，避免下一轮把已落库的纠偏再注一次。
 - **隐患**：用户 Stop 后泵仍 `completeAgentRun` 发 `run.end`，会话被标 `needs_review` 挤进待验收。正确做法：`abortAgent` 先标 `userCancelled` 并发 `run.error`；`shouldEmitRunEnd` 在 abort/超时后为假；`failAgentPump` 不把 cancelled 覆盖成 failed。
