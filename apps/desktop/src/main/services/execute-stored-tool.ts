@@ -9,17 +9,23 @@ import { SET_SESSION_HEARTBEAT_TOOL } from "@enjoy-agents/agent-core"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { disconnectedError } from "./ssh/ssh-errors.ts"
-import { createWorkspaceHost, getWorkspace } from "./workspace"
-import { resolveWorkspaceHost } from "./workspace-host-factory"
 import { getApproval } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
-import { callServerTool, listVisibleMcpTools } from "./mcp-service"
 import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
 
 export type StoredToolOutcome =
   | { kind: "ok" }
   | { kind: "desktop_act"; result: Record<string, unknown> }
+
+type ResumeDesktopAct = (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+
+let resumeDesktopActOverride: ResumeDesktopAct | undefined
+
+/** 仅测试：覆盖 desktop_act 恢复，避免拉真执行器。 */
+export function overrideResumeDesktopActForTest(fn: ResumeDesktopAct | null): void {
+  resumeDesktopActOverride = fn ?? undefined
+}
 
 export async function executeStoredTool(run: ActiveRun, pending: PendingApproval): Promise<StoredToolOutcome> {
   const args = storedToolArgs(pending.approvalId)
@@ -28,6 +34,13 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
       return { kind: "desktop_act", result: { success: false, code: "stale_observation" } }
     }
     return { kind: "ok" }
+  }
+  if (pending.name === "desktop_act") {
+    if (resumeDesktopActOverride) {
+      return { kind: "desktop_act", result: await resumeDesktopActOverride(args) }
+    }
+    const { resumeDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
+    return { kind: "desktop_act", result: await resumeDesktopAct(args) }
   }
   const host = await hostForRun(run)
   const path = typeof args.path === "string" ? args.path : ""
@@ -70,12 +83,9 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     await resumeSessionHeartbeat(run.input.sessionId, args)
     return { kind: "ok" }
   }
-  if (pending.name === "desktop_act") {
-    const { resumeDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
-    return { kind: "desktop_act", result: await resumeDesktopAct(args) }
-  }
-  const mcp = findVisibleMcpTool(pending.name)
+  const mcp = await findVisibleMcpTool(pending.name)
   if (mcp) {
+    const { callServerTool } = await import("./mcp-service")
     await callServerTool(mcp.serverId, mcp.name, args, { fromApprovedAgent: true })
     return { kind: "ok" }
   }
@@ -110,6 +120,8 @@ async function resumeSessionHeartbeat(sessionId: string, args: Record<string, un
 }
 
 async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {
+  const { createWorkspaceHost, getWorkspace } = await import("./workspace")
+  const { resolveWorkspaceHost } = await import("./workspace-host-factory")
   if (run.input.workspaceId) {
     const record = await getWorkspace(run.input.workspaceId)
     return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
@@ -135,7 +147,8 @@ async function resumeCodeMode(
 }
 
 /** MCP 工具名经字符清洗不可逆，只能对当前可见工具表反查。 */
-function findVisibleMcpTool(agentToolName: string) {
+async function findVisibleMcpTool(agentToolName: string) {
+  const { listVisibleMcpTools } = await import("./mcp-service")
   for (const item of listVisibleMcpTools()) {
     if (mcpAgentToolName(item.serverId, item.name) === agentToolName) {
       return { serverId: item.serverId, name: item.name }

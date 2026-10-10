@@ -49,6 +49,19 @@ const APPROVAL_COLUMNS = `id, run_id as runId, tool_call_id as toolCallId, name,
               created_at as createdAt, request_args as requestArgs, sdk_approved as sdkApproved,
               sdk_reason as sdkReason, resume_code as resumeCode, sdk_approval_id as sdkApprovalId`
 
+/** 旧行释放三元组时写入 sdk_approval_id，UNIQUE 与回放都不再命中。 */
+export const SUPERSEDED_SDK_PREFIX = "superseded:"
+
+const ACTIVE_SDK_IDENTITY_SQL = `(sdk_approval_id IS NULL OR sdk_approval_id NOT LIKE '${SUPERSEDED_SDK_PREFIX}%')`
+
+export function supersededSdkApprovalId(internalId: string): string {
+  return `${SUPERSEDED_SDK_PREFIX}${internalId}`
+}
+
+export function isSupersededSdkApprovalId(sdkApprovalId: string | null | undefined): boolean {
+  return Boolean(sdkApprovalId?.startsWith(SUPERSEDED_SDK_PREFIX))
+}
+
 /** 同一未决行幂等复用；已决保留内部 id。查找已按 run+toolCall+SDK id 收窄。 */
 export function nextApprovalId(
   existing: Pick<ApprovalRow, "id" | "decision"> | undefined,
@@ -154,7 +167,9 @@ export function getApprovalBySdkIdentity(
   return db
     .prepare(
       `SELECT ${APPROVAL_COLUMNS} FROM approvals
-       WHERE run_id = ? AND tool_call_id = ? AND COALESCE(sdk_approval_id, id) = ?`
+       WHERE run_id = ? AND tool_call_id = ? AND COALESCE(sdk_approval_id, id) = ?
+         AND ${ACTIVE_SDK_IDENTITY_SQL}
+       ORDER BY CASE WHEN decision IS NULL THEN 0 ELSE 1 END, created_at DESC`
     )
     .get(input.runId, input.toolCallId, input.sdkApprovalId) as ApprovalRow | undefined
 }
@@ -167,7 +182,9 @@ export function getApprovalByRunAndSdkId(
   return db
     .prepare(
       `SELECT ${APPROVAL_COLUMNS} FROM approvals
-       WHERE run_id = ? AND COALESCE(sdk_approval_id, id) = ?`
+       WHERE run_id = ? AND COALESCE(sdk_approval_id, id) = ?
+         AND ${ACTIVE_SDK_IDENTITY_SQL}
+       ORDER BY CASE WHEN decision IS NULL THEN 0 ELSE 1 END, created_at DESC`
     )
     .get(input.runId, input.sdkApprovalId) as ApprovalRow | undefined
 }
@@ -180,22 +197,56 @@ export function getApprovalByRunAndToolCall(
     .prepare(
       `SELECT ${APPROVAL_COLUMNS} FROM approvals
        WHERE run_id = ? AND tool_call_id = ?
-       ORDER BY created_at DESC`
+         AND ${ACTIVE_SDK_IDENTITY_SQL}
+       ORDER BY CASE WHEN decision IS NULL THEN 0 ELSE 1 END, created_at DESC`
     )
     .get(input.runId, input.toolCallId) as ApprovalRow | undefined
 }
 
-/** 二次确认 / repark：复用同一行，保留 sdk_approval_id，清掉已决以免 UNIQUE 再插一行。 */
-export function resetApprovalForRepark(
+/** 二次确认 / repark：新内部 id 接走 sdk_approval_id，旧行释放三元组并关闭。 */
+export function migrateApprovalForRepark(
   db: AppDatabase,
-  id: string,
-  patch: { args: string; hmac: string; requestArgs?: string }
-): void {
-  db.prepare(
-    `UPDATE approvals SET args = ?, hmac = ?, request_args = COALESCE(?, request_args),
-       decision = NULL, sdk_approved = NULL, sdk_reason = NULL, resume_code = NULL
-     WHERE id = ?`
-  ).run(patch.args, patch.hmac, patch.requestArgs ?? null, id)
+  input: {
+    existingId: string
+    nextId: string
+    name: string
+    args: string
+    hmac: string
+    requestArgs?: string
+    createdAt: number
+  }
+): { id: string; sdkApprovalId: string } {
+  const existing = getApproval(db, input.existingId)
+  if (!existing) throw new Error("No matching tool approval is waiting.")
+  if (isSupersededSdkApprovalId(existing.sdkApprovalId)) {
+    throw new Error("No matching tool approval is waiting.")
+  }
+  const sdkApprovalId = resolvedSdkApprovalId(existing)
+  db.exec("BEGIN IMMEDIATE")
+  try {
+    db.prepare(
+      `UPDATE approvals SET sdk_approval_id = ?, hmac = ?,
+         decision = COALESCE(decision, 'superseded')
+       WHERE id = ?`
+    ).run(supersededSdkApprovalId(existing.id), "", existing.id)
+    insertApproval(db, {
+      id: input.nextId,
+      runId: existing.runId,
+      toolCallId: existing.toolCallId,
+      name: input.name,
+      args: input.args,
+      hmac: input.hmac,
+      decision: null,
+      createdAt: input.createdAt,
+      requestArgs: input.requestArgs ?? existing.requestArgs ?? input.args,
+      sdkApprovalId
+    })
+    db.exec("COMMIT")
+  } catch (error) {
+    db.exec("ROLLBACK")
+    throw error
+  }
+  return { id: input.nextId, sdkApprovalId }
 }
 
 export function setApprovalDecision(db: AppDatabase, id: string, decision: string): void {

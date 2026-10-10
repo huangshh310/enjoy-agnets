@@ -11,9 +11,10 @@ import {
   getApprovalByRunAndSdkId,
   getApprovalBySdkIdentity,
   insertApproval,
+  isSupersededSdkApprovalId,
+  migrateApprovalForRepark,
   planRememberApproval,
   planSameRunSdkCollision,
-  resetApprovalForRepark,
   resolvedSdkApprovalId,
   setApprovalDecision,
   setApprovalSdkResponse,
@@ -116,7 +117,7 @@ export function rememberApproval(input: {
   return plan
 }
 
-/** 二次确认：复用原行，HMAC / 卡片仍用内部 id，sdk_approval_id 不动。 */
+/** 二次确认：新内部 id，sdk_approval_id 迁到新行；旧行关闭，pending / HMAC 失效。 */
 export function rememberReparkApproval(input: {
   existingApprovalId: string
   runId: string
@@ -137,24 +138,32 @@ export function rememberReparkApproval(input: {
       requestArgs: input.requestArgs
     })
   }
+  const nextId = createId("apr")
   const payload = approvalPayload({
     runId: input.runId,
     toolCallId: input.toolCallId,
-    approvalId: row.id,
+    approvalId: nextId,
     name: input.name,
     args: input.args
   })
-  resetApprovalForRepark(db, row.id, {
+  const migrated = migrateApprovalForRepark(db, {
+    existingId: row.id,
+    nextId,
+    name: input.name,
     args: JSON.stringify(input.args ?? {}),
     hmac: signApproval(approvalSecret(), payload),
-    requestArgs: input.requestArgs === undefined ? undefined : JSON.stringify(input.requestArgs)
+    requestArgs: input.requestArgs === undefined ? undefined : JSON.stringify(input.requestArgs),
+    createdAt: Date.now()
   })
-  return { id: row.id, action: "reuse" as const, sdkApprovalId: resolvedSdkApprovalId(row) }
+  return { id: migrated.id, action: "repark" as const, sdkApprovalId: migrated.sdkApprovalId }
 }
 
 export function sdkApprovalIdFor(approvalId: string): string {
   const row = getApproval(getDatabase(), approvalId)
-  return row ? resolvedSdkApprovalId(row) : approvalId
+  if (!row || isSupersededSdkApprovalId(row.sdkApprovalId)) {
+    throw new Error("No matching tool approval is waiting.")
+  }
+  return resolvedSdkApprovalId(row)
 }
 
 function logSameRunSdkCollision(input: {
@@ -177,7 +186,9 @@ export function assertApprovalHmac(input: {
   toolCallId: string
 }): void {
   const row = getApproval(getDatabase(), input.approvalId)
-  if (!row) throw new Error("No matching tool approval is waiting.")
+  if (!row || isSupersededSdkApprovalId(row.sdkApprovalId)) {
+    throw new Error("No matching tool approval is waiting.")
+  }
   if (row.runId !== input.runId || row.toolCallId !== input.toolCallId) {
     throw new Error("Approval token was tampered.")
   }

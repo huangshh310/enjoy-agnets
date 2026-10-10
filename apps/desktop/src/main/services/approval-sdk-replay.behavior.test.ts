@@ -8,6 +8,7 @@ import { approvalResponseMessage } from "./approval-response-message.ts"
 
 const {
   rememberApproval,
+  rememberReparkApproval,
   recordApprovalDecision,
   recordSdkApprovalResponse,
   sdkApprovalIdFor
@@ -179,11 +180,25 @@ test("二次确认 repark 后 SDK 重发原 id：不得回放 approved true", ()
     args: { observationId: "obs_1", action: "click" },
     requestArgs: { observationId: "obs_1", action: "click" }
   }
-  insertAndDecide(original, "allow")
-  // repark 只把 allow 记在原 id，从不发 tool-approval-response。
+  const first = insertAndDecide(original, "allow")
+  const second = rememberReparkApproval({
+    existingApprovalId: first.id,
+    runId: original.runId,
+    toolCallId: original.toolCallId,
+    name: original.name,
+    args: { observationId: "obs_2", action: "click", needsSecondConfirm: true },
+    requestArgs: original.requestArgs
+  })
+  assert.equal(second.action, "repark")
+  assert.notEqual(second.id, first.id)
+  assert.equal(second.sdkApprovalId, "apr_repark_orig")
   const applied = replayOriginal(original)
   assert.notEqual(applied.kind === "replay" && applied.approved, true)
   assert.equal(applied.kind === "replay" ? applied.approved : false, false)
+})
+
+test("sdkApprovalIdFor 找不到行时 fail closed，不回退内部 id", () => {
+  assert.throws(() => sdkApprovalIdFor("apr_missing_row"), /No matching tool approval is waiting/)
 })
 
 test("带 resumeCode 的 id 被重发：不得得到 approved true", () => {
