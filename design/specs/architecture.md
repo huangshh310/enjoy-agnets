@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（macOS 关窗不 flush；will-quit fail-closed 走 settle restart；renderer bash 会话允许走 ipc-contract 叶子（整条命令完全相同）；isE2eStub 自读 app.isPackaged；读不到 app 当打包；打包态忽略隔离 userData；读不到 app 只让 stub 当打包；明确已打包才忽略隔离 userData；`SecretWriteErrorCode` 只有 `KEYCHAIN_UNAVAILABLE`；Electron 分不开锁了/没装，不加 `KEYCHAIN_LOCKED`）
+> 进程边界与安全基线。最后更新：2026-10-10（macOS 关窗不 flush；will-quit fail-closed 走 settle restart；renderer bash 会话允许走 ipc-contract 叶子（整条命令完全相同）；isE2eStub 自读 app.isPackaged；读不到 app 当打包；打包态忽略隔离 userData；读不到 app 只让 stub 当打包；明确已打包才忽略隔离 userData；`SecretWriteErrorCode` 只有 `KEYCHAIN_UNAVAILABLE`；Electron 分不开锁了/没装，不加 `KEYCHAIN_LOCKED`；vault 禁止 `allowInsecure`；`e2e-plain:` 只 stub+未打包+隔离 userData；`SecretWriteErrorCode` 只有 `KEYCHAIN_UNAVAILABLE`）
 
 ## 当前真相
 
@@ -18,7 +18,7 @@ Main Process（可信）
   app-update        electron-updater → GitHub Releases
   terminal          node-pty + renderer xterm
   db                手写 SQL 迁移 + repository 函数 + node:sqlite（未引入 Drizzle ORM）
-  secrets           safeStorage / OS keychain（含 SSH 登录密码，按 hostId）
+  secrets           safeStorage / OS keychain（含 SSH 登录密码，按 hostId；禁止明文回落，无 allowInsecure）
   computer-use      附属进程：darwin AX / win32 UIA / linux AT-SPI（换行 JSON）
         │  HTTPS（BYOK 直连）
         ▼

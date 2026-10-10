@@ -3,8 +3,9 @@
  */
 import { safeStorage } from "electron"
 import { isE2eStub } from "./e2e-stub.ts"
-import { SecretWriteFailure, isE2eKeychainUnavailable, isSecretStorageAvailable } from "./secret-storage.ts"
+import { SecretWriteFailure, isSecretStorageAvailable } from "./secret-storage.ts"
 import {
+  deleteSecretValue,
   getSecretValue,
   setSecretValue,
 } from "@enjoy-agents/db"
@@ -160,9 +161,15 @@ export async function readVault(): Promise<Vault> {
   return emptyVault()
 }
 
-export async function writeVault(vault: Vault, opts?: { allowInsecure?: boolean }): Promise<void> {
-  setSecretValue(getDatabase(), VAULT_KEY, encryptJson(vault, opts))
+export async function writeVault(vault: Vault): Promise<void> {
+  setSecretValue(getDatabase(), VAULT_KEY, encryptJson(vault))
   // 惰性清理 settings KV 里的旧位置；键不存在时无害。
+  deleteSetting(VAULT_KEY)
+}
+
+/** 整行清掉，不重加密。钥匙串挂掉时删最后一把带密钥档案走这条。 */
+export function clearVault(): void {
+  deleteSecretValue(getDatabase(), VAULT_KEY)
   deleteSetting(VAULT_KEY)
 }
 
@@ -189,20 +196,17 @@ function readVaultBlob(): string | undefined {
 
 const E2E_PLAIN_PREFIX = "e2e-plain:"
 
-function encryptJson(value: unknown, opts?: { allowInsecure?: boolean }): string {
-  if (isE2eKeychainUnavailable() && !opts?.allowInsecure) {
+function encryptJson(value: unknown): string {
+  // 生产永不写明文。e2e-plain 只在 stub+未打包+隔离 userData（isSecretStorageAvailable 三道闸）。
+  if (!isSecretStorageAvailable()) {
     throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   if (isE2eStub() && !safeStorage.isEncryptionAvailable()) {
     return E2E_PLAIN_PREFIX + JSON.stringify(value)
   }
-  if (!isSecretStorageAvailable() && !opts?.allowInsecure) {
-    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
-  }
   try {
     return safeStorage.encryptString(JSON.stringify(value)).toString("base64")
   } catch {
-    if (opts?.allowInsecure) return E2E_PLAIN_PREFIX + JSON.stringify(value)
     throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
 }

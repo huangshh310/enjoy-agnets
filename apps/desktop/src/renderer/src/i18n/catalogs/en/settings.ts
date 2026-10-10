@@ -14,6 +14,9 @@ export const enSettings = {
     writeFailedKeychain:
       "Could not save: the system keychain is not usable right now. The key will not be stored in plaintext. Unlock the keychain, then save again.",
     failed: "Could not save. Please try again.",
+    notSaved: "Not saved",
+    deleteBlockedKeychain:
+      "The keychain is unavailable, so this key cannot be deleted right now. Your other keys are unchanged.",
     saving: "Saving…"
   },
 

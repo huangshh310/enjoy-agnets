@@ -15,7 +15,12 @@ import {
 } from "./provider-editor-writes"
 import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import { secretWriteErrorMessage, unwrapSettingsWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
+import {
+  SecretWriteUiError,
+  secretWriteErrorMessage,
+  unwrapSettingsWrite,
+  type SecretWriteErrorCode
+} from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { showAppToast } from "@renderer/lib/app-toast"
 
@@ -131,8 +136,17 @@ function useProviderWrites(
     },
     remove: async (id: string) => {
       if (!hasIde()) return
-      await writeProviderSnapshot(() => getIde().settings.removeProvider({ id }), queryClient, t)
-      if (editor?.id === id) closeEditor()
+      try {
+        await persistSnapshot(queryClient, unwrapSettingsWrite(await getIde().settings.removeProvider({ id })))
+        if (editor?.id === id) closeEditor()
+      } catch (error) {
+        showAppToast(
+          error instanceof SecretWriteUiError
+            ? t("settings.secretWrite.deleteBlockedKeychain")
+            : secretWriteErrorMessage(error, t),
+          { tone: "error" }
+        )
+      }
     },
     duplicate: async (profile: ProviderPublic) => {
       if (!hasIde()) return
