@@ -56,7 +56,7 @@ export const SessionIdInput = z
   .strict()
 export type SessionIdInput = z.infer<typeof SessionIdInput>
 
-/** 渲染层上报当前聚焦会话。null = 没有前台会话。 */
+/** 前台焦点。切会话 / 窗 focus 带 id；blur / 关闭 / unload 传 null。 */
 export const SessionSetFocusedInput = z
   .object({
     sessionId: z.string().min(1).nullable()

@@ -265,6 +265,42 @@ test("切到已出错会话：残留下的已完成必须收掉，不当本轮�
   )
 })
 
+test("前台出字前失败不当出错，不进需处理；后台同码仍占出错槽", () => {
+  const event = {
+    type: "run.error" as const,
+    runId: "run_pre",
+    message: "ECONNREFUSED",
+    code: "provider_unreachable",
+    preOutput: true
+  }
+  const foreground = ingestAttentionEvent([], {
+    event,
+    sessionId: "ses_fg",
+    sessionTitle: "前台",
+    now: 1,
+    foreground: true
+  })
+  assert.equal(foreground.some((item) => item.kind === "error"), false)
+  assert.equal(stripNeedsCount(foreground), 0)
+  const byCode = ingestAttentionEvent([], {
+    event: { ...event, preOutput: undefined },
+    sessionId: "ses_fg",
+    sessionTitle: "前台",
+    now: 1,
+    foreground: true
+  })
+  assert.equal(byCode.some((item) => item.kind === "error"), false)
+  const background = ingestAttentionEvent([], {
+    event,
+    sessionId: "ses_bg",
+    sessionTitle: "后台",
+    now: 1,
+    foreground: false
+  })
+  assert.equal(background.find((item) => item.kind === "error")?.status, "active")
+  assert.equal(stripNeedsCount(background), 1)
+})
+
 test("run.error 即使 turn 写成 complete 也只出出错，不当本轮又发了已完成", () => {
   const badError = {
     type: "run.error" as const,

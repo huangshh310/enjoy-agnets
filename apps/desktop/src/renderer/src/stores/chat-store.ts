@@ -4,8 +4,14 @@
 import { create } from "zustand"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
+import { noteSendCredentialFromStream } from "../lib/send-credential-memory"
 import { reduceStreamEvent } from "./apply-stream-event"
+import {
+  isDiscardedPreOutputRun,
+  rememberDiscardedPreOutputRun
+} from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
+import { isImmediatePreOutputError } from "./pre-output-rollback"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
 import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
 import type { ChatStore, ChangedFileRow, RepositoryNode, ThreadMessage } from "./chat-store.types"
@@ -138,13 +144,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       })
       return
     }
-    if (shouldBufferComposerEvent(get().running, get().runId)) {
+    const eventRunId = "runId" in event ? event.runId : undefined
+    if (isDiscardedPreOutputRun(eventRunId)) return
+    if (shouldBufferComposerEvent(get().running, get().runId) && !isImmediatePreOutputError(event)) {
       const queued = get().pendingStreamEvents
       if (queued.length >= 80) return
       set({ pendingStreamEvents: [...queued, event] })
       return
     }
+    const beforeCount = get().messages.length
     const patch = reduceStreamEvent(get().messages, event, get().runId)
+    if (event.type === "run.error" && patch.messages.length < beforeCount) {
+      rememberDiscardedPreOutputRun(event.runId)
+    }
+    noteSendCredentialFromStream(event, patch, get().runtimeId)
     const sessionId = get().sessionId
     if (patch.heldResolved && sessionId) {
       holdApprovalResolved(sessionId, patch.heldResolved)

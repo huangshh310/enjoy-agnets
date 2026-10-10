@@ -158,6 +158,72 @@ test("complete 不进安静 Inbox，不占拍板徽标", () => {
   assert.equal(inboxNavCounts(items).approval, 0)
 })
 
+test("拍板 main 行摘要走人话工具名，不摊 sessionTitle · write_file", () => {
+  const zhTool: Record<string, string> = {
+    "chat.toolName.writeFile": "写入文件",
+    "attention.kind.pending_approval": "待审批"
+  }
+  const tZh = (path: string) => zhTool[path] ?? path
+  const items = inboxFromPendingApprovals(
+    [
+      {
+        id: "apr_main",
+        runId: "run_1",
+        sessionId: "ses_live",
+        workspaceId: "ws",
+        sessionTitle: "stub-title",
+        name: "write_file",
+        toolCallId: "tool_1",
+        createdAt: 2
+      }
+    ],
+    {
+      t: tZh,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "stub-title", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  assert.equal(items[0]?.summary, "写入文件")
+  assert.equal(items[0]?.toolName, "write_file")
+  assert.doesNotMatch(items[0]?.summary ?? "", /write_file|stub-title/)
+})
+
+test("拍板摘要是人话工具名加文件短名，不摊 write_file", () => {
+  const zhTool: Record<string, string> = {
+    "chat.toolName.writeFile": "写入文件",
+    "attention.kind.pending_approval": "待审批"
+  }
+  const tZh = (path: string) => zhTool[path] ?? path
+  const items = inboxFromAttention(
+    [
+      attention({
+        id: "ses_live:pending_approval",
+        sessionId: "ses_live",
+        kind: "pending_approval",
+        status: "active",
+        summary: "活着 · write_file",
+        approval: {
+          type: "approval.required",
+          runId: "run_1",
+          toolCallId: "tool_1",
+          approvalId: "apr_1",
+          name: "write_file",
+          args: { path: "notes/e2e-stub.txt" }
+        }
+      })
+    ],
+    { t: tZh, readIds: new Set(), hiddenIds: new Set() }
+  )
+  assert.equal(items.length, 1)
+  assert.equal(items[0]?.summary, "写入文件 e2e-stub.txt")
+  assert.equal(items[0]?.toolName, "write_file")
+  assert.doesNotMatch(items[0]?.summary ?? "", /write_file/)
+})
+
 test("Attention 物化：隐藏项丢弃，必须带 sessionId", () => {
   const items = inboxFromAttention(
     [

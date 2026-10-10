@@ -56,6 +56,19 @@ test("失败阅读器无通过/打回；待验收列勿混失败", () => {
   assert.ok(preview.includes("待验收列勿混失败"))
 })
 
+test("Inbox 行与详情标签走 toolDisplayPhrase，不摊裸工具 id", () => {
+  const reader = readFileSync(join(dir, "../feed/inbox-reader.tsx"), "utf8")
+  const row = readFileSync(join(dir, "../feed/inbox-row.tsx"), "utf8")
+  const toolbar = readFileSync(join(dir, "../feed/inbox-toolbar.tsx"), "utf8")
+  assert.ok(reader.includes("toolDisplayPhrase"))
+  assert.ok(reader.includes("thoughtSecondsWithApproval"))
+  assert.ok(reader.includes("formatInboxOccurredAt"))
+  assert.ok(!reader.includes("toLocaleString"))
+  assert.ok(!reader.includes("toolDisplayName"))
+  assert.ok(row.includes("toolDisplayPhrase"))
+  assert.ok(toolbar.includes('data-testid="page-inbox"'))
+})
+
 test("Inbox 筛只有三档，默认拍板，不要全部/运行中", () => {
   assert.ok(pageSrc.includes('id: "approval"'))
   assert.ok(pageSrc.includes('id: "needs_review"'))

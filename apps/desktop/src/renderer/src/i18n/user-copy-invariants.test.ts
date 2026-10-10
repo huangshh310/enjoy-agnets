@@ -48,6 +48,16 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       noChatRouteNotice: string
       needModelNotice: string
       adoptedDefaultRouteToast: string
+      credentialInvalidNotice: string
+      credentialNetworkNotice: string
+      credentialForbiddenNotice: string
+      credentialBillingNotice: string
+      goFixKey: string
+      switchModel: string
+      retryDraft: string
+      resendDraft: string
+      resendingDraft: string
+      toolName: { writeFile: string }
     }
     nav: Record<string, string>
     settings: {
@@ -68,6 +78,18 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
         workspaceTitle: string
         capEnginesBody: string
         moreEngines: string
+        credentialInvalid: string
+        credentialUnverified: string
+        credentialRestricted: string
+        credentialUnverifiedNetwork: string
+        credentialUnverifiedTimeout: string
+        credentialUnverifiedUnknown: string
+        credentialUnverifiedForbidden: string
+        credentialUnverifiedBillingBefore: string
+        credentialConsole: string
+        credentialUnverifiedBillingAfter: string
+        readyUnverifiedHint: string
+        readyRestrictedHint: string
       }
       agentTools: { manageProviders: string }
       update: { devSkip: string }
@@ -75,11 +97,11 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       providers: Record<string, string>
     }
     studio: {
-      automations: Record<string, string>
+      automations: Record<string, string> & { failedBar: string }
       instructions: Record<string, string>
       instructionPresets: { minimalDiffs: { tag: string } }
     }
-    pages: { knowledge: { sourcesHealthy: string } }
+    pages: { knowledge: { sourcesHealthy: string }; inbox: { emptyHint: string } }
   }
   assert.equal(z.chat.desktopApprovalTtlFrozen, "等你决定，画面已定格在提问那一刻")
   assert.equal(z.chat.mentionDesktopSheetHint, "这台电脑上能操控的应用")
@@ -127,12 +149,63 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
   assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")
   assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
+  assert.equal(
+    z.chat.credentialInvalidNotice,
+    "密钥没通过：{name} 不认这把密钥，消息没发出去。草稿会留着。"
+  )
+  assert.equal(
+    z.chat.credentialNetworkNotice,
+    "连不上 {name}，消息没发出去。草稿会留着，检查网络后再试。"
+  )
+  assert.equal(
+    z.chat.credentialForbiddenNotice,
+    "{name} 拒绝了这次请求，消息没发出去。草稿会留着，可以换个模型，或稍后再试。"
+  )
+  assert.equal(
+    z.chat.credentialBillingNotice,
+    "{name} 说额度或账单有问题，消息没发出去。草稿会留着，可以先换个模型，处理好后再试。"
+  )
+  assert.equal(z.chat.goFixKey, "改密钥")
+  assert.equal(z.chat.switchModel, "换个模型")
+  assert.equal(z.chat.retryDraft, "再试一次")
+  assert.equal(z.chat.resendDraft, "再发一次")
+  assert.equal(z.chat.resendingDraft, "正在发送…")
   assert.equal(z.chat.needModelNotice, "还差一步：选一个模型，才能发消息。草稿会留着。")
+  assert.equal(z.settings.setupGuide.credentialInvalid, "密钥无效")
+  assert.equal(z.settings.setupGuide.credentialUnverified, "已保存 · 还没验证")
+  assert.equal(z.settings.setupGuide.credentialRestricted, "已保存 · 暂时用不了")
+  assert.equal(z.settings.setupGuide.credentialUnverifiedNetwork, "连不上服务，检查网络后再试。")
+  assert.equal(z.settings.setupGuide.credentialUnverifiedTimeout, "服务半天没回应，稍后再试。")
+  assert.equal(
+    z.settings.setupGuide.credentialUnverifiedUnknown,
+    "暂时没法验证，可以先用，发消息时会再检查。"
+  )
+  assert.equal(
+    z.settings.setupGuide.credentialUnverifiedForbidden,
+    "服务拒绝了这把密钥的请求，可能是权限或地区限制。"
+  )
+  assert.equal(
+    `${z.settings.setupGuide.credentialUnverifiedBillingBefore.replace("{name}", "X")}${z.settings.setupGuide.credentialConsole}${z.settings.setupGuide.credentialUnverifiedBillingAfter}`,
+    "额度或账单有问题，到 X 官网处理好后再试。"
+  )
+  assert.equal(z.settings.setupGuide.readyUnverifiedHint, "密钥还没验证，第一次发消息时会检查。")
+  assert.equal(z.settings.setupGuide.readyRestrictedHint, "{name} 暂时用不了，可以再连一家备用。")
+  assert.equal(z.chat.toolName.writeFile, "写入文件")
+  assert.equal(z.pages.inbox.emptyHint.includes("Inbox"), false)
+  assert.equal(z.studio.automations.failedBar, "进消息「失败」查看 · 不是待验收")
+  assert.doesNotMatch(z.studio.automations.failedBar, /\bInbox\b/)
+  assert.doesNotMatch(z.chat.credentialInvalidNotice, /401|403|ECONNREFUSED/)
+  assert.doesNotMatch(z.chat.credentialNetworkNotice, /401|403|ECONNREFUSED|status/)
+  assert.doesNotMatch(z.chat.credentialForbiddenNotice, /401|402|403|Forbidden|Payment Required/i)
+  assert.doesNotMatch(z.chat.credentialBillingNotice, /401|402|403|Forbidden|Payment Required/i)
   assert.equal(z.chat.adoptedDefaultRouteToast, "之后的新对话默认用「{name}」，可在设置里改。")
   assert.equal(z.chat.goConnect, "去连接")
   assert.equal(z.settings.setupGuide.connectLocalUnverified, "未验证")
   assert.equal(z.settings.setupGuide.connectLocalUnverifiedWhy, "这是远端地址，还没确认能连上，所以现在不能用来对话。")
   assert.equal(z.settings.setupGuide.goVerify, "去验证")
+  assert.equal(z.settings.setupGuide.verifyPending, "正在验证…")
+  assert.equal(z.settings.setupGuide.recheckStillUnreachable, "还是连不上")
+  assert.equal(z.pages.inbox.thoughtSecondsWithApproval, "本轮 {n} 秒（含等待审批）")
   assert.equal(z.settings.providers.pickTitle, "选一家，粘贴密钥")
   assert.equal(z.settings.setupGuide.workspaceTitle, "打开第一个项目")
   assert.equal(z.settings.setupGuide.capEnginesBody, "Enjoy 本地和这台电脑上已经装好的助手，可以在同一条对话里换着用。模型和登录还在各自那边。")
@@ -166,6 +239,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+  assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开。")
+  assert.doesNotMatch(z.chat.sourcesSheetFooter, /可聚焦|path|跳转/)
 })
 
 test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
@@ -173,6 +248,12 @@ test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
   const secretWrite = (zh as { settings: { secretWrite: Record<string, string> } }).settings.secretWrite
   for (const [key, value] of Object.entries(secretWrite)) {
     assert.doesNotMatch(value, leak, `zh settings.secretWrite.${key} leaks keychain English: ${value}`)
+  }
+})
+
+test("中文用户词表不写英文 Inbox，用消息", () => {
+  for (const { key, value } of flattenEntries(zh)) {
+    assert.doesNotMatch(value, /\bInbox\b/, `zh ${key} uses English Inbox: ${value}`)
   }
 })
 

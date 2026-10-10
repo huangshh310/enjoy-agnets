@@ -1,18 +1,22 @@
 /**
  * 完成页摘要：只认 ready；引擎数只读 engineCount，不把引擎就绪写成可以开始。
+ * ready + unverified / forbidden / billing 仍用「可以开始了」标题，只挂副标题。
  */
 import { useThemeMode } from "@/components/application/theme/theme-toggle"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
+import { showReadyRestrictedHint, showReadyUnverifiedHint } from "@renderer/lib/credential-check-ui"
+import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 
 export function ReadySummary({ workspaceName }: { workspaceName: string }) {
   const t = useT()
   const theme = useThemeMode()
   const readiness = useChatReadiness().data
+  const providers = useSettingsSnapshot().data?.providers ?? []
   const ready = readiness?.ready === true
   const engineCount = readiness?.engineCount ?? 0
-  const unverified = ready && readiness?.credentialCheck?.state === "unverified"
   if (!ready) {
     return (
       <p data-testid="ready-need-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
@@ -20,22 +24,65 @@ export function ReadySummary({ workspaceName }: { workspaceName: string }) {
       </p>
     )
   }
-  if (unverified) {
-    return (
-      <p data-testid="ready-unverified-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
-        {t("settings.setupGuide.readyUnverifiedHint")}
-      </p>
-    )
-  }
   const themeLabel = theme === "dark" ? t("common.dark") : t("common.light")
   const workspace = workspaceName
     ? t("settings.setupGuide.readyWorkspace", { name: workspaceName })
     : t("settings.setupGuide.readyNoWorkspace")
+  const connected = readyConnectedLine(readiness, providers, t)
+  const check = readiness?.credentialCheck
+  const restricted = showReadyRestrictedHint({
+    ready,
+    credentialState: check?.state,
+    credentialCode: check?.code
+  })
+  const unverified = showReadyUnverifiedHint({
+    ready,
+    credentialState: check?.state,
+    credentialCode: check?.code
+  })
+  const name = defaultProviderLabel(readiness, providers, t("chat.credentialProviderFallback"))
   return (
-    <p data-testid="ready-ok-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
-      {joinSegments(t("settings.setupGuide.readyEngines", { count: engineCount }), themeLabel, workspace)}
-    </p>
+    <div className="flex flex-col items-center gap-1">
+      <p data-testid="ready-ok-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
+        {joinSegments(
+          connected,
+          t("settings.setupGuide.readyEngines", { count: engineCount }),
+          themeLabel,
+          workspace
+        )}
+      </p>
+      {restricted ? (
+        <p
+          data-testid="ready-restricted-hint"
+          className="flex items-center justify-center gap-1.5 text-center text-caption-1-regular text-status-yellow-text"
+        >
+          <span className="size-1.5 shrink-0 rounded-full bg-status-yellow-text" aria-hidden />
+          {t("settings.setupGuide.readyRestrictedHint", { name })}
+        </p>
+      ) : null}
+      {unverified ? (
+        <p
+          data-testid="ready-unverified-hint"
+          className="flex items-center justify-center gap-1.5 text-center text-caption-1-regular text-text-tertiary"
+        >
+          <span className="size-1.5 shrink-0 rounded-full bg-text-tertiary" aria-hidden />
+          {t("settings.setupGuide.readyUnverifiedHint")}
+        </p>
+      ) : null}
+    </div>
   )
+}
+
+function readyConnectedLine(
+  readiness: ReturnType<typeof useChatReadiness>["data"],
+  providers: Array<{ id: string; name: string }>,
+  t: (path: string, vars?: Record<string, string | number>) => string
+): string {
+  const model = readiness?.defaultRoute?.modelId?.trim()
+  if (!model) return ""
+  const name = defaultProviderLabel(readiness, providers, "")
+  if (!name) return ""
+  return t("settings.setupGuide.readyConnected", { name, model })
 }
 
 const SHORTCUTS = [

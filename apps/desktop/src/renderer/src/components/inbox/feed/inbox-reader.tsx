@@ -18,7 +18,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
-import { useT } from "@renderer/i18n"
+import { useI18n, useT } from "@renderer/i18n"
+import { formatInboxOccurredAt } from "../lib/format-inbox-occurred-at"
+import { toolArgsOf, toolDisplayPhrase } from "@renderer/lib/tool-display-name"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { MarkdownResponse } from "@renderer/components/ai-chat/thread/markdown-response"
 import { parseAssistantPayload } from "@enjoy-agents/ipc-contract"
@@ -39,6 +41,7 @@ export function InboxReader(props: {
   onOpenAction: (item: InboxNotification) => void
 }) {
   const t = useT()
+  const { locale } = useI18n()
   const { item, now, onToggleRead, onOpenAction } = props
   const [copiedId, setCopiedId] = useState(false)
   const [sessionMessages, setSessionMessages] = useState<SessionMessageRow[] | null>(null)
@@ -85,17 +88,19 @@ export function InboxReader(props: {
 
     const parsed = parseAssistantPayload(lastAssistant.content)
     const assistantText = parsed.content.trim() || null
-    let toolNames: string[] = []
-    if (parsed.tools && parsed.tools.length > 0) {
-      toolNames = parsed.tools.map((t) => t.name).filter(Boolean)
-    }
+    const phrases = (parsed.tools ?? [])
+      .filter((tool) => tool.name)
+      .map((tool) => {
+        const args = toolArgsOf(tool) ?? (tool.name === item?.toolName ? item.toolArgs : undefined)
+        return toolDisplayPhrase(tool.name, t, args)
+      })
 
     return {
       latestAssistantText: assistantText,
-      toolsSummary: toolNames.length > 0 ? Array.from(new Set(toolNames)).join(", ") : null,
+      toolsSummary: phrases.length > 0 ? Array.from(new Set(phrases)).join("、") : null,
       thoughtSeconds: parsed.thoughtSeconds ?? null
     }
-  }, [sessionMessages])
+  }, [item?.toolArgs, item?.toolName, sessionMessages, t])
 
   if (!item) {
     return (
@@ -119,7 +124,7 @@ export function InboxReader(props: {
   const theme = getInboxTheme(item.copyKey, t)
   const ThemeIcon = theme.icon
   const relativeTime = inboxTimeLabel(item.occurredAt, now, t)
-  const fullTime = new Date(item.occurredAt).toLocaleString()
+  const fullTime = formatInboxOccurredAt(item.occurredAt, locale)
   const displayTitle = item.sessionTitle || item.title || t("chat.untitledSession")
   const displayWorkspace =
     item.workspaceName ||
@@ -202,9 +207,8 @@ export function InboxReader(props: {
             <h2 className="text-title-2-semibold text-text-primary tracking-tight leading-snug">
               {displayTitle}
             </h2>
-            <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary font-mono">
+            <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary">
               <RiTerminalBoxLine className="size-3.5 text-text-tertiary" />
-              <span>{item.sessionId}</span>
               <button
                 type="button"
                 onClick={handleCopySessionId}
@@ -235,8 +239,8 @@ export function InboxReader(props: {
                   <span>{t("pages.inbox.approvalCardTitle")}</span>
                 </div>
                 {item.toolName ? (
-                  <span className="font-mono text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
-                    {item.toolName}
+                  <span className="text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
+                    {toolDisplayPhrase(item.toolName, t, item.toolArgs)}
                   </span>
                 ) : null}
               </div>
@@ -302,11 +306,11 @@ export function InboxReader(props: {
               {toolsSummary ? (
                 <span className="inline-flex items-center gap-1">
                   <RiToolsLine className="size-3.5 text-text-tertiary" />
-                  <span>工具调用：{toolsSummary}</span>
+                  <span>{t("pages.inbox.toolsCalled", { names: toolsSummary })}</span>
                 </span>
               ) : null}
               {thoughtSeconds ? (
-                <span>思考耗时 {thoughtSeconds} 秒</span>
+                <span>{t("pages.inbox.thoughtSecondsWithApproval", { n: thoughtSeconds })}</span>
               ) : null}
             </div>
           ) : null}
@@ -321,7 +325,9 @@ export function InboxReader(props: {
           ) : item.summary &&
             item.summary !== displayTitle &&
             !item.isAborted &&
-            item.copyKey !== "error" ? (
+            item.copyKey !== "error" &&
+            item.copyKey !== "pending_approval" &&
+            item.copyKey !== "ask_user" ? (
             <div className="text-body-regular text-text-secondary leading-relaxed">
               {item.summary}
             </div>

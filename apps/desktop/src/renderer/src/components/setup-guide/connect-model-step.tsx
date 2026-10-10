@@ -2,15 +2,20 @@
  * 向导「连一个模型」：点选再按继续。未验证本机模型给人话 + 去验证。
  */
 import { RiKey2Line, RiServerLine, RiTimeLine } from "@remixicon/react"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { cx } from "@/utils/cx"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { CredentialCheckStatus } from "@renderer/components/settings/providers/credential-check-status"
 import { SecretWritePreflight } from "@renderer/components/settings/secret-write-notice"
+import { useRecheckProvider } from "@renderer/hooks/use-recheck-provider"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
+import { providerEditSearch } from "@renderer/lib/open-provider-edit"
+import { useNavigate } from "@tanstack/react-router"
 import {
   connectModelOptions,
   connectModelRowAction,
@@ -30,6 +35,11 @@ export function ConnectModelStep({
 }) {
   const t = useT()
   const readiness = useChatReadiness().data
+  const navigate = useNavigate()
+  const recheck = useRecheckProvider()
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const keyId = resolveDefaultProviderId(readiness, providers)
+  const keyProfile = providers.find((row) => row.id === keyId)
   const options = connectModelOptions(readiness)
   return (
     <div className="flex flex-col gap-2">
@@ -48,6 +58,29 @@ export function ConnectModelStep({
             hint={t(connectModelRowHintKey(option), hintVars(option))}
             connectedLabel={t("settings.setupGuide.connectApiKeyConnected")}
             unverifiedLabel={t("settings.setupGuide.connectLocalUnverified")}
+            credential={
+              option.kind === "api_key" && option.connected ? (
+                <CredentialCheckStatus
+                  check={readiness?.credentialCheck}
+                  hasKey
+                  pending={Boolean(keyId && recheck.pendingId === keyId)}
+                  providerKind={keyProfile?.kind}
+                  providerName={keyProfile?.name}
+                  onFixKey={
+                    keyId
+                      ? () => {
+                          void navigate({
+                            to: "/settings/$section",
+                            params: { section: "providers" },
+                            search: providerEditSearch(keyId)
+                          })
+                        }
+                      : undefined
+                  }
+                  onRecheck={keyId ? () => void recheck.recheck(keyId) : undefined}
+                />
+              ) : null
+            }
           />
         </li>
       ))}
@@ -63,7 +96,8 @@ function ConnectModelRow({
   title,
   hint,
   connectedLabel,
-  unverifiedLabel
+  unverifiedLabel,
+  credential
 }: {
   option: ConnectModelOption
   selected: boolean
@@ -72,14 +106,22 @@ function ConnectModelRow({
   hint: string
   connectedLabel: string
   unverifiedLabel: string
+  credential?: ReactNode
 }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       data-testid={`connect-model-${option.kind}`}
       data-verified={option.kind === "local_model" ? String(option.verified) : undefined}
       data-recommended={option.kind !== "later" && option.recommended ? "true" : undefined}
       onClick={onChoose}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onChoose()
+        }
+      }}
       className={cx(
         "flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-none",
         GUIDE_TILE_CLASS,
@@ -99,13 +141,14 @@ function ConnectModelRow({
         <span className="text-body-2-regular text-text-secondary">{hint}</span>
         {option.kind === "local_model" && !option.verified ? <VerifyLocalAction service={option.service} /> : null}
       </span>
-      {option.kind === "api_key" && option.connected ? (
-        <span className="inline-flex items-center gap-1.5 text-caption-1-medium text-state-success-text">
-          <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
-          {connectedLabel}
-        </span>
-      ) : null}
-    </button>
+      {credential ??
+        (option.kind === "api_key" && option.connected ? (
+          <span className="inline-flex items-center gap-1.5 text-caption-1-medium text-state-success-text">
+            <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
+            {connectedLabel}
+          </span>
+        ) : null)}
+    </div>
   )
 }
 

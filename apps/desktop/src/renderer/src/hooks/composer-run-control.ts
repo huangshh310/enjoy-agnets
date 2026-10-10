@@ -60,6 +60,20 @@ export function dropEmptyPendingAssistant() {
   store.setMessages(store.messages.slice(0, -1))
 }
 
+/** 出字前失败：丢掉乐观用户句 + 空助手。Stop 仍只丢空助手。 */
+export function dropOptimisticTurn(sentContent?: string) {
+  const store = useChatStore.getState()
+  let messages = store.messages
+  if (isEmptyStreamingAssistant(messages.at(-1))) {
+    messages = messages.slice(0, -1)
+  }
+  const last = messages.at(-1)
+  if (last?.role === "user" && (!sentContent || last.content === sentContent)) {
+    messages = messages.slice(0, -1)
+  }
+  if (messages !== store.messages) store.setMessages(messages)
+}
+
 function finalizeStreamingAssistant(opts?: { aborted?: boolean }) {
   const store = useChatStore.getState()
   const last = store.messages.at(-1)

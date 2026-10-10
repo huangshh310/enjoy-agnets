@@ -27,6 +27,7 @@ test("session.setFocused 只要可空 sessionId", () => {
   assert.equal(SessionSetFocusedInput.safeParse({ sessionId: null }).success, true)
   assert.equal(SessionSetFocusedInput.safeParse({ sessionId: "" }).success, false)
   assert.equal(SessionSetFocusedInput.safeParse({ sessionId: "s1", extra: 1 }).success, false)
+  assert.equal(SessionSetFocusedInput.safeParse({}).success, false)
 })
 
 test("session.archive 入参只要 sessionId", () => {

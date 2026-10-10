@@ -11,7 +11,7 @@ import {
   classifyChatSendFailure
 } from "@enjoy-agents/ipc-contract/credential-check"
 import { createE2eStubStream } from "./e2e-stub.ts"
-import { e2eSendFixture, e2eSendFixtureError } from "./e2e-send-fixture.ts"
+import { e2eSendFixture, e2eSendFixtureError, resetE2eSendFixtureForTest } from "./e2e-send-fixture.ts"
 
 const isolated = {
   ENJOY_E2E_STUB: "1",
@@ -19,7 +19,16 @@ const isolated = {
   ENJOY_E2E_SEND: "rejected"
 }
 
+test("ENJOY_E2E_SEND_ONCE 只炸第一次", () => {
+  resetE2eSendFixtureForTest()
+  const once = { ...isolated, ENJOY_E2E_SEND_ONCE: "1" }
+  assert.equal(e2eSendFixture(once, false, "/tmp/e2e-ud"), "rejected")
+  assert.equal(e2eSendFixture(once, false, "/tmp/e2e-ud"), undefined)
+  resetE2eSendFixtureForTest()
+})
+
 test("ENJOY_E2E_SEND 要 stub + 未打包 + 隔离 userData 路径对得上", () => {
+  resetE2eSendFixtureForTest()
   assert.equal(e2eSendFixture({ ...isolated }, false, "/tmp/e2e-ud"), "rejected")
   assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "unreachable" }, false, "/tmp/e2e-ud"), "unreachable")
   assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "forbidden" }, false, "/tmp/e2e-ud"), "forbidden")

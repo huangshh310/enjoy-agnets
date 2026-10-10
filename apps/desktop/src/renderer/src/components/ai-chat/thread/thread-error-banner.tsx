@@ -17,8 +17,7 @@ import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
 import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
-import { useT, type TranslateFn } from "@renderer/i18n"
-import { peekChatReadiness } from "@renderer/hooks/chat-readiness-cache"
+import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
 import { classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
@@ -26,9 +25,11 @@ import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
+import { ThreadCredentialInvalidNotice } from "./thread-credential-invalid-notice"
+import { ThreadCredentialNetworkNotice } from "./thread-credential-network-notice"
+import { ThreadCredentialRestrictedNotice } from "./thread-credential-restricted-notice"
 import { ThreadNeedModelNotice } from "./thread-need-model-notice"
 import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
-import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
 const REMOTE_INSTALL_MAP: Record<string, string> = {
   deepseek: "npm i -g @deepseek-ai/dsh",
@@ -59,69 +60,15 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
     return <ThreadNoChatRouteNotice onDismiss={() => setError(null)} className={className} />
   }
   if (kind === "credential_invalid") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-credential-invalid-notice"
-        kind="credential_invalid"
-        tone="error"
-        message={t("chat.credentialInvalidNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
+    return <ThreadCredentialInvalidNotice onDismiss={() => setError(null)} className={className} />
   }
   if (kind === "provider_unreachable") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-provider-unreachable-notice"
-        kind="provider_unreachable"
-        message={t("chat.providerUnreachableNotice", { name: unreachableProviderName(t) })}
-        actionLabel={t("chat.tryAgain")}
-        actionIcon={<RiRefreshLine className="size-3" />}
-        onAction={() => {
-          setError(null)
-          retryKeptDraft()
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
+    return <ThreadCredentialNetworkNotice onDismiss={() => setError(null)} className={className} />
   }
-  if (kind === "provider_forbidden") {
+  if (kind === "provider_forbidden" || kind === "provider_billing") {
     return (
-      <ThreadSendGateNotice
-        testId="thread-provider-forbidden-notice"
-        kind="provider_forbidden"
-        message={t("chat.providerForbiddenNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
-  }
-  if (kind === "provider_billing") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-provider-billing-notice"
-        kind="provider_billing"
-        message={t("chat.providerBillingNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
+      <ThreadCredentialRestrictedNotice
+        code={kind}
         onDismiss={() => setError(null)}
         className={className}
       />
@@ -370,28 +317,4 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
       </div>
     </div>
   )
-}
-
-function unreachableProviderName(t: TranslateFn): string {
-  const snap = peekChatReadiness()
-  const route = snap?.defaultRoute
-  if (route?.runtimeId && route.runtimeId !== "enjoy-local") {
-    const name = snap?.engines.find((row) => row.runtimeId === route.runtimeId)?.name
-    if (name) return name
-  }
-  const key = snap?.apiKeys.find((row) => row.providerId === route?.profileId) ?? snap?.apiKeys[0]
-  if (key?.presetId) return key.presetId
-  return String(t("chat.providerFallbackName"))
-}
-
-function retryKeptDraft(): void {
-  const state = useChatStore.getState()
-  if (state.composer.trim()) {
-    void sendComposerMessage()
-    return
-  }
-  const lastUser = [...state.messages].reverse().find((item) => item.role === "user")
-  if (!lastUser?.content) return
-  state.setComposer(lastUser.content)
-  void sendComposerMessage()
 }

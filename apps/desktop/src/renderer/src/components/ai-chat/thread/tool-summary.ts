@@ -4,6 +4,7 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { TranslateFn } from "../../../i18n/use-i18n.ts"
 import { isDevCopyEnabled } from "../../../lib/dev-copy.ts"
+import { toolDisplayName } from "../../../lib/tool-display-name.ts"
 import { asRecord, readString } from "../../../lib/record.ts"
 import {
   desktopApprovalSummaryKey,
@@ -19,7 +20,7 @@ export function formatToolName(name: string) {
 export function formatToolLabel(name: string, t: TranslateFn, args?: unknown): string {
   if (isDevCopyEnabled()) return formatToolName(name)
   if (name.startsWith("desktop_")) return desktopToolLabel(name, t, args)
-  return formatToolName(name)
+  return toolDisplayName(name, t)
 }
 
 export function desktopToolLabel(name: string, t: TranslateFn, args?: unknown): string {

@@ -83,13 +83,20 @@ test("ACP 未登录不是可重试供应商错误", () => {
   )
   assert.equal(classifyThreadError(NO_CHAT_ROUTE), "no_chat_route")
   assert.equal(classifyThreadError(CREDENTIAL_INVALID), "credential_invalid")
+  assert.notEqual(classifyThreadError(CREDENTIAL_INVALID), "no_chat_route")
   assert.equal(classifyThreadError(PROVIDER_FORBIDDEN), "provider_forbidden")
   assert.equal(classifyThreadError(PROVIDER_BILLING), "provider_billing")
   assert.notEqual(classifyThreadError(PROVIDER_FORBIDDEN), "credential_invalid")
   assert.notEqual(classifyThreadError(PROVIDER_BILLING), "credit")
   assert.equal(classifyThreadError(PROVIDER_UNREACHABLE), "provider_unreachable")
   assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "no_chat_route")
+  assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "credential_invalid")
   assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "generic")
+  assert.equal(classifyThreadError("provider_forbidden"), "provider_forbidden")
+  assert.equal(classifyThreadError("provider_billing"), "provider_billing")
+  assert.notEqual(classifyThreadError("provider_forbidden"), "credential_invalid")
+  assert.notEqual(classifyThreadError("provider_billing"), "credit")
+  assert.notEqual(classifyThreadError("provider_billing"), "generic")
   assert.equal(
     classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
     "no_chat_route"

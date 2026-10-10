@@ -6,6 +6,8 @@ export type SettingsSectionSearch = {
   tool?: string
   from?: string
   create?: string
+  edit?: string
+  focus?: string
 }
 
 export function parseSettingsSectionSearch(search: Record<string, unknown>): SettingsSectionSearch {
@@ -13,7 +15,9 @@ export function parseSettingsSectionSearch(search: Record<string, unknown>): Set
     tab: asSearchToken(search.tab),
     tool: asSearchToken(search.tool),
     from: asSearchToken(search.from),
-    create: asSearchToken(search.create)
+    create: asSearchToken(search.create),
+    edit: asSearchToken(search.edit),
+    focus: asSearchToken(search.focus)
   }
 }
 

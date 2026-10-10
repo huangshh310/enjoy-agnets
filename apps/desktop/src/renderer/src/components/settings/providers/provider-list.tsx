@@ -31,7 +31,7 @@ export function ProviderList({
   if (providers.length === 0) return null
 
   return (
-    <div className="divide-y divide-separator-border/60">
+    <div data-testid="providers-configured-list" className="divide-y divide-separator-border/60">
       {providers.map((profile) => (
         <ProviderConfiguredRow
           key={profile.id}

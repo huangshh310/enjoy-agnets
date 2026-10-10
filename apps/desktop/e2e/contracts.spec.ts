@@ -22,6 +22,21 @@ import { join } from "node:path"
 
 const routerSource = readFileSync(join(process.cwd(), "src/renderer/src/router.tsx"), "utf8")
 
+test("根路由有错误边界，崩溃回退走人话不摊英文堆栈", () => {
+  const appSource = readFileSync(join(process.cwd(), "src/renderer/src/App.tsx"), "utf8")
+  const copySource = readFileSync(
+    join(process.cwd(), "src/renderer/src/components/layout/crash-fallback/crash-fallback-copy.ts"),
+    "utf8"
+  )
+  expect(appSource.includes("RendererErrorBoundary")).toBeTruthy()
+  expect(routerSource.includes("errorComponent")).toBeTruthy()
+  expect(routerSource.includes("CrashFallbackHost")).toBeTruthy()
+  expect(copySource.includes('title: "这里出了点问题。"')).toBeTruthy()
+  expect(copySource.includes('reload: "重新加载"')).toBeTruthy()
+  expect(copySource.includes('title: "This view hit a problem."')).toBeTruthy()
+  expect(copySource.includes('title: "Something went wrong!"')).toBeFalsy()
+})
+
 test("Hash 路由包含 Knowledge / Workflows / Media / MCP / Skills / Observability", () => {
   for (const path of ["/knowledge", "/workflows", "/media", "/mcp", "/skills", "/observability"]) {
     expect(routerSource.includes(`path: "${path}"`)).toBeTruthy()

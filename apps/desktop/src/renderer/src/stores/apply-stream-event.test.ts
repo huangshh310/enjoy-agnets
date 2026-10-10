@@ -255,6 +255,7 @@ test("首发失败稳定码写回 error 并留下草稿", () => {
   )
   assert.equal(invalid.error, "credential_invalid")
   assert.equal(invalid.composer, "hello draft")
+  assert.equal(invalid.messages.length, 0)
   const unreachable = reduceStreamEvent(
     messages,
     { type: "run.error", runId: "run_1", message: "ECONNREFUSED", code: "provider_unreachable" },
@@ -262,6 +263,7 @@ test("首发失败稳定码写回 error 并留下草稿", () => {
   )
   assert.equal(unreachable.error, "provider_unreachable")
   assert.equal(unreachable.composer, "hello draft")
+  assert.equal(unreachable.messages.length, 0)
   const forbidden = reduceStreamEvent(
     messages,
     { type: "run.error", runId: "run_1", message: "403", code: "provider_forbidden" },
@@ -277,6 +279,163 @@ test("首发失败稳定码写回 error 并留下草稿", () => {
   assert.equal(billing.error, "provider_billing")
   assert.equal(billing.composer, "hello draft")
   assert.equal(JSON.stringify(invalid).includes("Unauthorized"), false)
+})
+
+test("preOutput=true 丢掉乐观气泡并把草稿还回 Composer", () => {
+  const prior: ThreadMessage[] = [
+    { id: "msg_old", role: "user", content: "earlier", createdAt: 1 },
+    { id: "msg_old_a", role: "assistant", content: "ok", createdAt: 2 }
+  ]
+  const messages: ThreadMessage[] = [
+    ...prior,
+    { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 3 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 4, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "ECONNREFUSED",
+      code: "provider_unreachable",
+      preOutput: true
+    },
+    "run_1"
+  )
+  assert.equal(patch.error, "provider_unreachable")
+  assert.equal(patch.composer, "hello draft")
+  assert.equal(patch.running, false)
+  assert.equal(patch.runId, null)
+  assert.deepEqual(
+    patch.messages.map((row) => row.id),
+    ["msg_old", "msg_old_a"]
+  )
+})
+
+test("preOutput=false 只有 cite：闸码仍撕泡还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello cite", createdAt: 1 },
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: true,
+      sources: [{ sourceId: "s1", title: "README.md", path: "README.md" }]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_forbidden",
+      code: "provider_forbidden",
+      preOutput: false
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello cite")
+  assert.equal(patch.error, "provider_forbidden")
+})
+
+test("preOutput=true 撕掉只有 cite 的助手并还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello cite", createdAt: 1 },
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: true,
+      sources: [{ sourceId: "s1", title: "README.md", path: "README.md" }]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: true
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello cite")
+})
+
+test("preOutput=false 且尚未出字：Zod 缺省回落后仍撕泡还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 2, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: false
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello draft")
+  assert.equal(patch.error, "provider_unreachable")
+})
+
+test("尚未认领 runId 的出字前失败也撕泡还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello unclaimed", createdAt: 1 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 2, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_fast",
+      message: "credential_invalid",
+      code: "credential_invalid",
+      preOutput: true
+    },
+    null
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello unclaimed")
+  assert.equal(patch.error, "credential_invalid")
+  assert.equal(patch.running, false)
+})
+
+test("已经出字后即使闸码也不回滚气泡", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "partial",
+      createdAt: 2,
+      streaming: true
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "later fail",
+      code: "provider_unreachable",
+      preOutput: false
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 2)
+  assert.equal(patch.messages.at(-1)?.content, "partial")
+  assert.equal(patch.composer, "hello draft")
+  assert.equal(patch.error, "provider_unreachable")
 })
 
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {

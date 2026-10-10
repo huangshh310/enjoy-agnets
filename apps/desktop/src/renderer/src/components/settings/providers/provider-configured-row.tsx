@@ -6,10 +6,19 @@ import { RiFlashlightLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { AgentBindRef, ProviderPublic } from "@enjoy-agents/ipc-contract"
 import { ProviderIcon } from "./provider-icons"
+import { CredentialCheckStatus } from "./credential-check-status"
 import { ProviderRowActions } from "./provider-row-actions"
 import { WIRE_LABEL, wireLinesOf } from "./provider-wire-lines"
 import type { PingStateMap } from "./use-provider-settings"
+import { useNavigate } from "@tanstack/react-router"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useRecheckProvider } from "@renderer/hooks/use-recheck-provider"
 import { useT } from "@renderer/i18n"
+import { resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
+import { providerCredentialCheck } from "@renderer/lib/provider-credential-check"
+import { providerEditSearch } from "@renderer/lib/open-provider-edit"
+import { useRememberedSendCredential } from "@renderer/lib/send-credential-memory"
 
 export function ProviderConfiguredRow({
   profile,
@@ -36,6 +45,15 @@ export function ProviderConfiguredRow({
 }) {
   const hasKeyIssue = profile.requiresKey && !profile.hasKey
   const muted = !profile.enabled
+  const recheck = useRecheckProvider()
+  const navigate = useNavigate()
+  const readiness = useChatReadiness().data
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const remembered = useRememberedSendCredential()
+  const check = providerCredentialCheck(profile.id, profile.credentialCheck, readiness, {
+    defaultId: resolveDefaultProviderId(readiness, providers),
+    remembered
+  })
   return (
     <article
       className={cx(
@@ -54,6 +72,24 @@ export function ProviderConfiguredRow({
           <RowRefs refs={refs} onOpenAgent={onOpenAgent} />
         </div>
       </div>
+      {profile.hasKey ? (
+        <CredentialCheckStatus
+          check={check}
+          hasKey
+          pending={recheck.pendingId === profile.id}
+          providerKind={profile.kind}
+          providerName={profile.name}
+          onFixKey={() => {
+            onEdit()
+            void navigate({
+              to: "/settings/$section",
+              params: { section: "providers" },
+              search: providerEditSearch(profile.id)
+            })
+          }}
+          onRecheck={() => void recheck.recheck(profile.id)}
+        />
+      ) : null}
       <ProviderRowActions
         profile={profile}
         pingState={pingState}

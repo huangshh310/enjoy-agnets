@@ -67,6 +67,25 @@ test("空闲时 kind=agent 的 run.start 仍归前台（续跑 / 恢复）", () 
   )
 })
 
+test("当前会话出字前失败即使空闲也归前台", () => {
+  assert.equal(
+    belongsToForeground(
+      {
+        type: "run.error",
+        runId: "run_fail",
+        message: "provider_unreachable",
+        code: "provider_unreachable",
+        preOutput: true
+      },
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    true
+  )
+})
+
 test("主 run 结束后标题补全 run.start 不归前台", () => {
   assert.equal(
     belongsToForeground(

@@ -13,6 +13,7 @@ import {
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { ChatSendErrorCode } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { rollbackPreOutputTurn, shouldRollbackPreOutput } from "./pre-output-rollback"
 import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
@@ -22,7 +23,7 @@ import {
   isForeignRunId,
   shouldFinalizeComposerRun
 } from "./stream-run-scope"
-import { dropPreOutputOptimisticTurn, lastUserText } from "./drop-pre-output-turn"
+import { lastUserText } from "./drop-pre-output-turn"
 
 export type StreamPatch = {
   messages: ThreadMessage[]
@@ -81,6 +82,10 @@ function applyTerminalEvent(
   activeRunId: string | null
 ): StreamPatch | null {
   if (event.type !== "run.end" && event.type !== "run.error") return null
+  if (event.type === "run.error") {
+    const preOutput = applyUnclaimedPreOutputError(messages, event, activeRunId)
+    if (preOutput) return preOutput
+  }
   if (!shouldFinalizeComposerRun(event.runId, activeRunId)) return { messages }
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) {
@@ -107,17 +112,10 @@ function applyTerminalEvent(
       }
     }
     const code = chatSendErrorCodeOf(event)
-    const lastUser = lastUserText(messages)
-    if (event.preOutput === true) {
-      return {
-        messages: dropPreOutputOptimisticTurn(messages),
-        pendingApproval: null,
-        running: false,
-        runId: null,
-        error: code ?? event.message,
-        ...(lastUser ? { composer: lastUser } : {})
-      }
+    if (shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) {
+      return rolledPreOutputPatch(messages, code ?? event.message)
     }
+    const lastUser = lastUserText(messages)
     return {
       messages: finalizeRun(messages),
       running: false,
@@ -126,6 +124,31 @@ function applyTerminalEvent(
     }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
+}
+
+/** agent.run 返回前 runId 还空：出字前失败仍要撕泡还草稿。 */
+function applyUnclaimedPreOutputError(
+  messages: ThreadMessage[],
+  event: StreamEvent & { type: "run.error" },
+  activeRunId: string | null
+): StreamPatch | null {
+  if (activeRunId && activeRunId !== event.runId) return null
+  const code = chatSendErrorCodeOf(event)
+  if (!shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) return null
+  return rolledPreOutputPatch(messages, code ?? event.message)
+}
+
+function rolledPreOutputPatch(messages: ThreadMessage[], error: string): StreamPatch {
+  const draft = lastUserText(messages)
+  const rolled = rollbackPreOutputTurn(messages, { dropAssistant: true })
+  return {
+    messages: rolled.messages,
+    pendingApproval: null,
+    running: false,
+    runId: null,
+    error,
+    composer: rolled.composer || draft
+  }
 }
 
 function applyApprovalEvent(

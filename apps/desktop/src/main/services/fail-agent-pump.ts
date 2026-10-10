@@ -75,8 +75,9 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
   }
   const code = sendFail?.code ?? (isPreOutputFailureCode(classified.message) ? classified.message : undefined)
   const message = code ?? classified.message
-  if (shouldRollbackPreOutput({ producedOutput: Boolean(run.producedOutput), code })) {
-    emitPreOutputFail(runId, run, code)
+  const rollback = { producedOutput: Boolean(run.producedOutput), code }
+  if (shouldRollbackPreOutput(rollback)) {
+    emitPreOutputFail(runId, run, rollback.code)
     return
   }
   persistActiveRun(run, runId, "failed", message)
@@ -96,6 +97,7 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     runId,
     message,
     ...(code ? { code } : {}),
+    preOutput: false,
     turn
   })
   if (classified.errorClass !== "timeout") return
@@ -152,5 +154,11 @@ function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {
   settleRun(runId, { status: "error", summary: CATCH_UP_APPROVAL_TIMEOUT })
   const turn = { ...turnOutcomeForRun(run, "error"), attention: "neutral" as const }
   persistTurnWorkflow(run.input.sessionId, turn)
-  emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT, turn })
+  emitEvent(run.window, {
+    type: "run.error",
+    runId,
+    message: CATCH_UP_APPROVAL_TIMEOUT,
+    preOutput: false,
+    turn
+  })
 }
