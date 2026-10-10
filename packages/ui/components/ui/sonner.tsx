@@ -22,7 +22,6 @@ export function Toaster({ offsetLeft = 0 }: { offsetLeft?: number }) {
       expand={false}
       visibleToasts={3}
       duration={2400}
-      pauseWhenPageIsHidden
       toastOptions={{
         unstyled: true,
         classNames: {
