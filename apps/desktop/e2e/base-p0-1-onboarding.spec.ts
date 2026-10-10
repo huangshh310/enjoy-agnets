@@ -151,7 +151,7 @@ test("S1-2 添加表单、已连上、末屏可以开始了", async () => {
   }
 })
 
-test("未验证本机模型露出提示，末屏仍还差一步", async () => {
+test("未验证本机模型露出提示，有密钥时末屏可以开始", async () => {
   test.setTimeout(180_000)
   const blocked = canLaunchElectron()
   test.skip(Boolean(blocked), blocked ?? "")
@@ -176,8 +176,8 @@ test("未验证本机模型露出提示，末屏仍还差一步", async () => {
     await clickGuidePrimary(window)
     await window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
     await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "还差一步：连一个模型" }).waitFor({ timeout: 8_000 })
-    await expect(window.getByRole("heading", { name: "可以开始了" })).toHaveCount(0)
+    await window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
+    await expect(window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
     await snap(window, "s1-unverified-ready-need")
   } finally {
     await app.close()
@@ -220,10 +220,10 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
     })
     await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toContainText("草稿会留着")
     await expect(window.locator('[data-testid="composer-input"]')).toHaveValue("还差一步也要留下草稿")
-    await expect(window.getByTestId("no-chat-route-connect")).toHaveText("去连接")
+    await expect(window.getByTestId("thread-no-chat-route-notice-action")).toHaveText("去连接")
     await snap(window, "s1-6-no-chat-route")
 
-    await window.getByTestId("no-chat-route-connect").click()
+    await window.getByTestId("thread-no-chat-route-notice-action").click()
     await window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, { timeout: 8_000 })
     await expect(window.getByTestId("provider-pick-panel")).toBeVisible()
     await snap(window, "s1-6-go-connect-form")

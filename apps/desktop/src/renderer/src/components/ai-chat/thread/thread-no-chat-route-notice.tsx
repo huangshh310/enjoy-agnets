@@ -18,6 +18,7 @@ export function ThreadNoChatRouteNotice({
   return (
     <ThreadSendGateNotice
       testId="thread-no-chat-route-notice"
+      kind="no_chat_route"
       message={t("chat.noChatRouteNotice")}
       actionLabel={t("chat.goConnect")}
       actionIcon={<RiKey2Line className="size-3" />}
