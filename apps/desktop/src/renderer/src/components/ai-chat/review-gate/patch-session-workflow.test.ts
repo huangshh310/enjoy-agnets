@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { nextLocalSessionWorkflow } from "./patch-session-workflow.ts"
+import { nextLocalSessionWorkflow } from "./next-local-session-workflow.ts"
 import { reviewGatePhase } from "./review-gate-phase.ts"
 
 test("只读轮收工：侧栏 / 看板 / Inbox 仍待验收", () => {

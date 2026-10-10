@@ -25,12 +25,10 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
   if (event.type === "run.start") return null
-  // 用户停 / 归档只信 turn.neutral。真出错只信 turn.error；没有 turn 才回落 event 类型。
+  // 只信 turn.neutral 不当出错（Stop / 归档）。其余一律 error，禁止把 run.error 折成 complete。
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) return "complete"
     if (event.turn?.attention === "neutral") return null
-    if (event.turn?.attention === "error") return "error"
-    if (event.turn) return null
     return "error"
   }
   if (event.type === "run.end" && event.turn) {

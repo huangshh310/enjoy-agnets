@@ -6,8 +6,8 @@ import { test } from "node:test"
 import { getApproval } from "@enjoy-agents/db"
 import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { consumeApprovalRequired } from "./consume-approval-required.ts"
-import { getDatabase } from "./database.ts"
-import { emptyTranscript } from "./persist-session.ts"
+
+const { getDatabase } = await import("./database.ts")
 
 async function runConsume(input: {
   name: string
@@ -32,7 +32,7 @@ async function runConsume(input: {
     {
       runId: input.runId,
       tools: input.tools,
-      transcript: emptyTranscript(),
+      transcript: { visible: "", think: "", pendingThink: false },
       onApproval: (pending) => cards.push(pending),
       onDecidedReplay: (message) => {
         const part = Array.isArray(message.content) ? message.content[0] : undefined
