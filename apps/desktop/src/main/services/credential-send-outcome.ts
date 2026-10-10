@@ -1,5 +1,6 @@
 /**
  * 首发结果回写 credentialCheck：成功 → ok；401/403 → invalid；网络不改。
+ * 不静态拉 chat-readiness / secrets，避免行为测试吃进 ACP 子进程类型。
  */
 import {
   classifyChatSendFailure,
@@ -9,9 +10,7 @@ import {
   type CredentialCheck
 } from "@enjoy-agents/ipc-contract/credential-check"
 import { classifyError } from "@enjoy-agents/agent-core"
-import { peekCachedChatReadiness, pushChatReadinessNow } from "./chat-readiness"
 import { writeCredentialCheck } from "./credential-check-store.ts"
-import { getActiveProfile } from "./secrets.ts"
 import type { ActiveRun } from "./agent-run-state"
 
 export function httpStatusOf(error: unknown): number | undefined {
@@ -44,6 +43,7 @@ export async function persistCredentialAfterSend(
   const at = new Date().toISOString()
   const check = outcome === "ok" ? credentialCheckAfterOkSend(at) : credentialCheckAfterAuthRejected(at)
   writeCredentialCheck(profileId, check)
+  const { pushChatReadinessNow } = await import("./chat-readiness")
   await pushChatReadinessNow().catch(() => undefined)
   return check
 }
@@ -51,5 +51,7 @@ export async function persistCredentialAfterSend(
 async function keyedEnjoyProfileId(run: ActiveRun): Promise<string | undefined> {
   if ((run.input.runtimeId ?? "enjoy-local") !== "enjoy-local") return undefined
   if (!run.secret?.apiKey?.trim()) return undefined
+  const { peekCachedChatReadiness } = await import("./chat-readiness")
+  const { getActiveProfile } = await import("./secrets.ts")
   return peekCachedChatReadiness()?.defaultRoute?.profileId ?? (await getActiveProfile())?.id
 }
