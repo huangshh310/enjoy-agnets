@@ -9,6 +9,7 @@ import { supportsMidSessionModelSwitch } from "../lib/model-switch-state.ts"
 import { nextPreferredModelId, planSessionModelWrite } from "../lib/session-model.ts"
 import { useChatStore } from "../stores/chat-store"
 import { runSecretWrite, SecretWriteUiError } from "../lib/secret-write"
+import { applyPreferredRuntime } from "./persist-preferred-runtime.ts"
 import { patchPreferences } from "./use-settings-snapshot"
 
 /** 只绑这一条会话，不改全局偏好。新建会话也走这里。 */
@@ -105,7 +106,7 @@ export async function persistRuntimeId(
   store.setRuntimeId(runtimeId)
   if (store.sessionId) await bindSessionRuntime(store.sessionId, runtimeId)
   if (opts?.asDefault) {
-    store.setPreferredRuntimeId(runtimeId)
+    applyPreferredRuntime(store, runtimeId)
     await patchPreferences({ runtimeId })
   }
   if (!hasIde()) return

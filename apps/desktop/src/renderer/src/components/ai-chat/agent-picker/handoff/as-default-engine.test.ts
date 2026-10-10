@@ -20,6 +20,6 @@ test("noop 与 confirm 都把 asDefault 传给 persistRuntimeId", () => {
   assert.match(store, /persistRuntimeId\(to, modelId, opts\)/)
   assert.match(store, /state\.asDefault \? \{ asDefault: true \}/)
   assert.match(persist, /if \(opts\?\.asDefault\)/)
-  assert.match(persist, /setPreferredRuntimeId\(runtimeId\)/)
+  assert.match(persist, /applyPreferredRuntime\(store, runtimeId\)/)
   assert.match(persist, /patchPreferences\(\{ runtimeId \}\)/)
 })
