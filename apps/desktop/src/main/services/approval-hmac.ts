@@ -1,10 +1,6 @@
 /**
  * 审批 HMAC：密钥进 userData（safeStorage），重启后未决审批仍可验。
  */
-import { randomBytes } from "node:crypto"
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
-import { app, safeStorage } from "electron"
 import {
   approvalPayload,
   getApproval,
@@ -23,42 +19,7 @@ import {
 } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
-
-let processSecret: string | undefined
-
-function hmacFile(): string {
-  return join(app.getPath("userData"), "approval-hmac.bin")
-}
-
-function approvalSecret(): string {
-  if (processSecret) return processSecret
-  processSecret = readPersistedSecret() ?? randomBytes(32).toString("hex")
-  persistSecret(processSecret)
-  return processSecret
-}
-
-function readPersistedSecret(): string | undefined {
-  const file = hmacFile()
-  if (!existsSync(file)) return undefined
-  try {
-    const buf = readFileSync(file)
-    if (safeStorage.isEncryptionAvailable()) return safeStorage.decryptString(buf)
-    return buf.toString("utf8")
-  } catch {
-    return undefined
-  }
-}
-
-function persistSecret(secret: string): void {
-  try {
-    const payload = safeStorage.isEncryptionAvailable()
-      ? safeStorage.encryptString(secret)
-      : Buffer.from(secret, "utf8")
-    writeFileSync(hmacFile(), payload, { mode: 0o600 })
-  } catch {
-    // 写盘失败仍用内存密钥，本进程内审批可用。
-  }
-}
+import { machineHmacSecret } from "./machine-hmac-secret.ts"
 
 export function rememberApproval(input: {
   runId: string
@@ -110,7 +71,7 @@ export function rememberApproval(input: {
     name: input.name,
     args: JSON.stringify(args),
     requestArgs: JSON.stringify(requestArgs ?? {}),
-    hmac: signApproval(approvalSecret(), payload),
+    hmac: signApproval(machineHmacSecret(), payload),
     decision: null,
     createdAt: Date.now(),
     sdkApprovalId: plan.sdkApprovalId
@@ -153,7 +114,7 @@ export function rememberReparkApproval(input: {
     nextId,
     name: input.name,
     args: JSON.stringify(args),
-    hmac: signApproval(approvalSecret(), payload),
+    hmac: signApproval(machineHmacSecret(), payload),
     requestArgs: input.requestArgs === undefined ? undefined : JSON.stringify(input.requestArgs),
     createdAt: Date.now()
   })
@@ -207,7 +168,7 @@ export function assertApprovalHmac(input: {
     name: row.name,
     args
   })
-  if (!verifyApproval(approvalSecret(), payload, row.hmac)) {
+  if (!verifyApproval(machineHmacSecret(), payload, row.hmac)) {
     throw new Error("Approval token was tampered.")
   }
 }

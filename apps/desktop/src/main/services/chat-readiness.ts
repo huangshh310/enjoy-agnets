@@ -21,6 +21,7 @@ const PUSH_DEBOUNCE_MS = 120
 let cached: ChatReadiness | undefined
 let lastLoggedIn = new Set<string>()
 let pushTimer: ReturnType<typeof setTimeout> | undefined
+let restamping = false
 
 export function peekCachedChatReadiness(): ChatReadiness | undefined {
   return cached
@@ -73,6 +74,14 @@ async function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean
   const withSecret =
     enjoySecret === undefined ? snapshot : { ...snapshot, hasEnjoySecret: enjoySecret }
   const adopted = persistAdoptedDefaultRoute(withSecret)
+  if (adopted.restamp && !restamping) {
+    restamping = true
+    try {
+      return await computeChatReadiness()
+    } finally {
+      restamping = false
+    }
+  }
   if (adopted.adopted && adopted.profileId) {
     await activateProfile(adopted.profileId).catch(() => undefined)
   }

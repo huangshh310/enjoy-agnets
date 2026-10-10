@@ -5,6 +5,9 @@
 import type { AgentToolId, AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { buildChatReadiness, type ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { e2eCredentialFixture } from "./credential-check-run.ts"
+import { e2eChatReadinessAllowed } from "./e2e-seed-gate.ts"
+
+export { e2eChatReadinessAllowed, e2eChatReadySeedAllowed } from "./e2e-seed-gate.ts"
 
 export const E2E_CHAT_READY_KEY_PROFILE_ID = "e2e"
 export const E2E_CHAT_READY_MODEL_ID = "stub-e2e"
@@ -17,24 +20,6 @@ export function e2eChatReadyKind(env: NodeJS.ProcessEnv = process.env): E2eChatR
   const kind = env.ENJOY_E2E_CHAT_READY
   if (kind === "key" || kind === "engine" || kind === "none" || kind === "unverified") return kind
   return undefined
-}
-
-export function e2eChatReadinessAllowed(env: NodeJS.ProcessEnv = process.env, packaged = false): boolean {
-  return env.ENJOY_E2E_STUB === "1" && !packaged
-}
-
-/** 写盘夹具还要隔离 userData，避免误种到本机目录。 */
-export function e2eChatReadySeedAllowed(input: {
-  env?: NodeJS.ProcessEnv
-  packaged?: boolean
-  userData?: string
-}): boolean {
-  const env = input.env ?? process.env
-  if (!e2eChatReadinessAllowed(env, input.packaged === true)) return false
-  const isolated = env.ENJOY_E2E_USERDATA || env.ENJOY_DEV_USERDATA
-  if (!isolated) return false
-  if (input.userData && input.userData !== isolated) return false
-  return true
 }
 
 export function e2eChatReadiness(

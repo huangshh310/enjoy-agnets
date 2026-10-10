@@ -13,6 +13,7 @@ import {
 import { catalogRequestURL, isApiStyle, presetFor, type ApiStyle } from "@enjoy-agents/providers"
 import { app } from "electron"
 import { sameOriginUrl } from "./credential-fingerprint.ts"
+import { e2eChatReadySeedAllowed } from "./e2e-seed-gate.ts"
 import type { ProviderProfile } from "./secrets-vault.ts"
 
 export const CREDENTIAL_CHECK_TIMEOUT_MS = 6_000
@@ -24,10 +25,10 @@ export type CredentialCheckProfile = Pick<
 
 export function e2eCredentialFixture(
   env: NodeJS.ProcessEnv = process.env,
-  packaged = false
+  packaged = false,
+  userData?: string
 ): CredentialCheck | undefined {
-  if (env.ENJOY_E2E_STUB !== "1" || packaged) return undefined
-  if (!env.ENJOY_E2E_USERDATA && !env.ENJOY_DEV_USERDATA) return undefined
+  if (!e2eChatReadySeedAllowed({ env, packaged, userData })) return undefined
   const flag = env.ENJOY_E2E_CREDENTIAL
   if (flag === "invalid") return { state: "invalid", code: "auth_rejected" }
   if (flag === "ok") return { state: "ok" }
@@ -49,7 +50,7 @@ export async function runCredentialCheck(
   fetchImpl: typeof fetch = fetch
 ): Promise<CredentialCheck> {
   if (fetchImpl === fetch) {
-    const fixture = e2eCredentialFixture(process.env, readPackaged())
+    const fixture = e2eCredentialFixture(process.env, readPackaged(), readUserData())
     if (fixture) return stamp(fixture, now())
   }
   const preset = presetFor(profile.kind)
@@ -139,5 +140,13 @@ function readPackaged(): boolean {
     return app.isPackaged
   } catch {
     return false
+  }
+}
+
+function readUserData(): string | undefined {
+  try {
+    return app.getPath("userData")
+  } catch {
+    return undefined
   }
 }

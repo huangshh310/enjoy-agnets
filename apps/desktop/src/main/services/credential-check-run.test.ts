@@ -43,6 +43,14 @@ test("夹具要隔离 userData；STUB 单独不默认 ok", () => {
   )
   assert.equal(e2eCredentialFixture({ ...isolated }, false), undefined)
   assert.equal(e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "invalid" }, true), undefined)
+  assert.equal(
+    e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "ok" }, false, "/tmp/other"),
+    undefined
+  )
+  assert.deepEqual(
+    e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "ok" }, false, "/tmp/e2e-ud"),
+    { state: "ok" }
+  )
 })
 
 test("403 → unverified/forbidden，不拦发送", async () => {

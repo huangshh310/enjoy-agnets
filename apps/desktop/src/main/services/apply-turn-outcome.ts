@@ -29,10 +29,10 @@ export function turnOutcomeForRun(
   }
 }
 
-/** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。 */
+/** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。先写改动文件，再改工单态。 */
 export function persistTurnWorkflow(sessionId: string | undefined, turn: TurnOutcome): void {
-  persistSessionWorkflow(sessionId, turn.workflow)
   persistSessionReview(sessionId, turn)
+  persistSessionWorkflow(sessionId, turn.workflow)
 }
 
 export function persistSessionWorkflow(

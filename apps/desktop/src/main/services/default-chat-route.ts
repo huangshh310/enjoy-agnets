@@ -41,6 +41,10 @@ export function defaultChatRouteAssembleInput(): {
 
 export type AdoptDefaultPlan = "skip" | "lock" | "stamp" | "adopt"
 
+export function adoptPlanRestamp(plan: AdoptDefaultPlan): boolean {
+  return plan === "stamp" || plan === "lock"
+}
+
 /** 纯决策：从无到有才 adopt；升级首次已有路线只 stamp；已有非出厂偏好只盖章。 */
 export function planAdoptedDefaultRoute(input: {
   explicit?: boolean
@@ -113,6 +117,8 @@ export type PersistAdoptedResult = {
   hint?: { name: string }
   /** adopt 挑中的档案，调用方走 activateProfile 切成当前。 */
   profileId?: string
+  /** stamp / lock 后立刻重算，避免快照仍按 prefer-ok 显示 ready。 */
+  restamp?: boolean
 }
 
 function noteSeenNoUsableRoute(ready: boolean): void {
@@ -138,7 +144,7 @@ export function persistAdoptedDefaultRoute(snapshot: ChatReadiness): PersistAdop
   if (plan === "skip") return { adopted: false }
   const now = String(Date.now())
   setSetting(ADOPTED_DEFAULT_ROUTE_AT_KEY, now)
-  if (plan === "stamp" || plan === "lock") return { adopted: false }
+  if (adoptPlanRestamp(plan)) return { adopted: false, restamp: true }
   const route = snapshot.defaultRoute
   if (!route) return { adopted: false }
   const prefs = readPreferences()

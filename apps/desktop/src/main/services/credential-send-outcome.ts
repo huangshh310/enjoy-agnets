@@ -17,17 +17,24 @@ import { credentialFingerprint } from "./credential-fingerprint.ts"
 import { writeCredentialCheckIfCurrent } from "./credential-check-store.ts"
 import type { ActiveRun } from "./agent-run-state"
 
-export function httpStatusOf(error: unknown): number | undefined {
+export function httpStatusOf(error: unknown, seen = new WeakSet<object>()): number | undefined {
   if (!error || typeof error !== "object") return undefined
+  if (seen.has(error)) return undefined
+  seen.add(error)
   const record = error as Record<string, unknown>
   for (const key of ["status", "statusCode", "status_code"]) {
     if (typeof record[key] === "number") return record[key] as number
   }
-  return undefined
+  return httpStatusOf(record.lastError, seen) ?? httpStatusOf(record.cause, seen)
 }
 
-export function structuredErrorTypeOf(error: unknown): string | undefined {
+export function structuredErrorTypeOf(
+  error: unknown,
+  seen = new WeakSet<object>()
+): string | undefined {
   if (!error || typeof error !== "object") return undefined
+  if (seen.has(error)) return undefined
+  seen.add(error)
   const record = error as Record<string, unknown>
   for (const value of [record.type, record.errorType]) {
     if (isStructuredType(value)) return value
@@ -49,7 +56,7 @@ export function structuredErrorTypeOf(error: unknown): string | undefined {
       if (isStructuredType(typed.type)) return typed.type
     }
   }
-  return undefined
+  return structuredErrorTypeOf(record.lastError, seen) ?? structuredErrorTypeOf(record.cause, seen)
 }
 
 function isStructuredType(value: unknown): value is string {

@@ -33,6 +33,15 @@ test("402 / spend / credit 走 L4，不并进泛化限流", () => {
   assert.equal(classifyThreadError("quota exceeded for included usage"), "credit")
 })
 
+test("有结构化码时 provider_billing 优先，正文额度只是无码回落", () => {
+  assert.equal(
+    classifyThreadError("quota exceeded for included usage", PROVIDER_BILLING),
+    "provider_billing"
+  )
+  assert.equal(classifyThreadError("quota exceeded for included usage"), "credit")
+  assert.notEqual(classifyThreadError("quota exceeded", PROVIDER_BILLING), "credit")
+})
+
 test("429 才是速率限制", () => {
   assert.equal(classifyThreadError("429 Too Many Requests"), "rate_limit")
   assert.equal(classifyThreadError("rate limit exceeded, retry later"), "rate_limit")
