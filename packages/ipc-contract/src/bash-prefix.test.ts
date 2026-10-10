@@ -47,48 +47,37 @@ test("管道 / 重定向 / 命令替换不记前缀也不吃已记前缀", () =>
   assert.equal(sessionAllowsBash("npm test src/a.ts", npm), true)
 })
 
-test("leo 解释器探针：不记也不匹配，含包装器与组合旗标", () => {
-  const planted = ["bash -c", "python -c", "node", "npx", "pnpm dlx", "cmd /c", "eval", "git status"]
+test("失败关闭：包装器 / 赋值 / 可疑字符 / 子命令不记也不匹配", () => {
+  const planted = ["npm test", "pnpm lint", "git status", "git log", "ls -la", "ls"]
   const probes = [
+    "nice -n sh -c rm${IFS}-rf${IFS}~ ls",
+    "time -p sh -c reboot ls",
+    "env -i sh -c whoami ls -la",
+    "NODE_OPTIONS=--require=./evil.js npm test",
+    "PATH=/tmp/evil npm test",
+    "LD_PRELOAD=/tmp/evil.so npm test",
+    "GIT_PAGER=./evil.sh git log",
+    "s\\h -c",
+    "b\\ash",
+    "/bin/s?",
+    "{sh,-c}",
+    "npm -y exec evil",
+    "pnpm -s dlx",
+    "git --no-pager -c core.pager=x log",
+    "git -ccore.pager=x",
+    "sed -i s/.*/id/e f",
+    "py -c",
+    "pythonw script.py",
+    "doas npm test",
     "bash -lc",
-    "sh -ec",
-    "python -Sc",
     "python3.11 -c",
     "node --eval",
-    "node -p",
-    "powershell -EncodedCommand",
-    "npm exec",
-    "npm x",
-    "pnpm exec",
-    "bun x",
-    "uvx",
-    "pipx run",
-    "bun -e",
-    "tsx -e",
-    "ts-node -e",
-    "osascript -e",
-    "php -r",
-    "lua -e",
-    "Rscript -e",
-    "env sh -c",
-    "sudo sh -c",
-    "xargs sh -c",
-    "nice",
-    "timeout",
-    "command sh",
-    "builtin eval",
-    "'sh' -c",
-    "$SHELL -c",
     "FOO=1 sh -c",
-    "python",
-    "node",
-    "git -c foo.bar=1 status",
-    "pnpm dlx evil",
-    "yarn dlx evil",
-    "uv run tool",
     "find . -name x -exec rm {} +",
-    "sed -e s/a/b/",
-    "ssh host"
+    "ssh host",
+    "docker ps",
+    "kubectl get pods",
+    "rsync -a ./ ./out"
   ]
   for (const command of probes) {
     assert.equal(bashCommandIsInterpreterStyle(command) || bashAllowPrefix(command) === "", true, command)
@@ -100,4 +89,5 @@ test("leo 解释器探针：不记也不匹配，含包装器与组合旗标", (
   assert.equal(sessionAllowsBash("pnpm test src/a.ts", ["pnpm test"]), true)
   assert.equal(bashAllowPrefix("python script.py"), "")
   assert.equal(bashCommandIsInterpreterStyle("git status"), false)
+  assert.equal(bashAllowPrefix("make test"), "make test")
 })

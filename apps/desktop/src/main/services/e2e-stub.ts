@@ -1,5 +1,5 @@
 /**
- * 仅 ENJOY_E2E_STUB=1 且未打包、且有隔离 userData（ENJOY_E2E_USERDATA / ENJOY_DEV_USERDATA）：
+ * 仅 ENJOY_E2E_STUB=1 且未打包（读不到 app 当打包）、且有隔离 userData：
  * 不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  *
  * 写盘：未放行时只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
