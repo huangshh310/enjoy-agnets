@@ -28,7 +28,9 @@ export function shouldPersistAppToast(input?: AppToastPolicyInput): boolean {
 }
 
 export function resolveAppToastDuration(input?: AppToastPolicyInput): number {
-  if (hasExplicitToastDuration(input)) return input.duration as number
+  if (typeof input?.duration === "number" && Number.isFinite(input.duration)) {
+    return input.duration
+  }
   if (shouldPersistAppToast(input)) return Number.POSITIVE_INFINITY
   return APP_TOAST_MS
 }
