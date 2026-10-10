@@ -16,7 +16,10 @@ test("创建完成不得清空正在打的字，也不得无 Enter 就发", () =
   assert.match(src, /cancelQueuedComposerSend/)
   assert.match(src, /flushComposerDomToStore/)
   assert.match(src, /from "\.\/composer-dom"/)
-  assert.match(src, /if \(typedDuringCreate\) useChatStore\.setState\(\{ composer: typedDuringCreate \}\)/)
+  assert.match(src, /hasQueuedComposerSend\(\)/)
+  assert.match(src, /setComposerWritebackHeld\(false\)/)
+  assert.doesNotMatch(src, /typedDuringCreate/)
+  assert.doesNotMatch(src, /syncComposerDom/)
   assert.doesNotMatch(src, /idleComposerPatch\(\), composer: ""/)
 })
 
@@ -26,8 +29,8 @@ test("发送成功一律按已发正文清输入，禁止只清 prepared 路径"
   const draft = readFileSync(new URL("./runtime-interact/composer-draft.ts", import.meta.url), "utf8")
   assert.match(send, /clearSentComposerText\(payload\.content\)/)
   assert.doesNotMatch(send, /if \(prepared\) clearSentComposerText/)
-  assert.match(queue, /syncComposerDom\(next\)/)
-  assert.match(draft, /syncComposerDom\(""\)/)
+  assert.match(queue, /syncComposerDom\(next, true\)/)
+  assert.match(draft, /syncComposerDom\("", true\)/)
 })
 
 test("归档调用容忍可选 deniedApprovals，不改 IPC", () => {

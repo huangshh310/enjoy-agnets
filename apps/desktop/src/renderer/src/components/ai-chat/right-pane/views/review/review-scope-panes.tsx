@@ -88,7 +88,7 @@ function ReviewChangesStream({ vm }: { vm: ReviewViewModel }) {
           allExpanded={vm.allExpanded}
         />
       </div>
-      <div className="shrink-0 border-t border-separator-border bg-background-secondary-default/40 px-3 py-2">
+      <div className="shrink-0 border-t border-separator-border bg-background-primary-default px-3 py-2">
         <ReviewCommitDock
           ref={vm.commitDockRef}
           changesCount={vm.changes.filter((file) => file.staged).length}

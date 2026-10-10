@@ -26,12 +26,19 @@ import {
 } from "./services/single-instance";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
+import {
+  gpuCompositingArg,
+  gpuCompositingFromStatus,
+  hardwareAccelerationForcedOff,
+  type GpuCompositingFlag
+} from "./services/gpu-compositing";
 
 const isolatedUserData = process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA
 if (isolatedUserData) {
   app.setPath("userData", isolatedUserData);
 }
-if (process.env.ENJOY_E2E_STUB === "1") {
+const e2eStub = process.env.ENJOY_E2E_STUB === "1"
+if (e2eStub) {
   app.disableHardwareAcceleration();
 }
 
@@ -100,6 +107,7 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      additionalArguments: [gpuCompositingArg(resolveGpuCompositingFlag())],
       // 右栏浏览器预览用 <webview>，guest 无 node，partition persist:enjoy-preview。
       webviewTag: true
     }
@@ -133,6 +141,21 @@ function createWindow(): BrowserWindow {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
   return mainWindow;
+}
+
+/** ready 之后读 GPU 特征；无硬件合成则 html[data-gpu-compositing=off]。 */
+function resolveGpuCompositingFlag(): GpuCompositingFlag {
+  const forcedOff = hardwareAccelerationForcedOff({
+    disableHardwareAcceleration: e2eStub,
+    hasSwitch: (name) => app.commandLine.hasSwitch(name)
+  })
+  try {
+    return gpuCompositingFromStatus(app.getGPUFeatureStatus(), {
+      hardwareAccelerationDisabled: forcedOff
+    })
+  } catch {
+    return "off"
+  }
 }
 
 function restoreOrphansOnce(window: BrowserWindow): void {

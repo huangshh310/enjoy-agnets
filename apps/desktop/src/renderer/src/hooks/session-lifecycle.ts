@@ -41,8 +41,9 @@ import {
   isCurrentCreateToken,
   shouldPublishCreatedSession
 } from "./new-session-create"
-import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend } from "./queue-composer-send"
+import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend, hasQueuedComposerSend } from "./queue-composer-send"
 import { flushComposerDomToStore } from "./composer-dom"
+import { setComposerWritebackHeld } from "./composer-sync-lock"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -150,12 +151,12 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "æ
       await getIde().session.delete({ sessionId: session.id }).catch(() => undefined)
       return
     }
-    const typedDuringCreate = flushComposerDomToStore()
+    flushComposerDomToStore()
     const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
     absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
-    if (typedDuringCreate) useChatStore.setState({ composer: typedDuringCreate })
     finishNewSessionCreate(token, session.id)
+    if (!hasQueuedComposerSend()) setComposerWritebackHeld(false)
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
     await refreshAllWorkspaces()

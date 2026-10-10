@@ -6,7 +6,12 @@
 import { useEffect } from "react"
 
 export function LiquidGlassFilters() {
+  const gpuOff =
+    typeof document !== "undefined" &&
+    document.documentElement.getAttribute("data-gpu-compositing") === "off"
+
   useEffect(() => {
+    if (gpuOff) return
     let frameId: number | null = null
     let targetX = 50
     let targetY = 28
@@ -43,7 +48,9 @@ export function LiquidGlassFilters() {
         window.cancelAnimationFrame(frameId)
       }
     }
-  }, [])
+  }, [gpuOff])
+
+  if (gpuOff) return null
 
   return (
     <svg

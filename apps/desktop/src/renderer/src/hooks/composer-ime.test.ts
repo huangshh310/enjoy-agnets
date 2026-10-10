@@ -22,6 +22,15 @@ test("组字中 Enter / keyCode 229 不发送", () => {
   setComposerComposing(false)
 })
 
+test("建会话锁定时 sync 不写回 DOM", () => {
+  const lock = readFileSync(new URL("./composer-sync-lock.ts", import.meta.url), "utf8")
+  const create = readFileSync(new URL("./new-session-create.ts", import.meta.url), "utf8")
+  const life = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
+  assert.match(lock, /isComposerWritebackHeld/)
+  assert.match(create, /setComposerWritebackHeld\(false\)/)
+  assert.match(life, /setComposerWritebackHeld\(false\)/)
+})
+
 test("组字中 flush / sync 不改 store 也不写回 DOM", () => {
   setComposerComposing(true)
   assert.equal(isComposerComposing(), true)
@@ -41,4 +50,11 @@ test("输入框与 flush 接线守门", () => {
   assert.match(input, /onCompositionStart/)
   assert.match(input, /onCompositionEnd/)
   assert.match(dom, /if \(isComposerComposing\(\)\) return/)
+  assert.match(dom, /shouldHoldComposerStoreSync/)
+  assert.match(dom, /readComposerDomText/)
+  const ime = readFileSync(
+    new URL("../components/ai-chat/composer/mentions/use-composer-ime.ts", import.meta.url),
+    "utf8"
+  )
+  assert.match(ime, /shouldHoldComposerStoreSync\(\)/)
 })

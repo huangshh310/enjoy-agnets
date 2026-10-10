@@ -1,15 +1,26 @@
 /**
- * 组字期间用本地稿，禁止受控 value 把 IME 候选写回去。
+ * 组字 / 建会话期间用本地稿，禁止受控 value 把 store 半成品写回去。
  */
 import { useEffect, useRef, useState, type ChangeEvent, type CompositionEvent } from "react"
 import { setComposerComposing } from "@renderer/hooks/composer-ime"
+import { shouldHoldComposerStoreSync } from "@renderer/hooks/composer-dom"
+import { useChatStore } from "@renderer/stores/chat-store"
 
 export function useComposerIme(value: string, onChange: (next: string) => void) {
   const composingRef = useRef(false)
   const [shown, setShown] = useState(value)
+  const preparing = useChatStore((state) => state.preparingHint)
+  const wasPreparing = useRef(false)
 
   useEffect(() => {
-    if (!composingRef.current) setShown(value)
+    if (preparing && !wasPreparing.current && !value) setShown("")
+    wasPreparing.current = preparing
+  }, [preparing, value])
+
+  useEffect(() => {
+    if (composingRef.current) return
+    if (shouldHoldComposerStoreSync()) return
+    setShown(value)
   }, [value])
 
   return {

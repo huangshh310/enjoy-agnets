@@ -108,10 +108,16 @@ html[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"]) {
   border: 1px solid var(--skin-frost-line);
 }
 
-/* 审查/启动空态：不渲染棱镜环与追光，禁止靠子层不透明底盖住 */
+/* 审查/启动空态：不渲染棱镜环与追光。底必须实心，否则画布黄光斑会透成同心环盖住「推送」。 */
 html[data-skin="glass"] [data-pane-shell-deco="off"] {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  background-color: #fff;
+  isolation: isolate;
+}
+
+html.dark[data-skin="glass"] [data-pane-shell-deco="off"] {
+  background-color: var(--color-neutral-900);
 }
 
 html[data-skin="glass"] [data-pane-shell-deco="off"]::before,
@@ -162,35 +168,48 @@ html.dark[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off
   opacity: 0.22;
 }
 
-html[data-skin="glass"] aside.rounded-3xl::after,
-html[data-skin="glass"] main::after,
-html[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-  padding: 1px;
-  background: linear-gradient(
-    var(--glass-light-angle),
-    color-mix(in srgb, var(--color-white) 80%, transparent) 0%,
-    color-mix(in srgb, var(--color-accent-400) 28%, transparent) 32%,
-    color-mix(in srgb, var(--color-white) 40%, transparent) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.65;
-  filter: url(#skin-liquid-glass);
-  /* 棱镜描边必须低于正文。mask-composite 失败时整层会变成同心圆；z-0 保证不盖字。 */
+/* 棱镜描边：mask-composite 在软件渲染 / 无 GPU 上会整层变成同心圆。
+   @supports 不够（Chromium 仍报支持），还要主进程 data-gpu-compositing。失败时只留外壳 1px 平边。 */
+@supports (mask-composite: exclude) {
+  html[data-skin="glass"]:not([data-gpu-compositing="off"]) aside.rounded-3xl::after,
+  html[data-skin="glass"]:not([data-gpu-compositing="off"]) main::after,
+  html[data-skin="glass"]:not([data-gpu-compositing="off"]) [data-frost="shell"]:not([data-pane-shell-deco="off"])::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    padding: 1px;
+    background: linear-gradient(
+      var(--glass-light-angle),
+      color-mix(in srgb, var(--color-white) 80%, transparent) 0%,
+      color-mix(in srgb, var(--color-accent-400) 28%, transparent) 32%,
+      color-mix(in srgb, var(--color-white) 40%, transparent) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.65;
+    filter: url(#skin-liquid-glass);
+  }
+
+  html.dark[data-skin="glass"]:not([data-gpu-compositing="off"]) aside.rounded-3xl::after,
+  html.dark[data-skin="glass"]:not([data-gpu-compositing="off"]) main::after,
+  html.dark[data-skin="glass"]:not([data-gpu-compositing="off"]) [data-frost="shell"]:not([data-pane-shell-deco="off"])::after {
+    opacity: 0.4;
+  }
 }
 
-html.dark[data-skin="glass"] aside.rounded-3xl::after,
-html.dark[data-skin="glass"] main::after,
-html.dark[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::after {
-  opacity: 0.4;
+html[data-skin="glass"][data-gpu-compositing="off"] aside.rounded-3xl::after,
+html[data-skin="glass"][data-gpu-compositing="off"] main::after,
+html[data-skin="glass"][data-gpu-compositing="off"] [data-frost]::after {
+  content: none;
+  display: none;
+  filter: none;
+  -webkit-mask: none;
+  mask: none;
 }
 
 /* 内层浅槽：外壳已经 blur */

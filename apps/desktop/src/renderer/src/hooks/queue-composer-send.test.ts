@@ -169,6 +169,7 @@ test("成功只清已发出的正文", () => {
   assert.equal(remainingComposerAfterSend("hello", "hello extra"), "extra")
   assert.equal(remainingComposerAfterSend("hello", "hello"), "")
   assert.equal(remainingComposerAfterSend("hello", "other"), "other")
+  assert.equal(remainingComposerAfterSend("hello world again", "he"), "")
 })
 
 test("未 take 的附件也能入队", async () => {

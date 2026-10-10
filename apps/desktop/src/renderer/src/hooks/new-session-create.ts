@@ -1,6 +1,8 @@
 /**
  * 新对话创建窗。发送只能等这里结束，避免 sessionId 还没到就清输入。
  */
+import { setComposerWritebackHeld } from "./composer-sync-lock"
+
 const CREATE_TIMEOUT_MS = 15_000
 
 type PendingCreate = {
@@ -63,6 +65,7 @@ export function resetNewSessionCreateForTest(): void {
   if (pending) pending.reject(new Error("SESSION_CREATE_RESET"))
   pending = null
   seq = 0
+  setComposerWritebackHeld(false)
 }
 
 export function isCurrentCreateToken(token: number): boolean {

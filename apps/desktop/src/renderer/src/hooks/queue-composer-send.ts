@@ -3,7 +3,8 @@
  * 二次 Enter 替换队列；还文与已键入合并；成功只清已发出的正文。
  */
 import { useChatStore } from "../stores/chat-store"
-import { syncComposerDom } from "./composer-dom"
+import { readComposerDomText, syncComposerDom } from "./composer-dom"
+import { setComposerWritebackHeld } from "./composer-sync-lock"
 import {
   listComposerAssets,
   setComposerAssets,
@@ -53,14 +54,17 @@ export function remainingComposerAfterSend(sent: string, current: string): strin
   if (!current) return current
   if (current === sent) return ""
   if (current.startsWith(sent)) return current.slice(sent.length).replace(/^\s+/, "")
+  if (sent.startsWith(current)) return ""
   return current
 }
 
 export function clearSentComposerText(sent: string): void {
   const store = useChatStore.getState()
-  const next = remainingComposerAfterSend(sent, store.composer)
+  const current = readComposerDomText() || store.composer
+  const next = remainingComposerAfterSend(sent, current)
   if (next !== store.composer) store.setComposer(next)
-  syncComposerDom(next)
+  setComposerWritebackHeld(false)
+  syncComposerDom(next, true)
   if (!next && store.sessionId) store.clearSessionDraft(store.sessionId)
 }
 
@@ -71,7 +75,10 @@ export function restoreComposerAfterFailedSend(
 ): void {
   const store = useChatStore.getState()
   store.setRunning(false)
-  store.setComposer(mergeComposerText(text, store.composer))
+  const next = mergeComposerText(text, store.composer)
+  store.setComposer(next)
+  setComposerWritebackHeld(false)
+  syncComposerDom(next, true)
   if (assets?.length) setComposerAssets(mergeQueuedAssets(listComposerAssets(), assets))
   store.setError(reason)
 }
@@ -91,12 +98,14 @@ export function absorbAssetsIntoQueuedSend(assets: QueuedComposerAsset[]): void 
 export function resetQueuedComposerSendForTest(): void {
   queuedSend = null
   queueSeq = 0
+  setComposerWritebackHeld(false)
 }
 
 /** 点「新对话」取消上一窗未发出的队列，禁止创建完成时误发正在打的字。 */
 export function cancelQueuedComposerSend(): void {
   queuedSend = null
   queueSeq += 1
+  setComposerWritebackHeld(false)
 }
 
 export function hasQueuedComposerSend(): boolean {
@@ -114,6 +123,7 @@ export async function waitThenSendAfterCreate(
 ): Promise<void> {
   const trimmed = text.trim()
   if (!trimmed) return
+  setComposerWritebackHeld(true)
   const captured = assets ?? takeComposerAssetDetails()
   const seq = replaceQueuedSend(trimmed, captured)
   const fail = deps?.onFail ?? restoreComposerAfterFailedSend

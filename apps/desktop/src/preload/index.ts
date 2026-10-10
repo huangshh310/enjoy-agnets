@@ -1,4 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { applyGpuCompositingAttr } from "./apply-gpu-compositing-attr";
+
+applyGpuCompositingAttr();
 
 import type {
   BuiltinToolsState,

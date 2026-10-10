@@ -26,6 +26,7 @@ import {
   prefixHostModeForSend,
   takeComposerText
 } from "./composer-draft"
+import { readComposerDomText } from "../composer-dom"
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
@@ -61,13 +62,13 @@ type SendPayload = {
 export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
-  const flushed = prepared ? null : flushComposerDomToStore()
+  if (!prepared) flushComposerDomToStore()
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
-    const text = flushed ?? useChatStore.getState().composer
+    const text = readComposerDomText()
     if (!text.trim()) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return

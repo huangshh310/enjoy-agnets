@@ -60,10 +60,32 @@ test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰"
   const sketch = readSkin("sketch.css")
   assert.match(glass, /\[data-pane-shell-deco="off"\]::after/)
   assert.match(glass, /content:\s*none/)
+  assert.match(glass, /\[data-pane-shell-deco="off"\][\s\S]*background-color:\s*#fff/)
   assert.match(ink, /\[data-pane-shell-deco="off"\][\s\S]*rounded-3xl\.shadow-card/)
   assert.match(ink, /:not\(\[data-pane-shell-deco="off"\]\)/)
   assert.match(sketch, /:not\(\[data-pane-shell-deco="off"\]\)/)
   assert.match(sketch, /\[data-pane-shell-deco="off"\][\s\S]*background-image:\s*none/)
+})
+
+test("无 GPU 旗标关掉棱镜 ::after 和 liquid-glass 滤镜", () => {
+  const glass = readSkin("glass.css")
+  const main = readFirst([
+    join(dir, "../../../main/index.ts"),
+    join(dir, "../../../../main/index.ts")
+  ])
+  const preload = readFirst([
+    join(dir, "../../../preload/index.ts"),
+    join(dir, "../../../../preload/index.ts")
+  ])
+  assert.match(glass, /@supports\s*\(mask-composite:\s*exclude\)/)
+  assert.match(glass, /:not\(\[data-gpu-compositing="off"\]\)[\s\S]*::after/)
+  assert.match(glass, /\[data-gpu-compositing="off"\][\s\S]*::after[\s\S]*content:\s*none/)
+  assert.match(glass, /\[data-gpu-compositing="off"\][\s\S]*filter:\s*none/)
+  assert.match(glass, /url\(#skin-liquid-glass\)/)
+  assert.match(main, /getGPUFeatureStatus/)
+  assert.match(main, /additionalArguments/)
+  assert.match(main, /gpuCompositingArg/)
+  assert.match(preload, /applyGpuCompositingAttr/)
 })
 
 test("审查空态组件不挂 data-frost，不靠装饰类名", () => {

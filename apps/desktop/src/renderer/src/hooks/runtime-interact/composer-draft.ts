@@ -82,7 +82,7 @@ export type ComposerDraftSnapshot = {
 export function clearComposerDraft() {
   const store = useChatStore.getState()
   store.setComposer("")
-  syncComposerDom("")
+  syncComposerDom("", true)
   if (store.sessionId) {
     store.clearSessionDraft(store.sessionId)
   }

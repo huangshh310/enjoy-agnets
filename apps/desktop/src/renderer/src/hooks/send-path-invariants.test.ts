@@ -34,6 +34,8 @@ test("Enter 与发送钮走 submitComposer；运行中 Enter 排队也 takeCompo
 test("入队抓按下全文，点新对话取消残留队列", () => {
   assert.match(queue, /replaceQueuedSend\(trimmed/)
   assert.match(queue, /export function cancelQueuedComposerSend/)
+  assert.match(send, /readComposerDomText\(\)/)
+  assert.doesNotMatch(send, /flushed \?\? useChatStore\.getState\(\)\.composer/)
   const life = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
   assert.match(life, /cancelQueuedComposerSend\(\)/)
 })
