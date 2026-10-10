@@ -10,7 +10,6 @@ import { fileURLToPath } from "node:url"
 const dir = dirname(fileURLToPath(import.meta.url))
 
 test("自定义端点标题走 addCustom，地址走 baseUrl", () => {
-  const drawer = readFileSync(join(dir, "provider-editor-drawer.tsx"), "utf8")
   const chrome = readFileSync(join(dir, "provider-editor-drawer-chrome.tsx"), "utf8")
   assert.match(chrome, /settings\.providers\.addCustom/)
   assert.match(chrome, /kind === "custom"/)
