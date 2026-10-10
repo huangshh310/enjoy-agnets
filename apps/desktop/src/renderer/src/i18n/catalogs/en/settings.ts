@@ -972,11 +972,11 @@ export const enSettings = {
     empty: "No archived chats",
     search: "Search archived chats",
     allProjects: "All projects",
-    deleteAllConfirm: "Permanently delete all archived sessions? This cannot be undone.",
+    deleteAllConfirm: "This will permanently delete {count} archived sessions. This cannot be undone.",
     deleteSession: "Delete session",
     deleteConfirm: "Permanently delete this session? This cannot be undone.",
     chatCount: "{count} chats",
-    unarchive: "Unarchive"
+    unarchive: "Restore"
   },
 
   secret: {

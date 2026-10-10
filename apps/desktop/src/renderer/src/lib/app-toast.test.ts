@@ -54,6 +54,7 @@ test("三处入口遵守停留规则：成功 2400，漏更是错误驻留", () 
   assert.ok(toaster.includes("closeButton:"))
   assert.ok(toaster.includes("border-border-button-default"))
   assert.ok(toaster.includes("bg-background-primary-default"))
+  assert.ok(toaster.includes("offset={{ bottom: 56 }}"))
 })
 
 test("三处入口走 showAppToast，手写实现已删", () => {

@@ -7,6 +7,7 @@ import {
   RiFileTextLine,
   RiApps2Line,
   RiFolder6Line,
+  RiInboxArchiveLine,
   RiKeyboardBoxLine,
   RiPaletteLine,
   RiPulseLine,
@@ -43,6 +44,12 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         labelKey: "nav.shortcuts",
         icon: RiKeyboardBoxLine,
         keywords: ["hotkey", "keymap", "command", "快捷键", "按键"]
+      },
+      {
+        id: "archived",
+        labelKey: "nav.archived",
+        icon: RiInboxArchiveLine,
+        keywords: ["archive", "archived", "chats", "已归档", "归档", "聊天"]
       }
     ]
   },

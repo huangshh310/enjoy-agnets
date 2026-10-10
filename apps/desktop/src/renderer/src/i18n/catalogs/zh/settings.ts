@@ -968,11 +968,11 @@ export const zhSettings = {
     empty: "暂无已归档的聊天",
     search: "搜索已归档聊天",
     allProjects: "所有项目",
-    deleteAllConfirm: "确定永久删除全部已归档会话？此操作不可恢复。",
+    deleteAllConfirm: "将永久删除 {count} 条已归档会话，此操作不可恢复。",
     deleteSession: "删除会话",
     deleteConfirm: "确定永久删除这条会话？此操作不可恢复。",
     chatCount: "{count} 条会话",
-    unarchive: "取消归档"
+    unarchive: "恢复"
   },
 
   secret: {
