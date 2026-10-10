@@ -97,8 +97,9 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
       location.hash = "#/automations"
     })
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
-    const openRow = window.locator('[data-testid="automation-row-open"]').first()
-    if ((await openRow.count()) > 0) await openRow.click({ force: true })
+    const noon = window.locator('[data-testid="automation-row"]').filter({ hasText: "午间改动复盘" })
+    await noon.locator("button").first().click({ force: true })
+    await window.locator("#automation-editor-title").waitFor({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-time"]')).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-hour"]')).toBeVisible()
     await expect(window.getByText("AM")).toHaveCount(0)
