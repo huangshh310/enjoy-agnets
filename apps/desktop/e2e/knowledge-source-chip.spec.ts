@@ -6,8 +6,23 @@ import { mkdtempSync, writeFileSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
+import type { ElectronApplication } from "playwright"
 import { hideOverlays, launchEnjoy, snap } from "./base-p0-1-launch"
 import { sendComposer } from "./send-composer"
+
+/** 根错误边界挂上后 Electron 常收不掉，不能让 close 拖死测试。 */
+async function closeApp(app: ElectronApplication): Promise<void> {
+  try {
+    await Promise.race([
+      app.close(),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("close timeout")), 4_000)
+      })
+    ])
+  } catch {
+    app.process()?.kill("SIGKILL")
+  }
+}
 
 test("点知识库来源芯片打开本轮来源且选中该行", async () => {
   test.setTimeout(90_000)
@@ -37,7 +52,7 @@ test("点知识库来源芯片打开本轮来源且选中该行", async () => {
     await expect(window.locator("body")).not.toContainText("Something went wrong!")
     await snap(window, "knowledge-source-drawer")
   } finally {
-    await app.close()
+    await closeApp(app)
   }
 })
 
@@ -65,6 +80,6 @@ test("渲染崩溃回退面是中文短句，不摊英文堆栈", async () => {
     await expect(window.locator('[data-testid="renderer-crash-stack"]')).toHaveCount(0)
     await snap(window, "renderer-crash-fallback")
   } finally {
-    await app.close()
+    await closeApp(app)
   }
 })

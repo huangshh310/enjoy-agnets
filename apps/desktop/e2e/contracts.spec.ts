@@ -31,9 +31,10 @@ test("根路由有错误边界，崩溃回退走人话不摊英文堆栈", () =>
   expect(appSource.includes("RendererErrorBoundary")).toBeTruthy()
   expect(routerSource.includes("errorComponent")).toBeTruthy()
   expect(routerSource.includes("CrashFallbackHost")).toBeTruthy()
-  expect(copySource.includes("这里出了点问题。")).toBeTruthy()
-  expect(copySource.includes("重新加载")).toBeTruthy()
-  expect(copySource.includes("Something went wrong!")).toBeFalsy()
+  expect(copySource.includes('title: "这里出了点问题。"')).toBeTruthy()
+  expect(copySource.includes('reload: "重新加载"')).toBeTruthy()
+  expect(copySource.includes('title: "This view hit a problem."')).toBeTruthy()
+  expect(copySource.includes('title: "Something went wrong!"')).toBeFalsy()
 })
 
 test("Hash 路由包含 Knowledge / Workflows / Media / MCP / Skills / Observability", () => {
