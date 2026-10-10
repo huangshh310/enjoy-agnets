@@ -126,6 +126,33 @@ test("脏仓未碰的 readme/untracked 不进标签；读文件进；知识库 c
   assert.equal(knowledge?.label.includes("验收清单"), true)
 })
 
+test("同一知识库来源的两文件芯片 id 不同，并带上 snippet", () => {
+  const chips = collectTurnSources(
+    {
+      sources: [
+        {
+          sourceId: "src-folder",
+          title: "readme.md",
+          path: "readme.md",
+          startLine: 1,
+          snippet: "hello knowledge"
+        },
+        {
+          sourceId: "src-folder",
+          title: "untracked.txt",
+          path: "untracked.txt",
+          startLine: 1,
+          snippet: "also hello"
+        }
+      ]
+    },
+    (name) => `技能 · ${name}`
+  )
+  assert.equal(chips.length, 2)
+  assert.notEqual(chips[0]?.id, chips[1]?.id)
+  assert.equal(chips.find((chip) => chip.path === "readme.md")?.snippet, "hello knowledge")
+})
+
 test("Enjoy 注入行标 fromEnjoy；空注入不造假行", () => {
   const empty = collectTurnSources({ hostInject: { mcp: [], skills: [] } }, (name) => `技能 · ${name}`)
   assert.equal(empty.length, 0)

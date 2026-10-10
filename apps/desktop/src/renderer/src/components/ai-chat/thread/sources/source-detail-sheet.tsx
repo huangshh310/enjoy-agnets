@@ -1,7 +1,7 @@
 /**
  * 「本轮来源」右（窄屏底）sheet。点芯片打开，不上 InlineCitations。
  */
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { useT } from "@renderer/i18n"
 import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
@@ -97,14 +97,14 @@ function SheetPanel({
           <h3 id="turn-sources-sheet-title" className="text-headline-semibold text-text-primary">
             {t("chat.sourcesSheetTitle")}
           </h3>
-          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{meta}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-primary">{meta}</p>
         </div>
         <button
           type="button"
           onClick={onClose}
           data-app-region="no-drag"
           style={APP_REGION_NO_DRAG_STYLE}
-          className="cursor-pointer text-caption-1-regular text-text-tertiary [app-region:no-drag] hover:text-text-primary"
+          className="cursor-pointer text-caption-1-regular text-text-secondary [app-region:no-drag] hover:text-text-primary"
         >
           {t("chat.sourcesSheetClose")}
         </button>
@@ -115,26 +115,44 @@ function SheetPanel({
           <p className="mt-1 text-caption-2-regular text-text-tertiary">{t("sessionOps.sourcesEmptyHint")}</p>
         </div>
       ) : (
-        <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
-          {chips.map((chip) => (
-            <SourceDetailRow
-              key={chip.id}
-              chip={chip}
-              selected={chip.id === activeId}
-              onOpen={(c) => {
-                openSourceRow(c)
-                onClose()
-              }}
-            />
-          ))}
-        </ul>
+        <SourceRowList chips={chips} activeId={activeId} onClose={onClose} />
       )}
       {empty ? null : (
-        <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-tertiary">
+        <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-primary">
           {t("chat.sourcesSheetFooter")}
         </p>
       )}
     </aside>
+  )
+}
+
+function SourceRowList({
+  chips,
+  activeId,
+  onClose
+}: {
+  chips: readonly TurnSourceChip[]
+  activeId: string | null
+  onClose: () => void
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  return (
+    <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
+      {chips.map((chip) => (
+        <SourceDetailRow
+          key={chip.id}
+          chip={chip}
+          selected={chip.id === activeId}
+          expanded={chip.id === expandedId}
+          onOpen={(next) => {
+            void openSourceRow(next).then((result) => {
+              if (result === "opened") onClose()
+              if (result === "expand") setExpandedId(next.id)
+            })
+          }}
+        />
+      ))}
+    </ul>
   )
 }
 

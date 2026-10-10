@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-10-10（聊天来源芯片 knowledge 书标）
+> 用户显式选择的本地 RAG。最后更新：2026-10-10（本轮来源知识库行：打开文件或展开片段）
 
 ## 当前真相
 
@@ -13,7 +13,7 @@
 2. **记忆层 Bento (Memory Layer Bento)**：非对称 2:1:1。脉冲 0 块主文案「还不能问」；透镜开关决定本次检索范围，星标写入工作区 `localStorage` 默认范围；健康卡折叠不可用源，缺失源禁用 Index Now。
 3. **索引管理面板**：默认收起，在舞台与 Bento **下方页内**展开（`rounded-3xl shadow-card`），不是遮罩 overlay。面板 `min-h-[28rem]` / `max-h-[min(40rem,75vh)]`，工具栏固定，文件空态与列表吃剩余高度并内部滚动。来源 Rebuild 在 Indexing 卡住时仍可点。预览 / View Files 先写 `selectedPath`。
 4. 区域组件：`components/retrieval/`、`components/bento/`、`components/drawer/`、`components/table/`、`knowledge-add-modal.tsx`、`knowledge-file-preview-modal.tsx`。
-5. 聊天 `SourceList` 点引用导航 `#/knowledge`（`path` / `q` / `snippet` / `startLine`），命中卡 `data-testid=knowledge-cited-hit`。助手气泡底脚知识库 cite 是独立 `knowledge` 芯片（书标 +「知识库」），点开「本轮来源」选中该行，不跳审查。图标表在 `thread/sources/source-badge.ts`，缺 kind 回落问号，禁止 undefined 白屏。
+5. 聊天 `SourceList` 点引用导航 `#/knowledge`（`path` / `q` / `snippet` / `startLine`），命中卡 `data-testid=knowledge-cited-hit`。助手气泡底脚知识库 cite 是独立 `knowledge` 芯片（书标 +「知识库」），点开「本轮来源」选中该行。工作区里还在的文件点行打开右侧并滚到行；找不到或不在工作区则就地展开片段。图标表在 `thread/sources/source-badge.ts`，缺 kind 回落问号，禁止 undefined 白屏。
 
 ## 不变量
 
@@ -28,7 +28,7 @@
 - 路径 jail：`packages/db/src/path-safe.ts`（`resolveKnowledgePath`）
 - 服务：`apps/desktop/src/main/services/knowledge-service.ts`（索引）；检索 `knowledge-search.ts`
 - UI：`apps/desktop/src/renderer/src/components/knowledge/`
-- 聊天来源芯片 / 本轮来源行：`apps/desktop/src/renderer/src/components/ai-chat/thread/sources/`（`source-badge.ts` 图标表）
+- 聊天来源芯片 / 本轮来源行：`apps/desktop/src/renderer/src/components/ai-chat/thread/sources/`（`source-badge.ts` 图标表；点击计划 `source-row-action.ts`；打开/展开 `open-source-row.ts`；滚到行 `source-file-reveal.ts`）
 
 ## 已知坑
 
@@ -41,7 +41,9 @@
 - `knowledge.documents` 失败时 UI 必须显示错误，不能把 `data ?? []` 画成「还没有文件」。View Files 若只切 tab 不设 `selectedPath`，看起来像点了没打开该目录。
 - 编辑来源弹窗不要用「路径没变」禁用保存。同一路径点 Rebuild 走 `knowledge.index rebuild`；改路径才删旧建新。卡住 Indexing 时也要能点。
 - 相对路径相对**当前打开的工作区根**，不是仓库自己的 `design/`。工作区是 `Desktop/img` 时，`design` 会变成 `Desktop/img/design`，不存在就 ENOENT。索引失败要把 `status=error` 和可读 `error` 写回来源，UI 必须显示；预设卡若磁盘上没有该目录，禁用 Index Now。
-- 添加来源弹窗的「整个项目」芯片不能藏在 `workspaceDirs.length > 0` 后面：只有 `readme.md`、没有子目录的工作区否则没法点根。`ENJOY_E2E_STUB` 启动时索引 `.`，否则 `citeKnowledge` 没有命中，聊天里看不到 `readme.md`。文档路径在索引面板里，检索首页要搜才会在命中卡出现 `readme.md`。窗口验收：发 `hello knowledge` → `turn-source-chip-knowledge` → 点开 sheet，`data-kind=knowledge` 行 `data-selected=true`（`e2e/knowledge-source-chip.spec.ts`）。
+- 添加来源弹窗的「整个项目」芯片不能藏在 `workspaceDirs.length > 0` 后面：只有 `readme.md`、没有子目录的工作区否则没法点根。`ENJOY_E2E_STUB` 启动时索引 `.`，否则 `citeKnowledge` 没有命中，聊天里看不到 `readme.md`。文档路径在索引面板里，检索首页要搜才会在命中卡出现 `readme.md`。窗口验收：发 `hello knowledge` → 一次点芯片开抽屉 → 点 `readme.md` 行打开右侧并滚到行；缺失文件就地展开片段；`data-selected=true` 只能一行（`e2e/knowledge-source-chip.spec.ts`）。
+- `citeKnowledge` 的 `sourceId` 是知识库来源（整个 `.`），不是文件。芯片 id 若写成 `source.sourceId || path`，多文件会撞 id、两行一起亮。正确做法：`sourceChipStableId` = `path:startLine`。
+- 本轮来源知识库行点了没反应、页脚却写「点文件可以在右侧打开」。根因：旧逻辑只让 `file`+path 聚焦审查。正确做法：工作区相对路径且 `workspace.readFile` 成功则走 `openChangedFile`；找不到 / `..` / 盘符 / URL 就地展开 `snippet`。页脚必须跟真实行为：「点文件可以在右侧打开；找不到的文件会就地展开片段。」
 - 聊天来源行若只给 file/skill/mcp 画图标，点知识库芯片会 `Element type is invalid`（`SourceRowBody`）。图标 / 词条必须是 `Record<SourceBadgeKind, …>`，并留运行时回落。
 - 分块 / 余弦排序有吞吐单测（约 8000 行 / 500 向量）。Agent / generate 会写 `ttfoMs`；用真实 Key 才能解释成模型 TTFO，stub 只证明字段被写入。
 - Cohere 以外没有官方 rerank 工厂时 `createRerankModel` 返回 undefined，必须走本地融合，不要空排。

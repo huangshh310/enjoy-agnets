@@ -54,7 +54,7 @@ test("行列：名称是短名，出处是 path 或服务器", () => {
   assert.equal(sourceRowProvenance(mcpChip, mcp), "服务器 · filesystem")
 })
 
-test("只有带 path 的文件行可聚焦，技能 / MCP / 知识库不跳转", () => {
+test("只有带 path 的文件行走旧聚焦；知识库开打/展开见 source-row-action", () => {
   const knowledgeChip: TurnSourceChip = {
     id: "k1",
     kind: "knowledge",

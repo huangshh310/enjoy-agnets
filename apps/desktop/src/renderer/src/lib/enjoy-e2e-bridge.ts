@@ -11,6 +11,9 @@ import { forceSecretWriteForE2e, type SecretWriteErrorCode } from "@renderer/lib
 import { queryClient } from "@renderer/lib/query-client"
 import { useCrashProbeStore } from "@renderer/components/layout/crash-fallback/crash-probe"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useSourceFileReveal } from "@renderer/components/ai-chat/thread/sources/source-file-reveal"
+import type { TurnSourceChip } from "@renderer/components/ai-chat/thread/sources/source-chip"
+import { useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
@@ -32,6 +35,12 @@ export type EnjoyE2eBridge = {
   forceSecretWrite: (code: SecretWriteErrorCode | null) => void
   /** 故意触发根错误边界，用来拍「这里出了点问题。」回退面。 */
   crashRenderer: () => void
+  getSelectedFile: () => {
+    path: string | null
+    line: number | null
+    rightPanelCollapsed: boolean
+  }
+  injectSheetChip: (chip: TurnSourceChip) => void
 }
 
 declare global {
@@ -78,6 +87,23 @@ export function installEnjoyE2eBridge(): void {
     hideGuide: () => useSetupGuideStore.getState().hide(),
     hideCreateProject: () => useCreateProjectStore.getState().hide(),
     forceSecretWrite: forceSecretWriteForE2e,
-    crashRenderer: () => useCrashProbeStore.getState().arm()
+    crashRenderer: () => useCrashProbeStore.getState().arm(),
+    getSelectedFile() {
+      const chat = useChatStore.getState()
+      const reveal = useSourceFileReveal.getState().reveal
+      return {
+        path: chat.selectedFilePath,
+        line: reveal?.line ?? null,
+        rightPanelCollapsed: chat.rightPanelCollapsed
+      }
+    },
+    injectSheetChip(chip) {
+      const sheet = useSourcesSheetStore.getState()
+      sheet.openSheet({
+        chips: [...sheet.chips, chip],
+        activeId: sheet.activeId,
+        ledgerEntry: sheet.ledgerEntry
+      })
+    }
   }
 }

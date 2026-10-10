@@ -8,6 +8,7 @@ import { extractShellCommand, extractToolPath } from "../thinking/extract-step-f
 import { isBashTool, isTodoWriteName } from "../thinking/agent-step-kind.ts"
 import { classifySourceKind, formatSourceChipLabel, parseMcpServerId, type TurnSourceChip } from "./source-chip.ts"
 import { isHttpSource } from "./source-path.ts"
+import { sourceChipStableId } from "./source-row-action.ts"
 
 export type HostInjectSourceNames = {
   mcp?: readonly string[]
@@ -24,10 +25,15 @@ export function collectTurnSources(
     chips.push(
       toChip(
         {
-          id: source.sourceId || source.path,
+          id: sourceChipStableId({
+            sourceId: source.sourceId,
+            path: source.path,
+            startLine: source.startLine
+          }),
           path: source.path,
           startLine: source.startLine,
           title: source.title,
+          snippet: source.snippet,
           fromKnowledge: true
         },
         skillPrefix
@@ -75,6 +81,7 @@ function toChip(
     path?: string
     startLine?: number
     title?: string
+    snippet?: string
     toolName?: string
     fromEnjoy?: boolean
     fromKnowledge?: boolean
@@ -89,6 +96,7 @@ function toChip(
     path: input.path,
     startLine: input.startLine,
     title: input.title,
+    snippet: input.snippet,
     fromEnjoy: input.fromEnjoy
   }
   return { ...chip, label: formatSourceChipLabel(chip, skillPrefix) }

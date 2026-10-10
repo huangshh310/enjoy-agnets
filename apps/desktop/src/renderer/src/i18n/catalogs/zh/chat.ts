@@ -231,7 +231,7 @@ export const zhChat = {
   sourcesSheetKindSkill: "技能",
   sourcesSheetKindMcp: "MCP",
   sourcesSheetMcpProvenance: "服务器 · {name}",
-  sourcesSheetFooter: "点文件可以在右侧打开。",
+  sourcesSheetFooter: "点文件可以在右侧打开；找不到的文件会就地展开片段。",
   hostInjectEnabled: "已启用 {mcp} MCP · {skills} Skills",
   hostInjectEnabledMcp: "已启用 {mcp} MCP",
   hostInjectEnabledSkills: "已启用 {skills} Skills",
