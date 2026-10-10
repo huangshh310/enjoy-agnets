@@ -44,7 +44,7 @@ export const zhWorkspacesPages = {
     defaultSessionName: "新对话",
     createFailed: "创建项目失败",
     title: "创建项目",
-    step1Desc: "打开位置，不是换引擎",
+    step1Desc: "选一个文件夹作为项目",
     testingHost: "正在测试…",
     hostReady: "主机已就绪，可测通连通性",
     pickHostFirst: "请先选择或配置主机",

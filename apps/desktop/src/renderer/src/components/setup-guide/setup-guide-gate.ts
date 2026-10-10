@@ -37,6 +37,17 @@ export const SETUP_GUIDE_FACE = {
     skipWithoutWorkspace: false,
     mark: "none"
   },
+  "connect-model": {
+    title: "settings.setupGuide.connectTitle",
+    body: "settings.setupGuide.connectBody",
+    primary: "settings.setupGuide.continue",
+    hero: false,
+    choice: true,
+    showBack: true,
+    finishes: false,
+    skipWithoutWorkspace: false,
+    mark: "none"
+  },
   appearance: {
     title: "settings.setupGuide.appearanceTitle",
     body: "settings.setupGuide.appearanceBody",

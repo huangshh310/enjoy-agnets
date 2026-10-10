@@ -5,13 +5,15 @@ export type SettingsSectionSearch = {
   tab?: string
   tool?: string
   from?: string
+  create?: string
 }
 
 export function parseSettingsSectionSearch(search: Record<string, unknown>): SettingsSectionSearch {
   return {
     tab: asSearchToken(search.tab),
     tool: asSearchToken(search.tool),
-    from: asSearchToken(search.from)
+    from: asSearchToken(search.from),
+    create: asSearchToken(search.create)
   }
 }
 

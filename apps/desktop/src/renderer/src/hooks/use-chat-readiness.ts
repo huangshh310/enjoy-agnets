@@ -1,5 +1,6 @@
 /**
  * 渲染侧只消费 main 的可对话路线快照。向导末屏与发送闸共用。
+ * defaultRoute 已在合约里，直接 parse，不要先剥字段。
  */
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
