@@ -76,7 +76,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - Composer 宿主注入一行芯片：`ai-chat/composer/host-inject/`（空不画；Popover 内脚注 / 管理扩展）；快照 `stores/host-inject/`；合约 `packages/ipc-contract/src/host-inject.ts`
 - Composer `@` 发现（文件 / 文档 / 技能 / MCP，网页 muted）与 `/` 内置（compact + 探索/执行）+ 技能面板：`ai-chat/composer/mentions/`。CU-P1-B 桌面组：`mentions/desktop/`（`@桌面` / `@应用`、testid `mention-sheet`、输入下偏置芯片；Explore 不装已连接）。视觉锁 [`../previews/cu-p1-b-composer-mention.html`](../previews/cu-p1-b-composer-mention.html)，不宣称像素 1:1
 - 会话目标 / Recap：有内容走 `composer/stacked-rail/` 上沿融合轨；未设入口仍是底栏 `composer-overflow-menu.tsx` + `session-goal-chip.tsx`。发送垫 `hooks/session-context-inject.ts`；启发式头标 `packages/ipc-contract/src/session-recap-kind.ts`。侧栏会话行 `h-7 rounded-md`：`sidebar/sidebar-session-row.tsx`
-- 线程提示：失败 `thread/thread-error-banner.tsx`（存储/泛失败一句人话，码只进 `isDevCopyEnabled`）；非失败 `thread/thread-notice-banner.tsx`。准备中：`composer-preparing-hint.tsx`。空会话复用：`hooks/reuse-empty-session.ts`。归档返回值：`hooks/session-archive-result.ts`。消息更多：`thread/turns/message-more-menu.tsx`。
+- 线程提示：失败 `thread/thread-error-banner.tsx`（存储/泛失败一句人话，码只进 `isDevCopyEnabled`）；非失败 `thread/thread-notice-banner.tsx`。准备中：`composer-preparing-hint.tsx`。空会话复用：`hooks/reuse-empty-session.ts`。归档返回值：`hooks/session-archive-result.ts`。消息更多：`thread/turns/message-more-menu.tsx`。e2e：`new-session-reuse.spec.ts`（点新对话、打字、Enter，会话数最多 +1）；`batch6-host-luna.spec.ts`（回焦、开发版不检查更新、资料页、时区一次）。
 - Environment 卡片：`ai-chat/environment/`（对话列覆盖，不替代 Inspector；Esc / 新对话 / 换路由关闭，`use-environment-dismiss.ts`）
 - 底栏项目 / 分支选择：`ai-chat/status-bar/`（禁止写死 Main）
 - Mermaid：`thread/mermaid/`；Preview Rail：`thread/thread-preview-rail.tsx`（窄屏与账本开启时隐藏，杜绝刻度穿插气泡）
