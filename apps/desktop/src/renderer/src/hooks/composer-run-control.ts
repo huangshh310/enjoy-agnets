@@ -3,9 +3,7 @@
  * agent.run 返回前 runId 为空，Stop 也必须先松 UI，不能空 return。
  */
 import { sealAbandonedTools } from "@enjoy-agents/ipc-contract"
-import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
-import { applyLocalSessionWorkflow } from "../components/ai-chat/review-gate/patch-session-workflow"
 import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
@@ -51,9 +49,6 @@ export async function abortComposerRun() {
   store.setNotice(USER_ABORTED_CODE)
   if (sessionId) {
     useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
-    const tools = useChatStore.getState().messages.at(-1)?.tools ?? []
-    const turn = decideTurnOutcome({ ended: "abort", tools })
-    applyLocalSessionWorkflow(sessionId, turn.workflow)
   }
   if (runId) abortOrphanedRun(runId)
 }
