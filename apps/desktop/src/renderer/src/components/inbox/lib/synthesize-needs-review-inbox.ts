@@ -4,6 +4,7 @@
 import type { SessionNeedsReviewItem } from "@enjoy-agents/ipc-contract"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import type { InboxNotification } from "../inbox.types"
+import { isLiveInboxSession } from "./filter-inbox"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
 
@@ -26,6 +27,7 @@ export function inboxFromNeedsReviewSessions(
 
   return rows
     .filter((row) => row.workflowStatus === "needs_review")
+    .filter((row) => isLiveInboxSession(row.id, input.repositories))
     .map((session) => {
       const id = `needs_review:${session.id}`
       const workspaceId = session.workspaceId ?? undefined

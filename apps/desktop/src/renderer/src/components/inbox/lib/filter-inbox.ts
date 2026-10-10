@@ -28,10 +28,10 @@ function isLiveInboxAttention(
   if (item.kind === "pending_approval" || item.kind === "ask_user") {
     if (item.status !== "active" && item.status !== "focused") return false
   }
-  return isLiveSession(item.sessionId, repositories)
+  return isLiveInboxSession(item.sessionId, repositories)
 }
 
-function isLiveSession(sessionId: string, repositories?: RepositoryNode[]): boolean {
+export function isLiveInboxSession(sessionId: string, repositories?: RepositoryNode[]): boolean {
   if (!repositories) return true
   const liveSessions = repositories.filter((row) => row.kind === "session")
   if (liveSessions.length === 0) return false
@@ -56,7 +56,7 @@ export function inboxFromPendingApprovals(
   }
 ): InboxNotification[] {
   return rows
-    .filter((row) => isLiveSession(row.sessionId, input.repositories))
+    .filter((row) => isLiveInboxSession(row.sessionId, input.repositories))
     .map((row) => {
       const ask = row.name === ASK_USER_QUESTIONS_TOOL
       const copyKey = ask ? ("ask_user" as const) : ("pending_approval" as const)

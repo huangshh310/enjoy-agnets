@@ -16,7 +16,7 @@ export type TurnAttention = z.infer<typeof TurnAttention>
 
 export const TurnOutcome = z.object({
   workflow: TurnWorkflow,
-  attention: TurnAttention
+  attention: TurnAttention.catch("neutral")
 })
 export type TurnOutcome = z.infer<typeof TurnOutcome>
 

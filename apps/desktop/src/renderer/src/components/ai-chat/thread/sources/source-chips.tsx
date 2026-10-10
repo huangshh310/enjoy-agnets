@@ -1,6 +1,7 @@
 /**
  * 助手气泡底脚来源芯片：3–4 颗可见，其余 +N。点芯片（含 +N）打开「本轮来源」sheet。
  */
+import { RiBookOpenLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
@@ -76,19 +77,28 @@ function SourceChipButton({
   selected: boolean
   onOpen: () => void
 }) {
+  const t = useT()
+  const knowledge = chip.kind === "knowledge"
   return (
     <button
       type="button"
-      data-testid="turn-source-chip"
+      data-testid={knowledge ? "turn-source-chip-knowledge" : "turn-source-chip"}
+      data-source-kind={chip.kind}
       onClick={onOpen}
       className={cx(
-        "max-w-full cursor-pointer truncate rounded-md px-2 py-0.5 text-caption-2-medium ring-1 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+        "inline-flex max-w-full cursor-pointer items-center gap-1 truncate rounded-md px-2 py-0.5 text-caption-2-medium ring-1 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         selected
           ? "bg-accent-50 text-accent-500 ring-accent-500/30"
           : "bg-background-tertiary-default text-text-primary ring-border-button-default hover:bg-background-secondary-hover"
       )}
     >
-      {chip.label}
+      {knowledge ? (
+        <span className="inline-flex items-center gap-0.5 text-caption-2-regular text-text-tertiary">
+          <RiBookOpenLine className="size-3 shrink-0" aria-hidden />
+          {t("chat.sourceKnowledgeLabel")}
+        </span>
+      ) : null}
+      <span className="truncate">{chip.label}</span>
     </button>
   )
 }

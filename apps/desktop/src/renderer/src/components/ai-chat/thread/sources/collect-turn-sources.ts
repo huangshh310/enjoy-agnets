@@ -1,5 +1,5 @@
 /**
- * 从本轮 cited sources + 工具调用收成芯片，去重。网页 URL 本轮不做。
+ * 本轮芯片 = 工具碰过的文件（读/写）∪ 知识库 source.added。不从 git dirty 推断。网页 URL 本轮不做。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
@@ -19,18 +19,16 @@ export function collectTurnSources(
   skillPrefix: (name: string) => string
 ): TurnSourceChip[] {
   const chips: TurnSourceChip[] = []
-  const toolPaths = thisRoundToolPaths(message.tools ?? [])
   for (const source of message.sources ?? []) {
     if (isHttpSource(source.path) || isHttpSource(source.title)) continue
-    const cited = source.path || source.title
-    if (cited && !toolPaths.has(normalizeSourcePath(cited))) continue
     chips.push(
       toChip(
         {
           id: source.sourceId || source.path,
           path: source.path,
           startLine: source.startLine,
-          title: source.title
+          title: source.title,
+          fromKnowledge: true
         },
         skillPrefix
       )
@@ -79,6 +77,7 @@ function toChip(
     title?: string
     toolName?: string
     fromEnjoy?: boolean
+    fromKnowledge?: boolean
   },
   skillPrefix: (name: string) => string
 ): TurnSourceChip {
@@ -101,19 +100,6 @@ function skillTitle(tool: ThreadToolCall): string {
   return typeof raw === "string" && raw.trim() ? raw.trim() : tool.name
 }
 
-function thisRoundToolPaths(tools: readonly ThreadToolCall[]): Set<string> {
-  const paths = new Set<string>()
-  for (const tool of tools) {
-    const path = extractToolPath(asRecord(tool.args), tool.name, asRecord(tool.result))
-    if (path) paths.add(normalizeSourcePath(path))
-  }
-  return paths
-}
-
-function normalizeSourcePath(path: string): string {
-  return path.trim().replace(/\\/g, "/").replace(/^\.\//, "")
-}
-
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -123,9 +109,17 @@ function asRecord(value: unknown): Record<string, unknown> {
 function dedupeChips(chips: readonly TurnSourceChip[]): TurnSourceChip[] {
   const byKey = new Map<string, TurnSourceChip>()
   for (const chip of chips) {
-    const key = `${chip.kind}:${chip.path ?? chip.title ?? chip.id}`
+    const key = chip.path ?? chip.title ?? chip.id
     const prev = byKey.get(key)
-    if (!prev || (prev.startLine == null && chip.startLine != null)) byKey.set(key, chip)
+    if (!prev) {
+      byKey.set(key, chip)
+      continue
+    }
+    if (prev.kind === "knowledge" && chip.kind !== "knowledge") {
+      byKey.set(key, { ...chip, startLine: chip.startLine ?? prev.startLine })
+      continue
+    }
+    if (prev.startLine == null && chip.startLine != null) byKey.set(key, chip)
   }
   return [...byKey.values()]
 }

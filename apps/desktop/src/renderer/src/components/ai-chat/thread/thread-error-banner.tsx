@@ -46,7 +46,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const kind = classifyThreadError(error)
-  if (kind === "stopped") return null
+  if (kind === "stopped" || kind === "catch_up_timeout") return null
   const runtimeId = useChatStore((state) => state.runtimeId)
   const loginLoop = useCliLoginLoop(runtimeId)
   const messages = useChatStore((state) => state.messages)
@@ -167,9 +167,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                     ? t("chat.restoreNoMatching")
                     : kind === "run_failed"
                       ? t("chat.runFailed")
-                      : kind === "catch_up_timeout"
-                        ? t("chat.catchUpApprovalTimeout")
-                        : humanizeThreadError(error, t))
+                      : humanizeThreadError(error, t))
 
   return (
     <div

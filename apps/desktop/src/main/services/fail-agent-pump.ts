@@ -87,7 +87,7 @@ function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {
     errorClass: "approval_denied"
   })
   settleRun(runId, { status: "error", summary: CATCH_UP_APPROVAL_TIMEOUT })
-  const turn = turnOutcomeForRun(run, "error")
+  const turn = { ...turnOutcomeForRun(run, "error"), attention: "neutral" as const }
   persistTurnWorkflow(run.input.sessionId, turn)
   emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT, turn })
 }

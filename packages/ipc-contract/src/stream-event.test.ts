@@ -91,6 +91,20 @@ test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
   }
 })
 
+test("未知 attention 回落 neutral，不丢掉整条终态事件", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "boom",
+    turn: { workflow: "in_progress", attention: "weird" }
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success && parsed.data.type === "run.error") {
+    assert.equal(parsed.data.turn?.attention, "neutral")
+    assert.equal(parsed.data.turn?.workflow, "in_progress")
+  }
+})
+
 test("source.added 的 NaN score 丢掉字段不拒整条", () => {
   const parsed = StreamEvent.safeParse({
     type: "source.added",

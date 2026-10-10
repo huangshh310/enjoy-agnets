@@ -129,7 +129,7 @@ type Translate = (path: string, vars?: Record<string, string | number>) => strin
 export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined {
   if (kind === "restore_no_matching") return "chat.restoreNoMatching"
   if (kind === "run_failed") return "chat.runFailed"
-  if (kind === "catch_up_timeout") return "chat.catchUpApprovalTimeout"
+  if (kind === "catch_up_timeout") return "studio.automations.catchUpTimeout"
   if (kind === "store") return "chat.errorGenericHint"
   if (kind === "send_restore") return "chat.sendFailedRestore"
   if (kind === "stopped") return "chat.runStopped"

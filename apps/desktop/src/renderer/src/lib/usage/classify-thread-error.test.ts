@@ -46,7 +46,7 @@ test("机器码走人话，横幅不得摊原文", () => {
   assert.equal(classifyThreadError(CATCH_UP_APPROVAL_TIMEOUT), "catch_up_timeout")
   assert.equal(humanizeThreadError(RESTORE_NO_MATCHING, t), "chat.restoreNoMatching")
   assert.equal(humanizeThreadError(RUN_FAILED, t), "chat.runFailed")
-  assert.equal(humanizeThreadError(CATCH_UP_APPROVAL_TIMEOUT, t), "chat.catchUpApprovalTimeout")
+  assert.equal(humanizeThreadError(CATCH_UP_APPROVAL_TIMEOUT, t), "studio.automations.catchUpTimeout")
   assert.equal(humanizeThreadError("mystery_machine_code", t), "chat.errorGenericHint")
   assert.notEqual(humanizeThreadError(RESTORE_NO_MATCHING, t), RESTORE_NO_MATCHING)
 })

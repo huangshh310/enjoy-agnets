@@ -35,8 +35,8 @@ export function persistSessionWorkflow(
     getDatabase()
       .prepare("UPDATE sessions SET workflow_status = ? WHERE id = ?")
       .run(workflow, sessionId)
-  } catch {
-    // 测试库尚未建 sessions 时不挡收工
+  } catch (error) {
+    console.error("persistSessionWorkflow failed", sessionId, workflow, error)
   }
 }
 

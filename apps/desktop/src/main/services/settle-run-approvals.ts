@@ -47,6 +47,19 @@ export function settlePendingApprovalsForSession(
   return settled
 }
 
+/** 结清指定行；已决不覆盖。给回挂 HMAC 失败 / 取消路径用。 */
+export function settleListedApprovals(
+  items: readonly PendingSettle[],
+  window?: BrowserWindow,
+  cause: SettleApprovalCause = "aborted"
+): number {
+  let settled = 0
+  for (const item of items) {
+    if (settleOne(item, window, cause)) settled += 1
+  }
+  return settled
+}
+
 export function countPendingApprovalsForSession(sessionId: string): number {
   return collectPendingForSession(sessionId).length
 }

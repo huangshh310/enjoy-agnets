@@ -39,7 +39,14 @@ const {
 
 const MIN = 60_000
 
-type SentEvent = { type: string; message?: string; runId?: string; code?: string; toolCallId?: string }
+type SentEvent = {
+  type: string
+  message?: string
+  runId?: string
+  code?: string
+  toolCallId?: string
+  turn?: { workflow?: string; attention?: string }
+}
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -201,7 +208,14 @@ test("子 agent 审批超时后不能再调工具，最终 failed 不发 run.end
   assert.equal((await settled).status, "error")
   assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_APPROVAL_TIMEOUT)
   assert.equal(getRun(getDatabase(), runId)?.status, "failed")
-  assert.ok(events.some((item) => item.type === "run.error" && item.message === CATCH_UP_APPROVAL_TIMEOUT))
+  assert.ok(
+    events.some(
+      (item) =>
+        item.type === "run.error" &&
+        item.message === CATCH_UP_APPROVAL_TIMEOUT &&
+        item.turn?.attention === "neutral"
+    )
+  )
   let ended = false
   completeAgentRun({
     runId,

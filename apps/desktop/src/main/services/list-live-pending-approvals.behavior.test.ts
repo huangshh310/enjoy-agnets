@@ -75,3 +75,80 @@ test("活会话未决进列表，已决与归档不进", () => {
   assert.ok(!items.some((item) => item.id === "apr_done_sot"))
   assert.ok(!items.some((item) => item.id === "apr_arch_sot"))
 })
+
+test("已结束 run 的未决不进拍板：cancelled / failed 不列", () => {
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_dead_run", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ses_dead_run", "ws_dead_run", "死跑", 1, 1)
+  insertRun(db, {
+    id: "run_cancelled_pending",
+    sessionId: "ses_dead_run",
+    workspaceId: "ws_dead_run",
+    kind: "agent",
+    status: "cancelled",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  insertRun(db, {
+    id: "run_failed_pending",
+    sessionId: "ses_dead_run",
+    workspaceId: "ws_dead_run",
+    kind: "agent",
+    status: "failed",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  insertRun(db, {
+    id: "run_running_pending",
+    sessionId: "ses_dead_run",
+    workspaceId: "ws_dead_run",
+    kind: "agent",
+    status: "running",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  insertApproval(db, {
+    id: "apr_cancelled_pending",
+    runId: "run_cancelled_pending",
+    toolCallId: "tool_c",
+    name: "write_file",
+    args: "{}",
+    hmac: "h",
+    decision: null,
+    createdAt: 5
+  })
+  insertApproval(db, {
+    id: "apr_failed_pending",
+    runId: "run_failed_pending",
+    toolCallId: "tool_f",
+    name: "write_file",
+    args: "{}",
+    hmac: "h",
+    decision: null,
+    createdAt: 6
+  })
+  insertApproval(db, {
+    id: "apr_running_pending",
+    runId: "run_running_pending",
+    toolCallId: "tool_r",
+    name: "write_file",
+    args: "{}",
+    hmac: "h",
+    decision: null,
+    createdAt: 7
+  })
+  const items = listLivePendingApprovals(db)
+  assert.ok(!items.some((item) => item.id === "apr_cancelled_pending"))
+  assert.ok(!items.some((item) => item.id === "apr_failed_pending"))
+  assert.ok(items.some((item) => item.id === "apr_running_pending"))
+})

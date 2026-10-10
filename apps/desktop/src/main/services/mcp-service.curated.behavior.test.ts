@@ -4,10 +4,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-const { listServers, upsertServer } = await import("./mcp-service.curated.behavior.load.ts")
+const { handleMcpUpsert, listServers } = await import("./mcp-service.curated.behavior.load.ts")
 
 function upsertGithub(input: { id: string; name: string; command: string; curatedPresetId?: string }) {
-  return upsertServer({
+  return handleMcpUpsert({
     id: input.id,
     name: input.name,
     transport: "stdio",
@@ -46,8 +46,19 @@ test("精选安装写下 marker，改名或改命令后清掉", () => {
   assert.equal(evil.curatedPresetId, undefined)
 })
 
+test("IPC upsert 多字段被拒，不写库", () => {
+  assert.throws(() =>
+    handleMcpUpsert({
+      name: "github",
+      transport: "stdio",
+      command: "npx -y @modelcontextprotocol/server-github",
+      extra: 1
+    })
+  )
+})
+
 test("导入同名 github 不写精选 marker", () => {
-  const imported = upsertServer({
+  const imported = handleMcpUpsert({
     name: "github",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-github",

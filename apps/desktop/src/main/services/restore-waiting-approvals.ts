@@ -23,17 +23,26 @@ export function restoreHeldWaitingApprovals(input: {
   items: PendingApproval[]
   window: BrowserWindow
 }): { ended: boolean; keep: PendingApproval[] } {
-  const classified = classifyWaitingApprovals(input.hmacPending, input.items)
+  const hmacPending = liveHmacRows(input.runId, input.hmacPending)
+  const classified = classifyWaitingApprovals(hmacPending, input.items)
   const orphaned = applyRestoredOrphanApprovals({
     runId: input.runId,
     items: classified.orphans,
     window: input.window
   })
   if (orphaned.ended) return { ended: true, keep: [] }
-  denyMissingArgApprovals(input.runId, classified.missingArgs, input.window)
-  const keep = mergeHmacPendingIntoKeep(input.hmacPending, classified.keep)
-  emitRestoredApprovalCards(input.runId, keep, input.window)
-  return { ended: false, keep }
+  const merged = mergeHmacPendingIntoKeep(hmacPending, classified.keep)
+  denyMissingArgApprovals(input.runId, [...classified.missingArgs, ...merged.missingArgs], input.window)
+  emitRestoredApprovalCards(input.runId, merged.keep, input.window)
+  return { ended: false, keep: merged.keep }
+}
+
+/** HMAC 通过的活行：本 run、未决、未 superseded。别的 run / 已决不进。 */
+function liveHmacRows(runId: string, hmacPending: ApprovalRow[]): ApprovalRow[] {
+  return hmacPending.filter(
+    (row) =>
+      row.runId === runId && row.decision == null && !isSupersededSdkApprovalId(row.sdkApprovalId)
+  )
 }
 
 function classifyWaitingApprovals(
@@ -49,10 +58,6 @@ function classifyWaitingApprovals(
   const orphans: PendingApproval[] = []
   for (const item of items) {
     const row = hmacPending.find((approval) => approval.id === item.approvalId)
-    if (row && isSupersededSdkApprovalId(row.sdkApprovalId)) {
-      orphans.push(item)
-      continue
-    }
     const args = parseStoredApprovalArgs(row)
     if (args != null) keep.push({ ...item, args })
     else if (row) missingArgs.push({ item, row })
@@ -61,27 +66,29 @@ function classifyWaitingApprovals(
   return { keep, missingArgs, orphans }
 }
 
-/** repark 已落库、检查点还没有的未决，以及 superseded 跳过后的替换行，都并进 keep。 */
+/** repark 已落库、检查点还没有的未决并进 keep；缺参走 deny，不跳过。 */
 function mergeHmacPendingIntoKeep(
   hmacPending: ApprovalRow[],
   keep: PendingApproval[]
-): PendingApproval[] {
+): {
+  keep: PendingApproval[]
+  missingArgs: Array<{ item: PendingApproval; row: ApprovalRow }>
+} {
   const seen = new Set(keep.map((item) => item.approvalId))
   const merged = [...keep]
+  const missingArgs: Array<{ item: PendingApproval; row: ApprovalRow }> = []
   for (const row of hmacPending) {
     if (seen.has(row.id)) continue
-    if (isSupersededSdkApprovalId(row.sdkApprovalId)) continue
     const args = parseStoredApprovalArgs(row)
-    if (args == null) continue
-    merged.push({
-      approvalId: row.id,
-      toolCallId: row.toolCallId,
-      name: row.name,
-      args
-    })
+    const item = { approvalId: row.id, toolCallId: row.toolCallId, name: row.name }
+    if (args == null) {
+      missingArgs.push({ item, row })
+      continue
+    }
+    merged.push({ ...item, args })
     seen.add(row.id)
   }
-  return merged
+  return { keep: merged, missingArgs }
 }
 
 function denyMissingArgApprovals(

@@ -285,7 +285,7 @@ export type LivePendingApproval = {
   createdAt: number
 }
 
-/** Inbox 拍板真源：未决且会话未归档。 */
+/** Inbox 拍板真源：未决、未 superseded、会话未归档，且 run 仍活着（等审批 / 在跑）。 */
 export function listLivePendingApprovals(db: AppDatabase): LivePendingApproval[] {
   return db
     .prepare(
@@ -296,6 +296,8 @@ export function listLivePendingApprovals(db: AppDatabase): LivePendingApproval[]
        JOIN runs r ON r.id = a.run_id
        JOIN sessions s ON s.id = r.session_id
        WHERE a.decision IS NULL AND s.archived_at IS NULL
+         AND r.status IN ('waiting_review', 'running')
+         AND ${ACTIVE_SDK_IDENTITY_SQL.replaceAll("sdk_approval_id", "a.sdk_approval_id")}
        ORDER BY a.created_at DESC`
     )
     .all() as LivePendingApproval[]

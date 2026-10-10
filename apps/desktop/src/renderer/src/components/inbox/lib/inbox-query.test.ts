@@ -285,11 +285,51 @@ test("待验收只认 main 的 needs_review，不看 git dirty / 裸 run.end", (
         workflowStatus: "needs_review"
       }
     ],
-    { t, now: 10, repositories: [{ id: "ws", name: "app", kind: "workspace", updatedAt: 1 }] }
+    {
+      t,
+      now: 10,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_r", name: "登录页改版", kind: "session", parentId: "ws", updatedAt: 9 }
+      ]
+    }
   )
   assert.equal(rows.length, 1)
   assert.equal(rows[0]?.sessionId, "ses_r")
   assert.equal(inboxNavCounts(rows).needs_review, 1)
+})
+
+test("待验收与拍板一样要和会话列表求交，空列表 fail-closed", () => {
+  const row = {
+    id: "ses_ghost",
+    workspaceId: "ws",
+    title: "幽灵",
+    updatedAt: 9,
+    workflowStatus: "needs_review" as const
+  }
+  assert.equal(
+    inboxFromNeedsReviewSessions([row], { t, now: 10, repositories: [] }).length,
+    0
+  )
+  assert.equal(
+    inboxFromNeedsReviewSessions([row], {
+      t,
+      now: 10,
+      repositories: [{ id: "ws", name: "app", kind: "workspace", updatedAt: 1 }]
+    }).length,
+    0
+  )
+  assert.equal(
+    inboxFromNeedsReviewSessions([row], {
+      t,
+      now: 10,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_ghost", name: "幽灵", kind: "session", parentId: "ws", updatedAt: 9 }
+      ]
+    }).length,
+    1
+  )
 })
 
 test("待验收从会话 workflowStatus 合成，不进拍板计数", () => {
