@@ -8,6 +8,7 @@ import { useAttentionStore } from "../stores/attention/attention-store"
 import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
 import { hydrateSessionRunning } from "./hydrate-session-running"
 import { applyFinishedHydrate } from "./session-hydrate-finish"
+import { noticeAfterRestartHydrate } from "./hydrate-restart-notice"
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]
@@ -38,6 +39,13 @@ export function applySessionHydrate(input: {
   )
   if (!ok) return false
   const store = useChatStore.getState()
+  const notice = noticeAfterRestartHydrate({
+    sameSession: input.sameSession,
+    running,
+    notice: store.notice,
+    messages: store.messages
+  })
+  if (notice && notice !== store.notice) store.setNotice(notice)
   for (const event of takeHeldApprovalResolved(input.sessionId)) {
     store.applyStreamEvent(event)
   }

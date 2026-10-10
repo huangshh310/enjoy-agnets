@@ -18,6 +18,7 @@ import {
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
 import { applyHydratedLivePending } from "./hydrate-live-pending-approval"
+import { keepRestoreFamilyNotice } from "./hydrate-restart-notice"
 import { applySessionHydrate } from "./session-hydrate"
 import { bumpSessionHydrateGeneration } from "./session-hydrate-generation"
 import { messagesAfterSessionSwitch } from "./session-hydrate-finish"
@@ -262,8 +263,12 @@ export function parkForegroundRun() {
 
 export function restoreComposerForSession(sessionId: string) {
   const park = useAttentionStore.getState().takePark(sessionId)
+  const keptNotice = keepRestoreFamilyNotice(useChatStore.getState().notice)
   if (park) {
-    useChatStore.setState(parkedComposerPatch(park))
+    useChatStore.setState({
+      ...parkedComposerPatch(park),
+      notice: park.notice ?? keptNotice
+    })
   } else {
     const slot = useAttentionStore
       .getState()
@@ -280,10 +285,14 @@ export function restoreComposerForSession(sessionId: string) {
         running: true,
         runId: slot.runId || null,
         lastRunId: slot.runId || null,
-        pendingApproval: slot.approval
+        pendingApproval: slot.approval,
+        notice: keptNotice
       })
     } else {
-      useChatStore.setState(idleComposerPatch())
+      useChatStore.setState({
+        ...idleComposerPatch(),
+        notice: keptNotice
+      })
     }
   }
 
