@@ -28,6 +28,7 @@
     "./turn-outcome": "./src/turn-outcome.ts",
     "./mcp-curated": "./src/mcp-curated.ts",
     "./approvals-pending": "./src/approvals-pending.ts",
+    "./sessions-needs-review": "./src/sessions-needs-review.ts",
     "./estimated-cost": "./src/estimated-cost.ts",
     "./session-config": "./src/session-config.ts",
     "./session-title": "./src/session-title.ts",

@@ -12,7 +12,10 @@ import {
   inboxNavCounts,
   resolveSelected
 } from "./filter-inbox.ts"
-import { synthesizeNeedsReviewInbox } from "./synthesize-needs-review-inbox.ts"
+import {
+  inboxFromNeedsReviewSessions,
+  synthesizeNeedsReviewInbox
+} from "./synthesize-needs-review-inbox.ts"
 import { groupInbox, inboxGroupId, inboxTimeParts, startOfLocalDay } from "./inbox-time.ts"
 
 const t = (path: string) => path
@@ -260,6 +263,33 @@ test("Attention error 含 abort 标已取消，合成待验收只看 workflowSta
     workflowStatus: "in_progress"
   }
   assert.equal(synthesizeNeedsReviewInbox({ repositories: [failedSession], t, now: 5 }).length, 0)
+})
+
+test("待验收只认 main 的 needs_review，不看 git dirty / 裸 run.end", () => {
+  const fromGitOrEnd = inboxFromNeedsReviewSessions([], {
+    t,
+    now: 10,
+    repositories: [
+      { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+      { id: "ses_dirty", name: "脏仓", kind: "session", parentId: "ws", updatedAt: 8 }
+    ]
+  })
+  assert.equal(fromGitOrEnd.length, 0)
+  const rows = inboxFromNeedsReviewSessions(
+    [
+      {
+        id: "ses_r",
+        workspaceId: "ws",
+        title: "登录页改版",
+        updatedAt: 9,
+        workflowStatus: "needs_review"
+      }
+    ],
+    { t, now: 10, repositories: [{ id: "ws", name: "app", kind: "workspace", updatedAt: 1 }] }
+  )
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.sessionId, "ses_r")
+  assert.equal(inboxNavCounts(rows).needs_review, 1)
 })
 
 test("待验收从会话 workflowStatus 合成，不进拍板计数", () => {

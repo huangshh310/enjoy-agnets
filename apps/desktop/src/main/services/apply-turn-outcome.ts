@@ -6,7 +6,6 @@ import type { TurnOutcome } from "@enjoy-agents/ipc-contract"
 import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import type { ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
-import { patchSession } from "./session-queries"
 import { shouldWriteSessionWorkflow, stickyTurnOutcome } from "./session-workflow-sticky"
 
 export { shouldWriteSessionWorkflow, stickyTurnOutcome }
@@ -32,7 +31,13 @@ export function persistSessionWorkflow(
 ): void {
   if (!sessionId) return
   if (!shouldWriteSessionWorkflow(readSessionWorkflow(sessionId), workflow)) return
-  void patchSession({ id: sessionId, workflowStatus: workflow }).catch(() => undefined)
+  try {
+    getDatabase()
+      .prepare("UPDATE sessions SET workflow_status = ? WHERE id = ?")
+      .run(workflow, sessionId)
+  } catch {
+    // 测试库尚未建 sessions 时不挡收工
+  }
 }
 
 function readSessionWorkflow(sessionId: string): string | null {

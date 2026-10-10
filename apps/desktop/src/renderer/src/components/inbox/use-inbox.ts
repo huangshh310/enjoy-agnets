@@ -16,7 +16,8 @@ import {
   resolveSelected
 } from "./lib/filter-inbox"
 import { useLivePendingApprovals } from "./use-live-pending-approvals"
-import { synthesizeNeedsReviewInbox } from "./lib/synthesize-needs-review-inbox"
+import { useLiveNeedsReview } from "./use-live-needs-review"
+import { inboxFromNeedsReviewSessions } from "./lib/synthesize-needs-review-inbox"
 import { groupInbox } from "./lib/inbox-time"
 import { takeInboxFilter } from "./lib/pending-inbox-filter"
 
@@ -32,6 +33,7 @@ export function useInbox() {
   const attentionItems = useAttentionStore((state) => state.items)
   const repositories = useChatStore((state) => state.repositories)
   const pendingApprovals = useLivePendingApprovals()
+  const needsReviewSessions = useLiveNeedsReview()
 
   // 挂载时加载耐久层：已读 / 隐藏状态 + error/complete 归档条目。
   useEffect(() => {
@@ -73,9 +75,25 @@ export function useInbox() {
       hiddenIds,
       repositories
     })
-    const reviewList = synthesizeNeedsReviewInbox({ repositories, t, now })
+    const reviewList = inboxFromNeedsReviewSessions(needsReviewSessions, {
+      t,
+      now,
+      readIds,
+      hiddenIds,
+      repositories
+    })
     return [...reviewList, ...pendingList, ...attentionList]
-  }, [attentionItems, archivedItems, hiddenIds, pendingApprovals, readIds, repositories, t, now])
+  }, [
+    attentionItems,
+    archivedItems,
+    hiddenIds,
+    needsReviewSessions,
+    pendingApprovals,
+    readIds,
+    repositories,
+    t,
+    now
+  ])
   const filteredItems = useMemo(
     () => filterInbox(items, filter, search),
     [filter, items, search]

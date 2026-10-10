@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approvals.pending`：Inbox 拍板 SoT）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approvals.pending` + `sessions.needsReview`：Inbox 拍板/待验收 SoT）
 
 ## 当前真相
 
@@ -29,6 +29,7 @@
 | terminal | `open` `write` `resize` `close` | node-pty；`resize` 入参 `{ sessionId, cols, rows }` |
 | inbox.state | `list` `put` | Inbox 档案耐久层（SQLite `inbox_state` 表）：已读 / 隐藏状态 + error/complete 条目归档；`put` 合并语义，只覆盖传入的标志 |
 | approvals | `pending` | Inbox 拍板真源：`decision IS NULL` 且会话未归档；入参空对象 `.strict()`，回 `{ items: PendingApprovalItem[] }` |
+| sessions | `needsReview` | Inbox 待验收真源：`workflow_status = needs_review` 且 `archived_at IS NULL`；入参空对象 `.strict()`，回 `{ items: SessionNeedsReviewItem[] }`。顶栏 / 横幅 / Inbox 共用 main 落库的这份，禁止 renderer 用 git dirty / 裸 `run.end` / 本地 `repositories` 自算 |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` `forceQuit` `setTaskbarTitle` `openExternal` | 无边框窗；`forceQuit` 放行后再 `app.quit`。关窗/⌘Q 若有跑中会话，main `before-quit` 先 `preventDefault` 并推 `window.quit-requested`，renderer 确认后才 `forceQuit`。`setTaskbarTitle` 入参 `{ label }`（去换行，最长 80）；main 只写成 `{label} — Enjoy Agents`，空串恢复 `Enjoy Agents`。Win / macOS / Linux 都是 `BrowserWindow.setTitle`。`openExternal` 入参 Zod `WindowOpenExternalInput` `{ url }`（最长 2048，只认 http(s)，拒 userinfo），main 再 `URL` 复验后才 `shell.openExternal`。校验失败回 `{ ok: false, code: OPEN_EXTERNAL_INVALID | OPEN_EXTERNAL_NOT_ALLOWED }`，不抛。`window.openExternal` **只能**从用户手势回调调用（目前是终端 WebLinks 点击）；禁止程序化 / 自动打开。禁止 effect / 定时器 / 自动扫描调用；禁止 renderer `window.open` |
 | app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |
 | builtinTools | `getState` `toggle` `regeneratePairingCode` `getDesktopPermissions` `openSystemPermission` `revealExtensionDir` `previewOverlay` `desktopDoctor` `desktopView` `desktopCapturePreview` `desktopListApps` `revokeAlwaysAllow` | 内置工具与桌面控制；内置浏览器、Browser Bridge（Chrome 扩展配对码与 47823 环回 WS）与 Computer Use。`getState` / `toggle` 可带 `sessionId`。`getState.computerUse.session` 为 `macos` / `windows` / `x11` / `wayland` / `none`；`anyDesktopSession` 默认 `false`，由该 `sessionId` 的会话表是否含 `desktop_act:*` 派生，**不**进 `builtin_tools` 落盘。`getState.computerUse.alwaysAllowApps` 投影 prefs `desktopAlwaysAllowAppKeys`（本机持久簿，禁止经 `setPreferences` 改写）。`revokeAlwaysAllow` `{ appKey, sessionId? }` 只从簿删该键，返回完整 `BuiltinToolsState`，**不**清会话表。`toggle.tool` 含 `anyDesktopSession`（必须带当前会话 id，写会话表）。`desktopDoctor` 返回 helper 路径 / `helperSigned` / 身份字段 / `success`（darwin 仅当 spawn 身份匹配且 helper 自己过 AX 才为真）；`executor_unsigned` / `executor_identity_mismatch` 不得绿；宿主 `hostAccessibility` 不能单独报绿。`desktopView` 返回最近观察（含可选 `appKey` 与缩略图 data URL，不进模型文本）。`desktopCapturePreview` 只拍一张宿主缩略图给人看。`desktopListApps` 与 `desktop_list_apps` 同源，返回 `{ ok, apps: { displayName, appKey, appKeySource?, stable, pid? }[] }`；pid 不是键，失败回空列表，不造假应用。`revealExtensionDir` 打开扩展目录；`previewOverlay` 预览冷静 overlay 铬（约 2.4s，不是成功条）。overlay 窗内部频道 `overlay:chrome` / `overlay:stop` / `overlay:ignore-mouse` **不**进 renderer preload，只给 `resources/overlay`。`approval.required.args` 对 `desktop_act` 约定 `DesktopActApprovalArgs`（`appKey` / `appKeySource` / `appName` / `observationId` / `action` / `elementName` / `thumbnailPath?` / `bypassesSessionAllow` / **`sensitive` 必填布尔**（main `desktopActIsSensitive` 必写，缺省 Zod 拒收；renderer 只读且 fail-closed：仅 `=== false` 才当普通应用） / 本观察 `thumbnailDataUrl`；二次确认另带 `needsSecondConfirm` / `previousThumbnailPath` / `previousThumbnailDataUrl`，Dock warn 卡见 `cu-p1-r-second-confirm.html`）。系统通知不新开频道：`agent.event` 上的 `approval.required` / `run.end` / `run.error` 经 `desktop-notify` 推导文案。`allow_session` 对 `desktop_act` write-through `desktop_act:<appKey>` 进会话表；任意桌面命中 `desktop_act:*`。`allow_always` 只写 prefs `desktopAlwaysAllowAppKeys`，不写会话表，禁写 `desktop_act:*` |
@@ -65,8 +66,9 @@
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 会话：`ipc-session.ts`（`SESSION_CHANNELS` 必须进 `CHANNELS`，含 `patch` / `recap` / `estimatedCost`）
 - 估算成本：`packages/ipc-contract/src/estimated-cost.ts`（子路径 `@enjoy-agents/ipc-contract/estimated-cost`）；出站闸：`apps/desktop/src/main/services/accept-stream-event.ts`（`emitEvent` / `stampAndSend`）；终态丢掉兜底 `settle-dropped-terminal.ts`
-- 壳频道：`ipc-shell.ts`（workspace / agent / terminal / window / inbox.state / approvals.pending；**无** session）
+- 壳频道：`ipc-shell.ts`（workspace / agent / terminal / window / inbox.state / approvals.pending / sessions.needsReview；**无** `session.list` 等会话 CRUD）
 - Inbox 拍板：`packages/ipc-contract/src/approvals-pending.ts`、`apps/desktop/src/main/services/list-live-pending-approvals.ts`
+- Inbox 待验收：`packages/ipc-contract/src/sessions-needs-review.ts`、`packages/db/src/repositories/sessions.ts`、`apps/desktop/src/main/services/list-sessions-needs-review.ts`
 - 自动更新：`ipc-app-update.ts`
 - 设置频道：`ipc-settings.ts`；探测 `ipc-provider-probe.ts`；Automations `ipc-automations.ts`；调度 `services/automations-scheduler.ts` + cron `automations-cron.ts` + 错过回看 `automations-missed-*.ts` / `automations-power.ts`（`powerMonitor` suspend/resume，Win/macOS/Linux）+ 保存后 `automations-onsave.ts` + 本机 webhook `automations-webhook.ts`；错过记录合约 `packages/ipc-contract/src/automations-missed.ts`
 - AI 频道：`ipc-ai.ts`
@@ -79,6 +81,7 @@
 ## 已知坑
 
 - Inbox 拍板若信 Attention 槽，已决/归档仍涨徽标，空 `repositories` 还会放行全部。正确做法：`approvals.pending` 只列 `decision IS NULL` 且未归档；renderer 空会话列表 fail-closed。
+- Inbox 待验收若信 renderer `repositories` / git dirty / 裸 `run.end`，非 git 仓写后 Stop 顶栏和横幅已是「待验收」，Inbox 列却空。根因：`persistSessionWorkflow` 曾 `void patchSession().catch()`，Stop 后立刻读库看不到；Inbox 又自己合成。正确做法：main 同步 `UPDATE sessions.workflow_status`；Inbox 只读 `sessions.needsReview`。
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`SESSION_CHANNELS`（含 `session.patch` / `session.recap` / `session.rename`）必须进 `CHANNELS`，否则卸载会留下 handler。
 - `patchSession` / `session.archive` / `session.unarchive` 不碰 `updated_at`；`rename` 才会 bump。归档只写 `archived_at`（`session-archive-stamp.ts`），否则撤销后会话跳顶并挤开当前高亮。归档前必须先走普通 deny 清未决审批。
 - **隐患**：给 `run.end` / `run.error` 加可选字段却不改 StreamEvent schema 时，`acceptStreamEvent` 的 `safeParse` 会剥掉或丢掉整条事件，renderer 永远看不到 `turn`。正确做法：先改合约再 emit，并加 `acceptStreamEvent` 断言字段还在。`map-part` 的 `ENJOY_TYPES` 是入站点号白名单，不管 main 直发的 `run.end` / `run.error`。
