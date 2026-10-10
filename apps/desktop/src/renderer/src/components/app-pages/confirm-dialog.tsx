@@ -63,40 +63,57 @@ export function ConfirmDialog({
         data-testid="confirm-dialog"
         showCloseButton={false}
         overlayClassName={cx(SETTINGS_DRAWER_Z_CLASS.modal, "fixed inset-0")}
+        style={{
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          transform: "none",
+          width: "100%",
+          maxWidth: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
         className={cx(
           SETTINGS_DRAWER_Z_CLASS.modal,
-          "fixed top-1/2 left-1/2 max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
+          "fixed inset-0 left-0 top-0 flex h-full w-full max-w-none translate-x-0 translate-y-0 items-center justify-center border-0 bg-transparent p-0 shadow-none"
         )}
       >
-        <form onSubmit={(event) => void submitConfirm(event)}>
-          <DialogHeader>
-            <DialogTitle className="text-title-3-semibold text-text-primary">{title}</DialogTitle>
-            <DialogDescription
-              className={
-                description
-                  ? "text-body-medium text-text-secondary"
-                  : "sr-only"
-              }
-            >
-              {description || title}
-            </DialogDescription>
-          </DialogHeader>
-          {children ? <div className="mt-3">{children}</div> : null}
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => onOpenChange(false)}>
-              {cancelText}
-            </Button>
-            <Button
-              type="submit"
-              variant={destructive ? "destructive" : "default"}
-              size="sm"
-              disabled={busy}
-              data-testid="confirm-dialog-confirm"
-            >
-              {confirmText}
-            </Button>
-          </DialogFooter>
-        </form>
+        <div
+          data-testid="confirm-dialog-panel"
+          className="w-full max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
+        >
+          <form onSubmit={(event) => void submitConfirm(event)}>
+            <DialogHeader>
+              <DialogTitle className="text-title-3-semibold text-text-primary">{title}</DialogTitle>
+              <DialogDescription
+                className={
+                  description
+                    ? "text-body-medium text-text-secondary"
+                    : "sr-only"
+                }
+              >
+                {description || title}
+              </DialogDescription>
+            </DialogHeader>
+            {children ? <div className="mt-3">{children}</div> : null}
+            <DialogFooter className="mt-2">
+              <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => onOpenChange(false)}>
+                {cancelText}
+              </Button>
+              <Button
+                type="submit"
+                variant={destructive ? "destructive" : "default"}
+                size="sm"
+                disabled={busy}
+                data-testid="confirm-dialog-confirm"
+              >
+                {confirmText}
+              </Button>
+            </DialogFooter>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

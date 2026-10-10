@@ -7,6 +7,7 @@ export const enCommon = {
   quickSearch: "Quick Search",
   quickSearchKbd: "Quick Search ({key})",
   searchSettings: "Search settings...",
+  returnToSettings: "Back to Settings",
   noMatchingItems: "No matching items.",
   cancel: "Cancel",
   undo: "Undo",

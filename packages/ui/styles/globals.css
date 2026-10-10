@@ -988,12 +988,22 @@ html[data-gpu-compositing="off"] aside.rounded-3xl,
 html[data-gpu-compositing="off"] main,
 html:not([data-gpu-compositing="on"]) aside.rounded-3xl,
 html:not([data-gpu-compositing="on"]) main {
-  background-color: #ffffff !important;
   background-image: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
   box-shadow: none !important;
+}
+
+/* 画布 / 主栏保持纯白；侧栏卡用浅底，软件 GL 下仍能读成独立表面。 */
+html[data-gpu-compositing="off"] main,
+html:not([data-gpu-compositing="on"]) main {
+  background-color: #ffffff !important;
+}
+
+html[data-gpu-compositing="off"] aside.rounded-3xl,
+html:not([data-gpu-compositing="on"]) aside.rounded-3xl {
+  background-color: #fafafa !important;
 }
 
 html[data-gpu-compositing="off"] body,
@@ -1008,19 +1018,22 @@ html:not([data-gpu-compositing="on"]) [data-shell-canvas] {
   background-image: none !important;
 }
 
-html.dark[data-gpu-compositing="off"] aside.rounded-3xl,
 html.dark[data-gpu-compositing="off"] main,
 html.dark[data-gpu-compositing="off"] body,
 html.dark[data-gpu-compositing="off"] #root,
 html.dark[data-gpu-compositing="off"] [data-testid="window-frame"],
 html.dark[data-gpu-compositing="off"] [data-shell-canvas],
-html.dark:not([data-gpu-compositing="on"]) aside.rounded-3xl,
 html.dark:not([data-gpu-compositing="on"]) main,
 html.dark:not([data-gpu-compositing="on"]) body,
 html.dark:not([data-gpu-compositing="on"]) #root,
 html.dark:not([data-gpu-compositing="on"]) [data-testid="window-frame"],
 html.dark:not([data-gpu-compositing="on"]) [data-shell-canvas] {
   background-color: var(--color-neutral-900) !important;
+}
+
+html.dark[data-gpu-compositing="off"] aside.rounded-3xl,
+html.dark:not([data-gpu-compositing="on"]) aside.rounded-3xl {
+  background-color: #1c1c1c !important;
 }
 
 html[data-gpu-compositing="off"] aside.rounded-3xl::before,

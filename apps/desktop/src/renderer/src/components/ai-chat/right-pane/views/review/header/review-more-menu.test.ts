@@ -27,3 +27,16 @@ test("审查更多菜单把 git apply 收进高级，主层只留复制全部改
   assert.ok(copyAt < advancedAt, "复制全部改动应在高级之前")
   assert.ok(advancedAt < applyAt, "git apply 必须写在高级子菜单里")
 })
+
+test("审查更多触发钮只走 focus-visible token 环，指针 Esc 不留琥珀环", () => {
+  const src = readFileSync(join(dir, "review-more-menu.tsx"), "utf8")
+  assert.match(src, /data-testid="review-more-menu"/)
+  assert.match(src, /outline-none/)
+  assert.match(src, /focus-visible:ring-2 focus-visible:ring-border-focus-ring/)
+  assert.match(src, /data-\[pointer-return\]:focus-visible:ring-0/)
+  assert.match(src, /applySessionMenuCloseFocus/)
+  assert.match(src, /onCloseAutoFocus/)
+  assert.match(src, /event\.key !== "Enter" && event\.key !== " "/)
+  assert.doesNotMatch(src, /ring-amber|ring-status-yellow|rgb\(229/)
+  assert.doesNotMatch(src, /focus:ring-(?!0)/)
+})

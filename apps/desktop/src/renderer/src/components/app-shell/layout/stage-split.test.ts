@@ -26,7 +26,8 @@ test("已完成进顶栏状态区，需处理占标题栏下一行，不盖标�
   assert.match(header, /run-ledger-toggle/)
   assert.doesNotMatch(header, /text-text-tertiary/)
   assert.doesNotMatch(header, /text-foreground-icon-secondary/)
-  assert.match(header, /min-w-\[12rem\]/)
+  assert.match(header, /min-w-0 flex-1 overflow-hidden/)
+  assert.doesNotMatch(header, /min-w-\[12rem\]/)
   assert.match(header, /chat-breadcrumb-project/)
   assert.match(header, /chat-breadcrumb-title/)
   assert.match(header, /min-w-\[4\.5rem\] max-w-\[60%\] shrink-0/)
@@ -38,6 +39,8 @@ test("待验收闸不缩，先裁会话题", () => {
     "utf8"
   )
   assert.match(gate, /shrink-0 whitespace-nowrap/)
+  assert.match(header, /ml-auto flex shrink-0/)
   assert.match(header, /chat-breadcrumb-title/)
   assert.match(header, /block truncate/)
+  assert.match(header, /min-w-0 flex-1 overflow-hidden/)
 })

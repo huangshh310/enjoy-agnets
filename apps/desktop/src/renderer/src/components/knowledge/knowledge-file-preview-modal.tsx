@@ -15,7 +15,8 @@ import {
 import type { KnowledgeDocumentItem } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { hasIde } from "@renderer/lib/ide"
+import { readWorkspaceFile } from "@renderer/lib/read-workspace-file"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { getPathExtension, knowledgeDocumentStatusLabel } from "./knowledge-table-format"
@@ -51,11 +52,7 @@ export function KnowledgeFilePreviewModal({
     queryFn: async () => {
       if (!workspaceId || !document) return ""
       try {
-        const text = (await getIde().workspace.readFile({
-          workspaceId,
-          path: document.path
-        })) as string
-        return text
+        return await readWorkspaceFile(workspaceId, document.path)
       } catch (err) {
         return t("pages.knowledge.readFileError", { err: String(err) })
       }

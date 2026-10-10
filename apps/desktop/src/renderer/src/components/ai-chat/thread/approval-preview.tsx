@@ -5,7 +5,8 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { RiCheckLine, RiClipboardLine, RiCommandLine, RiFileLine, RiGitCommitLine } from "@remixicon/react"
 import { diffTexts, parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { hasIde } from "@renderer/lib/ide"
+import { readWorkspaceFile } from "@renderer/lib/read-workspace-file"
 import { readString } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { FileDiff } from "../diff/file-diff"
@@ -121,9 +122,9 @@ function WorkspaceFilePreview({
   const currentQuery = useQuery({
     queryKey: ["workspace-file", currentWorkspaceId, path],
     enabled: hasIde() && Boolean(currentWorkspaceId && path),
-    queryFn: () => getIde().workspace.readFile({ path }) as Promise<{ content: string }>
+    queryFn: () => readWorkspaceFile(currentWorkspaceId, path)
   })
-  const currentContent = currentQuery.data?.content ?? fallbackCurrent
+  const currentContent = currentQuery.data ?? fallbackCurrent
   const nextContent = next ?? (nextFromCurrent ? `${currentContent}\n${nextFromCurrent}` : "")
   return (
     <div className="flex flex-col gap-2">

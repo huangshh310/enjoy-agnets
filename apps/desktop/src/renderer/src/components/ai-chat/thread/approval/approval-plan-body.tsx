@@ -86,7 +86,11 @@ function PlanDiffToggle({ name, args }: { name: string; args: Record<string, unk
       >
         {open ? t("chat.approvalHideDiff") : t("chat.approvalViewDiff")}
       </button>
-      {open ? <ApprovalPreview name={name} args={args} /> : null}
+      {open ? (
+        <div data-testid="approval-diff" className="min-h-40 overflow-y-auto">
+          <ApprovalPreview name={name} args={args} />
+        </div>
+      ) : null}
     </div>
   )
 }

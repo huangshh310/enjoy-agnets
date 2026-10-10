@@ -221,6 +221,8 @@ export const enObservabilityPages = {
   timeoutN: "Timeout: {n}",
   errorN: "Errors: {n}",
   errorDistTitle: "Error distribution",
+  allHealthy: "All healthy",
+  allHealthyHint: "Every request in this window completed normally.",
   range1h: "1h",
   range6h: "6h",
   range24h: "24h",

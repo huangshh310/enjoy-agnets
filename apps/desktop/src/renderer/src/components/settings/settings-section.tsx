@@ -27,6 +27,13 @@ export function SettingsSectionPage() {
   if (section === "account") return <SettingsSectionBody section={section} />
   if (section === "billing") return <SettingsSectionBody section={section} />
   if (section === "extensions") return <SettingsSectionBody section={section} />
+  if (section === "skills" || section === "mcp") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <SettingsSectionBody section={section} />
+      </div>
+    )
+  }
   if (section === "telemetry") return <SettingsSectionBody section={section} />
   if (section === "providers") {
     return (

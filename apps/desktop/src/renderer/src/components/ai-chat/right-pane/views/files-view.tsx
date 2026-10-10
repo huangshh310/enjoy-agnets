@@ -7,6 +7,8 @@ import { RiFolder3Line } from "@remixicon/react"
 import { remapAfterMove } from "@enjoy-agents/ipc-contract"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { getIde } from "@renderer/lib/ide"
+import { readWorkspaceFile } from "@renderer/lib/read-workspace-file"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { SourceFilePreview } from "../../source-file-preview"
 import { useSourceFileReveal } from "../../thread/sources/source-file-reveal"
 import { sameReviewPath } from "./review/same-review-path"
@@ -21,13 +23,24 @@ const MAX_PREVIEW_CHARS = 200_000
 export function FilesView({ workspaceId }: { workspaceId: string | null }) {
   const t = useT()
   const reveal = useSourceFileReveal((state) => state.reveal)
+  const selectedFilePath = useChatStore((state) => state.selectedFilePath)
+  const selectedFileContent = useChatStore((state) => state.selectedFileContent)
   const [path, setPath] = useState<string | null>(null)
   const [content, setContent] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [moveError, setMoveError] = useState<string | null>(null)
   const [treeOpen, setTreeOpen] = useState(true)
   const [treeEpoch, setTreeEpoch] = useState(0)
-  const readOnly = reveal?.view === "preview" && path != null && sameReviewPath(reveal.path, path)
+  // 只读预览一进来就走查看文件，不要等本地 path 对齐后才切，否则会闪可写 Monaco。
+  const readOnly = reveal?.view === "preview" && Boolean(reveal.path)
+  const displayPath = readOnly ? reveal.path : path
+  const storeSeed =
+    readOnly &&
+    selectedFileContent &&
+    sameReviewPath(selectedFilePath ?? "", displayPath ?? "")
+      ? selectedFileContent
+      : ""
+  const displayContent = content || storeSeed
 
   useEffect(() => {
     if (!workspaceId) return
@@ -62,7 +75,7 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
     setError(null)
     setMoveError(null)
     try {
-      const text = (await getIde().workspace.readFile({ workspaceId, path: nextPath })) as string
+      const text = await readWorkspaceFile(workspaceId, nextPath)
       setContent(text.length > MAX_PREVIEW_CHARS ? `${text.slice(0, MAX_PREVIEW_CHARS)}\n…` : text)
     } catch (caught) {
       setContent("")
@@ -76,8 +89,8 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
   }, [reveal?.path, reveal?.view, workspaceId])
 
   const preview =
-    workspaceId && readOnly && path ? (
-      <SourceFilePreview path={path} content={content} />
+    workspaceId && readOnly && displayPath ? (
+      <SourceFilePreview path={displayPath} content={displayContent} />
     ) : workspaceId ? (
       <FilesPreviewEditor workspaceId={workspaceId} path={path} content={content} error={error} />
     ) : (

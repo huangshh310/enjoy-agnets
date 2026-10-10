@@ -4,8 +4,9 @@
 import { useEffect } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
-import type { AppModuleId } from "../app-shell.types"
+import { readLastSettingsSection } from "@renderer/components/settings/last-settings-section"
 import { isSettingsDrawerOpen, shouldLeaveSettingsOnEscape } from "@renderer/components/settings/settings-drawer-close"
+import type { AppModuleId } from "../app-shell.types"
 import { isOverlayModule, isWorkModule, matchAppModule, pathForWorkModule } from "./match-module"
 import { readLastWorkModule, writeLastWorkModule } from "./last-work-module"
 
@@ -25,7 +26,14 @@ export function useShellNavigation() {
     return true
   })
 
-  function selectModule(_id: AppModuleId, to: string) {
+  function selectModule(id: AppModuleId, to: string) {
+    if (id === "settings") {
+      void navigate({
+        to: "/settings/$section",
+        params: { section: readLastSettingsSection() }
+      })
+      return
+    }
     void navigate({ to: to as "/" })
   }
 

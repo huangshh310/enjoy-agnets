@@ -47,6 +47,11 @@ export function takeSessionContextChips(): SessionContextChip[] {
   return taken
 }
 
+export function setSessionContextChips(chips: SessionContextChip[]) {
+  pending = [...chips]
+  notify()
+}
+
 export function formatContextChipsForSend(chips: SessionContextChip[]): string {
   return chips
     .filter((chip) => chip.enabled !== false && chip.snippet?.trim())

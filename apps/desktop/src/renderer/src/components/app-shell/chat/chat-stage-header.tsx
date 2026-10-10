@@ -47,7 +47,7 @@ export function ChatStageHeader({
       <RiFolder6Line className="size-4 shrink-0 text-text-secondary" aria-hidden />
       <Breadcrumb
         data-testid="chat-breadcrumb"
-        className="min-w-[12rem] flex-1 overflow-hidden"
+        className="min-w-0 flex-1 overflow-hidden"
       >
         <BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
           <BreadcrumbItem className="min-w-[4.5rem] max-w-[60%] shrink-0">

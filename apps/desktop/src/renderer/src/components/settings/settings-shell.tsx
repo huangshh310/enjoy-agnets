@@ -1,6 +1,8 @@
+import { useEffect } from "react"
 import { Outlet, useNavigate, useParams } from "@tanstack/react-router"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { useT } from "@renderer/i18n"
+import { writeLastSettingsSection } from "./last-settings-section"
 import {
   getSettingsNav,
   isSettingsSectionId,
@@ -15,6 +17,10 @@ export function SettingsShell() {
   const section = isSettingsSectionId(params.section ?? "")
     ? (params.section as SettingsSectionId)
     : "general"
+
+  useEffect(() => {
+    writeLastSettingsSection(section)
+  }, [section])
 
   return (
     <SecondaryPageShell

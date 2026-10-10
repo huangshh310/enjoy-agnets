@@ -35,9 +35,8 @@ import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
 import type { TranslateFn } from "@renderer/i18n"
 import { SETTINGS_NAV_DEF } from "./settings-catalog-nav"
 import type { SettingsNavGroup, SettingsNavItem, SettingsSectionId, SettingsNavIcon } from "./settings-catalog.types"
-import { SETTINGS_SECTIONS } from "./settings-sections"
 
-export { SETTINGS_SECTIONS }
+export { SETTINGS_SECTIONS, isSettingsSectionId } from "./settings-sections"
 export { resolveActiveNavSectionId } from "./settings-nav-resolve"
 export type { SettingsNavGroup, SettingsNavItem, SettingsSectionId }
 
@@ -54,11 +53,6 @@ export function getSettingsNav(t: TranslateFn): SettingsNavGroup[] {
     }))
   }))
 }
-
-export function isSettingsSectionId(value: string): value is SettingsSectionId {
-  return (SETTINGS_SECTIONS as readonly string[]).includes(value)
-}
-
 
 const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: SettingsNavIcon }> = {
   general: { labelKey: "nav.general", icon: RiSettings4Line },

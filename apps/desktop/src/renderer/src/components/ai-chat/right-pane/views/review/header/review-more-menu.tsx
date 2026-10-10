@@ -3,7 +3,7 @@
  * 对齐 Codex Image #2 的“...”下拉菜单，提供刷新、自动换行、隐藏空白、文字差异与 Git apply 复制等高阶操作。
  */
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   RiCheckLine,
   RiFileCopyLine,
@@ -25,6 +25,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { cx } from "@/utils/cx"
+import { applySessionMenuCloseFocus } from "@renderer/components/ai-chat/sidebar/session-menu-placement"
 import { useT } from "@renderer/i18n"
 import type { DiffPalette } from "../../../../diff/diff-palette"
 import type { ReviewOptions } from "../types/review.types"
@@ -51,6 +53,8 @@ export function ReviewMoreMenu(props: {
     onCopyUnifiedDiff
   } = props
   const t = useT()
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const openedByPointer = useRef(false)
   const [copiedApply, setCopiedApply] = useState(false)
   const [copiedDiff, setCopiedDiff] = useState(false)
 
@@ -70,14 +74,39 @@ export function ReviewMoreMenu(props: {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
+          data-testid="review-more-menu"
           title={t("chat.previewRailLabel")}
-          className="cursor-pointer rounded-md p-1.5 text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
+          onPointerDown={() => {
+            openedByPointer.current = true
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return
+            openedByPointer.current = false
+            delete triggerRef.current?.dataset.pointerReturn
+          }}
+          onBlur={() => {
+            delete triggerRef.current?.dataset.pointerReturn
+          }}
+          className={cx(
+            "cursor-pointer rounded-md p-1.5 text-text-secondary outline-none transition-colors",
+            "hover:bg-background-secondary-hover hover:text-text-primary",
+            "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0"
+          )}
         >
           <RiMoreFill className="size-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-1">
+      <DropdownMenuContent
+        align="end"
+        className="w-56 p-1"
+        onCloseAutoFocus={(event) => {
+          applySessionMenuCloseFocus(event, openedByPointer.current, triggerRef.current)
+          openedByPointer.current = false
+        }}
+      >
         {onRefresh ? (
           <>
             <DropdownMenuItem

@@ -15,6 +15,9 @@ import { useSourceFileReveal } from "@renderer/components/ai-chat/thread/sources
 import type { TurnSourceChip } from "@renderer/components/ai-chat/thread/sources/source-chip"
 import { useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import { useRightPaneStore } from "@renderer/stores/right-pane-store"
+import { addQuotedContext } from "@renderer/hooks/quoted-context"
+import { forceArchivePrompt } from "@renderer/hooks/deny-then-archive"
+import type { SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
@@ -45,6 +48,13 @@ export type EnjoyE2eBridge = {
   }
   injectSheetChip: (chip: TurnSourceChip) => void
   injectThisTurnWrite: (path: string) => void
+  addQuotedFileChip: (title?: string) => void
+  openArchiveGuard: () => void
+  setReviewChrome: (input: {
+    title?: string
+    workflowStatus?: SessionWorkflowStatus
+    rightPanelCollapsed?: boolean
+  }) => void
 }
 
 declare global {
@@ -133,6 +143,31 @@ export function installEnjoyE2eBridge(): void {
           ]
         }
       ])
+    },
+    addQuotedFileChip(title = "readme.md") {
+      addQuotedContext({
+        id: `e2e-quote-${title}`,
+        type: "file",
+        title,
+        snippet: "e2e"
+      })
+    },
+    openArchiveGuard() {
+      const sessionId = useChatStore.getState().sessionId ?? "e2e-archive"
+      forceArchivePrompt(sessionId)
+    },
+    setReviewChrome(input) {
+      const store = useChatStore.getState()
+      const existing = store.sessionId
+      const fallback = store.repositories.find((node) => node.kind === "session")?.id
+      const sessionId = existing ?? fallback ?? null
+      if (sessionId && input.title) store.setSession(sessionId, input.title)
+      if (sessionId && input.workflowStatus) {
+        store.patchSessionNode(sessionId, { workflowStatus: input.workflowStatus })
+      }
+      if (input.rightPanelCollapsed !== undefined) {
+        store.setRightPanelCollapsed(input.rightPanelCollapsed)
+      }
     }
   }
 }

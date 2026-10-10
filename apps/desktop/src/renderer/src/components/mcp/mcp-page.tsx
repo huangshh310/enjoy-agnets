@@ -1,6 +1,8 @@
 /**
  * MCP Server 与插件生态页面：已配置服务 / 本地预设 / JSON 规格。
  */
+import { useSearch } from "@tanstack/react-router"
+import { ModuleReturnBar } from "@renderer/components/app-pages/module-return-bar"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { EXTENSIONS_HUB_HREF } from "@renderer/components/settings/extensions/constants.ts"
 import { useT } from "@renderer/i18n"
@@ -18,6 +20,7 @@ export function McpPage(props?: {
   onBrowseMarketplace?: () => void
 }) {
   const t = useT()
+  const search = useSearch({ strict: false }) as { from?: string; section?: string }
   const page = useMcpPage()
 
   const content = (
@@ -99,6 +102,7 @@ export function McpPage(props?: {
       contentWidth="fill"
       hideChrome
     >
+      <ModuleReturnBar from={search.from} origin={search.section} fallback="mcp" />
       {content}
     </SecondaryPageShell>
   )

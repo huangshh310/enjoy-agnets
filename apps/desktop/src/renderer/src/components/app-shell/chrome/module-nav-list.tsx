@@ -25,6 +25,7 @@ export function ModuleNavList({
           {group.items.map((item) => (
             <NavRow
               key={item.id}
+              id={item.id}
               selected={item.id === selectedId}
               label={item.label}
               meta={item.meta}
@@ -49,12 +50,14 @@ function navItemBadgeTheme(selected: boolean) {
 }
 
 function NavRow({
+  id,
   selected,
   label,
   meta,
   icon: Icon,
   onClick
 }: {
+  id: string
   selected: boolean
   label: string
   meta?: string
@@ -66,6 +69,8 @@ function NavRow({
   return (
     <button
       type="button"
+      data-testid={`module-nav-${id}`}
+      aria-current={selected ? "page" : undefined}
       onClick={onClick}
       className={cx(
         "group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition-all duration-200 ease-out active:scale-[0.98]",

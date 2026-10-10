@@ -36,6 +36,7 @@ import {
   TelemetrySettings,
   WorkflowSettings
 } from "./settings-ai-pages"
+import { SkillsSettings } from "./settings-skills"
 
 export function SettingsSectionBody({ section }: { section: SettingsSectionId }) {
   const t = useT()
@@ -63,6 +64,7 @@ const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
   "computer-use": ComputerUseSettings,
   appsnap: AppsnapSettings,
   instructions: InstructionsSection,
+  skills: SkillsSettings,
   rules: RulesSection,
   workspace: WorkspaceSection,
   extensions: ExtensionsPage,
