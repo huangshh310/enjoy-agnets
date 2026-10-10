@@ -28,9 +28,17 @@ export function e2eCredentialFixture(
   if (env.ENJOY_E2E_STUB !== "1" || packaged) return undefined
   const flag = env.ENJOY_E2E_CREDENTIAL
   if (flag === "invalid") return { state: "invalid", code: "auth_rejected" }
-  if (flag === "unverified") return { state: "unverified", code: "unknown" }
   if (flag === "ok") return { state: "ok" }
+  if (flag === "unverified" || flag?.startsWith("unverified:")) {
+    return { state: "unverified", code: unverifiedFixtureCode(flag) }
+  }
   return { state: "ok" }
+}
+
+function unverifiedFixtureCode(flag: string): "network" | "timeout" | "unknown" {
+  if (flag === "unverified:network") return "network"
+  if (flag === "unverified:timeout") return "timeout"
+  return "unknown"
 }
 
 export async function runCredentialCheck(

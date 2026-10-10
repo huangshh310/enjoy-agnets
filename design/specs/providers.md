@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-10（option A：unverified 算 ready；首发回写）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-10（option A；夹具 `ENJOY_E2E_CREDENTIAL` / `ENJOY_E2E_SEND`）
 
 ## 当前真相
 
@@ -16,7 +16,7 @@
 
 `enabled` 是关闭但保留。关掉的档案不进选择器、不进 CLI 绑定。`activeId` 仍是新会话 Enjoy Local 的默认档案，和 `enabled` 是两件事。关掉当前默认档案时，`activeId` 改到下一张仍开启的档案。设置页「当前」只显示仍开启的默认档案；一张都没开就写「未在使用」，不把已关闭的名字当成当前。关掉的行主按钮是「开启」。页头模型数是收录，含已关闭档案，文案不是「此刻可选」。复制档案在主进程完成，Key 不进 renderer。
 
-存密钥成功后 main **后台**做一次轻量校验（优先 GET `/models`，没有目录再 1 token POST；超时 6s，不重试，不挡对话框）。结果落 settings KV `provider.credentialChecks`，挂到 `ProviderPublic.credentialCheck`：`{ state: "ok"|"invalid"|"unverified", code?: CredentialCheckCode, checkedAt?, verifiedAt? }`。401/403 → `invalid` + `auth_rejected`；网络 / 超时 / 未知协议 / 5xx → `unverified`（`network` / `timeout` / `unknown`）。**禁止**回传 HTTP 原文或 JSON。`settings.recheckProvider({ id })` 立刻再跑并回新状态，然后推 readiness。夹具 `ENJOY_E2E_STUB=1` + 未打包 + `ENJOY_E2E_CREDENTIAL=ok|invalid|unverified`（未设默认 `ok`，以免旧窗口 E2E 掉 ready）。
+存密钥成功后 main **后台**做一次轻量校验（优先 GET `/models`，没有目录再 1 token POST；超时 6s，不重试，不挡对话框）。结果落 settings KV `provider.credentialChecks`，挂到 `ProviderPublic.credentialCheck`：`{ state: "ok"|"invalid"|"unverified", code?: CredentialCheckCode, checkedAt?, verifiedAt? }`。401/403 → `invalid` + `auth_rejected`；网络 / 超时 / 未知协议 / 5xx → `unverified`（`network` / `timeout` / `unknown`）。**禁止**回传 HTTP 原文或 JSON。`settings.recheckProvider({ id })` 立刻再跑并回新状态，然后推 readiness。夹具 `ENJOY_E2E_STUB=1` + 未打包：`ENJOY_E2E_CREDENTIAL=ok|invalid|unverified`（未设默认 `ok`，以免旧窗口 E2E 掉 ready）；`unverified:network|unverified:timeout|unverified:unknown` 写原因码，光 `unverified` 当 `unknown`。首发失败夹具 `ENJOY_E2E_SEND=unreachable|rejected` 还要隔离 `ENJOY_E2E_USERDATA` / `ENJOY_DEV_USERDATA`（与 seed 同闸）：stub 路线抛 401 / `ECONNREFUSED`，走 `fail-agent-pump` → `classifyEnjoyLocalSendFailure` → 落盘 / 不改态。未设 `ENJOY_E2E_SEND` 即正常发送，成功写 `ok`。打包态不生效。
 
 invalid：不 ready、不自动 adopt、发送 `definitely_unusable` + `credential_invalid`。unverified / 未检：ready、可自动 adopt，快照 `credentialCheck.state=unverified`（向导占位「可以开始了 · 密钥还没验证，发第一句时会再试一次」，luna 定稿），发送 uncertain 放行，首发再验。多档案挑默认：ok 先于 unverified；全 invalid 不 ready（向导「还差一步」）。不变量：ready ⇒ 闸放行。首发 401/403 → 落盘 `invalid(auth_rejected)` 并推 readiness，`run.error.code=credential_invalid`（红卡 + 换密钥，草稿留下）。网络 / 超时 → `provider_unreachable`（中性「连不上 X，检查网络后再试」，不改落盘、不当 invalid、不回落「还差一步」）。一次成功发送落盘 `ok`（`checkedAt` / `verifiedAt`）并推 readiness，不必再单独 probe。`ChatSendErrorCode` = `credential_invalid` | `provider_unreachable`，走 Zod，禁止 HTTP 原文。无密钥本机档案不跑这套，仍走 ping。
 
@@ -59,7 +59,7 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - 上下文窗口解析：`packages/providers/src/context-window.ts`、`gateway-catalog.ts`；`models.list` 在 `secrets.ts` 的 `listAllPublicModels` 注入
 - 空 vault 目录：`apps/desktop/src/main/services/listed-models.ts`
 - vault：`apps/desktop/src/main/services/secrets-vault.ts`（加解密 / 迁移）；档案 CRUD：`secrets.ts`（删除时解绑 CLI）
-- 存密钥后校验：`apps/desktop/src/main/services/credential-check-run.ts`（GET `/models` → 1 token；6s；夹具 `ENJOY_E2E_CREDENTIAL`）+ `credential-check-store.ts`（settings KV `provider.credentialChecks`）+ `credential-check-schedule.ts`（写完后台跑、不挡对话框）+ `credential-send-outcome.ts`（首发成功 / 401 回写，网络不改态）
+- 存密钥后校验：`apps/desktop/src/main/services/credential-check-run.ts`（GET `/models` → 1 token；6s；夹具 `ENJOY_E2E_CREDENTIAL` / `unverified:*`）+ `credential-check-store.ts`（settings KV `provider.credentialChecks`）+ `credential-check-schedule.ts`（写完后台跑、不挡对话框）+ `credential-send-outcome.ts`（首发成功 / 401 回写，网络不改态）+ `e2e-send-fixture.ts`（`ENJOY_E2E_SEND`）
 - 设置 UI：`apps/desktop/src/renderer/src/components/settings/providers/`
 - 合约：`packages/ipc-contract` 的 `UpsertProviderInput` / `ProviderPublic` / `CredentialCheck`（子路径 `@enjoy-agents/ipc-contract/credential-check`）；CLI 兼容与引用派生 `provider-agent-bind.ts`
 - 单价与估算：`packages/providers/src/pricing/`（子路径 `@enjoy-agents/providers/pricing`，只给 main；根入口不导出，renderer 不要别名这份快照）
@@ -69,6 +69,7 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 
 - **隐患**：不要复用 `detectProvider` 当密钥校验。探测把 401 JSON 当「协议通了」；校验必须按状态码分类（401/403 → `invalid` + `auth_rejected`，5xx / 网络 / 超时 → `unverified`），且**禁止**把 HTTP 原文或 JSON 回给 renderer。
 - **隐患**：unverified 曾被当成不 ready。option A：网络没探到 ≠ 密钥无效。unverified 算 ready、可 adopt，首发再验；只有 401/403 落 `invalid`。跑中失败只回 `ChatSendErrorCode`，禁止摊 HTTP 原文，也禁止把网络失败写成「还差一步」。
+- **隐患**：录屏夹具不要在 stub 里直接写 `run.error.code` 或跳过 persist。正确做法：`ENJOY_E2E_SEND` 抛 401 / `ECONNREFUSED`，走 `fail-agent-pump` + `classifyEnjoyLocalSendFailure`。闸必须 `ENJOY_E2E_STUB=1` + 未打包 + 隔离 userData。
 - **隐患**：`settings.upsertProvider` 在无系统钥匙串时抛英文，renderer `void save()` 吞掉后抽屉既不关也不报错。正确做法：renderer `runSecretWrite` 先检 `ok` 再接 throw；① `secretStorageAvailable === false` 黄条+禁保存（输入不锁）；② `KEYCHAIN_UNAVAILABLE` 保存钮上方红字（不提重启）；其它「没存上，请再试一次」；草稿留下。不要在本包定义 `SecretWriteErrorCode` 枚举（#133 ipc-contract）。
 - **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。
 - **隐患**：`customHeaders` / `customBody` 曾随 `ProviderPublic` 全文回 renderer。正确做法：只回键的占位 JSON；保存时空值保留已存，与 apiKey 空则保留同一套。

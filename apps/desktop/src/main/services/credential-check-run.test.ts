@@ -29,6 +29,18 @@ test("夹具 ok / invalid / unverified；未打包 stub 默认 ok", () => {
     e2eCredentialFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CREDENTIAL: "unverified" }, false),
     { state: "unverified", code: "unknown" }
   )
+  assert.deepEqual(
+    e2eCredentialFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CREDENTIAL: "unverified:network" }, false),
+    { state: "unverified", code: "network" }
+  )
+  assert.deepEqual(
+    e2eCredentialFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CREDENTIAL: "unverified:timeout" }, false),
+    { state: "unverified", code: "timeout" }
+  )
+  assert.deepEqual(
+    e2eCredentialFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CREDENTIAL: "unverified:unknown" }, false),
+    { state: "unverified", code: "unknown" }
+  )
   assert.deepEqual(e2eCredentialFixture({ ENJOY_E2E_STUB: "1" }, false), { state: "ok" })
   assert.equal(e2eCredentialFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CREDENTIAL: "invalid" }, true), undefined)
 })

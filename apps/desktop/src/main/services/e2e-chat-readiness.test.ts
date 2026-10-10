@@ -85,7 +85,16 @@ test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
   })
   assert.equal(unverified?.ready, true)
   assert.equal(unverified?.credentialCheck?.state, "unverified")
+  assert.equal(unverified?.credentialCheck?.code, "unknown")
   assert.equal(unverified?.defaultRoute?.profileId, "e2e")
+  const timed = e2eChatReadiness({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key",
+    ENJOY_E2E_CREDENTIAL: "unverified:timeout"
+  })
+  assert.equal(timed?.ready, true)
+  assert.equal(timed?.credentialCheck?.state, "unverified")
+  assert.equal(timed?.credentialCheck?.code, "timeout")
 })
 
 test("stub + none 引擎数不能冒充可以开始", () => {
