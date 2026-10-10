@@ -12,6 +12,11 @@ import type {
   ResolveDefaultChatRouteInput
 } from "./chat-readiness.ts"
 
+type KeyedPickInput = Pick<
+  ResolveDefaultChatRouteInput,
+  "apiKeys" | "hasEnjoySecret" | "keyStates" | "credentialState" | "activeKeyProfileId"
+>
+
 export function chatDefaultRouteOf(
   runtimeId: string,
   modelId?: string,
@@ -24,7 +29,7 @@ export function chatDefaultRouteOf(
   }
 }
 
-export function activeKeyProfileIdOf(input: ResolveDefaultChatRouteInput): string | undefined {
+export function activeKeyProfileIdOf(input: KeyedPickInput): string | undefined {
   if (input.activeKeyProfileId !== undefined) return input.activeKeyProfileId ?? undefined
   if (input.hasEnjoySecret === false) return undefined
   return input.apiKeys[0]?.providerId
@@ -97,7 +102,7 @@ function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefau
 }
 
 /** 带密钥档案：ok 先于 unverified；全 invalid 则没有可挑的。缺检当 unverified。 */
-export function pickKeyedProfileId(input: ResolveDefaultChatRouteInput): string | undefined {
+export function pickKeyedProfileId(input: KeyedPickInput): string | undefined {
   if (!enjoySecretOf(input) || input.apiKeys.length === 0) return undefined
   const ranked = [...input.apiKeys].sort(
     (left, right) =>
@@ -115,7 +120,7 @@ function keyedRank(state: CredentialCheckState | undefined): number {
 }
 
 export function keyedStateOf(
-  input: Pick<ResolveDefaultChatRouteInput, "keyStates" | "credentialState" | "activeKeyProfileId" | "apiKeys">,
+  input: KeyedPickInput,
   profileId: string | undefined
 ): CredentialCheckState | undefined {
   if (!profileId) return input.credentialState
@@ -124,7 +129,7 @@ export function keyedStateOf(
 
 function routeCredentialState(
   route: ChatDefaultRoute,
-  input: Pick<ResolveDefaultChatRouteInput, "keyStates" | "credentialState" | "activeKeyProfileId" | "apiKeys">
+  input: KeyedPickInput
 ): CredentialCheckState | undefined {
   if (route.runtimeId !== "enjoy-local") return undefined
   return keyedStateOf(input, route.profileId)
