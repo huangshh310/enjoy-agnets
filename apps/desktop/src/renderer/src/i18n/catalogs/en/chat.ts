@@ -641,6 +641,7 @@ export const enChat = {
   sessionReviewCollapse: "Collapse files",
   sessionReviewOpenFile: "Review {name}",
   sessionReviewNoDiff: "No line changes",
+  sessionReviewCommandPlaceholder: "This turn ran commands; see the review pane for changes",
   sessionReviewDefaultModel: "Enjoy Agents",
   sessionReviewRestoreEmpty: "None of these files have workspace changes to restore",
   sessionReviewOpenPreview: "Open in browser",

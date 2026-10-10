@@ -633,6 +633,7 @@ export const zhChat = {
   sessionReviewCollapse: "收起本轮改动",
   sessionReviewOpenFile: "在审查栏打开 {name}",
   sessionReviewNoDiff: "无行级改动",
+  sessionReviewCommandPlaceholder: "本轮执行了命令，改动请看审查栏",
   sessionReviewDefaultModel: "Enjoy Agents",
   sessionReviewRestoreEmpty: "这些文件在工作区里没有可还原的改动",
   sessionReviewOpenPreview: "在浏览器打开",

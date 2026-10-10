@@ -50,7 +50,9 @@ export function ReviewGateCard({
           ))}
         </ul>
       ) : (
-        <p className="text-caption-2-regular text-text-tertiary">{t("chat.sessionReviewNoDiff")}</p>
+        <p className="text-caption-2-regular text-text-tertiary">
+          {t("chat.sessionReviewCommandPlaceholder")}
+        </p>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
         <SessionPreviewOpenButton enabled={canOpenPreview} busy={previewBusy} onOpen={onOpenPreview} />

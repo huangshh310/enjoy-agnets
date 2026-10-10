@@ -49,7 +49,9 @@ export function ComposerLiveChanges() {
   const peek =
     files.length > 0
       ? t("chat.stackedFilesChanged", { n: files.length })
-      : t("chat.environmentChanges")
+      : showGate
+        ? t("chat.sessionReviewCommandPlaceholder")
+        : t("chat.environmentChanges")
   const chips = chipsFromLastAssistant(lastAssistantTurn(messages), (name) =>
     t("chat.sourceSkillLabel", { name })
   )
@@ -141,11 +143,17 @@ function LiveChangesRow({
       actions={actions}
     >
       <ul className="flex flex-col">
-        {files.map((file) => (
-          <li key={file.path}>
-            <SessionFileTrigger file={file} title={file.name} onOpen={openSessionReview} />
+        {files.length > 0 ? (
+          files.map((file) => (
+            <li key={file.path}>
+              <SessionFileTrigger file={file} title={file.name} onOpen={openSessionReview} />
+            </li>
+          ))
+        ) : showGate ? (
+          <li className="px-1 py-1 text-caption-2-regular text-text-tertiary">
+            {t("chat.sessionReviewCommandPlaceholder")}
           </li>
-        ))}
+        ) : null}
       </ul>
       {showGate ? (
         <GateExpanded
