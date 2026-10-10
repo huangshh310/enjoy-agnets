@@ -12,6 +12,7 @@ const {
   getActiveRun,
   holdAgentRun,
   getDatabase,
+  getApproval,
   archiveSession,
   denyPendingApprovalsForSession
 } = await import("./archive-deny-pending.behavior.load.ts")
@@ -97,6 +98,9 @@ test("归档带未决审批的会话：走 deny，清 pending，回 deniedApprov
   assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
   assert.equal(getActiveRun(runId), undefined)
   assert.ok(events.some((event) => event.type === "approval.resolved" && event.decision === "deny"))
+  const stored = getApproval(getDatabase(), "apr_archive_deny")
+  assert.equal(stored?.decision, "deny")
+  assert.equal(stored?.sdkApproved, 0)
   deleteActiveRun(runId)
 })
 

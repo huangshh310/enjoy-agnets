@@ -5,12 +5,8 @@
 import type { BrowserWindow } from "electron"
 import { listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
 import { decideApproval } from "./decide-approval"
-import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
-import { USER_ABORT_MESSAGE } from "./claim-run-end"
-import { persistActiveRun } from "./flush-agent-run"
-import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
-import { clearSteer } from "./runtime-interact/steering-queue"
-import { deleteActiveRun, emitEvent, getActiveRun, listActiveRuns, settleRun } from "./agent-run-state"
+import { abortActiveRunMemory, logCancelStreamError } from "./abort-active-run"
+import { emitEvent, getActiveRun, listActiveRuns } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { recordSdkApprovalResponse } from "./approval-hmac"
 import { foldDeniedAssistantTool, sessionIdForRun } from "./fold-denied-assistant-tools"
@@ -20,37 +16,23 @@ type PendingDeny = { runId: string; approvalId: string; toolCallId: string }
 export async function abortLiveRunsForSession(sessionId: string): Promise<void> {
   for (const { runId, run } of listActiveRuns()) {
     if (run.input.sessionId !== sessionId) continue
-    abortLiveRun(runId, run)
-    await cancelLiveStreamBestEffort(runId)
+    abortActiveRunMemory(runId)
+    await cancelLiveStreamBestEffort(runId, sessionId)
   }
 }
 
-/** 不经 agent-runner：避免测试 strip-types 拉进 ACP 参数属性。 */
-function abortLiveRun(runId: string, run: NonNullable<ReturnType<typeof getActiveRun>>): void {
-  clearCatchUpApprovalTimeout(runId)
-  run.userCancelled = true
-  persistActiveRun(run, runId, "cancelled")
-  clearSteer(run.input.sessionId)
-  settleRun(runId, { status: "error", summary: USER_ABORT_MESSAGE })
-  const turn = turnOutcomeForRun(run, "abort")
-  persistTurnWorkflow(run.input.sessionId, turn)
-  emitEvent(run.window, { type: "run.error", runId, message: USER_ABORT_MESSAGE, turn })
-  run.abort.abort()
-  deleteActiveRun(runId)
-}
-
-async function cancelLiveStreamBestEffort(runId: string): Promise<void> {
+async function cancelLiveStreamBestEffort(runId: string, sessionId: string): Promise<void> {
   try {
     const { cancelCodingStream } = await import("./open-coding-stream")
     await cancelCodingStream(runId)
-  } catch {
-    // 测试环境可能加载不了 ACP client；内存泵已经 abort。
+  } catch (error) {
+    logCancelStreamError(error)
   }
   try {
     const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
     const { cancelInFlightDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
     endDesktopActOverlay()
-    cancelInFlightDesktopAct()
+    cancelInFlightDesktopAct({ runId, sessionId })
   } catch {
     // overlay 未装
   }
