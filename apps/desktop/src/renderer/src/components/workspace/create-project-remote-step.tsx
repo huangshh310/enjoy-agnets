@@ -20,6 +20,9 @@ import {
   InputGroupInput
 } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "../settings/secret-write-notice"
+import { secretWriteUi, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { SshHostFields } from "../settings/workspace/ssh-host-fields"
 import { CreateProjectHostPicker } from "./create-project-host-picker"
 import type { RemoteConnectInput } from "./remote-connect.types"
@@ -31,6 +34,7 @@ export function CreateProjectRemoteStep({
   onNameChange,
   loading,
   error,
+  writeCode = null,
   onBack,
   onCancel,
   onConnect
@@ -39,6 +43,7 @@ export function CreateProjectRemoteStep({
   onNameChange: (value: string) => void
   loading: boolean
   error: string | null
+  writeCode?: SecretWriteErrorCode | null
   onBack: () => void
   onCancel: () => void
   onConnect: (input: RemoteConnectInput) => void
@@ -46,6 +51,9 @@ export function CreateProjectRemoteStep({
   const remote = useCreateProjectRemote(projectName, onConnect)
   const t = remote.t
   const [showSelectedPassword, setShowSelectedPassword] = useState(false)
+  const storageAvailable = useChatReadiness().data?.secretStorageAvailable
+  const ui = secretWriteUi(storageAvailable, writeCode ?? null)
+  const secretBlocked = storageAvailable === false && Boolean(remote.draft.password.trim())
 
   const isProbeSuccess = remote.probeNote && remote.probeNote.includes("正常")
 
@@ -195,11 +203,14 @@ export function CreateProjectRemoteStep({
         )}
       </div>
 
+      {ui.preflight ? <SecretWritePreflight /> : null}
+      {ui.errorCode ? <SecretWriteError code={ui.errorCode} /> : null}
+
       {/* 全局错误提示 */}
-      {error ? (
+      {error && !ui.preflight && !ui.errorCode ? (
         <div className="flex items-start gap-2 rounded-xl border border-border-error-default/20 bg-background-tertiary-error/10 p-3 text-caption-1-regular text-text-error-primary dark:text-text-error-primary">
           <RiAlertLine className="size-4 shrink-0 mt-0.5" />
-          <span className="font-mono text-caption-2-regular break-all leading-relaxed">
+          <span className="text-caption-1-regular leading-relaxed">
             {error}
           </span>
         </div>
@@ -224,15 +235,17 @@ export function CreateProjectRemoteStep({
           >
             {t("pages.workspaces.createProject.cancel")}
           </Button>
-          <Button
-            size="sm"
-            disabled={loading || !remote.remotePath.trim() || !remote.hostReady}
-            onClick={remote.submit}
-            className="h-8 gap-1.5 text-caption-2-medium font-medium shadow-xs cursor-pointer"
-          >
-            {loading ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
-            <span>{t("pages.workspaces.createProject.connect")}</span>
-          </Button>
+          <SecretWriteSaveTip blocked={secretBlocked}>
+            <Button
+              size="sm"
+              disabled={loading || secretBlocked || !remote.remotePath.trim() || !remote.hostReady}
+              onClick={remote.submit}
+              className="h-8 gap-1.5 text-caption-2-medium font-medium shadow-xs cursor-pointer"
+            >
+              {loading ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
+              <span>{t("pages.workspaces.createProject.connect")}</span>
+            </Button>
+          </SecretWriteSaveTip>
         </div>
       </div>
     </div>

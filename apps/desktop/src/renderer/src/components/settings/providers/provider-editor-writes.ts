@@ -2,10 +2,11 @@
  * 编辑器的保存、拉目录、检测协议。请求只走 preload，明文 Key 不从回包里读。
  */
 import type { QueryClient } from "@tanstack/react-query"
-import type { ProviderPublic, SettingsSnapshot } from "@enjoy-agents/ipc-contract"
+import { SettingsSnapshot as SettingsSnapshotSchema, type ProviderPublic, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { isApiStyle, type ApiStyle } from "@enjoy-agents/providers/presets"
 import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import { getIde } from "@renderer/lib/ide"
+import { runSecretWrite, type SecretWriteOutcome } from "@renderer/lib/secret-write"
 import { applyDetectResults, catalogStyleOf, catalogUrlOf, detectUrlOf, mergeCatalog } from "./provider-editor-form"
 import {
   providerUpsertPayload,
@@ -18,11 +19,19 @@ export async function persistSnapshot(queryClient: QueryClient, snapshot: Settin
   await applySettingsSnapshot(snapshot)
 }
 
-export async function saveEditor(queryClient: QueryClient, editor: EditorState, activate: boolean) {
-  await persistSnapshot(
-    queryClient,
-    (await getIde().settings.upsertProvider(providerUpsertPayload(editor, activate))) as SettingsSnapshot
+export async function saveEditor(
+  queryClient: QueryClient,
+  editor: EditorState,
+  activate: boolean
+): Promise<SecretWriteOutcome<SettingsSnapshot>> {
+  const outcome = await runSecretWrite(() =>
+    getIde().settings.upsertProvider(providerUpsertPayload(editor, activate)) as Promise<SettingsSnapshot>
   )
+  if (!outcome.ok) return outcome
+  const snap = SettingsSnapshotSchema.safeParse(outcome.value)
+  if (!snap.success) return { ok: false, code: "UNKNOWN" }
+  await persistSnapshot(queryClient, snap.data)
+  return { ok: true, value: snap.data }
 }
 
 export async function runProviderProbe(

@@ -16,6 +16,7 @@ export function SettingsSideDrawer({
   closeLabel,
   layer = "base",
   widthClass = "w-[min(32rem,calc(100vw-1.5rem))]",
+  motion = true,
   children
 }: {
   open: boolean
@@ -24,6 +25,8 @@ export function SettingsSideDrawer({
   closeLabel: string
   layer?: "base" | "nested"
   widthClass?: string
+  /** 向导添加表单关掉滑入，避免首帧裁切右侧、底栏按钮跳位。 */
+  motion?: boolean
   children: ReactNode
 }) {
   const nested = layer === "nested"
@@ -55,7 +58,10 @@ export function SettingsSideDrawer({
       <button
         type="button"
         onClick={onClose}
-        className="absolute inset-0 cursor-pointer bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+        className={cx(
+          "absolute inset-0 cursor-pointer bg-black/40 backdrop-blur-xs",
+          motion && "animate-in fade-in duration-200"
+        )}
         aria-label={closeLabel}
       />
       <aside
@@ -63,7 +69,8 @@ export function SettingsSideDrawer({
         aria-modal="true"
         aria-labelledby={labelledBy}
         className={cx(
-          "absolute inset-y-3 right-3 z-10 flex flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card animate-in slide-in-from-right duration-250",
+          "absolute inset-y-3 right-3 z-10 flex min-w-0 flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card",
+          motion && "animate-in slide-in-from-right duration-250",
           widthClass
         )}
       >

@@ -43,11 +43,33 @@ test("开发者文案白名单短且都在词表里", () => {
 
 test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
   const z = zh as {
-    chat: Record<string, string>
+    chat: Record<string, string> & {
+      noProjectEmpty: string
+      noChatRouteNotice: string
+      needModelNotice: string
+      adoptedDefaultRouteToast: string
+    }
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
-      setupGuide: { replayDesc: string }
+      secretWrite: {
+        unavailableTitle: string
+        unavailableBody: string
+        saveNeedsKeychain: string
+        writeFailedKeychain: string
+        failed: string
+      }
+      setupGuide: {
+        replayDesc: string
+        replay: string
+        connectLocalUnverified: string
+        connectLocalUnverifiedWhy: string
+        goVerify: string
+        workspaceTitle: string
+        capEnginesBody: string
+        moreEngines: string
+      }
+      agentTools: { manageProviders: string }
       update: { devSkip: string }
       builtinTools: { browserBridgeTitle: string }
       providers: Record<string, string>
@@ -86,7 +108,40 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.nav.workspace, "项目")
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
   assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
-  assert.equal(z.settings.setupGuide.replayDesc, "再走一遍引擎安装、外观和打开项目。")
+  assert.equal(
+    z.settings.secretWrite.unavailableTitle,
+    "这台电脑没有可用的系统钥匙串，暂时没法安全地保存密钥。"
+  )
+  assert.equal(
+    z.settings.secretWrite.unavailableBody,
+    "装好系统钥匙串（比如 GNOME 密钥环）后，重启 Enjoy 再来添加。"
+  )
+  assert.equal(z.settings.secretWrite.saveNeedsKeychain, "需要系统钥匙串才能保存")
+  assert.equal(
+    z.settings.secretWrite.writeFailedKeychain,
+    "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。"
+  )
+  assert.equal(z.settings.secretWrite.failed, "没存上，请再试一次")
+  assert.doesNotMatch(z.settings.secretWrite.writeFailedKeychain, /重启/)
+  assert.equal(z.settings.setupGuide.replayDesc, "再走一遍连模型、装引擎、外观和打开文件夹。")
+  assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
+  assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")
+  assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
+  assert.equal(z.chat.needModelNotice, "还差一步：选一个模型，才能发消息。草稿会留着。")
+  assert.equal(z.chat.adoptedDefaultRouteToast, "之后的新对话默认用「{name}」，可在设置里改。")
+  assert.equal(z.chat.goConnect, "去连接")
+  assert.equal(z.settings.setupGuide.connectLocalUnverified, "未验证")
+  assert.equal(z.settings.setupGuide.connectLocalUnverifiedWhy, "这是远端地址，还没确认能连上，所以现在不能用来对话。")
+  assert.equal(z.settings.setupGuide.goVerify, "去验证")
+  assert.equal(z.settings.providers.pickTitle, "选一家，粘贴密钥")
+  assert.equal(z.settings.setupGuide.workspaceTitle, "打开第一个项目")
+  assert.equal(z.settings.setupGuide.capEnginesBody, "Enjoy 本地和这台电脑上已经装好的助手，可以在同一条对话里换着用。模型和登录还在各自那边。")
+  assert.equal(z.settings.setupGuide.moreEngines, "更多引擎")
+  assert.equal(z.settings.providers.emptyTitle, "还没有连接模型")
+  assert.equal(z.chat.noProvidersYet, "还没有连接模型")
+  assert.equal(z.chat.manageProviders, "管理模型连接")
+  assert.equal(z.settings.agentTools.manageProviders, "管理模型连接")
+  assert.equal(z.chat.noProjectNewChatHint, "先选一个文件夹，才能开新对话。")
   assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
   assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")
@@ -111,6 +166,20 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+})
+
+test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
+  const leak = /libsecret|DBus|keychain|isEncryptionAvailable|safeStorage|gnome-keyring/i
+  const secretWrite = (zh as { settings: { secretWrite: Record<string, string> } }).settings.secretWrite
+  for (const [key, value] of Object.entries(secretWrite)) {
+    assert.doesNotMatch(value, leak, `zh settings.secretWrite.${key} leaks keychain English: ${value}`)
+  }
+})
+
+test("用户可见词表不含供应商密钥，统一连接模型 / API 密钥", () => {
+  for (const { key, value } of flattenEntries(zh)) {
+    assert.doesNotMatch(value, /供应商密钥/, `zh ${key} uses banned copy: ${value}`)
+  }
 })
 
 test("中文词条不用半角 ? !，确认问句走全角问号", () => {

@@ -1,5 +1,5 @@
 /**
- * 设置里再打开一次启动引导。
+ * 设置里再打开一次入门向导。
  */
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
@@ -11,7 +11,7 @@ export function SetupGuideReplay() {
   return (
     <SettingsCard title={t("settings.setupGuide.replayTitle")}>
       <SettingsRow title={t("settings.setupGuide.replay")} description={t("settings.setupGuide.replayDesc")}>
-        <Button type="button" variant="outline" onClick={replaySetupGuide}>
+        <Button type="button" variant="outline" data-testid="setup-guide-replay" onClick={replaySetupGuide}>
           {t("settings.setupGuide.replay")}
         </Button>
       </SettingsRow>

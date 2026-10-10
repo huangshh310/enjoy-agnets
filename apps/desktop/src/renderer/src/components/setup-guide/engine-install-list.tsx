@@ -17,6 +17,7 @@ import { useT } from "@renderer/i18n"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { countAvailableEngines } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { guideEngineShowsReady } from "./guide-engine-ready"
+import { splitGuideEngines } from "./guide-engine-split"
 import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 
 type RowPhase = "idle" | "busy" | "failed" | "copied"
@@ -27,14 +28,17 @@ export function EngineInstallList() {
   const tools = composerAgentTabs(snapshot.data?.agentTools ?? [])
   const [phase, setPhase] = useState<Record<string, RowPhase>>({})
   const [refreshing, setRefreshing] = useState(false)
+  const [showMore, setShowMore] = useState(false)
   const queryClient = useQueryClient()
   const readiness = useChatReadiness().data
   const ready = readiness?.engineCount ?? countAvailableEngines(tools)
   const missing = tools.filter((tool) => !tool.comingSoon && !guideEngineShowsReady(tool)).length
+  const { pinned, more } = splitGuideEngines(tools)
+  const visible = showMore ? [...pinned, ...more] : pinned
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
       <ul className="grid min-h-0 flex-1 auto-rows-[60px] grid-cols-3 content-start gap-2.5 overflow-y-auto pr-1">
-        {tools.map((tool) => (
+        {visible.map((tool) => (
           <EngineInstallRow
             key={tool.id}
             tool={tool}
@@ -47,6 +51,16 @@ export function EngineInstallList() {
           />
         ))}
       </ul>
+      {more.length > 0 ? (
+        <button
+          type="button"
+          data-testid="setup-guide-more-engines"
+          onClick={() => setShowMore((open) => !open)}
+          className="self-start cursor-pointer text-caption-1-medium text-text-primary underline decoration-text-primary/40 underline-offset-2"
+        >
+          {showMore ? t("settings.setupGuide.fewerEngines") : t("settings.setupGuide.moreEngines")}
+        </button>
+      ) : null}
       <div className="flex items-center justify-between text-body-2-regular text-text-secondary">
         <span>{t("settings.setupGuide.engineSummary", { ready, missing })}</span>
         <button

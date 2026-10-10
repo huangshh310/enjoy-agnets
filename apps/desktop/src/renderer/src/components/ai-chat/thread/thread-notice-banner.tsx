@@ -1,5 +1,6 @@
 /**
  * 非失败提示：用户停 / ACP resume 回落。中性条，不是错误卡。
+ * no_chat_route 由 ThreadErrorBanner → ThreadNoChatRouteNotice 画，这里不再叠一条。
  */
 import { RiCloseLine } from "@remixicon/react"
 import { useChatStore } from "@renderer/stores/chat-store"

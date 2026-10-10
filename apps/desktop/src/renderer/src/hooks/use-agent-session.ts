@@ -38,6 +38,7 @@ import { useChatReadiness } from "./use-chat-readiness"
 import { planNewSession } from "./plan-new-session"
 import { rememberWorkspaceOnLoad } from "./unknown-workspace-remember"
 import { landEmptyHome } from "./nav-history/nav-history-controller"
+import { useNoProjectNudge } from "../components/app-shell/chat/no-project-nudge"
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
@@ -252,6 +253,7 @@ export async function openFolder() {
 export async function startPersistedSession() {
   const workspaceId = useChatStore.getState().workspaceId
   if (planNewSession(workspaceId) === "empty_home") {
+    useNoProjectNudge.getState().pulse()
     await landEmptyHome()
     return
   }

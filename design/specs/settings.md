@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（BASE-P0-1：`ready` 看当前档案 `hasEnjoySecret`；从无到有才 toast）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（BASE-P0-1：钥匙串 ① 黄条预检 / ② 红字没存上）
 
 ## 当前真相
 
@@ -73,6 +73,8 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 壳：`settings-shell.tsx`（登记情境栏）；应用铬 `app-shell/`
 - 抽屉叠层：`settings-overlay.ts`（base 50 / nested 70 / float 80）
 - 看板原语：`settings-hub.tsx`
+- 密钥写回：`renderer/src/lib/secret-write.ts`（本地窄联合 + `WRITE_SURFACE` 码表；TODO(#133) 换成 `@enjoy-agents/ipc-contract/secret-write`）；① 黄条 `SecretWritePreflight` / ② 红字 `SecretWriteError`；闸 `hooks/use-secret-write-gate.ts`
+- 启动引导：`apps/desktop/src/renderer/src/components/setup-guide/`（`connect-model-step.tsx` / `connect-model-options.ts` / `appearance-choice.tsx` / `ready-face.ts` / `ready-summary.tsx` / `setup-guide-store.ts` / `guide-engine-split.ts`）；可对话路线 `hooks/use-chat-readiness.ts` + `hooks/apply-default-chat-route.ts`（只消费 `defaultRoute`，本会话 Picker 选择不覆盖）+ `hooks/adopted-default-route-toast.ts`（`adoptedHint` 一次 toast「之后的新对话默认用「{name}」，可在设置里改。」）；无路线横幅 `ai-chat/thread/thread-no-chat-route-notice.tsx`；有密钥没模型 `thread-need-model-notice.tsx`（中性条「还差一步：选一个模型，才能发消息。草稿会留着。」+「去选择」，动作打开模型选择器，草稿留下）。添加密钥先选厂商 `providers/provider-pick-panel.tsx` + `provider-simple-fields.tsx`。未连上的「添加 API 密钥」点行即进选厂商；「去连接」同一套 picker，不预选 DeepSeek。无项目「选择文件夹」用 outline，不得比侧栏「+ 点击添加项目」更响。密钥写（`upsertProvider` / SSH 登录密码 / `setHarness` / `upsertCustom` / `openSsh` 带密码）走 renderer `runSecretWrite`：先检 `ok`，仍接住旧 main 的 throw；未知码「没存上，请再试一次」。`secretStorageAvailable === false`（合约 `.catch(true)`，缺省不当不可用；Linux `basic_text` 算 false）时，向导加钥步和添加表单**填写前**出 ① 中性黄点条（与「还差一步」同款，不是红）：主句「这台电脑没有可用的系统钥匙串，暂时没法安全地保存密钥。」次句「装好系统钥匙串（比如 GNOME 密钥环）后，重启 Enjoy 再来添加。」禁保存，hover「需要系统钥匙串才能保存」；输入不锁；向导「以后再连」仍可点。写失败 `KEYCHAIN_UNAVAILABLE` 出 ② 保存钮上方小红字「没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。」（不提重启）；抽屉不关、已填留下。未来若拆出「没装」码，把它标成 `WRITE_SURFACE.preflight` 即改走 ①。禁止摊 libsecret / DBus / keychain 英文。luna 文案在 `settings.secretWrite.*`。枚举本体在 #133 ipc-contract，本 PR 不定义。e2e 夹具 `ENJOY_E2E_STUB=1` + `ENJOY_E2E_KEYCHAIN=unavailable`（仅未打包）；夹具未到则 skip-until-#133。
 - 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings/agent-tools/`（`agent-tool-row.tsx` / `list-secondary.ts` / `install-row-copy.ts` / `list-layout.ts` / `official-login/` / `power-source/` / `bind-source/` / `drawer-trust/` / `display-name/engine-display-name-field.tsx` / `agent-tool-add-archive-link.tsx` / `capability-matrix.tsx` / `config-boundary-table.tsx` / `acp-registry-*.tsx` / `custom-acp-agent-form.tsx`）、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；本机执行沙箱：`sandbox-settings.tsx`；进阶沙箱：`settings-harness.tsx` / `settings-harness-credentials.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
@@ -86,6 +88,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
+- **隐患**：去添加密钥时 `pauseAt` 把向导 `open` 设成 false，Radix Dialog `onOpenChange(false)` 会当成用户关掉并 `finish()`，向导被标完成、resume 清掉。正确做法：`onOpenChange` 见 `paused` 不要 finish。
 - **隐患**：1100×700 设置侧栏看不到「项目与扩展」。根因：情境栏父级不裁剪高度，Radix ScrollArea 失效。正确做法：见 `ui` spec；e2e `settings-nav-scroll.spec.ts`。
 - **隐患**：自动化抽屉 X / Esc / 遮罩静默丢改动。正确做法：`isDraftDirty` 对照打开快照；脏则 Confirm「放弃未保存的修改？」；确认框开着抽屉不抢 Esc（`isAppDialogOpen`）。
 - **隐患**：抽屉 X 要点两下才关。根因：焦点在输入框时，第一次 click 先触发 blur → 重渲，这次 click 被吞；不是脏表单守卫（脏表单应立刻出确认框）。正确做法：关闭钮 `onPointerDown` 走 `handleDrawerClosePointer`（主键 `preventDefault` 再 `onClose`），aside 抬到 `z-10` 避免遮罩抢点。
@@ -118,7 +121,8 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - **隐患**：不变量测试 `import` 轨道 registry 时若 `McpIcon` 走 `@renderer` 别名，Node `--experimental-strip-types` 会 `ERR_MODULE_NOT_FOUND`。正确做法：`module-registry` 对 `mcp-brand-icons.ts` 用相对路径。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
-- 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。
+- **隐患**：Linux 无 GNOME 密钥环时 `settings.upsertProvider` 抛 `OS keychain encryption is not available on this machine.`，renderer 若 `void save()` 不 catch，抽屉不关也不报错。正确做法：`runSecretWrite` 先检 `ok` 再接 throw；① 快照 false 黄条+禁保存；② `KEYCHAIN_UNAVAILABLE` 红字（不提重启）；未知码「没存上，请再试一次」；草稿留下。不要在 renderer 定义 `SecretWriteErrorCode` Zod 枚举（#133）。
+- 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。钥匙串是否可用只读 `secretStorageAvailable`（`.catch(true)`）。
 - 个人资料不要只写 renderer `localStorage`：刷新能活但换 userData / 主进程看不到。权威在 `preferences.accountProfile`；旧 key 迁完即删。
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
 - 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。
