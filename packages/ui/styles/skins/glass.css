@@ -156,7 +156,7 @@ html[data-skin="glass"] [data-frost="shell"]::after {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0;
   padding: 1px;
   background: linear-gradient(
     var(--glass-light-angle),
@@ -170,6 +170,7 @@ html[data-skin="glass"] [data-frost="shell"]::after {
   mask-composite: exclude;
   opacity: 0.65;
   filter: url(#skin-liquid-glass);
+  /* 棱镜描边必须低于正文。mask-composite 失败时整层会变成同心圆；z-0 保证不盖字。 */
 }
 
 html.dark[data-skin="glass"] aside.rounded-3xl::after,

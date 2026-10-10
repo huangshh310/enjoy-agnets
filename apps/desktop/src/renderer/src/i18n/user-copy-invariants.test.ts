@@ -15,6 +15,10 @@ const DEV_COPY_ALLOWLIST = new Set([
   "chat.paneDesktopAppKey"
 ])
 
+/** 默认中文面禁止 Diff/diff；审查「高级」里的 git apply 可留工程词。 */
+const DIFF_COPY_ALLOWLIST = new Set(["chat.reviewCopyGitApply"])
+const DIFF_TERM_RE = /(?<![A-Za-z])[Dd]iff(?![A-Za-z])/
+
 const TOOL_ID_RE = buildToolIdPattern()
 const BUNDLE_ID_RE = /\b(?:com|org|net|io)\.[a-z][a-z0-9-]*\.[a-z0-9._-]+\b/i
 const SECTION_RE = /§/
@@ -38,6 +42,18 @@ test("开发者文案白名单短且都在词表里", () => {
   const keys = new Set(flattenEntries(zh).map((row) => row.key))
   for (const key of DEV_COPY_ALLOWLIST) {
     assert.ok(keys.has(key), `missing allowlisted key ${key}`)
+  }
+})
+
+test("zh 默认词表不含 Diff/diff，高级 git apply 可留", () => {
+  const keys = new Set(flattenEntries(zh).map((row) => row.key))
+  for (const key of DIFF_COPY_ALLOWLIST) {
+    assert.ok(keys.has(key), `missing Diff allowlisted key ${key}`)
+  }
+  assert.equal((zh as { chat: { reviewCopyGitApply: string } }).chat.reviewCopyGitApply, "复制 git apply 命令")
+  for (const { key, value } of flattenEntries(zh)) {
+    if (DIFF_COPY_ALLOWLIST.has(key)) continue
+    assert.doesNotMatch(value, DIFF_TERM_RE, `zh ${key} leaks Diff: ${value}`)
   }
 })
 
@@ -69,6 +85,10 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.flagSession, "加星标")
   assert.equal(z.chat.reviewCommitStaged, "提交已暂存的改动")
   assert.equal(z.chat.reviewCommitChanges, "提交已暂存的改动")
+  assert.equal(z.chat.reviewCopyUnifiedDiff, "复制全部改动")
+  assert.equal(z.chat.reviewAdvanced, "高级")
+  assert.equal(z.chat.intentGitTag, "改动")
+  assert.equal(z.chat.intentGitDesc, "分析未提交的代码差异，排查潜在缺陷与风险")
   assert.equal(z.chat.approvalCycleHint, "工具审批策略 · 空输入时 Shift+Tab 在读取和编辑之间切换")
   assert.equal(z.chat.approvalChipHintReads, "读取：助手改文件或运行命令前会逐条问你")
   assert.equal(z.chat.approvalChipHintEdits, "编辑：助手可直接改文件，运行命令前仍会问你")

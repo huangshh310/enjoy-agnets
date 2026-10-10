@@ -389,12 +389,12 @@ export const enStudio = {
   },
   projectRules: {
     cleanDiffs: {
-      title: "Clean Code & Surgical Diffs",
+      title: "Clean code · precise edits",
       category: "Clean code",
       badge: "High Priority",
       description: "Force small atomic edits, zero leftover code, files under 300 lines.",
       content:
-        "# Clean Code & Surgical Diffs Rule\n- Prefer precise local edits; avoid rewriting whole files.\n- Keep files strictly under 300 lines; extract modules when they grow.\n- Keep existing comments and docs; do not add lines that merely restate code.\n- Do not introduce unformatted code or extra debug logs."
+        "# Clean code · precise edits\n- Prefer precise local edits; avoid rewriting whole files.\n- Keep files strictly under 300 lines; extract modules when they grow.\n- Keep existing comments and docs; do not add lines that merely restate code.\n- Do not introduce unformatted code or extra debug logs."
     },
     strictTsZod: {
       title: "Strict TypeScript & Zod Schemas",
@@ -423,7 +423,7 @@ export const enStudio = {
   },
   automationTemplates: {
     diffs: {
-      name: "Review Git Diffs on Save",
+      name: "Review changes on save",
       category: "Code Quality",
       prompt:
         "Inspect the latest uncommitted changes in the workspace whenever files are saved and summarize risk, security concerns, and potential regressions.",

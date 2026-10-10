@@ -14,7 +14,7 @@ import {
 import { useT } from "@renderer/i18n"
 import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { SettingsCard } from "./settings-row"
-import { KEYBINDING_CATALOG, metaFor, type KeybindingCategory } from "./keybindings/keybinding-catalog"
+import { KEYBINDING_CATALOG, labelKeysForBinding, metaFor, type KeybindingCategory } from "./keybindings/keybinding-catalog"
 import { isApplePlatform, keybindingPlatform } from "./keybindings/keybinding-format"
 import { KeybindingRow } from "./keybindings/keybinding-row"
 
@@ -104,7 +104,7 @@ function ShortcutGroups(props: {
             {items.map((row) => (
               <KeybindingRow
                 key={`${row.command}-${row.chord}`}
-                meta={metaFor(row.command)}
+                meta={{ ...metaFor(row.command), actionKey: row.actionKey, descKey: row.descKey }}
                 chord={row.chord}
                 customized={customized.has(row.command)}
                 editing={props.edit?.command === row.command && props.edit.rowKey === row.chord}
@@ -129,7 +129,7 @@ function ShortcutGroups(props: {
 function visibleRows(userRules: readonly KeybindingRule[], search: string, t: (path: string) => string) {
   const query = search.trim().toLowerCase()
   return resolveKeybindings(userRules)
-    .map((rule) => ({ ...metaFor(rule.command), chord: rule.key }))
+    .map((rule) => ({ ...metaFor(rule.command), ...labelKeysForBinding(rule.command, rule.key), chord: rule.key }))
     .filter((row) => {
       if (!query) return true
       const title = t(row.actionKey).toLowerCase()

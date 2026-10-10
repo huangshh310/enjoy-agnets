@@ -36,7 +36,7 @@ export function ReviewDiffPane(props: {
 
   if (changes.length === 0 && !activePath) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-text-tertiary">
+      <div className="relative z-10 flex h-full flex-col items-center justify-center gap-2 bg-background-primary-default p-8 text-center text-text-tertiary">
         <div className="flex size-10 items-center justify-center rounded-full bg-state-success-text/10 text-state-success-text">
           <RiCheckLine className="size-5" />
         </div>

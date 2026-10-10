@@ -32,3 +32,22 @@ export function metaFor(command: KeybindingCommand): KeybindingCommandMeta {
   if (!found) throw new Error(`missing keybinding meta: ${command}`)
   return found
 }
+
+/** ⌘L 是快速搜索，⌘K 是命令面板。两者打开同一窗口，设置页与快捷键表必须分名。 */
+export function labelKeysForBinding(
+  command: KeybindingCommand,
+  chord: string
+): { actionKey: string; descKey: string } {
+  const meta = metaFor(command)
+  if (command === "search.quick" && isCommandPaletteChord(chord)) {
+    return {
+      actionKey: "settings.shortcuts.quickSearchAlt",
+      descKey: "settings.shortcuts.quickSearchAltDesc"
+    }
+  }
+  return { actionKey: meta.actionKey, descKey: meta.descKey }
+}
+
+function isCommandPaletteChord(chord: string): boolean {
+  return chord === "mod+k" || chord === "ctrl+k"
+}

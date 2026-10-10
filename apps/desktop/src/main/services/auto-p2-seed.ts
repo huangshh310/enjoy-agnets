@@ -76,7 +76,7 @@ export function buildAutoP2Fixture(now = Date.now(), extras = false) {
     }),
     row({
       id: "auto_catchup",
-      name: "午间 diff 复盘",
+      name: "午间改动复盘",
       cronExpr: "30 10 * * *",
       lastRunAt: now,
       lastRunStatus: "ok",

@@ -79,7 +79,7 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     await snap(window, "auto-p2-drawer-default-off")
     await closeDrawer(window)
 
-    await openRow(window, "午间 diff 复盘")
+    await openRow(window, "午间改动复盘")
     const toggle = window.locator('[data-testid="automation-catch-up-toggle"] [role="switch"]')
     await expect(toggle).toHaveAttribute("aria-checked", "true")
     await window.locator('[data-testid="automation-missed-expand"] summary').click()

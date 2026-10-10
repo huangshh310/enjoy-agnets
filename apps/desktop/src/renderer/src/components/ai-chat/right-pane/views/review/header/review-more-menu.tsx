@@ -20,6 +20,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
@@ -149,17 +152,6 @@ export function ReviewMoreMenu(props: {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          onClick={handleCopyApply}
-          className="flex items-center justify-between py-1.5 px-2 text-caption-1-medium cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <RiTerminalBoxLine className="size-4 text-text-tertiary" />
-            <span>{t("chat.reviewCopyGitApply")}</span>
-          </div>
-          {copiedApply ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
           onClick={handleCopyDiff}
           className="flex items-center justify-between py-1.5 px-2 text-caption-1-medium cursor-pointer"
         >
@@ -169,6 +161,22 @@ export function ReviewMoreMenu(props: {
           </div>
           {copiedDiff ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
         </DropdownMenuItem>
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="flex items-center gap-2 py-1.5 px-2 text-caption-1-medium cursor-pointer">
+            <RiTerminalBoxLine className="size-4 text-text-tertiary" />
+            <span>{t("chat.reviewAdvanced")}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-56 p-1">
+            <DropdownMenuItem
+              onClick={handleCopyApply}
+              className="flex items-center justify-between py-1.5 px-2 text-caption-1-medium cursor-pointer"
+            >
+              <span>{t("chat.reviewCopyGitApply")}</span>
+              {copiedApply ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   )
