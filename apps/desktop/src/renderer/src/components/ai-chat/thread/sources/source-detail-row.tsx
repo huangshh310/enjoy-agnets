@@ -20,10 +20,10 @@ export function SourceDetailRow({
   const t = useT()
   const badge = sourceBadgeKind(chip.kind)
   const focusable = canFocusSourceRow(chip)
-  const body = <SourceRowBody chip={chip} badge={badge} selected={selected} t={t} />
+  const body = <SourceRowBody chip={chip} badge={badge} t={t} />
   const rowClass = cx(
     "flex w-full items-start gap-2 px-3 py-2.5 text-left",
-    selected ? "bg-accent-50" : "hover:bg-background-secondary-hover"
+    selected ? "bg-accent-500/10" : "hover:bg-background-secondary-hover"
   )
 
   if (focusable) {
@@ -60,12 +60,10 @@ export function SourceDetailRow({
 function SourceRowBody({
   chip,
   badge,
-  selected,
   t
 }: {
   chip: TurnSourceChip
   badge: SourceBadgeKind
-  selected: boolean
   t: TranslateFn
 }) {
   const Icon = sourceBadgeIcon(badge)
@@ -73,12 +71,7 @@ function SourceRowBody({
   return (
     <>
       <span
-        className={cx(
-          "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md ring-1",
-          selected
-            ? "bg-background-primary-default text-accent-500 ring-accent-500/30"
-            : "bg-background-secondary-default text-foreground-icon-tertiary ring-border-button-default"
-        )}
+        className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-background-secondary-default text-foreground-icon-tertiary ring-1 ring-border-button-default"
         aria-hidden="true"
       >
         <Icon className="size-3.5" />
@@ -90,7 +83,7 @@ function SourceRowBody({
             {t(sourceBadgeLabelKey(badge))}
           </span>
           {chip.fromEnjoy ? (
-            <span className="shrink-0 rounded bg-accent-50 px-1.5 py-px text-caption-2-regular text-accent-600 ring-1 ring-accent-500/20">
+            <span className="shrink-0 rounded bg-accent-500/10 px-1.5 py-px text-caption-2-regular text-accent-600 ring-1 ring-accent-500/20">
               {t("chat.hostInjectFromEnjoy")}
             </span>
           ) : null}

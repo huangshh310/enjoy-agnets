@@ -53,6 +53,9 @@ test("中英词表与预览同文，不用 Citations / Sources 抽屉", () => {
   assert.equal(zhChat.sourcesSheetKindMcp, "MCP")
   assert.equal(zhChat.sourceKnowledgeLabel, "知识库")
   assert.equal(zhChat.sourcesSheetMeta, "{n} 项 · 暂不支持网页来源")
+  assert.equal(zhChat.sourcesSheetFooter, "点文件可以在右侧打开。")
+  assert.equal(enChat.sourcesSheetFooter, "Click a file to open it on the right.")
+  assert.doesNotMatch(zhChat.sourcesSheetFooter, /可聚焦|path|跳转/)
   assert.equal(enChat.sourcesSheetTitle, "This turn")
   assert.doesNotMatch(zhChat.sourcesSheetTitle, /引用|Citations/i)
   assert.doesNotMatch(enChat.sourcesSheetTitle, /Citations|Sources drawer|InlineCitations/i)
@@ -88,6 +91,11 @@ test("sheet 是右/底面板，不上 InlineCitations；无芯片且无账本行
   assert.ok(files.row.includes("sourceBadgeLabelKey"))
   assert.ok(files.row.includes("sourceBadgeIcon"))
   assert.ok(files.row.includes("data-selected"))
+  assert.ok(files.row.includes("bg-accent-500/10"))
+  assert.ok(files.row.includes("text-text-primary"))
+  assert.ok(files.row.includes("text-foreground-icon-tertiary"))
+  assert.doesNotMatch(files.row, /bg-accent-50(?!\d)/)
+  assert.doesNotMatch(files.row, /#[0-9a-fA-F]{3,8}\b/)
 })
 
 test("只有带 path 的文件行聚焦审查；网页 URL 不进名单", () => {

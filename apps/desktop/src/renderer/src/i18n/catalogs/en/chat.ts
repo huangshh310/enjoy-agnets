@@ -233,7 +233,7 @@ export const enChat = {
   sourcesSheetKindSkill: "Skill",
   sourcesSheetKindMcp: "MCP",
   sourcesSheetMcpProvenance: "Server · {name}",
-  sourcesSheetFooter: "A file row with a path can focus review. Skill / MCP rows do not invent a jump.",
+  sourcesSheetFooter: "Click a file to open it on the right.",
   hostInjectEnabled: "Enabled {mcp} MCP · {skills} Skills",
   hostInjectEnabledMcp: "Enabled {mcp} MCP",
   hostInjectEnabledSkills: "Enabled {skills} Skills",

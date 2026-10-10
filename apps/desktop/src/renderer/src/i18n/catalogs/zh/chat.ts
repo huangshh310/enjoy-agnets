@@ -231,7 +231,7 @@ export const zhChat = {
   sourcesSheetKindSkill: "技能",
   sourcesSheetKindMcp: "MCP",
   sourcesSheetMcpProvenance: "服务器 · {name}",
-  sourcesSheetFooter: "选中文件行 = 可聚焦。技能 / MCP 无文件 path，不编造跳转。",
+  sourcesSheetFooter: "点文件可以在右侧打开。",
   hostInjectEnabled: "已启用 {mcp} MCP · {skills} Skills",
   hostInjectEnabledMcp: "已启用 {mcp} MCP",
   hostInjectEnabledSkills: "已启用 {skills} Skills",
