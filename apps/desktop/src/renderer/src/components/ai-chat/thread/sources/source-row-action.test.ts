@@ -6,6 +6,7 @@ import {
   isWorkspaceRelPath,
   planSourceOpenView,
   planSourceRowClick,
+  resolveSourceOpenView,
   sourceChipStableId
 } from "./source-row-action.ts"
 
@@ -82,15 +83,19 @@ test("知识库行：文件在则打开到行，不在或非工作区路径则�
 test("本轮写过才走差异，知识库与只读来源走查看文件", () => {
   assert.equal(planSourceOpenView(knowledgeOk, []), "preview")
   assert.equal(planSourceOpenView(knowledgeOk, ["untracked.txt"]), "preview")
-  assert.equal(planSourceOpenView(knowledgeOk, ["readme.md"]), "diff")
+  assert.equal(planSourceOpenView(knowledgeOk, ["readme.md"]), "preview")
   assert.equal(planSourceOpenView(fileChip, []), "preview")
   assert.equal(planSourceOpenView(fileChip, ["src/auth/login.ts"]), "diff")
   assert.deepEqual(planSourceRowClick(knowledgeOk, true, ["readme.md"]), {
     action: "open",
     path: "readme.md",
     startLine: 1,
-    view: "diff"
+    view: "preview"
   })
+  assert.equal(resolveSourceOpenView("diff", true), "diff")
+  assert.equal(resolveSourceOpenView("diff", null), "diff")
+  assert.equal(resolveSourceOpenView("diff", false), "preview")
+  assert.equal(resolveSourceOpenView("preview", false), "preview")
 })
 
 test("知识库行可点；技能不可点", () => {

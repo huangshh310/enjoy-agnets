@@ -14,6 +14,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { useSourceFileReveal } from "@renderer/components/ai-chat/thread/sources/source-file-reveal"
 import type { TurnSourceChip } from "@renderer/components/ai-chat/thread/sources/source-chip"
 import { useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
+import { useRightPaneStore } from "@renderer/stores/right-pane-store"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
@@ -39,6 +40,7 @@ export type EnjoyE2eBridge = {
     path: string | null
     line: number | null
     view: "diff" | "preview" | null
+    paneKind: string | null
     rightPanelCollapsed: boolean
   }
   injectSheetChip: (chip: TurnSourceChip) => void
@@ -93,10 +95,13 @@ export function installEnjoyE2eBridge(): void {
     getSelectedFile() {
       const chat = useChatStore.getState()
       const reveal = useSourceFileReveal.getState().reveal
+      const pane = useRightPaneStore.getState()
+      const tab = pane.tabs.find((item) => item.id === pane.activeId)
       return {
         path: chat.selectedFilePath,
         line: reveal?.line ?? null,
         view: reveal?.view ?? null,
+        paneKind: tab?.kind ?? null,
         rightPanelCollapsed: chat.rightPanelCollapsed
       }
     },

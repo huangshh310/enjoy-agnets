@@ -129,6 +129,12 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
         { timeout: 8_000 }
       )
       .toBe(false)
+    await expect(window.locator('[data-testid="review-not-git-empty"]')).toHaveCount(0)
+    await expect
+      .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.paneKind ?? ""), {
+        timeout: 4_000
+      })
+      .toBe("files")
     await expect(window.locator('[data-testid="source-file-path"]')).toContainText("readme.md")
     await expect(window.locator('[data-testid="source-file-view-mode"]')).toContainText("查看文件")
     const preview = window.locator('[data-testid="source-file-preview"]')

@@ -944,7 +944,7 @@ export const zhChat = {
   shareChanges: "分享改动",
   treeClean: "工作区没有未提交改动。",
   reviewNotGit: "这个文件夹没有用 Git 管理",
-  reviewNotGitHint: "本轮改过的文件仍会列在下面。",
+  reviewNotGitHint: "本轮改过的文件仍会列在下面。点文件名可以查看内容。",
   selectChanged: "选择一个改动文件以预览。",
   reviewTabChanges: "变更",
   reviewTabCommits: "提交",

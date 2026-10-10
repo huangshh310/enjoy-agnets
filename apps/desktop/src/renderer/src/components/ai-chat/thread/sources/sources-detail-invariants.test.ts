@@ -113,6 +113,8 @@ test("sheet 是右/底面板，不上 InlineCitations；无芯片且无账本行
 test("文件行打开审查；知识库行打开或展开；网页 URL 不进名单", () => {
   assert.ok(files.open.includes("planSourceRowClick"))
   assert.ok(files.open.includes("planSourceOpenView") || files.open.includes("pathsFromLastTurn"))
+  assert.ok(files.open.includes("resolveSourceOpenView"))
+  assert.ok(files.open.includes('reveal: view === "preview" ? "files" : "review"'))
   assert.ok(files.open.includes("openChangedFile"))
   assert.ok(files.sheet.includes("openSourceRow"))
   assert.ok(files.row.includes("canActivateSourceRow"))

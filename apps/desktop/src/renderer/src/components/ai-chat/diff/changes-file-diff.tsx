@@ -4,10 +4,9 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
-import { RiCodeSSlashLine } from "@remixicon/react"
 import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
-import { AiChatCodePane } from "../ai-chat-code-pane"
+import { SourceFilePreview } from "../source-file-preview"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
 import { sameReviewPath } from "../right-pane/views/review/same-review-path"
@@ -83,28 +82,5 @@ export function ChangesFileDiff({
   }
 
   const effectiveContent = fallbackContent || fileContentQuery.data || ""
-  return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background-primary-default">
-      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 text-caption-1-regular select-none">
-        <div className="flex items-center gap-2 min-w-0">
-          <RiCodeSSlashLine className="size-4 shrink-0 text-text-tertiary" />
-          <span
-            data-testid="source-file-path"
-            className="min-w-0 truncate font-mono font-semibold text-text-primary"
-          >
-            {path}
-          </span>
-        </div>
-        <span
-          data-testid="source-file-view-mode"
-          className="shrink-0 rounded border border-border-button-default bg-background-primary-default px-1.5 py-0.5 text-caption-2-medium font-medium text-text-primary"
-        >
-          {t("chat.reviewViewFile")}
-        </span>
-      </header>
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <AiChatCodePane path={path} value={effectiveContent} />
-      </div>
-    </div>
-  )
+  return <SourceFilePreview path={path} content={effectiveContent} />
 }

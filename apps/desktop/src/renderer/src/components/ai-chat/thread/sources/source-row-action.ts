@@ -12,16 +12,26 @@ export type SourceRowPlan =
   | { action: "expand" }
   | { action: "none" }
 
-/** 本轮写过才走差异；知识库 / 只读来源一律查看文件，禁止把未改文件画成 +N。 */
+/** 知识库 / 只读一律查看文件；本轮写过的 file 才走差异。非 git 没有差异可看。 */
 export function planSourceOpenView(
-  chip: Pick<TurnSourceChip, "path">,
+  chip: Pick<TurnSourceChip, "path" | "kind">,
   thisTurnChangedPaths: readonly string[]
 ): SourceOpenView {
+  if (sourceBadgeKind(chip.kind) === "knowledge") return "preview"
   const path = chip.path?.trim().replaceAll("\\", "/")
   if (path && thisTurnChangedPaths.some((item) => item.replaceAll("\\", "/") === path)) {
     return "diff"
   }
   return "preview"
+}
+
+/** 非 git 工作区没有审查差异，本轮写过的 file 也改走查看文件。 */
+export function resolveSourceOpenView(
+  view: SourceOpenView,
+  gitRepo: boolean | null
+): SourceOpenView {
+  if (view === "diff" && gitRepo === false) return "preview"
+  return view
 }
 
 /** 工作区内相对路径才允许打开；盘符 / `..` / URL 就地展开。 */

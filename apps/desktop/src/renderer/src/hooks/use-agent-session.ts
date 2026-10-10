@@ -260,14 +260,18 @@ export async function startPersistedSession() {
   await createAndOpenSession(workspaceId as string, "新对话")
 }
 
-export async function openChangedFile(path: string, opts?: { reveal?: boolean }) {
+export async function openChangedFile(
+  path: string,
+  opts?: { reveal?: boolean | "review" | "files" }
+) {
   const store = useChatStore.getState()
   if (!store.workspaceId || !path) return
 
   const matched = store.changes.find((c) => sameReviewPath(c.path, path))
   let resolvedPath = matched?.path ?? path
 
-  if (opts?.reveal !== false) revealRightPane("review")
+  const pane = paneToReveal(opts?.reveal)
+  if (pane) revealRightPane(pane)
   store.setSelectedFile(resolvedPath, store.selectedFileContent || "")
 
   try {
@@ -306,6 +310,12 @@ export async function openChangedFile(path: string, opts?: { reveal?: boolean })
   } catch {
     // 若读取失败，保留选中的文件路径使 Diff/视图依然能响应
   }
+}
+
+function paneToReveal(reveal?: boolean | "review" | "files"): "review" | "files" | null {
+  if (reveal === false) return null
+  if (reveal === "files") return "files"
+  return "review"
 }
 
 function followOpenReviewFile(path: string) {
