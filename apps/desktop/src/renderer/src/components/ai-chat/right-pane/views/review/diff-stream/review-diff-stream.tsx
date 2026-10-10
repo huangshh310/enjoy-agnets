@@ -32,9 +32,15 @@ export function ReviewDiffStream(props: {
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    const next: Record<string, boolean> = {}
-    for (const file of changes) next[file.path] = allExpanded
-    setExpandedMap(next)
+    setExpandedMap((prev) => {
+      const next: Record<string, boolean> = {}
+      let same = Object.keys(prev).length === changes.length
+      for (const file of changes) {
+        next[file.path] = allExpanded
+        if (prev[file.path] !== allExpanded) same = false
+      }
+      return same ? prev : next
+    })
   }, [allExpanded, changes])
 
   if (!allExpanded) {

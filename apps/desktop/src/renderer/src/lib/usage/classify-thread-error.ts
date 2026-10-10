@@ -21,6 +21,7 @@ export type ThreadErrorKind =
   | "resume_fallback"
   | "store"
   | "send_restore"
+  | "stopped"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -37,6 +38,7 @@ export const INTERNAL_STORE_ERROR = "INTERNAL_STORE_ERROR"
 export const SEND_FAILED_RESTORE = "SEND_FAILED_RESTORE"
 export const SESSION_CREATE_TIMEOUT = "SESSION_CREATE_TIMEOUT"
 export const SESSION_NOT_READY = "SESSION_NOT_READY"
+export const USER_STOPPED = "user_aborted"
 
 const CREDIT_MARKERS = [
   "402",
@@ -52,6 +54,12 @@ const CREDIT_MARKERS = [
 
 export function classifyThreadError(message: string): ThreadErrorKind {
   const lower = message.toLowerCase()
+  if (
+    message === USER_STOPPED ||
+    lower.trim().replace(/\.+$/, "") === "aborted by user"
+  ) {
+    return "stopped"
+  }
   if (
     message === INTERNAL_STORE_ERROR ||
     lower.includes("unique constraint") ||

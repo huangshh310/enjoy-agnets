@@ -8,8 +8,10 @@ import { persistMessage } from "./persist-session"
 import { createSession } from "./session-queries"
 import { upsertProfile } from "./secrets"
 import { recordMetric } from "./telemetry-service"
+import { writeSessionModel, writeSessionRuntime } from "./agent-tools-vault"
 import {
   buildCostFixture,
+  costSeedSessionBinding,
   COST_LIVE_MODEL_ID,
   type CostSeedRun,
   type CostSeedUsage
@@ -24,6 +26,7 @@ export async function writeCostFixture(workspaceId: string, now = Date.now()): P
     persistMessage(created.id, "user", session.prompt)
     persistMessage(created.id, "assistant", session.reply)
     for (const run of session.runs) writeSeedRun(workspaceId, created.id, run)
+    bindCostSeedSession(created.id, session.runs)
   }
 }
 
@@ -41,7 +44,8 @@ async function seedCostProfiles(): Promise<void> {
     kind: "qwen",
     apiKey: "sk-e2e-cost-qwen",
     modelId: "qwen-plus",
-    models: [{ id: "qwen-plus", label: "Qwen Plus" }]
+    models: [{ id: "qwen-plus", label: "Qwen Plus" }],
+    activate: false
   })
   await upsertProfile({
     name: "COST Qwen 自填单价",
@@ -55,8 +59,16 @@ async function seedCostProfiles(): Promise<void> {
         inputPricePerMillion: 2,
         outputPricePerMillion: 4
       }
-    ]
+    ],
+    activate: false
   })
+}
+
+function bindCostSeedSession(sessionId: string, runs: CostSeedRun[]): void {
+  const bind = costSeedSessionBinding(runs)
+  if (!bind) return
+  if (bind.runtimeId) writeSessionRuntime(sessionId, bind.runtimeId, bind.modelId)
+  else writeSessionModel(sessionId, bind.modelId)
 }
 
 function writeSeedRun(workspaceId: string, sessionId: string, run: CostSeedRun): void {

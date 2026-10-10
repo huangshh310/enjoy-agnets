@@ -9,7 +9,9 @@ import {
   COMMIT_TOOLS,
   HOST_CONTROL_TOOLS,
   MUTATING_TOOLS,
-  WRITE_TOOLS
+  WRITE_TOOLS,
+  isMcpToolName,
+  isWriteTypeToolName
 } from "@enjoy-agents/ipc-contract/tool-names"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
@@ -139,17 +141,13 @@ export function resolveToolApproval(
   return "user-approval"
 }
 
-const MCP_WRITE_LEAF = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
-/** 叶子名精确匹配：不要用含子串 `command`，否则 list_commands 会被误伤。 */
-const MCP_SHELL_LEAF = /^(bash|shell|sh|zsh|cmd|command|run_command|run-command|terminal)$/i
-
 export function mcpToolLeafName(toolName: string): string {
   return toolName.includes("__") ? toolName.slice(toolName.indexOf("__") + 2) : toolName
 }
 
 export function isMcpWriteToolName(toolName: string): boolean {
-  const leaf = mcpToolLeafName(toolName).trim()
-  return MCP_WRITE_LEAF.test(leaf) || MCP_SHELL_LEAF.test(leaf)
+  if (!isMcpToolName(toolName) && !toolName.includes("__")) return false
+  return isWriteTypeToolName(toolName)
 }
 
 /** ACP 弱名：command / shell / 终端也算探索态要拦的写。 */

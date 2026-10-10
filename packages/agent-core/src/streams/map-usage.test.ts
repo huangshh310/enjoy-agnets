@@ -2,6 +2,21 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { mapUsageTokens } from "./map-usage.ts"
 
+test("小数 token 四舍五入，避免 usage.updated 被 int 闸丢掉", () => {
+  const mapped = mapUsageTokens({
+    inputTokens: 1.4,
+    outputTokens: 2.6,
+    totalTokens: 4.2,
+    cachedInputTokens: 0.4
+  })
+  assert.deepEqual(mapped, {
+    inputTokens: 1,
+    outputTokens: 3,
+    totalTokens: 4,
+    cacheReadTokens: 0
+  })
+})
+
 test("缓存和推理没返回时是未知而不是 0", () => {
   const mapped = mapUsageTokens({ inputTokens: 3, outputTokens: 5, totalTokens: 8 })
   assert.deepEqual(mapped, {

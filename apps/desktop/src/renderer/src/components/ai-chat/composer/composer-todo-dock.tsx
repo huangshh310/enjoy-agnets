@@ -25,6 +25,7 @@ export function ComposerTodoDock() {
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const runStartedAt = useChatStore((state) => state.runStartedAt)
+  const waitingApproval = Boolean(useChatStore((state) => state.pendingApproval))
   const modelLabel = useComposerActiveModelLabel()
   const todos = latestSessionTodoList(messages)
   const reviewModel = useSessionReviewModel()
@@ -86,6 +87,7 @@ export function ComposerTodoDock() {
           files={reviewModel.files}
           running={running}
           runStartedAt={runStartedAt ?? undefined}
+          waitingApproval={waitingApproval}
           modelLabel={modelLabel}
           busy={busy}
           hasFiles={reviewModel.files.length > 0}

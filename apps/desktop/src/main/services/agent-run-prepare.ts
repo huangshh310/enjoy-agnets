@@ -3,6 +3,7 @@
  * 否则知识 embed 一卡住，renderer 没有 runId，Stop 点了没反应。
  */
 import { logAndClassifyError } from "@enjoy-agents/agent-core"
+import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 import { pumpStream } from "./agent-pump"
 import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { appendRunAttachments, attachmentCapsFor } from "./attach-run-files"
@@ -38,10 +39,13 @@ export async function prepareAndPump(runId: string): Promise<void> {
   } catch (error) {
     const current = getActiveRun(runId)
     if (!current) return
+    const turn = turnOutcomeForRun(current, "error")
+    persistTurnWorkflow(current.input.sessionId, turn)
     emitEvent(current.window, {
       type: "run.error",
       runId,
-      message: logAndClassifyError("prepareAndPump", error).message
+      message: logAndClassifyError("prepareAndPump", error).message,
+      turn
     })
     deleteActiveRun(runId)
   }

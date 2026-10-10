@@ -38,6 +38,7 @@ export function SessionReviewActions({
       />
       <button
         type="button"
+        data-testid="session-review-open"
         title={t("chat.sessionReviewOpen")}
         disabled={busy}
         onClick={onOpenReview}

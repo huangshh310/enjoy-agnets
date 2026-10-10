@@ -80,6 +80,14 @@ function StepTitleRow({
         <span className="font-semibold text-text-primary group-hover:text-accent-500">{node.title}</span>
       )}
       {node.status === "running" ? <RiLoader4Line className="size-3 animate-spin text-accent-500" /> : null}
+      {node.status === "stopped" ? (
+        <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+          <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
+            <RiCloseLine className="size-2.5 text-text-tertiary" />
+          </span>
+          <span>{t("chat.toolStopped")}</span>
+        </span>
+      ) : null}
       {node.status === "completed" ? (
         <span className="flex size-3.5 items-center justify-center rounded-full bg-state-success-text/15 text-state-success-text">
           <RiCheckLine className="size-2.5" />

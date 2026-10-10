@@ -20,7 +20,7 @@ test("act begin 传入 runId；stop 先 cancel 再 abort 该 runId", () => {
   assert.match(tools, /resolveDesktopActRunId/)
   assert.match(tools, /currentToolRunId\(\)/)
   assert.match(tools, /currentPumpingRunId\(\)/)
-  assert.match(tools, /runId:/)
+  assert.match(tools, /beginDesktopActOverlay\(\{[\s\S]*?\brunId\b/)
   assert.match(tools, /cancelInFlightDesktopAct/)
   const chrome = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "desktop-overlay-chrome.ts"), "utf8")
   assert.match(chrome, /runDesktopOverlayStop/)

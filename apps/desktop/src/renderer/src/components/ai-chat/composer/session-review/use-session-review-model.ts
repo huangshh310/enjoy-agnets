@@ -15,6 +15,7 @@ import { reviewFilesKey, sessionReviewVisible } from "./session-review-visible"
 export function useSessionReviewModel() {
   const messages = useChatStore((state) => state.messages)
   const changes = useChatStore((state) => state.changes)
+  const gitRepo = useChatStore((state) => state.gitRepo)
   const running = useChatStore((state) => state.running)
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
@@ -24,8 +25,8 @@ export function useSessionReviewModel() {
     repositories.find((node) => node.id === sessionId)?.workflowStatus === "needs_review"
 
   const pick = useMemo(
-    () => describeReviewFiles(pathsFromLastTurn(messages), changes, running),
-    [messages, changes, running]
+    () => describeReviewFiles(pathsFromLastTurn(messages), changes, running, gitRepo),
+    [messages, changes, running, gitRepo]
   )
   const files = pick.files
   const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])

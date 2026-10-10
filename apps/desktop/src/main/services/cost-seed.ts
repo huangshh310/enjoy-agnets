@@ -63,6 +63,20 @@ export type CostSeedSession = {
   runs: CostSeedRun[]
 }
 
+/** 会话绑定：用最后一次 run 的 modelId；Claude CLI 再带 runtimeId。 */
+export function costSeedSessionBinding(runs: CostSeedRun[]): {
+  modelId: string
+  runtimeId?: string
+} | null {
+  const last = runs.at(-1)
+  if (!last?.modelId) return null
+  const runtimeId = last.runtimeId?.trim()
+  return {
+    modelId: last.modelId,
+    ...(runtimeId && runtimeId !== "enjoy-local" ? { runtimeId } : {})
+  }
+}
+
 export function buildCostFixture(now = Date.now()): { sessions: CostSeedSession[] } {
   return {
     sessions: [

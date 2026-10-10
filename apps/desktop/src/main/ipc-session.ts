@@ -1,7 +1,7 @@
 /**
  * 会话 IPC：创建、列表、归档、压缩、重命名与字段补丁 (session.patch)。
  */
-import { app, ipcMain } from "electron"
+import { app, BrowserWindow, ipcMain } from "electron"
 import {
   SessionCompactInput,
   SessionCreateInput,
@@ -10,6 +10,7 @@ import {
   SessionHeartbeatClearInput,
   SessionHeartbeatGetInput,
   SessionHeartbeatPutInput,
+  SessionArchiveResult,
   SessionIdInput,
   SessionPatchInput,
   SessionRecapInput,
@@ -111,9 +112,15 @@ function registerSessionEditIpc() {
 }
 
 function registerSessionLifecycleIpc() {
-  ipcMain.handle("session.archive", async (_event, raw) =>
-    archiveSession(SessionIdInput.parse(raw).sessionId)
-  )
+  ipcMain.handle("session.archive", async (event, raw) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    return SessionArchiveResult.parse(
+      await archiveSession(
+        SessionIdInput.parse(raw).sessionId,
+        window && !window.isDestroyed() ? window : undefined
+      )
+    )
+  })
   ipcMain.handle("session.unarchive", async (_event, raw) =>
     unarchiveSession(SessionIdInput.parse(raw).sessionId)
   )

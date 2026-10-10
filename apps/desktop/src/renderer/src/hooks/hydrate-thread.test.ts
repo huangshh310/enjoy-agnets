@@ -87,6 +87,19 @@ test("重新打开后：库里 output-error + 拒绝码仍是未执行，不是�
   assert.notEqual(mapToolStatus(tool.state, tool), "running")
 })
 
+test("仍在跑的会话回灌：不把 input-available 封成出错", () => {
+  const content = JSON.stringify({
+    v: 1,
+    content: "",
+    tools: [{ id: "tool_live", name: "write_file", state: "input-available", args: { path: "a.ts" } }]
+  })
+  const row = { id: "msg_live", role: "assistant" as const, content, createdAt: 1 }
+  const [sealed] = threadFromRows([row])
+  assert.equal(sealed?.tools?.[0]?.state, "output-error")
+  const [live] = threadFromRows([row], { sealAbandoned: false })
+  assert.equal(live?.tools?.[0]?.state, "input-available")
+})
+
 test("无 stamp 的旧信封 runKind 为空", () => {
   const message = mapAssistantThreadMessage(
     { id: "msg_2", content: "ok", createdAt: 1 },

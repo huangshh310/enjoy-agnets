@@ -17,6 +17,7 @@ export const McpServer = z.object({
   modelVisibleTools: z.array(z.string()).default([]),
   appOnlyTools: z.array(z.string()).default([]),
   trusted: z.boolean().default(false),
+  curatedPresetId: z.string().optional(),
   connected: z.boolean().default(false),
   error: z.string().optional(),
   tools: z
@@ -47,7 +48,9 @@ export const McpUpsertInput = z
     allowedResourceUris: z.array(z.string()).default([]),
     modelVisibleTools: z.array(z.string()).default([]),
     appOnlyTools: z.array(z.string()).default([]),
-    trusted: z.boolean().default(false)
+    trusted: z.boolean().default(false),
+    /** 仅精选安装可写；main 校验指纹，改名/改命令会清掉。 */
+    curatedPresetId: z.string().optional()
   })
   .strict()
 export type McpUpsertInput = z.infer<typeof McpUpsertInput>

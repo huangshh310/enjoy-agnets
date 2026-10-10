@@ -4,6 +4,7 @@
 import type { StreamEvent } from "./index"
 import type { ThreadToolCall } from "./assistant-payload"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
+import { USER_ABORTED_CODE } from "./desktop-notify.ts"
 
 export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void {
   if (event.type === "tool.start") {
@@ -56,22 +57,45 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   }
   if (event.type === "approval.resolved") {
     const current = tools.find((tool) => tool.id === event.toolCallId)
+    const cancelled = event.decision === "cancelled"
+    const code = event.code ?? (cancelled ? USER_ABORTED_CODE : undefined)
     upsertTool(tools, {
       id: event.toolCallId,
-      state: event.decision === "deny" ? "output-denied" : "input-available",
-      result: mergeResultDecision(current?.result, { decision: event.decision })
+      state: cancelled ? "output-error" : event.decision === "deny" ? "output-denied" : "input-available",
+      result: mergeResultDecision(current?.result, {
+        decision: event.decision,
+        ...(code ? { code } : {})
+      })
     })
   }
 }
 
-/** 加载历史时：只收口卡死的 Pending。库里的 output-error 原样保留，未执行由渲染层映射。 */
-export function sealAbandonedTools(tools: ThreadToolCall[] | undefined): ThreadToolCall[] | undefined {
+/** 加载历史 / 收工：input-streaming 与 input-available 封成 output-error。用户停标 stopped。 */
+export function sealAbandonedTools(
+  tools: ThreadToolCall[] | undefined,
+  opts?: { aborted?: boolean }
+): ThreadToolCall[] | undefined {
   if (!tools) return tools
   return tools.map((tool) => {
-    if (tool.state === "input-streaming") {
-      return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
+    if (opts?.aborted && tool.state === "approval-requested") {
+      const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+      return {
+        ...tool,
+        state: "output-error" as const,
+        result: { ...prev, code: USER_ABORTED_CODE, decision: "cancelled" }
+      }
     }
-    return tool
+    if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
+    if (opts?.aborted) {
+      const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+      return {
+        ...tool,
+        state: "output-error" as const,
+        errorText: undefined,
+        result: { ...prev, code: USER_ABORTED_CODE }
+      }
+    }
+    return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
   })
 }
 

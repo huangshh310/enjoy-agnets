@@ -104,7 +104,8 @@ export function planRememberApproval(
   return planSdkReplay(existing, next.id, sdkApprovalId, decision)
 }
 
-function planSdkReplay(
+/** 已决回放闸：没发过 SDK / 带 resumeCode / desktop_act allow 一律 fail closed。重启回挂必须走这里。 */
+export function planSdkReplay(
   existing: ApprovalRow,
   id: string,
   sdkApprovalId: string,

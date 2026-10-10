@@ -3,6 +3,7 @@ import { test } from "node:test"
 import { buildSessionEstimatedCost, estimateRunCost } from "@enjoy-agents/providers/pricing"
 import {
   buildCostFixture,
+  costSeedSessionBinding,
   COST_LIVE_MODEL_ID,
   COST_SEED_GUIDE,
   isDevCostSeedAllowed
@@ -64,6 +65,21 @@ test("ACP 两组累计相加；本机不计费；泵前失败不进未知；混�
   assert.ok((mixed.knownUsd ?? 0) > 0)
   assert.equal(mixed.unknownCount, 1)
   assert.deepEqual(mixed.missing, ["price"])
+})
+
+test("夹具按最后一次 run 写会话模型；Claude CLI 带 runtime", () => {
+  const { sessions } = buildCostFixture()
+  const priced = sessions.find((item) => item.key === "priced")
+  assert.deepEqual(costSeedSessionBinding(priced?.runs ?? []), {
+    modelId: COST_LIVE_MODEL_ID
+  })
+  const acp = sessions.find((item) => item.key === "acp")
+  assert.deepEqual(costSeedSessionBinding(acp?.runs ?? []), {
+    modelId: "cli:claude",
+    runtimeId: "claude"
+  })
+  const qwen = sessions.find((item) => item.key === "qwen-blank")
+  assert.deepEqual(costSeedSessionBinding(qwen?.runs ?? []), { modelId: "qwen-plus" })
 })
 
 test("实时 stub 用的 DeepSeek Flash 在快照里有单价", () => {

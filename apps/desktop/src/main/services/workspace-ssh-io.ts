@@ -26,9 +26,14 @@ export async function sshGit(
   return host.bash(cmd)
 }
 
-export async function sshWorkspaceChanges(host: AgentWorkspaceHost): Promise<ChangeRow[]> {
+export async function sshWorkspaceChanges(
+  host: AgentWorkspaceHost
+): Promise<{ files: ChangeRow[]; gitRepo: boolean }> {
+  const inside = await sshGit(host, ["rev-parse", "--is-inside-work-tree"])
+  const gitRepo = inside.exitCode === 0 && inside.stdout.trim() === "true"
+  if (!gitRepo) return { files: [], gitRepo: false }
   const status = await host.gitStatus()
-  return changesFromGitStatus(status)
+  return { files: changesFromGitStatus(status), gitRepo: true }
 }
 
 export async function sshWorkspaceGitLog(

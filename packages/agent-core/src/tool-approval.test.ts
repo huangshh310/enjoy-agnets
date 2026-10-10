@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { clearMcpReadOnlyHints, rememberMcpReadOnlyHint } from "@enjoy-agents/ipc-contract/tool-names"
 import {
   isExploreMutatingDeny,
   isMcpWriteToolName,
@@ -296,17 +297,16 @@ test("Ask 模式写入 Harness host toolApproval 为 denied", () => {
   })
 })
 
-test("MCP 写名按 leaf 判断，与注册过滤同一规则", () => {
-  assert.equal(isMcpWriteToolName("mcp_s1__read_file"), false)
+test("MCP 默认全是写，不按叶子名；只有 readOnlyHint 才只读", () => {
+  assert.equal(isMcpWriteToolName("mcp_s1__read_file"), true)
+  assert.equal(isMcpWriteToolName("mcp_x__snapshot"), true)
+  assert.equal(isMcpWriteToolName("mcp_jira__task"), true)
   assert.equal(isMcpWriteToolName("mcp_s1__write_file"), true)
-  assert.equal(isMcpWriteToolName("mcp_s1__delete_record"), true)
-  assert.equal(isMcpWriteToolName("mcp_s1__bash"), true)
-  assert.equal(isMcpWriteToolName("mcp_s1__run_command"), true)
-  assert.equal(isMcpWriteToolName("mcp_s1__list_commands"), false)
+  assert.equal(isMcpWriteToolName("mcp_s1__list_commands"), true)
 })
 
-test("MCP 写工具要审批，读工具直接过", () => {
-  assert.equal(resolveToolApproval("mcp_s1__read_file", "agent", REQUIRE_ALL), "not-applicable")
+test("MCP 写工具要审批；未声明 hint 的读名也要审批", () => {
+  assert.equal(resolveToolApproval("mcp_s1__read_file", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("mcp_s1__write_file", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("mcp_s1__bash", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("mcp_s1__shell", "agent", REQUIRE_ALL), "user-approval")
@@ -319,13 +319,27 @@ test("MCP 写工具要审批，读工具直接过", () => {
     type: "denied",
     reason: "plan mode is read-only."
   })
-  assert.equal(resolveToolApproval("mcp_s1__read_file", "plan", REQUIRE_ALL), "not-applicable")
+  assert.deepEqual(resolveToolApproval("mcp_s1__read_file", "plan", REQUIRE_ALL), {
+    type: "denied",
+    reason: "plan mode is read-only."
+  })
+})
+
+test("MCP 声明 readOnlyHint 后才只读、探索态可过", () => {
+  rememberMcpReadOnlyHint("mcp_s1__read_file", true)
+  try {
+    assert.equal(isMcpWriteToolName("mcp_s1__read_file"), false)
+    assert.equal(resolveToolApproval("mcp_s1__read_file", "agent", REQUIRE_ALL), "not-applicable")
+    assert.equal(isExploreMutatingDeny("plan", "mcp_s1__read_file"), false)
+  } finally {
+    clearMcpReadOnlyHints()
+  }
 })
 
 test("探索态拦截 MCP 命令名与 ACP 弱名", () => {
   assert.equal(isExploreMutatingDeny("plan", "mcp_s1__bash"), true)
   assert.equal(isExploreMutatingDeny("ask", "mcp_s1__run_command"), true)
-  assert.equal(isExploreMutatingDeny("plan", "mcp_s1__read_file"), false)
+  assert.equal(isExploreMutatingDeny("plan", "mcp_s1__read_file"), true)
   assert.equal(isExploreMutatingDeny("plan", "command"), true)
   assert.equal(isExploreMutatingDeny("plan", "terminal"), true)
 })

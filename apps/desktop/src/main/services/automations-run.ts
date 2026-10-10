@@ -113,7 +113,16 @@ export async function launchAutomationAgent(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     if (openedSessionId) {
-      stampAndSend(window, { type: "run.error", runId: createId("run"), message }, openedSessionId)
+      stampAndSend(
+        window,
+        {
+          type: "run.error",
+          runId: createId("run"),
+          message,
+          turn: { workflow: "in_progress", attention: "error" }
+        },
+        openedSessionId
+      )
     }
     finishAutomationRun(item.id, "failed", message, opts)
     throw error

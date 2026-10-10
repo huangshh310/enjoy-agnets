@@ -7,9 +7,7 @@ import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { logAndClassifyError } from "@enjoy-agents/agent-core"
 import { createId } from "./ids"
 import { persistFromEvent, type RunTranscript } from "./persist-session"
-import { rememberApproval } from "./approval-hmac"
-import { approvalResponseMessage } from "./approval-response-message"
-import { applyRememberedApproval } from "./consume-approval"
+import { consumeApprovalRequired } from "./consume-approval-required"
 import { shouldCheckpointPersist } from "./agent-run-flush"
 import { mapStreamPart, withToolId } from "./stream-parts"
 
@@ -54,7 +52,7 @@ export async function consumeFullStream(input: {
     if (!mapped) continue
     const event = withToolId(mapped, createId("tool"))
     if (event.type === "approval.required") {
-      lastCheckpointAt = await consumeApprovalRequired(event, input, lastCheckpointAt)
+      lastCheckpointAt = await consumeApprovalRequired(event, input, lastCheckpointAt, emitCheckpoint)
       continue
     }
     persistFromEvent(input.tools, event, input.transcript)
@@ -81,93 +79,6 @@ export async function consumeFullStream(input: {
     }
     input.emit(event)
   }
-}
-
-async function consumeApprovalRequired(
-  event: StreamEvent & { type: "approval.required" },
-  input: {
-    runId: string
-    tools: ThreadToolCall[]
-    transcript: RunTranscript
-    onApproval: (pending: PendingApproval) => void
-    onDecidedReplay?: (message: ModelMessage) => void
-    onCheckpoint?: () => void
-    emit: (event: StreamEvent) => void
-  },
-  lastCheckpointAt: number
-): Promise<number> {
-  const rawArgs = event.args
-  const args = await parkApprovalArgs(event.name, rawArgs)
-  const toolCallId = event.toolCallId || createId("tool")
-  const applied = applyRememberedApproval(
-    rememberApproval({
-      runId: input.runId,
-      approvalId: event.approvalId || createId("apr"),
-      toolCallId,
-      name: event.name,
-      args,
-      requestArgs: rawArgs
-    }),
-    { toolCallId, name: event.name, args }
-  )
-  if (applied.kind === "open_card") {
-    persistFromEvent(input.tools, event, input.transcript)
-    input.onApproval(applied.pending)
-    input.emit({ ...event, approvalId: applied.pending.approvalId, toolCallId, args })
-    return emitCheckpoint("approval.required", lastCheckpointAt, input.onCheckpoint)
-  }
-  replayDecidedApproval(applied, { event, toolCallId, args, input })
-  return emitCheckpoint("tool.result", lastCheckpointAt, input.onCheckpoint)
-}
-
-function replayDecidedApproval(
-  applied: Exclude<ReturnType<typeof applyRememberedApproval>, { kind: "open_card" }>,
-  ctx: {
-    event: StreamEvent & { type: "approval.required" }
-    toolCallId: string
-    args: unknown
-    input: {
-      runId: string
-      tools: ThreadToolCall[]
-      transcript: RunTranscript
-      onDecidedReplay?: (message: ModelMessage) => void
-      emit: (event: StreamEvent) => void
-    }
-  }
-) {
-  const approved = applied.kind === "replay" ? applied.approved : false
-  const reason = applied.kind === "fail_closed" ? applied.code : applied.reason
-  ctx.input.onDecidedReplay?.(
-    approvalResponseMessage({ approvalId: applied.approvalId, approved, reason })
-  )
-  const follow: StreamEvent =
-    applied.kind === "replay"
-      ? {
-          type: "approval.resolved",
-          runId: ctx.input.runId,
-          toolCallId: ctx.toolCallId,
-          decision: applied.decision
-        }
-      : {
-          type: "tool.result",
-          runId: ctx.input.runId,
-          toolCallId: ctx.toolCallId,
-          name: ctx.event.name,
-          args: ctx.args,
-          result: { code: applied.code },
-          error: applied.message
-        }
-  persistFromEvent(ctx.input.tools, follow, ctx.input.transcript)
-  ctx.input.emit(follow)
-}
-
-/** 主循环待批：冻结 TTL，并补 appKey / 本观察缩略图。 */
-async function parkApprovalArgs(name: string, args: unknown): Promise<unknown> {
-  if (name !== "desktop_act" || !args || typeof args !== "object") return args
-  const { enrichDesktopActApprovalArgs, parkDesktopActArgs } = await import(
-    "./builtin-tools/computer-use/desktop-tools"
-  )
-  return enrichDesktopActApprovalArgs(parkDesktopActArgs(args as Record<string, unknown>))
 }
 
 function emitCheckpoint(

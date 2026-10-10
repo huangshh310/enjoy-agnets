@@ -1,7 +1,7 @@
 /**
  * Inspector 始终挂在树上：收起走 Panel.collapse，不要 unmount。
  */
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import { Panel, Separator, usePanelRef } from "react-resizable-panels"
 import { cx } from "@/utils/cx"
 import { RightPane } from "@renderer/components/ai-chat/right-pane/right-pane"
@@ -114,6 +114,9 @@ function InspectorBody({
   const deletions = useChatStore((state) => state.deletions)
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const selectedFileContent = useChatStore((state) => state.selectedFileContent)
+  const onSelectFile = useCallback((path: string) => {
+    void openChangedFile(path)
+  }, [])
   return (
     <RightPane
       workspaceId={workspaceId}
@@ -122,7 +125,7 @@ function InspectorBody({
       deletions={deletions}
       selectedFilePath={selectedFilePath}
       selectedFileContent={selectedFileContent}
-      onSelectFile={(path) => void openChangedFile(path)}
+      onSelectFile={onSelectFile}
       onCollapse={() => {
         resetWidth()
         onCollapsed()

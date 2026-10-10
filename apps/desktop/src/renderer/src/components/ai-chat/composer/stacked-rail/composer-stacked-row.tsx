@@ -18,7 +18,8 @@ export function ComposerStackedRow({
   open,
   onToggle,
   actions,
-  children
+  children,
+  peekTestId
 }: {
   icon: ReactNode
   label: string
@@ -28,6 +29,7 @@ export function ComposerStackedRow({
   onToggle?: () => void
   actions?: ReactNode
   children?: ReactNode
+  peekTestId?: string
 }) {
   return (
     <div>
@@ -39,15 +41,27 @@ export function ComposerStackedRow({
             onClick={onToggle}
             className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left"
           >
-            <span className={STACKED_LABEL_CLASS_NAME}>{label}</span>
+            <span data-testid={peekTestId} className={STACKED_LABEL_CLASS_NAME}>
+              {label}
+            </span>
             {meta}
-            {!open && peek ? <span className={STACKED_PEEK_CLASS_NAME}>{peek}</span> : null}
+            {!open && peek ? (
+              <span data-testid={peekTestId ? `${peekTestId}-sub` : undefined} className={STACKED_PEEK_CLASS_NAME}>
+                {peek}
+              </span>
+            ) : null}
           </button>
         ) : (
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <span className={STACKED_LABEL_CLASS_NAME}>{label}</span>
+            <span data-testid={peekTestId} className={STACKED_LABEL_CLASS_NAME}>
+              {label}
+            </span>
             {meta}
-            {peek ? <span className={STACKED_PEEK_CLASS_NAME}>{peek}</span> : null}
+            {peek ? (
+              <span data-testid={peekTestId ? `${peekTestId}-sub` : undefined} className={STACKED_PEEK_CLASS_NAME}>
+                {peek}
+              </span>
+            ) : null}
           </div>
         )}
         {actions}

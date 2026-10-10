@@ -6,7 +6,9 @@
 import { useEffect } from "react"
 import { RiCheckLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
+import { useChatStore } from "@renderer/stores/chat-store"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
+import { ReviewNotGitEmpty } from "../review-not-git-empty"
 import { ChangesFileDiff } from "../../../../diff/changes-file-diff"
 import { sameReviewPath } from "../same-review-path"
 import type { DiffPalette } from "../../../../diff/diff-palette"
@@ -23,17 +25,21 @@ export function ReviewDiffPane(props: {
 }) {
   const { workspaceId, changes, selectedFilePath, selectedFileContent, onSelectFile, options, palette } = props
   const t = useT()
+  const gitRepo = useChatStore((state) => state.gitRepo)
 
   const matched = selectedFilePath
     ? changes.find((file) => sameReviewPath(file.path, selectedFilePath))
     : undefined
   const activePath = matched?.path ?? selectedFilePath ?? changes[0]?.path ?? null
 
+  // 非 git 禁止自动选文件：onSelectFile 每渲一次新引用，选不中就会 Maximum update depth。
   useEffect(() => {
+    if (gitRepo === false) return
     if (selectedFilePath) return
     if (activePath) onSelectFile(activePath)
-  }, [activePath, selectedFilePath, onSelectFile])
+  }, [activePath, selectedFilePath, onSelectFile, gitRepo])
 
+  if (gitRepo === false) return <ReviewNotGitEmpty />
   if (changes.length === 0 && !activePath) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-text-tertiary">

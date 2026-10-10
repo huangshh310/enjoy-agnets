@@ -67,7 +67,11 @@ export async function startGeneration(window: BrowserWindow, raw: unknown) {
   rememberGenerationRun({ runId, request })
   const abort = new AbortController()
   controllers.set(runId, abort)
-  stampAndSend(window, { type: "run.start", runId, sessionId: request.sessionId }, request.sessionId)
+  stampAndSend(
+    window,
+    { type: "run.start", runId, sessionId: request.sessionId, kind: request.kind },
+    request.sessionId
+  )
   void runKind(window, runId, request, abort.signal)
   return { runId, kind: request.kind }
 }
@@ -117,7 +121,11 @@ export async function resumeGeneration(window: BrowserWindow, raw: unknown) {
   rememberGenerationRun({ runId: input.runId, request, status: "running" })
   const abort = new AbortController()
   controllers.set(input.runId, abort)
-  stampAndSend(window, { type: "run.start", runId: input.runId, sessionId: request.sessionId }, request.sessionId)
+  stampAndSend(
+    window,
+    { type: "run.start", runId: input.runId, sessionId: request.sessionId, kind: request.kind },
+    request.sessionId
+  )
   void runKind(window, input.runId, request, abort.signal)
   return { ok: true, runId: input.runId }
 }
@@ -155,7 +163,11 @@ async function runKind(
       ttfoMs: ttfoMs(started, firstTokenAt),
       tokensPerSecond: tokensPerSecond(undefined, durationMs)
     })
-    stampAndSend(window, { type: "run.end", runId }, request.sessionId)
+    stampAndSend(
+      window,
+      { type: "run.end", runId, turn: { workflow: "todo", attention: "complete" } },
+      request.sessionId
+    )
   } catch (error) {
     const classified = logAndClassifyError("ai-generation", error)
     updateRun(getDatabase(), runId, { status: "failed", error: classified.message })
@@ -167,7 +179,16 @@ async function runKind(
       durationMs: Date.now() - started,
       errorClass: classified.errorClass
     })
-    stampAndSend(window, { type: "run.error", runId, message: classified.message }, request.sessionId)
+    stampAndSend(
+      window,
+      {
+        type: "run.error",
+        runId,
+        message: classified.message,
+        turn: { workflow: "in_progress", attention: "error" }
+      },
+      request.sessionId
+    )
     if (classified.errorClass === "timeout") {
       stampAndSend(
         window,

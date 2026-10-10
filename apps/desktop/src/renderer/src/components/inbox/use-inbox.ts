@@ -42,7 +42,9 @@ export function useInbox() {
         for (const entry of result.entries) {
           if (entry.readAt != null) read.add(entry.id)
           if (entry.hiddenAt != null) hidden.add(entry.id)
-          if (entry.item) archived.push(archivedToAttentionItem(entry.item))
+          if (entry.item && entry.item.kind !== "pending_approval" && entry.item.kind !== "ask_user") {
+            archived.push(archivedToAttentionItem(entry.item))
+          }
         }
         setReadIds(read)
         setHiddenIds(hidden)

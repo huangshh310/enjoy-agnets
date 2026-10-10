@@ -30,6 +30,45 @@ function assistantWithDeniedTool(): ThreadMessage[] {
   ]
 }
 
+test("用户停 run.error 不写红条，工具封成已停止", () => {
+  const messages: ThreadMessage[] = [
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "one two",
+      createdAt: 1,
+      streaming: true,
+      tools: [
+        {
+          id: "tool_1",
+          name: "write_file",
+          state: "input-available",
+          args: { path: "e2e-stub.txt" }
+        }
+      ]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "Aborted by user.",
+      code: "user_aborted",
+      turn: { workflow: "needs_review", attention: "neutral" }
+    },
+    "run_1"
+  )
+  assert.equal(patch.error, null)
+  assert.equal(patch.notice, "user_aborted")
+  assert.equal(patch.running, false)
+  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-error")
+  assert.equal(
+    (patch.messages[0]?.tools?.[0]?.result as { code?: string } | undefined)?.code,
+    "user_aborted"
+  )
+})
+
 test("未执行类 run.error 不写红条，库里 output-error 不改写", () => {
   const patch = reduceStreamEvent(assistantWithDeniedTool(), {
     type: "run.error",
@@ -70,6 +109,37 @@ function hydratedPendingAssistant(): ThreadMessage[] {
   ]
 }
 
+test("泵出错结清 cancelled + run_failed：工具行走出错，不是已停止", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "cancelled",
+    code: "run_failed"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(tool.state, "output-error")
+  assert.equal(mapToolStatus(tool.state, tool), "error")
+  assert.notEqual(mapToolStatus(tool.state, tool), "stopped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
+test("Stop 结清 cancelled：工具行走已停止，不是已拒绝", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "cancelled"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(patch.pendingApproval, null)
+  assert.equal(tool.state, "output-error")
+  assert.equal(mapToolStatus(tool.state, tool), "stopped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
 test("切走再切回后的非流式助手：deny 立刻折成未执行，不转圈、不计入已运行", () => {
   const hydrated = hydratedPendingAssistant()
   assert.equal(hydrated[1]?.streaming, undefined)
@@ -106,6 +176,30 @@ test("切回后允许一次但观察过期：tool.result 折到非流式助手�
   assert.equal(mapToolStatus(tool.state, tool), "skipped")
   assert.notEqual(mapToolStatus(tool.state, tool), "denied")
   assert.equal([tool].filter((row) => !isToolNotExecuted(row)).length, 0)
+})
+
+test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开助手气泡", () => {
+  const afterMain: ThreadMessage[] = [
+    { id: "msg_user", role: "user", content: "写一段摘要", createdAt: 1 },
+    { id: "msg_asst", role: "assistant", content: "好的", createdAt: 2, streaming: false }
+  ]
+  const start = reduceStreamEvent(
+    afterMain,
+    { type: "run.start", runId: "run_title", sessionId: "ses_a", kind: "completion" },
+    null
+  )
+  assert.equal(start.runId, undefined)
+  assert.equal(start.running, undefined)
+  const delta = reduceStreamEvent(
+    start.messages,
+    { type: "text.delta", runId: "run_title", text: "精炼标题" },
+    start.runId ?? null
+  )
+  assert.equal(
+    delta.messages.some((row) => row.role === "assistant" && row.streaming && row.content.includes("精炼")),
+    false
+  )
+  assert.equal(delta.messages.at(-1)?.content, "好的")
 })
 
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {

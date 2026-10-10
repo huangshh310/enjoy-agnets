@@ -51,6 +51,97 @@ test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
   }
 })
 
+test("approval.resolved.code 只认 user_aborted / run_failed", () => {
+  const aborted = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "user_aborted"
+  })
+  const failed = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "run_failed"
+  })
+  const other = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "timeout"
+  })
+  assert.equal(aborted.success, true)
+  assert.equal(failed.success, true)
+  assert.equal(other.success, false)
+})
+
+test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled"
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success && parsed.data.type === "approval.resolved") {
+    assert.equal(parsed.data.decision, "cancelled")
+  }
+})
+
+test("source.added 的 NaN score 丢掉字段不拒整条", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "source.added",
+    runId: "r1",
+    sourceId: "k1",
+    title: "a.ts",
+    path: "a.ts",
+    score: Number.NaN
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success && parsed.data.type === "source.added") {
+    assert.equal(parsed.data.score, undefined)
+  }
+})
+
+test("approval.required 带 automationSource 与 estimatedCost 过闸", () => {
+  const approval = StreamEvent.safeParse({
+    type: "approval.required",
+    runId: "r1",
+    toolCallId: "t1",
+    approvalId: "a1",
+    name: "bash",
+    args: { command: "ls" },
+    automationSource: {
+      automationId: "auto_1",
+      automationName: "晨间",
+      scheduledAt: 1,
+      isCatchUp: false
+    }
+  })
+  assert.equal(approval.success, true)
+  const usage = StreamEvent.safeParse({
+    type: "usage.updated",
+    runId: "r1",
+    inputTokens: 3,
+    estimatedCost: { status: "estimated", usd: 0.12, source: "snapshot" }
+  })
+  assert.equal(usage.success, true)
+})
+
+test("approval.required 缺 args 仍过闸（P1-a：zod4 的 z.unknown() 必填会丢整条）", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "approval.required",
+    runId: "r1",
+    toolCallId: "t1",
+    approvalId: "a1",
+    name: "bash"
+  })
+  assert.equal(parsed.success, true)
+})
+
 test("未知 type 被拒绝", () => {
   const parsed = StreamEvent.safeParse({ type: "not.a.thing", runId: "r1" })
   assert.equal(parsed.success, false)

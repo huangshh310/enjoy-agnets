@@ -46,6 +46,10 @@ test("拒绝写盘：无本轮改动，磁盘残留也不算本轮", () => {
 })
 
 test("拒绝写盘：run.end 回待办，不进待验收，不弹已完成", () => {
+  assert.equal(
+    workflowAfterStreamEvent("run.end", { turn: { workflow: "todo", attention: "neutral" } }),
+    "todo"
+  )
   assert.equal(workflowAfterStreamEvent("run.end", { deniedOnly: true }), "todo")
   assert.equal(workflowAfterStreamEvent("run.end"), "needs_review")
   const items = ingestAttentionEvent([], {

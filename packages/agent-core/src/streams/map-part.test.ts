@@ -94,6 +94,49 @@ test("人工审批 request 才映射为 approval.required", () => {
   )
 })
 
+test("Enjoy 已成型的 approval.required 缺 args 原样放行，不补 {}", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "approval.required",
+        runId: "run_1",
+        toolCallId: "tool_enjoy",
+        approvalId: "apr_enjoy",
+        name: "write_file"
+      },
+      "run_1"
+    ),
+    {
+      type: "approval.required",
+      runId: "run_1",
+      toolCallId: "tool_enjoy",
+      approvalId: "apr_enjoy",
+      name: "write_file"
+    }
+  )
+})
+
+test("审批 request 缺 args 仍映射，不补 {}", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "tool-approval-request",
+        approvalId: "apr_empty",
+        toolCallId: "tool_empty",
+        toolName: "write_file"
+      },
+      "run_1"
+    ),
+    {
+      type: "approval.required",
+      runId: "run_1",
+      toolCallId: "tool_empty",
+      approvalId: "apr_empty",
+      name: "write_file"
+    }
+  )
+})
+
 test("SDK 自动放行的 approval request 不弹卡", () => {
   assert.equal(
     mapStreamPart(
@@ -189,6 +232,36 @@ test("passes through Enjoy StreamEvent from ACP", () => {
       "run_1"
     ),
     { type: "generation.warning", runId: "run_1", code: "acp_resume_fallback", message: "fell back" }
+  )
+  assert.deepEqual(
+    mapStreamPart({ type: "session.title", runId: "run_1", title: "Implement list" }, "run_1"),
+    { type: "session.title", runId: "run_1", title: "Implement list" }
+  )
+  assert.deepEqual(
+    mapStreamPart(
+      { type: "commands.update", runId: "run_1", commands: [{ name: "plan" }] },
+      "run_1"
+    ),
+    { type: "commands.update", runId: "run_1", commands: [{ name: "plan" }] }
+  )
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "mcp.app",
+        runId: "run_1",
+        serverId: "acp",
+        resourceUri: "ui://dash",
+        phase: "open"
+      },
+      "run_1"
+    ),
+    {
+      type: "mcp.app",
+      runId: "run_1",
+      serverId: "acp",
+      resourceUri: "ui://dash",
+      phase: "open"
+    }
   )
 })
 

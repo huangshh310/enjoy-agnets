@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   ChangedFile,
+  readWorkspaceChangesResult,
+  WorkspaceChangesResult,
   GitCommitInput,
   GitStageInput,
   GitPatchInput,
@@ -59,6 +61,15 @@ test("ChangedFile 默认 staged/worktree 为 false", () => {
   const parsed = ChangedFile.parse({ path: "a.ts", status: "modified" })
   assert.equal(parsed.staged, false)
   assert.equal(parsed.worktree, false)
+})
+
+test("WorkspaceChangesResult 兼容旧数组，并区分非 git", () => {
+  const fromArray = readWorkspaceChangesResult([{ path: "a.ts", status: "modified" }])
+  assert.equal(fromArray.files[0]?.path, "a.ts")
+  assert.equal(fromArray.gitRepo, undefined)
+  const parsed = WorkspaceChangesResult.parse({ files: [], gitRepo: false })
+  assert.equal(parsed.gitRepo, false)
+  assert.deepEqual(readWorkspaceChangesResult(parsed), parsed)
 })
 
 test("GitPushInput 拒绝未知字段", () => {

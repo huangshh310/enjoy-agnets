@@ -22,6 +22,7 @@ export * from "./settings-input"
 export * from "./automations"
 export * from "./automations-missed"
 export * from "./stream-event"
+export * from "./turn-outcome"
 export * from "./host-inject"
 export {
   parseAssistantPayload,
