@@ -15,6 +15,7 @@ test("新建会话复用当前空会话并回焦 Composer", () => {
 test("创建完成不得清空正在打的字，也不得无 Enter 就发", () => {
   assert.match(src, /cancelQueuedComposerSend/)
   assert.match(src, /flushComposerDomToStore/)
+  assert.match(src, /from "\.\/composer-dom"/)
   assert.match(src, /if \(typedDuringCreate\) useChatStore\.setState\(\{ composer: typedDuringCreate \}\)/)
   assert.doesNotMatch(src, /idleComposerPatch\(\), composer: ""/)
 })

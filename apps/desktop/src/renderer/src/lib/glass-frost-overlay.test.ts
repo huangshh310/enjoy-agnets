@@ -45,6 +45,11 @@ test("空态右栏：data-pane-shell-deco=off、不挂 data-frost=shell", () => 
   assert.match(pane, /data-frost=\{shellFrost \? "shell" : undefined\}/)
   assert.match(pane, /useRightPaneShellFrost/)
   assert.doesNotMatch(pane, /reviewEmpty/)
+  const hook = readFirst([join(dir, "../components/ai-chat/right-pane/use-right-pane-shell-frost.ts")])
+  assert.match(hook, /EMPTY_MESSAGES/)
+  assert.match(hook, /EMPTY_CHANGES/)
+  assert.doesNotMatch(hook, /reviewActive \? state\.messages : \[\]/)
+  assert.doesNotMatch(hook, /reviewActive \? state\.changes : \[\]/)
 })
 
 test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰", () => {

@@ -19,15 +19,7 @@ import { useChatStore } from "../../stores/chat-store"
 import { listQuotedContexts, takeQuotedContexts } from "../quoted-context"
 import { formatContextChipsForSend, takeSessionContextChips } from "../session-context-chips"
 
-/** 发送前把输入框 DOM 刷进 store，避免 remount / 批处理丢掉未提交的字。 */
-export function flushComposerDomToStore(): string {
-  const store = useChatStore.getState()
-  if (typeof document === "undefined") return store.composer
-  const el = document.querySelector('[data-testid="composer-input"]') as HTMLTextAreaElement | null
-  const fromDom = el?.value ?? store.composer
-  if (fromDom !== store.composer) store.setComposer(fromDom)
-  return fromDom
-}
+export { flushComposerDomToStore } from "../composer-dom"
 
 /** 取出引用、技能与知识 Chip，并消化句首 /plan、/compact 或 /技能。 */
 export async function takeComposerText(): Promise<string> {

@@ -10,6 +10,10 @@ import { useWorkspaceCheckpoints } from "./views/review/use-workspace-checkpoint
 import { useWorkspaceGit } from "./views/review/use-workspace-git"
 import { isReviewDecorEmpty, shouldRightPaneShellFrost } from "./right-pane-shell-frost.logic"
 
+const EMPTY_MESSAGES: never[] = []
+const EMPTY_CHANGES: never[] = []
+const EMPTY_PATHS: string[] = []
+
 export function useRightPaneShellFrost(workspaceId: string | null, changesLength: number) {
   const tabs = useRightPaneStore((state) => state.tabs)
   const activeId = useRightPaneStore((state) => state.activeId)
@@ -19,9 +23,9 @@ export function useRightPaneShellFrost(workspaceId: string | null, changesLength
   const activeTab = tabs.find((tab) => tab.id === activeId)
   const reviewActive = activeTab?.kind === "review"
 
-  const messages = useChatStore((state) => (reviewActive ? state.messages : []))
+  const messages = useChatStore((state) => (reviewActive ? state.messages : EMPTY_MESSAGES))
   const lastTurnPaths = useMemo(
-    () => (reviewActive ? pathsFromLastTurn(messages) : []),
+    () => (reviewActive ? pathsFromLastTurn(messages) : EMPTY_PATHS),
     [reviewActive, messages]
   )
 
@@ -34,7 +38,7 @@ export function useRightPaneShellFrost(workspaceId: string | null, changesLength
     enabled: reviewActive && reviewScope === "checkpoints"
   })
 
-  const changes = useChatStore((state) => (reviewActive ? state.changes : []))
+  const changes = useChatStore((state) => (reviewActive ? state.changes : EMPTY_CHANGES))
 
   const reviewDecorEmpty = useMemo(
     () =>

@@ -42,7 +42,7 @@ import {
   shouldPublishCreatedSession
 } from "./new-session-create"
 import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend } from "./queue-composer-send"
-import { flushComposerDomToStore } from "./runtime-interact/composer-draft"
+import { flushComposerDomToStore } from "./composer-dom"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
