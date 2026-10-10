@@ -66,6 +66,7 @@ function takeRun(
 function batchStatus(run: AgentStepNode[]): AgentStepNode["status"] {
   if (run.some((n) => n.status === "error")) return "error"
   if (run.some((n) => n.status === "running")) return "running"
+  if (run.some((n) => n.status === "denied")) return "denied"
   return "completed"
 }
 

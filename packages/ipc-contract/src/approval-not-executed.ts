@@ -23,7 +23,7 @@ const NOT_EXECUTED_TEXT = new Set([
   "Declined, not run this time"
 ])
 
-export function isApprovalNotExecutedCode(value: unknown): boolean {
+export function isApprovalNotExecutedCode(value: unknown): value is string {
   return typeof value === "string" && NOT_EXECUTED_CODES.has(value)
 }
 

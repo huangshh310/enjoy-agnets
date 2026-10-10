@@ -194,7 +194,7 @@ function fallbackNode(
     return {
       id: tool.id,
       kind: "command",
-      title: formatToolName(tool.name),
+      title: formatToolLabel(tool.name, t),
       errorText: toolDeniedCopy(t, tool),
       status: "denied"
     }

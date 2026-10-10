@@ -36,7 +36,7 @@ export interface BatchFileItem {
   actionVerb?: string
   additions?: number
   deletions?: number
-  status: "pending" | "running" | "completed" | "error"
+  status: "pending" | "running" | "completed" | "error" | "denied"
 }
 
 export interface AgentStepNode {
