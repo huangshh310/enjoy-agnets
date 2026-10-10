@@ -158,7 +158,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - **隐患**：Shift+Tab 在输入框「失灵」。根因：hotkey 跳过 input/textarea/contentEditable。空 Composer 才切档；有字让出焦点后退。循环不要进「全部」。
 - **隐患**：Composer `@` 漏 MCP / 把 MCP 当授权。发现组是 discover（文件+文档+技能+MCP+muted web）；执行仍走 ToolLoop。
 - **隐患**：有 path 的文件 chip 直接 `openSourceRow` / `openChangedFile`，底脚会跳过「本轮来源」sheet。根因：把审查捷径绑在芯片上。正确做法（P0-G `76b5ecd`）：芯片与 +N **只开 sheet**；sheet 内知识库 / 只读行：工作区相对路径且读得到则 `openChangedFile(..., { reveal: "files" })` 打开文件栏「查看文件」并滚到 `startLine`，找不到或逃出工作区则就地展开 `snippet` 且不关抽屉；本轮写过的 `file` 且 git 才 `reveal: "review"`。技能 / MCP 只展示出处。sheet 用轻 scrim（`bg-black/10`），禁止全屏黑底遮死右侧看板。
-- 非 git 点知识库行只看到「这个文件夹没有用 Git 管理」。根因：默认打开审查栏，`ReviewView` 在 `gitRepo === false` 只画空态。正确做法：只读永远 `reveal: "files"`；非 git 空态文件名可点，同样打开查看文件。
+- 非 git 点知识库行只看到「这个文件夹没有用 Git 管理」。根因：默认打开审查栏，`ReviewView` 在 `gitRepo === false` 只画空态；右栏未激活标签还写了 `className="flex"`，盖过 HTML `hidden`，空态会叠在文件预览上。正确做法：只读永远 `reveal: "files"`；未激活标签用 `hidden` class，不要和 `flex` 同写；非 git 空态文件名可点，同样打开查看文件。
 - 点「知识库 readme.md」芯片整窗「Element type is invalid… SourceRowBody」。根因：`SourceBadgeKind` 已含 `knowledge`，图标表却只有 file/skill/mcp，`ICONS[badge]` 是 undefined。正确做法：`source-badge.ts` 用 `Record<SourceBadgeKind, …>` + 运行时问号回落；每加 kind 必须补表。验收：`e2e/knowledge-source-chip.spec.ts`（stub 索引 `.` 后发 `hello knowledge`）。
 - 本轮来源两行一起淡蓝、分不清选中。根因：cite 的 `sourceId` 是知识库来源（整个 `.`），芯片 id 写成 `source.sourceId || path`，多文件撞 id。正确做法：`sourceChipStableId` = `path:startLine`。
 - 未跟踪文件芯片要点两下才开抽屉。根因：第一次 click 只让 Composer 失焦，重渲吞掉 click。正确做法：`pointerdown` 先 `preventDefault`，微任务再开 sheet。
