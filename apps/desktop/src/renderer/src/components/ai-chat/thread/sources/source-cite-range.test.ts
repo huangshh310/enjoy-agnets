@@ -9,21 +9,25 @@ test("单行 cite 只标 L1，不高亮后面空行", () => {
   assert.equal(formatCitedLines({ start: 42, end: 42 }), "L42")
 })
 
-test("snippet 跨多行则标 L1–N，丢掉末尾空行", () => {
+test("明确跨行才标 L1–N；snippet 本身不扩高亮", () => {
   assert.deepEqual(
     citedLineRange({ startLine: 1, snippet: "# e2e workspace\nhello knowledge" }),
-    { start: 1, end: 2 }
+    { start: 1, end: 1 }
   )
   assert.deepEqual(
-    citedLineRange({ startLine: 1, endLine: 3, snippet: "# e2e workspace\nhello knowledge\n" }),
-    { start: 1, end: 2 }
+    citedLineRange({ startLine: 2, endLine: 2, snippet: "hello knowledge" }),
+    { start: 2, end: 2 }
+  )
+  assert.deepEqual(
+    citedLineRange({ startLine: 1, endLine: 3, snippet: "a\nb\nc" }),
+    { start: 1, end: 3 }
   )
   assert.equal(formatCitedLines({ start: 1, end: 3 }), "L1–3")
-  assert.equal(formatCitedLines({ start: 1, end: 2 }), "L1–2")
+  assert.equal(formatCitedLines({ start: 2, end: 2 }), "L2")
 })
 
-test("高亮跟范围对齐，文件尾空行不着", () => {
+test("命中行高亮只盖匹配行，文件尾空行不着", () => {
   const file = "# e2e workspace\nhello knowledge\n"
+  assert.deepEqual(highlightLineBounds({ start: 2, end: 2 }, file), { start: 2, end: 2 })
   assert.deepEqual(highlightLineBounds({ start: 1, end: 3 }, file), { start: 1, end: 2 })
-  assert.deepEqual(highlightLineBounds({ start: 1, end: 2 }, file), { start: 1, end: 2 })
 })

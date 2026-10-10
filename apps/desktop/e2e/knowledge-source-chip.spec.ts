@@ -135,7 +135,8 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
 
     const readmeRow = window.locator('[data-testid="turn-source-row"][data-path="readme.md"]')
     await expect(readmeRow).toBeVisible()
-    await expect(readmeRow).toContainText("L1–2")
+    await expect(readmeRow).toContainText("L2")
+    await expect(readmeRow).not.toContainText("L1")
     await readmeRow.click()
     await expect(sheet).toBeHidden({ timeout: 8_000 })
     await expect
@@ -143,7 +144,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
       .toMatch(/readme\.md$/)
     await expect
       .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.line ?? 0), { timeout: 8_000 })
-      .toBe(1)
+      .toBe(2)
     await expect
       .poll(
         async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.rightPanelCollapsed ?? true),
@@ -164,9 +165,9 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect(preview).not.toContainText("+")
     await expect(window.locator('[data-testid="source-file-diff"]')).toHaveCount(0)
     const highlighted = window.locator('[data-source-highlight="true"]')
-    await expect(highlighted).toHaveCount(2)
-    await expect(highlighted.first()).toHaveAttribute("data-source-line", "1")
-    await expect(highlighted.nth(1)).toHaveAttribute("data-source-line", "2")
+    await expect(highlighted).toHaveCount(1)
+    await expect(highlighted).toHaveAttribute("data-source-line", "2")
+    await expect(window.locator('[data-source-line="1"][data-source-highlight="true"]')).toHaveCount(0)
     await expect(window.locator('[data-source-line="3"][data-source-highlight="true"]')).toHaveCount(0)
     await expect
       .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.view ?? ""), { timeout: 4_000 })

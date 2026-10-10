@@ -53,13 +53,13 @@ test("行列：名称是短名，出处是 path 或服务器", () => {
         kind: "knowledge",
         label: "readme.md",
         path: "readme.md",
-        startLine: 1,
-        endLine: 3,
-        snippet: "# e2e workspace\nhello knowledge\n"
+        startLine: 2,
+        endLine: 2,
+        snippet: "hello knowledge"
       },
       mcp
     ),
-    "readme.md · L1–2"
+    "readme.md · L2"
   )
   assert.equal(sourceRowName(docChip), "登录流程说明")
   assert.equal(sourceRowProvenance(docChip, mcp), "docs/login.md")
