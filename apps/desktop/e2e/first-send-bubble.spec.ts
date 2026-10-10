@@ -158,3 +158,57 @@ test("新对话创建窗内带附件首发：气泡要带附件，不能丢掉",
     await app.close()
   }
 })
+
+test("新对话后不必点输入框，直接打字回车就能发出", async () => {
+  test.setTimeout(120_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const playwright = await import("playwright")
+  const electron = playwright._electron
+  if (!electron?.launch) {
+    test.skip(true, "playwright electron launcher unavailable")
+    return
+  }
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-ws-"))
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-ud-"))
+  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  const app = await electron.launch({
+    args: [mainEntry],
+    cwd: process.cwd(),
+    timeout: 45_000,
+    env: {
+      ...process.env,
+      ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_WORKSPACE: workspace,
+      ENJOY_E2E_USERDATA: userData
+    }
+  })
+  try {
+    const window = await app.firstWindow()
+    await window.waitForSelector("#root", { timeout: 20_000 })
+    await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
+      timeout: 20_000
+    })
+    await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
+    await window.waitForFunction(
+      () => {
+        const label = document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? ""
+        return label === "Send" || label === "发送"
+      },
+      undefined,
+      { timeout: 15_000 }
+    )
+    const stage = window.locator('[data-chat-stage="true"]')
+    const newChat = window.locator('[data-testid="sidebar-new-session"]')
+    for (let index = 0; index < 5; index += 1) {
+      const text = `hello autofocus ${index}`
+      await newChat.click()
+      await window.keyboard.type(text)
+      await window.keyboard.press("Enter")
+      await expect(stage.locator("[data-thread-message]").first()).toBeVisible({ timeout: 20_000 })
+      await expect(stage).toContainText(text)
+      await expect(stage).not.toContainText(/What should we do in|在 .* 里做什么/)
+    }
+  } finally {
+    await app.close()
+  }
+})

@@ -39,6 +39,7 @@ import {
   shouldPublishCreatedSession
 } from "./new-session-create"
 import { absorbAssetsIntoQueuedSend } from "./queue-composer-send"
+import { queueComposerFocus } from "./composer-focus"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -102,6 +103,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
   applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
+  queueComposerFocus()
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
@@ -164,6 +166,7 @@ function detachForegroundForCreate() {
     composer: "",
     running: false
   })
+  queueComposerFocus()
 }
 
 export async function selectPersistedSession(
