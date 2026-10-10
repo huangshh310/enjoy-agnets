@@ -331,7 +331,8 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
     const allows = chatRouteAllowsSend({
       runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
       hasEnjoySecret: snap.hasEnjoySecret ?? false,
-      verifiedLocal: input.localModels.some(isVerifiedLocalModel)
+      verifiedLocal: input.localModels.some(isVerifiedLocalModel),
+      credentialState: snap.credentialCheck?.state
     })
     assert.ok(!snap.ready || allows, input.name)
   }
@@ -409,26 +410,7 @@ test("密钥 invalid 不 ready、不 adopt、发送拦 credential_invalid", () =
   )
 })
 
-test("带密钥档案缺 credentialCheck 不 ready，发送仍放行", () => {
-  const snap = buildChatReadiness({
-    engines: [],
-    localModels: [],
-    apiKeys: [KEY],
-    engineCount: 1,
-    hasEnjoySecret: true
-  })
-  assert.equal(snap.ready, false)
-  assert.equal(
-    chatRouteGateCode({
-      runtimeId: "enjoy-local",
-      hasEnjoySecret: true,
-      verifiedLocal: false
-    }),
-    null
-  )
-})
-
-test("密钥 unverified 不 ready，发送 uncertain 放行", () => {
+test("单条 unverified 路线 ready、可 adopt，快照露出 unverified", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [],
@@ -437,7 +419,9 @@ test("密钥 unverified 不 ready，发送 uncertain 放行", () => {
     hasEnjoySecret: true,
     credentialCheck: { state: "unverified", code: "timeout" }
   })
-  assert.equal(snap.ready, false)
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prov_1")
+  assert.equal(snap.credentialCheck?.state, "unverified")
   assert.equal(
     chatRouteGateKind({
       runtimeId: "enjoy-local",
@@ -456,4 +440,62 @@ test("密钥 unverified 不 ready，发送 uncertain 放行", () => {
     }),
     null
   )
+})
+
+test("带密钥档案缺 credentialCheck 当 unverified：ready 且快照露出 unverified", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1,
+    hasEnjoySecret: true
+  })
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prov_1")
+  assert.equal(snap.credentialCheck?.state, "unverified")
+  assert.equal(
+    chatRouteGateCode({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    null
+  )
+})
+
+test("ok 与 unverified 混排时 adopt ok 档案", () => {
+  const other: ChatApiKeyRoute = { kind: "api_key", providerId: "prov_ok", presetId: "anthropic" }
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY, other],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    activeKeyProfileId: "prov_1",
+    credentialCheck: { state: "unverified", code: "network" },
+    keyChecks: {
+      prov_1: { state: "unverified", code: "network" },
+      prov_ok: { state: "ok" }
+    }
+  })
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prov_ok")
+  assert.equal(snap.credentialCheck?.state, "ok")
+})
+
+test("全 invalid 不 ready，向导还差一步", () => {
+  const other: ChatApiKeyRoute = { kind: "api_key", providerId: "prov_2", presetId: "anthropic" }
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY, other],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    keyChecks: {
+      prov_1: { state: "invalid", code: "auth_rejected" },
+      prov_2: { state: "invalid", code: "auth_rejected" }
+    }
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.defaultRoute?.profileId, undefined)
 })

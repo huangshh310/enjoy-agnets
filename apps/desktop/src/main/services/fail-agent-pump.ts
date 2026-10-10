@@ -13,6 +13,10 @@ import { claimCatchUpFail } from "./claim-catchup-fail"
 import { isCatchUpApprovalTimeout } from "./automations-catchup-timeout"
 import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+import {
+  classifyEnjoyLocalSendFailure,
+  persistCredentialAfterSend
+} from "./credential-send-outcome.ts"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
@@ -58,7 +62,12 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
   if (classified.message === INTERNAL_STORE_ERROR) {
     console.error("agent pump store error", error)
   }
-  persistActiveRun(run, runId, "failed", classified.message)
+  const sendFail = classifyEnjoyLocalSendFailure(error)
+  if (sendFail?.persistInvalid) {
+    void persistCredentialAfterSend(run, "invalid")
+  }
+  const message = sendFail?.code ?? classified.message
+  persistActiveRun(run, runId, "failed", message)
   recordMetric({
     runId,
     kind: "agent",
@@ -67,10 +76,16 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     durationMs: Date.now() - run.startedAt,
     errorClass: classified.errorClass
   })
-  settleRun(runId, { status: "error", summary: classified.message })
+  settleRun(runId, { status: "error", summary: message })
   const turn = turnOutcomeForRun(run, "error")
   persistTurnWorkflow(run.input.sessionId, turn)
-  emitEvent(run.window, { type: "run.error", runId, message: classified.message, turn })
+  emitEvent(run.window, {
+    type: "run.error",
+    runId,
+    message,
+    ...(sendFail ? { code: sendFail.code } : {}),
+    turn
+  })
   if (classified.errorClass !== "timeout") return
   emitEvent(run.window, {
     type: "generation.warning",

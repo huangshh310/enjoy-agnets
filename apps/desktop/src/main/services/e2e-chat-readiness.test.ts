@@ -83,8 +83,9 @@ test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
     ENJOY_E2E_CHAT_READY: "key",
     ENJOY_E2E_CREDENTIAL: "unverified"
   })
-  assert.equal(unverified?.ready, false)
+  assert.equal(unverified?.ready, true)
   assert.equal(unverified?.credentialCheck?.state, "unverified")
+  assert.equal(unverified?.defaultRoute?.profileId, "e2e")
 })
 
 test("stub + none 引擎数不能冒充可以开始", () => {

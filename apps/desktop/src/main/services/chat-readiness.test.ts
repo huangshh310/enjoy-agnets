@@ -145,6 +145,82 @@ test("显式 enjoy-local 时即使已登录 CLI 也不改默认", () => {
   assert.equal(snap.ready, false)
 })
 
+test("单条 unverified 密钥 ready 且 adopt 该档案", () => {
+  const snap = assembleChatReadiness(
+    [{ id: "enjoy-local", status: "ready" }],
+    [
+      {
+        id: "prv_1",
+        kind: "openai",
+        enabled: true,
+        hasKey: true,
+        requiresKey: true,
+        credentialCheck: { state: "unverified", code: "timeout" }
+      }
+    ],
+    []
+  )
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prv_1")
+  assert.equal(snap.credentialCheck?.state, "unverified")
+})
+
+test("ok 与 unverified 混排 adopt ok", () => {
+  const snap = assembleChatReadiness(
+    [{ id: "enjoy-local", status: "ready" }],
+    [
+      {
+        id: "prv_unverified",
+        kind: "openai",
+        enabled: true,
+        hasKey: true,
+        requiresKey: true,
+        active: true,
+        credentialCheck: { state: "unverified", code: "network" }
+      },
+      {
+        id: "prv_ok",
+        kind: "anthropic",
+        enabled: true,
+        hasKey: true,
+        requiresKey: true,
+        active: false,
+        credentialCheck: { state: "ok" }
+      }
+    ],
+    []
+  )
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prv_ok")
+  assert.equal(snap.credentialCheck?.state, "ok")
+})
+
+test("全 invalid 不 ready", () => {
+  const snap = assembleChatReadiness(
+    [{ id: "enjoy-local", status: "ready" }],
+    [
+      {
+        id: "prv_1",
+        kind: "openai",
+        enabled: true,
+        hasKey: true,
+        requiresKey: true,
+        credentialCheck: { state: "invalid", code: "auth_rejected" }
+      },
+      {
+        id: "prv_2",
+        kind: "anthropic",
+        enabled: true,
+        hasKey: true,
+        requiresKey: true,
+        credentialCheck: { state: "invalid", code: "auth_rejected" }
+      }
+    ],
+    []
+  )
+  assert.equal(snap.ready, false)
+})
+
 test("组装快照 ready === 默认路线发送闸放行", () => {
   const cases = [
     {
@@ -197,7 +273,8 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
     const allows = chatRouteAllowsSend({
       runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
       hasEnjoySecret: snap.hasEnjoySecret ?? false,
-      verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
+      verifiedLocal: snap.localModels.some(isVerifiedLocalModel),
+      credentialState: snap.credentialCheck?.state
     })
     assert.ok(!snap.ready || allows, item.name)
     assert.ok(
@@ -207,7 +284,8 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
           runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
           codingRuntime: "local",
           hasEnjoySecret: snap.hasEnjoySecret ?? false,
-          verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
+          verifiedLocal: snap.localModels.some(isVerifiedLocalModel),
+          credentialState: snap.credentialCheck?.state
         }) === null,
       item.name
     )

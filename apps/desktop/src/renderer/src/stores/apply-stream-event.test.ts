@@ -218,6 +218,28 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
   assert.equal(delta.messages.at(-1)?.content, "好的")
 })
 
+test("首发失败稳定码写回 error 并留下草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 2, streaming: true }
+  ]
+  const invalid = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "401 Unauthorized", code: "credential_invalid" },
+    "run_1"
+  )
+  assert.equal(invalid.error, "credential_invalid")
+  assert.equal(invalid.composer, "hello draft")
+  const unreachable = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "ECONNREFUSED", code: "provider_unreachable" },
+    "run_1"
+  )
+  assert.equal(unreachable.error, "provider_unreachable")
+  assert.equal(unreachable.composer, "hello draft")
+  assert.equal(JSON.stringify(invalid).includes("Unauthorized"), false)
+})
+
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {
   const patch = reduceStreamEvent([], {
     type: "approval.resolved",

@@ -16,6 +16,7 @@ import {
   NEED_PROVIDER_KEY,
   CREDENTIAL_INVALID,
   NO_CHAT_ROUTE,
+  PROVIDER_UNREACHABLE,
   ACP_RESUME_FALLBACK,
   NEED_REMOTE_CONNECTED,
   RESTORE_NO_MATCHING,
@@ -71,6 +72,9 @@ test("ACP 未登录不是可重试供应商错误", () => {
   )
   assert.equal(classifyThreadError(NO_CHAT_ROUTE), "no_chat_route")
   assert.equal(classifyThreadError(CREDENTIAL_INVALID), "credential_invalid")
+  assert.equal(classifyThreadError(PROVIDER_UNREACHABLE), "provider_unreachable")
+  assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "no_chat_route")
+  assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "generic")
   assert.equal(
     classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
     "no_chat_route"

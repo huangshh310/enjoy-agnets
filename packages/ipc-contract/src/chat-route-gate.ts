@@ -1,6 +1,7 @@
 /**
  * 发送闸：只拦确定不可用的 enjoy-local。
- * ready ⇒ 放行（单向）；未 ready 仍可能放行（远端 / 未 ping / 未验证密钥）。
+ * ready ⇒ 放行（单向）。unverified 也 ready，闸放行，首发再验。
+ * 只有 invalid 不 ready、不放行。
  */
 import { CREDENTIAL_INVALID, type CredentialCheckState } from "./credential-check.ts"
 

@@ -14,7 +14,8 @@ export function ThreadSendGateNotice({
   actionIcon,
   onAction,
   onDismiss,
-  className
+  className,
+  tone = "neutral"
 }: {
   testId: string
   kind?: string
@@ -24,20 +25,30 @@ export function ThreadSendGateNotice({
   onAction: () => void
   onDismiss: () => void
   className?: string
+  tone?: "neutral" | "error"
 }) {
   const t = useT()
+  const error = tone === "error"
   return (
     <div
       id="thread-error-banner"
       data-testid={testId}
       data-kind={kind}
       className={cx(
-        "my-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default",
-        "bg-background-primary-default p-3 shadow-card",
+        "my-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border p-3 shadow-card",
+        error
+          ? "border-border-error-default bg-background-tertiary-error"
+          : "border-border-button-default bg-background-primary-default",
         className
       )}
     >
-      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-status-yellow-text" aria-hidden />
+      <span
+        className={cx(
+          "mt-1.5 size-2 shrink-0 rounded-full",
+          error ? "bg-text-error-primary" : "bg-status-yellow-text"
+        )}
+        aria-hidden
+      />
       <div className="min-w-0 flex-1">
         <p className="text-caption-1-medium text-text-primary">{message}</p>
         <button

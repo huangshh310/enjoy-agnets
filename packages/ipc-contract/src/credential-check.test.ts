@@ -2,11 +2,16 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   CREDENTIAL_INVALID,
+  ChatSendErrorCode,
   CredentialCheck,
   CredentialCheckCode,
+  PROVIDER_UNREACHABLE,
   catalogMissingStatus,
+  classifyChatSendFailure,
   classifyCredentialFailure,
   classifyCredentialStatus,
+  credentialCheckAfterAuthRejected,
+  credentialCheckAfterOkSend,
   parseCredentialCheck
 } from "./credential-check.ts"
 
@@ -49,4 +54,55 @@ test("404/405 当没目录", () => {
 
 test("发送闸码 credential_invalid 是独立字符串", () => {
   assert.equal(CREDENTIAL_INVALID, "credential_invalid")
+})
+
+test("跑中失败码是 Zod 枚举，不含 HTTP 原文", () => {
+  assert.deepEqual(ChatSendErrorCode.options, [CREDENTIAL_INVALID, PROVIDER_UNREACHABLE])
+  assert.equal(ChatSendErrorCode.safeParse("401 Unauthorized").success, false)
+  assert.equal(ChatSendErrorCode.parse(CREDENTIAL_INVALID), CREDENTIAL_INVALID)
+})
+
+test("首发 401/403 → credential_invalid 且要落盘 invalid", () => {
+  assert.deepEqual(classifyChatSendFailure({ status: 401 }), {
+    code: CREDENTIAL_INVALID,
+    persistInvalid: true
+  })
+  assert.deepEqual(classifyChatSendFailure({ status: 403 }), {
+    code: CREDENTIAL_INVALID,
+    persistInvalid: true
+  })
+  assert.deepEqual(classifyChatSendFailure({ errorClass: "auth" }), {
+    code: CREDENTIAL_INVALID,
+    persistInvalid: true
+  })
+  const at = "2026-10-10T00:00:00.000Z"
+  assert.deepEqual(credentialCheckAfterAuthRejected(at), {
+    state: "invalid",
+    code: "auth_rejected",
+    checkedAt: at
+  })
+})
+
+test("网络 / 超时 → provider_unreachable，不改落盘", () => {
+  assert.deepEqual(classifyChatSendFailure({ errorClass: "timeout" }), {
+    code: PROVIDER_UNREACHABLE,
+    persistInvalid: false
+  })
+  assert.deepEqual(classifyChatSendFailure({ message: "ECONNREFUSED 127.0.0.1" }), {
+    code: PROVIDER_UNREACHABLE,
+    persistInvalid: false
+  })
+  assert.deepEqual(classifyChatSendFailure({ message: "fetch failed" }), {
+    code: PROVIDER_UNREACHABLE,
+    persistInvalid: false
+  })
+})
+
+test("一次成功发送写成 ok，带 checkedAt / verifiedAt", () => {
+  const at = "2026-10-10T00:00:00.000Z"
+  assert.deepEqual(credentialCheckAfterOkSend(at), {
+    state: "ok",
+    checkedAt: at,
+    verifiedAt: at
+  })
 })

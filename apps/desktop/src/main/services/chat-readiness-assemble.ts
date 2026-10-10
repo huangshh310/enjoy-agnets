@@ -10,6 +10,7 @@ import {
   signedInEngineRoutes,
   type AvailableEngineTool,
   type ChatReadiness,
+  type CredentialCheck,
   type PublicKeyProvider
 } from "@enjoy-agents/ipc-contract/chat-readiness"
 
@@ -51,8 +52,18 @@ export function assembleChatReadiness(
     modelId: route.modelId,
     hasEnjoySecret,
     activeKeyProfileId,
-    credentialCheck: active?.credentialCheck
+    credentialCheck: active?.credentialCheck,
+    keyChecks: keyChecksOf(providers)
   })
+}
+
+function keyChecksOf(providers: readonly PublicKeyProvider[]): Record<string, CredentialCheck> {
+  const out: Record<string, CredentialCheck> = {}
+  for (const row of providers) {
+    if (row.enabled === false || !row.credentialCheck) continue
+    out[row.id] = row.credentialCheck
+  }
+  return out
 }
 
 function activePublicProvider(

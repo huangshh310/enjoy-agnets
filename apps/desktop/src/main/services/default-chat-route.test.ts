@@ -90,6 +90,27 @@ test("已有非出厂偏好只盖章不改写", () => {
   )
 })
 
+test("单条 unverified 密钥 ready，从无到有可 adopt", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [{ kind: "api_key", providerId: "prov_1", presetId: "openai" }],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    credentialCheck: { state: "unverified", code: "timeout" }
+  })
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prov_1")
+  assert.equal(
+    planAdoptedDefaultRoute({
+      ready: snap.ready,
+      routeRuntimeId: snap.defaultRoute?.runtimeId,
+      hadNoUsableRoute: true
+    }),
+    "adopt"
+  )
+})
+
 test("adopt 提示用引擎显示名，不是 id", () => {
   const engine = buildChatReadiness({
     engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],
