@@ -76,7 +76,7 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
 test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {
   const chrome = read("ai-chat/thread/approval/approval-chrome.tsx")
   const stacked = read("ai-chat/composer/stacked-rail/composer-stacked-styles.ts")
-  assert.match(chrome, /flex min-w-0 flex-1 flex-col gap-1\.5/)
+  assert.match(chrome, /flex min-h-0 min-w-0 flex-1 flex-col gap-1\.5 overflow-y-auto/)
   assert.match(chrome, /leading-6 text-text-primary/)
   assert.match(stacked, /flex w-full min-w-0 flex-col/)
   assert.match(stacked, /mb-2/)
