@@ -135,7 +135,7 @@ test("自动化抽屉 X 带 no-drag 且点击关闭", () => {
 })
 
 test("供应商抽屉 X 同样 pointerdown 关闭，避免失焦吞第一次 click", () => {
-  const src = readFileSync(join(dir, "providers/provider-editor-drawer.tsx"), "utf8")
+  const src = readFileSync(join(dir, "providers/provider-editor-drawer-chrome.tsx"), "utf8")
   assert.match(src, /onPointerDown=\{/)
   assert.match(src, /handleDrawerClosePointer/)
   assert.match(src, /onClick=\{onClose\}/)
@@ -143,7 +143,7 @@ test("供应商抽屉 X 同样 pointerdown 关闭，避免失焦吞第一次 cli
 
 test("其它共用抽屉头的关闭钮也标 no-drag", () => {
   const files = [
-    "providers/provider-editor-drawer.tsx",
+    "providers/provider-editor-drawer-chrome.tsx",
     "agent-tools/agent-tool-config-dialog-chrome.tsx",
     "agent-tools/custom-acp-agent-dialog.tsx",
     "../ai-chat/thread/sources/source-detail-sheet.tsx"

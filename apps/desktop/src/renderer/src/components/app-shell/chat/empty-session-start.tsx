@@ -3,6 +3,7 @@
  */
 import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-chat-empty-state"
 import { ThreadErrorBanner } from "@renderer/components/ai-chat/thread/thread-error-banner"
+import { ThreadNoticeBanner } from "@renderer/components/ai-chat/thread/thread-notice-banner"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 
 export function EmptySessionStart(props: {
@@ -25,6 +26,7 @@ export function EmptySessionStart(props: {
         workspaceRootLabel={props.workspaceRootLabel}
         changesCount={props.changesCount}
       />
+      <ThreadNoticeBanner />
       {error ? <ThreadErrorBanner error={error} className="my-0 w-full max-w-none" /> : null}
     </div>
   )

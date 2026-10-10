@@ -91,7 +91,7 @@ test("无快照时 Enjoy Local 放行，Harness 也放行", () => {
 test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", () => {
   rememberChatReadiness(readyNone())
   const chat = store({ runtimeId: "enjoy-local", hasKey: true })
-  assert.equal(guardComposerSend(chat as never, { ideReady: true, chatReady: true }), false)
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
   assert.equal(chat.read().error, NO_CHAT_ROUTE)
   assert.equal(chat.read().picker, false)
 })
@@ -334,13 +334,15 @@ test("SSH connecting|failed|disconnected 时 guardComposerSend 为 false", () =>
     assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m", workspaceKind: "ssh", remoteStatus: status }), false)
   }
   assert.equal(
-    composerSendReady({
-      runtimeId: "enjoy-local",
-      hasKey: true,
-      modelId: "m",
-      workspaceKind: "ssh",
-      remoteStatus: "connected"
-    }),
+    composerSendReady(
+      {
+        runtimeId: "enjoy-local",
+        hasKey: true,
+        modelId: "m",
+        workspaceKind: "ssh",
+        remoteStatus: "connected"
+      },
+    ),
     true
   )
 })

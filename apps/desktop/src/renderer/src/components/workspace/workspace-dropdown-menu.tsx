@@ -24,7 +24,7 @@ import {
 } from "react-aria-components"
 import { AppMark } from "@renderer/components/brand/app-mark"
 import { ChevronUpDownSmall } from "@/components/foundations/icons/chevrons"
-import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
+import { requestCreateProject } from "@renderer/components/workspace/create-project-open"
 import { loadWorkspace, openFolder, type WorkspaceRow } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -61,7 +61,6 @@ export function WorkspaceDropdownMenu({
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
@@ -275,9 +274,9 @@ export function WorkspaceDropdownMenu({
               </button>
               <button
                 type="button"
-                onClick={() => {
+                onPointerDown={(event) => {
                   setIsOpen(false)
-                  setCreateDialogOpen(true)
+                  requestCreateProject(event)
                 }}
                 className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-caption-1-medium font-medium text-text-primary transition-colors hover:bg-background-secondary-default cursor-pointer"
               >
@@ -310,11 +309,6 @@ export function WorkspaceDropdownMenu({
         </AriaPopover>
       </AriaDialogTrigger>
 
-      {/* 新建 / 连接项目弹窗 */}
-      <CreateProjectDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
     </>
   )
 }

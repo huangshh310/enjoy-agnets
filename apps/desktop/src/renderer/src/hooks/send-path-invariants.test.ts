@@ -31,6 +31,13 @@ test("Enter 与发送钮走 submitComposer；运行中 Enter 排队也 takeCompo
   assert.match(submit, /steerPreparedText\(content\)/)
 })
 
+test("发送闸拦下仍还全文草稿，不盖掉 no_chat_route / NEED_MODEL", () => {
+  assert.match(send, /restoreDraftAfterSendGate\(/)
+  assert.match(send, /restoreComposerDraft\(/)
+  assert.match(send, /blocked === NO_CHAT_ROUTE \|\| blocked === NEED_MODEL/)
+  assert.match(queue, /export function restoreComposerDraft/)
+})
+
 test("入队抓按下全文，点新对话取消残留队列", () => {
   assert.match(queue, /replaceQueuedSend\(trimmed/)
   assert.match(queue, /export function cancelQueuedComposerSend/)

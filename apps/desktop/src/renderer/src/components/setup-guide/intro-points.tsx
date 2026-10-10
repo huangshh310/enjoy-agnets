@@ -15,11 +15,11 @@ const POINTS = [
 export function IntroPoints() {
   const t = useT()
   return (
-    <ul className="grid h-full min-h-0 flex-1 grid-cols-3 gap-4">
+    <ul className="grid grid-cols-3 gap-4">
       {POINTS.map((point) => {
         const Icon = point.icon
         return (
-          <li key={point.title} className={cx("flex h-full flex-col gap-2.5 p-5", GUIDE_TILE_CLASS)}>
+          <li key={point.title} className={cx("flex flex-col gap-2.5 p-5", GUIDE_TILE_CLASS)}>
             <Icon className="size-[18px] text-text-primary/80" aria-hidden />
             <span className="text-headline-medium font-medium text-text-primary">{t(point.title)}</span>
             <span className="text-body-2-regular leading-normal text-text-secondary">{t(point.body)}</span>

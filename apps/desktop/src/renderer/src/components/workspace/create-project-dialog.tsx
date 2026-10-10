@@ -17,8 +17,10 @@ import { CreateProjectRemoteStep } from "@renderer/components/workspace/create-p
 import { CreateProjectTypeStep } from "@renderer/components/workspace/create-project-type-step"
 import { folderNameFromPath, nextProjectName } from "@renderer/components/workspace/project-name"
 import type { RemoteConnectInput } from "@renderer/components/workspace/remote-connect.types"
+import { useSecretWriteGate } from "@renderer/hooks/use-secret-write-gate"
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
+import { runSecretWrite } from "@renderer/lib/secret-write"
 
 export function CreateProjectDialog({
   open,
@@ -35,6 +37,7 @@ export function CreateProjectDialog({
   const [selectedPath, setSelectedPath] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const gate = useSecretWriteGate()
 
   function resetState() {
     setStep(1)
@@ -44,6 +47,7 @@ export function CreateProjectDialog({
     setSelectedPath("")
     setError(null)
     setLoading(false)
+    gate.setWriteCode(null)
   }
 
   async function handlePickFolder() {
@@ -95,8 +99,15 @@ export function CreateProjectDialog({
   async function handleConnectRemote(input: RemoteConnectInput) {
     setLoading(true)
     setError(null)
+    gate.setWriteCode(null)
+    const outcome = await runSecretWrite(() => getIde().workspace.openSsh(input))
+    if (!outcome.ok) {
+      setLoading(false)
+      gate.setWriteCode(outcome.code)
+      return
+    }
     try {
-      const workspace = (await getIde().workspace.openSsh(input)) as {
+      const workspace = outcome.value as {
         id: string
         name: string
         rootPath: string
@@ -107,8 +118,8 @@ export function CreateProjectDialog({
       await refreshAllWorkspaces()
       onOpenChange(false)
       resetState()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("pages.workspaces.createProject.createFailed"))
+    } catch {
+      setError(t("pages.workspaces.createProject.createFailed"))
     } finally {
       setLoading(false)
     }
@@ -123,6 +134,7 @@ export function CreateProjectDialog({
       }}
     >
       <DialogContent
+        data-testid="create-project-dialog"
         className={`${step === 2 && projectType === "remote" ? "max-w-[380px]" : "max-w-md"} p-6 overflow-hidden rounded-3xl bg-background-primary-default shadow-card border border-border-button-default`}
       >
         <DialogHeader className="mb-2">
@@ -158,6 +170,7 @@ export function CreateProjectDialog({
             }}
             loading={loading}
             error={error}
+            writeCode={gate.writeCode}
             onBack={() => setStep(1)}
             onCancel={() => {
               resetState()

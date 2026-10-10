@@ -134,6 +134,25 @@ test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 
   })
   assert.equal(badFields.hasEnjoySecret, undefined)
   assert.equal(badFields.adoptedHint, undefined)
+  const withKeychain = ChatReadiness.parse({
+    ready: false,
+    engineCount: 0,
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    secretStorageAvailable: false
+  })
+  assert.equal(withKeychain.secretStorageAvailable, false)
+  assert.equal(parsed.secretStorageAvailable, true)
+  const badKeychain = ChatReadiness.parse({
+    ready: false,
+    engineCount: 0,
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    secretStorageAvailable: "no"
+  })
+  assert.equal(badKeychain.secretStorageAvailable, true)
 })
 
 test("已登录外置引擎单独构成路线；enjoy-local 即使 loggedIn 也不进 engines", () => {

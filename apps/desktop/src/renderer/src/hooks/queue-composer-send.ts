@@ -68,6 +68,16 @@ export function clearSentComposerText(sent: string): void {
   if (!next && store.sessionId) store.clearSessionDraft(store.sessionId)
 }
 
+/** 还全文草稿，不改 error：发送闸中性条要留着。 */
+export function restoreComposerDraft(text: string, assets?: QueuedComposerAsset[]): void {
+  const store = useChatStore.getState()
+  const next = mergeComposerText(text, store.composer)
+  store.setComposer(next)
+  setComposerWritebackHeld(false)
+  syncComposerDom(next, true)
+  if (assets?.length) setComposerAssets(mergeQueuedAssets(listComposerAssets(), assets))
+}
+
 export function restoreComposerAfterFailedSend(
   text: string,
   reason: string,
@@ -75,11 +85,7 @@ export function restoreComposerAfterFailedSend(
 ): void {
   const store = useChatStore.getState()
   store.setRunning(false)
-  const next = mergeComposerText(text, store.composer)
-  store.setComposer(next)
-  setComposerWritebackHeld(false)
-  syncComposerDom(next, true)
-  if (assets?.length) setComposerAssets(mergeQueuedAssets(listComposerAssets(), assets))
+  restoreComposerDraft(text, assets)
   store.setError(reason)
 }
 

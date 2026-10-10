@@ -16,7 +16,7 @@ import {
 } from "@renderer/components/ai-chat/sidebar/project-session-groups"
 import { sidebarListHeadingKey } from "@renderer/components/ai-chat/sidebar/sidebar-heading"
 import { sortSessions } from "@renderer/components/ai-chat/sidebar/sort-sessions"
-import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
+import { requestCreateProject } from "@renderer/components/workspace/create-project-open"
 import { requestArchiveSession } from "@renderer/hooks/deny-then-archive"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -36,7 +36,6 @@ export function SidebarRepos({
   onSelectSession: (id: string) => void
   formatTime: (timestamp: number) => string
 }) {
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [clickedRow, setClickedRow] = useState<SessionRowClick | null>(null)
   const t = useT()
   const currentWorkspaceId = useChatStore((state) => state.workspaceId)
@@ -72,8 +71,9 @@ export function SidebarRepos({
           <SidebarOrganizeMenu />
           <button
             type="button"
+            data-testid="create-project-trigger"
             title={t("chat.createProject")}
-            onClick={() => setCreateDialogOpen(true)}
+            onPointerDown={(event) => requestCreateProject(event)}
             className="flex size-6 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer"
           >
             <RiAddLine className="size-4" />
@@ -93,7 +93,7 @@ export function SidebarRepos({
       />
 
       {workspaces.length === 0 ? (
-        <EmptyProjects onAdd={() => setCreateDialogOpen(true)} />
+        <EmptyProjects onAdd={(event) => requestCreateProject(event)} />
       ) : grouping === "status" ? (
         <SidebarStatusGroups
           sessions={allSessions}
@@ -145,12 +145,15 @@ export function SidebarRepos({
         />
       )}
 
-      <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
     </div>
   )
 }
 
-function EmptyProjects({ onAdd }: { onAdd: () => void }) {
+function EmptyProjects({
+  onAdd
+}: {
+  onAdd: (event: { button?: number; preventDefault: () => void }) => void
+}) {
   const t = useT()
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
@@ -158,7 +161,7 @@ function EmptyProjects({ onAdd }: { onAdd: () => void }) {
       <p className="text-caption-1-medium text-text-secondary">{t("chat.noProjects")}</p>
       <button
         type="button"
-        onClick={onAdd}
+        onPointerDown={(event) => onAdd(event)}
         className="text-caption-2-medium text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
       >
         {t("chat.addProject")}

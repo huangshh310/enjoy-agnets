@@ -306,9 +306,9 @@ function applyComposerModel(store: ReturnType<typeof useChatStore.getState>, ses
   store.setModel(patch.modelId, patch.modelLabel, patch.provider)
 }
 
-/** 新建会话跟 Composer 当前引擎；非法 id 再回落偏好。 */
 function resolveCreateRuntime(current: string, preferred: string) {
   for (const id of [current, preferred, DEFAULT_RUNTIME_ID]) {
+    if (!id) continue
     const parsed = AgentToolId.safeParse(id)
     if (parsed.success) return parsed.data
   }

@@ -3,7 +3,7 @@
  */
 import { useThemeMode } from "@/components/application/theme/theme-toggle"
 import { cx } from "@/utils/cx"
-import { MARK_DARK, MARK_LIGHT, MARK_SMALL, SMALL_MARK_MAX_PX } from "./constants"
+import { kitSvgUrl, MARK_DARK, MARK_LIGHT, MARK_SMALL, SMALL_MARK_MAX_PX } from "./constants"
 
 export function AppMark({
   size = 16,
@@ -13,8 +13,9 @@ export function AppMark({
   className?: string
 }) {
   const theme = useThemeMode()
-  const src =
+  const src = kitSvgUrl(
     size <= SMALL_MARK_MAX_PX ? MARK_SMALL : theme === "dark" ? MARK_DARK : MARK_LIGHT
+  )
 
   return (
     <img

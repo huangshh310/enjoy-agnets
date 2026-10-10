@@ -14,6 +14,8 @@ import {
   saveEditor
 } from "./provider-editor-writes"
 import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 
 export type PingStateMap = Record<
@@ -33,6 +35,7 @@ export function useProviderSettings() {
   })
   const session = useEditorSession(t("settings.providers.customName"))
   const writes = useProviderWrites(queryClient, session, setDetecting)
+  const secretStorageAvailable = useChatReadiness().data?.secretStorageAvailable
   const providers = settingsQuery.data?.providers ?? []
   const preset = session.editor ? presetFor(session.editor.kind) : null
   const modelChoices = useMemo(
@@ -55,6 +58,7 @@ export function useProviderSettings() {
       for (const profile of providers) void pingOne(profile, t, setPingStates)
     },
     canSave: canSaveEditor(session.editor, preset?.requiresKey ?? true),
+    secretBlocked: secretStorageAvailable === false,
     openCreate: session.openCreate,
     openEdit: session.openEdit,
     closeEditor: session.closeEditor,
@@ -99,11 +103,26 @@ function useProviderWrites(
 ) {
   const t = useT()
   const { editor, setProbe, closeEditor, updateEditor } = session
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<SecretWriteErrorCode | null>(null)
+  useEffect(() => {
+    if (!editor) setSaveError(null)
+  }, [editor])
   return {
+    saving,
+    saveError,
     save: async (activate: boolean) => {
-      if (!editor || !hasIde()) return
-      await saveEditor(queryClient, editor, activate)
+      if (!editor || !hasIde()) return false
+      setSaving(true)
+      setSaveError(null)
+      const outcome = await saveEditor(queryClient, editor, activate)
+      setSaving(false)
+      if (!outcome.ok) {
+        setSaveError(outcome.code)
+        return false
+      }
       closeEditor()
+      return true
     },
     activate: async (id: string) => {
       if (!hasIde()) return

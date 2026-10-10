@@ -44,7 +44,7 @@ export const enWorkspacesPages = {
     defaultSessionName: "New chat",
     createFailed: "Failed to create project",
     title: "Create project",
-    step1Desc: "Choose a location, not a new engine",
+    step1Desc: "Choose a folder as the project",
     testingHost: "Testing…",
     hostReady: "Host is ready — you can probe connectivity",
     pickHostFirst: "Choose or configure a host first",

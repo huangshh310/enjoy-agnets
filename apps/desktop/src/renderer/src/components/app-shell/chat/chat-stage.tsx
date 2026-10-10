@@ -7,14 +7,13 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
-import { Button } from "@/components/ui/button"
+import { useQuery } from "@tanstack/react-query"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
 import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
 import { ExperimentalMediaDialog } from "@renderer/components/ai-chat/experimental-media-dialog"
 import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
-import { openFolder } from "@renderer/hooks/use-agent-session"
+import type { WorkspaceRow } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
-import { useT } from "@renderer/i18n"
 import { reviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate-phase"
 import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledger-rail"
 import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
@@ -31,6 +30,9 @@ import { useTaskbarTitle } from "./use-taskbar-title"
 import { EmptySessionStart } from "./empty-session-start"
 import { EmptyStatePills } from "@renderer/components/ai-chat/empty-state/empty-state-pills"
 import { focusComposerEnd } from "@renderer/components/ai-chat/empty-state/focus-composer"
+import { NoProjectEmpty } from "./no-project-empty.tsx"
+import { shouldShowNoProjectEmpty } from "./no-project-empty.ts"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatModelGate } from "./use-chat-model-gate"
 import { usePermissionCycleHotkey } from "@renderer/components/ai-chat/use-permission-cycle-hotkey"
 import {
@@ -41,7 +43,6 @@ import { ThreadFindBar } from "@renderer/components/ai-chat/thread/thread-find/t
 import { queueComposerFocus } from "@renderer/hooks/composer-focus"
 
 export function ChatStage() {
-  const t = useT()
   usePermissionCycleHotkey()
   useThreadFindHotkey()
   const workspaceId = useChatStore((state) => state.workspaceId)
@@ -57,6 +58,17 @@ export function ChatStage() {
   const gate = useChatModelGate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const surface = pathname === "/kanban" ? "kanban" : pathname === "/automations" ? "automations" : "thread"
+  const workspaces = useQuery({
+    queryKey: ["workspaces"],
+    enabled: hasIde(),
+    queryFn: () => getIde().workspace.list() as Promise<WorkspaceRow[]>
+  })
+  const showNoProject = shouldShowNoProjectEmpty({
+    workspaceId,
+    surface,
+    workspacesSettled: workspaces.isFetched || workspaces.isError,
+    workspaceCount: workspaces.data?.length ?? 0
+  })
 
   return (
     <main
@@ -65,7 +77,9 @@ export function ChatStage() {
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
     >
       <ShortcutSheet />
-      {workspaceId || surface !== "thread" ? (
+      {showNoProject ? (
+        <NoProjectEmpty />
+      ) : workspaceId || surface !== "thread" ? (
         <ChatWorkspaceBody
           workspaceName={workspaceName}
           sessionTitle={sessionTitle}
@@ -82,11 +96,7 @@ export function ChatStage() {
           onSend={gate.requestSend}
         />
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-          <p className="text-title-3-semibold text-text-primary">{t("chat.openWorkspace")}</p>
-          <p className="max-w-sm text-body-medium text-text-secondary">{t("chat.openWorkspaceHint")}</p>
-          <Button onClick={() => void openFolder()}>{t("chat.openFolder")}</Button>
-        </div>
+        <div className="flex flex-1 flex-col" data-testid="project-boot-wait" />
       )}
       <ExperimentalMediaDialog
         open={gate.promptOpen}

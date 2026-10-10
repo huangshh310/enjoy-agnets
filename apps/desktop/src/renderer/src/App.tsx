@@ -6,8 +6,10 @@ import { queryClient } from "@renderer/lib/query-client"
 import { router } from "@renderer/router"
 import { AppToaster } from "@renderer/components/layout/app-toaster"
 import { initThemeSkin } from "@renderer/hooks/use-theme-skin"
+import { installEnjoyE2eBridge } from "@renderer/lib/enjoy-e2e-bridge"
 
 initThemeSkin()
+installEnjoyE2eBridge()
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>

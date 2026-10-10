@@ -36,6 +36,7 @@ import {
   composerNeedsSessionReady,
   mergeComposerText,
   restoreComposerAfterFailedSend,
+  restoreComposerDraft,
   SEND_FAILED_RESTORE,
   SESSION_NOT_READY,
   waitThenSendAfterCreate
@@ -81,15 +82,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   if (firstTurn) store.setPreparingHint(true)
   store.setRunning(true)
   if (!guardComposerSend(store)) {
-    store.setRunning(false)
-    store.setPreparingHint(false)
-    const blocked = useChatStore.getState().error
-    if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
-    if (prepared?.content) {
-      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
-    } else if (!store.sessionId) {
-      restoreComposerAfterFailedSend(store.composer, SESSION_NOT_READY)
-    }
+    restoreDraftAfterSendGate(store, prepared)
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
@@ -111,6 +104,18 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
       restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     }
   }
+}
+
+/** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
+function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): void {
+  store.setRunning(false)
+  store.setPreparingHint(false)
+  const blocked = useChatStore.getState().error
+  const draft = prepared?.content ?? readComposerDomText() || store.composer
+  if (draft) restoreComposerDraft(draft, prepared?.assets)
+  if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
+  if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
+  else if (!store.sessionId) store.setError(SESSION_NOT_READY)
 }
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
