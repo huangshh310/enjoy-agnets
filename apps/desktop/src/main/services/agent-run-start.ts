@@ -14,6 +14,9 @@ import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import { peekVerifiedLocalModel } from "./chat-readiness"
+import { hasSecret } from "./secrets"
+import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
@@ -31,6 +34,8 @@ import {
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eCostSeed, isE2eStub } from "./e2e-stub"
+import type { AgentRunResult } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
@@ -42,7 +47,10 @@ export async function runAgent(
 ) {
   const parsed = RunAgentInput.parse(rawInput)
   const input = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
-  return beginAgentRun(window, input, { persistUser: input.persistUser !== false })
+  return beginAgentRun(window, input, {
+    persistUser: input.persistUser !== false,
+    rememberMru: trust.rememberMru
+  })
 }
 
 /** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。 */
@@ -85,10 +93,29 @@ export async function resumeAgentRun(
 async function beginAgentRun(
   window: BrowserWindow,
   input: RunAgentInput,
-  options: { runId?: string; persistUser: boolean; resumeMessages?: unknown; promptEcho?: boolean }
-) {
+  options: {
+    runId?: string
+    persistUser: boolean
+    resumeMessages?: unknown
+    promptEcho?: boolean
+    rememberMru?: boolean
+  }
+): Promise<AgentRunResult> {
   const prefs = readPreferences()
   const runtimeId = resolveRuntimeId(input, prefs)
+  const blocked = selectedRouteGateCode({
+    skip: shouldSkipSelectedRouteGate({
+      automationSource: input.automationSource,
+      rememberMru: options.rememberMru,
+      isResume: Boolean(options.runId),
+      isHeartbeat: Boolean(options.promptEcho)
+    }),
+    runtimeId,
+    codingRuntime: prefs.codingRuntime,
+    hasEnjoySecret: await hasSecret().catch(() => "unknown" as const),
+    verifiedLocal: peekVerifiedLocalModel()
+  })
+  if (blocked) return { ok: false, code: NO_CHAT_ROUTE }
   writeSessionRuntime(input.sessionId, runtimeId)
   input.runtimeId = runtimeId
   const overlayModel = await resolveBoundRunModelId(input, runtimeId)
@@ -119,7 +146,8 @@ async function beginAgentRun(
     shouldRememberWorkspaceOnRun({
       automationSource: input.automationSource,
       isResume: Boolean(options.runId),
-      isHeartbeat: Boolean(options.promptEcho)
+      isHeartbeat: Boolean(options.promptEcho),
+      rememberMru: options.rememberMru
     })
   ) {
     rememberWorkspaceOpened(workspace.id)
@@ -127,7 +155,7 @@ async function beginAgentRun(
 
   if (input.commandId && !options.runId) {
     const existing = peekCommandReceipt(input.commandId)
-    if (existing) return { runId: existing }
+    if (existing) return { ok: true, runId: existing }
   }
   const runId = options.runId ?? createId("run")
   const modelMessages = await modelMessagesForStart(
@@ -158,7 +186,7 @@ async function beginAgentRun(
     }).catch(() => undefined)
   }
   void prepareAndPump(runId)
-  return { runId }
+  return { ok: true, runId }
 }
 
 function emitRunStart(

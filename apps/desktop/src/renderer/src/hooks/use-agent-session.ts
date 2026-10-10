@@ -11,6 +11,8 @@ import { queryClient } from "../lib/query-client"
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
 import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
+import { applyDefaultChatRoute } from "./apply-default-chat-route"
+import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
 import { composerModelPatch } from "../lib/session-model.ts"
@@ -32,6 +34,10 @@ import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
 import { useRightPaneStore } from "../stores/right-pane-store"
 import { useWorkspaceChangeInvalidation } from "./use-workspace-change-invalidation"
+import { useChatReadiness } from "./use-chat-readiness"
+import { planNewSession } from "./plan-new-session"
+import { rememberWorkspaceOnLoad } from "./unknown-workspace-remember"
+import { landEmptyHome } from "./nav-history/nav-history-controller"
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
@@ -84,9 +90,12 @@ export function useAgentSession() {
     void applySettingsSnapshot(snapshot)
   }, [settingsQuery.data])
 
+  useChatReadiness()
+
   useBootWorkspace(
     Boolean(settingsQuery.data),
     settingsQuery.data?.lastWorkspaceId,
+    settingsQuery.data?.recentWorkspaceIds,
     workspacesQuery.data,
     (workspace) => {
       void loadWorkspace(workspace)
@@ -117,11 +126,14 @@ export function useAgentSession() {
 export async function loadWorkspace(workspace: WorkspaceRow) {
   rememberOpenedWorkspace(workspace)
   if (hasIde()) {
-    try {
-      await getIde().workspace.remember({ workspaceId: workspace.id })
-    } catch {
-      // remember 失败不得挡住切换
-    }
+    const outcome = await rememberWorkspaceOnLoad({
+      remember: () => getIde().workspace.remember({ workspaceId: workspace.id }),
+      onUnknown: async () => {
+        await refreshAllWorkspaces()
+        await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+      }
+    })
+    if (outcome === "abort") return
   }
   const store = useChatStore.getState()
   await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
@@ -179,11 +191,20 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   store.setProvider(snapshot.provider)
   rememberDefaultMode(snapshot.preferences?.defaultMode)
   // 会话 mode 由 Composer / 句首斜杠决定。默认项只在设置页写入，refetch 不得打回 agent。
-  const preferred = snapshot.preferences?.runtimeId ?? "enjoy-local"
+  const readySnap = peekChatReadiness()
+  if (readySnap?.defaultRoute) applyDefaultChatRoute(readySnap)
+  const after = useChatStore.getState()
+  const preferred =
+    after.preferredRuntimeId ||
+    readySnap?.defaultRoute?.runtimeId ||
+    snapshot.preferences?.runtimeId ||
+    "enjoy-local"
   store.setPreferredRuntimeId(preferred)
   store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
   store.setSessionModels(snapshot.sessionModels ?? {})
-  store.setRuntimeId(pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, preferred))
+  store.setRuntimeId(
+    pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, after.runtimeId || preferred)
+  )
   if (!store.preferredModelId && snapshot.defaultModelId) {
     store.setPreferredModelId(snapshot.defaultModelId)
   }
@@ -230,11 +251,11 @@ export async function openFolder() {
 
 export async function startPersistedSession() {
   const workspaceId = useChatStore.getState().workspaceId
-  if (!workspaceId) {
-    await openFolder()
+  if (planNewSession(workspaceId) === "empty_home") {
+    await landEmptyHome()
     return
   }
-  await createAndOpenSession(workspaceId, "新对话")
+  await createAndOpenSession(workspaceId as string, "新对话")
 }
 
 export async function openChangedFile(path: string, opts?: { reveal?: boolean }) {

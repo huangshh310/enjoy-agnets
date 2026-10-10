@@ -117,6 +117,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/estimated-cost.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/chat-readiness",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/chat-readiness.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/agent-tools",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/agent-tools.ts")
         },
@@ -230,6 +234,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/estimated-cost",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/estimated-cost.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/chat-readiness",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/chat-readiness.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/agent-tools",

@@ -6,13 +6,15 @@ import { composerAgentTabs } from "@renderer/components/ai-chat/agent-picker/com
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
-import { guideEngineShowsReady } from "./guide-engine-ready"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { countAvailableEngines } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 export function ReadySummary({ workspaceName }: { workspaceName: string }) {
   const t = useT()
   const theme = useThemeMode()
   const tools = composerAgentTabs(useSettingsSnapshot().data?.agentTools ?? [])
-  const ready = tools.filter(guideEngineShowsReady).length
+  const readiness = useChatReadiness().data
+  const ready = readiness?.engineCount ?? countAvailableEngines(tools)
   const themeLabel = theme === "dark" ? t("common.dark") : t("common.light")
   const workspace = workspaceName
     ? t("settings.setupGuide.readyWorkspace", { name: workspaceName })

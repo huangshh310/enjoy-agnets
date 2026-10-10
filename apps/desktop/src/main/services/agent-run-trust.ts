@@ -6,7 +6,12 @@ import type { AutomationRunSource, RunAgentInput } from "@enjoy-agents/ipc-contr
 export type TrustedRunAgentOptions = {
   /** main 内部入口（自动化补跑 / 续跑）才为 true。 */
   trustAutomationFlags?: boolean
+  /** 工作流子步 / ai.generate 不写 MRU。缺省跟前台用户开跑。 */
+  rememberMru?: boolean
 }
+
+/** 工作流子步与 ai.generate：不写 MRU，也不走发送闸。 */
+export const BACKGROUND_AGENT_TRUST = { rememberMru: false } as const satisfies TrustedRunAgentOptions
 
 export function stripUntrustedAutomationFlags(input: RunAgentInput): RunAgentInput {
   if (!input.denyAnyDesktop && !input.automationSource) return input

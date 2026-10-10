@@ -18,6 +18,7 @@
     "./workspace-move-plan": "./src/workspace-move-plan.ts",
     "./workspace-preview": "./src/workspace-preview.ts",
     "./quoted-context": "./src/quoted-context.ts",
+    "./chat-readiness": "./src/chat-readiness.ts",
     "./host-inject": "./src/host-inject.ts",
     "./desktop-notify": "./src/desktop-notify.ts",
     "./automations-missed": "./src/automations-missed.ts",

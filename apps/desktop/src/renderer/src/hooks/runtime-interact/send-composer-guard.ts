@@ -1,7 +1,9 @@
 /**
- * 发送前置：无密钥 / 未登录先拦，不要跳设置或打出 ACP 英文堆栈。
+ * 发送前置：Enjoy Local 共用 chatRouteGateCode；无快照放行。
  */
+import { chatRouteGateCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { rememberedAgentTool } from "../agent-tools-cache.ts"
+import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts"
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
@@ -11,8 +13,10 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
+  NEED_MODEL,
   NEED_PROVIDER_KEY,
-  NEED_REMOTE_CONNECTED
+  NEED_REMOTE_CONNECTED,
+  NO_CHAT_ROUTE
 } from "../../lib/usage/classify-thread-error.ts"
 
 type ComposerGuardStore = {
@@ -27,7 +31,28 @@ type ComposerGuardStore = {
   setAgentPickerOpen: (open: boolean) => void
 }
 
-/** 发送盘是否亮成可发：与闸门同一套 ready。 */
+function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
+  const snap = peekChatReadiness()
+  return chatRouteGateCode({
+    runtimeId: "enjoy-local",
+    codingRuntime: peekCodingRuntime(),
+    hasEnjoySecret: snap ? (snap.hasEnjoySecret ?? "unknown") : "unknown",
+    verifiedLocal: snap ? snap.localModels.some((row) => row.verified === true) : "unknown"
+  })
+}
+
+/** 当前档案有密钥才催选模型，不是「任意档案有密钥」。 */
+function currentProfileNeedsModel(modelId: string): boolean {
+  const snap = peekChatReadiness()
+  if (!snap?.hasEnjoySecret || !snap.defaultRoute?.profileId) return false
+  return !modelId.trim()
+}
+
+function enjoyLocalAllowsSend(): boolean {
+  return enjoyLocalGateCode() === null
+}
+
+/** 发送盘是否亮成可发：Enjoy Local 信共享闸；CLI 仍看登录 / 检测。 */
 export function composerSendReady(
   store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">
 ): boolean {
@@ -35,14 +60,21 @@ export function composerSendReady(
     const status = store.remoteStatus ?? "disconnected"
     if (status !== "connected") return false
   }
-  if (store.runtimeId === "enjoy-local") return Boolean(store.hasKey && store.modelId)
+  if (store.runtimeId === "enjoy-local") {
+    if (!enjoyLocalAllowsSend()) return false
+    if (currentProfileNeedsModel(store.modelId)) return false
+    return true
+  }
   const tool = rememberedAgentTool(store.runtimeId)
   if (!tool) return false
   const input = readinessInputOf(tool)
   return canBindEngine(input) && engineReadiness(input) === "ready"
 }
 
-export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?: boolean }): boolean {
+export function guardComposerSend(
+  store: ComposerGuardStore,
+  opts?: { ideReady?: boolean; chatReady?: boolean }
+): boolean {
   const ideReady = opts?.ideReady ?? hasIde()
   if (!ideReady) {
     store.setError("The desktop IPC bridge is not available.")
@@ -60,12 +92,14 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
     }
   }
   if (store.runtimeId === "enjoy-local") {
-    if (!store.hasKey) {
-      store.setError(NEED_PROVIDER_KEY)
+    if (enjoyLocalGateCode()) {
+      store.setError(NO_CHAT_ROUTE)
       return false
     }
-    // 档案已亮、models.list 还没写进 store 时不要打 agent.run，否则主进程抛 Choose a model。
-    if (!store.modelId) return false
+    if (currentProfileNeedsModel(store.modelId)) {
+      store.setError(NEED_MODEL)
+      return false
+    }
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)
