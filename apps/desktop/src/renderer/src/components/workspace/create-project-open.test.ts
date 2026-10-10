@@ -46,4 +46,4 @@ test("侧栏只发请求，Dialog 挂在应用壳", () => {
   assert.match(sidebar, /requestCreateProject/)
   assert.doesNotMatch(sidebar, /<CreateProjectDialog/)
   assert.match(shell, /CreateProjectHost/)
-}
+})

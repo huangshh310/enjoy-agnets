@@ -27,7 +27,7 @@ import { AutomationsPage } from "@renderer/components/automations/automations-pa
 import { ChatStageHeader } from "./chat-stage-header"
 import { useTaskbarTitle } from "./use-taskbar-title"
 import { EmptySessionStart } from "./empty-session-start"
-import { NoProjectEmpty } from "./no-project-empty"
+import { NoProjectEmpty } from "./no-project-empty.tsx"
 import { shouldShowNoProjectEmpty } from "./no-project-empty.ts"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatModelGate } from "./use-chat-model-gate"

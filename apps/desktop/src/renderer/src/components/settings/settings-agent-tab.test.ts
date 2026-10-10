@@ -51,4 +51,4 @@ test("向导添加密钥 create=official 进 search", () => {
     from: "setup-guide",
     create: "official"
   })
-}
+})

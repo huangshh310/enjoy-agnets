@@ -15,7 +15,7 @@ export function ThreadNoticeBanner() {
   const notice = useChatStore((state) => state.notice)
   const setError = useChatStore((state) => state.setError)
   const setNotice = useChatStore((state) => state.setNotice)
-  const noRoute = classifyThreadError(error) === "no_chat_route"
+  const noRoute = error != null && classifyThreadError(error) === "no_chat_route"
   if (noRoute) {
     return (
       <div
