@@ -57,7 +57,8 @@ export function e2eChatReadiness(env: NodeJS.ProcessEnv, packaged: boolean): Cha
       engineCount: 1,
       preferredRuntimeId: "enjoy-local",
       ...(kind === "key" ? { modelId: E2E_CHAT_READY_MODEL_ID } : {}),
-      hasEnjoySecret: true
+      hasEnjoySecret: true,
+      activeKeyProfileId: E2E_CHAT_READY_KEY_PROFILE_ID
     })
   }
   if (kind === "engine") {

@@ -26,7 +26,8 @@ function readyKey() {
     engines: [],
     localModels: [],
     apiKeys: [{ kind: "api_key", providerId: "p", presetId: "openai" }],
-    engineCount: 1
+    engineCount: 1,
+    activeKeyProfileId: "p"
   })
 }
 
