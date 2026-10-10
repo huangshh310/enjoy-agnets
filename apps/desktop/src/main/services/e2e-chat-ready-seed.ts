@@ -1,8 +1,9 @@
 /**
- * CHAT_READY=key / engine：写入真能发的 stub 路线。打包态 / 非隔离目录不写。
- * 只种一次，避免每次 ready 重算都 activate:true。
+ * CHAT_READY 写盘：key / engine 种可发路线；none 只盖「曾经没有可用路线」。
+ * 打包态 / 非隔离目录不写。只种一次，避免每次 ready 重算都 activate:true。
  */
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
+import { SEEN_NO_USABLE_CHAT_ROUTE_KEY } from "./default-chat-route"
 import { setSetting } from "./database"
 import {
   E2E_CHAT_READY_ENGINE_ID,
@@ -35,6 +36,11 @@ export async function seedE2eChatReadyRoute(input: {
   if (seededKind) return false
   if (!isE2eStub() || !e2eChatReadySeedAllowed(input)) return false
   const kind = e2eChatReadyKind()
+  if (kind === "none") {
+    setSetting(SEEN_NO_USABLE_CHAT_ROUTE_KEY, "1")
+    seededKind = "none"
+    return true
+  }
   if (kind === "key") {
     await upsertProfile({
       id: E2E_CHAT_READY_KEY_PROFILE_ID,

@@ -11,7 +11,6 @@ import { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-
 import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./default-chat-route"
 import { e2eChatReadiness } from "./e2e-chat-readiness"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
-import { isE2eStub } from "./e2e-stub"
 import { activateProfile, hasSecret, listPublicProviders } from "./secrets"
 
 export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
@@ -51,7 +50,7 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
   const [tools, providers, live] = await Promise.all([
     listAgentTools(),
     listPublicProviders(),
-    isE2eStub() ? Promise.resolve(["ollama"] as Array<"ollama" | "lmstudio">) : pingLocalModelServices()
+    pingLocalModelServices()
   ])
   const listed = tools.map((tool) => ({
     id: tool.id,

@@ -31,6 +31,7 @@ test("CU 铬：pill / 本会话默认 / 敏感警示 / 硬拒中文卡", async (
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_CU_READY: "1",
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,

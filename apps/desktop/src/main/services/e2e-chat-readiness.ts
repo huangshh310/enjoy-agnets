@@ -1,6 +1,6 @@
 /**
  * 仅 ENJOY_E2E_STUB=1 且未打包：向导 / 空态夹具。
- * key / engine 的真 vault 与已登录 stub 在 seed 里。
+ * key / engine / unverified 冻结快照；none 不冻结，只在 seed 里种「起始无路线」。
  */
 import type { AgentToolId, AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { buildChatReadiness, type ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
@@ -50,15 +50,8 @@ export function e2eChatReadiness(
       hasEnjoySecret: false
     })
   }
-  if (kind === "none") {
-    return buildChatReadiness({
-      engines: [],
-      localModels: [],
-      apiKeys: [],
-      engineCount: 1,
-      hasEnjoySecret: false
-    })
-  }
+  // none = 起始无路线，不冻结。computeChatReadiness 从 vault / 档案组装。
+  if (kind === "none") return null
   if (kind === "unverified") {
     return buildChatReadiness({
       engines: [],

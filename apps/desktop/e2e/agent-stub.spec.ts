@@ -29,6 +29,7 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData
     }

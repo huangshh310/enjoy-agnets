@@ -119,6 +119,45 @@ test("单条 unverified 密钥 ready，从无到有可 adopt", () => {
   )
 })
 
+test("none 起始无路线，存密钥后同会话可 adopt，盖章后不再 toast", () => {
+  const empty = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: false
+  })
+  assert.equal(empty.ready, false)
+  const keyed = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [{ kind: "api_key", providerId: "p1", presetId: "deepseek" }],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    activeKeyProfileId: "p1",
+    credentialCheck: { state: "ok" }
+  })
+  assert.equal(keyed.ready, true)
+  assert.equal(keyed.apiKeys.length, 1)
+  assert.equal(
+    planAdoptedDefaultRoute({
+      ready: keyed.ready,
+      routeRuntimeId: keyed.defaultRoute?.runtimeId,
+      hadNoUsableRoute: true
+    }),
+    "adopt"
+  )
+  assert.equal(
+    planAdoptedDefaultRoute({
+      ready: keyed.ready,
+      routeRuntimeId: keyed.defaultRoute?.runtimeId,
+      adoptedAt: "1",
+      hadNoUsableRoute: true
+    }),
+    "skip"
+  )
+})
+
 test("adopt 提示用引擎显示名，不是 id", () => {
   const engine = buildChatReadiness({
     engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],

@@ -29,6 +29,7 @@ test("新建对话首次发送后主区出现气泡，且跨会话仍弹审批�
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData
     }
@@ -85,6 +86,7 @@ test("新对话创建窗内立刻发送：气泡仍要出现，不能吞掉输�
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData,
       ENJOY_DEV_DELAY_SESSION_CREATE_MS: "2000"
@@ -128,6 +130,7 @@ test("新对话创建窗内带附件首发：气泡要带附件，不能丢掉",
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData,
       ENJOY_DEV_DELAY_SESSION_CREATE_MS: "2000"
@@ -178,6 +181,7 @@ test("新对话后不必点输入框，直接打字回车就能发出", async ()
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData
     }

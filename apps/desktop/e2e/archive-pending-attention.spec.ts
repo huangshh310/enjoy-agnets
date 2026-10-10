@@ -28,6 +28,7 @@ test("归档待审批会话：顶栏不留需处理 / 出错", async () => {
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData
     }

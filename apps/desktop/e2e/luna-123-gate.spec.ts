@@ -30,6 +30,7 @@ test("luna #123：芯片文案、高级时区、抽屉月亮", async () => {
       ...process.env,
       TZ: "Asia/Shanghai",
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_CU_READY: "1",
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,

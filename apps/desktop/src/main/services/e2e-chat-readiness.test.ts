@@ -2,6 +2,7 @@
  * E2E 路线夹具：没开 stub / 打包态不得冒充 ready。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import { chatRouteAllowsSend, isVerifiedLocalModel } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
@@ -94,18 +95,22 @@ test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
   assert.equal(timed?.credentialCheck?.code, "timeout")
 })
 
-test("stub + none 引擎数不能冒充可以开始", () => {
-  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "none" })
-  assert.equal(snap?.ready, false)
-  assert.equal(snap?.engineCount, 1)
+test("stub + none 不冻结空快照，后续从 vault 组装", () => {
+  assert.equal(e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "none" }), null)
   assert.equal(
     chatRouteAllowsSend({
-      runtimeId: snap?.defaultRoute?.runtimeId ?? "enjoy-local",
+      runtimeId: "enjoy-local",
       hasEnjoySecret: false,
       verifiedLocal: false
     }),
     false
   )
+})
+
+test("CHAT_READY 未设时不注入 live ollama，走现场 ping", () => {
+  const src = readFileSync(new URL("./chat-readiness.ts", import.meta.url), "utf8")
+  assert.doesNotMatch(src, /isE2eStub\(\) \? Promise\.resolve\(\["ollama"\]/)
+  assert.match(src, /pingLocalModelServices\(\)/)
 })
 
 test("stub + unverified 露出远端本机模型；有密钥则 ready，闸放行", () => {
