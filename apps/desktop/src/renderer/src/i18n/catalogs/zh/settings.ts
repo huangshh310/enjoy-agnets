@@ -922,11 +922,15 @@ export const zhSettings = {
     customProvider: "自定义供应商"
   },
 
+  skills: {
+    openHub: "打开技能中心"
+  },
+
   mcp: {
     hubTitle: "模型上下文协议（MCP）中枢",
     hubBadge: "JSON-RPC 2.0",
     hubDesc: "连接外部工具服务器、数据库查询引擎与实时应用界面的标准化协议。",
-    openHub: "打开 MCP 中枢",
+    openHub: "打开 MCP 中心",
     policies: "安全与沙箱策略",
     untrusted: "默认不信任",
     untrustedDesc: "新添加的 MCP 服务器以不信任模式启动。工具调用需明确人工确认。",

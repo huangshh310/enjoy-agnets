@@ -7,6 +7,7 @@ import {
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { readWorkspaceFile } from "../lib/read-workspace-file"
 import { queryClient } from "../lib/query-client"
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
 import { useBootWorkspace } from "./use-boot-workspace"
@@ -344,8 +345,8 @@ function followOpenReviewFile(path: string) {
 
 async function tryReadFile(workspaceId: string, path: string): Promise<string | null> {
   try {
-    const res = (await getIde().workspace.readFile({ workspaceId, path })) as string
-    return typeof res === "string" ? res : null
+    const res = await readWorkspaceFile(workspaceId, path)
+    return res || null
   } catch {
     return null
   }

@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（SwiftShader 不算硬件合成）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（e2e stub 可降最小窗）
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 - `frame: false`、`transparent: true`、`hasShadow: false`
 - `backgroundColor: "#00000000"`。macOS 注入 `vibrancy: "fullscreen-ui"`。Windows **不要** `backgroundMaterial: "acrylic"`：acrylic 铺满矩形 HWND，CSS `rounded-2xl` 切不掉四角。磨砂只走 `WindowFrame` + `skins/glass.css`。
-- 默认 1440×920，最小 1100×720
+- 默认 1440×920，最小 1100×720。`ENJOY_E2E_STUB=1` 且未打包时最小降到 400×300，便于 733×480 巡检；正式包仍是 1100×720
 - `autoHideMenuBar: true`
 - `webPreferences.additionalArguments` 带 `--enjoy-gpu-compositing=on|off`。`app.whenReady` 后读 `app.getGPUFeatureStatus()` **和** `app.getGPUInfo("complete")`：`gpu_compositing` / `webgl` 必须是硬件 `enabled*` 才写 `on`。`disableHardwareAcceleration` / `--disable-gpu` / SwiftShader / LLVMpipe / `--use-gl=disabled` / `--use-angle=swiftshader` 一律 `off`。`child-process-gone` type=GPU 立刻 off；`gpu-info-update` 再读 info。preload 启动时写到 `html[data-gpu-compositing]`，不新开 IPC。e2e stub 默认仍 `disableHardwareAcceleration()`；`ENJOY_E2E_ALLOW_GPU=1` 才跳过。
 

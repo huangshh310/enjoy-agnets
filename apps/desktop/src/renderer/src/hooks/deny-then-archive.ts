@@ -41,6 +41,12 @@ export function peekArchivePrompt(): ArchivePrompt {
   return prompt
 }
 
+/** E2E / 截图：直接弹出归档确认，不走审批探测。 */
+export function forceArchivePrompt(sessionId = "e2e-archive"): void {
+  prompt = { sessionId }
+  emit()
+}
+
 export function requestArchiveSession(sessionId: string): void {
   if (archiveNeedsDenyConfirm(sessionId)) {
     prompt = { sessionId }

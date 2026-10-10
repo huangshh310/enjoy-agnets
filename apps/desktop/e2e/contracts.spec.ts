@@ -43,10 +43,21 @@ test("Hash 路由包含 Knowledge / Workflows / Media / MCP / Skills / Observabi
   }
 })
 
-test("settings/skills 重定向到工作模块，没有第二套技能页", () => {
-  expect(routerSource.includes('params.section === "skills"')).toBeTruthy()
+test("settings/skills 与 settings/mcp 留在设置壳，不整页跳出走模块", () => {
+  const settingsSection = routerSource.slice(
+    routerSource.indexOf("const settingsSectionRoute"),
+    routerSource.indexOf("const knowledgeRoute")
+  )
+  expect(settingsSection.includes('redirect({ to: "/skills" })')).toBeFalsy()
+  expect(settingsSection.includes('redirect({ to: "/mcp" })')).toBeFalsy()
   expect(routerSource.includes('redirect({ to: "/skills" })')).toBeTruthy()
   expect(routerSource.includes("SkillFlowPage")).toBeFalsy()
+  const pages = readFileSync(
+    join(process.cwd(), "src/renderer/src/components/settings/settings-section-pages.tsx"),
+    "utf8"
+  )
+  expect(pages.includes("skills: SkillsSettings")).toBeTruthy()
+  expect(pages.includes("mcp: McpSettings")).toBeTruthy()
 })
 
 test("AppShell 单壳：Studio 重定向，二级壳不再「返回应用」", () => {

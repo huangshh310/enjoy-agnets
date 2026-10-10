@@ -43,6 +43,7 @@ export function ActivityBar({
       {WORK_RAIL_ITEMS.map((item) => (
         <RailButton
           key={item.id}
+          id={item.id}
           active={activeModule === item.id}
           label={t(item.labelKey)}
           icon={ACTIVITY_ICONS[item.id]}
@@ -54,6 +55,7 @@ export function ActivityBar({
         {OVERLAY_RAIL_ITEMS.map((item) => (
           <RailButton
             key={item.id}
+            id={item.id}
             active={activeModule === item.id}
             label={t(item.labelKey)}
             icon={ACTIVITY_ICONS[item.id]}

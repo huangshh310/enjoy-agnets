@@ -5,6 +5,7 @@ import { cx } from "@/utils/cx"
 import type { ActivityIcon } from "./module-registry"
 
 export function RailButton({
+  id,
   active,
   label,
   icon: Icon,
@@ -12,6 +13,7 @@ export function RailButton({
   count,
   onClick
 }: {
+  id?: string
   active: boolean
   label: string
   icon: ActivityIcon
@@ -23,6 +25,7 @@ export function RailButton({
   return (
     <button
       type="button"
+      data-testid={id ? `rail-${id}` : undefined}
       title={label}
       aria-label={badge ? `${label} ${badge}` : label}
       aria-current={active ? "page" : undefined}

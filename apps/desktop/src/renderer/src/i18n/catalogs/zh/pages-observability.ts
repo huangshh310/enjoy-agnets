@@ -217,6 +217,7 @@ export const zhObservabilityPages = {
   errorN: "异常：{n}",
   errorDistTitle: "异常分类排行 (Error Distribution)",
   allHealthy: "目前都很正常",
+  allHealthyHint: "当前时间窗口内所有请求都正常。",
   range1h: "1小时",
   range6h: "6小时",
   range24h: "24小时",

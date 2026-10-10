@@ -1,7 +1,7 @@
 /**
  * 点 sheet 行：只读 / 知识库打开文件栏查看文件；本轮写过且 git 才走审查差异。找不到则展开片段。
  */
-import { getIde } from "@renderer/lib/ide"
+import { readWorkspaceFile } from "@renderer/lib/read-workspace-file"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { pathsFromLastTurn } from "../../right-pane/views/review/last-turn-paths.ts"
@@ -36,8 +36,8 @@ async function workspaceFileExists(path?: string): Promise<boolean> {
   const rel = path?.trim()
   if (!workspaceId || !rel) return false
   try {
-    const res = (await getIde().workspace.readFile({ workspaceId, path: rel })) as string
-    return typeof res === "string"
+    await readWorkspaceFile(workspaceId, rel)
+    return true
   } catch {
     return false
   }

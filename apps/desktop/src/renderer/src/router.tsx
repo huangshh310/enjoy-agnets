@@ -117,12 +117,6 @@ const settingsSectionRoute = createRoute({
     if (!isSettingsSectionId(params.section)) {
       throw redirect({ to: "/settings/$section", params: { section: "general" } })
     }
-    if (params.section === "skills") {
-      throw redirect({ to: "/skills" })
-    }
-    if (params.section === "mcp") {
-      throw redirect({ to: "/mcp" })
-    }
   },
   component: SettingsSectionPage
 })

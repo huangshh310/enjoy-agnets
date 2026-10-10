@@ -7,6 +7,7 @@ export const zhCommon = {
   quickSearch: "快速搜索",
   quickSearchKbd: "快速搜索 ({key})",
   searchSettings: "搜索设置…",
+  returnToSettings: "返回设置",
   noMatchingItems: "没有匹配项。",
   cancel: "取消",
   undo: "撤销",

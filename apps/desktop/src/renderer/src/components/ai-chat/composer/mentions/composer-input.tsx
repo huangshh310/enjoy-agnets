@@ -11,6 +11,7 @@ import { isApplePlatform } from "@renderer/components/settings/keybindings/keybi
 import { useComposerMentions } from "./use-composer-mentions.ts"
 import { useComposerIme } from "./use-composer-ime.ts"
 import { shouldIgnoreComposerEnter } from "@renderer/hooks/composer-ime"
+import { clearComposerDraftChips, shouldClearComposerChipsOnDelete } from "@renderer/hooks/clear-composer-chips"
 import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 
 export function ComposerInput({
@@ -48,6 +49,9 @@ export function ComposerInput({
     if (shouldIgnoreComposerEnter(event)) return
     if (mentions.handleKeyDown(event)) return
     if (handleRecall(event)) return
+    if (shouldClearComposerChipsOnDelete(event.key, event.currentTarget)) {
+      clearComposerDraftChips()
+    }
     if (event.key !== "Enter" || event.shiftKey) return
     event.preventDefault()
     if (event.metaKey || event.ctrlKey) onSteer()

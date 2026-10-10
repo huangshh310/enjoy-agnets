@@ -926,11 +926,15 @@ export const enSettings = {
     customProvider: "Custom Provider"
   },
 
+  skills: {
+    openHub: "Open Skills Center"
+  },
+
   mcp: {
     hubTitle: "Model Context Protocol (MCP) Hub",
     hubBadge: "JSON-RPC 2.0",
     hubDesc: "Standardized protocol for connecting external tool servers, database query engines, and live app surfaces.",
-    openHub: "Open MCP Hub",
+    openHub: "Open MCP Center",
     policies: "Security & Sandboxing Policies",
     untrusted: "Untrusted by default",
     untrustedDesc: "Newly added MCP servers start in untrusted mode. Tool calls require explicit human confirmation.",

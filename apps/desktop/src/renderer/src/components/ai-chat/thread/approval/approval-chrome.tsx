@@ -83,12 +83,12 @@ export function ApprovalChrome({
         >
           <Icon className="size-3.5" aria-hidden />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto">
           <h3 className="text-caption-1-semibold leading-6 text-text-primary">{title}</h3>
           {children}
         </div>
       </div>
-      <footer className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-0.5">
         <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary">
           <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">
