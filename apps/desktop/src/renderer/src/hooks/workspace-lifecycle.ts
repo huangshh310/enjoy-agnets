@@ -8,7 +8,7 @@ import { refreshAllWorkspaces } from "./use-agent-session"
 import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
 import { connectSshIfNeeded } from "./ssh-session-switch"
 import { sessionTitleFromStore } from "./archive-session-copy"
-import { notifySessionArchived } from "./archive-session-toast"
+import { notifySessionArchived, notifySessionRestored } from "./archive-session-toast"
 import { notifySwitchedProject } from "./switched-project-toast"
 import { landEmptyHome, pruneHistoryPages, releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
 import { showEmptyHistoryChat } from "@renderer/hooks/nav-history/show-empty-chat"
@@ -32,6 +32,7 @@ export async function unarchiveSession(sessionId: string) {
   await getIde().session.unarchive({ sessionId })
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
+  notifySessionRestored()
 }
 
 export async function deleteArchivedSession(sessionId: string) {

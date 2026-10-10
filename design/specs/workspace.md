@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（删除剪历史不导航；设置情境栏没有项目行）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档不 bump updated_at）
 
 ## 当前真相
 
@@ -9,7 +9,7 @@
 当前能力：
 
 - 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹；SSH 由 main 先 `dropSshPool` 再删行，回 `{ id, lastWorkspaceId }`（按 `recentWorkspaceIds` MRU 排除已删项，没有再名单第一个），不依赖 renderer 切走 disconnect。真实切换走 `loadWorkspace` → `workspace.remember`；`open` / `openSsh` / 开跑也会写入 MRU。`workspace.open` / `openSsh` 成功后 `loadWorkspace` 立刻 `setQueryData(["workspaces"])`。启动对齐只在启动时跑一次，且只在 `workspaceId == null` 时发生，不得用过期名单推断「有没有项目」。
-- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目**只剪**该项目在历史里的条目（`pruneHistory`），不弹栈、不 `showCurrent`、不落到 past 里的设置页。当前若在对话主区（`#/`）就留在主区，只换指针。一个不剩则 `setWorkspace(null)` 并 `landEmptyHome()` 回 `#/` 主区空态，不自动新建。不 `loadWorkspace` / `loadSession(sessions[0])` / `createAndOpenSession`。切到的 next 若是 SSH，只 `connect`，main 不会按需 lazy 建连。自动切到另一个项目时弹轻 toast「已切换到「A」」（`chat.switchedToProject`，`showAppToast` 默认 2400ms）；删光不弹。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。设置模块下 `ContextColumn` 换成 `ModuleNav`（`SettingsShell` 分段），**没有**项目行；删除入口只在 Chat 模块的 `AiChatSidebar` → `ProjectPopover`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
+- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。归档 / 恢复只写 `archived_at`，不 bump `updated_at`。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目**只剪**该项目在历史里的条目（`pruneHistory`），不弹栈、不 `showCurrent`、不落到 past 里的设置页。当前若在对话主区（`#/`）就留在主区，只换指针。一个不剩则 `setWorkspace(null)` 并 `landEmptyHome()` 回 `#/` 主区空态，不自动新建。不 `loadWorkspace` / `loadSession(sessions[0])` / `createAndOpenSession`。切到的 next 若是 SSH，只 `connect`，main 不会按需 lazy 建连。自动切到另一个项目时弹轻 toast「已切换到「A」」（`chat.switchedToProject`，`showAppToast` 默认 2400ms）；删光不弹。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。设置模块下 `ContextColumn` 换成 `ModuleNav`（`SettingsShell` 分段），**没有**项目行；删除入口只在 Chat 模块的 `AiChatSidebar` → `ProjectPopover`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件或按已展开目录暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）

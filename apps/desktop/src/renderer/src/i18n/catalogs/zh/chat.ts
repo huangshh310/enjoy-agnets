@@ -511,6 +511,7 @@ export const zhChat = {
   },
 
   projects: "项目",
+  chats: "对话",
   organizeProjects: "整理项目侧边栏",
   organizeSidebar: "整理侧边栏",
   groupByProject: "按项目",
@@ -519,6 +520,7 @@ export const zhChat = {
   viewArchived: "查看已归档",
   otherChats: "其他对话",
   archivedToast: "已归档「{title}」",
+  restoredToast: "已恢复到侧栏",
   statusTodo: "待办",
   statusInProgress: "进行中",
   statusNeedsReview: "待验收",

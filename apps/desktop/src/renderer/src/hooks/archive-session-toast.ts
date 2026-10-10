@@ -8,9 +8,13 @@ import { zh } from "../i18n/catalogs/zh/index.ts"
 import { resolveLocale, type LanguagePref } from "../i18n/locale.ts"
 import { translate } from "../i18n/lookup.ts"
 import { queryClient } from "../lib/query-client.ts"
-import { archivedToastMessage, type ArchiveToastTranslate } from "./archive-session-copy.ts"
+import {
+  archivedToastMessage,
+  restoredToastMessage,
+  type ArchiveToastTranslate
+} from "./archive-session-copy.ts"
 
-export { archivedToastMessage, sessionTitleFromStore } from "./archive-session-copy.ts"
+export { archivedToastMessage, restoredToastMessage, sessionTitleFromStore } from "./archive-session-copy.ts"
 export type { ArchiveToastTranslate }
 
 export function currentArchiveTranslate(): ArchiveToastTranslate {
@@ -34,5 +38,14 @@ export function notifySessionArchived(sessionId: string, title: string, undo: ()
       label: t("common.undo"),
       onClick: undo
     }
+  })
+}
+
+export function notifySessionRestored(): void {
+  const t = currentArchiveTranslate()
+  showAppToast(restoredToastMessage(t), {
+    id: "session-restored",
+    testId: "session-restored-toast",
+    tone: "success"
   })
 }

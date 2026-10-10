@@ -14,3 +14,7 @@ export function sessionTitleFromStore(
 export function archivedToastMessage(title: string, t: ArchiveToastTranslate): string {
   return t("chat.archivedToast", { title })
 }
+
+export function restoredToastMessage(t: ArchiveToastTranslate): string {
+  return t("chat.restoredToast")
+}

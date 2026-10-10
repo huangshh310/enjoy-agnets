@@ -517,6 +517,7 @@ export const enChat = {
   },
 
   projects: "Projects",
+  chats: "Chats",
   organizeProjects: "Organize project sidebar",
   organizeSidebar: "Organize sidebar",
   groupByProject: "By project",
@@ -525,6 +526,7 @@ export const enChat = {
   viewArchived: "View archived",
   otherChats: "Other chats",
   archivedToast: "Archived “{title}”",
+  restoredToast: "Restored to sidebar",
   statusTodo: "To-do",
   statusInProgress: "In progress",
   statusNeedsReview: "Needs acceptance",

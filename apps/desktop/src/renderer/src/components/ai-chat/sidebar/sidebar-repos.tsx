@@ -13,6 +13,7 @@ import {
   sessionsForWorkspace,
   workspaceIdsOf
 } from "@renderer/components/ai-chat/sidebar/project-session-groups"
+import { sidebarListHeadingKey } from "@renderer/components/ai-chat/sidebar/sidebar-heading"
 import { sortSessions } from "@renderer/components/ai-chat/sidebar/sort-sessions"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
 import { archiveCurrentSession } from "@renderer/hooks/workspace-lifecycle"
@@ -62,7 +63,9 @@ export function SidebarRepos({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex items-center justify-between px-2 pt-2">
-        <span className="text-body-medium font-semibold text-text-primary">{t("chat.projects")}</span>
+        <span className="text-body-medium font-semibold text-text-primary">
+          {t(sidebarListHeadingKey(grouping))}
+        </span>
         <div className="flex items-center gap-0.5">
           <SidebarOrganizeMenu />
           <button
