@@ -4,7 +4,8 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import {
   isStaleObservationAfterAllow,
-  isToolNotExecuted
+  isToolNotExecuted,
+  readApprovalDecision
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import {
   RESTART_ABANDONED_CODE,
@@ -66,6 +67,9 @@ export function thinkingHeadline(
     }
     if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
       return t("studio.automations.catchUpTimeout")
+    }
+    if (tools.every((tool) => readApprovalDecision(tool.result) === "cancelled")) {
+      return t("chat.restartAbandoned")
     }
     return t("chat.toolDenied")
   }

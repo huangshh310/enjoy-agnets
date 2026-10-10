@@ -40,6 +40,24 @@ test("补跑超时工具行走中性文案，不是拒绝或出错", () => {
   assert.notEqual(headline, "chat.toolDenied")
 })
 
+test("回挂 cancelled 无码也走重启后已中断，不是已拒绝", () => {
+  const headline = thinkingHeadline(
+    false,
+    [
+      {
+        id: "t1",
+        name: "write_file",
+        state: "output-error",
+        result: { decision: "cancelled" }
+      }
+    ],
+    null,
+    t
+  )
+  assert.equal(headline, "chat.restartAbandoned")
+  assert.notEqual(headline, "chat.toolDenied")
+})
+
 test("重启放弃工具行走中性「重启后已中断」，不是拒绝或已停止", () => {
   const headline = thinkingHeadline(
     false,

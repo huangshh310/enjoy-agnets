@@ -16,6 +16,7 @@ const {
   getRun,
   listLivePendingApprovals,
   rememberApproval,
+  resetApprovalSecretForTest,
   resetRestoreWaitingOnceForTests,
   restoreWaitingRuns,
   RESTORE_NO_MATCHING_CODE,
@@ -248,6 +249,68 @@ test("已决 allow + 篡 HMAC：cancelled，审计 restart_unverifiable_decision
   assert.equal(getApproval(db, approvalId)?.decision, "allow")
   assert.notEqual(getApproval(db, approvalId)?.sdkReason, RESTART_UNVERIFIABLE_DECISION)
   assert.equal(existsSync(join("/tmp", "note.txt")), false)
+})
+
+test("未决 + 篡 HMAC：fail closed，审计，不重跑", async () => {
+  resetRestoreWaitingOnceForTests()
+  const runId = "run_hmac_pending"
+  const sessionId = "ses_hmac_pending"
+  const approvalId = "apr_hmac_pending"
+  const events: SentEvent[] = []
+  seedWaiting({
+    runId,
+    sessionId,
+    workspaceId: "ws_hmac_pending",
+    approvalId,
+    checkpoint: waitingCheckpoint({ sessionId, approvalId })
+  })
+  const db = getDatabase()
+  db.prepare("UPDATE approvals SET hmac = 'tampered' WHERE id = ?").run(approvalId)
+  await restoreWaitingRuns(recordWindow(events))
+  assert.equal(getRun(db, runId)?.status, "cancelled")
+  assert.equal(getApproval(db, approvalId)?.decision, "cancelled")
+  assert.equal(getApproval(db, approvalId)?.sdkReason, RESTART_UNVERIFIABLE_DECISION)
+  assert.equal(events.some((event) => event.type === "approval.required"), false)
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.ok(
+    events.some(
+      (event) => event.type === "approval.resolved" && event.code === "restart_abandoned"
+    ) || events.some((event) => event.type === "run.error" && event.code === RESTORE_NO_MATCHING_CODE)
+  )
+  assert.equal(getActiveRun(runId), undefined)
+})
+
+test("HMAC 密钥轮换：fail closed，工具行 restart_abandoned，不重跑", async () => {
+  resetRestoreWaitingOnceForTests()
+  const runId = "run_hmac_rotated"
+  const sessionId = "ses_hmac_rotated"
+  const approvalId = "apr_hmac_rotated"
+  const events: SentEvent[] = []
+  seedWaiting({
+    runId,
+    sessionId,
+    workspaceId: "ws_hmac_rotated",
+    approvalId,
+    checkpoint: waitingCheckpoint({ sessionId, approvalId })
+  })
+  resetApprovalSecretForTest()
+  const { writeFileSync } = await import("node:fs")
+  const { join } = await import("node:path")
+  const { app } = await import("electron")
+  writeFileSync(join(app.getPath("userData"), "approval-hmac.bin"), Buffer.from("rotated-secret-key"))
+  await restoreWaitingRuns(recordWindow(events))
+  const db = getDatabase()
+  assert.equal(getRun(db, runId)?.status, "cancelled")
+  assert.equal(getApproval(db, approvalId)?.decision, "cancelled")
+  assert.notEqual(getApproval(db, approvalId)?.decision, "deny")
+  assert.equal(events.some((event) => event.type === "approval.required"), false)
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.ok(
+    events.some(
+      (event) => event.type === "approval.resolved" && event.code === "restart_abandoned"
+    ) || events.some((event) => event.type === "run.error")
+  )
+  assert.equal(getActiveRun(runId), undefined)
 })
 
 test("desktop_act 已决 allow + 重启：无卡，fail closed + 审计", async () => {

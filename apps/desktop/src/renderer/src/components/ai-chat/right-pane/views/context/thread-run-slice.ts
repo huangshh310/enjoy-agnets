@@ -4,7 +4,8 @@
 import type { CitedSource, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import {
   isStaleObservationAfterAllow,
-  isToolNotExecuted
+  isToolNotExecuted,
+  readApprovalDecision
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import {
   RESTART_ABANDONED_CODE,
@@ -41,6 +42,7 @@ export function toolRunKind(
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"
   if (abort === "neutral") return "catch_up"
+  if (readApprovalDecision(tool?.result) === "cancelled") return "restart"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"
   if (state === "output-denied") return "denied"

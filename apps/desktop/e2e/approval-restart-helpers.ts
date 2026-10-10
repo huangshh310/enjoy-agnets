@@ -1,7 +1,7 @@
 /**
  * 重启回挂 e2e 共用：同一 userData 起 stub、SIGKILL、抹检查点 / 篡 HMAC。
  */
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { DatabaseSync } from "node:sqlite"
@@ -129,6 +129,12 @@ export function tamperWaitingHmac(userData: string): void {
   mutateAppDb(userData, (db) => {
     db.exec("UPDATE approvals SET hmac = 'tampered' WHERE decision IS NULL")
   })
+}
+
+/** 不可回挂：删掉审批 HMAC 密钥，启动时全部行验签失败。 */
+export function deleteApprovalHmacKey(userData: string): void {
+  const file = join(userData, "approval-hmac.bin")
+  if (existsSync(file)) rmSync(file)
 }
 
 export async function openInbox(window: Page): Promise<void> {
