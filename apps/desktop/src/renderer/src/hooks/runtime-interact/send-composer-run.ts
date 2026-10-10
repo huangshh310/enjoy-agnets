@@ -18,7 +18,12 @@ import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
-import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
+import {
+  clearComposerDraft,
+  flushComposerDomToStore,
+  prefixHostModeForSend,
+  takeComposerText
+} from "./composer-draft"
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
@@ -54,12 +59,13 @@ type SendPayload = {
 export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
+  if (!prepared) flushComposerDomToStore()
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
-    const text = store.composer
+    const text = useChatStore.getState().composer
     if (!text.trim()) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return

@@ -162,8 +162,15 @@ test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {
 
 test("抽屉时间 24 小时，中文不带 AM/PM", () => {
   const schedule = readFileSync(join(dir, "components/schedule-fields.tsx"), "utf8")
+  const picker = readFileSync(join(dir, "components/time-picker-24.tsx"), "utf8")
   const clock = readFileSync(join(dir, "lib/last-run-label.ts"), "utf8")
-  assert.match(schedule, /lang="en-GB"/)
+  assert.match(schedule, /TimePicker24/)
+  assert.doesNotMatch(schedule, /type="time"/)
+  assert.doesNotMatch(picker, /type="time"/)
+  assert.doesNotMatch(picker, /hour12|type="time"/)
+  assert.doesNotMatch(picker, /["']AM["']|["']PM["']/)
+  assert.match(picker, /length: 24/)
+  assert.match(picker, /length: 60/)
   assert.match(clock, /padStart\(2, "0"\)/)
   assert.doesNotMatch(clock, /toLocaleTimeString/)
   assert.doesNotMatch(clock, /hour12/)

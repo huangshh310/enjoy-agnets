@@ -540,6 +540,7 @@ export const enChat = {
   archivePendingTitle: "Archive this chat",
   archivePendingDesc: "This chat still has an action waiting for you. Archiving will deny it.",
   archivePendingConfirm: "Deny and archive",
+  archiveFailed: "Couldn't archive. The approval and chat are unchanged.",
   timeJustNow: "just now",
   timeMinutes: "{n}m",
   timeHours: "{n}h",

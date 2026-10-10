@@ -44,7 +44,8 @@ test("右栏启动页不挂 frost；审查空态自己抬到 z-10 且不透明",
   const changesEmpty = readFirst([
     join(dir, "../components/ai-chat/right-pane/views/review/changes-list.tsx")
   ])
-  assert.match(pane, /data-frost=\{empty \? undefined : "shell"\}/)
+  assert.match(pane, /reviewEmpty = activeTab\?\.kind === "review" && changes\.length === 0/)
+  assert.match(pane, /data-frost=\{empty \|\| reviewEmpty \? undefined : "shell"\}/)
   assert.match(picker, /relative z-10/)
   assert.match(picker, /bg-background-primary-default/)
   assert.match(reviewEmpty, /relative z-10/)

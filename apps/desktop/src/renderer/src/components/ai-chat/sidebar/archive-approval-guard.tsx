@@ -26,7 +26,7 @@ export function ArchiveApprovalGuard() {
         if (!open) cancelArchivePrompt()
       }}
       onConfirm={() => {
-        void confirmDenyAndArchive()
+        void confirmDenyAndArchive().catch(() => undefined)
       }}
     />
   )

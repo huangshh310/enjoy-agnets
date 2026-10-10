@@ -534,6 +534,7 @@ export const zhChat = {
   archivePendingTitle: "归档这条对话",
   archivePendingDesc: "这条对话还有一个操作等你决定。归档会拒绝它。",
   archivePendingConfirm: "拒绝并归档",
+  archiveFailed: "归档失败，审批或会话没有改动",
   timeJustNow: "刚刚",
   timeMinutes: "{n} 分钟",
   timeHours: "{n} 小时",

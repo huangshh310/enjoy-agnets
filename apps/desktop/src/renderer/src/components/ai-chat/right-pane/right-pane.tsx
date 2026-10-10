@@ -56,10 +56,12 @@ export function RightPane({
   }, [workspaceId, reset])
 
   const empty = tabs.length === 0
+  const activeTab = tabs.find((tab) => tab.id === activeId)
+  const reviewEmpty = activeTab?.kind === "review" && changes.length === 0
 
   return (
     <section
-      data-frost={empty ? undefined : "shell"}
+      data-frost={empty || reviewEmpty ? undefined : "shell"}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
     >
       {empty ? (

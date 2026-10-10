@@ -45,14 +45,29 @@ export function ChatStageHeader({
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden px-5">
       <RiFolder6Line className="size-4 shrink-0 text-text-secondary" aria-hidden />
-      <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
+      <Breadcrumb
+        data-testid="chat-breadcrumb"
+        className="min-w-[12rem] flex-1 overflow-hidden"
+      >
         <BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
-          <BreadcrumbItem className="min-w-0 max-w-[40%]">
-            <span className="block truncate text-body-medium text-text-secondary">{workspaceName}</span>
+          <BreadcrumbItem className="min-w-[4.5rem] max-w-[60%] shrink-0">
+            <span
+              data-testid="chat-breadcrumb-project"
+              title={workspaceName}
+              className="block truncate text-body-medium text-text-secondary"
+            >
+              {workspaceName}
+            </span>
           </BreadcrumbItem>
           <BreadcrumbSeparator className="shrink-0" />
           <BreadcrumbItem className="min-w-0 flex-1">
-            <BreadcrumbPage className="block truncate text-body-medium text-text-primary">{title}</BreadcrumbPage>
+            <BreadcrumbPage
+              data-testid="chat-breadcrumb-title"
+              title={title}
+              className="block truncate text-body-medium text-text-primary"
+            >
+              {title}
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>

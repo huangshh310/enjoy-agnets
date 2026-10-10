@@ -33,14 +33,20 @@ test("接线：确认走 decide deny，取消只关框", () => {
   )
   const life = readFileSync(join(dir, "workspace-lifecycle.ts"), "utf8")
   assert.match(dock, /decidePendingApproval\("deny"\)/)
-  assert.match(deny, /decidePendingApproval\("deny"\)/)
+  assert.match(deny, /decidePendingApprovalOrThrow\("deny"\)/)
   assert.match(deny, /decision:\s*"deny"/)
+  assert.match(deny, /notifyArchiveFailed/)
   assert.match(deny, /archiveCurrentSession/)
   assert.match(deny, /hideSessionAttention/)
   assert.match(guard, /confirmDenyAndArchive/)
   assert.match(guard, /cancelArchivePrompt/)
   assert.match(guard, /chat\.archivePendingConfirm/)
   assert.doesNotMatch(life, /requestArchiveSession/)
+  const confirm = readFileSync(
+    join(dir, "../components/app-pages/confirm-dialog.tsx"),
+    "utf8"
+  )
+  assert.match(confirm, /onConfirm\(\)\s*\n\s*onOpenChange\(false\)/)
 })
 
 test("归档后胶囊不计隐藏会话，徽标为 0", () => {

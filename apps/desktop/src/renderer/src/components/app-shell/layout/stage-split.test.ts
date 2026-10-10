@@ -26,4 +26,8 @@ test("已完成进顶栏状态区，需处理占标题栏下一行，不盖标�
   assert.match(header, /run-ledger-toggle/)
   assert.doesNotMatch(header, /text-text-tertiary/)
   assert.doesNotMatch(header, /text-foreground-icon-secondary/)
+  assert.match(header, /min-w-\[12rem\]/)
+  assert.match(header, /chat-breadcrumb-project/)
+  assert.match(header, /chat-breadcrumb-title/)
+  assert.match(header, /min-w-\[4\.5rem\] max-w-\[60%\] shrink-0/)
 })

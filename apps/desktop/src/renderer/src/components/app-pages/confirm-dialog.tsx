@@ -70,9 +70,10 @@ export function ConfirmDialog({
           <Button
             variant={destructive ? "destructive" : "default"}
             size="sm"
+            data-testid="confirm-dialog-confirm"
             onClick={() => {
-              onOpenChange(false)
               onConfirm()
+              onOpenChange(false)
             }}
           >
             {confirmText}

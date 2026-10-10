@@ -1,5 +1,5 @@
 /**
- * 手绘昼/夜开关。滤镜 id 见组件内 defs。
+ * 昼/夜开关。不用 SVG displacement，避免外观页黄蓝乱线。
  */
 
 .theme-switch {
@@ -33,13 +33,6 @@
   font-size: var(--toggle-size);
 }
 
-.theme-switch__filters {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-
 .theme-switch__container {
   position: relative;
   width: var(--container-width);
@@ -52,7 +45,6 @@
     0 0 0 2.5px #1a1a1a,
     3px 4px 0 2.5px rgb(26 26 26 / 0.22);
   transform: rotate(-0.7deg);
-  filter: url(#theme-switch-sketchy);
   cursor: pointer;
   transition: all var(--transition);
 }
@@ -144,7 +136,6 @@
     transparent 337deg,
     transparent 360deg
   );
-  filter: url(#theme-switch-sketchy-sm);
   opacity: 1;
   pointer-events: none;
   animation: theme-switch-rotate-rays 14s linear infinite;
@@ -164,7 +155,7 @@
     0.062em 0.062em 0.062em 0em rgb(254 255 239 / 0.61) inset,
     0em -0.062em 0.062em 0em #a1872a inset,
     0.1em 0.13em 0 0.04em #1a1a1a;
-  filter: url(#theme-switch-sketchy-sm) drop-shadow(0.062em 0.125em 0.125em rgb(0 0 0 / 0.25));
+  filter: drop-shadow(0.062em 0.125em 0.125em rgb(0 0 0 / 0.25));
   pointer-events: auto;
   transform: scale(1);
   transition: var(--transition);
@@ -192,7 +183,6 @@
   border-radius: var(--container-radius);
   background-color: var(--spot-color);
   box-shadow: 0em 0.0312em 0.062em rgb(0 0 0 / 0.25) inset;
-  filter: url(#theme-switch-sketchy-sm);
 }
 
 .theme-switch__spot:nth-of-type(2) {
@@ -233,7 +223,6 @@
     4.625em -1.75em 0 0.437em var(--clouds-color),
     4em -0.625em var(--back-clouds-color),
     4.125em -2.125em 0 0.437em var(--back-clouds-color);
-  filter: url(#theme-switch-sketchy-sm);
   transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
 }
 

@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（已完成只留最新一颗；切会话/新对话清掉；不抢焦点）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（拒绝并归档先 deny 再 archive；失败 toast）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -170,6 +170,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 ## 已知坑
 
 - 需处理条曾绝对居中盖住会话题和用户气泡。根因：`stage-split` 用 `absolute top-3 inset-x-0 justify-center` 叠在顶栏上。正确做法：「需处理」在 `ChatStageHeader` 下一行占位（`AttentionNeedsBar`），「已完成」进顶栏右侧状态区约 4s 自消；禁止再绝对居中。
+- 「拒绝并归档」点确认后会话仍在、卡仍 pending。根因：确认框先关再确认，`cancelArchivePrompt` 清掉 `sessionId`；kai 主进程也还没 deny-before-archive。正确做法：先确认再关；渲染先走 Dock `decidePendingApprovalOrThrow("deny")`（发 `approval.resolved`），等完再 `session.archive`；失败 toast，禁止静默。兼容 kai 稍后合入的可选 `deniedApprovals`（已 deny 则循环找不到未决，只归档）。验收：`e2e/deny-and-archive.spec.ts`（库 `approvals.decision=deny`、`sessions.archived_at` 非空、侧栏消失、需处理/Inbox 徽标清零）。
 - **隐患**：Inbox「未读」出现大量「运行中」→ 合成 running 被标成未读。正确做法：`synthesize-running-inbox.ts` 固定 `read: true`；`inboxNavCounts.unread` 只计 `!read`。running 不得加成 Attention kind。
 - **隐患**：导航仍按「智能体 / 系统」或「全部 / 运行中」筛 → 旧 IA 残留。正确做法：筛 `InboxCategory` 的 approval / needs_review / failed。
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。

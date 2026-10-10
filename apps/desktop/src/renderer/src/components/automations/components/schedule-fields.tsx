@@ -8,13 +8,8 @@ import { cx } from "@/utils/cx"
 import { useI18n, useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { cronChipLabel } from "../lib/cron-chip-label"
-import {
-  clockValue,
-  cronFromSchedule,
-  parseClockValue,
-  scheduleFromCron,
-  type SchedulePreset
-} from "../lib/schedule-preset"
+import { cronFromSchedule, scheduleFromCron, type SchedulePreset } from "../lib/schedule-preset"
+import { TimePicker24 } from "./time-picker-24"
 import { formatTimezoneAdvanced, formatTimezoneLabel } from "../lib/timezone-label"
 
 const PRESETS: SchedulePreset[] = ["daily", "weekdays", "weekly"]
@@ -100,18 +95,10 @@ export function ScheduleFields({
           ) : null}
           <label className="block">
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.scheduleTime")}</span>
-            <Input
-              type="time"
-              lang="en-GB"
-              step={60}
-              value={clockValue(parsed.hour, parsed.minute)}
-              onChange={(event) => {
-                const next = parseClockValue(event.target.value)
-                if (!next) return
-                onChange({ cronExpr: cronFromSchedule({ ...parsed, ...next }) })
-              }}
-              className="mt-1 w-32"
-              data-testid="automation-schedule-time"
+            <TimePicker24
+              hour={parsed.hour}
+              minute={parsed.minute}
+              onChange={(next) => onChange({ cronExpr: cronFromSchedule({ ...parsed, ...next }) })}
             />
           </label>
         </div>

@@ -149,24 +149,32 @@ export async function decidePendingApproval(
   decision: "allow" | "deny" | "allow_session" | "allow_always",
   answers?: AskUserAnswers
 ) {
+  try {
+    await decidePendingApprovalOrThrow(decision, answers)
+  } catch (error) {
+    const store = useChatStore.getState()
+    store.setError(error instanceof Error ? error.message : String(error))
+  }
+}
+
+/** Dock 与「拒绝并归档」同一条 decide；归档路径要抛错，不能吞。 */
+export async function decidePendingApprovalOrThrow(
+  decision: "allow" | "deny" | "allow_session" | "allow_always",
+  answers?: AskUserAnswers
+) {
   const store = useChatStore.getState()
   const pending = store.pendingApproval
   const runId = resolveApprovalRunId(pending, store.runId)
   if (!pending || !runId) {
-    store.setError("没有等待中的审批。")
-    return
+    throw new Error("没有等待中的审批。")
   }
-  try {
-    await getIde().agent.decide({
-      runId,
-      toolCallId: pending.toolCallId,
-      approvalId: pending.approvalId,
-      decision,
-      ...(answers ? { answers } : {})
-    })
-  } catch (error) {
-    store.setError(error instanceof Error ? error.message : String(error))
-  }
+  await getIde().agent.decide({
+    runId,
+    toolCallId: pending.toolCallId,
+    approvalId: pending.approvalId,
+    decision,
+    ...(answers ? { answers } : {})
+  })
 }
 
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {

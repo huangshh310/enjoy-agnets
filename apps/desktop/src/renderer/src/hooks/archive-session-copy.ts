@@ -22,3 +22,7 @@ export function restoredToastMessage(t: ArchiveToastTranslate): string {
 export function undoArchiveFailedMessage(t: ArchiveToastTranslate): string {
   return t("chat.undoArchiveFailed")
 }
+
+export function archiveFailedMessage(t: ArchiveToastTranslate): string {
+  return t("chat.archiveFailed")
+}

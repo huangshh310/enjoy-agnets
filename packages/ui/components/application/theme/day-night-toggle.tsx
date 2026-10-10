@@ -1,5 +1,5 @@
 /**
- * 昼/夜开关：手绘滤镜 + 日芒 + 夜空特效，结构对齐用户源码。
+ * 昼/夜开关：日芒 + 夜空特效。不用位移滤镜，Linux/Xvfb 上会画成黄蓝乱线。
  */
 import type { MouseEvent } from "react"
 import { cx } from "@/utils/cx"
@@ -23,7 +23,6 @@ export function DayNightToggle({
         onToggle(event)
       }}
     >
-      <SketchFilters />
       <input
         type="checkbox"
         className="theme-switch__checkbox"
@@ -48,23 +47,6 @@ export function DayNightToggle({
         <NightDecor />
       </div>
     </label>
-  )
-}
-
-function SketchFilters() {
-  return (
-    <svg className="theme-switch__filters" aria-hidden="true">
-      <defs>
-        <filter id="theme-switch-sketchy" x="-10%" y="-10%" width="120%" height="120%">
-          <feTurbulence type="turbulence" baseFrequency="0.035 0.042" numOctaves={4} result="noise" seed={42} />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="4.5" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-        <filter id="theme-switch-sketchy-sm" x="-18%" y="-18%" width="136%" height="136%">
-          <feTurbulence type="turbulence" baseFrequency="0.06" numOctaves={3} result="noise" seed={7} />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </defs>
-    </svg>
   )
 }
 
