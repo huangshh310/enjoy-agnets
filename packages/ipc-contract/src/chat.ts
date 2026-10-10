@@ -55,3 +55,15 @@ export const AbortAgentInput = z.object({
   runId: z.string()
 })
 export type AbortAgentInput = z.infer<typeof AbortAgentInput>
+
+/** 回灌问该会话自己的活泵，禁止 OR 前台 running。 */
+export const SessionActiveInput = z.object({
+  sessionId: z.string().min(1)
+})
+export type SessionActiveInput = z.infer<typeof SessionActiveInput>
+
+export const SessionActiveResult = z.object({
+  runId: z.string().nullable(),
+  running: z.boolean()
+})
+export type SessionActiveResult = z.infer<typeof SessionActiveResult>

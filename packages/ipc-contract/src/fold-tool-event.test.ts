@@ -65,6 +65,91 @@ test("带 resumeCode 的 tool.result 也折成 output-denied", () => {
   assert.equal(tools[0]?.state, "output-denied")
 })
 
+test("收工封口：input-available 也封成 output-error，approval-requested 不动", () => {
+  const sealed = sealAbandonedTools([
+    { id: "t1", name: "write_file", state: "input-available" },
+    { id: "t2", name: "write_file", state: "approval-requested" }
+  ])
+  assert.equal(sealed?.[0]?.state, "output-error")
+  assert.equal(sealed?.[0]?.errorText, "No result received.")
+  assert.equal(sealed?.[1]?.state, "approval-requested")
+})
+
+test("用户停封口：input-available 标 user_aborted，审批中标 cancelled 已停止", () => {
+  const sealed = sealAbandonedTools(
+    [
+      { id: "t1", name: "write_file", state: "input-available", args: { path: "e2e-stub.txt" } },
+      { id: "t2", name: "write_file", state: "approval-requested", args: { path: "later.txt" } }
+    ],
+    { aborted: true }
+  )
+  assert.equal(sealed?.[0]?.state, "output-error")
+  assert.deepEqual(sealed?.[0]?.result, { code: "user_aborted" })
+  assert.equal(sealed?.[1]?.state, "output-error")
+  assert.deepEqual(sealed?.[1]?.result, { code: "user_aborted", decision: "cancelled" })
+})
+
+test("approval.resolved cancelled + run_failed 不是已停止", () => {
+  const tools: ThreadToolCall[] = [
+    { id: "t1", name: "write_file", state: "approval-requested", args: { path: "note.txt" } }
+  ]
+  foldToolEvent(tools, {
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "run_failed"
+  })
+  const row = tools[0]
+  assert.ok(row)
+  assert.equal(row.state, "output-error")
+  const result = row.result as { decision?: string; code?: string }
+  assert.equal(result.decision, "cancelled")
+  assert.equal(result.code, "run_failed")
+  assert.notEqual(result.code, "user_aborted")
+})
+
+test("approval.resolved cancelled 折成已停止，不是已拒绝", () => {
+  const tools: ThreadToolCall[] = [
+    { id: "t1", name: "write_file", state: "approval-requested", args: { path: "note.txt" } }
+  ]
+  foldToolEvent(tools, {
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled"
+  })
+  const row = tools[0]
+  assert.ok(row)
+  assert.equal(row.state, "output-error")
+  const result = row.result as { decision?: string; code?: string }
+  assert.equal(result.decision, "cancelled")
+  assert.equal(result.code, "user_aborted")
+})
+
+test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
+  const tools: ThreadToolCall[] = []
+  foldToolEvent(tools, {
+    type: "tool.start",
+    runId: "r1",
+    toolCallId: "parent",
+    name: "delegate",
+    args: { task: "look around" }
+  })
+  foldToolEvent(tools, {
+    type: "tool.start",
+    runId: "r1",
+    toolCallId: "child",
+    name: "mcp_fs__move_file",
+    args: { path: "a.ts" },
+    parentToolCallId: "parent"
+  })
+  assert.equal(tools.length, 2)
+  assert.equal(tools[0]?.name, "delegate")
+  assert.equal(tools[1]?.name, "mcp_fs__move_file")
+  assert.equal(tools[1]?.parentToolCallId, "parent")
+})
+
 test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {
   const sealed = sealAbandonedTools([
     {

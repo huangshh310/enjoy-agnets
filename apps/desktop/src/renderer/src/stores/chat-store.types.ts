@@ -213,6 +213,8 @@ export type ChatStore = {
   selectedFilePath: string | null
   selectedFileContent: string
   changes: ChangedFileRow[]
+  /** null=还没问过；false=这个文件夹不是 git 仓库。 */
+  gitRepo: boolean | null
   additions: number
   deletions: number
   /** 改动条 Keep/Undo 后隐藏；新 run 或文件集合变化再出现。 */
@@ -285,7 +287,7 @@ export type ChatStore = {
     remoteError?: string | null
   ) => void
   setSelectedFile: (path: string | null, content: string) => void
-  setChanges: (changes: ChangedFileRow[]) => void
+  setChanges: (changes: ChangedFileRow[], gitRepo?: boolean | null) => void
   setSessionReviewDismissedKey: (key: string | null) => void
   setPendingApproval: (event: ChatStore["pendingApproval"]) => void
   setModels: (models: ModelOption[]) => void

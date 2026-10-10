@@ -4,9 +4,11 @@
  */
 import { z } from "zod"
 import { AutomationRunSource } from "./automations-missed.ts"
+import { APPROVAL_RESOLVED_CODES } from "./desktop-notify.ts"
 import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
+import { TurnOutcome } from "./turn-outcome.ts"
 
 const Envelope = {
   sequence: z.number().int().optional(),
@@ -66,7 +68,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     toolCallId: z.string(),
     approvalId: z.string(),
     name: z.string(),
-    args: z.unknown(),
+    args: z.unknown().optional(),
     /** 自动化补跑 / 准点来源；缺省不是自动化。 */
     automationSource: AutomationRunSource.optional(),
     ...Envelope
@@ -75,7 +77,10 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("approval.resolved"),
     runId: z.string(),
     toolCallId: z.string(),
-    decision: z.enum(["allow", "deny", "allow_session", "allow_always"]),
+    /** 用户 deny 与系统 cancelled（Stop / 归档 / 超时）分开，禁止把停当成拒绝。 */
+    decision: z.enum(["allow", "deny", "allow_session", "allow_always", "cancelled"]),
+    /** Stop 默认 `user_aborted`；泵真实出错传 `run_failed`，禁止默认同 Stop。 */
+    code: z.enum(APPROVAL_RESOLVED_CODES).optional(),
     ...Envelope
   }),
   z.object({
@@ -85,8 +90,22 @@ export const StreamEvent = z.discriminatedUnion("type", [
     kind: z.enum(["created", "modified", "deleted"]),
     ...Envelope
   }),
-  z.object({ type: z.literal("run.end"), runId: z.string(), ...Envelope }),
-  z.object({ type: z.literal("run.error"), runId: z.string(), message: z.string(), ...Envelope }),
+  z.object({
+    type: z.literal("run.end"),
+    runId: z.string(),
+    /** main 收工判定；缺省时 renderer 回落旧逻辑。 */
+    turn: TurnOutcome.optional(),
+    ...Envelope
+  }),
+  z.object({
+    type: z.literal("run.error"),
+    runId: z.string(),
+    message: z.string(),
+    /** 用户停 / 归档：`user_aborted`。renderer 只认这码走中性已停止。 */
+    code: z.string().optional(),
+    turn: TurnOutcome.optional(),
+    ...Envelope
+  }),
   z.object({
     type: z.literal("message.part.start"),
     runId: z.string(),

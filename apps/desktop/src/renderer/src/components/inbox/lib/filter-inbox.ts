@@ -17,6 +17,19 @@ export function isApprovalItem(item: InboxNotification): boolean {
   return item.copyKey === "pending_approval" || item.copyKey === "ask_user"
 }
 
+/** 拍板只认活会话上仍 active/focused 的未决；已决与已归档会话不进 Inbox / 徽标。 */
+function isLiveInboxAttention(
+  item: AttentionItem,
+  repositories?: RepositoryNode[]
+): boolean {
+  if (item.kind === "pending_approval" || item.kind === "ask_user") {
+    if (item.status !== "active" && item.status !== "focused") return false
+  }
+  const liveSessions = repositories?.filter((row) => row.kind === "session") ?? []
+  if (liveSessions.length === 0) return true
+  return liveSessions.some((row) => row.id === item.sessionId)
+}
+
 export function isFailedItem(item: InboxNotification): boolean {
   return item.copyKey === "error" || item.copyKey === "aborted"
 }
@@ -36,6 +49,7 @@ export function inboxFromAttention(
 ): InboxNotification[] {
   return items
     .filter((item) => !input.hiddenIds.has(item.id))
+    .filter((item) => isLiveInboxAttention(item, input.repositories))
     .map((item) => {
       const isAborted =
         item.kind === "error" &&

@@ -20,6 +20,7 @@ export function RightPanePicker({ onPick }: { onPick: (kind: RightPaneKind) => v
             <li key={tool.kind}>
               <button
                 type="button"
+                data-testid={`pane-pick-${tool.kind}`}
                 onClick={() => onPick(tool.kind)}
                 className={cx(
                   "flex w-full items-center gap-3 rounded-2lg px-3 py-2 text-left",

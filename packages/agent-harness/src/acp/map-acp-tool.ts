@@ -41,7 +41,9 @@ function inferToolName(rec: Record<string, unknown>): string {
   const kind = String(rec.kind ?? rec.toolKind ?? "").toLowerCase()
   if (/^(task|delegate|subagent)$/.test(kind)) return "delegate"
   if (kind === "read") return "read_file"
-  if (kind === "edit" || kind === "write" || kind === "delete") return "edit_file"
+  if (kind === "edit" || kind === "write" || kind === "delete" || kind === "move" || kind === "rename") {
+    return "edit_file"
+  }
   if (kind === "execute" || kind === "shell" || kind === "terminal" || kind === "bash") return "bash"
   if (kind === "search" || kind === "grep" || kind === "glob") return "grep"
 
@@ -66,7 +68,9 @@ function classifyTitle(title: string): string | null {
   if (/^(task|delegate|subagent)$/i.test(title)) return "delegate"
   if (/^(explore|scout)\b/i.test(title)) return "delegate"
   if (/^read\b/i.test(title)) return "read_file"
-  if (/^(edit|write|create|delete|update|patch|strreplace)\b/i.test(title)) return "edit_file"
+  if (/^(edit|write|create|delete|update|patch|strreplace|move|rename)\b/i.test(title)) {
+    return "edit_file"
+  }
   if (/^(run|bash|shell|exec)\b/i.test(title)) return "bash"
   return null
 }

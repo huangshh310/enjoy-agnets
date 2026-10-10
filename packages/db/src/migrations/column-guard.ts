@@ -77,3 +77,8 @@ export function repairClaimedV14(sqlite: DatabaseSync): void {
   addColumnIfMissing(sqlite, "telemetry_metrics", "cost_missing", "TEXT")
   ensureApprovalSdkColumns(sqlite)
 }
+
+/** v16 已记账或缺跑时补精选 marker 列，禁止重加。 */
+export function ensureCuratedPresetIdColumn(sqlite: DatabaseSync): void {
+  addColumnIfMissing(sqlite, "mcp_servers", "curated_preset_id", "TEXT")
+}

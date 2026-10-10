@@ -46,6 +46,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const kind = classifyThreadError(error)
+  if (kind === "stopped") return null
   const runtimeId = useChatStore((state) => state.runtimeId)
   const loginLoop = useCliLoginLoop(runtimeId)
   const messages = useChatStore((state) => state.messages)

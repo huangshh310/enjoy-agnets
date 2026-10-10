@@ -73,3 +73,74 @@ export const MUTATING_TOOLS: readonly string[] = [
   ...COMMIT_TOOLS,
   ...HOST_CONTROL_TOOLS
 ]
+
+/**
+ * 收工判定唯一只读白名单。未知 MCP / ACP 弱名默认当可能改盘。
+ * `delegate` 本身不改盘，子工具已折进同一份 `run.tools`。
+ */
+const READ_ONLY_TYPE_LEAVES = new Set([
+  "read_file",
+  "read",
+  "list_dir",
+  "list",
+  "desktop_list_apps",
+  "glob",
+  "grep",
+  "repo_outline",
+  "outline",
+  "git_status",
+  "git_diff",
+  "git_log",
+  "desktop_snapshot",
+  "snapshot",
+  "desktop_screenshot",
+  "screenshot",
+  "browser_extract_content",
+  "extract",
+  "todo_write",
+  "todo",
+  "update_todos",
+  "ask_user_questions",
+  "ask",
+  "submit_plan",
+  "plan",
+  "delegate",
+  "task",
+  "subagent"
+])
+
+/** MCP `mcp_server__leaf` 与 ACP 弱名都取叶子。MCP 写类不看叶子名。 */
+export function toolNameLeaf(name: string): string {
+  const trimmed = name.trim()
+  const sep = trimmed.indexOf("__")
+  return sep >= 0 ? trimmed.slice(sep + 2) : trimmed
+}
+
+export function isMcpToolName(name: string): boolean {
+  return name.includes("__") || name.startsWith("mcp_")
+}
+
+/** MCP 只有声明 `readOnlyHint: true` 才只读；默认全是写。 */
+const mcpReadOnlyHints = new Set<string>()
+
+export function rememberMcpReadOnlyHint(toolName: string, readOnly: boolean): void {
+  if (readOnly) mcpReadOnlyHints.add(toolName)
+  else mcpReadOnlyHints.delete(toolName)
+}
+
+export function clearMcpReadOnlyHints(): void {
+  mcpReadOnlyHints.clear()
+}
+
+/**
+ * 写类：不在只读白名单里的都算可能改盘。
+ * MCP 不按叶子名：`mcp_x__snapshot` / `mcp_jira__task` 都是写，除非登记了 readOnlyHint。
+ */
+export function isWriteTypeToolName(name: string): boolean {
+  const trimmed = name.trim()
+  if (!trimmed) return false
+  if (isMcpToolName(trimmed)) return !mcpReadOnlyHints.has(trimmed)
+  const leaf = toolNameLeaf(trimmed)
+  const normalized = leaf.toLowerCase().replace(/[\s-]/g, "_")
+  return !READ_ONLY_TYPE_LEAVES.has(normalized)
+}

@@ -1,6 +1,11 @@
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { StreamEvent, type AskUserAnswers, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
+import {
+  StreamEvent,
+  readWorkspaceChangesResult,
+  type AskUserAnswers,
+  type SettingsSnapshot
+} from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
@@ -21,11 +26,7 @@ import {
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import type { WorkspaceRow } from "./workspace-row"
 import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
-import {
-  useChatStore,
-  type ChangedFileRow,
-  type ModelOption
-} from "../stores/chat-store"
+import { useChatStore, type ModelOption } from "../stores/chat-store"
 import { pickForegroundSession } from "./pick-foreground-session"
 import { resolveApprovalRunId } from "./resolve-approval-run"
 import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
@@ -108,9 +109,11 @@ export function useAgentSession() {
     queryKey: ["changes", workspaceId],
     enabled: hasIde() && Boolean(workspaceId),
     queryFn: async () => {
-      const rows = (await getIde().workspace.changes({ workspaceId: workspaceId as string })) as ChangedFileRow[]
-      useChatStore.getState().setChanges(rows)
-      return rows
+      const parsed = readWorkspaceChangesResult(
+        await getIde().workspace.changes({ workspaceId: workspaceId as string })
+      )
+      useChatStore.getState().setChanges(parsed.files, parsed.gitRepo ?? null)
+      return parsed.files
     }
   })
 

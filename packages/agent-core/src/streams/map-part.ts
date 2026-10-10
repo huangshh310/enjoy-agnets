@@ -26,7 +26,10 @@ const ENJOY_TYPES = new Set([
 
 export function mapStreamPart(part: Record<string, unknown>, runId: string): StreamEvent | null {
   const type = String(part.type ?? "")
-  if (ENJOY_TYPES.has(type)) return part as StreamEvent
+  if (ENJOY_TYPES.has(type)) {
+    // Enjoy 自组 approval.required 缺 args 时原样放行，禁止在这里填 {}。
+    return part as StreamEvent
+  }
   const text = readPartText(part)
 
   if (type === "text-delta") {
@@ -130,7 +133,7 @@ function mapToolPart(part: Record<string, unknown>, runId: string): StreamEvent 
       toolCallId,
       approvalId: String(part.approvalId ?? ""),
       name,
-      args
+      ...(args !== undefined ? { args } : {})
     }
   }
   return null

@@ -1,5 +1,5 @@
 /**
- * 本轮工具：按 ToolCallState 显示进行中 / 完成 / 失败 / 拒绝。
+ * 本轮工具：按 ToolCallState 显示进行中 / 完成 / 失败 / 拒绝 / 已停止。
  */
 import { RiCheckLine, RiCloseLine, RiCommandLine, RiLoader4Line } from "@remixicon/react"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
@@ -56,6 +56,7 @@ function statusLabel(kind: ReturnType<typeof toolRunKind>, t: TranslateFn) {
   if (kind === "error") return t("chat.inspectorToolError")
   if (kind === "denied") return t("chat.inspectorToolDenied")
   if (kind === "skipped") return t("chat.toolStaleObservation")
+  if (kind === "stopped") return t("chat.toolStopped")
   return t("chat.inspectorToolRunning")
 }
 
@@ -72,6 +73,14 @@ function ToolMark({ kind, label }: { kind: ReturnType<typeof toolRunKind>; label
     return (
       <span className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
         <span className="size-1.5 rounded-full bg-text-tertiary" />
+        {label}
+      </span>
+    )
+  }
+  if (kind === "stopped") {
+    return (
+      <span className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
+        <RiCloseLine className="size-3" />
         {label}
       </span>
     )

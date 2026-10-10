@@ -65,7 +65,9 @@ test("允许后先 tool-result 再正文，toolCallId 对上审批卡", async ()
 test("允许后写入 ENJOY_E2E_WORKSPACE/e2e-stub.txt", async () => {
   const root = await mkdtemp(join(tmpdir(), "enjoy-stub-write-"))
   const previous = process.env.ENJOY_E2E_WORKSPACE
+  const previousStub = process.env.ENJOY_E2E_STUB
   process.env.ENJOY_E2E_WORKSPACE = root
+  process.env.ENJOY_E2E_STUB = "1"
   try {
     const written = await writeStubApprovedFile()
     // macOS `/tmp` → `/private/tmp`；跟 jail 同一套 realpath，不要和 mkdtemp 字面路径比。
@@ -74,6 +76,17 @@ test("允许后写入 ENJOY_E2E_WORKSPACE/e2e-stub.txt", async () => {
     assert.equal(await readFile(written, "utf8"), STUB_WRITE_CONTENT)
   } finally {
     process.env.ENJOY_E2E_WORKSPACE = previous
+    process.env.ENJOY_E2E_STUB = previousStub
     await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("打包态不写 stub 盘", async () => {
+  const previousStub = process.env.ENJOY_E2E_STUB
+  process.env.ENJOY_E2E_STUB = "1"
+  try {
+    assert.equal(await writeStubApprovedFile("/tmp/not-used", true), null)
+  } finally {
+    process.env.ENJOY_E2E_STUB = previousStub
   }
 })

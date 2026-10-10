@@ -8,7 +8,14 @@ import { inferSubagentKind, pickDelegateTitle } from "../thinking/delegate-step.
 import { mapToolStatus, mergeToolArgs } from "../thinking/extract-step-fields.ts"
 import type { SubagentKind } from "../thinking/agent-step-tree.types.ts"
 
-export type DelegatePillStatus = "pending" | "running" | "completed" | "error" | "denied" | "skipped"
+export type DelegatePillStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "error"
+  | "denied"
+  | "skipped"
+  | "stopped"
 
 export type DelegatePillItem = {
   id: string

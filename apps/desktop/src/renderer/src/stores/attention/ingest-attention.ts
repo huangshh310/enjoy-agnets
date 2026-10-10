@@ -24,8 +24,17 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "approval.required") {
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
+  if (event.type === "run.start") return null
+  // 只信 turn.neutral 不当出错（Stop / 归档）。其余一律 error，禁止把 run.error 折成 complete。
   if (event.type === "run.error") {
-    return isApprovalNotExecutedMessage(event.message) ? "complete" : "error"
+    if (event.turn?.attention === "neutral") return null
+    if (isApprovalNotExecutedMessage(event.message)) return "complete"
+    return "error"
+  }
+  if (event.type === "run.end" && event.turn) {
+    if (event.turn.attention === "complete") return "complete"
+    if (event.turn.attention === "error") return "error"
+    return null
   }
   if (event.type === "run.end") return "complete"
   return null
@@ -42,20 +51,26 @@ export function ingestAttentionEvent(
 ): AttentionItem[] {
   const now = input.now ?? Date.now()
   const aged = expireStaleCompletes(items, now)
+  if (input.event.type === "run.start") {
+    return resolveTerminalSlots(aged, input.sessionId)
+  }
   if (input.event.type === "approval.resolved") {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   const kind = attentionKindFromEvent(input.event)
-  if (kind === "complete" && input.omitComplete) {
+  if (isNeutralTurn(input) || (kind === "complete" && input.omitComplete)) {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   if (!kind) return aged
+  const decided = resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   const cleared =
-    kind === "complete" || kind === "error"
-      ? resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
-      : kind === "pending_approval" || kind === "ask_user"
-        ? resolveTerminalSlots(aged, input.sessionId)
-        : aged
+    kind === "error"
+      ? resolveTerminalSlots(decided, input.sessionId)
+      : kind === "complete"
+        ? decided
+        : kind === "pending_approval" || kind === "ask_user"
+          ? resolveTerminalSlots(aged, input.sessionId)
+          : aged
   const next = upsertSlot(cleared, {
     sessionId: input.sessionId,
     workspaceId: input.workspaceId,
@@ -88,7 +103,33 @@ export function dismissAttentionSlot(items: AttentionItem[], id: string): Attent
   return items.map((item) => (item.id === id ? { ...item, status: "dismissed" } : item))
 }
 
+/** 归档后清掉该会话全部胶囊：需处理 / 出错 / 已完成都不留。 */
+export function clearSessionAttention(items: AttentionItem[], sessionId: string): AttentionItem[] {
+  return items.map((item) => {
+    if (item.sessionId !== sessionId) return item
+    if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
+      return item
+    }
+    return { ...item, status: "resolved" }
+  })
+}
+
 /** 新审批进场时只收同会话已完成，未处理的 error 保留。 */
+/** 切到已出错会话 / 新 error 进场：收掉该会话旧的已完成，禁止两粒并排。 */
+export function clearCompleteIfSessionErrored(
+  items: AttentionItem[],
+  sessionId: string
+): AttentionItem[] {
+  const errored = items.some(
+    (item) =>
+      item.sessionId === sessionId &&
+      item.kind === "error" &&
+      (item.status === "active" || item.status === "focused")
+  )
+  if (!errored) return items
+  return resolveTerminalSlots(items, sessionId)
+}
+
 export function resolveTerminalSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
   return items.map((item) => {
     if (item.sessionId !== sessionId) return item
@@ -118,8 +159,20 @@ export function resolveDecisionSlots(
 
 /** Strip 画 active/focused；当前会话决策面在 Dock，胶囊收成微点。 */
 export function stripVisibleItems(items: AttentionItem[]): AttentionItem[] {
+  const errored = new Set(
+    items
+      .filter(
+        (item) =>
+          item.kind === "error" && (item.status === "active" || item.status === "focused")
+      )
+      .map((item) => item.sessionId)
+  )
   return sortByPriority(
-    items.filter((item) => item.status === "active" || item.status === "focused")
+    items.filter((item) => {
+      if (item.status !== "active" && item.status !== "focused") return false
+      if (item.kind === "complete" && errored.has(item.sessionId)) return false
+      return true
+    })
   )
 }
 
@@ -173,6 +226,11 @@ function upsertSlot(
   const index = items.findIndex((item) => item.id === id)
   if (index < 0) return [...items, next]
   return items.map((item, i) => (i === index ? { ...next, workspaceId: next.workspaceId ?? item.workspaceId } : item))
+}
+
+function isNeutralTurn(input: IngestAttentionInput): boolean {
+  const event = input.event
+  return (event.type === "run.end" || event.type === "run.error") && event.turn?.attention === "neutral"
 }
 
 function summaryFor(kind: AttentionKind, input: IngestAttentionInput): string {

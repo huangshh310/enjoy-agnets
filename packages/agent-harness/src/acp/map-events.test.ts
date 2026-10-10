@@ -370,6 +370,23 @@ test("Explore 标题无 input 时去掉前缀再当 title", () => {
   }
 })
 
+test("ACP completed 写工具发 tool.result，fold 后是 output-available", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call_update",
+      toolCallId: "t-write",
+      title: "Write File",
+      kind: "edit",
+      rawInput: { path: "note.txt", content: "x" },
+      status: "completed"
+    },
+    "run_1"
+  )
+  const result = events.find((event) => event.type === "tool.result")
+  assert.equal(result?.type, "tool.result")
+  if (result?.type === "tool.result") assert.equal(result.error, undefined)
+})
+
 test("有 parentToolCallId 则转发到 tool.start / tool.result", () => {
   const events = mapAcpUpdate(
     {

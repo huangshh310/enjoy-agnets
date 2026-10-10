@@ -13,7 +13,11 @@ import { tool } from "ai"
 import { z } from "zod"
 import { checkDesktopPermissions } from "../builtin-tools-state"
 import { currentToolRunId } from "../../active-run-id"
-import { currentPumpingRunId } from "../../agent-run-state"
+import { currentPumpingRunId, getActiveRun } from "../../agent-run-state"
+import {
+  shouldCancelInFlightDesktopAct,
+  type DesktopActOwner
+} from "./desktop-act-cancel"
 import { beginDesktopActOverlay, endDesktopActOverlay } from "../desktop-overlay-chrome"
 import { rememberInputMonitoring } from "../desktop-input-watch"
 import { resolveDesktopActRunId } from "../desktop-overlay-lifecycle"
@@ -62,6 +66,7 @@ const actSchema = z.object({
 })
 
 let singleton: DesktopSession | null = null
+let inFlightOwner: DesktopActOwner | null = null
 
 function sharedSession(): DesktopSession {
   singleton ??= createDesktopSession(openExecutor, {
@@ -70,13 +75,19 @@ function sharedSession(): DesktopSession {
     onView: setLastDesktopView,
     resolveCommand: () => resolveExecutorCommand(),
     onAct: (input, observation) => {
+      const runId = resolveDesktopActRunId(undefined, currentToolRunId(), currentPumpingRunId())
+      inFlightOwner = {
+        runId,
+        sessionId: runId ? getActiveRun(runId)?.input.sessionId : undefined
+      }
       beginDesktopActOverlay({
         action: input.action,
         appName: observation.appName,
-        runId: resolveDesktopActRunId(undefined, currentToolRunId(), currentPumpingRunId())
+        runId
       })
     },
     onActEnd: () => {
+      inFlightOwner = null
       endDesktopActOverlay()
     },
     advancedCoords: () => readPreferences().desktopAdvancedCoords === true
@@ -95,7 +106,8 @@ export function desktopControlTools(session = sharedSession()) {
 }
 
 /** 用户停：拒绝在途 act。协议无 cancel RPC，执行器侧 kill 在途请求。 */
-export function cancelInFlightDesktopAct(): void {
+export function cancelInFlightDesktopAct(scope?: DesktopActOwner): void {
+  if (!shouldCancelInFlightDesktopAct(inFlightOwner, scope)) return
   singleton?.cancelInFlight()
 }
 

@@ -15,13 +15,14 @@ export type McpServerRow = {
   appOnlyTools: string
   trusted: number
   createdAt: number
+  curatedPresetId: string | null
 }
 
 export function upsertMcpServer(db: AppDatabase, row: McpServerRow): void {
   db.prepare(
     `INSERT INTO mcp_servers
-      (id, name, transport, command, url, env_ref, allowed_resource_uris, model_visible_tools, app_only_tools, trusted, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, name, transport, command, url, env_ref, allowed_resource_uris, model_visible_tools, app_only_tools, trusted, created_at, curated_preset_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        transport = excluded.transport,
@@ -31,7 +32,8 @@ export function upsertMcpServer(db: AppDatabase, row: McpServerRow): void {
        allowed_resource_uris = excluded.allowed_resource_uris,
        model_visible_tools = excluded.model_visible_tools,
        app_only_tools = excluded.app_only_tools,
-       trusted = excluded.trusted`
+       trusted = excluded.trusted,
+       curated_preset_id = excluded.curated_preset_id`
   ).run(
     row.id,
     row.name,
@@ -43,7 +45,8 @@ export function upsertMcpServer(db: AppDatabase, row: McpServerRow): void {
     row.modelVisibleTools,
     row.appOnlyTools,
     row.trusted,
-    row.createdAt
+    row.createdAt,
+    row.curatedPresetId
   )
 }
 
@@ -53,7 +56,8 @@ export function listMcpServers(db: AppDatabase): McpServerRow[] {
       `SELECT id, name, transport, command, url, env_ref as envRef,
               allowed_resource_uris as allowedResourceUris,
               model_visible_tools as modelVisibleTools,
-              app_only_tools as appOnlyTools, trusted, created_at as createdAt
+              app_only_tools as appOnlyTools, trusted, created_at as createdAt,
+              curated_preset_id as curatedPresetId
        FROM mcp_servers ORDER BY created_at DESC`
     )
     .all() as McpServerRow[]

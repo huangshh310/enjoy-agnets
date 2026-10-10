@@ -5,6 +5,7 @@ import { applyMigrations, MIGRATIONS } from "./runner.ts"
 import {
   columnExists,
   ensureApprovalsSdkIdentityIndex,
+  ensureCuratedPresetIdColumn,
   repairClaimedV14
 } from "./column-guard.ts"
 
@@ -13,9 +14,10 @@ test("cost_missing 已存在时 015 不报错", () => {
   applyMigrations(db, MIGRATIONS.filter((item) => item.version <= 13))
   db.exec("ALTER TABLE telemetry_metrics ADD COLUMN cost_missing TEXT")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [14, 15])
+  assert.deepEqual(applied, [14, 15, 16])
   assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), true)
   assert.equal(columnExists(db, "approvals", "sdk_approval_id"), true)
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), true)
 })
 
 test("审批 SDK 列已存在时 v14 不报错", () => {
@@ -24,7 +26,7 @@ test("审批 SDK 列已存在时 v14 不报错", () => {
   db.exec("ALTER TABLE approvals ADD COLUMN request_args TEXT")
   db.exec("ALTER TABLE approvals ADD COLUMN sdk_approved INTEGER")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [14, 15])
+  assert.deepEqual(applied, [14, 15, 16])
   assert.equal(columnExists(db, "approvals", "request_args"), true)
   assert.equal(columnExists(db, "approvals", "sdk_approved"), true)
   assert.equal(columnExists(db, "approvals", "sdk_approval_id"), true)
@@ -40,7 +42,7 @@ test("旧分支把 v14 记成 cost-missing 时补上审批 SDK 列", () => {
   )
   assert.equal(columnExists(db, "approvals", "sdk_approved"), false)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [15])
+  assert.deepEqual(applied, [15, 16])
   assert.equal(columnExists(db, "telemetry_metrics", "cost_missing"), true)
   assert.equal(columnExists(db, "approvals", "request_args"), true)
   assert.equal(columnExists(db, "approvals", "sdk_approved"), true)
@@ -66,6 +68,17 @@ test("库里有重复三元组时建 UNIQUE 不挡住启动", () => {
   `)
   assert.doesNotThrow(() => repairClaimedV14(db))
   assert.doesNotThrow(() => ensureApprovalsSdkIdentityIndex(db))
+})
+
+test("v16 已记账但缺 curated_preset_id 时迁移后补列", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  db.exec("ALTER TABLE mcp_servers DROP COLUMN curated_preset_id")
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), false)
+  assert.deepEqual(applyMigrations(db), [])
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), true)
+  ensureCuratedPresetIdColumn(db)
+  assert.equal(columnExists(db, "mcp_servers", "curated_preset_id"), true)
 })
 
 test("没有 v14 记账时不提前加 sdk 列", () => {

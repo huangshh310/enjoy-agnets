@@ -15,6 +15,16 @@ export type AgentStepKind =
 /** 子智能体人格：Explore 只读调查，General 跟父模式。文案不翻译。 */
 export type SubagentKind = "explore" | "general"
 
+/** 含 Stop 封口的已停止；渲染层不得把 stopped 当成 completed。 */
+export type AgentStepStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "error"
+  | "denied"
+  | "skipped"
+  | "stopped"
+
 export interface DomainPill {
   id: string
   label: string
@@ -36,7 +46,7 @@ export interface BatchFileItem {
   actionVerb?: string
   additions?: number
   deletions?: number
-  status: "pending" | "running" | "completed" | "error" | "denied" | "skipped"
+  status: AgentStepStatus
 }
 
 export interface AgentStepNode {
@@ -48,7 +58,7 @@ export interface AgentStepNode {
   output?: string
   exitCode?: number
   errorText?: string
-  status: "pending" | "running" | "completed" | "error" | "denied" | "skipped"
+  status: AgentStepStatus
   /** 用户拒绝审批：渲染「已拒绝」，不要红失败。 */
   denied?: boolean
   domainPills?: DomainPill[]

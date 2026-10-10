@@ -30,6 +30,7 @@ export function ComposerSessionReview() {
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const runStartedAt = useChatStore((state) => state.runStartedAt)
+  const waitingApproval = Boolean(useChatStore((state) => state.pendingApproval))
   const modelLabel = useComposerActiveModelLabel()
   const model = useSessionReviewModel()
   const preview = useOpenSessionPreview()
@@ -79,6 +80,7 @@ export function ComposerSessionReview() {
           files={model.files}
           running={running}
           runStartedAt={runStartedAt ?? undefined}
+          waitingApproval={waitingApproval}
           modelLabel={modelLabel}
           busy={busy}
           canOpenPreview={canOpenPreview}
@@ -116,6 +118,7 @@ function ReviewCard({
   files,
   running,
   runStartedAt,
+  waitingApproval,
   modelLabel,
   busy,
   canOpenPreview,
@@ -128,6 +131,7 @@ function ReviewCard({
   files: SessionReviewFile[]
   running: boolean
   runStartedAt?: number
+  waitingApproval?: boolean
   modelLabel: string
   busy: boolean
   canOpenPreview: boolean
@@ -148,6 +152,7 @@ function ReviewCard({
         files={files}
         running={running}
         runStartedAt={runStartedAt}
+        waitingApproval={waitingApproval}
         modelLabel={modelLabel}
         busy={busy}
         hasFiles={files.length > 0}

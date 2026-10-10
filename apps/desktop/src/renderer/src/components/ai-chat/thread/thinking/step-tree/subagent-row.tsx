@@ -66,6 +66,8 @@ export function SubagentRow({
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             {node.status === "running" ? (
               <RiLoader4Line className="size-3.5 animate-spin text-accent-500" />
+            ) : node.status === "stopped" ? (
+              <span className="shrink-0 text-caption-2-medium text-text-tertiary">{t("chat.toolStopped")}</span>
             ) : failedHint ? (
               <span className="shrink-0 text-caption-2-medium text-text-error-primary">{failedHint}</span>
             ) : childStepCount > 0 ? (

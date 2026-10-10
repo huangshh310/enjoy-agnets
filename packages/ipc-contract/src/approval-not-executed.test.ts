@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   APPROVAL_ARGS_MISMATCH,
+  APPROVAL_ARGS_MISSING,
+  APPROVAL_ARGS_MISSING_COPY,
   APPROVAL_REPLAY_DENIED,
   APPROVAL_ARGS_MISMATCH_COPY,
   isStaleObservationAfterAllow,
@@ -34,8 +36,30 @@ test("未执行：deny 态、回放码、参数不一致、resumeCode 都算", (
     }),
     true
   )
+  assert.equal(
+    isToolNotExecuted({
+      state: "output-error",
+      result: { code: APPROVAL_ARGS_MISSING },
+      errorText: APPROVAL_ARGS_MISSING_COPY
+    }),
+    true
+  )
   assert.equal(isToolNotExecuted({ state: "output-available" }), false)
   assert.equal(isToolNotExecuted({ state: "output-error", errorText: "Explore mode is read-only." }), false)
+  assert.equal(
+    isToolNotExecuted({
+      state: "output-error",
+      result: { code: "user_aborted", decision: "cancelled" }
+    }),
+    true
+  )
+  assert.equal(
+    isToolNotExecuted({
+      state: "output-error",
+      result: { code: "user_aborted" }
+    }),
+    false
+  )
 })
 
 test("stale_observation + allow 不是用户拒绝", () => {

@@ -131,14 +131,13 @@ async function maybeReparkSecondConfirm(
   )
   if (!isDesktopSecondConfirmResult(desktopResume)) return false
   const { reparkDesktopSecondConfirm } = await import("./repark-desktop-second-confirm")
-  await reparkDesktopSecondConfirm({
+  return reparkDesktopSecondConfirm({
     run,
     runId,
     window,
     pending,
     result: desktopResume ?? {}
   })
-  return true
 }
 
 function applyApprovalDecision(

@@ -29,6 +29,7 @@ import {
   sshWorkspaceSwitch
 } from "./workspace-ssh-io.ts"
 import type { WorkspaceRecord } from "./workspace-record.ts"
+import type { WorkspaceChangesSnapshot } from "./workspace-git.ts"
 
 function hostForWorkspace(record: WorkspaceRecord) {
   return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
@@ -39,7 +40,7 @@ function assertConnected(ws: WorkspaceRecord, action: string) {
   if (getSshPoolEntry(ws.id)?.status !== "connected") throw disconnectedError(action)
 }
 
-export async function dispatchChanges(workspaceId: string) {
+export async function dispatchChanges(workspaceId: string): Promise<WorkspaceChangesSnapshot> {
   const ws = await getWorkspace(workspaceId)
   assertConnected(ws, "git")
   if (ws.kind === "ssh") return sshWorkspaceChanges(hostForWorkspace(ws))
