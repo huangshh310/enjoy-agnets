@@ -2,7 +2,7 @@
  * 会话行操作菜单：星标、状态切换、归档。
  * 触发钮必须始终占位：`hidden` 在开菜单后失悬停会丢掉 bbox，Radix 会把菜单钉到窗口左上。
  */
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   RiBookmarkFill,
   RiBookmarkLine,
@@ -28,6 +28,13 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import {
+  applySessionMenuCloseFocus,
+  SESSION_MENU_COLLISION,
+  sessionMenuAlign,
+  sessionMenuMaxHeight,
+  type SessionMenuAlign
+} from "./session-menu-placement"
+import {
   WORKFLOW_STATUS_LIST,
   WORKFLOW_STATUSES,
   type SessionWorkflowStatus
@@ -50,7 +57,23 @@ export function SessionRowMenu({
 }: SessionRowMenuProps) {
   const t = useT()
   const [open, setOpen] = useState(false)
+  const [align, setAlign] = useState<SessionMenuAlign>("start")
+  const [maxHeight, setMaxHeight] = useState<number>()
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const openedByPointer = useRef(false)
   const patchSessionNode = useChatStore((state) => state.patchSessionNode)
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      const rect = triggerRef.current?.getBoundingClientRect()
+      if (rect) {
+        const nextAlign = sessionMenuAlign(rect, window.innerHeight)
+        setAlign(nextAlign)
+        setMaxHeight(sessionMenuMaxHeight(rect, window.innerHeight, SESSION_MENU_COLLISION, nextAlign))
+      }
+    }
+    setOpen(next)
+  }
 
   const handleToggleFlag = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -80,16 +103,30 @@ export function SessionRowMenu({
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           data-testid="session-row-menu"
           onClick={(e) => e.stopPropagation()}
+          onPointerDown={() => {
+            openedByPointer.current = true
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return
+            openedByPointer.current = false
+            delete triggerRef.current?.dataset.pointerReturn
+          }}
+          onBlur={() => {
+            delete triggerRef.current?.dataset.pointerReturn
+          }}
           aria-label="Session actions"
           className={cx(
-            "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary",
+            "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary outline-none",
             "hover:bg-background-primary-default hover:text-text-primary",
+            "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0",
             open ? "opacity-100" : "opacity-0 group-hover/session:opacity-100 group-focus-within/session:opacity-100",
             className
           )}
@@ -99,11 +136,17 @@ export function SessionRowMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         data-testid="session-row-menu-content"
-        align="start"
+        align={align}
         side="right"
         sideOffset={6}
-        collisionPadding={{ top: 44, right: 12, bottom: 12, left: 12 }}
-        className="w-48 rounded-xl bg-background-primary-default p-1 shadow-card border border-border-button-default"
+        avoidCollisions
+        collisionPadding={SESSION_MENU_COLLISION}
+        onCloseAutoFocus={(event) => {
+          applySessionMenuCloseFocus(event, openedByPointer.current, triggerRef.current)
+          openedByPointer.current = false
+        }}
+        style={maxHeight ? { maxHeight } : undefined}
+        className="w-48 overflow-y-auto rounded-xl bg-background-primary-default p-1 shadow-card border border-border-button-default"
       >
         {/* 1. 旗标置顶 */}
         <DropdownMenuItem onClick={handleToggleFlag} className="cursor-pointer">
@@ -148,6 +191,7 @@ export function SessionRowMenu({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              data-testid="session-row-menu-archive"
               onClick={(e) => {
                 e.stopPropagation()
                 onArchive()

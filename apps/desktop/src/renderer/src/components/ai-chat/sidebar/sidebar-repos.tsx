@@ -19,6 +19,7 @@ import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sideba
 import { SidebarStatusGroups } from "@renderer/components/ai-chat/sidebar/sidebar-status-groups"
 import { sortSessions } from "@renderer/components/ai-chat/sidebar/sort-sessions"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
+import { archiveCurrentSession } from "@renderer/hooks/workspace-lifecycle"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
@@ -219,6 +220,7 @@ export function SidebarRepos({
               workflowStatus={session.workflowStatus}
               className="rounded-xl"
               onSelect={() => onSelectSession(session.id)}
+              onArchive={() => void archiveCurrentSession(session.id)}
             />
           ))}
         </div>

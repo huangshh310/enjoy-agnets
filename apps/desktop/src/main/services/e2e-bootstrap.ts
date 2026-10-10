@@ -10,6 +10,7 @@ import { upsertProfile } from "./secrets"
 import { openWorkspace } from "./workspace"
 import { seedE2eAutomations } from "./e2e-stub-automations"
 import { addKnowledgeSource, indexKnowledgeSource } from "./knowledge-service"
+import { e2eSessionCount } from "./e2e-session-count"
 
 export async function bootstrapE2eStub(): Promise<void> {
   if (!isE2eStub()) return
@@ -31,8 +32,17 @@ export async function bootstrapE2eStub(): Promise<void> {
   } catch (error) {
     console.warn("e2e stub profile skipped", error)
   }
-  await createSession(workspace.id, "New agent")
+  await seedE2eSessions(workspace.id)
   seedE2eAutomations()
   const source = await addKnowledgeSource(workspace.id, ".")
   await indexKnowledgeSource(source.id, true)
 }
+
+async function seedE2eSessions(workspaceId: string): Promise<void> {
+  const count = e2eSessionCount()
+  for (let i = 0; i < count; i += 1) {
+    const title = i === 0 ? "New agent" : `Seed session ${String(i).padStart(2, "0")}`
+    await createSession(workspaceId, title)
+  }
+}
+
