@@ -141,7 +141,10 @@ test("最新助手早于本轮用户句：不复用，waiting / running 都不�
   )
   const oldTools = parseAssistantPayload(previousAssistant).tools
   assert.equal(oldTools?.[0]?.state, "output-available")
-  assert.match(runningSrc, /readLatestAssistantSnapshot\(row\.sessionId, \{ runCreatedAt: row\.createdAt \}\)/)
+  assert.match(
+    runningSrc,
+    /readLatestAssistantSnapshot\(row\.sessionId, \{ runCreatedAt: row\.createdAt, runId: row\.id \}\)/
+  )
 })
 
 test("本轮用户句之后的助手：复用同一行", () => {

@@ -155,7 +155,7 @@ async function restoreOneWaiting(input: {
     workspaceRoot: workspace.rootPath,
     secret,
     messages,
-    ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt })
+    ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt, runId: row.id })
   })
   hydrateActiveRunUsage(row.id)
   const run = getActiveRun(row.id)

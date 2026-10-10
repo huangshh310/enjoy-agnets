@@ -151,6 +151,7 @@ export function endRestoredRunWithoutSdkReply(
     const createdAt = getRun(getDatabase(), runId)?.createdAt
     persistSealedAssistantTools(sid, {
       ...(createdAt != null ? { runCreatedAt: createdAt } : {}),
+      runId,
       restartNotice: RESTORE_NO_MATCHING_CODE
     })
   }

@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许仅 user origin 种子；回挂卡带 HMAC args；abandon 发 `run.error`；回挂对不上记停止；kill-9 / 缺检查点结清未决；终态带 kind；空闲只收回挂家族；拍板点允许不再一律静默；回挂卡与普通卡同面：允许/拒绝；Mike 横幅合约；`restart_abandoned`；已决 HMAC 续泵；desktop_act 重拍；终态 UPDATE 助手行；running 中途 kill-9 中性结清；本轮改动只认 `output-available`；unsent fail closed；running 中途中性结清；写类已开始进待验收；「已改」只数 `output-available`；中途结清走 `decideTurnOutcome`；助手行按 runId 归属；重启中断后再发不得盖旧泡；冷启动按落库态封工具；自动化回挂不上走中性「重启后已中断」）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（will-quit fail-closed 走 settle restart；助手行先认信封 runId；立即运行不伪造 scheduledAt）
 
 ## 当前真相
 
@@ -120,7 +120,9 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：回灌封口若看前台 `chat.running`，切到后台仍在跑的会话会把活着的 `input-available` 封成出错。正确做法：`loadSession` 问 main `agent.sessionActive`（该会话自己的 ActiveRun），再 OR 该会话 park；`hydrateSessionRunning` **禁止** OR 前台 Composer `running`。该会话在跑则 `sealAbandoned: false`。
 - **隐患**：重启后上一轮已完成的工具行仍蓝转圈，最新一轮没有工具行。根因：冷启动没按落库态封口，且最新助手行工具只活在内存 `run.tools`。正确做法：`hydrateAssistantTools` 信封优先、缺失从 parts 补；`output-available`（或已有 result）是完成，不得当 pending；`persistFinishedAssistant` 把 tool parts 写进助手行。测试：`hydrate-thread.test.ts` / `hydrate-assistant-tools.test.ts`。
 - **隐患**：重启后审查条说「运行了命令」，其实只是丢了工具种类。正确做法：先从 `run.tools` / 落库工具名认写盘或命令；真认不出才 `sessionReviewUnknownPlaceholder`「这一轮可能改了文件，请到「审查」里核对。」，禁止命令句当回退。中途中断仍用短句「可能改了文件，请核对」。
-- **隐患**：自动化「立即运行」停在审批后普通重启：卡没了、工具转圈、Inbox 角标 1、库仍 `waiting_review`+decision NULL。根因：手动跑曾因缺 `scheduledAt` 丢掉 `automationSource`，回挂既不发卡也不结清。正确做法：立即运行也盖 `automationSource`（`scheduledAt` 用当前时间）；回挂与用户同一套；扫完仍是 waiting 且无 ActiveRun 就 `abandonWaitingRestore`；回挂不上中性条「重启后已中断」+「放回输入框」。origin=automation 不吃本会话允许。测试：`restore-automation-waiting.behavior.test.ts`。
+- **隐患**：自动化「立即运行」停在审批后普通重启：卡没了、工具转圈、Inbox 角标 1、库仍 `waiting_review`+decision NULL。根因：手动跑曾因缺 `scheduledAt` 丢掉 `automationSource`，回挂既不发卡也不结清。正确做法：立即运行也盖 `automationSource`，但 **禁止** `scheduledAt: Date.now()` 冒充准点（`scheduledAt` 只给 cron/补跑；立即运行写 `startedAt`）。跳过 selected-route 闸、不写工作区 MRU；卡出示「来自自动化」。回挂与用户同一套；扫完仍是 waiting 且无 ActiveRun 就 `abandonWaitingRestore`；回挂不上中性条「重启后已中断」+「放回输入框」。origin=automation 不吃本会话允许。测试：`restore-automation-waiting.behavior.test.ts`。
+- **隐患**：will-quit 写检查点失败时直接 `setApprovalDecision(..., cancelled)`，丢掉 `sdk_reason=restart`。正确做法：`settlePendingApprovalsForRun(runId, undefined, "restart")` + `writeCancelledRestoreError(..., RESTORE_NO_MATCHING_CODE)`，catch 里打日志。测试：`flush-agent-run.behavior.test.ts`。
+- **隐患**：`assistantBelongsToRun` 用 createdAt OR，旧 run 未收工再开一轮会封邻轮助手行。正确做法：信封有 `runId` 只认本轮；没有则 createdAt 必须同时晚于本轮用户句且 ≥ `runs.created_at`。`persistSealedAssistantTools` 同样核信封 `runId`。测试：`restore-assistant-snapshot.test.ts` / `restore-interrupted-running.test.ts`。
 - **隐患**：用户 Stop 后若当 `run.error` 写 error Attention / 红条，侧栏出「出错」而不是已停止。正确做法：`code=user_aborted` + `turn.attention=stopped`；工具封 `user_aborted` / 审批中折未执行；过程折叠标题走 `chat.toolStopped`；横幅立刻列 path。
 - **隐患**：fail-closed / Stop 结清若无条件 `setApprovalDecision(..., cancelled)`，会覆盖用户已 allow/deny 的审计行。正确做法：`settleOne` 先 `getApproval`，`decision != null` 只从内存 pending 丢掉，不改库。
 - **隐患**：补跑超时若 `denyCatchUpPending` 自己推 `approval.resolved`，settle 再推一条，同一工具收到两次结清。正确做法：超时只放开闸，一条 resolved 由 `failAgentPump` settle 发出。

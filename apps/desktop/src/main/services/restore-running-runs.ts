@@ -131,7 +131,7 @@ async function holdAndPump(
     workspaceRoot: workspace.rootPath,
     secret,
     messages: extras.modelMessages as ModelMessage[],
-    ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt })
+    ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt, runId: row.id })
   })
   hydrateActiveRunUsage(row.id)
   emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId, kind: "agent" })

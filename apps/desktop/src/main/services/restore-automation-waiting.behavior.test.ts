@@ -124,7 +124,7 @@ test("自动化立即运行有检查点：回挂发卡，origin=automation，不
       automationSource: {
         automationId: "auto_1",
         automationName: "手动写入",
-        scheduledAt: 1,
+        startedAt: 1,
         isCatchUp: false
       }
     })

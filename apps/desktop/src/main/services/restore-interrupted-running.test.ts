@@ -18,6 +18,7 @@ const {
   emitQueuedInterruptedRunning,
   getDatabase,
   persistMessage,
+  persistSealedAssistantTools,
   queueInterruptedRunningSettle,
   resetInterruptedRunningForTest
 } = await import("./restore-interrupted-running.behavior.load.ts")
@@ -44,6 +45,7 @@ test("写类已开始：中途结清进待验收，工具行 restart_abandoned�
     "assistant",
     serializeAssistantPayload({
       content: "",
+      runId,
       tools: [
         {
           id: "tool_write",
@@ -114,6 +116,7 @@ test("只读中途结清：不进待验收", () => {
     "assistant",
     serializeAssistantPayload({
       content: "",
+      runId,
       tools: [{ id: "tool_read", name: "read_file", state: "output-available", args: { path: "a.ts" } }]
     })
   )
@@ -157,6 +160,7 @@ test("cancelled 终态也清掉 runs.checkpoint", () => {
     "assistant",
     serializeAssistantPayload({
       content: "",
+      runId,
       tools: [
         {
           id: "tool_write",
@@ -186,4 +190,30 @@ test("cancelled 终态也清掉 runs.checkpoint", () => {
   const settled = getRun(db, runId)
   assert.equal(settled?.status, "cancelled")
   assert.equal(settled?.checkpoint, null)
+})
+
+test("旧 run 未收工、新开一轮：封口不得改邻轮助手行", () => {
+  const sessionId = "ses_int_other_run"
+  seedSession({ workspaceId: "ws_int_other_run", sessionId })
+  persistMessage(sessionId, "user", "first write")
+  const oldContent = serializeAssistantPayload({
+    content: "",
+    runId: "run_old_unfinished",
+    tools: [
+      {
+        id: "tool_old",
+        name: "write_file",
+        state: "approval-requested",
+        args: { path: "old.txt" }
+      }
+    ]
+  })
+  const oldId = persistMessage(sessionId, "assistant", oldContent)
+  persistMessage(sessionId, "user", "second write")
+  persistSealedAssistantTools(sessionId, { runCreatedAt: Date.now(), runId: "run_new_turn" })
+  const kept = (
+    getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(oldId) as { content: string }
+  ).content
+  assert.equal(kept, oldContent)
+  assert.equal(parseAssistantPayload(kept).tools?.[0]?.state, "approval-requested")
 })

@@ -2,7 +2,8 @@
  * 把 ActiveRun 上累积的助手 transcript 写入 SQLite，并回写 runs.status。
  * 流式过程 checkpoint 同一行；complete / fail / abort / before-quit 再封口。
  */
-import { listPendingApprovals, setApprovalDecision, updateRun } from "@enjoy-agents/db"
+import { updateRun } from "@enjoy-agents/db"
+import { RESTORE_NO_MATCHING_CODE } from "@enjoy-agents/ipc-contract/restore-codes"
 import { persistFinishedAssistant } from "./persist-parts"
 import { flushPayloadFromRun } from "./agent-run-flush"
 import { getDatabase } from "./database"
@@ -10,10 +11,21 @@ import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { persistWaitingRun } from "./persist-waiting-run"
 import { persistRunUsageFromActive, markPumpMissingUsage, usageNeverRecorded } from "./run-usage"
 import { listActiveRuns, type ActiveRun } from "./agent-run-state"
+import { writeCancelledRestoreError } from "./restore-interrupted-running"
+import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+export { shouldFlushRunsOnWindowAllClosed } from "./flush-on-window-all-closed"
 
 const FINISHED = new Set(["completed", "failed", "cancelled"])
 
 export type RunFlushStatus = "completed" | "failed" | "cancelled" | "waiting_review" | "running"
+
+export type FlushActiveRunsOpts = {
+  /** 只有真退出（will-quit / 非 darwin 关最后一扇窗）才 fail-closed。 */
+  failClosed?: boolean
+  persistWaiting?: (run: ActiveRun, runId: string) => void
+  persistActive?: typeof persistActiveRun
+  persistRunning?: (run: ActiveRun, runId: string) => void
+}
 
 export function persistActiveRun(
   run: ActiveRun,
@@ -74,31 +86,30 @@ function writeAssistantRow(run: ActiveRun): boolean {
 }
 
 /** 关窗口 / 退出时把还在跑或卡在审批的回复刷进库。 */
-export function flushActiveRuns(): void {
+export function flushActiveRuns(opts: FlushActiveRunsOpts = {}): void {
+  const persistWaiting = opts.persistWaiting ?? persistWaitingRun
+  const persistActive = opts.persistActive ?? persistActiveRun
+  const persistRunning = opts.persistRunning ?? persistRunningCheckpoint
   for (const { runId, run } of listActiveRuns()) {
     try {
       if (run.pendingApprovals.length > 0) {
-        persistWaitingRun(run, runId)
-        persistActiveRun(run, runId, "waiting_review")
+        persistWaiting(run, runId)
+        persistActive(run, runId, "waiting_review")
       } else {
-        persistRunningCheckpoint(run, runId)
-        persistActiveRun(run, runId, "running")
+        persistRunning(run, runId)
+        persistActive(run, runId, "running")
       }
-    } catch {
-      if (run.pendingApprovals.length > 0) failClosedWaitingOnQuit(runId)
+    } catch (error) {
+      console.error("[flush] will-quit persist failed", { runId, error })
+      if (opts.failClosed !== false && run.pendingApprovals.length > 0) {
+        failClosedWaitingOnQuit(runId)
+      }
     }
   }
 }
 
 /** will-quit 写检查点失败时不得留下 waiting_review + 未决 NULL。 */
 function failClosedWaitingOnQuit(runId: string): void {
-  const db = getDatabase()
-  for (const item of listPendingApprovals(db, runId)) {
-    if (item.decision == null) setApprovalDecision(db, item.id, "cancelled")
-  }
-  updateRun(db, runId, {
-    status: "cancelled",
-    error: "restore_no_matching_approval",
-    checkpoint: null
-  })
+  settlePendingApprovalsForRun(runId, undefined, "restart")
+  writeCancelledRestoreError(runId, RESTORE_NO_MATCHING_CODE)
 }

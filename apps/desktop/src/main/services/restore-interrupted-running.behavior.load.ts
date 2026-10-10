@@ -5,6 +5,7 @@ export { getDatabase } from "./database.ts"
 export { persistMessage } from "./persist-session.ts"
 export {
   emitQueuedInterruptedRunning,
+  persistSealedAssistantTools,
   queueInterruptedRunningSettle,
   resetInterruptedRunningForTest
 } from "./restore-interrupted-running.ts"

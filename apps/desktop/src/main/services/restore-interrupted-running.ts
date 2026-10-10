@@ -30,6 +30,7 @@ export function queueInterruptedRunningSettle(row: RunRow): void {
   settlePendingApprovalsForRun(row.id, undefined, "restart")
   const original = persistSealedAssistantTools(row.sessionId, {
     runCreatedAt: row.createdAt,
+    runId: row.id,
     restartNotice: RESTORE_INTERRUPTED_RUNNING
   })
   writeCancelledRestoreError(row.id, RESTORE_INTERRUPTED_RUNNING)
@@ -74,7 +75,7 @@ export function writeCancelledRestoreError(runId: string, restoreCode: string): 
 /** waiting 放弃与 running 中途共用：只封本轮助手行，返回封口前的工具给收工判定。 */
 export function persistSealedAssistantTools(
   sessionId: string,
-  opts?: { runCreatedAt?: number; restartNotice?: RestoreFamilyCode }
+  opts?: { runCreatedAt?: number; runId?: string; restartNotice?: RestoreFamilyCode }
 ): Array<{ name: string; state?: string; result?: unknown; errorText?: string }> {
   const db = getDatabase()
   const latestUser = db
@@ -89,8 +90,15 @@ export function persistSealedAssistantTools(
     .all(sessionId) as Array<{ id: string; content: string; createdAt: number }>
   let original: Array<{ name: string; state?: string; result?: unknown; errorText?: string }> = []
   for (const row of rows) {
-    if (!assistantBelongsToRun(row.createdAt, latestUser?.createdAt, opts?.runCreatedAt)) continue
     const payload = parseAssistantPayload(row.content)
+    if (
+      !assistantBelongsToRun(row.createdAt, latestUser?.createdAt, opts?.runCreatedAt, {
+        runId: opts?.runId,
+        envelopeRunId: payload.runId
+      })
+    ) {
+      continue
+    }
     const tools = payload.tools ?? []
     if (original.length === 0) original = tools
     const sealed = sealAbandonedTools(tools, { code: RESTART_ABANDONED_CODE }) ?? tools

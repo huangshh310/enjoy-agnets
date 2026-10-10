@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`agent.run.origin` 只许 main 写；`approvals.pending.args` 为 HMAC 库拷贝；`approvals.pending` 不列缺参行；回挂对不上先结清；终态可选 `kind`；拍板 args 有上限；decide 失败码；`restart_abandoned`；超 16KB 仍列 Inbox；`targetShortName`）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`AutomationRunSource.scheduledAt` 可选，立即运行写 `startedAt`）
 
 ## 当前真相
 
@@ -90,7 +90,7 @@
 - `patchSession` / `session.archive` / `session.unarchive` 不碰 `updated_at`；`rename` 才会 bump。归档只写 `archived_at`（`session-archive-stamp.ts`），否则撤销后会话跳顶并挤开当前高亮。归档前必须先走普通 deny 清未决审批。
 - **隐患**：给 `run.end` / `run.error` 加可选字段却不改 StreamEvent schema 时，`acceptStreamEvent` 的 `safeParse` 会剥掉或丢掉整条事件，renderer 永远看不到 `turn`。正确做法：先改合约再 emit，并加 `acceptStreamEvent` 断言字段还在。`map-part` 的 `ENJOY_TYPES` 是入站点号白名单，不管 main 直发的 `run.end` / `run.error`。
 - **隐患**：`approval.required.args` 写成 `z.unknown()` 时，zod4 把缺字段当失败，整条事件被丢掉。consume 却已记 pending。正确做法：`.optional()`，生产者补 `args ?? {}`。
-- Zod `AutomationTrigger` 含 `cron` / `on_save` / `webhook`。cron 走 `automations-scheduler` 20s 滴答；保存后走 `fireOnSaveAutomations` 防抖；webhook 只绑 `127.0.0.1`。关应用停听。AUTO-P2：启动 / `powerMonitor` resume 回看 ≤7 天错过点（只记记录），默认只记 `skipped`（本机 `automation_missed_local`，不进 `automations` JSON）；`catchUpMissed` 开才补**最近一次且 ≤24h**（`CATCH_UP_MAX_AGE_MS`），补跑 `denyAnyDesktop` 不继承 `desktop_act:*`。补跑停 Dock 30min 自动拒绝（`catch_up_approval_timeout`），`lastRunStatus` 仍 `failed`；列表读 `lastRunErrorCode`（未知码 `.catch(undefined)`，不丢整行），抽屉读 `records[].code`。reconcile **不** await settle。未来若做云同步必须显式排除 `automation_missed_local`。`stopOnFailCount` 已按缺省 3 停用；路径/glob 仍未做。禁止把云隧道 / 开机自启写成已做。
+- Zod `AutomationTrigger` 含 `cron` / `on_save` / `webhook`。cron 走 `automations-scheduler` 20s 滴答；保存后走 `fireOnSaveAutomations` 防抖；webhook 只绑 `127.0.0.1`。关应用停听。AUTO-P2：启动 / `powerMonitor` resume 回看 ≤7 天错过点（只记记录），默认只记 `skipped`（本机 `automation_missed_local`，不进 `automations` JSON）；`catchUpMissed` 开才补**最近一次且 ≤24h**（`CATCH_UP_MAX_AGE_MS`），补跑 `denyAnyDesktop` 不继承 `desktop_act:*`。补跑停 Dock 30min 自动拒绝（`catch_up_approval_timeout`），`lastRunStatus` 仍 `failed`；列表读 `lastRunErrorCode`（未知码 `.catch(undefined)`，不丢整行），抽屉读 `records[].code`。reconcile **不** await settle。未来若做云同步必须显式排除 `automation_missed_local`。`stopOnFailCount` 已按缺省 3 停用；路径/glob 仍未做。禁止把云隧道 / 开机自启写成已做。`AutomationRunSource.scheduledAt` 可选：立即运行只写 `startedAt`，禁止 `Date.now()` 冒充准点。立即运行跳过 selected-route 闸、不写 MRU，卡出示「来自自动化」。
 - node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；通知推导走 `ipc-contract/desktop-notify`；硬拒码走 `ipc-contract/desktop-act-codes`；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session` / `allow_always`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止这两种：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。`allow_always` 只写 prefs 簿，不写会话表。

@@ -157,12 +157,13 @@ async function startLaunchedRun(
       opts.scheduledAt != null ? scheduledAutomationCommandId(item.id, opts.scheduledAt) : undefined,
     denyAnyDesktop: opts.isCatchUp === true,
     origin: opts.isCatchUp === true ? "catch_up" : "automation",
-    // 立即运行也要带上来源：回挂不能因缺 scheduledAt 把自动化当丢弃行。
+    // 立即运行也盖来源，但不伪造 scheduledAt；回挂认 automationId，不靠准点。
     automationSource: {
       automationId: item.id,
       automationName: item.name,
-      scheduledAt: opts.scheduledAt ?? Date.now(),
-      isCatchUp: opts.isCatchUp === true
+      isCatchUp: opts.isCatchUp === true,
+      startedAt: Date.now(),
+      ...(opts.scheduledAt != null ? { scheduledAt: opts.scheduledAt } : {})
     }
   })
   const runId = requireAgentRunId(started)
