@@ -17,7 +17,7 @@ export const zhMcpPages = {
   registerServer: "添加服务",
   registeredCount: "已注册服务（{n}）",
   searchServers: "搜索服务名称…",
-  emptyTitle: "暂未配置任何 MCP Server",
+  emptyTitle: "还没有添加服务",
   emptyHint: "通过 Model Context Protocol 连接文件系统、数据库或外部 API，让 Agent 在对话中调度。",
   browseMarketplace: "浏览扩展",
   marketplaceLocalHint: "这是内置模板，不是在线目录。添加后写入本机 mcp_servers。",
