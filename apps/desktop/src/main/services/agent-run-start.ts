@@ -10,6 +10,7 @@ import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
 import { createId } from "./ids"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
+import { applyAgentRunSessionAllowReset } from "./conversation-session-allow"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
@@ -163,6 +164,7 @@ async function beginAgentRun(
     if (existing) return { ok: true, runId: existing }
   }
   const runId = options.runId ?? createId("run")
+  applyAgentRunSessionAllowReset(input)
   const modelMessages = await modelMessagesForStart(
     input,
     options.resumeMessages,

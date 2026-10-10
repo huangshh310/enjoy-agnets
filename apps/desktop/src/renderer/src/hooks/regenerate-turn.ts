@@ -191,6 +191,7 @@ async function startTurnIpc(
     messages: history,
     attachments: assetIds,
     commandId: crypto.randomUUID(),
+    clearSessionAllow: true,
     ...(desktopBias ? { desktopBias } : {})
   })
 }

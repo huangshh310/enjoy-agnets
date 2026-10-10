@@ -7,6 +7,7 @@ import { test } from "node:test"
 import type { BrowserWindow } from "electron"
 
 const {
+  applyAgentRunSessionAllowReset,
   archiveSession,
   clearAllConversationSessionAllows,
   deleteActiveRun,
@@ -64,6 +65,14 @@ test("归档会话后本会话允许表清空，新 run 不再种子 write_file"
   deleteActiveRun(runId)
 })
 
+test("regenerate / edit-and-resend 经 clearSessionAllow 清表", () => {
+  const sessionId = "ses_allow_regen"
+  grantConversationToolAllow(sessionId, "write_file")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  applyAgentRunSessionAllowReset({ sessionId, clearSessionAllow: true })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+})
+
 test("截断会话后本会话允许表清空", async () => {
   const sessionId = "ses_allow_truncate"
   seedSession(sessionId)
@@ -79,6 +88,15 @@ test("截断会话后本会话允许表清空", async () => {
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
   await truncateSessionFrom(sessionId, "msg_cut")
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+})
+
+test("rewind / regenerate / edit-and-resend 都经 main 清本会话允许", () => {
+  const rewind = readFileSync(new URL("../../renderer/src/hooks/rewind-from-here.ts", import.meta.url), "utf8")
+  const regen = readFileSync(new URL("../../renderer/src/hooks/regenerate-turn.ts", import.meta.url), "utf8")
+  const start = readFileSync(new URL("./agent-run-start.ts", import.meta.url), "utf8")
+  assert.match(rewind, /session\.truncateFrom/)
+  assert.match(regen, /clearSessionAllow:\s*true/)
+  assert.match(start, /applyAgentRunSessionAllowReset\(input\)/)
 })
 
 test("永久删除与归档走同一 forget，清 desktop 表和写盘/bash 表", () => {

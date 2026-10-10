@@ -19,7 +19,7 @@ import { addKnowledgeSource, indexKnowledgeSource } from "./knowledge-service"
 import { e2eSessionCount } from "./e2e-session-count"
 
 export async function bootstrapE2eStub(): Promise<void> {
-  if (!isE2eStub(app.isPackaged)) return
+  if (!isE2eStub()) return
   const root = process.env.ENJOY_E2E_WORKSPACE
   if (!root) return
   const first = await seedE2eWorkspace(root, "e2e workspace")

@@ -115,14 +115,12 @@ function withSessionAllowMarks(event: StreamEvent): StreamEvent {
         sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes]
       }
     : undefined
-  const allowedBySession =
-    event.allowedBySession ??
-    (policy ? sessionTableAllowsTool(event.name, policy, event.args) : false)
+  const allowedBySession = policy ? sessionTableAllowsTool(event.name, policy, event.args) : false
   const sessionAllowScope =
-    event.sessionAllowScope ??
-    (allowedBySession && policy ? sessionAllowScopeFor(event.name, policy, event.args) : undefined)
+    allowedBySession && policy ? sessionAllowScopeFor(event.name, policy, event.args) : undefined
   const reaskReason =
-    event.reaskReason ?? (event.type === "approval.required" ? run?.reaskReason : undefined)
+    event.type === "approval.required" ? (event.reaskReason ?? run?.reaskReason) : undefined
+  if (event.type === "approval.required" && run?.reaskReason) run.reaskReason = undefined
   return {
     ...event,
     allowedBySession,

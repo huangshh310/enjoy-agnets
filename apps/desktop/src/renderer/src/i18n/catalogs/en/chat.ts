@@ -785,6 +785,8 @@ export const enChat = {
   askUserEmpty: "No questions to answer.",
   alwaysAllowHint: "Allow “{target}” this session. Applies to later turns; cleared after restart.",
   alwaysAllowOnceHint: "This command has a pipe or redirect, so it is allowed once only and no prefix is stored.",
+  alwaysAllowInterpreterHint: "This is running a snippet of code, so it is allowed once only and no prefix is stored.",
+  alwaysAllowWriteHint: "Allow all write tools this session. Applies to later turns; cleared after restart.",
   alwaysAllow: "Always allow this session",
   allowOnce: "Allow once",
   desktopApprovalTitle: "Allow control of “{app}”?",

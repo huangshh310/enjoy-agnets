@@ -776,6 +776,8 @@ export const zhChat = {
   askUserEmpty: "没有可回答的问题。",
   alwaysAllowHint: "本会话放行「{target}」。后续每轮生效，重启后失效。",
   alwaysAllowOnceHint: "含管道或重定向的命令只允许这一次，不记前缀。",
+  alwaysAllowInterpreterHint: "这是在运行一段代码，只允许这一次，不记前缀。",
+  alwaysAllowWriteHint: "本会话放行所有写入类工具。后续每轮生效，重启后失效。",
   alwaysAllow: "本会话总是允许",
   allowOnce: "仅允许本次",
   desktopApprovalTitle: "允许操控「{app}」？",

@@ -15,6 +15,7 @@
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  */
 import type { ModelMessage } from "ai"
+import { isE2eStub } from "./e2e-stub-gate.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 import {
   isVerySlowPrompt,
@@ -46,19 +47,15 @@ export const STUB_STORE_ERROR_PROMPT = "stub store error"
 export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
 
 export type E2eStubStreamOpts = {
-  packaged?: boolean
   /** 会话策略已放行写盘时为真，stub 直接执行、不弹卡。 */
   isToolApproved?: (toolName: string, input: unknown) => boolean
 }
 
-export function isE2eStub(packaged = false): boolean {
-  const isolated = Boolean(process.env.ENJOY_E2E_USERDATA || process.env.ENJOY_DEV_USERDATA)
-  return process.env.ENJOY_E2E_STUB === "1" && packaged !== true && isolated
-}
+export { isE2eStub, setE2eStubPackagedForTest } from "./e2e-stub-gate.ts"
 
 /** COST-P3 复检夹具：开发态 stub 才吐带单价的 totalUsage。 */
-export function isE2eCostSeed(packaged = false): boolean {
-  return isE2eStub(packaged) && process.env.ENJOY_DEV_SEED_COST === "1"
+export function isE2eCostSeed(): boolean {
+  return isE2eStub() && process.env.ENJOY_DEV_SEED_COST === "1"
 }
 
 export function isStubStoreErrorPrompt(text: string): boolean {
@@ -66,8 +63,8 @@ export function isStubStoreErrorPrompt(text: string): boolean {
   return trimmed === STUB_STORE_ERROR_PROMPT || trimmed === STUB_STORE_ERROR_PROMPT_ZH
 }
 
-export function shouldFailStubStore(prompt: string, packaged = false): boolean {
-  return isE2eStub(packaged) && isStubStoreErrorPrompt(prompt)
+export function shouldFailStubStore(prompt: string): boolean {
+  return isE2eStub() && isStubStoreErrorPrompt(prompt)
 }
 
 let stubWriteSeq = 0
@@ -167,7 +164,7 @@ export async function* createE2eStubStream(
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
-  if (shouldFailStubStore(prompt, opts?.packaged === true)) {
+  if (shouldFailStubStore(prompt)) {
     throw new Error("INTERNAL_STORE_ERROR")
   }
   if (stubDeniedApproval(messages)) {
@@ -185,20 +182,20 @@ export async function* createE2eStubStream(
   }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
-    await writeStubApprovedFile(undefined, opts?.packaged === true)
+    await writeStubApprovedFile()
     yield stubApprovedWriteResult(toolCallId)
-    if (isWriteSlowNotePrompt(prompt, opts?.packaged === true)) {
+    if (isWriteSlowNotePrompt(prompt)) {
       yield* emitText(STUB_VERY_SLOW_WORDS.join(" "), signal, verySlowDelayMs())
       return
     }
-    if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+    if (isVerySlowPrompt(prompt)) {
       yield* emitText(verySlowTail(), signal, verySlowDelayMs())
       return
     }
     yield* emitText("stub-ok allowed write", signal)
     return
   }
-  if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+  if (isVerySlowPrompt(prompt)) {
     yield* emitText(verySlowHead(), signal, verySlowDelayMs())
     yield* emitStubWriteTurn(signal, opts)
     return
@@ -222,9 +219,8 @@ async function* emitStubWriteTurn(
   opts?: E2eStubStreamOpts
 ): AsyncGenerator<Record<string, unknown>> {
   stubWriteSeq += 1
-  const packaged = opts?.packaged === true
   if (opts?.isToolApproved?.("write_file", STUB_WRITE_INPUT)) {
-    for (const part of await stubPolicyAllowedWriteParts(`tool_stub_${stubWriteSeq}`, packaged)) {
+    for (const part of await stubPolicyAllowedWriteParts(`tool_stub_${stubWriteSeq}`)) {
       yield part
     }
     yield* emitText("stub-ok allowed write", signal)

@@ -75,7 +75,6 @@ export function ApprovalCard({
   }
   return (
     <QuestionsApproval
-      name={pending.name}
       payload={payloadPreview(args)}
       thumbnailPath={typeof args.thumbnailPath === "string" ? args.thumbnailPath : ""}
       sourceLine={sourceLine}
@@ -99,9 +98,12 @@ function CommandApproval({
 }) {
   const t = useT()
   const allow = sessionAllowCardState(name, command)
-  const sessionHint = allow.onceOnly
-    ? t("chat.alwaysAllowOnceHint")
-    : t("chat.alwaysAllowHint", { target: allow.target })
+  const sessionHint =
+    allow.onceKind === "interpreter"
+      ? t("chat.alwaysAllowInterpreterHint")
+      : allow.onceOnly
+        ? t("chat.alwaysAllowOnceHint")
+        : t("chat.alwaysAllowHint", { target: allow.target })
   return (
     <ApprovalChrome
       variant="command"
@@ -133,7 +135,9 @@ function PlanApproval({
 }) {
   const t = useT()
   const allow = sessionAllowCardState(name, "")
-  const sessionHint = t("chat.alwaysAllowHint", { target: allow.target || name })
+  const sessionHint = allow.writeGroup
+    ? t("chat.alwaysAllowWriteHint")
+    : t("chat.alwaysAllowHint", { target: allow.target || name })
   const plan = planFromPending(name, args, t("chat.emptyValue"), {
     write: t("chat.verbWrite"),
     edit: t("chat.verbEdit"),
@@ -163,13 +167,11 @@ function PlanApproval({
 }
 
 function QuestionsApproval({
-  name,
   payload,
   thumbnailPath,
   sourceLine,
   decide
 }: {
-  name: string
   payload: string
   thumbnailPath?: string
   sourceLine: string | null
@@ -192,7 +194,6 @@ function QuestionsApproval({
       title={t("chat.approvalQuestions")}
       approveLabel={t("chat.approvalContinue")}
       denyLabel={t("chat.approvalSkip")}
-      sessionHint={t("chat.alwaysAllowHint", { target: name })}
       showAlways={false}
       approveDisabled={!picked}
       decide={{

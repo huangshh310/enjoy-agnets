@@ -57,7 +57,9 @@ export const RunAgentInput = z.object({
   /** 补跑：审批闸丢掉 desktop_act:*，按应用会话放行与簿照常。 */
   denyAnyDesktop: z.boolean().optional(),
   /** 待审批 Dock / 通知用来源句。补跑必带。 */
-  automationSource: AutomationRunSource.optional()
+  automationSource: AutomationRunSource.optional(),
+  /** regenerate / edit-and-resend：main 清本会话允许表后再种子。 */
+  clearSessionAllow: z.boolean().optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 
