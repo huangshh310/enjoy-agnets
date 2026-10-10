@@ -44,6 +44,11 @@ test("点知识库来源芯片打开本轮来源且选中该行", async () => {
     await chip.click()
     const sheet = window.locator('[data-testid="turn-sources-sheet"]')
     await expect(sheet).toBeVisible({ timeout: 8_000 })
+    // md 面 200ms 从右侧滑入；toBeVisible 在第一帧就过，太早拍会只剩右缘一条。
+    await expect
+      .poll(async () => (await sheet.boundingBox())?.width ?? 0, { timeout: 4_000 })
+      .toBeGreaterThan(240)
+    await expect(sheet.getByText("本轮来源")).toBeVisible()
     const row = window.locator('[data-testid="turn-source-row"][data-kind="knowledge"]')
     await expect(row).toBeVisible()
     await expect(row).toHaveAttribute("data-selected", "true")
@@ -51,6 +56,14 @@ test("点知识库来源芯片打开本轮来源且选中该行", async () => {
     await expect(window.locator("body")).not.toContainText("Element type is invalid")
     await expect(window.locator("body")).not.toContainText("Something went wrong!")
     await snap(window, "knowledge-source-drawer")
+    await window.setViewportSize({ width: 1024, height: 700 })
+    await expect
+      .poll(async () => (await sheet.boundingBox())?.width ?? 0, { timeout: 4_000 })
+      .toBeGreaterThan(240)
+    const box1024 = await sheet.boundingBox()
+    expect(box1024).toBeTruthy()
+    expect(box1024!.x + box1024!.width).toBeLessThanOrEqual(1024)
+    await snap(window, "knowledge-source-drawer-1024")
   } finally {
     await closeApp(app)
   }
