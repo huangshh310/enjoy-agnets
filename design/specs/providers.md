@@ -59,7 +59,7 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - 上下文窗口解析：`packages/providers/src/context-window.ts`、`gateway-catalog.ts`；`models.list` 在 `secrets.ts` 的 `listAllPublicModels` 注入
 - 空 vault 目录：`apps/desktop/src/main/services/listed-models.ts`
 - vault：`apps/desktop/src/main/services/secrets-vault.ts`（加解密 / 迁移）；档案 CRUD：`secrets.ts`（删除时解绑 CLI）
-- 存密钥后校验：`apps/desktop/src/main/services/credential-check-run.ts`（只 GET `/models`；`redirect:manual`；夹具 `ENJOY_E2E_CREDENTIAL`）+ `credential-fingerprint.ts` + `machine-hmac-secret.ts`（与审批共用本机 HMAC 密钥）+ `credential-check-store.ts` + `credential-check-schedule.ts` + `credential-send-outcome.ts` + `e2e-send-fixture.ts`
+- 存密钥后校验：`apps/desktop/src/main/services/credential-check-run.ts`（只 GET `/models`；`redirect:manual`；夹具 `ENJOY_E2E_CREDENTIAL`）+ `credential-fingerprint.ts` + `machine-hmac-secret.ts`（与审批共用本机 HMAC 密钥）+ `credential-check-store.ts` + `credential-check-schedule.ts` + `credential-status.ts`（拆 RetryError）+ `credential-send-outcome.ts` + `e2e-send-fixture.ts`
 - 设置 UI：`apps/desktop/src/renderer/src/components/settings/providers/`
 - 合约：`packages/ipc-contract` 的 `UpsertProviderInput` / `ProviderPublic` / `CredentialCheck`（子路径 `@enjoy-agents/ipc-contract/credential-check`）；CLI 兼容与引用派生 `provider-agent-bind.ts`
 - 单价与估算：`packages/providers/src/pricing/`（子路径 `@enjoy-agents/providers/pricing`，只给 main；根入口不导出，renderer 不要别名这份快照）
