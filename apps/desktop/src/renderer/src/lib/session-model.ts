@@ -2,6 +2,7 @@
  * 会话有效模型：会话覆盖 > 引擎默认 > 档案 models[0]。
  * 同引擎换模不是 handoff。
  */
+import { resolveModelDisplayName } from "./model-display-name.ts"
 
 export function getEffectiveModel(input: {
   sessionId: string | null
@@ -68,7 +69,11 @@ export function composerModelPatch(input: {
       catalogFirst: input.models[0]?.id
     }) ?? ""
   const catalog = input.models.find((item) => item.id === modelId)
-  return { modelId, modelLabel: catalog?.label ?? "", provider: catalog?.provider }
+  return {
+    modelId,
+    modelLabel: modelId ? resolveModelDisplayName(modelId, catalog?.label) : "",
+    provider: catalog?.provider
+  }
 }
 
 export function shouldShowModelSwitchBadge(input: {

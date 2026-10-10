@@ -44,6 +44,8 @@ export type ThreadMcpApp = {
   resourceUri: string
   srcDoc: string
   title?: string
+  /** srcDoc 超上限：只留中性提示，禁止带字数或 iframe。 */
+  tooLarge?: boolean
 }
 
 export type ThreadMessage = {

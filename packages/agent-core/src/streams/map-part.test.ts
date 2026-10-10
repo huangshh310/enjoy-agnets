@@ -170,6 +170,25 @@ test("合入 #126/#127 后审批与 tool.result 仍走白名单，不靠点号�
   )
 })
 
+test("Enjoy 事件缺 runId 时补上泵里的 runId", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "generation.warning",
+        code: "mcp_app_srcdoc_too_large",
+        message: "MCP App srcDoc exceeds limit"
+      },
+      "run_1"
+    ),
+    {
+      type: "generation.warning",
+      runId: "run_1",
+      code: "mcp_app_srcdoc_too_large",
+      message: "MCP App srcDoc exceeds limit"
+    }
+  )
+})
+
 test("passes through Enjoy StreamEvent from ACP", () => {
   assert.deepEqual(mapStreamPart({ type: "text.delta", runId: "run_1", text: "hi" }, "run_1"), {
     type: "text.delta",

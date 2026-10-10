@@ -16,6 +16,7 @@ import type { ModelMessage } from "ai"
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+import { shouldEmitHugeMcpApp, stubHugeMcpAppParts } from "./e2e-stub-mcp-app.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
@@ -47,6 +48,11 @@ export function shouldFailStubStore(prompt: string, packaged = false): boolean {
 let stubWriteSeq = 0
 
 export { isE2eCuReady } from "./e2e-stub-desktop.ts"
+export {
+  STUB_HUGE_MCP_APP_PROMPT,
+  STUB_HUGE_MCP_APP_PROMPT_ZH,
+  shouldEmitHugeMcpApp
+} from "./e2e-stub-mcp-app.ts"
 
 function userText(message: ModelMessage | undefined): string {
   if (!message) return ""
@@ -165,6 +171,11 @@ export async function* createE2eStubStream(
   const prompt = userText(real)
   if (shouldFailStubStore(prompt, opts?.packaged === true)) {
     throw new Error("INTERNAL_STORE_ERROR")
+  }
+  if (shouldEmitHugeMcpApp(prompt, opts?.packaged === true)) {
+    for (const part of stubHugeMcpAppParts()) yield part
+    yield* emitText("stub-ok huge mcp app", signal)
+    return
   }
   if (stubDeniedApproval(messages)) {
     yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }

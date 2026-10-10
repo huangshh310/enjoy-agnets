@@ -8,6 +8,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { resolveModelDisplayName } from "@renderer/lib/model-display-name"
 import { ModelPickerBody } from "./model-picker-body"
 
 export function ModelPicker({
@@ -53,7 +54,7 @@ export function ModelPicker({
             />
           </div>
           <span className="min-w-0 max-w-[5.5rem] truncate text-caption-1-medium text-text-primary">
-            {models.length > 0 ? modelLabel || modelId : t("chat.selectModel")}
+            {models.length > 0 ? resolveModelDisplayName(modelId, modelLabel || currentModel?.label) : t("chat.selectModel")}
           </span>
           <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </button>

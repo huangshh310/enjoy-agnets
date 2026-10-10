@@ -132,6 +132,35 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
   assert.equal(delta.messages.at(-1)?.content, "好的")
 })
 
+test("mcp_app_srcdoc_too_large 在本轮工具行留超大提示，不带字数或 srcDoc", () => {
+  const opened = reduceStreamEvent(
+    [{ id: "msg_user", role: "user", content: "huge mcp app", createdAt: 1 }],
+    {
+      type: "mcp.app",
+      runId: "run_huge",
+      serverId: "acp",
+      resourceUri: "ui://huge-mcp-app",
+      phase: "error",
+      title: "Huge"
+    },
+    "run_huge"
+  )
+  const warned = reduceStreamEvent(
+    opened.messages,
+    {
+      type: "generation.warning",
+      runId: "run_huge",
+      code: "mcp_app_srcdoc_too_large",
+      message: "MCP App srcDoc exceeds 200000 characters"
+    },
+    "run_huge"
+  )
+  const app = warned.messages.find((row) => row.role === "assistant")?.mcpApps?.[0]
+  assert.equal(app?.tooLarge, true)
+  assert.equal(app?.srcDoc, "")
+  assert.ok(!app?.srcDoc)
+})
+
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {
   const patch = reduceStreamEvent([], {
     type: "approval.resolved",

@@ -433,6 +433,7 @@ export const enChat = {
   agentRescan: "I installed it, scan again",
   agentScanning: "Scanning…",
   agentLoggingIn: "Signing in…",
+  mcpAppTooLarge: "This app UI is too large to open here.",
   selectModel: "Select Model",
   providersCount: "Providers ({count})",
   allModels: "All Models",

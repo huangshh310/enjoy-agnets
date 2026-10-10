@@ -430,6 +430,7 @@ export const zhChat = {
   agentLoggingIn: "登录中…",
   agentRescan: "我已安装，重新扫描",
   agentScanning: "正在扫描…",
+  mcpAppTooLarge: "这个应用界面太大，没法在这里打开。",
   selectModel: "选择模型",
   providersCount: "供应商 ({count})",
   allModels: "全部模型",

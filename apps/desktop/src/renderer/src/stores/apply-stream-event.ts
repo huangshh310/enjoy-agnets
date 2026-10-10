@@ -11,6 +11,7 @@ import {
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { markMcpAppTooLarge } from "../lib/mcp-app-surface"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
 import {
@@ -52,9 +53,8 @@ export function reduceStreamEvent(
   if (terminal) return terminal
   const approval = applyApprovalEvent(messages, event, activeRunId)
   if (approval) return approval
-  if (event.type === "generation.warning" && event.code === "acp_resume_fallback") {
-    return { messages, notice: event.message }
-  }
+  const warning = applyGenerationWarning(messages, event, activeRunId)
+  if (warning) return warning
   if (event.type === "file.changed") return { messages }
   if (!isLivePart(event.type) || !event.runId) return { messages }
   if (event.type === "tool.result" || event.type === "tool.start" || event.type === "tool.args.delta") {
@@ -68,6 +68,21 @@ export function reduceStreamEvent(
   const assistant = attachAssistant(next, event.runId, activeRunId)
   if (!assistant) return { messages }
   return applyLiveEvent(next, assistant, event)
+}
+
+function applyGenerationWarning(
+  messages: ThreadMessage[],
+  event: StreamEvent,
+  activeRunId: string | null
+): StreamPatch | null {
+  if (event.type !== "generation.warning") return null
+  if (event.code === "acp_resume_fallback") return { messages, notice: event.message }
+  if (event.code !== "mcp_app_srcdoc_too_large") return null
+  const next = cloneMessagesForLiveEvent(messages)
+  const assistant = attachAssistant(next, event.runId, activeRunId)
+  if (!assistant) return { messages }
+  markMcpAppTooLarge(assistant)
+  return { messages: next }
 }
 
 function applyTerminalEvent(
