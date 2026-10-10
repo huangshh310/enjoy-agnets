@@ -27,10 +27,8 @@ export function matchesCuratedFingerprint(presetId: string, input: CuratedMcpRow
   if (!preset) return false
   if ((input.transport ?? "stdio") !== preset.transport) return false
   if (preset.command && normalizeText(input.command) !== normalizeText(preset.command)) return false
-  if ("url" in preset && preset.url && normalizeText(input.url) !== normalizeText(preset.url)) {
-    return false
-  }
-  if (!("url" in preset && preset.url) && normalizeText(input.url)) return false
+  if (preset.url && normalizeText(input.url) !== normalizeText(preset.url)) return false
+  if (!preset.url && normalizeText(input.url)) return false
   return true
 }
 

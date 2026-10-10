@@ -1,6 +1,13 @@
 /**
  * 精选 MCP 官方指纹。叶子模块，renderer 与 main 共用，禁止再抄一份 command。
  */
+export type CuratedMcpFingerprint = {
+  readonly id: string
+  readonly transport: "stdio" | "sse" | "http"
+  readonly command?: string
+  readonly url?: string
+}
+
 export const CURATED_MCP_FINGERPRINTS = [
   { id: "filesystem", transport: "stdio", command: "npx -y @modelcontextprotocol/server-filesystem ." },
   { id: "everything", transport: "stdio", command: "npx -y @modelcontextprotocol/server-everything" },
@@ -22,10 +29,9 @@ export const CURATED_MCP_FINGERPRINTS = [
   { id: "git", transport: "stdio", command: "npx -y @modelcontextprotocol/server-git" },
   { id: "mysql", transport: "stdio", command: "npx -y @modelcontextprotocol/server-mysql mysql://root@localhost/db" },
   { id: "playwright", transport: "stdio", command: "npx -y @modelcontextprotocol/server-playwright" }
-] as const
+] as const satisfies readonly CuratedMcpFingerprint[]
 
-export type CuratedMcpFingerprint = (typeof CURATED_MCP_FINGERPRINTS)[number]
-export type CuratedMcpPresetId = CuratedMcpFingerprint["id"]
+export type CuratedMcpPresetId = (typeof CURATED_MCP_FINGERPRINTS)[number]["id"]
 
 export const CURATED_MCP_SERVER_IDS = CURATED_MCP_FINGERPRINTS.map((item) => item.id) as readonly CuratedMcpPresetId[]
 

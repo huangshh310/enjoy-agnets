@@ -9,7 +9,10 @@ import {
   RiGlobalLine,
   RiSparklingLine
 } from "@remixicon/react"
-import { CURATED_MCP_FINGERPRINTS } from "@enjoy-agents/ipc-contract/mcp-curated"
+import {
+  CURATED_MCP_FINGERPRINTS,
+  type CuratedMcpFingerprint
+} from "@enjoy-agents/ipc-contract/mcp-curated"
 import type { TranslateFn } from "@renderer/i18n"
 import {
   BraveIcon,
@@ -534,7 +537,9 @@ const PRESET_DEFS: PresetDef[] = [
   }
 ]
 
-const FINGERPRINT_BY_ID = new Map(CURATED_MCP_FINGERPRINTS.map((item) => [item.id, item]))
+const FINGERPRINT_BY_ID = new Map<string, CuratedMcpFingerprint>(
+  CURATED_MCP_FINGERPRINTS.map((item) => [item.id, item])
+)
 
 function withSharedFingerprint(def: PresetDef): PresetDef {
   const fingerprint = FINGERPRINT_BY_ID.get(def.id)
@@ -542,8 +547,8 @@ function withSharedFingerprint(def: PresetDef): PresetDef {
   return {
     ...def,
     transport: fingerprint.transport,
-    command: fingerprint.command,
-    url: "url" in fingerprint ? fingerprint.url : def.url
+    command: fingerprint.command ?? def.command,
+    url: fingerprint.url ?? def.url
   }
 }
 
