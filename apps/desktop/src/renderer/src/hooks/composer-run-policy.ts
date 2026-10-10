@@ -19,6 +19,7 @@ export function isEmptyStreamingAssistant(message: ThreadMessage | undefined): b
     !message.content.trim() &&
     !(message.reasoning ?? "").trim() &&
     !message.tools?.length &&
-    !message.assets?.length
+    !message.assets?.length &&
+    !message.sources?.length
   )
 }

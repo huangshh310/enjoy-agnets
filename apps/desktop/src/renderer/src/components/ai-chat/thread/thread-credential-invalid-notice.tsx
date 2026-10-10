@@ -8,6 +8,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { defaultProviderLabel, resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
 import { providerEditSearch } from "@renderer/lib/open-provider-edit"
+import { CHAT_CONNECT_FROM } from "@renderer/lib/provider-form-origin"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
 export function ThreadCredentialInvalidNotice({
@@ -37,7 +38,7 @@ export function ThreadCredentialInvalidNotice({
         void navigate({
           to: "/settings/$section",
           params: { section: "providers" },
-          search: providerEditSearch(providerId)
+          search: providerEditSearch(providerId, CHAT_CONNECT_FROM)
         })
       }}
       onDismiss={onDismiss}

@@ -45,6 +45,9 @@ export function ProviderSettings() {
     setPicking(true)
   }, [search.create])
   useEffect(() => {
+    if (!settings.editor) openedEdit.current = null
+  }, [settings.editor])
+  useEffect(() => {
     if (!search.edit || openedEdit.current === search.edit) return
     const profile = findProviderForEdit(settings.providers, search.edit)
     if (!profile) return

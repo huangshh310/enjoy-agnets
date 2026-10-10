@@ -13,6 +13,7 @@ import {
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { ChatSendErrorCode } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { rollbackPreOutputTurn, shouldRollbackPreOutput } from "./pre-output-rollback"
 import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
@@ -22,7 +23,7 @@ import {
   isForeignRunId,
   shouldFinalizeComposerRun
 } from "./stream-run-scope"
-import { dropPreOutputOptimisticTurn, lastUserText } from "./drop-pre-output-turn"
+import { lastUserText } from "./drop-pre-output-turn"
 
 export type StreamPatch = {
   messages: ThreadMessage[]
@@ -107,17 +108,18 @@ function applyTerminalEvent(
       }
     }
     const code = chatSendErrorCodeOf(event)
-    const lastUser = lastUserText(messages)
-    if (event.preOutput === true) {
+    if (shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) {
+      const rolled = rollbackPreOutputTurn(messages)
       return {
-        messages: dropPreOutputOptimisticTurn(messages),
+        messages: rolled.messages,
         pendingApproval: null,
         running: false,
         runId: null,
         error: code ?? event.message,
-        ...(lastUser ? { composer: lastUser } : {})
+        ...(rolled.composer ? { composer: rolled.composer } : {})
       }
     }
+    const lastUser = lastUserText(messages)
     return {
       messages: finalizeRun(messages),
       running: false,

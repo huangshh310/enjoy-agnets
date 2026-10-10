@@ -1,6 +1,6 @@
 # spec/ai-capabilities
 
-> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（`CHAT_READY=none` 不冻结；未设不注入 ollama；`ENJOY_E2E_CREDENTIAL` 含 forbidden/billing 后缀；`ENJOY_E2E_SEND` 四态）
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（`CHAT_READY=none` 不冻结；未设不注入 ollama；`run.error.preOutput`；`PRE_OUTPUT_FAILURE_CODES`；`ENJOY_E2E_SEND` 四态）
 
 ## 当前真相
 

@@ -58,4 +58,6 @@ export type IngestAttentionInput = {
   now?: number
   /** 本轮工具全未执行：run.end 不弹「已完成」。 */
   omitComplete?: boolean
+  /** 前台出字前失败不当「出错」/「需处理」。 */
+  foreground?: boolean
 }

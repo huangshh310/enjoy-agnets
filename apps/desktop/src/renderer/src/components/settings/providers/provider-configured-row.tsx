@@ -80,6 +80,7 @@ export function ProviderConfiguredRow({
           providerKind={profile.kind}
           providerName={profile.name}
           onFixKey={() => {
+            onEdit()
             void navigate({
               to: "/settings/$section",
               params: { section: "providers" },

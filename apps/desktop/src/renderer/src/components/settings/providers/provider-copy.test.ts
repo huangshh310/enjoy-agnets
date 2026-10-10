@@ -18,3 +18,13 @@ test("自定义端点标题走 addCustom，地址走 baseUrl", () => {
   assert.match(fields, /settings\.providers\.baseUrlHint/)
   assert.doesNotMatch(fields, /primaryBase/)
 })
+
+test("列表改密钥直接 openEdit，关抽屉后还能再开同一档案", () => {
+  const row = readFileSync(join(dir, "provider-configured-row.tsx"), "utf8")
+  const page = readFileSync(join(dir, "providers-settings.tsx"), "utf8")
+  const recheck = readFileSync(join(dir, "../../../hooks/use-recheck-provider.ts"), "utf8")
+  assert.match(row, /onFixKey=\{\(\) => \{\s*onEdit\(\)/)
+  assert.match(page, /if \(!settings\.editor\) openedEdit\.current = null/)
+  assert.match(recheck, /recheckStillUnreachable/)
+  assert.match(recheck, /credential-recheck-still-unreachable/)
+})

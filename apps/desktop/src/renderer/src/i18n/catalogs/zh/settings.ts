@@ -103,6 +103,7 @@ export const zhSettings = {
     credentialUnverifiedBilling: "额度或账单有问题，到供应商官网处理好后再试。",
     credentialFixKey: "改密钥",
     credentialRecheck: "再试一次",
+    recheckStillUnreachable: "还是连不上",
     readyUnverifiedHint: "密钥还没验证，第一次发消息时会检查。",
     readyRestrictedHint: "{name} 暂时用不了，可以再连一家备用。",
     readyConnected: "已连 {name} · {model}",

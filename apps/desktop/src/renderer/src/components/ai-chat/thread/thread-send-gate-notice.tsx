@@ -4,6 +4,7 @@
 import type { ReactNode } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
+import { APP_REGION_NO_DRAG_CLASS } from "@renderer/lib/app-region"
 import { cx } from "@/utils/cx"
 
 export type SendGateNoticeTone = "neutral" | "warning" | "danger"
@@ -84,9 +85,14 @@ export function ThreadSendGateNotice({
       </div>
       <button
         type="button"
+        data-testid={`${testId}-dismiss`}
+        data-app-region="no-drag"
         onClick={onDismiss}
         title={t("chat.dismissError")}
-        className="cursor-pointer text-text-tertiary hover:text-text-primary"
+        className={cx(
+          "cursor-pointer text-text-tertiary hover:text-text-primary",
+          APP_REGION_NO_DRAG_CLASS
+        )}
       >
         <RiCloseLine className="size-4" />
       </button>

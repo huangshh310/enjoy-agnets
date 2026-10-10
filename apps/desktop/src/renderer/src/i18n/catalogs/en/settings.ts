@@ -103,6 +103,7 @@ export const enSettings = {
     credentialUnverifiedBilling: "There's a quota or billing issue. Visit the provider console and try again.",
     credentialFixKey: "Edit key",
     credentialRecheck: "Try again",
+    recheckStillUnreachable: "Still can't connect",
     readyUnverifiedHint: "The key is not verified yet. The first send will check it.",
     readyRestrictedHint: "{name} is unavailable for now. You can connect a backup.",
     readyConnected: "Connected {name} · {model}",

@@ -24,6 +24,7 @@ export const enInboxPages = {
   emptyHint: "Only decide, review, and failed. Running stays in the sidebar; completed stays out of the default inbox.",
   changedFiles: "Changed {files} and {total} files",
   toolsCalled: "Tools: {names}",
+  thoughtSecondsWithApproval: "{n}s this turn (includes approval wait)",
   groupToday: "Today",
   groupYesterday: "Yesterday",
   groupEarlier: "Earlier",

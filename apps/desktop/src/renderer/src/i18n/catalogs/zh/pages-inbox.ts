@@ -24,6 +24,7 @@ export const zhInboxPages = {
   emptyHint: "只列拍板、待验收和失败。运行中在侧栏「进行中」，完成不进默认收件箱。",
   changedFiles: "改了 {files} 等 {total} 个文件",
   toolsCalled: "工具调用：{names}",
+  thoughtSecondsWithApproval: "本轮 {n} 秒（含等待审批）",
   groupToday: "今天",
   groupYesterday: "昨天",
   groupEarlier: "更早",

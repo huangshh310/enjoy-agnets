@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#135：none 不冻结；luna forbidden/billing 琥珀态）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#135：none 不冻结；luna forbidden/billing 琥珀态；列表「改密钥」`openEdit`；聊天改密钥 `from=chat`）
 
 ## 当前真相
 

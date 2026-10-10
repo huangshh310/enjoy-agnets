@@ -41,7 +41,7 @@ export const RunAgentInput = z.object({
   executePlan: z.boolean().optional(),
   /** 幂等收据。同一 commandId 重试返回第一次的 runId，不双开 turn。 */
   commandId: z.string().min(1).optional(),
-  /** 双击防重。同一会话同一 id 60s 内不重写；首字前回滚后换新 id 才算重试。 */
+  /** 同会话 60s 内去重（最长 80）。每次「发送 / 再发一次 / 再试一次 / Enter」新 id；同一手势误触连点才复用。与 commandId 分轨。首字前回滚后换新 id 才算重试。 */
   clientRequestId: z.string().min(1).max(CLIENT_REQUEST_ID_MAX).optional(),
   /** CU-P1-B：Composer `@桌面` / `@应用` 偏置。缺省不偏。提及 ≠ 放行。 */
   desktopBias: DesktopMentionBias.optional(),

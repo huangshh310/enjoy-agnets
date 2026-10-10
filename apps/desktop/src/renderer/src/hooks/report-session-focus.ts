@@ -1,9 +1,8 @@
 /**
- * 把当前会话报给 main。窗口失焦由 main 清掉；重新 focus 再报一次。
+ * 兼容入口：走同一份防抖 / lastSent，避免和 useSessionFocus 双报。
  */
-import { getIde, hasIde } from "../lib/ide"
+import { reportSessionFocused } from "./session-focus"
 
 export function reportSessionFocus(sessionId: string | null): void {
-  if (!hasIde()) return
-  void getIde().session.setFocused({ sessionId }).catch(() => undefined)
+  reportSessionFocused(sessionId)
 }

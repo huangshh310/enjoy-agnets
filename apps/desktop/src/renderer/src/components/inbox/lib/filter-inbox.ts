@@ -66,7 +66,7 @@ export function inboxFromPendingApprovals(
         id,
         copyKey,
         title: input.t(`attention.kind.${copyKey}`),
-        summary: `${row.sessionTitle} · ${row.name}`,
+        summary: toolDisplayPhrase(row.name, input.t),
         sessionTitle: row.sessionTitle,
         toolName: row.name,
         category: "agent" as InboxKind,

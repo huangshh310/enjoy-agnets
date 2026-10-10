@@ -12,8 +12,9 @@ import { syncReviewGateOnComposerStart } from "../../components/ai-chat/review-g
 import {
   abortOrphanedRun,
   claimComposerRun,
-  dropEmptyPendingAssistant
+  dropOptimisticTurn
 } from "../composer-run-control"
+import { releaseClientRequestId, takeClientRequestId } from "./client-request-id"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
@@ -42,6 +43,8 @@ type PreparedSend = {
   assets?: QueuedComposerAsset[]
   executePlan?: boolean
   sessionId?: string
+  /** 同一手势续发（创建窗排队）复用，禁止另开 clientRequestId。 */
+  clientRequestId?: string
 }
 
 type SendPayload = {
@@ -55,43 +58,54 @@ type SendPayload = {
 
 /** 先 setRunning 占位，避免双击连发两轮。创建窗内先入队，禁止清输入空转。 */
 export async function sendComposerMessage(prepared?: PreparedSend) {
+  const clientRequestId = takeClientRequestId(prepared?.clientRequestId)
   const store = useChatStore.getState()
   if (store.running) return
-  if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
-    restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
-    return
-  }
-  if (composerNeedsSessionReady() && !prepared) {
-    const text = store.composer
-    if (!text.trim()) {
-      restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
+  let handoff = false
+  try {
+    if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
+      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
       return
     }
-    const assets = takeComposerAssetDetails()
-    await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next), assets)
-    return
-  }
-  store.setRunning(true)
-  if (!guardComposerSend(store)) {
-    store.setRunning(false)
-    const blocked = useChatStore.getState().error
-    if (blocked === NEED_MODEL || isDraftKeepingSendGate(blocked)) return
-    if (prepared?.content) {
-      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
-    } else if (!store.sessionId) {
-      restoreComposerAfterFailedSend(store.composer, SESSION_NOT_READY)
+    if (composerNeedsSessionReady() && !prepared) {
+      const text = store.composer
+      if (!text.trim()) {
+        restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
+        return
+      }
+      const assets = takeComposerAssetDetails()
+      handoff = true
+      await waitThenSendAfterCreate(
+        text,
+        (next) => sendComposerMessage({ ...next, clientRequestId }),
+        assets
+      )
+      return
     }
-    return
+    store.setRunning(true)
+    if (!guardComposerSend(store)) {
+      store.setRunning(false)
+      const blocked = useChatStore.getState().error
+      if (blocked === NEED_MODEL || isDraftKeepingSendGate(blocked)) return
+      if (prepared?.content) {
+        restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+      } else if (!store.sessionId) {
+        restoreComposerAfterFailedSend(store.composer, SESSION_NOT_READY)
+      }
+      return
+    }
+    syncReviewGateOnComposerStart(store.sessionId)
+    const payload = await resolveSendPayload(prepared)
+    if (!payload) {
+      store.setRunning(false)
+      return
+    }
+    const messages = beginOptimisticTurn(store, payload)
+    if (prepared) clearSentComposerText(prepared.content)
+    await launchComposerRun(store, payload, messages, clientRequestId)
+  } finally {
+    if (!handoff) releaseClientRequestId(clientRequestId)
   }
-  syncReviewGateOnComposerStart(store.sessionId)
-  const payload = await resolveSendPayload(prepared)
-  if (!payload) {
-    store.setRunning(false)
-    return
-  }
-  const messages = beginOptimisticTurn(store, payload)
-  if (prepared) clearSentComposerText(prepared.content)
-  await launchComposerRun(store, payload, messages)
 }
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
@@ -148,7 +162,8 @@ function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
 async function launchComposerRun(
   store: ChatState,
   payload: SendPayload,
-  messages: ChatState["messages"]
+  messages: ChatState["messages"],
+  clientRequestId: string
 ) {
   const sessionId = store.sessionId
   try {
@@ -158,11 +173,12 @@ async function launchComposerRun(
       messages,
       payload.assetIds,
       payload.executePlan,
-      payload.computerUseOnce
+      payload.computerUseOnce,
+      clientRequestId
     )
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
-      dropEmptyPendingAssistant()
+      dropOptimisticTurn(payload.content)
       store.setRunning(false)
       store.setError(blocked)
       if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
@@ -176,7 +192,7 @@ async function launchComposerRun(
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
   } catch (error) {
-    dropEmptyPendingAssistant()
+    dropOptimisticTurn(payload.content)
     store.setRunning(false)
     store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
     if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
@@ -193,7 +209,8 @@ async function startComposerRun(
   messages: ChatState["messages"],
   assetIds: string[],
   executePlan?: boolean,
-  computerUseOnce?: boolean
+  computerUseOnce?: boolean,
+  clientRequestId?: string
 ) {
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -232,7 +249,7 @@ async function startComposerRun(
     attachments: assetIds,
     executePlan: executePlan || undefined,
     commandId: crypto.randomUUID(),
-    clientRequestId: crypto.randomUUID(),
+    ...(clientRequestId ? { clientRequestId } : {}),
     ...(desktopBias ? { desktopBias } : {}),
     ...(once ? { computerUseOnce: true } : {})
   })
