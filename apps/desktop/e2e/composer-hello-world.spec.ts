@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
+import { sendComposer } from "./send-composer"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
 const shots = "/opt/cursor/artifacts/screenshots"
@@ -62,6 +63,47 @@ test("新对话逐字慢打 10 次 + 慢建会话，整句入库且 Enter 前不
   }
 
   writeFileSync(join(logs, "p1_slow_type_db.txt"), dbLines.join("\n"))
+})
+
+test("已有会话逐字慢打 please write a note，整句入库且 Enter 前不发", async () => {
+  test.setTimeout(120_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const playwright = await import("playwright")
+  const electron = playwright._electron
+  if (!electron?.launch) {
+    test.skip(true, "playwright electron launcher unavailable")
+    return
+  }
+  mkdirSync(shots, { recursive: true })
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-hello-exist-ws-"))
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-hello-exist-ud-"))
+  writeFileSync(join(workspace, "readme.md"), "# e2e\n")
+  const app = await launchApp(electron, workspace, userData)
+  try {
+    const window = await readyWindow(app)
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.waitFor({ timeout: 20_000 })
+    await waitSendReady(window)
+    await sendComposer(window, composer, "seed existing session")
+    await window.waitForFunction(() => document.body.innerText.includes("stub-ok"), undefined, {
+      timeout: 20_000
+    })
+    const prompt = "please write a note"
+    const beforeEnter = listUserContents(userData)
+    await composer.click()
+    await typeSlow(window, prompt)
+    await expect(composer).toHaveValue(prompt)
+    expect(listUserContents(userData)).toEqual(beforeEnter)
+    await window.screenshot({ path: join(shots, "p1_existing_before_enter.png"), fullPage: true })
+    await composer.press("Enter")
+    await expect.poll(() => lastUserMessage(userData), { timeout: 20_000 }).toBe(prompt)
+    await expect(composer).toHaveValue("", { timeout: 15_000 })
+    expect(countUserMessages(userData, prompt)).toBe(1)
+    expect(listUserContents(userData).length).toBe(beforeEnter.length + 1)
+    await window.screenshot({ path: join(shots, "p1_existing_please_write_a_note.png"), fullPage: true })
+  } finally {
+    await closeApp(app)
+  }
 })
 
 async function runSlowTypeSend(

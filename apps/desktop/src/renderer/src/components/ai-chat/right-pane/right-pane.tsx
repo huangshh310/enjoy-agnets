@@ -57,7 +57,7 @@ export function RightPane({
   }, [workspaceId, reset])
 
   const empty = tabs.length === 0
-  const { shellFrost } = useRightPaneShellFrost(workspaceId, changes.length)
+  const { shellFrost } = useRightPaneShellFrost()
 
   return (
     <section
