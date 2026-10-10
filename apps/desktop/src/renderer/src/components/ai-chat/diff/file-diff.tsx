@@ -3,11 +3,12 @@
  * 参考 https://www.aicss.dev/components/file-diff 顶级交互与设计规范。
  * 具备 4 列行号/符号对齐网格、左侧 3px 新增/删除状态指示条、全高 Gutter 分界线与增减统计徽标。
  */
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { RiCodeSSlashLine } from "@remixicon/react"
 import type { DiffLine, FileDiffModel } from "@enjoy-agents/agent-core/diff"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { useSourceFileReveal } from "../thread/sources/source-file-reveal"
 import { applyDiffViewOptions, splitWordDiff } from "./file-diff-options"
 import { diffTone, type DiffPalette } from "./diff-palette"
 export function FileDiff({
@@ -39,10 +40,17 @@ export function FileDiff({
 }) {
   const t = useT()
   const tone = diffTone(palette)
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const reveal = useSourceFileReveal((state) => state.reveal)
   const view = useMemo(
     () => applyDiffViewOptions(model, { hideWhitespace, foldLargeFiles }),
     [model, hideWhitespace, foldLargeFiles]
   )
+  useEffect(() => {
+    if (!fill || !reveal || reveal.path !== model.path) return
+    const target = scrollerRef.current?.querySelector(`[data-source-line="${reveal.line}"]`)
+    target?.scrollIntoView({ block: "center" })
+  }, [fill, reveal, model.path, view])
   if (view.hunks.length === 0) {
     return (
       <div
@@ -72,7 +80,10 @@ export function FileDiff({
         <header className="flex items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-caption-1-regular">
           <div className="flex items-center gap-2 min-w-0">
             <RiCodeSSlashLine className="size-4 shrink-0 text-text-tertiary" />
-            <span className="min-w-0 truncate font-semibold text-text-primary">
+            <span
+              data-testid={fill ? "source-file-path" : undefined}
+              className="min-w-0 truncate font-semibold text-text-primary"
+            >
               {model.path}
             </span>
           </div>
@@ -89,6 +100,7 @@ export function FileDiff({
 
       {/* Diff 主体行区域 (4 列等宽网格 + 左侧 3px 状态指示条) */}
       <div
+        ref={scrollerRef}
         className={cx(
           "overflow-auto font-mono text-caption-2-regular leading-relaxed relative bg-background-primary-default",
           fill && "min-h-0 flex-1",
@@ -143,6 +155,7 @@ function DiffRow({
 
   return (
     <div
+      data-source-line={line.newNo ?? line.oldNo}
       className={cx(
         "group/diff relative grid grid-cols-[32px_32px_18px_1fr] items-stretch text-caption-2-regular transition-colors",
         isAdd && tone.addRow,

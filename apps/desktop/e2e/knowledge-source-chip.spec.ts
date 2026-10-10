@@ -1,6 +1,7 @@
 /**
  * 知识库来源：一次点开抽屉；工作区文件打开到行；缺失展开片段；只亮一行。
  */
+import { execSync } from "node:child_process"
 import { mkdtempSync, writeFileSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -42,6 +43,13 @@ async function closeApp(app: ElectronApplication): Promise<void> {
   }
 }
 
+/** 审查栏非 git 只画空态；夹具先建仓，打开文件才走现有 ChangesFileDiff。 */
+function initFixtureGit(workspace: string): void {
+  execSync("git init -b main", { cwd: workspace })
+  execSync("git add readme.md", { cwd: workspace })
+  execSync("git -c user.email=e2e@local -c user.name=e2e commit -m init", { cwd: workspace })
+}
+
 async function waitSheetReady(window: Page, sheet: Locator): Promise<void> {
   await expect(sheet).toBeVisible({ timeout: 8_000 })
   await expect
@@ -55,6 +63,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-know-"))
   writeFileSync(join(workspace, "readme.md"), "# e2e workspace\nhello knowledge\n")
   writeFileSync(join(workspace, "untracked.txt"), "hello knowledge\n")
+  initFixtureGit(workspace)
   const { app, window } = await launchEnjoy({
     ENJOY_E2E_STUB: "1",
     ENJOY_E2E_WORKSPACE: workspace

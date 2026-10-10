@@ -41,7 +41,7 @@
 - `knowledge.documents` 失败时 UI 必须显示错误，不能把 `data ?? []` 画成「还没有文件」。View Files 若只切 tab 不设 `selectedPath`，看起来像点了没打开该目录。
 - 编辑来源弹窗不要用「路径没变」禁用保存。同一路径点 Rebuild 走 `knowledge.index rebuild`；改路径才删旧建新。卡住 Indexing 时也要能点。
 - 相对路径相对**当前打开的工作区根**，不是仓库自己的 `design/`。工作区是 `Desktop/img` 时，`design` 会变成 `Desktop/img/design`，不存在就 ENOENT。索引失败要把 `status=error` 和可读 `error` 写回来源，UI 必须显示；预设卡若磁盘上没有该目录，禁用 Index Now。
-- 添加来源弹窗的「整个项目」芯片不能藏在 `workspaceDirs.length > 0` 后面：只有 `readme.md`、没有子目录的工作区否则没法点根。`ENJOY_E2E_STUB` 启动时索引 `.`，否则 `citeKnowledge` 没有命中，聊天里看不到 `readme.md`。文档路径在索引面板里，检索首页要搜才会在命中卡出现 `readme.md`。窗口验收：发 `hello knowledge` → 一次点芯片开抽屉 → 点 `readme.md` 行打开右侧并滚到行；缺失文件就地展开片段；`data-selected=true` 只能一行（`e2e/knowledge-source-chip.spec.ts`）。
+- 添加来源弹窗的「整个项目」芯片不能藏在 `workspaceDirs.length > 0` 后面：只有 `readme.md`、没有子目录的工作区否则没法点根。`ENJOY_E2E_STUB` 启动时索引 `.`，否则 `citeKnowledge` 没有命中，聊天里看不到 `readme.md`。文档路径在索引面板里，检索首页要搜才会在命中卡出现 `readme.md`。窗口验收：发 `hello knowledge` → 一次点芯片开抽屉 → 点 `readme.md` 行打开右侧并滚到行；缺失文件就地展开片段；`data-selected=true` 只能一行（`e2e/knowledge-source-chip.spec.ts`）。夹具先 `git init`，否则审查栏非 git 空态看不到打开的文件。
 - `citeKnowledge` 的 `sourceId` 是知识库来源（整个 `.`），不是文件。芯片 id 若写成 `source.sourceId || path`，多文件会撞 id、两行一起亮。正确做法：`sourceChipStableId` = `path:startLine`。
 - 本轮来源知识库行点了没反应、页脚却写「点文件可以在右侧打开」。根因：旧逻辑只让 `file`+path 聚焦审查。正确做法：工作区相对路径且 `workspace.readFile` 成功则走 `openChangedFile`；找不到 / `..` / 盘符 / URL 就地展开 `snippet`。页脚必须跟真实行为：「点文件可以在右侧打开；找不到的文件会就地展开片段。」
 - 聊天来源行若只给 file/skill/mcp 画图标，点知识库芯片会 `Element type is invalid`（`SourceRowBody`）。图标 / 词条必须是 `Record<SourceBadgeKind, …>`，并留运行时回落。
