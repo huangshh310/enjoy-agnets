@@ -49,7 +49,6 @@ export const KEYBINDING_LIMIT = 256
 const WHEN_BY_COMMAND: Partial<Record<KeybindingCommand, KeybindingWhen>> = {
   "nav.back": "settingsOrInbox",
   "chat.find": "!terminalFocus",
-  "chat.permission.cycle": "!inputFocus",
   "shortcuts.sheet": "!inputFocus"
 }
 
@@ -70,7 +69,7 @@ export const DEFAULT_KEYBINDINGS: readonly KeybindingRule[] = [
   { key: "mod+shift+c", command: "pane.context" },
   { key: "mod+shift+d", command: "pane.desktop" },
   { key: "mod+f", command: "chat.find", when: "!terminalFocus" },
-  { key: "shift+tab", command: "chat.permission.cycle", when: "!inputFocus" },
+  { key: "shift+tab", command: "chat.permission.cycle" },
   { key: "?", command: "shortcuts.sheet", when: "!inputFocus" }
 ]
 

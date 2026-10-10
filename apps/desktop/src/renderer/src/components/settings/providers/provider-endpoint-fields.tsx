@@ -169,7 +169,7 @@ function EndpointInput({
         <p className="text-caption-2-medium text-status-yellow-text">{t("settings.providers.detectMismatch")}</p>
       ) : null}
       {code && code !== "detectOk" ? (
-        <p className="text-caption-2-medium text-text-tertiary">{t(`settings.providers.${code}`)}</p>
+        <p className="text-caption-2-medium text-text-secondary">{t(`settings.providers.${code}`)}</p>
       ) : null}
       {advice.action === "reject" ? (
         <p className="text-pretty text-caption-2-medium text-text-error-primary">
@@ -193,7 +193,7 @@ function Field({
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
         <Label className="text-caption-1-medium text-text-secondary">{label}</Label>
-        {hint ? <span className="text-caption-1-medium text-text-tertiary">{hint}</span> : null}
+        {hint ? <span className="text-caption-1-medium text-text-secondary">{hint}</span> : null}
       </div>
       {children}
     </div>

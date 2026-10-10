@@ -39,7 +39,7 @@ export function AiChatStatusBar({
                   ? t("chat.contextTokensHintCompacted", { percent: compaction.savedPercent })
                   : t("chat.contextTokensHint")
               }
-              className="inline-flex items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent-500/20"
+              className="inline-flex items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
               <ContextRing value={capKnown ? usagePercent : 0} />
               <span className="font-medium font-mono">

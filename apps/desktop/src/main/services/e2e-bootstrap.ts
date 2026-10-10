@@ -9,6 +9,8 @@ import { createSession } from "./session-queries"
 import { upsertProfile } from "./secrets"
 import { openWorkspace } from "./workspace"
 import { seedE2eAutomations } from "./e2e-stub-automations"
+import { shouldSeedE2eLedger } from "./e2e-stub-ledger-data"
+import { seedE2eLedgerSession } from "./e2e-stub-ledger"
 import { addKnowledgeSource, indexKnowledgeSource } from "./knowledge-service"
 import { e2eSessionCount } from "./e2e-session-count"
 
@@ -33,6 +35,7 @@ export async function bootstrapE2eStub(): Promise<void> {
     console.warn("e2e stub profile skipped", error)
   }
   await seedE2eSessions(workspace.id)
+  if (shouldSeedE2eLedger()) await seedE2eLedgerSession(workspace.id)
   seedE2eAutomations()
   const source = await addKnowledgeSource(workspace.id, ".")
   await indexKnowledgeSource(source.id, true)

@@ -8,8 +8,6 @@ import { Group, Panel, useDefaultLayout } from "react-resizable-panels"
 import { cx } from "@/utils/cx"
 import { useRightPaneShortcuts } from "@renderer/components/ai-chat/right-pane/use-right-pane-shortcuts"
 import { useRightPaneWidth } from "@renderer/components/ai-chat/right-pane/use-right-pane-width"
-import { useAttentionStore } from "@renderer/stores/attention/attention-store"
-import { stripVisibleItems } from "@renderer/stores/attention/ingest-attention"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { AppModuleId } from "../app-shell.types"
 import { AttentionStrip } from "@renderer/components/ai-chat/attention/attention-strip"
@@ -30,7 +28,6 @@ export function StageSplit({
   const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isConversation = isConversationSurface(isChat, pathname)
-  const stripVisible = useAttentionStore((state) => stripVisibleItems(state.items).length > 0)
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
     id: "enjoy-agents-chat-split",
     storage: window.localStorage
@@ -74,22 +71,10 @@ export function StageSplit({
       >
         <HistoryPageSlide>
         <div className="relative h-full min-h-0 flex-1">
-          <div
-            className={cx(
-              "absolute inset-0 flex min-h-0 flex-col",
-              !isChat && "hidden",
-              stripVisible && "pt-12"
-            )}
-          >
+          <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
             <ChatStage />
           </div>
-          <div
-            className={cx(
-              "absolute inset-0 flex min-h-0 flex-col",
-              isChat && "hidden",
-              stripVisible && "pt-12"
-            )}
-          >
+          <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
             <Outlet />
           </div>
           <AttentionStrip />

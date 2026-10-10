@@ -254,6 +254,6 @@ function ModelProbeStatus({ probe }: { probe: ProbeState }) {
   }
 
   return (
-    <p className="text-caption-1-medium text-text-tertiary">{t("settings.providers.fetchHint")}</p>
+    <p className="text-caption-1-medium text-text-secondary">{t("settings.providers.fetchHint")}</p>
   )
 }

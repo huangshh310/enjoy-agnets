@@ -1,5 +1,5 @@
 /**
- * 审查栏提交底栏：输入框内 sparkle 生成说明，提交/推送收到芯片行。
+ * 审查栏提交底栏：输入框内 sparkle 生成说明；类型芯片一行，提交/推送另起一行，避免压住「推送」。
  */
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react"
@@ -127,8 +127,8 @@ export const ReviewCommitDock = forwardRef<
         ) : null}
       </div>
 
-      <div className="flex min-w-0 items-center gap-1">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+      <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
           {CONVENTIONAL_PREFIXES.map((item) => (
             <button
               key={item.prefix}
@@ -144,29 +144,31 @@ export const ReviewCommitDock = forwardRef<
             </button>
           ))}
         </div>
-        {onPush ? (
+        <div className="flex min-w-0 items-center justify-end gap-1">
+          {onPush ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              disabled={locked}
+              className="h-6 shrink-0 gap-1 px-1.5 text-text-tertiary"
+              onClick={() => void runPush()}
+            >
+              <RiUploadCloudLine className="size-3" />
+              <span>{t("chat.reviewPushAction")}</span>
+            </Button>
+          ) : null}
           <Button
-            type="button"
-            variant="ghost"
+            type="submit"
             size="xs"
-            disabled={locked}
-            className="h-6 shrink-0 gap-1 px-1.5 text-text-tertiary"
-            onClick={() => void runPush()}
+            disabled={locked || !message.trim() || changesCount === 0}
+            title={changesCount === 0 ? t("chat.reviewNothingStaged") : undefined}
+            className="h-6 shrink-0 gap-1 px-2"
           >
-            <RiUploadCloudLine className="size-3" />
-            <span>{t("chat.reviewPushAction")}</span>
+            <RiGitCommitLine className="size-3" />
+            <span>{busy ? t("chat.reviewCommitting") : t("chat.reviewCommitStaged")}</span>
           </Button>
-        ) : null}
-        <Button
-          type="submit"
-          size="xs"
-          disabled={locked || !message.trim() || changesCount === 0}
-          title={changesCount === 0 ? t("chat.reviewNothingStaged") : undefined}
-          className="h-6 shrink-0 gap-1 px-2"
-        >
-          <RiGitCommitLine className="size-3" />
-          <span>{busy ? t("chat.reviewCommitting") : t("chat.reviewCommitStaged")}</span>
-        </Button>
+        </div>
       </div>
 
       {error ? <p className="text-caption-2-regular text-text-error-primary">{error}</p> : null}

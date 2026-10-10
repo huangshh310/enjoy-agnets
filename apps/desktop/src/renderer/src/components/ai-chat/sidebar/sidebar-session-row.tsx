@@ -25,15 +25,21 @@ export function SidebarSessionRow({
   workflowStatus = null,
   changesSummary = null,
   className,
-  nameClassName = "text-caption-2-medium"
+  nameClassName = "text-caption-2-medium",
+  surface = "tree"
 }: SidebarSessionRowProps) {
+  const t = useT()
   const activity = useSessionActivity(sessionId)
   const statusMeta = getWorkflowStatusMeta(workflowStatus)
+  const label = displaySessionTitle(name, t("chat.newAgent"))
 
   return (
     <div
+      data-testid="sidebar-session-row"
+      data-session-name={name}
+      data-session-surface={surface}
       className={cx(
-        "group/session flex h-7 w-full items-center gap-1 rounded-md",
+        "group/session flex h-7 w-full min-w-0 items-center gap-1 rounded-md",
         active
           ? "bg-background-secondary-hover text-text-primary"
           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",
@@ -43,7 +49,8 @@ export function SidebarSessionRow({
       <button
         type="button"
         onClick={onSelect}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md px-2 py-0.5 text-left"
+        title={label}
+        className="flex min-w-[6rem] flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-2 py-0.5 text-left"
       >
         <SessionAgentMark sessionId={sessionId} />
         {flagged ? (
@@ -52,7 +59,7 @@ export function SidebarSessionRow({
           </span>
         ) : null}
         {statusMeta ? <WorkflowStatusGlyph status={statusMeta.status} className={statusMeta.colorClass} /> : null}
-        <SessionRowIdentity name={name} nameClassName={nameClassName} />
+        <SessionRowIdentity label={label} nameClassName={nameClassName} />
         {changesSummary && (changesSummary.additions > 0 || changesSummary.deletions > 0) ? (
           <span
             title="工作区未提交"
@@ -87,16 +94,14 @@ export function SidebarSessionRow({
 
 /** 主行只写会话题。引擎身份走左侧 SessionAgentMark，不要把品牌/供应商名当会话名。 */
 function SessionRowIdentity({
-  name,
+  label,
   nameClassName
 }: {
-  name: string
+  label: string
   nameClassName?: string
 }) {
-  const t = useT()
-  const label = displaySessionTitle(name, t("chat.newAgent"))
   return (
-    <span className={cx("min-w-0 flex-1 truncate", nameClassName)} title={label}>
+    <span className={cx("min-w-[4.5rem] flex-1 truncate", nameClassName)} title={label}>
       {label}
     </span>
   )
@@ -125,5 +130,10 @@ function SessionRowMeta({
     )
   }
   if (running) return <LoadingStateGlyph variant="drive" className={cx("shrink-0", hide)} />
-  return <span className={cx("shrink-0 text-caption-2-regular text-text-secondary", hide)}>{formatTime(updatedAt)}</span>
+  const time = Number.isFinite(updatedAt) && updatedAt > 0 ? formatTime(updatedAt) : ""
+  return (
+    <span className={cx("w-8 shrink-0 text-right text-caption-2-regular text-text-secondary tabular-nums", hide)}>
+      {time}
+    </span>
+  )
 }

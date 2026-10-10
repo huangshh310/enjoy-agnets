@@ -1,7 +1,9 @@
 /**
  * 紧凑 C 端行：名称 · 触发 · 次行（上次 / 已跳过 / 错过 N 次）· 开/停。
+ * 空白处打开抽屉；开关 / 失败条 / 次行 tip 仍走各自动作。
  */
 import type { Automation, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
+import { RiCalendarScheduleLine } from "@remixicon/react"
 import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
@@ -42,33 +44,45 @@ export function AutomationRow({
       )}
       data-testid="automation-row"
     >
-      <div className="flex items-center gap-3 px-4 py-2.5">
-        <div className="min-w-0 flex-1">
-          <button type="button" onClick={onOpen} className="w-full text-left">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
-              {chips.map((chip) => {
-                const shown = chipLabel(chip.kind, chip.text, t)
-                return (
-                  <span
-                    key={`${chip.kind}:${chip.text}`}
-                    title={shown.title}
-                    className="rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default"
-                  >
-                    {shown.label}
-                  </span>
-                )
-              })}
-              <StatusChip status={status} t={t} />
-            </div>
-          </button>
-          <LastRunExplain text={line.text} tip={line.tip} testId={line.testId} />
-        </div>
-        <Switch
-          checked={automation.enabled}
-          onCheckedChange={onToggle}
-          aria-label={automation.enabled ? t("studio.automations.disableAria") : t("studio.automations.enableAria")}
+      <div className="relative flex items-center gap-3 px-4 py-2.5">
+        <button
+          type="button"
+          onClick={onOpen}
+          data-testid="automation-row-open"
+          aria-label={automation.name}
+          className="absolute inset-0 cursor-pointer"
         />
+        <div className="pointer-events-none relative z-10 min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
+            {chips.map((chip) => {
+              const shown = chipLabel(chip.kind, chip.text, t)
+              return (
+                <span
+                  key={`${chip.kind}:${chip.text}`}
+                  title={shown.title}
+                  className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default"
+                >
+                  {chip.kind === "cron" ? (
+                    <RiCalendarScheduleLine className="size-3 shrink-0 text-text-secondary" aria-hidden />
+                  ) : null}
+                  {shown.label}
+                </span>
+              )
+            })}
+            <StatusChip status={status} t={t} />
+          </div>
+          <div className={line.tip ? "pointer-events-auto" : undefined}>
+            <LastRunExplain text={line.text} tip={line.tip} testId={line.testId} />
+          </div>
+        </div>
+        <div className="relative z-10">
+          <Switch
+            checked={automation.enabled}
+            onCheckedChange={onToggle}
+            aria-label={automation.enabled ? t("studio.automations.disableAria") : t("studio.automations.enableAria")}
+          />
+        </div>
       </div>
       {status === "running" ? (
         <p className="border-t border-accent-500/15 bg-accent-500/10 px-4 py-1.5 text-caption-1-medium text-accent-600">

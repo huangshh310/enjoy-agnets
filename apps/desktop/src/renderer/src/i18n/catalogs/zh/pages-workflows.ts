@@ -99,7 +99,7 @@ export const zhWorkflowPages = {
   recipeAnalyzeTitle: "Analyze → Patch → Verify",
   recipeAnalyzeSubtitle: "针对性诊断与热补丁交付",
   recipeAnalyzeCategory: "诊断与补丁",
-  recipeAnalyzeDesc: "分析错误日志或问题描述，合成最小 diff 补丁，并在目标工作区验证。",
+  recipeAnalyzeDesc: "分析错误日志或问题描述，合成最小改动补丁，并在目标工作区验证。",
   recipeAnalyzeStep1: "分析",
   recipeAnalyzeStep2: "补丁",
   recipeAnalyzeStep3: "验证"

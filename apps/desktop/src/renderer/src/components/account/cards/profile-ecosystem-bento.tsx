@@ -180,32 +180,32 @@ export function ProfileEcosystemBento({
             <div className="flex items-center gap-2 rounded-xl border border-separator-border/60 bg-background-secondary-default/50 p-2.5">
               <RiFireLine className="size-4 shrink-0 text-status-yellow-text" />
               <div className="flex flex-col min-w-0">
-                <span className="truncate text-caption-2-medium font-semibold text-text-primary">活跃先锋</span>
-                <span className="truncate font-mono text-caption-2-regular text-text-tertiary">{summary.topStreakDays} 连续开发</span>
+                <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">活跃先锋</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-tertiary">{summary.topStreakDays} 连续开发</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 rounded-xl border border-separator-border/60 bg-background-secondary-default/50 p-2.5">
               <RiFlashlightLine className="size-4 shrink-0 text-accent-500" />
               <div className="flex flex-col min-w-0">
-                <span className="truncate text-caption-2-medium font-semibold text-text-primary">百万吞吐</span>
-                <span className="truncate font-mono text-caption-2-regular text-text-tertiary">{summary.lifetimeTokens} Tokens</span>
+                <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">百万吞吐</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-tertiary">{summary.lifetimeTokens} Tokens</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 rounded-xl border border-separator-border/60 bg-background-secondary-default/50 p-2.5">
               <RiShieldCheckLine className="size-4 shrink-0 text-state-success-text" />
               <div className="flex flex-col min-w-0">
-                <span className="truncate text-caption-2-medium font-semibold text-text-primary">凭据护盾</span>
-                <span className="truncate font-mono text-caption-2-regular text-text-tertiary">硬件安全托管</span>
+                <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">凭据护盾</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-tertiary">硬件安全托管</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 rounded-xl border border-separator-border/60 bg-background-secondary-default/50 p-2.5">
               <RiStackLine className="size-4 shrink-0 text-accent-500" />
               <div className="flex flex-col min-w-0">
-                <span className="truncate text-caption-2-medium font-semibold text-text-primary">全能调度</span>
-                <span className="truncate font-mono text-caption-2-regular text-text-tertiary">多引擎协同</span>
+                <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">全能调度</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-tertiary">多引擎协同</span>
               </div>
             </div>
           </div>

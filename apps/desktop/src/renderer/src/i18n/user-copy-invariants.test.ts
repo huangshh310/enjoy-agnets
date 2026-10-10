@@ -67,6 +67,12 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.declined, "已拒绝")
   assert.equal(z.chat.newAgent, "新对话")
   assert.equal(z.chat.flagSession, "加星标")
+  assert.equal(z.chat.reviewCommitStaged, "提交已暂存的改动")
+  assert.equal(z.chat.reviewCommitChanges, "提交已暂存的改动")
+  assert.equal(z.chat.approvalCycleHint, "工具审批策略 · 空输入时 Shift+Tab 在读取和编辑之间切换")
+  assert.equal(z.chat.approvalChipHintReads, "读取：助手改文件或运行命令前会逐条问你")
+  assert.equal(z.chat.approvalChipHintEdits, "编辑：助手可直接改文件，运行命令前仍会问你")
+  assert.equal(z.chat.approvalChipHintAll, "全部：助手可直接改文件、运行命令，不再逐条问你")
   assert.equal(z.chat.desktopBiasHostHint, "让助手在这个应用里操作")
   assert.equal(z.chat.mentionScopeWorkspace, "项目")
   assert.equal(z.chat.fastMode, "快速")
@@ -93,8 +99,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
-  assert.equal(z.studio.automations.deleteTitle, "删除这条自动化？")
-  assert.equal(z.studio.automations.discardTitle, "放弃未保存的修改？")
+  assert.equal(z.studio.automations.deleteTitle, "删除这条自动化\uFF1F")
+  assert.equal(z.studio.automations.discardTitle, "放弃未保存的修改\uFF1F")
   assert.equal(z.studio.automations.discardConfirm, "放弃")
   assert.equal(z.studio.automations.keepEditing, "继续编辑")
   assert.equal(z.settings.providers.customDesc, "填好地址和密钥即可。用不到的协议留空。")
@@ -105,6 +111,19 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+})
+
+test("中文词条不用半角 ? !，确认问句走全角问号", () => {
+  const halfWidth = /[?!]/
+  const cjk = /[\u4e00-\u9fff]/
+  for (const { key, value } of flattenEntries(zh)) {
+    if (!cjk.test(value)) continue
+    assert.doesNotMatch(value, halfWidth, `zh ${key} uses half-width punct: ${value}`)
+  }
+  const automations = (zh as { studio: { automations: { deleteTitle: string; discardTitle: string } } })
+    .studio.automations
+  assert.equal(automations.deleteTitle.endsWith("\uFF1F"), true)
+  assert.equal(automations.discardTitle.endsWith("\uFF1F"), true)
 })
 
 function buildToolIdPattern(): RegExp {
