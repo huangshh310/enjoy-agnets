@@ -218,7 +218,15 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
     defaultModelId: snapshot.defaultModelId,
     readySnap,
     models,
-    setModel: (id, label, provider, effort) => store.setModel(id, label, provider, effort)
+    setModel: (id, label = "", provider, effort) =>
+      store.setModel(
+        id,
+        label,
+        provider,
+        effort === "low" || effort === "medium" || effort === "high" || effort === "xhigh"
+          ? effort
+          : undefined
+      )
   })
   // 先写 model 再亮 hasKey，避免发送盘在 modelId 仍空时变成 Send。
   store.setHasKey(snapshot.hasKey)

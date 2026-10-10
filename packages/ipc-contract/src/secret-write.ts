@@ -32,6 +32,14 @@ export function secretWriteOk<T extends Record<string, unknown>>(
   return { ok: true, ...payload }
 }
 
+/** 解开成功回包里的既有 payload，不要把 ok 留在设置快照上。 */
+export function secretWriteOkPayload<T extends Record<string, unknown>>(
+  result: { ok: true } & T
+): T {
+  const { ok: _ok, ...payload } = result
+  return payload as unknown as T
+}
+
 export function isSecretWriteBlocked(result: unknown): result is SecretWriteBlocked {
   return SecretWriteBlocked.safeParse(result).success
 }

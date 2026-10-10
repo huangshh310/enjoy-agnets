@@ -1,5 +1,5 @@
 /**
- * 把 Composer 选中的 runtimeId 写入偏好与当前会话覆盖。
+ * Composer 选中的 runtime 只绑当前会话；设为主引擎才写偏好。
  * 中途换模走 persistSessionModel，禁止误写成全局 upsert。
  */
 import { capabilitiesFor, type AgentToolId } from "@enjoy-agents/ipc-contract"
@@ -90,12 +90,18 @@ function restoreSessionModel(previous: {
   store.setSessionModels(previous.sessionModels)
 }
 
-export async function persistRuntimeId(runtimeId: AgentToolId, modelId?: string) {
+export async function persistRuntimeId(
+  runtimeId: AgentToolId,
+  modelId?: string,
+  opts?: { asDefault?: boolean }
+) {
   const store = useChatStore.getState()
   store.setRuntimeId(runtimeId)
-  store.setPreferredRuntimeId(runtimeId)
   if (store.sessionId) await bindSessionRuntime(store.sessionId, runtimeId)
-  await patchPreferences({ runtimeId })
+  if (opts?.asDefault) {
+    store.setPreferredRuntimeId(runtimeId)
+    await patchPreferences({ runtimeId })
+  }
   if (!hasIde()) return
   if (modelId) await getIde().agentTools.upsert({ id: runtimeId, modelId })
 }

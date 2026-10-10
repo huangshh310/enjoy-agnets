@@ -205,12 +205,14 @@ function defaultRouteUsable(
   })
 }
 
-/** ready 比闸严：无密钥本机要 ping 过；远端未验证不算。闸仍可放行。 */
+/** ready 比闸严：CLI 必须已登录（在 engines[]）；无密钥本机要 ping 过；远端未验证不算。 */
 function defaultRouteReady(
   route: ChatDefaultRoute,
-  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels" | "hasEnjoySecret">
+  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels" | "hasEnjoySecret" | "engines">
 ): boolean {
-  if (route.runtimeId !== "enjoy-local") return true
+  if (route.runtimeId !== "enjoy-local") {
+    return input.engines.some((row) => row.runtimeId === route.runtimeId)
+  }
   if (input.apiKeys.length > 0 && enjoySecretOf(input)) return true
   return input.localModels.some(isVerifiedLocalModel)
 }
@@ -273,7 +275,8 @@ export function buildChatReadiness(input: {
     ready: defaultRouteReady(defaultRoute, {
       apiKeys,
       localModels,
-      hasEnjoySecret: input.hasEnjoySecret
+      hasEnjoySecret: input.hasEnjoySecret,
+      engines
     }),
     engineCount: input.engineCount,
     engines,

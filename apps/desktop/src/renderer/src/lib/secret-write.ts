@@ -3,8 +3,9 @@
  */
 import {
   secretWriteBlockedCode,
-  type SecretWriteErrorCode,
-  type SettingsSnapshot
+  secretWriteOkPayload,
+  SettingsSnapshot,
+  type SecretWriteErrorCode
 } from "@enjoy-agents/ipc-contract"
 
 export class SecretWriteUiError extends Error {
@@ -23,8 +24,10 @@ export function unwrapSecretWrite<T>(result: unknown): T {
   return result as T
 }
 
+/** 成功回包去掉 ok，立刻给 renderer 新快照，不要再 refetch 旧的。 */
 export function unwrapSettingsWrite(result: unknown): SettingsSnapshot {
-  return unwrapSecretWrite<SettingsSnapshot>(result)
+  const raw = unwrapSecretWrite<{ ok: true } & Record<string, unknown>>(result)
+  return SettingsSnapshot.parse(secretWriteOkPayload(raw))
 }
 
 export function secretWriteErrorMessage(

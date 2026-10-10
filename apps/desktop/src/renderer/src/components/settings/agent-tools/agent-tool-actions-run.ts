@@ -24,7 +24,7 @@ export async function handleMakeActive(
 ) {
   setBusy("activate")
   try {
-    const result = await requestEngineSwitch(tool.id, tool.selectedModel)
+    const result = await requestEngineSwitch(tool.id, tool.selectedModel, { asDefault: true })
     if (result === "pending" || result === "blocked") {
       await router.navigate({ to: "/" })
     }

@@ -2,6 +2,7 @@
  * 聊天会话 Zustand store。类型在 chat-store.types.ts，树灌入在 chat-store-hydrate.ts。
  */
 import { create } from "zustand"
+import { markModelsListed } from "../hooks/models-listed.ts"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
 import { reduceStreamEvent } from "./apply-stream-event"
@@ -248,7 +249,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setSessionReviewDismissedKey: (sessionReviewDismissedKey) => set({ sessionReviewDismissedKey }),
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),
-  setModels: (models) => set({ models }),
+  setModels: (models) => {
+    markModelsListed()
+    set({ models })
+  },
   setProvider: (provider) => set({ provider }),
   setSidebarGrouping: (sidebarGrouping) => set({ sidebarGrouping }),
   setSessionSortOrder: (sessionSortOrder) => set({ sessionSortOrder }),

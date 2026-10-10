@@ -14,6 +14,7 @@ import {
 } from "@enjoy-agents/providers"
 import { unbindProviderFromAgentTools } from "./agent-tools-vault"
 import { listedModelsFromProfiles } from "./listed-models"
+import { pickActiveEnabled } from "./pick-active-enabled"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
 import {
@@ -37,9 +38,10 @@ export async function listPublicProviders(): Promise<ProviderPublic[]> {
 
 export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
   const vault = await readVault()
-  const active = vault.profiles.find((profile) => profile.id === vault.activeId && profile.enabled)
-  if (active) return active
-  return vault.profiles.find((profile) => profile.enabled)
+  return pickActiveEnabled(vault.profiles, {
+    enabled: (profile) => profile.enabled,
+    active: (profile) => (profile.id === vault.activeId ? true : undefined)
+  })
 }
 
 export async function findProfileByKinds(kinds: readonly string[]): Promise<ProviderProfile | undefined> {

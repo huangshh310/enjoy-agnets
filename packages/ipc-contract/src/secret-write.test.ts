@@ -8,7 +8,8 @@ import {
   isSecretWriteBlocked,
   secretWriteBlocked,
   secretWriteBlockedCode,
-  secretWriteOk
+  secretWriteOk,
+  secretWriteOkPayload
 } from "./secret-write.ts"
 
 test("SecretWriteErrorCode 含 KEYCHAIN_UNAVAILABLE", () => {
@@ -30,6 +31,7 @@ test("成功把既有 payload 摊在 ok:true 旁边", () => {
   assert.deepEqual(ok.providers, [])
   assert.equal(isSecretWriteBlocked(ok), false)
   assert.equal(secretWriteBlockedCode(ok), null)
+  assert.deepEqual(secretWriteOkPayload(ok), { providers: [], hasKey: false })
 })
 
 test("快照缺 secretStorageAvailable 当 true，显式 false 保留", () => {

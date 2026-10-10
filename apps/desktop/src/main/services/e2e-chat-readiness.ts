@@ -28,28 +28,25 @@ export function e2eChatReadySkipsDefaultModel(kind?: E2eChatReadyKind): boolean 
   return kind === "key-no-model"
 }
 
-export function e2eChatReadinessAllowed(env: NodeJS.ProcessEnv = process.env, packaged = false): boolean {
+export function e2eChatReadinessAllowed(env: NodeJS.ProcessEnv, packaged: boolean): boolean {
   return env.ENJOY_E2E_STUB === "1" && !packaged
 }
 
 /** 写盘夹具还要隔离 userData，避免误种到本机目录。 */
 export function e2eChatReadySeedAllowed(input: {
   env?: NodeJS.ProcessEnv
-  packaged?: boolean
+  packaged: boolean
   userData?: string
 }): boolean {
   const env = input.env ?? process.env
-  if (!e2eChatReadinessAllowed(env, input.packaged === true)) return false
+  if (!e2eChatReadinessAllowed(env, input.packaged)) return false
   const isolated = env.ENJOY_E2E_USERDATA || env.ENJOY_DEV_USERDATA
   if (!isolated) return false
   if (input.userData && input.userData !== isolated) return false
   return true
 }
 
-export function e2eChatReadiness(
-  env: NodeJS.ProcessEnv = process.env,
-  packaged = false
-): ChatReadiness | null {
+export function e2eChatReadiness(env: NodeJS.ProcessEnv, packaged: boolean): ChatReadiness | null {
   if (!e2eChatReadinessAllowed(env, packaged)) return null
   const kind = e2eChatReadyKind(env)
   if (kind === "key" || kind === "key-no-model") {
@@ -104,8 +101,8 @@ export function e2eStubEngineInspectValue(): InspectAgentToolResult {
 
 export function e2eStubEngineInspect(
   id: string,
-  env: NodeJS.ProcessEnv = process.env,
-  packaged = false
+  env: NodeJS.ProcessEnv,
+  packaged: boolean
 ): InspectAgentToolResult | null {
   if (packaged || env.ENJOY_E2E_STUB !== "1" || e2eChatReadyKind(env) !== "engine") return null
   if (id !== E2E_CHAT_READY_ENGINE_ID) return null
@@ -115,8 +112,8 @@ export function e2eStubEngineInspect(
 /** 夹具把 Claude 标成已登录就绪，不依赖本机 PATH。打包态不覆盖。 */
 export function applyE2eStubEngine(
   tools: AgentToolPublic[],
-  env: NodeJS.ProcessEnv = process.env,
-  packaged = false
+  env: NodeJS.ProcessEnv,
+  packaged: boolean
 ): AgentToolPublic[] {
   if (packaged || env.ENJOY_E2E_STUB !== "1" || e2eChatReadyKind(env) !== "engine") return tools
   return tools.map((tool) =>

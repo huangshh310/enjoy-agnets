@@ -28,9 +28,9 @@ export function e2eChatReadySeededKind(): string | undefined {
 }
 
 export async function seedE2eChatReadyRoute(input: {
-  packaged?: boolean
+  packaged: boolean
   userData?: string
-} = {}): Promise<boolean> {
+}): Promise<boolean> {
   if (seededKind) return false
   if (!isE2eStub() || !e2eChatReadySeedAllowed(input)) return false
   const kind = e2eChatReadyKind()

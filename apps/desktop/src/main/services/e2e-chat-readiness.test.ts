@@ -17,8 +17,8 @@ import {
 } from "./e2e-chat-readiness.ts"
 
 test("没开 stub 或打包态一律不覆盖", () => {
-  assert.equal(e2eChatReadiness({}), null)
-  assert.equal(e2eChatReadiness({ ENJOY_E2E_CHAT_READY: "key" }), null)
+  assert.equal(e2eChatReadiness({}, false), null)
+  assert.equal(e2eChatReadiness({ ENJOY_E2E_CHAT_READY: "key" }, false), null)
   assert.equal(e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key" }, true), null)
 })
 
@@ -49,7 +49,7 @@ test("写盘夹具必须隔离 userData", () => {
 })
 
 test("stub + key 带可发默认路线，不含秘密", () => {
-  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key" })
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key" }, false)
   assert.equal(snap?.ready, true)
   assert.equal(snap?.apiKeys[0]?.presetId, "openai")
   assert.equal(snap?.defaultRoute?.runtimeId, "enjoy-local")
@@ -67,7 +67,7 @@ test("stub + key 带可发默认路线，不含秘密", () => {
 })
 
 test("stub + key-no-model 有密钥档案、默认路线没有模型", () => {
-  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key-no-model" })
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key-no-model" }, false)
   assert.equal(snap?.ready, true)
   assert.equal(snap?.hasEnjoySecret, true)
   assert.equal(snap?.defaultRoute?.profileId, "e2e")
@@ -87,7 +87,7 @@ test("stub + key-no-model 有密钥档案、默认路线没有模型", () => {
 })
 
 test("stub + none 引擎数不能冒充可以开始", () => {
-  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "none" })
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "none" }, false)
   assert.equal(snap?.ready, false)
   assert.equal(snap?.engineCount, 1)
   assert.equal(
@@ -101,7 +101,7 @@ test("stub + none 引擎数不能冒充可以开始", () => {
 })
 
 test("stub + unverified 露出远端本机模型；不 ready，闸仍放行", () => {
-  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "unverified" })
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "unverified" }, false)
   assert.equal(snap?.ready, false)
   assert.deepEqual(snap?.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
   assert.equal(snap?.hasEnjoySecret, true)
@@ -140,7 +140,8 @@ test("stub + engine 列表行标成已登录就绪", () => {
         supportedApiStyles: []
       }
     ],
-    { ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "engine" }
+    { ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "engine" },
+    false
   )
   assert.equal(overlaid[0]?.status, "ready")
   assert.equal(overlaid[0]?.authAccount?.loggedIn, true)
@@ -176,7 +177,7 @@ test("打包态不覆盖引擎列表和 inspect", () => {
 })
 
 test("stub + engine 默认路线是已登录 CLI，闸放行", () => {
-  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "engine" })
+  const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "engine" }, false)
   assert.equal(snap?.ready, true)
   assert.equal(snap?.defaultRoute?.runtimeId, "claude")
   assert.equal(

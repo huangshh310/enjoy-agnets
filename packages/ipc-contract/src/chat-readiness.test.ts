@@ -305,6 +305,27 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
   }
 })
 
+test("显式选了未登录 CLI 时不 ready，默认路线仍是该引擎", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    engineCount: 2,
+    explicit: true,
+    preferredRuntimeId: "claude"
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.defaultRoute?.runtimeId, "claude")
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "claude",
+      hasEnjoySecret: false,
+      verifiedLocal: false
+    }),
+    true
+  )
+})
+
 test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸也拦", () => {
   const snap = buildChatReadiness({
     engines: [],

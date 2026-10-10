@@ -26,6 +26,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { SecretStorageWarning } from "../secret-storage-warning"
+import { persistSnapshot } from "../providers/provider-editor-writes"
 import { secretWriteErrorMessage, unwrapSettingsWrite } from "@renderer/lib/secret-write"
 
 type QuickPresetMeta = {
@@ -198,7 +199,7 @@ export function AgentToolQuickKeyDialog({
           modelId: preset.defaultModel
         })
       )
-      await queryClient.invalidateQueries({ queryKey: ["settings"] })
+      await persistSnapshot(queryClient, snapshot)
       const created = snapshot.providers.find((p: { name: string; id: string }) => p.name === profileName) ?? snapshot.providers.at(-1)
       if (created) {
         await onSaved(created.id, preset.defaultModel)

@@ -7,6 +7,7 @@ import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
+import { modelsHaveListed } from "../models-listed.ts"
 import {
   NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
@@ -41,11 +42,17 @@ function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
   })
 }
 
-/** 当前档案有密钥才催选模型，不是「任意档案有密钥」。 */
-function currentProfileNeedsModel(modelId: string): boolean {
+/** 当前档案有密钥才催选模型；列表没回来不催；会话掉回 enjoy-local 也催。 */
+function enjoyLocalModelGate(modelId: string, runtimeId: string): "ok" | "loading" | "need" {
+  if (runtimeId !== "enjoy-local") return "ok"
   const snap = peekChatReadiness()
-  if (!snap?.hasEnjoySecret || !snap.defaultRoute?.profileId) return false
-  return !modelId.trim()
+  if (!snap?.hasEnjoySecret || modelId.trim()) return "ok"
+  const keyed = Boolean(snap.defaultRoute?.profileId)
+  const fellBackFromCli = Boolean(
+    snap.defaultRoute?.runtimeId && snap.defaultRoute.runtimeId !== "enjoy-local"
+  )
+  if (!keyed && !fellBackFromCli) return "ok"
+  return modelsHaveListed() ? "need" : "loading"
 }
 
 function enjoyLocalAllowsSend(): boolean {
@@ -62,7 +69,7 @@ export function composerSendReady(
   }
   if (store.runtimeId === "enjoy-local") {
     if (!enjoyLocalAllowsSend()) return false
-    if (currentProfileNeedsModel(store.modelId)) return false
+    if (enjoyLocalModelGate(store.modelId, store.runtimeId) !== "ok") return false
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)
@@ -96,10 +103,12 @@ export function guardComposerSend(
       store.setError(NO_CHAT_ROUTE)
       return false
     }
-    if (currentProfileNeedsModel(store.modelId)) {
+    const modelGate = enjoyLocalModelGate(store.modelId, store.runtimeId)
+    if (modelGate === "need") {
       store.setError(NEED_MODEL)
       return false
     }
+    if (modelGate === "loading") return false
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)

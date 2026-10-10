@@ -108,39 +108,68 @@ export function adoptedRouteLabel(snapshot: ChatReadiness): string {
 
 export type PersistAdoptedResult = { adopted: boolean; hint?: { name: string } }
 
-function noteSeenNoUsableRoute(ready: boolean): void {
-  if (ready || adoptedDefaultRouteAt()) return
-  setSetting(SEEN_NO_USABLE_CHAT_ROUTE_KEY, "1")
+export type AdoptRouteStore = {
+  get(key: string): string | undefined
+  set(key: string, value: string): void
+  readRuntimeId(): string | undefined
+  writeRuntimeId(runtimeId: string): void
 }
 
-function hadNoUsableChatRoute(): boolean {
-  return getSetting(SEEN_NO_USABLE_CHAT_ROUTE_KEY) === "1"
+function liveAdoptStore(): AdoptRouteStore {
+  return {
+    get: getSetting,
+    set: setSetting,
+    readRuntimeId: () => readPreferences().runtimeId,
+    writeRuntimeId: (runtimeId) => {
+      writePreferences({ runtimeId })
+    }
+  }
+}
+
+/** inspect + ping 都结束前不要记，避免升级用户先被标成「从没路线」。 */
+export function shouldNoteSeenNoUsableRoute(input: {
+  ready: boolean
+  probesSettled: boolean
+  adoptedAt?: string
+}): boolean {
+  return input.probesSettled && !input.ready && !input.adoptedAt
+}
+
+function noteSeenNoUsableRoute(store: AdoptRouteStore, ready: boolean, probesSettled: boolean): void {
+  if (!shouldNoteSeenNoUsableRoute({ ready, probesSettled, adoptedAt: store.get(ADOPTED_DEFAULT_ROUTE_AT_KEY) })) {
+    return
+  }
+  store.set(SEEN_NO_USABLE_CHAT_ROUTE_KEY, "1")
 }
 
 /** 第一次从「没有可用路线」到「有路线」时写回偏好，之后不再改 prefs.runtimeId。 */
-export function persistAdoptedDefaultRoute(snapshot: ChatReadiness): PersistAdoptedResult {
-  noteSeenNoUsableRoute(snapshot.ready)
+export function persistAdoptedDefaultRoute(
+  snapshot: ChatReadiness,
+  opts?: { probesSettled?: boolean; store?: AdoptRouteStore }
+): PersistAdoptedResult {
+  const store = opts?.store ?? liveAdoptStore()
+  noteSeenNoUsableRoute(store, snapshot.ready, opts?.probesSettled !== false)
   const plan = planAdoptedDefaultRoute({
-    explicit: isDefaultChatRouteExplicit(),
-    adoptedAt: adoptedDefaultRouteAt(),
+    explicit: store.get(DEFAULT_CHAT_ROUTE_EXPLICIT_KEY) === "1",
+    adoptedAt: store.get(ADOPTED_DEFAULT_ROUTE_AT_KEY),
     ready: snapshot.ready,
-    hadNoUsableRoute: hadNoUsableChatRoute(),
-    currentRuntimeId: readPreferences().runtimeId,
+    hadNoUsableRoute: store.get(SEEN_NO_USABLE_CHAT_ROUTE_KEY) === "1",
+    currentRuntimeId: store.readRuntimeId(),
     routeRuntimeId: snapshot.defaultRoute?.runtimeId
   })
   if (plan === "skip") return { adopted: false }
   const now = String(Date.now())
-  setSetting(ADOPTED_DEFAULT_ROUTE_AT_KEY, now)
+  store.set(ADOPTED_DEFAULT_ROUTE_AT_KEY, now)
   if (plan === "stamp" || plan === "lock") return { adopted: false }
   const route = snapshot.defaultRoute
   if (!route) return { adopted: false }
-  const prefs = readPreferences()
-  const modelId = getSetting("defaultModelId") || ""
-  if (route.runtimeId !== prefs.runtimeId) {
-    writePreferences({ runtimeId: route.runtimeId })
+  const current = store.readRuntimeId()
+  const modelId = store.get("defaultModelId") || ""
+  if (route.runtimeId !== current) {
+    store.writeRuntimeId(route.runtimeId)
   }
   if (route.modelId && route.modelId !== modelId) {
-    setSetting("defaultModelId", route.modelId)
+    store.set("defaultModelId", route.modelId)
   }
   return { adopted: true, hint: { name: adoptedRouteLabel(snapshot) } }
 }

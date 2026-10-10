@@ -51,7 +51,11 @@ export const useEngineHandoffStore = create<
 export type RequestEngineSwitchResult = "applied" | "pending" | "blocked" | "noop"
 
 /** Rail / Picker 选 to。未 ready 的调用方不要进来。 */
-export async function requestEngineSwitch(to: string, modelId?: string): Promise<RequestEngineSwitchResult> {
+export async function requestEngineSwitch(
+  to: string,
+  modelId?: string,
+  opts?: { asDefault?: boolean }
+): Promise<RequestEngineSwitchResult> {
   if (!isAgentToolId(to)) return "noop"
   const chat = useChatStore.getState()
   const plan = planComposerSwitch({
@@ -66,7 +70,7 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     return switched === "applied" ? "applied" : "noop"
   }
   if (plan.kind === "apply") {
-    await persistRuntimeId(to, modelId)
+    await persistRuntimeId(to, modelId, opts)
     useEngineHandoffStore.getState().resetPending()
     return "applied"
   }

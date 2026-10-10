@@ -30,7 +30,7 @@ import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secr
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { runSecretWrite } from "./services/secret-write-guard.ts"
 import { listAgentTools } from "./services/agent-tools-service"
-import { scheduleChatReadinessPush } from "./services/chat-readiness"
+import { pushChatReadinessNow, scheduleChatReadinessPush } from "./services/chat-readiness"
 import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
@@ -105,7 +105,7 @@ async function settingsSnapshot() {
 async function withSettingsSecretWrite(write: () => Promise<void>) {
   return runSecretWrite(async () => {
     await write()
-    scheduleChatReadinessPush()
+    await pushChatReadinessNow().catch(() => undefined)
     return settingsSnapshot()
   })
 }
