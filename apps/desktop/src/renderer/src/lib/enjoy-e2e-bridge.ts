@@ -9,6 +9,7 @@ import { bindSessionRuntime } from "@renderer/hooks/persist-runtime"
 import { CHAT_READINESS_QUERY_KEY } from "@renderer/hooks/use-chat-readiness"
 import { forceSecretWriteForE2e, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { queryClient } from "@renderer/lib/query-client"
+import { useCrashProbeStore } from "@renderer/components/layout/crash-fallback/crash-probe"
 import { useChatStore } from "@renderer/stores/chat-store"
 
 export type EnjoyE2eBridge = {
@@ -29,6 +30,8 @@ export type EnjoyE2eBridge = {
   hideGuide: () => void
   hideCreateProject: () => void
   forceSecretWrite: (code: SecretWriteErrorCode | null) => void
+  /** 故意触发根错误边界，用来拍「这里出了点问题。」回退面。 */
+  crashRenderer: () => void
 }
 
 declare global {
@@ -74,6 +77,7 @@ export function installEnjoyE2eBridge(): void {
     resumeGuide: resumeSetupGuide,
     hideGuide: () => useSetupGuideStore.getState().hide(),
     hideCreateProject: () => useCreateProjectStore.getState().hide(),
-    forceSecretWrite: forceSecretWriteForE2e
+    forceSecretWrite: forceSecretWriteForE2e,
+    crashRenderer: () => useCrashProbeStore.getState().arm()
   }
 }

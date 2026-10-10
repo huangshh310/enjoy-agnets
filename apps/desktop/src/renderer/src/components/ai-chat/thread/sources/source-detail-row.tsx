@@ -1,19 +1,12 @@
 /**
  * 本轮来源 sheet 一行：图标 · 名称 · 类型标 · 出处。
  */
-import { RiFileTextLine, RiSparklingLine } from "@remixicon/react"
-import { McpIcon } from "@renderer/components/mcp/components/mcp-brand-icons.ts"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
+import { sourceBadgeIcon, sourceBadgeLabelKey } from "./source-badge"
 import { canFocusSourceRow, sourceBadgeKind, sourceRowName, sourceRowProvenance } from "./source-detail"
 import type { SourceBadgeKind } from "./source-detail"
 import type { TurnSourceChip } from "./source-chip"
-
-const ICONS = {
-  file: RiFileTextLine,
-  skill: RiSparklingLine,
-  mcp: McpIcon
-} as const
 
 export function SourceDetailRow({
   chip,
@@ -27,7 +20,11 @@ export function SourceDetailRow({
   const t = useT()
   const badge = sourceBadgeKind(chip.kind)
   const focusable = canFocusSourceRow(chip)
-  const body = <SourceRowBody chip={chip} badge={badge} selected={selected} t={t} />
+  const body = <SourceRowBody chip={chip} badge={badge} t={t} />
+  const rowClass = cx(
+    "flex w-full items-start gap-2 px-3 py-2.5 text-left",
+    selected ? "bg-accent-500/10" : "hover:bg-background-secondary-hover"
+  )
 
   if (focusable) {
     return (
@@ -38,10 +35,7 @@ export function SourceDetailRow({
           data-kind={badge}
           data-selected={selected ? "true" : "false"}
           onClick={() => onOpen(chip)}
-          className={cx(
-            "flex w-full items-start gap-2 px-3 py-2.5 text-left",
-            selected ? "bg-accent-50" : "hover:bg-background-secondary-hover"
-          )}
+          className={rowClass}
         >
           {body}
         </button>
@@ -51,7 +45,12 @@ export function SourceDetailRow({
 
   return (
     <li>
-      <div data-testid="turn-source-row" data-kind={badge} className="flex items-start gap-2 px-3 py-2.5">
+      <div
+        data-testid="turn-source-row"
+        data-kind={badge}
+        data-selected={selected ? "true" : "false"}
+        className={rowClass}
+      >
         {body}
       </div>
     </li>
@@ -61,25 +60,18 @@ export function SourceDetailRow({
 function SourceRowBody({
   chip,
   badge,
-  selected,
   t
 }: {
   chip: TurnSourceChip
   badge: SourceBadgeKind
-  selected: boolean
   t: TranslateFn
 }) {
-  const Icon = ICONS[badge]
+  const Icon = sourceBadgeIcon(badge)
   const provenance = sourceRowProvenance(chip, (server) => t("chat.sourcesSheetMcpProvenance", { name: server }))
   return (
     <>
       <span
-        className={cx(
-          "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md ring-1",
-          selected
-            ? "bg-background-primary-default text-accent-500 ring-accent-500/30"
-            : "bg-background-secondary-default text-foreground-icon-tertiary ring-border-button-default"
-        )}
+        className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-background-secondary-default text-foreground-icon-tertiary ring-1 ring-border-button-default"
         aria-hidden="true"
       >
         <Icon className="size-3.5" />
@@ -88,10 +80,10 @@ function SourceRowBody({
         <span className="flex items-center gap-1.5">
           <span className="truncate text-caption-1-medium text-text-primary">{sourceRowName(chip)}</span>
           <span className="shrink-0 rounded bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-tertiary ring-1 ring-border-button-default">
-            {badgeLabel(badge, t)}
+            {t(sourceBadgeLabelKey(badge))}
           </span>
           {chip.fromEnjoy ? (
-            <span className="shrink-0 rounded bg-accent-50 px-1.5 py-px text-caption-2-regular text-accent-600 ring-1 ring-accent-500/20">
+            <span className="shrink-0 rounded bg-accent-500/10 px-1.5 py-px text-caption-2-regular text-accent-600 ring-1 ring-accent-500/20">
               {t("chat.hostInjectFromEnjoy")}
             </span>
           ) : null}
@@ -104,11 +96,4 @@ function SourceRowBody({
       </span>
     </>
   )
-}
-
-function badgeLabel(kind: SourceBadgeKind, t: TranslateFn): string {
-  if (kind === "skill") return t("chat.sourcesSheetKindSkill")
-  if (kind === "mcp") return t("chat.sourcesSheetKindMcp")
-  if (kind === "knowledge") return t("chat.sourceKnowledgeLabel")
-  return t("chat.sourcesSheetKindFile")
 }

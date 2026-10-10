@@ -1,5 +1,5 @@
 /**
- * 本轮来源 sheet 行：图标侧类型标只有文件 / 技能 / MCP，文档并进文件。
+ * 本轮来源 sheet 行：类型标是文件 / 技能 / MCP / 知识库；文档并进文件。
  */
 import type { SourceKind, TurnSourceChip } from "./source-chip.ts"
 import { displayBaseName, shortenSourcePath } from "./source-path.ts"
