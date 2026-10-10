@@ -76,14 +76,16 @@ async function runSlowTypeSend(
 ) {
   const beforeEnter = listUserContents(userData)
   await window.locator('[data-testid="sidebar-new-session"]').click({ noWaitAfter: true })
+  await composer.click()
   await typeSlow(window, prompt)
+  await expect(composer).toHaveValue(prompt)
   expect(listUserContents(userData)).toEqual(beforeEnter)
   if (snapFirst) {
     await window.screenshot({ path: join(shots, "p1_hello_world_before_enter.png"), fullPage: true })
   }
-  await window.keyboard.press("Enter")
-  await expect(composer).toHaveValue("", { timeout: 20_000 })
+  await composer.press("Enter")
   await expect.poll(() => lastUserMessage(userData), { timeout: 20_000 }).toBe(prompt)
+  await expect(composer).toHaveValue("", { timeout: 15_000 })
   expect(countUserMessages(userData, prompt)).toBeGreaterThanOrEqual(1)
   expect(listUserContents(userData).length).toBe(expectedTotal + 1)
   dbLines.push(`${prompt}\t${lastUserMessage(userData)}\tcount=${countUserMessages(userData, prompt)}`)

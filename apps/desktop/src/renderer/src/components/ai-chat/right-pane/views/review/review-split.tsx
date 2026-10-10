@@ -32,7 +32,7 @@ export function ReviewSplit(props: { tree: ReactNode; children: ReactNode }) {
       <Panel id="review-diff" minSize="200px" className="flex min-h-0 min-w-0 flex-col overflow-hidden">
         {children}
       </Panel>
-      <Separator className={HANDLE} />
+      <Separator data-testid="review-split-separator" className={HANDLE} />
       <Panel
         id="review-tree"
         minSize="140px"

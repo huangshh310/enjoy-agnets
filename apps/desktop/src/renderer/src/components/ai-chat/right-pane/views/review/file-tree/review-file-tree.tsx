@@ -50,12 +50,12 @@ export function ReviewFileTree(props: {
         ) : null}
       </div>
 
-      {/* 目录树展示区；空态铺满不透明底，挡住外壳同心环 */}
+      {/* 目录树展示区。空态不挂装饰，也不靠不透明底去盖外壳环。 */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {tree.length === 0 ? (
           <div
             data-testid="review-file-list-empty"
-            className="relative z-10 isolate flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-background-primary-default text-caption-2-medium text-text-tertiary"
+            className="flex min-h-0 flex-1 items-center justify-center bg-background-primary-default text-caption-2-medium text-text-tertiary"
           >
             {t("chat.reviewNoMatchingFiles")}
           </div>

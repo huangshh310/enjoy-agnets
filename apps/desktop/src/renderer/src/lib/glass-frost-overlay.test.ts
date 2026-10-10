@@ -78,7 +78,9 @@ test("审查空态组件不挂 data-frost，不靠装饰类名", () => {
     assert.doesNotMatch(src, /data-frost/)
     assert.doesNotMatch(src, /data-pane-shell-deco/)
     assert.doesNotMatch(src, /skin-glass-orb|skin-liquid-glass/)
+    assert.doesNotMatch(src, /isolate|z-10/)
   }
+  assert.match(reviewEmpty, /data-testid="review-diff-empty"/)
   assert.match(reviewEmpty, /chat\.treeClean/)
   assert.match(fileListEmpty, /review-file-list-empty/)
 })

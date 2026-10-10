@@ -95,7 +95,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   const messages = beginOptimisticTurn(store, payload)
-  if (prepared) clearSentComposerText(prepared.content)
+  clearSentComposerText(payload.content)
   await launchComposerRun(store, payload, messages)
 }
 

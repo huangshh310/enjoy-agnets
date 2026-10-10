@@ -95,12 +95,14 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     if ((await clean.count()) > 0) await expect(clean.first()).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="review-file-list-empty"]')).toBeVisible({ timeout: 8_000 })
     await expect(window.locator('[data-testid="review-file-list-empty"]')).toHaveText("没有匹配的文件")
+    await expect(window.locator('[data-testid="review-diff-empty"]')).toBeVisible({ timeout: 8_000 })
     const reviewPane = window.locator('[data-testid="right-pane-shell"]').filter({
       has: window.locator('[data-testid="review-file-list-empty"]')
     })
     await expect(reviewPane).toHaveAttribute("data-pane-shell-deco", "off")
     await expect(reviewPane).not.toHaveAttribute("data-frost", "shell")
     await expect(reviewPane.locator("[data-frost]")).toHaveCount(0)
+    await expect(reviewPane.locator('[class*="frost"], .skin-glass-orb')).toHaveCount(0)
     await window.evaluate(() => {
       document.documentElement.classList.remove("dark")
       document.documentElement.setAttribute("data-skin", "glass")
@@ -109,6 +111,13 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
       if (node.getAttribute("data-frost") === "shell") return "frost-shell"
       if (node.getAttribute("data-pane-shell-deco") !== "off") return "deco-on"
       if (node.querySelector("[data-frost], .skin-glass-orb, [class*='frost']")) return "nested-deco"
+      const empties = node.querySelectorAll(
+        '[data-testid="review-diff-empty"], [data-testid="review-file-list-empty"]'
+      )
+      for (const empty of empties) {
+        if (empty.getAttribute("data-frost")) return "empty-frost"
+        if (/\bfrost\b|skin-glass-orb|skin-liquid-glass/.test(empty.className)) return "empty-deco-class"
+      }
       const after = getComputedStyle(node, "::after").content
       if (after && after !== "none") return `after:${after}`
       const before = getComputedStyle(node, "::before").content
@@ -116,15 +125,15 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
       return "ok"
     })
     expect(deco).toBe("ok")
-    const fileList = window.locator('[data-testid="review-file-list-empty"]')
-    const box = await fileList.boundingBox()
+    const divider = window.locator('[data-testid="review-split-separator"]')
+    const box = (await divider.boundingBox()) ?? (await window.locator('[data-testid="review-file-list-empty"]').boundingBox())
     if (box) {
       await window.screenshot({
         path: join(shots, "luna_review_divider_light_zoom.png"),
         clip: {
-          x: Math.max(0, box.x - 48),
+          x: Math.max(0, box.x - 40),
           y: Math.max(0, box.y),
-          width: 96,
+          width: Math.min(120, box.width + 80),
           height: Math.min(box.height + 80, 360)
         }
       })

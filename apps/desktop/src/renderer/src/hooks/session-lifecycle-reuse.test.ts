@@ -20,6 +20,12 @@ test("创建完成不得清空正在打的字，也不得无 Enter 就发", () =
   assert.doesNotMatch(src, /idleComposerPatch\(\), composer: ""/)
 })
 
+test("发送成功一律按已发正文清输入，禁止只清 prepared 路径", () => {
+  const send = readFileSync(new URL("./runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
+  assert.match(send, /clearSentComposerText\(payload\.content\)/)
+  assert.doesNotMatch(send, /if \(prepared\) clearSentComposerText/)
+})
+
 test("归档调用容忍可选 deniedApprovals，不改 IPC", () => {
   const archive = readFileSync(new URL("./workspace-lifecycle.ts", import.meta.url), "utf8")
   assert.match(archive, /readDeniedApprovals/)
