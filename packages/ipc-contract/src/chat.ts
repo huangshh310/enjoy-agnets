@@ -8,7 +8,6 @@ import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 import { AgentRunOrigin } from "./agent-run-origin.ts"
 
 export {
-  AgentRunOrigin,
   coerceAgentRunOrigin,
   inferAgentRunOrigin,
   isUserInitiatedRunOrigin
