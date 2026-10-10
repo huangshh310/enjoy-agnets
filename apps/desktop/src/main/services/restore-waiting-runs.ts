@@ -45,6 +45,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
 
 async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
   const db = getDatabase()
+  // 只捡还在等审批的。completed / denied / cancelled 即使检查点残留也不得回挂。
   const waiting = listRuns(db, {}).filter((row) => row.status === "waiting_review")
   const prefs = readPreferences()
   for (const row of waiting) {

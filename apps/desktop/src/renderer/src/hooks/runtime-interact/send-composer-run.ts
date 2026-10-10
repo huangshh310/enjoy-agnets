@@ -83,6 +83,18 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   if (firstTurn) store.setPreparingHint(true)
   store.setRunning(true)
   if (!guardComposerSend(store)) {
+    const blocked = useChatStore.getState().error
+    // 创建回来的 prepared 发送：闸拦也要还文 + notice + 清空转圈会话，禁止只 setError 就 return。
+    if (prepared) {
+      failComposerSend({
+        text: prepared.content,
+        reason: blocked || SEND_FAILED_RESTORE,
+        sessionId: store.sessionId,
+        assets: prepared.assets
+      })
+      store.setPreparingHint(false)
+      return
+    }
     restoreDraftAfterSendGate(store, prepared)
     return
   }

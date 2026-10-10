@@ -21,14 +21,11 @@ export function failComposerSend(input: {
   dropEmptyPendingAssistant()
   if (input.dropOptimisticUser) dropMatchingOptimisticUser(input.text)
   if (input.sessionId) useAttentionStore.getState().takePark(input.sessionId)
-  const empty = isEmptyFailedSession(input.sessionId)
-  if (empty && input.sessionId) {
-    void discardCreatedSession(input.sessionId, () => true).finally(() => {
-      restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
-    })
-    return
-  }
+  // 先还文 + notice，再删空会话。禁止等 session.delete 才出提示（会空几秒）。
   restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
+  if (input.sessionId && isEmptyFailedSession(input.sessionId)) {
+    void discardCreatedSession(input.sessionId, () => true, { keepComposer: true })
+  }
 }
 
 function dropMatchingOptimisticUser(content: string): void {

@@ -9,6 +9,8 @@ import {
   crashKill,
   expectApprovalInboxCleared,
   expectDecidableCard,
+  expectFinishedRunsSettled,
+  expectSettledFinishedTurns,
   firstWindow,
   mainEntry,
   readStub,
@@ -16,6 +18,7 @@ import {
   stubPath,
   wipeWaitingCheckpoints
 } from "./approval-restart-helpers"
+import { sendComposer } from "./send-composer"
 
 test("重启后待审批卡还在，允许后工具跑、Inbox 清空", async () => {
   test.setTimeout(180_000)
@@ -87,18 +90,16 @@ test("允许并完成后连重启两次：写行不再转圈，没有额外失�
   await expect.poll(() => existsSync(stubPath(env.workspace)), { timeout: 20_000 }).toBe(true)
   await expect(first.locator("body")).toContainText("stub-ok allowed write", { timeout: 20_000 })
   await env.app.close()
+  expectFinishedRunsSettled(env.userData)
   for (let i = 0; i < 2; i += 1) {
     const app = await relaunchElectron(env.env)
     try {
       const window = await firstWindow(app)
-      await expect(window.locator("body")).toContainText("please write a note", { timeout: 20_000 })
-      await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
-      await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0)
-      await expect(window.locator("body")).not.toContainText("已运行 1 个工具 · 运行命令 · 失败")
-      await expect(window.locator("body")).toContainText("e2e-stub.txt")
+      await expectSettledFinishedTurns(window)
     } finally {
       await app.close()
     }
+    expectFinishedRunsSettled(env.userData)
   }
 })
 
@@ -110,17 +111,49 @@ test("拒绝后连重启两次：仍是已拒绝，写行不转圈", async () =>
   await first.locator('[data-testid="approval-deny"]').click({ timeout: 15_000, force: true })
   await expect(first.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
   await env.app.close()
+  expectFinishedRunsSettled(env.userData)
   for (let i = 0; i < 2; i += 1) {
     const app = await relaunchElectron(env.env)
     try {
       const window = await firstWindow(app)
       await expect(window.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
       await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
+      await expect(window.locator('[data-testid="chat-conversation"] [class*="animate-spin"]')).toHaveCount(0)
       await expect(window.locator("body")).not.toContainText("已运行 1 个工具 · 运行命令 · 失败")
       expect(existsSync(stubPath(env.workspace))).toBe(false)
     } finally {
       await app.close()
     }
+    expectFinishedRunsSettled(env.userData)
+  }
+})
+
+test("同一 userData 允许一轮再拒绝一轮，连重启两次都保持收工态", async () => {
+  test.setTimeout(300_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  const first = await firstWindow(env.app)
+  await first.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
+  await expect.poll(() => existsSync(stubPath(env.workspace)), { timeout: 20_000 }).toBe(true)
+  await expect(first.locator("body")).toContainText("stub-ok allowed write", { timeout: 20_000 })
+  await expect(first.locator('[data-testid="turn-changed-files"]')).toBeVisible()
+  await expect(first.locator('[data-testid="approval-allow"]')).toHaveCount(0)
+  await sendComposer(first, first.locator('[data-testid="composer-input"]'), "please write a note")
+  await first.locator('[data-testid="approval-deny"]').click({ timeout: 15_000, force: true })
+  await expect(first.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
+  await env.app.close()
+  expectFinishedRunsSettled(env.userData)
+  for (let i = 0; i < 2; i += 1) {
+    const app = await relaunchElectron(env.env)
+    try {
+      const window = await firstWindow(app)
+      await expectSettledFinishedTurns(window)
+      await expect(window.locator("body")).toContainText("已拒绝，本次未执行")
+      await expect(window.locator("body")).toContainText("stub-ok allowed write")
+    } finally {
+      await app.close()
+    }
+    expectFinishedRunsSettled(env.userData)
   }
 })
 

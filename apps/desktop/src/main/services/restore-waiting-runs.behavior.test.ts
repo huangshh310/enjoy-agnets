@@ -274,3 +274,67 @@ test("检查点里 HMAC 失败行：结束 run，不回 SDK，Inbox 不留未决
   assert.equal(events.some((event) => event.type === "approval.required"), false)
   assert.ok(!listLivePendingApprovals(db).some((item) => item.id === approvalId))
 })
+
+test("已完成 / 已拒绝 / cancelled 即使检查点残留也不回挂", async () => {
+  const db = getDatabase()
+  const leftover = JSON.stringify({
+    version: 1,
+    request: {
+      kind: "agent",
+      sessionId: "ses_done_ckpt",
+      modelId: "m",
+      messages: [{ role: "user", content: "write" }]
+    },
+    pendingApprovals: [{ approvalId: "apr_done_ckpt", toolCallId: "tool_done_ckpt", name: "write_file" }]
+  })
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_done_ckpt", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ses_done_ckpt", "ws_done_ckpt", "done", 1, 1)
+  for (const [runId, status] of [
+    ["run_done_completed", "completed"],
+    ["run_done_failed", "failed"],
+    ["run_done_cancelled", "cancelled"]
+  ] as const) {
+    insertRun(db, {
+      id: runId,
+      sessionId: "ses_done_ckpt",
+      workspaceId: "ws_done_ckpt",
+      kind: "agent",
+      status,
+      modelId: "m",
+      providerId: null,
+      checkpoint: leftover,
+      error: null
+    })
+    insertApproval(db, {
+      id: `apr_${runId}`,
+      runId,
+      toolCallId: `tool_${runId}`,
+      name: "write_file",
+      args: JSON.stringify({ path: "note.txt" }),
+      hmac: "h",
+      decision: status === "cancelled" ? "cancelled" : status === "failed" ? "deny" : "allow",
+      createdAt: 1
+    })
+  }
+  resetRestoreWaitingOnceForTests()
+  const events: Array<{ type: string }> = []
+  await restoreWaitingRuns({
+    isDestroyed: () => false,
+    webContents: {
+      send(_ch: string, event: { type: string }) {
+        events.push(event)
+      }
+    }
+  } as unknown as BrowserWindow)
+  assert.equal(getActiveRun("run_done_completed"), undefined)
+  assert.equal(getActiveRun("run_done_failed"), undefined)
+  assert.equal(getActiveRun("run_done_cancelled"), undefined)
+  assert.equal(getRun(db, "run_done_completed")?.status, "completed")
+  assert.equal(getRun(db, "run_done_failed")?.status, "failed")
+  assert.equal(getRun(db, "run_done_cancelled")?.status, "cancelled")
+  assert.equal(events.some((event) => event.type === "approval.required"), false)
+})
