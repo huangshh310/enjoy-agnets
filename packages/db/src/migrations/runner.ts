@@ -17,6 +17,7 @@ import { sessionForkHeartbeatMigration } from "./session-fork-heartbeat.ts"
 import { runUsageCostMigration } from "./run-usage-cost.ts"
 import { approvalSdkResponseMigration } from "./approval-sdk-response.ts"
 import { costMissingMigration } from "./cost-missing.ts"
+import { mcpCuratedMigration } from "./mcp-curated.ts"
 import { repairClaimedV14, tableExists } from "./column-guard.ts"
 import type { Migration } from "./types.ts"
 
@@ -36,7 +37,8 @@ export const MIGRATIONS: Migration[] = [
   sessionForkHeartbeatMigration,
   runUsageCostMigration,
   approvalSdkResponseMigration,
-  costMissingMigration
+  costMissingMigration,
+  mcpCuratedMigration
 ]
 
 function ensureMigrationTable(sqlite: DatabaseSync): void {

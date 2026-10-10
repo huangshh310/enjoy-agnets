@@ -15,8 +15,9 @@ import {
   createMcpHandleRegistry,
   decideMcpCall,
   disconnectMcpServer,
-  isCuratedMcpServerName,
+  isCuratedMcpIdentity,
   mcpCallAction,
+  resolveCuratedPresetId,
   mcpToolRequiresWriteApproval,
   readMcpResource,
   type McpToolInfo,
@@ -60,9 +61,18 @@ export function upsertServer(input: {
   modelVisibleTools: string[]
   appOnlyTools: string[]
   trusted: boolean
+  curatedPresetId?: string
 }) {
   const id = input.id ?? createId("mcp")
   const existing = listMcpServers(getDatabase()).find((item) => item.id === id)
+  const curatedPresetId = resolveCuratedPresetId({
+    curatedPresetId: input.curatedPresetId,
+    existingPresetId: existing?.curatedPresetId,
+    name: input.name,
+    transport: input.transport,
+    command: input.command,
+    url: input.url
+  })
   const row: McpServerRow = {
     id,
     name: input.name,
@@ -74,7 +84,8 @@ export function upsertServer(input: {
     modelVisibleTools: JSON.stringify(input.modelVisibleTools),
     appOnlyTools: JSON.stringify(input.appOnlyTools),
     trusted: input.trusted ? 1 : 0,
-    createdAt: existing?.createdAt ?? Date.now()
+    createdAt: existing?.createdAt ?? Date.now(),
+    curatedPresetId
   }
   upsertMcpServer(getDatabase(), row)
   return toPublic(row)
@@ -146,7 +157,7 @@ export async function callServerTool(
   const mutating = mcpToolRequiresWriteApproval({
     readOnlyHint: tool?.readOnlyHint,
     trusted: row.trusted === 1,
-    curated: isCuratedMcpServerName(row.name)
+    curated: isCuratedMcpIdentity(row)
   })
   const decision = decideMcpCall({
     trusted: row.trusted === 1,
@@ -204,6 +215,7 @@ export function listVisibleMcpTools(): Array<{
   description?: string
   inputSchema?: unknown
   readOnlyHint?: boolean
+  curated: boolean
 }> {
   const out: Array<{
     serverId: string
@@ -214,6 +226,7 @@ export function listVisibleMcpTools(): Array<{
     description?: string
     inputSchema?: unknown
     readOnlyHint?: boolean
+    curated: boolean
   }> = []
   for (const row of listMcpServers(getDatabase())) {
     const handle = handles.get(row.id)
@@ -222,12 +235,12 @@ export function listVisibleMcpTools(): Array<{
     for (const tool of handle.tools ?? []) {
       if (visible.length > 0 && !visible.includes(tool.name)) continue
       if (visible.length === 0 && row.trusted !== 1) continue
-      const hintTrusted =
-        row.trusted === 1 || isCuratedMcpServerName(row.name)
+      const curated = isCuratedMcpIdentity(row)
+      const hintTrusted = row.trusted === 1 || curated
       const mutating = mcpToolRequiresWriteApproval({
         readOnlyHint: tool.readOnlyHint,
         trusted: row.trusted === 1,
-        curated: isCuratedMcpServerName(row.name)
+        curated
       })
       const level = permissionLevel(row.id, tool.name)
       if (decideMcpCall({ trusted: row.trusted === 1, level, mutating }) === "deny") continue
@@ -239,7 +252,8 @@ export function listVisibleMcpTools(): Array<{
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
-        ...(hintTrusted && tool.readOnlyHint === true ? { readOnlyHint: true } : {})
+        ...(hintTrusted && tool.readOnlyHint === true ? { readOnlyHint: true } : {}),
+        curated
       })
     }
   }
@@ -273,6 +287,7 @@ function toPublic(row: McpServerRow) {
     modelVisibleTools: JSON.parse(row.modelVisibleTools) as string[],
     appOnlyTools: JSON.parse(row.appOnlyTools) as string[],
     trusted: row.trusted === 1,
+    curatedPresetId: row.curatedPresetId ?? undefined,
     connected: handle?.state === "connected",
     error: handle?.error,
     tools: handle?.tools ?? []

@@ -36,7 +36,7 @@ export function isMutatingToolName(name: string): boolean {
   return MUTATING_NAME.test(leaf) || SHELL_NAME.test(leaf)
 }
 
-/** 精选预设 id。readOnlyHint 只对这些或用户已标 trusted 的服务器生效。 */
+/** 精选预设 id 列表。hint 身份以 curated_preset_id + 指纹为准，不认显示名。 */
 export const CURATED_MCP_SERVER_IDS = [
   "filesystem",
   "everything",
