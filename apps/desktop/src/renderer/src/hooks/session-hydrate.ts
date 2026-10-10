@@ -4,7 +4,9 @@
 import { migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../stores/chat-store"
 import { takeHeldApprovalResolved } from "../stores/held-approval-resolved"
+import { useAttentionStore } from "../stores/attention/attention-store"
 import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
+import { hydrateSessionRunning } from "./hydrate-session-running"
 import { applyFinishedHydrate } from "./session-hydrate-finish"
 
 export function applySessionHydrate(input: {
@@ -12,17 +14,27 @@ export function applySessionHydrate(input: {
   sameSession: boolean
   generation: number
   sessionId: string
+  sessionRunning?: boolean
 }): boolean {
   const latest = useChatStore.getState()
+  const parkedRunning =
+    input.sessionRunning === true ||
+    useAttentionStore.getState().parks[input.sessionId]?.running === true
+  const running = hydrateSessionRunning({
+    sessionId: input.sessionId,
+    storeSessionId: latest.sessionId,
+    storeRunning: latest.running,
+    parkedRunning
+  })
   const ok = applyFinishedHydrate(
     {
       generation: input.generation,
       sessionId: input.sessionId,
       currentSessionId: latest.sessionId,
-      dbMessages: threadFromRows(input.dbRows, { sealAbandoned: !latest.running }),
+      dbMessages: threadFromRows(input.dbRows, { sealAbandoned: !running }),
       liveMessages: latest.messages,
       sameSession: input.sameSession,
-      running: latest.running
+      running
     },
     (next) => {
       restoreUiMessages(input.dbRows)

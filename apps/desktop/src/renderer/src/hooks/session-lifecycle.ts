@@ -85,6 +85,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     liveMessages: store.messages
   })
   const generation = bumpSessionHydrateGeneration()
+  const sessionRunning = useAttentionStore.getState().parks[sessionId]?.running === true
   if (!sameSession) {
     if (store.sessionId) {
       parkForegroundRun()
@@ -102,7 +103,13 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
-  applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
+  applySessionHydrate({
+    dbRows: rows,
+    sameSession,
+    generation,
+    sessionId,
+    sessionRunning: sessionRunning || useChatStore.getState().running
+  })
   useAttentionStore.getState().clearCompleteIfErrored(sessionId)
   queueComposerFocus()
 }
