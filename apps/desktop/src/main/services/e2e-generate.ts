@@ -36,21 +36,44 @@ async function finishE2eGeneration(
   request: ReturnType<typeof AiGenerateInput.parse>
 ) {
   const started = Date.now()
-  await emitStubKind(window, runId, request)
-  updateRun(getDatabase(), runId, { status: "completed" })
-  recordMetric({
-    runId,
-    kind: request.kind,
-    modelId: request.modelId,
-    status: "completed",
-    durationMs: Date.now() - started,
-    ttfoMs: 1
-  })
-  stampAndSend(
-    window,
-    { type: "run.end", runId, kind: request.kind, turn: { workflow: "todo", attention: "complete" } },
-    request.sessionId
-  )
+  try {
+    await emitStubKind(window, runId, request)
+    updateRun(getDatabase(), runId, { status: "completed" })
+    recordMetric({
+      runId,
+      kind: request.kind,
+      modelId: request.modelId,
+      status: "completed",
+      durationMs: Date.now() - started,
+      ttfoMs: 1
+    })
+    stampAndSend(
+      window,
+      { type: "run.end", runId, kind: request.kind, turn: { workflow: "todo", attention: "complete" } },
+      request.sessionId
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    updateRun(getDatabase(), runId, { status: "failed", error: message })
+    recordMetric({
+      runId,
+      kind: request.kind,
+      modelId: request.modelId,
+      status: "failed",
+      durationMs: Date.now() - started
+    })
+    stampAndSend(
+      window,
+      {
+        type: "run.error",
+        runId,
+        kind: request.kind,
+        message,
+        turn: { workflow: "todo", attention: "error" }
+      },
+      request.sessionId
+    )
+  }
 }
 
 async function emitStubKind(

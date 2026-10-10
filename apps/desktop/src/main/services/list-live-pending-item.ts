@@ -7,6 +7,7 @@ import {
   type PendingApprovalItem
 } from "@enjoy-agents/ipc-contract/approvals-pending"
 import { getActiveRun } from "./agent-run-state"
+import { pendingApprovalTargetShort } from "./pending-approval-target-short"
 import { parseStoredApprovalArgs } from "./restore-approval-args"
 
 export function mapLivePendingItem(row: LivePendingApproval): PendingApprovalItem {
@@ -21,8 +22,12 @@ export function mapLivePendingItem(row: LivePendingApproval): PendingApprovalIte
     createdAt: row.createdAt
   }
   const args = pickPendingArgs(row)
-  if (args === undefined) return item
-  return { ...item, args }
+  const stored = parseStoredApprovalArgs({ args: row.args, requestArgs: row.requestArgs })
+  const targetShortName = pendingApprovalTargetShort(row.name, args ?? stored ?? undefined)
+  if (args === undefined) {
+    return targetShortName ? { ...item, targetShortName } : item
+  }
+  return targetShortName ? { ...item, args, targetShortName } : { ...item, args }
 }
 
 function pickPendingArgs(row: LivePendingApproval): unknown | undefined {

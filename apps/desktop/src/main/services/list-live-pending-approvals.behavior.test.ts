@@ -232,3 +232,40 @@ test("HMAC 库参进 Inbox args，park 字段剥掉，缺参不补 {}", () => {
   assert.equal("args" in mapLivePendingItem({ ...row, args: null, requestArgs: null }), false)
   assert.deepEqual(mapLivePendingItem({ ...row, args: "{}" }).args, {})
 })
+
+test("20KB write_file 未决仍进 Inbox，超限 args 省略、条目留下", () => {
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_huge_args", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ses_huge_args", "ws_huge_args", "huge", 1, 1)
+  insertRun(db, {
+    id: "run_huge_args",
+    sessionId: "ses_huge_args",
+    workspaceId: "ws_huge_args",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  insertApproval(db, {
+    id: "apr_huge_args",
+    runId: "run_huge_args",
+    toolCallId: "tool_huge",
+    name: "write_file",
+    args: JSON.stringify({ path: "big.txt", content: "x".repeat(20_000) }),
+    hmac: "h",
+    decision: null,
+    createdAt: 8
+  })
+  const live = listLivePendingApprovals(db).find((item) => item.id === "apr_huge_args")
+  assert.ok(live)
+  const mapped = mapLivePendingItem(live)
+  assert.equal(mapped.id, "apr_huge_args")
+  assert.equal(mapped.name, "write_file")
+  assert.equal("args" in mapped, false)
+})

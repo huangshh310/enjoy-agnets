@@ -6,7 +6,11 @@ import {
   isStaleObservationAfterAllow,
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
-import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RESTART_ABANDONED_CODE,
+  toolAbortKind,
+  toolHasResultCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 
 export type SliceMessage = {
   role: string
@@ -29,9 +33,10 @@ export function toolsFromMessages(messages: SliceMessage[], limit = 8): ThreadTo
 export function toolRunKind(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
-): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" | "catch_up" {
+): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" | "catch_up" | "restart" {
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (state === "output-available") return "ok"
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return "restart"
   const abort = toolAbortKind(tool)
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"

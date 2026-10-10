@@ -15,7 +15,15 @@ import type { BrowserWindow } from "electron"
 import { deleteActiveRun, emitEvent, getActiveRun } from "./agent-run-state"
 import { approvalResponseMessage } from "./approval-response-message"
 import { getDatabase } from "./database"
+import { parseStoredApprovalArgs } from "./restore-approval-args"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+
+type RestoredAllow = {
+  approvalId: string
+  toolCallId: string
+  name: string
+  args?: unknown
+}
 
 /** 无匹配行 / planSdkReplay fail closed：机器码，禁止英文句子进 run.error。 */
 export const RESTORE_NO_MATCHING_CODE = "restore_no_matching_approval"
@@ -28,6 +36,12 @@ export type RestoredOrphan =
       decision: string
       reason?: string
     }
+  | {
+      kind: "continue_decided"
+      approved: boolean
+      decision: string
+    }
+  | { kind: "desktop_reverify" }
   | { kind: "skip" }
   | { kind: "fail_closed" }
 
@@ -52,6 +66,17 @@ export function resolveRestoredOrphanApproval(
       reason: plan.reason
     }
   }
+  // 已决但 SDK 没发出（kill-9 在 execute 前）：文件/命令续跑；desktop_act allow 必须先重拍。
+  if (
+    (row.decision === "allow" || row.decision === "deny") &&
+    plan.action === "fail_closed" &&
+    plan.cause === "unsent"
+  ) {
+    if (row.name === "desktop_act" && row.decision === "allow") {
+      return { kind: "desktop_reverify" }
+    }
+    return { kind: "continue_decided", approved: row.decision === "allow", decision: row.decision }
+  }
   return { kind: "fail_closed" }
 }
 
@@ -59,9 +84,16 @@ export function applyRestoredOrphanApprovals(input: {
   runId: string
   items: Array<{ approvalId: string; toolCallId: string; name: string }>
   window?: BrowserWindow
-}): { ended: boolean; replies: Array<{ approvalId: string; approved: boolean; reason?: string }> } {
+}): {
+  ended: boolean
+  replies: Array<{ approvalId: string; approved: boolean; reason?: string }>
+  continueAllows: RestoredAllow[]
+  desktopReverify: RestoredAllow[]
+} {
   const db = getDatabase()
   const replies: Array<{ approvalId: string; approved: boolean; reason?: string }> = []
+  const continueAllows: RestoredAllow[] = []
+  const desktopReverify: RestoredAllow[] = []
   for (const item of input.items) {
     const resolved = resolveRestoredOrphanApproval(db, {
       approvalId: item.approvalId,
@@ -71,7 +103,34 @@ export function applyRestoredOrphanApprovals(input: {
     if (resolved.kind === "skip") continue
     if (resolved.kind === "fail_closed") {
       endRestoredRunWithoutSdkReply(db, input.runId, input.window)
-      return { ended: true, replies }
+      return { ended: true, replies, continueAllows, desktopReverify }
+    }
+    if (resolved.kind === "desktop_reverify") {
+      const row = getApproval(db, item.approvalId)
+      desktopReverify.push({
+        approvalId: item.approvalId,
+        toolCallId: item.toolCallId,
+        name: item.name,
+        args: row ? (parseStoredApprovalArgs(row) ?? undefined) : undefined
+      })
+      continue
+    }
+    if (resolved.kind === "continue_decided") {
+      replies.push({
+        approvalId: item.approvalId,
+        approved: resolved.approved,
+        reason: resolved.decision
+      })
+      if (resolved.approved) {
+        const row = getApproval(db, item.approvalId)
+        continueAllows.push({
+          approvalId: item.approvalId,
+          toolCallId: item.toolCallId,
+          name: item.name,
+          args: row ? (parseStoredApprovalArgs(row) ?? undefined) : undefined
+        })
+      }
+      continue
     }
     replies.push({
       approvalId: resolved.sdkApprovalId,
@@ -80,7 +139,7 @@ export function applyRestoredOrphanApprovals(input: {
     })
     replayStoredSdkResponse(input.runId, item, resolved, input.window)
   }
-  return { ended: false, replies }
+  return { ended: false, replies, continueAllows, desktopReverify }
 }
 
 function replayStoredSdkResponse(
@@ -127,7 +186,7 @@ export function endRestoredRunWithoutSdkReply(
       sessionId: sessionId ?? run?.input.sessionId,
       message: RESTORE_NO_MATCHING_CODE,
       code: RESTORE_NO_MATCHING_CODE,
-      turn: { workflow: "todo", attention: "stopped" }
+      turn: { workflow: "todo", attention: "neutral" }
     })
   }
   if (run) deleteActiveRun(runId)

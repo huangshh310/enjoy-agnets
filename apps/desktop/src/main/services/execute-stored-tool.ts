@@ -121,9 +121,12 @@ async function resumeSessionHeartbeat(sessionId: string, args: Record<string, un
 
 async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {
   const { createWorkspaceHost, getWorkspace } = await import("./workspace")
-  const { resolveWorkspaceHost } = await import("./workspace-host-factory")
   if (run.input.workspaceId) {
     const record = await getWorkspace(run.input.workspaceId)
+    if (record.kind !== "ssh" && !looksLikeSshRoot(record.rootPath)) {
+      return createWorkspaceHost(record.rootPath)
+    }
+    const { resolveWorkspaceHost } = await import("./workspace-host-factory")
     return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
   }
   if (looksLikeSshRoot(run.workspaceRoot)) {

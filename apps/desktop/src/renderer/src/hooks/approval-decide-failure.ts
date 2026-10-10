@@ -10,20 +10,18 @@ import {
   extractApprovalDecideCode
 } from "@enjoy-agents/ipc-contract/approval-decide"
 
-const COPY: Record<Exclude<ReturnType<typeof extractApprovalDecideCode>, undefined>, string> = {
-  [APPROVAL_NOT_REATTACHED]: "",
-  [APPROVAL_HMAC_FAILED]: "Approval token was tampered.",
-  [APPROVAL_ASK_USER_NO_SESSION]: "ask_user_questions cannot be allow_session",
-  [APPROVAL_RUN_INACTIVE]: "This agent run is no longer active.",
-  [APPROVAL_NO_MATCHING]: "No matching tool approval is waiting."
+const KEYS: Record<Exclude<ReturnType<typeof extractApprovalDecideCode>, undefined>, string | null> = {
+  [APPROVAL_NOT_REATTACHED]: null,
+  [APPROVAL_HMAC_FAILED]: "chat.approvalDecideHmac",
+  [APPROVAL_ASK_USER_NO_SESSION]: "chat.approvalDecideAskUserNoSession",
+  [APPROVAL_RUN_INACTIVE]: "chat.approvalDecideRunInactive",
+  [APPROVAL_NO_MATCHING]: "chat.approvalDecideNoMatching"
 }
 
-/** 要写横幅的人话；reattach 前点允许回 null，禁止红条。 */
+/** 要写横幅的 i18n 键；reattach 前点允许回 null，禁止红条。 */
 export function approvalDecideUiError(error: unknown): string | null {
   const code = extractApprovalDecideCode(error)
   if (code === APPROVAL_NOT_REATTACHED) return null
-  if (code) return COPY[code]
-  if (error instanceof Error && error.message.trim()) return error.message
-  const text = String(error ?? "").trim()
-  return text || "Approval failed."
+  if (code) return KEYS[code]
+  return "chat.approvalDecideFailed"
 }

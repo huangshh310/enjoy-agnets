@@ -17,6 +17,10 @@ import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
 import { approvalDecideUiError } from "./approval-decide-failure"
+import { en } from "../i18n/catalogs/en/index.ts"
+import { zh } from "../i18n/catalogs/zh/index.ts"
+import { resolveLocale, type LanguagePref } from "../i18n/locale.ts"
+import { translate } from "../i18n/lookup.ts"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { pickActiveModel } from "./pick-active-model"
 import {
@@ -196,8 +200,7 @@ export async function decidePendingApprovalOrThrow(
     })
   } catch (error) {
     const shown = approvalDecideUiError(error)
-    if (shown) store.setError(shown)
-    else throw error
+    if (shown) store.setError(translateDecideError(shown))
   }
 }
 
@@ -348,6 +351,16 @@ function followOpenReviewFile(path: string) {
     return
   }
   void openChangedFile(path, { reveal: false })
+}
+
+function translateDecideError(path: string): string {
+  const language = (
+    queryClient.getQueryData(["settings"]) as
+      | { preferences?: { language?: LanguagePref } }
+      | undefined
+  )?.preferences?.language ?? "zh"
+  const messages = resolveLocale(language) === "en" ? en : zh
+  return translate(messages, path)
 }
 
 async function tryReadFile(workspaceId: string, path: string): Promise<string | null> {

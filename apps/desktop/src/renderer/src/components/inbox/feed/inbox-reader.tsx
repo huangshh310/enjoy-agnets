@@ -227,7 +227,8 @@ export function InboxReader(props: {
           </div>
 
           {/* 待审批提示卡 */}
-          {item.copyKey === "pending_approval" || item.copyKey === "ask_user" ? (
+          {(item.copyKey === "pending_approval" || item.copyKey === "ask_user") &&
+          item.canOpenApproval !== false ? (
             <div className="flex flex-col gap-3 rounded-2xl border border-status-yellow-text/30 bg-status-yellow-background/10 p-5 shadow-xs">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-status-yellow-text dark:text-status-yellow-text font-semibold text-caption-1-medium">

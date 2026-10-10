@@ -1,6 +1,6 @@
 # spec/ai-capabilities
 
-> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（终态也带 kind；空闲只收回挂家族；标题补全不认领前台）
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（终态也带 kind；`approval.resolved.code` 含 `restart_abandoned`）
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 `GenerationRequest.kind`：`text` `structured-object` `structured-array` `completion` `image` `speech` `transcription` `translation` `video` `embedding` `rerank` `realtime-session` `agent` `workflow`。fullStream 映射在 `packages/agent-core/src/streams/map-part.ts`：SDK 连字符部件按原规则折；已是点号的 Enjoy / ACP 事件只放行显式白名单（原 7 种 + `session.title` / `session.config` / `usage.updated` / `generation.warning` + `commands.update` / `mcp.app`），未知点号类型丢弃。`emitEvent` / `stampAndSend` 出站再 `StreamEvent.safeParse`，失败丢弃并计数（开发态全量 `console.warn`，生产态按 type 10s 限速）；`stampAndSend` / `stampAndBroadcast` 丢掉时返回 `null`，不要把原事件当已发送。终态 `run.end` / `run.error` 被闸丢掉时，`emitEvent` 仍 `settleRun`，避免 `waitForRunSettle` 挂死。映射层先把边沿形状修到可过闸：ACP MCP App 标题截到 200，`srcDoc` 超过 200000 发 `mcp.app` `phase:"error"` + `generation.warning`（`mcp_app_srcdoc_too_large`，不带超长 srcDoc）；ACP `session.title` 截到 200；`host.inject` 名称截到 120、名单封顶 128；`usage.updated` token 四舍五入成整数；`source.added` 的 NaN score 丢掉字段。Agent / `ai.generate` 完成时写 `ttfoMs` 与 `tokensPerSecond`。
 
-StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）/ `session.config`（ACP `configOptions` 与 `config_option_update`，选项形状复用 `SessionConfigOption`；思考档认 `thought_level` 或 `effort` / `reasoning_effort`）/ `session.title`（`session_info_update`，仅默认标题时 `session.rename`）。`run.start` / `run.end` / `run.error` 可带可选 `kind`（Composer / 恢复为 `agent`；标题补全等旁路带自己的 generation kind；旧事件缺字段 `.catch(undefined)` 仍过闸）。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
+StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）/ `session.config`（ACP `configOptions` 与 `config_option_update`，选项形状复用 `SessionConfigOption`；思考档认 `thought_level` 或 `effort` / `reasoning_effort`）/ `session.title`（`session_info_update`，仅默认标题时 `session.rename`）。`run.start` / `run.end` / `run.error` 可带可选 `kind`（Composer / 恢复为 `agent`；标题补全等旁路带自己的 generation kind；旧事件缺字段 `.catch(undefined)` 仍过闸）。`e2e-generate` 成功 `run.end` 与失败 `run.error` 都 stamp `kind`。`approval.resolved.code` 认 `user_aborted` / `run_failed` / `catch_up_approval_timeout` / `restart_abandoned`，未知码 `.catch(undefined)` 不拒整条。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
 
 消息 parts：`UIMessage` + `migrateContentToParts`。旧 `messages.content` 仍是兼容字段。生成式 UI 只能选 `GENERATIVE_COMPONENT_IDS` 白名单。
 

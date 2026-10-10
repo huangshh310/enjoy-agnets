@@ -48,9 +48,11 @@ export function shouldCheckpointPersist(
   return now - lastCheckpointAt >= CHECKPOINT_INTERVAL_MS
 }
 
-/** 已终态落库或没有任何正文/工具时返回 null，避免插入空气泡或重复行。 */
+/**
+ * 有正文 / 工具就拿出 payload。`assistantPersisted` 只表示已有助手行 id，
+ * 禁止再挡 UPDATE，否则允许后的 tool.result / 收工态写不进库，重启会转圈。
+ */
 export function flushPayloadFromRun(run: FlushableRun): AssistantFlushPayload | null {
-  if (run.assistantPersisted) return null
   if (!hasAssistantPersistableBody(run)) return null
   return {
     sessionId: run.sessionId,

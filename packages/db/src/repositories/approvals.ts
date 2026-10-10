@@ -267,6 +267,10 @@ export function setApprovalSdkResponse(
   )
 }
 
+export function listApprovalsForRun(db: AppDatabase, runId: string): ApprovalRow[] {
+  return db.prepare(`SELECT ${APPROVAL_COLUMNS} FROM approvals WHERE run_id = ?`).all(runId) as ApprovalRow[]
+}
+
 export function listPendingApprovals(db: AppDatabase, runId?: string): ApprovalRow[] {
   const rows = db
     .prepare(`SELECT ${APPROVAL_COLUMNS} FROM approvals WHERE decision IS NULL`)

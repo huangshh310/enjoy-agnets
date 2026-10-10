@@ -250,7 +250,7 @@ test("空闲时标题补全 run.error 不改前台、不写 error", () => {
   assert.equal(noKind.error, undefined)
 })
 
-test("空闲时回挂对不上走中性 notice，工具封成已停止", () => {
+test("空闲时回挂对不上走中性 notice，工具封成 restart_abandoned", () => {
   const messages: ThreadMessage[] = [
     {
       id: "msg_1",
@@ -269,7 +269,7 @@ test("空闲时回挂对不上走中性 notice，工具封成已停止", () => {
       sessionId: "ses_a",
       message: RESTORE_NO_MATCHING,
       code: RESTORE_NO_MATCHING,
-      turn: { workflow: "todo", attention: "stopped" }
+      turn: { workflow: "todo", attention: "neutral" }
     },
     null
   )
@@ -281,7 +281,7 @@ test("空闲时回挂对不上走中性 notice，工具封成已停止", () => {
   assert.equal(humanizeThreadError(patch.notice, (path) => path), "chat.restoreNoMatching")
   assert.equal(
     (patch.messages[0]?.tools?.[0]?.result as { code?: string } | undefined)?.code,
-    "user_aborted"
+    "restart_abandoned"
   )
 })
 

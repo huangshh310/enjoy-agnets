@@ -183,6 +183,7 @@ export async function* createE2eStubStream(
   }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
+    if (process.env.ENJOY_E2E_SLOW_TOOL === "1") await wait(8_000)
     await writeStubApprovedFile(undefined, opts?.packaged === true)
     yield stubApprovedWriteResult(toolCallId)
     if (isWriteSlowNotePrompt(prompt, opts?.packaged === true)) {

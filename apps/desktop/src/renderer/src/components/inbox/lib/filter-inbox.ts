@@ -57,7 +57,6 @@ export function inboxFromPendingApprovals(
 ): InboxNotification[] {
   return rows
     .filter((row) => isLiveInboxSession(row.sessionId, input.repositories))
-    .filter((row) => row.args != null)
     .map((row) => {
       const ask = row.name === ASK_USER_QUESTIONS_TOOL
       const copyKey = ask ? ("ask_user" as const) : ("pending_approval" as const)
@@ -66,7 +65,9 @@ export function inboxFromPendingApprovals(
         id,
         copyKey,
         title: input.t(`attention.kind.${copyKey}`),
-        summary: `${row.sessionTitle} · ${row.name}`,
+        summary: row.targetShortName
+          ? `${row.sessionTitle} · ${row.name} · ${row.targetShortName}`
+          : `${row.sessionTitle} · ${row.name}`,
         sessionTitle: row.sessionTitle,
         toolName: row.name,
         category: "agent" as InboxKind,
@@ -76,7 +77,8 @@ export function inboxFromPendingApprovals(
         workspaceId: row.workspaceId ?? undefined,
         actionKey: "openSession" as const,
         actionLabel: input.t("pages.inbox.actions.openSession"),
-        status: "active" as const
+        status: "active" as const,
+        canOpenApproval: row.args != null
       }
     })
     .filter((item) => !input.hiddenIds.has(item.id))

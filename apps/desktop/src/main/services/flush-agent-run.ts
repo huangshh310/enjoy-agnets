@@ -23,7 +23,11 @@ export function persistActiveRun(
 ): boolean {
   const wrote = writeAssistantRow(run)
   if (wrote) run.assistantPersisted = true
-  updateRun(getDatabase(), runId, { status, error: error ?? null })
+  updateRun(getDatabase(), runId, {
+    status,
+    error: error ?? null,
+    ...(FINISHED.has(status) ? { checkpoint: null } : {})
+  })
   if (FINISHED.has(status)) {
     run.endedAt = run.endedAt ?? Date.now()
     // 只给 completed 补 incomplete。failed/cancelled 且没泵过不得算 unknown；
@@ -39,7 +43,6 @@ export function persistActiveRun(
  * 进程被杀、electron-vite 重载没有 before-quit 时，hydrate 还能读到最后一次快照。
  */
 export function checkpointActiveRun(run: ActiveRun): boolean {
-  if (run.assistantPersisted) return false
   return writeAssistantRow(run)
 }
 

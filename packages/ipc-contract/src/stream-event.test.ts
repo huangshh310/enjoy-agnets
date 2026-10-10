@@ -51,7 +51,7 @@ test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
   }
 })
 
-test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_timeout", () => {
+test("approval.resolved.code 认 user_aborted / run_failed / catch_up / restart_abandoned；未知码丢掉", () => {
   const aborted = StreamEvent.safeParse({
     type: "approval.resolved",
     runId: "r1",
@@ -73,6 +73,13 @@ test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_t
     decision: "cancelled",
     code: "catch_up_approval_timeout"
   })
+  const restart = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "restart_abandoned"
+  })
   const other = StreamEvent.safeParse({
     type: "approval.resolved",
     runId: "r1",
@@ -83,7 +90,11 @@ test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_t
   assert.equal(aborted.success, true)
   assert.equal(failed.success, true)
   assert.equal(catchUp.success, true)
-  assert.equal(other.success, false)
+  assert.equal(restart.success, true)
+  assert.equal(other.success, true)
+  if (other.success && other.data.type === "approval.resolved") {
+    assert.equal(other.data.code, undefined)
+  }
 })
 
 test("approval.resolved 认 cancelled，与用户 deny 分开", () => {

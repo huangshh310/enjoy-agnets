@@ -78,6 +78,52 @@ test("kill-9 且检查点没刷上：结清停止，Inbox 空，重新发送回�
   }
 })
 
+test("允许并完成后连重启两次：写行不再转圈，没有额外失败行", async () => {
+  test.setTimeout(240_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  const first = await firstWindow(env.app)
+  await first.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
+  await expect.poll(() => existsSync(stubPath(env.workspace)), { timeout: 20_000 }).toBe(true)
+  await expect(first.locator("body")).toContainText("stub-ok allowed write", { timeout: 20_000 })
+  await env.app.close()
+  for (let i = 0; i < 2; i += 1) {
+    const app = await relaunchElectron(env.env)
+    try {
+      const window = await firstWindow(app)
+      await expect(window.locator("body")).toContainText("please write a note", { timeout: 20_000 })
+      await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
+      await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0)
+      await expect(window.locator("body")).not.toContainText("已运行 1 个工具 · 运行命令 · 失败")
+      await expect(window.locator("body")).toContainText("e2e-stub.txt")
+    } finally {
+      await app.close()
+    }
+  }
+})
+
+test("拒绝后连重启两次：仍是已拒绝，写行不转圈", async () => {
+  test.setTimeout(240_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  const first = await firstWindow(env.app)
+  await first.locator('[data-testid="approval-deny"]').click({ timeout: 15_000, force: true })
+  await expect(first.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
+  await env.app.close()
+  for (let i = 0; i < 2; i += 1) {
+    const app = await relaunchElectron(env.env)
+    try {
+      const window = await firstWindow(app)
+      await expect(window.locator("body")).toContainText("已拒绝，本次未执行", { timeout: 20_000 })
+      await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
+      await expect(window.locator("body")).not.toContainText("已运行 1 个工具 · 运行命令 · 失败")
+      expect(existsSync(stubPath(env.workspace))).toBe(false)
+    } finally {
+      await app.close()
+    }
+  }
+})
+
 async function relaunchAndAllow(input: {
   workspace: string
   userData: string

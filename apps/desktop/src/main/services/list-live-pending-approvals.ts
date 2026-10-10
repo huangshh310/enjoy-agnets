@@ -10,9 +10,7 @@ import { isRestoreWaitingSettled } from "./restore-once"
 export function listPendingApprovalsForInbox(raw: unknown): ApprovalsPendingResult {
   ApprovalsPendingInput.parse(raw ?? {})
   return {
-    items: listLivePendingApprovals(getDatabase())
-      .map(mapLivePendingItem)
-      .filter((item) => item.args != null),
+    items: listLivePendingApprovals(getDatabase()).map(mapLivePendingItem),
     restoreSettled: isRestoreWaitingSettled()
   }
 }

@@ -91,6 +91,33 @@ test("回挂取消结清未决：cancelled run 的 NULL 行不进拍板", () => 
   deleteActiveRun("run_abandon")
 })
 
+test("回挂异常在 runs.error 为空时写入，不吞掉", () => {
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_write_err", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ses_write_err", "ws_write_err", "write", 1, 1)
+  insertRun(db, {
+    id: "run_write_err",
+    sessionId: "ses_write_err",
+    workspaceId: "ws_write_err",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  abandonWaitingRestore("run_write_err", silentWindow(), {
+    sessionId: "ses_write_err",
+    cause: new Error("workspace missing")
+  })
+  assert.equal(getRun(db, "run_write_err")?.status, "cancelled")
+  assert.equal(getRun(db, "run_write_err")?.error, "workspace missing")
+})
+
 test("回挂取消保留 runs.error 原异常，不盖成回挂码", () => {
   const db = getDatabase()
   db.prepare(
@@ -240,7 +267,8 @@ test("检查点里 HMAC 失败行：结束 run，不回 SDK，Inbox 不留未决
   assert.equal(getRun(db, runId)?.status, "cancelled")
   assert.equal(getRun(db, runId)?.error, RESTORE_NO_MATCHING_CODE)
   assert.equal(stored?.decision, "cancelled")
-  assert.equal(stored?.sdkApproved ?? null, null)
+  assert.equal(stored?.sdkReason, "restart_unverifiable_decision")
+  assert.equal(stored?.sdkApproved, 0)
   assert.equal(getActiveRun(runId), undefined)
   assert.equal(events.some((event) => event.type === "tool.result"), false)
   assert.equal(events.some((event) => event.type === "approval.required"), false)

@@ -92,4 +92,11 @@ test("toolRunKind maps SDK states", () => {
     }),
     "catch_up"
   )
+  assert.equal(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { code: "restart_abandoned", decision: "cancelled" }
+    }),
+    "restart"
+  )
 })

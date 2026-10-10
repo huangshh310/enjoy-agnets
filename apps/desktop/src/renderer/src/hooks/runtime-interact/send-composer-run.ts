@@ -9,11 +9,8 @@ import { codingAgentRunInput } from "../agent-run-payload"
 import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
 import { composerRunKind } from "../composer-run-kind"
 import { syncReviewGateOnComposerStart } from "../../components/ai-chat/review-gate/sync-review-gate"
-import {
-  abortOrphanedRun,
-  claimComposerRun,
-  dropEmptyPendingAssistant
-} from "../composer-run-control"
+import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
+import { failComposerSend } from "./fail-composer-send"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
@@ -39,7 +36,6 @@ import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
 import {
   clearSentComposerText,
   composerNeedsSessionReady,
-  mergeComposerText,
   restoreComposerAfterFailedSend,
   restoreComposerDraft,
   SEND_FAILED_RESTORE,
@@ -191,24 +187,33 @@ async function launchComposerRun(
     )
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
-      dropEmptyPendingAssistant()
-      store.setRunning(false)
-      store.setError(blocked)
-      if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
+      failComposerSend({
+        text: payload.content,
+        reason: blocked,
+        sessionId,
+        dropOptimisticUser: true
+      })
       return
     }
     const runId = requireAgentRunId(result)
     if (!claimComposerRun(sessionId, runId)) {
       abortOrphanedRun(runId)
+      failComposerSend({
+        text: payload.content,
+        reason: SEND_FAILED_RESTORE,
+        sessionId
+      })
       return
     }
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
   } catch (error) {
-    dropEmptyPendingAssistant()
-    store.setRunning(false)
-    store.setError(composerSendError(error))
-    if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
+    failComposerSend({
+      text: payload.content,
+      reason: composerSendError(error),
+      sessionId: store.sessionId,
+      dropOptimisticUser: true
+    })
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }

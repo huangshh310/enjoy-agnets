@@ -247,7 +247,7 @@ test("desktop_act + sdkApproved=1：planSdkReplay fail closed，不回 approved:
   assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
 })
 
-test("sdkApproved=null + decision=allow：planSdkReplay fail closed，不回 approved:false 却标 allow", () => {
+test("sdkApproved=null + decision=allow：continue_decided，不结束整轮、不假回 SDK", () => {
   const runId = "run_unsent_allow"
   const { applied, events } = applyOne(
     runId,
@@ -257,7 +257,7 @@ test("sdkApproved=null + decision=allow：planSdkReplay fail closed，不回 app
       runId,
       toolCallId: "tool_unsent_allow",
       name: "write_file",
-      args: "{}",
+      args: JSON.stringify({ path: "note.txt", content: "from stub" }),
       hmac: "h",
       decision: "allow",
       createdAt: Date.now(),
@@ -266,13 +266,45 @@ test("sdkApproved=null + decision=allow：planSdkReplay fail closed，不回 app
     },
     { approvalId: "apr_unsent_allow", toolCallId: "tool_unsent_allow", name: "write_file" }
   )
-  assert.equal(applied.ended, true)
-  assert.equal(applied.replies.length, 0)
+  assert.equal(applied.ended, false)
+  assert.equal(applied.replies[0]?.approved, true)
+  assert.equal(applied.continueAllows.length, 1)
+  assert.equal(applied.continueAllows[0]?.approvalId, "apr_unsent_allow")
   assert.equal(
-    events.some((event) => event.type === "tool.result" && event.decision === "allow"),
+    events.some((event) => event.type === "tool.result"),
     false
   )
-  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
+  assert.equal(getRun(getDatabase(), runId)?.status, "waiting_review")
+  assert.ok(getActiveRun(runId))
+  deleteActiveRun(runId)
+})
+
+test("desktop_act 未发出 allow：desktop_reverify，不直接 continue_decided", () => {
+  const runId = "run_desktop_unsent"
+  const { applied, events } = applyOne(
+    runId,
+    "ses_desktop_unsent",
+    {
+      id: "apr_desktop_unsent",
+      runId,
+      toolCallId: "tool_desktop_unsent",
+      name: "desktop_act",
+      args: JSON.stringify({ action: "click", appName: "备忘录" }),
+      hmac: "h",
+      decision: "allow",
+      createdAt: Date.now(),
+      sdkApproved: null,
+      sdkApprovalId: "apr_sdk_desktop_unsent"
+    },
+    { approvalId: "apr_desktop_unsent", toolCallId: "tool_desktop_unsent", name: "desktop_act" }
+  )
+  assert.equal(applied.ended, false)
+  assert.equal(applied.continueAllows.length, 0)
+  assert.equal(applied.desktopReverify.length, 1)
+  assert.equal(applied.desktopReverify[0]?.approvalId, "apr_desktop_unsent")
+  assert.equal(events.some((event) => event.type === "tool.result"), false)
+  assert.ok(getActiveRun(runId))
+  deleteActiveRun(runId)
 })
 
 test("resume_code=stale_observation：planSdkReplay fail closed，不回放", () => {

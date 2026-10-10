@@ -27,3 +27,20 @@ test("args 超上限当缺参，条目其它字段仍可解析", () => {
   assert.deepEqual(parsePendingApprovalArgs({ path: "e2e-stub.txt" }), { path: "e2e-stub.txt" })
   assert.equal(parseInboxPendingItems([{ ...item, args: huge }])[0]?.id, "apr_1")
 })
+
+test("二次确认卡超上限只剥缩略图，保留 sensitive / hints", () => {
+  const args = {
+    action: "click",
+    sensitive: true,
+    hints: ["password field"],
+    thumbnailDataUrl: `data:image/png;base64,${"A".repeat(20_000)}`,
+    previousThumbnailDataUrl: `data:image/png;base64,${"B".repeat(4_000)}`
+  }
+  const parsed = parsePendingApprovalArgs(args)
+  assert.ok(parsed && typeof parsed === "object")
+  const record = parsed as Record<string, unknown>
+  assert.equal(record.sensitive, true)
+  assert.deepEqual(record.hints, ["password field"])
+  assert.equal("thumbnailDataUrl" in record, false)
+  assert.equal("previousThumbnailDataUrl" in record, false)
+})

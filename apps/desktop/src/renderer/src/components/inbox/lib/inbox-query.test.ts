@@ -151,7 +151,7 @@ test("拍板行来自 main 未决，不靠 Attention 槽", () => {
   assert.equal(fromAttention.length, 0)
 })
 
-test("缺参未决不进拍板：卡画不出来就不要幽灵行", () => {
+test("缺参未决仍进 Inbox，只开会话、不补可点卡", () => {
   const rows = inboxFromPendingApprovals(
     [
       {
@@ -175,7 +175,39 @@ test("缺参未决不进拍板：卡画不出来就不要幽灵行", () => {
       ]
     }
   )
-  assert.equal(rows.length, 0)
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.id, "apr:apr_ghost")
+  assert.equal(rows[0]?.canOpenApproval, false)
+  assert.equal(rows[0]?.actionKey, "openSession")
+})
+
+test("有短文件名时 Inbox 摘要带 basename", () => {
+  const rows = inboxFromPendingApprovals(
+    [
+      {
+        id: "apr_short",
+        runId: "run_1",
+        sessionId: "ses_live",
+        workspaceId: "ws",
+        sessionTitle: "活着",
+        name: "write_file",
+        toolCallId: "tool_1",
+        createdAt: 2,
+        args: { path: "src/note.txt" },
+        targetShortName: "note.txt"
+      }
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  assert.equal(rows[0]?.summary, "活着 · write_file · note.txt")
 })
 
 test("complete 不进安静 Inbox，不占拍板徽标", () => {

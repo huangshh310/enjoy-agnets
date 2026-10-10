@@ -22,7 +22,12 @@ export function restoreHeldWaitingApprovals(input: {
   hmacPending: ApprovalRow[]
   items: PendingApproval[]
   window: BrowserWindow
-}): { ended: boolean; keep: PendingApproval[] } {
+}): {
+  ended: boolean
+  keep: PendingApproval[]
+  continueAllows: PendingApproval[]
+  desktopReverify: PendingApproval[]
+} {
   const hmacPending = liveHmacRows(input.runId, input.hmacPending)
   const classified = classifyWaitingApprovals(hmacPending, input.items)
   const orphaned = applyRestoredOrphanApprovals({
@@ -30,11 +35,16 @@ export function restoreHeldWaitingApprovals(input: {
     items: classified.orphans,
     window: input.window
   })
-  if (orphaned.ended) return { ended: true, keep: [] }
+  if (orphaned.ended) return { ended: true, keep: [], continueAllows: [], desktopReverify: [] }
   const merged = mergeHmacPendingIntoKeep(hmacPending, classified.keep)
   denyMissingArgApprovals(input.runId, [...classified.missingArgs, ...merged.missingArgs], input.window)
   emitRestoredApprovalCards(input.runId, merged.keep, input.window)
-  return { ended: false, keep: merged.keep }
+  return {
+    ended: false,
+    keep: merged.keep,
+    continueAllows: orphaned.continueAllows,
+    desktopReverify: orphaned.desktopReverify
+  }
 }
 
 /** HMAC 通过的活行：本 run、未决、未 superseded。别的 run / 已决不进。 */

@@ -70,29 +70,37 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   }
 }
 
-/** 加载历史 / 收工：input-streaming 与 input-available 封成 output-error。用户停标 stopped。 */
+/** 加载历史 / 收工：input-streaming 与 input-available 封成 output-error。用户停标 stopped；重启放弃用 restart_abandoned。 */
 export function sealAbandonedTools(
   tools: ThreadToolCall[] | undefined,
-  opts?: { aborted?: boolean }
+  opts?: { aborted?: boolean; code?: string }
 ): ThreadToolCall[] | undefined {
   if (!tools) return tools
+  const sealCode = opts?.code ?? (opts?.aborted ? USER_ABORTED_CODE : undefined)
   return tools.map((tool) => {
-    if (opts?.aborted && tool.state === "approval-requested") {
+    if (tool.state === "approval-requested") {
       const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+      if (sealCode) {
+        return {
+          ...tool,
+          state: "output-error" as const,
+          result: { ...prev, code: sealCode, decision: "cancelled" }
+        }
+      }
       return {
         ...tool,
         state: "output-error" as const,
-        result: { ...prev, code: USER_ABORTED_CODE, decision: "cancelled" }
+        errorText: tool.errorText ?? "No result received."
       }
     }
     if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
-    if (opts?.aborted) {
+    if (sealCode) {
       const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
       return {
         ...tool,
         state: "output-error" as const,
         errorText: undefined,
-        result: { ...prev, code: USER_ABORTED_CODE }
+        result: { ...prev, code: sealCode }
       }
     }
     return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }

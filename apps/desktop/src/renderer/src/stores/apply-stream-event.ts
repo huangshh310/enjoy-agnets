@@ -12,7 +12,11 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
-import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  isUserAbortEvent,
+  RESTART_ABANDONED_CODE,
+  USER_ABORTED_CODE
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isRestoreFamilyCode, restoreFamilyCodeOf } from "@enjoy-agents/ipc-contract/restore-codes"
 import { RESTORE_NO_MATCHING } from "../lib/usage/classify-thread-error"
 import { applyV2Part } from "./apply-v2-parts"
@@ -107,7 +111,7 @@ function applyTerminalEvent(
     }
     if (isRestoreFamilyCode(event.message) || isRestoreFamilyCode(event.code)) {
       return {
-        messages: finalizeRun(messages, { aborted: true }),
+        messages: finalizeRun(messages, { code: RESTART_ABANDONED_CODE }),
         pendingApproval: null,
         running: false,
         runId: null,
@@ -313,7 +317,7 @@ function attachAssistant(
   return created
 }
 
-function finalizeRun(messages: ThreadMessage[], opts?: { aborted?: boolean }): ThreadMessage[] {
+function finalizeRun(messages: ThreadMessage[], opts?: { aborted?: boolean; code?: string }): ThreadMessage[] {
   return messages.map((message) => {
     const chips =
       message.role === "assistant" ? takeActionChips(message.content, message.actionChips) : null
@@ -326,10 +330,10 @@ function finalizeRun(messages: ThreadMessage[], opts?: { aborted?: boolean }): T
       thoughtSeconds: message.streaming
         ? (clampThoughtSeconds(message.createdAt) ?? undefined)
         : message.thoughtSeconds,
-      tools: sealAbandonedTools(
-        message.tools?.map((tool) => ({ ...tool })),
-        { aborted: opts?.aborted }
-      )
+      tools: sealAbandonedTools(message.tools?.map((tool) => ({ ...tool })), {
+        aborted: opts?.aborted,
+        code: opts?.code
+      })
     }
   })
 }

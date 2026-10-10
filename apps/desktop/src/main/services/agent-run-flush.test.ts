@@ -52,8 +52,10 @@ test("审批后再泵一轮：累积 transcript 一并落库", () => {
   assert.equal(payload?.content.includes("登录页已经写好"), true)
 })
 
-test("已经落过库不再插第二行", () => {
-  assert.equal(flushPayloadFromRun(failedHtmlRun({ assistantPersisted: true })), null)
+test("已经落过库仍拿出 payload，同一行 UPDATE 终态工具", () => {
+  const payload = flushPayloadFromRun(failedHtmlRun({ assistantPersisted: true }))
+  assert.ok(payload)
+  assert.equal(payload.tools[0]?.state, "output-available")
 })
 
 test("空 transcript 且无工具不落库", () => {
@@ -85,8 +87,10 @@ test("落库带上本轮 modelId / runtimeId，换模不改旧泡", () => {
   assert.equal(payload?.runtimeId, "claude")
 })
 
-test("checkpoint 未封口时 payload 仍在，硬杀才能靠同一行 hydrate", () => {
+test("checkpoint 未封口与已落库都能拿出同一行 payload", () => {
   const payload = flushPayloadFromRun(failedHtmlRun({ assistantPersisted: false }))
   assert.ok(payload)
-  assert.equal(flushPayloadFromRun(failedHtmlRun({ assistantPersisted: true })), null)
+  const again = flushPayloadFromRun(failedHtmlRun({ assistantPersisted: true }))
+  assert.ok(again)
+  assert.equal(again.tools[0]?.state, "output-available")
 })
