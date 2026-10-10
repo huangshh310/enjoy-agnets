@@ -8,7 +8,12 @@ import {
   STUB_TERMINAL_LINK_ECHO,
   STUB_TERMINAL_LINK_URL
 } from "./e2e-stub.ts"
-import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+import {
+  applyStubDesktopObservation,
+  stubDesktopStreamParts,
+  stubFreshDesktopActResult
+} from "./e2e-stub-desktop.ts"
+import { createObservationLedger } from "@enjoy-agents/agent-core/computer-use"
 
 test("lastUserText 取最后一条用户字", () => {
   assert.equal(
@@ -170,6 +175,40 @@ test("stubApprovedWrite 识别 tool-approval-response", () => {
     ]),
     true
   )
+})
+
+test("允许一次后桌面 stub 不再重放审批，收工", async () => {
+  const allowed = [
+    { role: "user" as const, content: "desktop catchup notes" },
+    {
+      role: "tool" as const,
+      content: [{ type: "tool-approval-response", approvalId: "apr_catchup", approved: true }]
+    } as never
+  ]
+  const parts: string[] = []
+  for await (const part of createE2eStubStream(allowed, new AbortController().signal)) {
+    parts.push(String(part.type))
+  }
+  assert.equal(parts.includes("tool-approval-request"), false)
+  assert.deepEqual(parts, ["finish"])
+})
+
+test("stub 新鲜观察可 take，允许一次返回 completed", () => {
+  const ledger = createObservationLedger()
+  const input = { observationId: "obs_notes", appName: "备忘录", appKey: "com.apple.notes", elementName: "今日" }
+  const seeded = applyStubDesktopObservation((observation) => ledger.put(observation), input)
+  assert.equal(seeded.id, "obs_notes")
+  assert.equal(ledger.freeze("obs_notes"), true)
+  const taken = ledger.take("obs_notes")
+  assert.equal(taken.ok, true)
+  if (taken.ok) assert.equal(taken.observation.appName, "备忘录")
+
+  const previous = process.env.ENJOY_E2E_STUB
+  process.env.ENJOY_E2E_STUB = "1"
+  const fresh = new Map<string, { id: string }>([["obs_notes", { id: "obs_notes" }]])
+  const result = stubFreshDesktopActResult(input, (id) => fresh.get(id) ?? null)
+  process.env.ENJOY_E2E_STUB = previous
+  assert.deepEqual(result, { success: true, observationId: "obs_notes" })
 })
 
 test("拒绝后继续不再重放同一张审批", async () => {

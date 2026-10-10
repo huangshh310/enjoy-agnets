@@ -10,7 +10,7 @@ import {
 import { zh } from "../../../i18n/catalogs/zh/index.ts"
 import { translate } from "../../../i18n/lookup.ts"
 import { mapToolStatus } from "./thinking/extract-step-fields.ts"
-import { isDeniedTool, toolDeniedCopy } from "./tool-denied-copy.ts"
+import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "./tool-denied-copy.ts"
 
 const t = (path: string) => translate(zh, path)
 
@@ -58,4 +58,22 @@ test("fail closed / 参数不一致也走未执行，不计入已运行", () => 
   assert.equal(toolDeniedCopy(t, mismatch), "审批参数已变化，本次未执行。")
   const executed = [replay, mismatch].filter((tool) => !isToolNotExecuted(tool))
   assert.equal(executed.length, 0)
+})
+
+test("允许一次后 stale_observation 不是已拒绝，中性未执行", () => {
+  const stale = {
+    id: "tool_stale",
+    name: "desktop_act",
+    state: "output-error" as const,
+    result: { code: "stale_observation", decision: "allow" },
+    errorText: "stale_observation"
+  }
+  assert.equal(isToolNotExecuted(stale), true)
+  assert.equal(isDeniedTool(stale), false)
+  assert.equal(isSkippedTool(stale), true)
+  assert.equal(mapToolStatus(stale.state, stale), "skipped")
+  assert.notEqual(mapToolStatus(stale.state, stale), "denied")
+  assert.notEqual(mapToolStatus(stale.state, stale), "error")
+  assert.notEqual(mapToolStatus(stale.state, stale), "running")
+  assert.equal(toolDeniedCopy(t, stale), "画面已经变了，这次没有执行，请重新确认")
 })

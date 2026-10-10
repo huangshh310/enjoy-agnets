@@ -28,8 +28,10 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
     return
   }
   if (event.type === "tool.result") {
+    const current = tools.find((tool) => tool.id === event.toolCallId)
+    const result = mergeResultDecision(current?.result, event.result)
     const notExecuted = isToolNotExecuted({
-      result: event.result,
+      result,
       errorText: event.error
     })
     upsertTool(tools, {
@@ -37,7 +39,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       name: event.name,
       ...(event.args !== undefined ? { args: event.args } : {}),
       ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
-      result: event.result,
+      result,
       errorText: event.error,
       state: notExecuted ? "output-denied" : event.error ? "output-error" : "output-available"
     })
@@ -53,9 +55,11 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
     return
   }
   if (event.type === "approval.resolved") {
+    const current = tools.find((tool) => tool.id === event.toolCallId)
     upsertTool(tools, {
       id: event.toolCallId,
-      state: event.decision === "deny" ? "output-denied" : "input-available"
+      state: event.decision === "deny" ? "output-denied" : "input-available",
+      result: mergeResultDecision(current?.result, { decision: event.decision })
     })
   }
 }
@@ -69,6 +73,15 @@ export function sealAbandonedTools(tools: ThreadToolCall[] | undefined): ThreadT
     }
     return tool
   })
+}
+
+function mergeResultDecision(prev: unknown, next: unknown): unknown {
+  const nextRecord = isArgsRecord(next) ? { ...next } : next !== undefined ? next : {}
+  if (!isArgsRecord(nextRecord)) return nextRecord
+  const prevDecision =
+    isArgsRecord(prev) && typeof prev.decision === "string" ? prev.decision : undefined
+  if (prevDecision && nextRecord.decision == null) nextRecord.decision = prevDecision
+  return nextRecord
 }
 
 function mergeToolArgs(prev: unknown, next: unknown): unknown {

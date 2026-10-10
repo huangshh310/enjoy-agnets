@@ -20,6 +20,32 @@ test("空库回灌保住进行中的乐观气泡", () => {
   assert.equal(next[0]?.content, "hello")
 })
 
+test("切走再切回：库行还停在 approval-requested 时保住已经折过的拒绝", () => {
+  const db = [
+    {
+      id: "msg_asst",
+      role: "assistant" as const,
+      content: "",
+      tools: [{ id: "tool_1", state: "approval-requested" }]
+    }
+  ]
+  const live = [
+    {
+      id: "msg_asst",
+      role: "assistant" as const,
+      content: "",
+      tools: [{ id: "tool_1", state: "output-denied" }]
+    }
+  ]
+  const next = pickHydratedMessages({
+    dbMessages: db,
+    liveMessages: live,
+    sameSession: false,
+    running: true
+  })
+  assert.equal(next[0]?.tools?.[0]?.state, "output-denied")
+})
+
 test("切走会话不得把上一会话的 live 当成当前乐观泡", () => {
   const next = pickHydratedMessages({
     dbMessages: [],

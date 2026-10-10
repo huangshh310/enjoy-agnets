@@ -23,6 +23,8 @@ export type StreamPatch = {
   runId?: string | null
   error?: string | null
   notice?: string | null
+  /** 消息还没回灌：先挂住，applySessionHydrate 后再折。 */
+  heldResolved?: StreamEvent & { type: "approval.resolved" }
 }
 
 export function reduceStreamEvent(
@@ -49,6 +51,13 @@ export function reduceStreamEvent(
   }
   if (event.type === "file.changed") return { messages }
   if (!isLivePart(event.type) || !event.runId) return { messages }
+  if (event.type === "tool.result" || event.type === "tool.start" || event.type === "tool.args.delta") {
+    const next = cloneMessagesForToolEvent(messages, event.toolCallId)
+    const assistant =
+      findAssistantForResolved(next, event.toolCallId) ?? attachAssistant(next, event.runId, activeRunId)
+    if (!assistant) return { messages }
+    return applyLiveEvent(next, assistant, event)
+  }
   const next = cloneMessagesForLiveEvent(messages)
   const assistant = attachAssistant(next, event.runId, activeRunId)
   if (!assistant) return { messages }
@@ -92,12 +101,13 @@ function applyApprovalEvent(
     }
   }
   if (event.type !== "approval.resolved") return null
-  const next = cloneMessagesForLiveEvent(messages)
-  const assistant = lastStreamingAssistant(next)
-  if (assistant) {
-    assistant.tools ??= []
-    foldToolEvent(assistant.tools, event)
+  const next = cloneMessagesForToolEvent(messages, event.toolCallId)
+  const assistant = findAssistantForResolved(next, event.toolCallId)
+  if (!assistant) {
+    return { messages, pendingApproval: null, heldResolved: event }
   }
+  assistant.tools ??= []
+  foldToolEvent(assistant.tools, event)
   return { messages: next, pendingApproval: null }
 }
 
@@ -174,6 +184,41 @@ function applyLiveEvent(
       ? event.name
       : "tool"
   return { messages, thinkingLabel: (name ?? "tool").replaceAll("_", " ") }
+}
+
+function cloneMessagesForToolEvent(messages: ThreadMessage[], toolCallId: string): ThreadMessage[] {
+  const index = messages.findIndex(
+    (message) => message.role === "assistant" && message.tools?.some((tool) => tool.id === toolCallId)
+  )
+  const target = index >= 0 ? index : lastAssistantIndex(messages)
+  if (target < 0) return [...messages]
+  return messages.map((message, at) => {
+    if (at !== target) return message
+    return {
+      ...message,
+      tools: message.tools?.map((tool) => ({ ...tool })) ?? []
+    }
+  })
+}
+
+function findAssistantForResolved(messages: ThreadMessage[], toolCallId: string): ThreadMessage | undefined {
+  const byId = messages.find(
+    (message) => message.role === "assistant" && message.tools?.some((tool) => tool.id === toolCallId)
+  )
+  if (byId) return byId
+  return [...messages]
+    .reverse()
+    .find(
+      (message) =>
+        message.role === "assistant" && message.tools?.some((tool) => tool.state === "approval-requested")
+    )
+}
+
+function lastAssistantIndex(messages: ThreadMessage[]): number {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === "assistant") return index
+  }
+  return -1
 }
 
 function cloneMessagesForLiveEvent(messages: ThreadMessage[]): ThreadMessage[] {

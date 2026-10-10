@@ -96,6 +96,8 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
                   <RiCheckLine className="ml-auto size-3 shrink-0 text-state-success-text/80" />
                 ) : item.status === "denied" ? (
                   <RiCloseLine className="ml-auto size-3 shrink-0 text-text-tertiary" />
+                ) : item.status === "skipped" ? (
+                  <span className="ml-auto size-1.5 shrink-0 rounded-full bg-text-tertiary" />
                 ) : item.status === "error" ? (
                   <RiCloseLine className="ml-auto size-3 shrink-0 text-text-error-primary" />
                 ) : null}

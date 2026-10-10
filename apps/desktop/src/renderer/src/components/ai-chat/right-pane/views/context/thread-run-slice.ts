@@ -2,7 +2,10 @@
  * 从最近助手轮抽出引用与工具，供检查器使用。
  */
 import type { CitedSource, ThreadToolCall } from "@enjoy-agents/ipc-contract"
-import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import {
+  isStaleObservationAfterAllow,
+  isToolNotExecuted
+} from "@enjoy-agents/ipc-contract/approval-not-executed"
 
 export type SliceMessage = {
   role: string
@@ -27,7 +30,8 @@ export function toolsFromMessages(messages: SliceMessage[], limit = 8): ThreadTo
 export function toolRunKind(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
-): "running" | "ok" | "error" | "denied" {
+): "running" | "ok" | "error" | "denied" | "skipped" {
+  if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-available") return "ok"
   if (state === "output-error") return "error"

@@ -46,10 +46,31 @@ export function readApprovalNotExecutedCode(value: unknown): string | undefined 
   return undefined
 }
 
+const APPROVAL_DECISIONS = new Set(["allow", "deny", "allow_session", "allow_always"])
+
 export type NotExecutedTool = {
   state?: string
   result?: unknown
   errorText?: string
+}
+
+/** 库行 / 折叠结果上的决策，渲染层按码+决策映射文案，不得自行推断。 */
+export function readApprovalDecision(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const row = value as Record<string, unknown>
+  const nested = row.result && typeof row.result === "object" ? (row.result as Record<string, unknown>) : undefined
+  for (const candidate of [row.decision, nested?.decision]) {
+    if (typeof candidate === "string" && APPROVAL_DECISIONS.has(candidate)) return candidate
+  }
+  return undefined
+}
+
+/** Allow 后观察过期：未执行，但不是用户拒绝。缺 decision 仍按码认（旧行只有 resumeCode）。 */
+export function isStaleObservationAfterAllow(tool: NotExecutedTool | undefined): boolean {
+  if (!tool) return false
+  const code = readApprovalNotExecutedCode(tool.result) ?? readApprovalNotExecutedCode(tool.errorText)
+  if (code !== "stale_observation") return false
+  return readApprovalDecision(tool.result) !== "deny"
 }
 
 /** deny / fail closed / 参数不一致 / resumeCode，含旧库 output-error 行。 */

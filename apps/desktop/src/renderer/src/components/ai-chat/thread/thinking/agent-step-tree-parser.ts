@@ -19,7 +19,7 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
-import { isDeniedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
+import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -59,6 +59,7 @@ export function parseAgentStepNodes(
 }
 
 function stampDenied(node: AgentStepNode, tool: ThreadToolCall): AgentStepNode {
+  if (isSkippedTool(tool)) return { ...node, status: "skipped", denied: false }
   return tool.state === "output-denied" ? { ...node, denied: true } : node
 }
 
@@ -190,6 +191,15 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
+  if (isSkippedTool(tool)) {
+    return {
+      id: tool.id,
+      kind: "command",
+      title: formatToolName(tool.name),
+      errorText: toolDeniedCopy(t, tool),
+      status: "skipped"
+    }
+  }
   if (isDeniedTool(tool)) {
     return {
       id: tool.id,
@@ -241,7 +251,7 @@ function ioFields(
         : stderr
           ? stderr
           : undefined
-  if (isDeniedTool(tool)) {
+  if (isDeniedTool(tool) || isSkippedTool(tool)) {
     return { command, output, exitCode: undefined, errorText: toolDeniedCopy(t, tool) }
   }
   const raw = tool.errorText || (typeof result.error === "string" ? result.error : undefined)

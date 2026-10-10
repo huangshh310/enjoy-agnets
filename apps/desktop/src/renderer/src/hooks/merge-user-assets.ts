@@ -3,9 +3,11 @@
  */
 
 export type AssetBearingMessage = {
+  id?: string
   role: string
   content: string
   assets?: unknown[]
+  tools?: Array<{ id: string; state: string }>
 }
 
 export function mergeUserAssets<T extends AssetBearingMessage>(next: T[], previous: T[]): T[] {

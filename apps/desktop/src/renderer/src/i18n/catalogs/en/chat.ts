@@ -592,6 +592,7 @@ export const enChat = {
   errorGenericHint: "That didn't go through. Please try again.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",
+  toolStaleObservation: "The screen has changed, so this action was not run. Please confirm again.",
   dismissError: "Dismiss error",
   switchModelKey: "Switch model / check key",
   editPlaceholder: "Edit your message...",

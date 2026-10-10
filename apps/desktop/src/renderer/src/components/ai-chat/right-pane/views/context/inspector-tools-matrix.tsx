@@ -202,6 +202,13 @@ function ToolStatusPill({ kind }: { kind: ReturnType<typeof toolRunKind> }) {
       </span>
     )
   }
+  if (kind === "skipped") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+        <span className="size-1.5 rounded-full bg-text-tertiary" />
+      </span>
+    )
+  }
   if (kind === "error" || kind === "denied") {
     return (
       <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-text-error-primary">

@@ -1,7 +1,9 @@
 /**
  * E2E 桌面铬夹具：只在 stub 流里吐 desktop_act 审批 / 硬拒结果，不改审批闸。
  * 每个 run 换新 approvalId / toolCallId，贴近真实 SDK；闸门不得依赖这点。
+ * Allow once 要能真执行：审批入参必须先种进观察账本，否则 resume 会 stale_observation。
  */
+import type { Observation } from "@enjoy-agents/agent-core/computer-use"
 import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
 
 let stubDesktopSeq = 0
@@ -123,4 +125,43 @@ function desktopApproval(
     toolName: "desktop_act",
     input
   }
+}
+
+/** stub 审批入参对应的新鲜观察，供账本 put / 单测 take。 */
+export function stubDesktopObservation(input: Record<string, unknown>): Observation {
+  const id = String(input.observationId ?? "").trim() || "obs_stub"
+  const appName = String(input.appName ?? "备忘录")
+  const elementName = String(input.elementName ?? "今日")
+  const appKey = typeof input.appKey === "string" ? input.appKey : undefined
+  return {
+    id,
+    pid: 1,
+    windowId: "win_stub",
+    appName,
+    appKey,
+    bundleId: appKey,
+    elements: [{ id: "el_stub", role: "AXButton", name: elementName, clickable: true }],
+    createdAt: Date.now(),
+    platform: process.platform
+  }
+}
+
+export function applyStubDesktopObservation(
+  put: (observation: Observation) => void,
+  input: Record<string, unknown>
+): Observation {
+  const observation = stubDesktopObservation(input)
+  put(observation)
+  return observation
+}
+
+/** stub 且账本仍有该观察：允许一次直接成功，不打真实执行器。 */
+export function stubFreshDesktopActResult(
+  args: Record<string, unknown>,
+  peek: (observationId: string) => unknown
+): Record<string, unknown> | null {
+  if (process.env.ENJOY_E2E_STUB !== "1") return null
+  const id = typeof args.observationId === "string" ? args.observationId.trim() : ""
+  if (!id || !peek(id)) return null
+  return { success: true, observationId: id }
 }

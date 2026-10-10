@@ -55,6 +55,7 @@ function statusLabel(kind: ReturnType<typeof toolRunKind>, t: TranslateFn) {
   if (kind === "ok") return t("chat.inspectorToolOk")
   if (kind === "error") return t("chat.inspectorToolError")
   if (kind === "denied") return t("chat.inspectorToolDenied")
+  if (kind === "skipped") return t("chat.toolStaleObservation")
   return t("chat.inspectorToolRunning")
 }
 
@@ -63,6 +64,14 @@ function ToolMark({ kind, label }: { kind: ReturnType<typeof toolRunKind>; label
     return (
       <span className="flex items-center gap-1 text-caption-2-medium text-state-success-text">
         <RiCheckLine className="size-3" />
+        {label}
+      </span>
+    )
+  }
+  if (kind === "skipped") {
+    return (
+      <span className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
+        <span className="size-1.5 rounded-full bg-text-tertiary" />
         {label}
       </span>
     )

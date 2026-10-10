@@ -36,7 +36,7 @@ export interface BatchFileItem {
   actionVerb?: string
   additions?: number
   deletions?: number
-  status: "pending" | "running" | "completed" | "error" | "denied"
+  status: "pending" | "running" | "completed" | "error" | "denied" | "skipped"
 }
 
 export interface AgentStepNode {
@@ -48,7 +48,7 @@ export interface AgentStepNode {
   output?: string
   exitCode?: number
   errorText?: string
-  status: "pending" | "running" | "completed" | "error" | "denied"
+  status: "pending" | "running" | "completed" | "error" | "denied" | "skipped"
   /** 用户拒绝审批：渲染「已拒绝」，不要红失败。 */
   denied?: boolean
   domainPills?: DomainPill[]

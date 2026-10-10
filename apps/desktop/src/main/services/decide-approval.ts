@@ -74,12 +74,25 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     decision: decision.decision
   }
   foldToolEvent(run.tools, resolved)
+  const resumeCode = desktopResume ? desktopActFailureCode(desktopResume) : ""
+  const desktopResult =
+    desktopResume && pending.name === "desktop_act"
+      ? {
+          type: "tool.result" as const,
+          runId: decision.runId,
+          toolCallId: decision.toolCallId,
+          name: pending.name,
+          args: pending.args,
+          result: { ...desktopResume, decision: decision.decision },
+          error: desktopActMayReportSuccess(desktopResume) ? undefined : resumeCode
+        }
+      : undefined
+  if (desktopResult) foldToolEvent(run.tools, desktopResult)
   persistActiveRun(run, decision.runId, run.pendingApprovals.length > 0 ? "waiting_review" : "running")
   emitEvent(window, resolved)
   if (await maybeReparkSecondConfirm(window, run, decision.runId, pending, desktopResume)) {
     return { ok: true }
   }
-  const resumeCode = desktopResume ? desktopActFailureCode(desktopResume) : ""
   const skipped = pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision === "deny"
   const approved = decision.decision !== "deny" && !resumeCode
   const reason = skipped ? "User skipped questions." : resumeCode || decision.reason
@@ -91,16 +104,8 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
       reason
     })
   )
-  if (desktopResume && !desktopActMayReportSuccess(desktopResume)) {
-    emitEvent(window, {
-      type: "tool.result",
-      runId: decision.runId,
-      toolCallId: decision.toolCallId,
-      name: pending.name,
-      args: pending.args,
-      result: desktopResume,
-      error: resumeCode
-    })
+  if (desktopResult && (!desktopActMayReportSuccess(desktopResume) || !hadWaiter)) {
+    emitEvent(window, desktopResult)
   }
   run.resumeAfterPump = true
   if (!run.pumping) {

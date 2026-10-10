@@ -81,6 +81,10 @@ export async function* createE2eStubStream(
     yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
     return
   }
+  if (hasApprovalResponse(messages, true) && stubDesktopStreamParts(prompt)) {
+    yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
+    return
+  }
   const desktop = stubDesktopStreamParts(prompt)
   if (desktop) {
     for (const part of desktop) yield part

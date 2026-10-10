@@ -3,7 +3,10 @@
  * 对标 monocode extractToolPreview & inputRecords 算法，彻底解决嵌套 args 提取不到真实路径的问题。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
-import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import {
+  isStaleObservationAfterAllow,
+  isToolNotExecuted
+} from "@enjoy-agents/ipc-contract/approval-not-executed"
 import type { SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
@@ -143,12 +146,13 @@ export function extractFilePaths(
   })
 }
 
-export type ToolRenderStatus = "pending" | "running" | "completed" | "error" | "denied"
+export type ToolRenderStatus = "pending" | "running" | "completed" | "error" | "denied" | "skipped"
 
 export function mapToolStatus(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): ToolRenderStatus {
+  if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"
   if (state === "input-streaming" || state === "input-available" || state === "approval-requested") {
