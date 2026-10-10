@@ -13,6 +13,7 @@ import { clearSteer } from "./runtime-interact/steering-queue"
 import { deleteActiveRun, emitEvent, getActiveRun, listActiveRuns, settleRun } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { recordSdkApprovalResponse } from "./approval-hmac"
+import { foldDeniedAssistantTool, sessionIdForRun } from "./fold-denied-assistant-tools"
 
 type PendingDeny = { runId: string; approvalId: string; toolCallId: string }
 
@@ -113,6 +114,14 @@ function denyStored(item: PendingDeny, window?: BrowserWindow): boolean {
   if (!still) return false
   setApprovalDecision(db, item.approvalId, "deny")
   recordSdkApprovalResponse(item.approvalId, { approved: false, reason: "Session archived." })
+  const sessionId = sessionIdForRun(item.runId)
+  if (sessionId) {
+    foldDeniedAssistantTool({
+      sessionId,
+      runId: item.runId,
+      toolCallId: item.toolCallId
+    })
+  }
   if (window) {
     emitEvent(window, {
       type: "approval.resolved",
