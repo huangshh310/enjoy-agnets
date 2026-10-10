@@ -393,19 +393,19 @@ test("已完成约 4s 自消", () => {
 
 test("多会话完成只留最新一颗，切走就清", () => {
   const first = ingestAttentionEvent([], {
-    event: { type: "run.end", runId: "run_a" },
+    event: { type: "run.end", runId: "run_a", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_a",
     sessionTitle: "A",
     now: 1
   })
   const second = ingestAttentionEvent(first, {
-    event: { type: "run.end", runId: "run_b" },
+    event: { type: "run.end", runId: "run_b", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_b",
     sessionTitle: "B",
     now: 2
   })
   const third = ingestAttentionEvent(second, {
-    event: { type: "run.end", runId: "run_c" },
+    event: { type: "run.end", runId: "run_c", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_c",
     sessionTitle: "C",
     now: 3
