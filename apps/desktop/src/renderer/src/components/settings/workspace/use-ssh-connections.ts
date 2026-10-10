@@ -3,7 +3,9 @@
  */
 import { useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useSecretWriteGate } from "@renderer/hooks/use-secret-write-gate"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { runSecretWrite } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import type { SshConfigCandidate, SshHost, SshHostUpsertInput } from "@enjoy-agents/ipc-contract"
 import { draftToUpsert, emptyHostDraft, hostToDraft, type SshHostDraft } from "./ssh-host-fields.types"
@@ -11,6 +13,7 @@ import { draftToUpsert, emptyHostDraft, hostToDraft, type SshHostDraft } from ".
 export function useSshConnections() {
   const t = useT()
   const queryClient = useQueryClient()
+  const gate = useSecretWriteGate()
   const [draft, setDraft] = useState<SshHostDraft>(emptyHostDraft())
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -41,49 +44,53 @@ export function useSshConnections() {
     setOpen,
     busy,
     error,
+    writeCode: gate.writeCode,
+    secretBlocked: gate.blocked && Boolean(draft.password.trim()),
+    noticeCode: gate.blocked && draft.password.trim() ? "KEYCHAIN_UNAVAILABLE" : gate.writeCode,
     isEditing,
     hosts: hostsQuery.data ?? [],
     discovered: discoverQuery.data ?? [],
     startEdit: (host: SshHost) => {
       setDraft(hostToDraft(host))
       setError(null)
+      gate.setWriteCode(null)
       setOpen(true)
     },
     cancelEdit: () => {
       setDraft(emptyHostDraft())
       setError(null)
+      gate.setWriteCode(null)
       setOpen(false)
     },
     addHost: async (input: SshHostUpsertInput) => {
       if (!hasIde()) return
       setBusy(true)
       setError(null)
-      try {
-        await getIde().workspace.sshHosts.upsert(input)
-        setDraft(emptyHostDraft())
-        setOpen(false)
-        await refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
-      } finally {
-        setBusy(false)
+      gate.setWriteCode(null)
+      const outcome = await runSecretWrite(() => getIde().workspace.sshHosts.upsert(input))
+      setBusy(false)
+      if (!outcome.ok) {
+        gate.setWriteCode(outcome.code)
+        return
       }
+      setDraft(emptyHostDraft())
+      setOpen(false)
+      await refresh()
     },
     saveDraft: async () => {
       if (!hasIde()) return
       setBusy(true)
       setError(null)
-      try {
-        const payload = draftToUpsert(draft)
-        await getIde().workspace.sshHosts.upsert(payload)
-        setDraft(emptyHostDraft())
-        setOpen(false)
-        await refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
-      } finally {
-        setBusy(false)
+      gate.setWriteCode(null)
+      const outcome = await runSecretWrite(() => getIde().workspace.sshHosts.upsert(draftToUpsert(draft)))
+      setBusy(false)
+      if (!outcome.ok) {
+        gate.setWriteCode(outcome.code)
+        return
       }
+      setDraft(emptyHostDraft())
+      setOpen(false)
+      await refresh()
     },
     removeHost: async (id: string) => {
       if (!hasIde()) return

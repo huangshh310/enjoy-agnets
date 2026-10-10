@@ -52,6 +52,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
+      secretWrite: { keychainUnavailable: string; failed: string }
       setupGuide: {
         replayDesc: string
         replay: string
@@ -101,6 +102,11 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.nav.workspace, "项目")
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
   assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
+  assert.equal(
+    z.settings.secretWrite.keychainUnavailable,
+    "这台电脑没有可用的系统钥匙串，密钥暂时存不了。装好系统钥匙串（如 GNOME 密钥环）后重启 Enjoy 再试。"
+  )
+  assert.equal(z.settings.secretWrite.failed, "没存上，请再试一次")
   assert.equal(z.settings.setupGuide.replayDesc, "再走一遍连模型、装引擎、外观和打开文件夹。")
   assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
   assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")

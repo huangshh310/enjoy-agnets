@@ -22,7 +22,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { createTargetForBind } from "@enjoy-agents/ipc-contract"
+import { SecretWriteNotice } from "@renderer/components/settings/secret-write-notice"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { runSecretWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 
@@ -122,6 +125,8 @@ export function AgentToolQuickKeyDialog({
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [writeCode, setWriteCode] = useState<SecretWriteErrorCode | null>(null)
+  const secretBlocked = useChatReadiness().data?.secretStorageAvailable === false
 
   function resetState() {
     setApiKey("")
@@ -132,6 +137,7 @@ export function AgentToolQuickKeyDialog({
     setTestResult(null)
     setSaving(false)
     setErrorMsg(null)
+    setWriteCode(null)
   }
 
   async function handleTestPing() {
@@ -182,10 +188,11 @@ export function AgentToolQuickKeyDialog({
     if (!hasIde()) return
     setSaving(true)
     setErrorMsg(null)
-    try {
-      const effectiveBaseURL = baseURL.trim() || (preset.defaultBaseURL || undefined)
-      const profileName = name.trim() || preset.defaultName
-      const snapshot = await getIde().settings.upsertProvider({
+    setWriteCode(null)
+    const effectiveBaseURL = baseURL.trim() || (preset.defaultBaseURL || undefined)
+    const profileName = name.trim() || preset.defaultName
+    const outcome = await runSecretWrite(() =>
+      getIde().settings.upsertProvider({
         name: profileName,
         kind: preset.kind,
         apiKey: key,
@@ -193,20 +200,19 @@ export function AgentToolQuickKeyDialog({
         apiStyle: preset.apiStyle,
         models: preset.models,
         modelId: preset.defaultModel
-      })
-      await queryClient.invalidateQueries({ queryKey: ["settings"] })
-      // 从返回的快照中寻找新存入的档案
-      const created = snapshot.providers.find((p: { name: string; id: string }) => p.name === profileName) ?? snapshot.providers.at(-1)
-      if (created) {
-        await onSaved(created.id, preset.defaultModel)
-      }
-      onOpenChange(false)
-      resetState()
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : String(err))
-    } finally {
-      setSaving(false)
+      }) as Promise<{ providers: Array<{ name: string; id: string }> }>
+    )
+    setSaving(false)
+    if (!outcome.ok) {
+      setWriteCode(outcome.code)
+      return
     }
+    await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    const created =
+      outcome.value.providers.find((p) => p.name === profileName) ?? outcome.value.providers.at(-1)
+    if (created) await onSaved(created.id, preset.defaultModel)
+    onOpenChange(false)
+    resetState()
   }
 
   return (
@@ -228,6 +234,9 @@ export function AgentToolQuickKeyDialog({
           <DialogDescription className="text-caption-2-regular text-text-tertiary">
             {t("settings.agentTools.quickKeyModalDesc")}
           </DialogDescription>
+          {secretBlocked || writeCode ? (
+            <SecretWriteNotice code={secretBlocked ? "KEYCHAIN_UNAVAILABLE" : writeCode!} />
+          ) : null}
         </DialogHeader>
 
         <div className="flex flex-col gap-3.5 py-2">
@@ -329,7 +338,7 @@ export function AgentToolQuickKeyDialog({
             </button>
             <button
               type="button"
-              disabled={saving || !apiKey.trim()}
+              disabled={saving || secretBlocked || !apiKey.trim()}
               onClick={() => void handleSaveAndBind()}
               className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-accent-500 px-3.5 py-1.5 text-caption-2-medium font-semibold text-text-white shadow-2xs transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -338,7 +347,7 @@ export function AgentToolQuickKeyDialog({
               ) : (
                 <RiKey2Line className="size-3.5" />
               )}
-              <span>{t("settings.agentTools.quickKeySaveBtn")}</span>
+              <span>{saving ? t("settings.secretWrite.saving") : t("settings.agentTools.quickKeySaveBtn")}</span>
             </button>
           </div>
         </DialogFooter>

@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 准备失败不进 unknown）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-10（密钥写失败走人话，不关抽屉）
 
 ## 当前真相
 
@@ -62,6 +62,7 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 
 ## 已知坑
 
+- **隐患**：`settings.upsertProvider` 在无系统钥匙串时抛英文，renderer `void save()` 吞掉后抽屉既不关也不报错。正确做法：renderer `runSecretWrite` 同时认 throw 与 `{ok:false, code}`；`KEYCHAIN_UNAVAILABLE` 走人话；其它「没存上，请再试一次」；草稿留下。不要在本包定义 `SecretWriteErrorCode` 枚举（kai 的 ipc-contract）。
 - **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。
 - **隐患**：`customHeaders` / `customBody` 曾随 `ProviderPublic` 全文回 renderer。正确做法：只回键的占位 JSON；保存时空值保留已存，与 apiKey 空则保留同一套。
 - 空 vault 曾在 `listAllPublicModels` 硬塞 DeepSeek 静态目录（`providerId: "default"`）。设置页「已配置 0」但选择器仍显示 4 个模型。目录必须跟档案走，空档案返回 `[]`。

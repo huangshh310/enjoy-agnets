@@ -18,3 +18,12 @@ test("英文界面同样避开行话", () => {
 test("其它错误原样返回", () => {
   assert.equal(mapCustomAgentFormError("Custom working directory does not exist.", (path) => path), "Custom working directory does not exist.")
 })
+
+test("钥匙串抛错走人话，不摊英文", () => {
+  const shown = mapCustomAgentFormError(
+    "Error invoking remote method 'agentTools.upsertCustom': Error: OS keychain encryption is not available on this machine.",
+    (path) => path
+  )
+  assert.equal(shown, "settings.secretWrite.keychainUnavailable")
+  assert.doesNotMatch(shown, /keychain encryption|isEncryptionAvailable/i)
+})

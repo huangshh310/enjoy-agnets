@@ -7,6 +7,12 @@ export const enSettings = {
   usageNumberUsed: "Used",
   usageNumberRemaining: "Remaining",
   detectAuto: "Detect automatically",
+  secretWrite: {
+    keychainUnavailable:
+      "This computer has no usable system keychain, so the key cannot be stored yet. Install a system keychain such as GNOME Keyring, restart Enjoy, and try again.",
+    failed: "Could not save. Please try again.",
+    saving: "Saving…"
+  },
 
   general: {
     title: "General details",

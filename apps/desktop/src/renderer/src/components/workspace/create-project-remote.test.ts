@@ -19,6 +19,7 @@ test("远程创建步走 openSsh，不调用本机 pickFolder", () => {
   assert.match(remote, /showSelectedPassword \? "text" : "password"/)
   assert.match(remote, /RiEyeLine/)
   assert.match(dialog, /workspace\.openSsh/)
+  assert.match(dialog, /runSecretWrite/)
   assert.match(typeStep, /onChangeType\("remote"\)/)
   assert.equal(typeStep.includes("comingSoon"), false)
   assert.match(dialog, /max-w-\[380px\]/)

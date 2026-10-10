@@ -18,6 +18,7 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import type { SshHostUpsertInput } from "@enjoy-agents/ipc-contract"
+import { SecretWriteNotice } from "../secret-write-notice"
 import { SshHostFields } from "./ssh-host-fields"
 import { SshHostRow } from "./ssh-host-row"
 import { useSshConnections } from "./use-ssh-connections"
@@ -47,6 +48,7 @@ export function SshConnections() {
   const canSubmit = Boolean(
     !model.busy &&
       !probingDraft &&
+      !model.secretBlocked &&
       model.draft.host.trim() &&
       model.draft.user.trim()
   )
@@ -136,6 +138,8 @@ export function SshConnections() {
 
           <SshHostFields value={model.draft} onChange={model.setDraft} />
 
+          {model.noticeCode ? <SecretWriteNotice code={model.noticeCode} /> : null}
+
           {/* 错误告警区 */}
           {model.error ? (
             <div className="flex items-start gap-2.5 rounded-xl border border-border-error-default/20 bg-background-tertiary-error/10 p-3 text-caption-1-regular text-text-error-primary dark:text-text-error-primary">
@@ -194,18 +198,24 @@ export function SshConnections() {
               >
                 {model.busy ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
                 <span>
-                  {model.isEditing ? "更新主机" : t("settings.workspace.sshSaveHost")}
+                  {model.busy
+                    ? t("settings.secretWrite.saving")
+                    : model.isEditing
+                      ? "更新主机"
+                      : t("settings.workspace.sshSaveHost")}
                 </span>
               </Button>
             </div>
           </div>
         </div>
+      ) : model.noticeCode ? (
+        <SecretWriteNotice code={model.noticeCode} />
       ) : model.error ? (
         <div className="flex items-start gap-2.5 rounded-xl border border-border-error-default/20 bg-background-tertiary-error/10 p-3 text-caption-1-regular text-text-error-primary dark:text-text-error-primary">
           <RiAlertLine className="size-4 shrink-0 mt-0.5" />
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-semibold">操作失败</span>
-            <span className="font-mono text-caption-2-regular break-all leading-relaxed">
+            <span className="text-caption-1-regular leading-relaxed">
               {model.error}
             </span>
           </div>

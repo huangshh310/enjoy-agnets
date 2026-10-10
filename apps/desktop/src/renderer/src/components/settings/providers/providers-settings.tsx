@@ -228,8 +228,11 @@ export function ProviderSettings() {
         probe={settings.probe}
         modelChoices={settings.modelChoices}
         refs={settings.editor?.id ? refsByProvider[settings.editor.id] : undefined}
-        canSave={settings.canSave}
+        canSave={settings.canSave && !settings.saving && !settings.secretBlocked}
         detecting={settings.detecting}
+        saving={settings.saving}
+        saveError={settings.saveError}
+        secretBlocked={settings.secretBlocked}
         simple={!settings.editor?.id && Boolean(search.create)}
         motion={false}
         onClose={search.create ? leaveOrigin : settings.closeEditor}
@@ -237,8 +240,8 @@ export function ProviderSettings() {
         onFetchModels={() => void settings.fetchModels()}
         onDetect={() => void settings.detect()}
         onSave={() => {
-          void settings.save(true).then(() => {
-            if (search.create) leaveOrigin()
+          void settings.save(true).then((ok) => {
+            if (ok && search.create) leaveOrigin()
           })
         }}
         onOpenAgent={openAgent}

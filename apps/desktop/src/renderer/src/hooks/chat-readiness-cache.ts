@@ -33,3 +33,8 @@ export function peekDefaultChatRoute(): ChatReadiness["defaultRoute"] {
 export function peekEngineCount(): number | undefined {
   return last?.engineCount
 }
+
+/** 只有明确 false 才挡保存；缺字段表示 kai 的合约还没到。 */
+export function peekSecretStorageAvailable(): boolean | undefined {
+  return last?.secretStorageAvailable
+}
