@@ -11,6 +11,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
+  getChatReadiness: () => ChatReadiness | undefined
   setError: (message: string | null) => void
   replayGuide: () => void
   resumeGuide: () => void
@@ -30,6 +31,9 @@ export function installEnjoyE2eBridge(): void {
     setChatReadiness(snap) {
       rememberChatReadiness(snap)
       queryClient.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+    },
+    getChatReadiness() {
+      return queryClient.getQueryData<ChatReadiness>(CHAT_READINESS_QUERY_KEY)
     },
     setError(message) {
       useChatStore.getState().setError(message)

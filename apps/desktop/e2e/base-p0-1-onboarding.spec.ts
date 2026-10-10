@@ -48,7 +48,9 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     await window.getByRole("button", { name: "先逛逛" }).click()
     await window.getByTestId("no-project-empty").waitFor({ timeout: 8_000 })
     await expect(window.getByTestId("no-project-empty")).toContainText("选一个文件夹开始")
-    await expect(window.getByRole("button", { name: "选择文件夹" })).toBeVisible()
+    const pickFolder = window.getByTestId("no-project-select-folder")
+    await expect(pickFolder).toBeVisible()
+    await expect(pickFolder).toHaveAttribute("data-variant", "outline")
     await expect(window.getByText("打开工作区", { exact: true })).toHaveCount(0)
     await snap(window, "s1-5-no-project-empty")
 
@@ -83,7 +85,15 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     await snap(window, "s1-4-settings-search")
 
     await window.getByTestId("setup-guide-replay").click()
-    await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 8_000 })
+    const replay = window.getByRole("dialog").filter({
+      has: window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" })
+    })
+    await expect(replay).toBeVisible({ timeout: 8_000 })
+    const mark = replay.locator("img").first()
+    await expect(mark).toBeVisible()
+    await expect
+      .poll(async () => mark.evaluate((node) => (node as HTMLImageElement).naturalWidth), { timeout: 8_000 })
+      .toBeGreaterThan(0)
     await snap(window, "s1-4-replay-opens")
   } finally {
     await app.close()
@@ -232,10 +242,11 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
   }
 })
 
-test("S1-2 向导有密钥后能发 hello 并收到回复", async () => {
+test("S1-2 有密钥和项目后能发 hello 并收到回复", async () => {
   test.setTimeout(180_000)
   const blocked = canLaunchElectron()
   test.skip(Boolean(blocked), blocked ?? "")
+  // 有项目才种密钥；有项目向导会免。走密钥夹具 + 跳过向导才是真实发送路径。
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-p01-hello-"))
   const { app, window } = await launchEnjoy({
     ENJOY_E2E_STUB: "1",
@@ -244,15 +255,10 @@ test("S1-2 向导有密钥后能发 hello 并收到回复", async () => {
     ENJOY_E2E_CHAT_READY: "key"
   })
   try {
-    await openConnectModelStep(window)
-    await expect(window.getByTestId("connect-model-api_key")).toContainText("已连上")
-    await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "选一个外观" }).waitFor({ timeout: 8_000 })
-    await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "打开第一个项目" }).waitFor({ timeout: 8_000 })
-    await clickGuidePrimary(window)
-    await window.getByRole("heading", { name: "可以开始了" }).waitFor({ timeout: 8_000 })
-    await clickGuidePrimary(window)
+    await skipGuideIfOpen(window)
+    await window.evaluate(() => {
+      window.__enjoyE2e?.hideGuide()
+    })
     await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.fill("hello")
@@ -281,9 +287,15 @@ test("S1-2 引擎夹具发 hello 不出现中性条", async () => {
   })
   try {
     await skipGuideIfOpen(window)
+    await window.evaluate(() => {
+      window.__enjoyE2e?.hideGuide()
+    })
     await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
     const chip = window.getByTestId("composer-engine-chip")
     if ((await chip.count()) > 0) await snap(window, "s1-2-engine-chip")
+    const readiness = await window.evaluate(() => window.__enjoyE2e?.getChatReadiness?.() ?? null)
+    console.log("CHAT_READY=engine readiness", JSON.stringify(readiness))
+    if ((await chip.count()) > 0) console.log("CHAT_READY=engine chip", await chip.innerText())
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.fill("hello")
     await composer.press("Enter")
