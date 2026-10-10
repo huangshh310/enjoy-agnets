@@ -2,7 +2,8 @@
  * 冷启动回灌工具：信封优先，缺失则从 parts 补。
  * 按落库态封口：output-available 是完成，禁止当 pending 转圈。
  */
-import { sealAbandonedTools, type ThreadToolCall, type ToolCallState } from "@enjoy-agents/ipc-contract"
+import type { ThreadToolCall, ToolCallState } from "@enjoy-agents/ipc-contract"
+import { sealAbandonedTools } from "@enjoy-agents/ipc-contract/fold-tool-event"
 
 const TOOL_STATES = new Set<ToolCallState>([
   "input-streaming",

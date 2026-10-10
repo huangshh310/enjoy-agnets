@@ -82,3 +82,32 @@ test("最新一次刷新失败时仍灌入最近一次成功的名单", async ()
 
   assert.deepEqual(ids, ["ws-ok"])
 })
+
+test("灌入侧栏必须带上 session.list 的 workflowStatus，待验收闸才看得见", async () => {
+  resetRefreshWorkspacesForTest()
+  const ide = {
+    workspace: {
+      list: async () => [{ id: "ws-1", name: "W", rootPath: "/w" }]
+    },
+    session: {
+      list: async () => [
+        {
+          id: "ses-1",
+          workspaceId: "ws-1",
+          title: "interrupted",
+          updatedAt: 1,
+          workflowStatus: "needs_review"
+        }
+      ]
+    }
+  }
+  ;(globalThis as { window?: { ide: typeof ide } }).window = { ide }
+  let workflows: Array<string | null | undefined> = []
+  await refreshWorkspacesInto({
+    activeWorkspaceId: () => "ws-1",
+    hydrate: (items) => {
+      workflows = items.flatMap((item) => item.sessions.map((session) => session.workflowStatus))
+    }
+  })
+  assert.deepEqual(workflows, ["needs_review"])
+})

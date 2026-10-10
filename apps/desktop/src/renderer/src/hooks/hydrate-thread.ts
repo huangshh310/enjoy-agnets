@@ -1,7 +1,8 @@
 /**
  * 从会话行恢复 ThreadMessage：优先 assistant-payload，parts 补来源/资产/工具。
  */
-import { parseAssistantPayload, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
+import { parseAssistantPayload } from "@enjoy-agents/ipc-contract/assistant-payload"
+import { safeValidateUIMessages } from "@enjoy-agents/ipc-contract/ui-message"
 import { extrasFromParts } from "./extras-from-parts.ts"
 import { hydrateAssistantTools } from "./hydrate-assistant-tools.ts"
 import { mapAssistantThreadMessage, mapUserThreadMessage } from "./hydrate-thread-map.ts"

@@ -10,6 +10,10 @@ type SessionRow = {
   workspaceId: string
   title: string
   updatedAt: number
+  flagged?: boolean
+  workflowStatus?: "todo" | "in_progress" | "needs_review" | "done" | null
+  goal?: string | null
+  recap?: string | null
 }
 
 let refreshGeneration = 0
@@ -17,7 +21,16 @@ let appliedGeneration = 0
 const inFlight = new Set<number>()
 type HydrateItems = Array<{
   workspace: WorkspaceRow
-  sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+  sessions: Array<{
+    id: string
+    title: string
+    updatedAt: number
+    workspaceId: string
+    flagged?: boolean
+    workflowStatus?: SessionRow["workflowStatus"]
+    goal?: string | null
+    recap?: string | null
+  }>
 }>
 let lastSuccess: { generation: number; items: HydrateItems } | null = null
 
@@ -94,7 +107,11 @@ async function hydrateOneWorkspace(workspace: WorkspaceRow) {
         id: session.id,
         title: session.title,
         updatedAt: session.updatedAt,
-        workspaceId: session.workspaceId
+        workspaceId: session.workspaceId,
+        flagged: session.flagged,
+        workflowStatus: session.workflowStatus,
+        goal: session.goal,
+        recap: session.recap
       }))
     }
   } catch {
