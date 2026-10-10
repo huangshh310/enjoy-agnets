@@ -141,7 +141,7 @@ export function toPublic(profile: ProviderProfile, activeId: string | null): Pro
   }
 }
 
-/** 库里有密文但解不开：钥匙串挂了时删档案必须拒绝，不能当成空 vault 成功。 */
+/** 库里有密文但解不开（换机 / 钥匙串挂了）：删档案必须拒绝，不能当成空 vault 成功。 */
 export function vaultCipherUnreadable(): boolean {
   const stored = readVaultBlob()
   if (!stored) return false

@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（立即运行不伪造 scheduledAt，跳过选中路线闸、不写 MRU；合 #141：侧栏只高亮当前分段 / 中心回原分段；jojo 门：遥测去重、项目是/否、扩展写技能；钥匙串失败码不加 `KEYCHAIN_LOCKED`；设默认模型认 `{ok:false}`；`models.list` 失败不卡发送）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（立即运行不伪造 scheduledAt，跳过选中路线闸、不写 MRU；合 #141：侧栏只高亮当前分段 / 中心回原分段；jojo 门：遥测去重、项目是/否、扩展写技能；钥匙串失败码不加 `KEYCHAIN_LOCKED`；设默认模型认 `{ok:false}`；`models.list` 失败不卡发送；设主引擎先写密钥再 patchPreferences）
 
 ## 当前真相
 
@@ -94,7 +94,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 已归档页「恢复」有时把会话送到侧栏顶。根因：设置页 `unarchiveSession` 与 toast 撤销刷新顺序不一致。正确做法：共用 `restoreUnarchivedSession`。
 - 抽屉原生 `type="time"` 在 zh 仍画出「08:00 AM」。根因：Chromium 不认 `lang="en-GB"`。正确做法：自绘 24h 时/分 `<select>`（`TimePicker24`），不要再挂原生 time。
 - 外观「颜色模式」插图是黄蓝乱线或斜纹毛边。根因：`feDisplacementMap` / 容器 `repeating-linear-gradient` / `rotate(-0.7deg)` / 日芒 `conic-gradient` 在 Linux/Xvfb 上画脏。正确做法：干净胶囊日/夜预览，禁止斜纹与错位描边。
-- **隐患**：两个都没绑 runtime 的会话互切会把 Picker 带过去。根因：`persistRuntimeId` 把 Composer 选择写成全局偏好，切会话又不清 `agentPickerOpen`。正确做法：Picker 只 `bindSessionRuntime`；「设为主引擎」才写偏好；互切走 `sessionSwitchComposerReset`（按偏好重选并关 Picker）。
+- **隐患**：两个都没绑 runtime 的会话互切会把 Picker 带过去。根因：`persistRuntimeId` 把 Composer 选择写成全局偏好，切会话又不清 `agentPickerOpen`。正确做法：Picker 只 `bindSessionRuntime`；「设为主引擎」才写偏好；互切走 `sessionSwitchComposerReset`（按偏好重选并关 Picker）。`asDefault` 必须先 `agentTools.upsert` 再 `patchPreferences({runtimeId})`（显式旗只在 `ipc-settings` setPreferences）；密钥失败不回滚、不提前盖 `defaultChatRouteExplicit`，否则 auto-adopt 永远 skip。
 - **隐患**：第一次自动收默认 toast 看不见。根因：Toaster 是 `RouterProvider` 后置兄弟，`queryFn` 在 Toaster commit 前就 `showAppToast`；隔离目录第一次计算若没见过空路线只会 stamp。正确做法：`queueAdoptedDefaultRoute` 入队，`useChatReadiness` mount + `requestAnimationFrame` 再刷；`CHAT_READY=key` 种盘先记 `seenNoUsableChatRoute`。
 - **隐患**：有密钥没模型仍自动顶上目录第一项，NEED_MODEL 中性条拍不到。根因：`pickActiveModel` / `composerModelPatch` 空 id 回落 `models[0]`，bootstrap 还写 `defaultModelId=stub-e2e` 并种 Ollama。正确做法：默认路线没模型且无偏好/会话覆盖时 `setModel("", "")`；夹具 `CHAT_READY=key-no-model` 跳过 defaultModel 与 Ollama。
 - **隐患**：去添加密钥时 `pauseAt` 把向导 `open` 设成 false，Radix Dialog `onOpenChange(false)` 会当成用户关掉并 `finish()`，向导被标完成、resume 清掉。正确做法：`onOpenChange` 见 `paused` 不要 finish。

@@ -24,13 +24,6 @@ export type VaultDeletePlan<T extends VaultDeleteRow> =
   | { kind: "clear" }
   | { kind: "rewrite"; vault: VaultDeleteState<T> }
 
-export function profileHasSecret(profile: VaultDeleteRow): boolean {
-  if (profile.apiKey?.trim()) return true
-  if (profile.keys?.some((key) => key.apiKey?.trim())) return true
-  if (profile.proxy?.trim()) return true
-  return jsonHoldsSecret(profile.customHeaders) || jsonHoldsSecret(profile.customBody)
-}
-
 export function planVaultDelete<T extends VaultDeleteRow>(
   vault: VaultDeleteState<T>,
   id: string,
@@ -47,16 +40,5 @@ export function planVaultDelete<T extends VaultDeleteRow>(
       profiles: remaining,
       activeId: vault.activeId === id ? (remaining.find((item) => item.enabled)?.id ?? null) : vault.activeId
     }
-  }
-}
-
-function jsonHoldsSecret(raw?: string): boolean {
-  if (!raw?.trim()) return false
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== "object") return String(parsed).trim().length > 0
-    return Object.values(parsed).some((value) => typeof value === "string" && value.trim().length > 0)
-  } catch {
-    return raw.trim().length > 0
   }
 }

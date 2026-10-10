@@ -9,14 +9,13 @@ import {
   mergeAgentToolOverride,
   type AgentToolOverride
 } from "./agent-tools-override-merge"
+import { AGENT_TOOLS_OVERRIDES_KEY } from "./agent-tools-override-key"
 import { unbindProviderInOverrides } from "./agent-tools-unbind"
 import { getSetting, setSetting } from "./database"
 import { clearAcpSessionBind } from "./acp-session-bind.ts"
 
 export { unbindProviderInOverrides } from "./agent-tools-unbind"
 export { mergeAgentToolOverride, type AgentToolOverride } from "./agent-tools-override-merge"
-
-const KEY = "agentTools.overrides"
 
 const OVERRIDE_SCHEMA = z.object({
   enabled: z.boolean().optional(),
@@ -28,7 +27,7 @@ const OVERRIDE_SCHEMA = z.object({
 })
 
 export function readAgentToolOverrides(): Record<string, AgentToolOverride> {
-  const raw = getSetting(KEY)
+  const raw = getSetting(AGENT_TOOLS_OVERRIDES_KEY)
   if (!raw) return {}
   try {
     const parsed: unknown = JSON.parse(raw)
@@ -60,7 +59,7 @@ export function writeAgentToolOverride(
     next.binaryPath = path || undefined
   }
   all[id] = next
-  setSetting(KEY, JSON.stringify(all))
+  setSetting(AGENT_TOOLS_OVERRIDES_KEY, JSON.stringify(all))
   return next
 }
 
@@ -80,7 +79,7 @@ export function readSessionRuntimes(): Record<string, string> {
 /** 删除供应商档案时解绑引用它的 CLI。 */
 export function unbindProviderFromAgentTools(providerId: string): void {
   const { next, changed } = unbindProviderInOverrides(readAgentToolOverrides(), providerId)
-  if (changed) setSetting(KEY, JSON.stringify(next))
+  if (changed) setSetting(AGENT_TOOLS_OVERRIDES_KEY, JSON.stringify(next))
 }
 
 export function writeSessionRuntime(sessionId: string, runtimeId: string, modelId?: string) {
