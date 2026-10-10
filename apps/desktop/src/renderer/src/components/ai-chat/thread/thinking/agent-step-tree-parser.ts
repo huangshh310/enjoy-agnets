@@ -3,7 +3,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "../../../../lib/record.ts"
-import { formatToolLabel, summarizeToolArgs } from "../tool-summary.ts"
+import { formatToolLabel, formatToolName, summarizeToolArgs } from "../tool-summary.ts"
 import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { commandStreamText } from "./command-stream-text.ts"
@@ -19,6 +19,7 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
+import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -58,6 +59,7 @@ export function parseAgentStepNodes(
 }
 
 function stampDenied(node: AgentStepNode, tool: ThreadToolCall): AgentStepNode {
+  if (isSkippedTool(tool)) return { ...node, status: "skipped", denied: false }
   return tool.state === "output-denied" ? { ...node, denied: true } : node
 }
 
@@ -91,7 +93,7 @@ function commandNode(
     title: display,
     ...ioFields(tool, shell, result, t),
     domainPills: pills.length > 0 ? pills : undefined,
-    status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state)
+    status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state, tool)
   }
 }
 
@@ -117,7 +119,7 @@ function searchNode(
     id: tool.id,
     kind: "search",
     title,
-    status: mapToolStatus(tool.state),
+    status: mapToolStatus(tool.state, tool),
     domainPills: pills.length > 0 ? pills : undefined
   }
 }
@@ -147,7 +149,7 @@ function editNode(
     ...ioFields(tool, command, result, t),
     additions: typeof result.additions === "number" ? result.additions : undefined,
     deletions: typeof result.deletions === "number" ? result.deletions : undefined,
-    status: mapToolStatus(tool.state)
+    status: mapToolStatus(tool.state, tool)
   }
 }
 
@@ -178,7 +180,7 @@ function readNode(
     exploredPages: exploredPages.length > 1 ? exploredPages : undefined,
     exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
     domainPills: pills.length > 0 ? pills : undefined,
-    status: mapToolStatus(tool.state)
+    status: mapToolStatus(tool.state, tool)
   }
 }
 
@@ -189,6 +191,25 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
+  if (isSkippedTool(tool)) {
+    return {
+      id: tool.id,
+      kind: "command",
+      title: formatToolName(tool.name),
+      errorText: toolDeniedCopy(t, tool),
+      status: "skipped"
+    }
+  }
+  if (isDeniedTool(tool)) {
+    return {
+      id: tool.id,
+      kind: "command",
+      // 必须用已 import 的 formatToolName；合入时丢过 import，ThinkingTrace 同步 parse 会白屏。
+      title: formatToolName(tool.name),
+      errorText: toolDeniedCopy(t, tool),
+      status: "denied"
+    }
+  }
   const failed = desktopActFailureKind(tool) ?? desktopActFailureKind(result)
   if (failed) {
     const copy = desktopActFailedCopy(failed, t)
@@ -210,7 +231,7 @@ function fallbackNode(
     kind: "command",
     title,
     detail: shell && shell.length > 80 ? `${shell.slice(0, 80)}...` : shell,
-    status: mapToolStatus(tool.state)
+    status: mapToolStatus(tool.state, tool)
   }
 }
 
@@ -230,6 +251,9 @@ function ioFields(
         : stderr
           ? stderr
           : undefined
+  if (isDeniedTool(tool) || isSkippedTool(tool)) {
+    return { command, output, exitCode: undefined, errorText: toolDeniedCopy(t, tool) }
+  }
   const raw = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
   return {
     command,

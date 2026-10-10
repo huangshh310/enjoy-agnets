@@ -63,8 +63,26 @@ test("连续同因收成错过 N 次", () => {
     t
   })
   assert.equal(line.kind, "missed_many")
-  assert.equal(line.text, "错过 3 次 · 电脑睡眠 · 最近 今天 08:00")
+  assert.equal(line.text, "错过 3 次 · 电脑睡眠 · 今天 08:00")
   assert.equal(line.testId, "automation-row-missed-many")
+})
+
+test("列表混因与抽屉同一句", () => {
+  const records = [
+    skip(today8, "app_not_running"),
+    skip(yest8, "system_sleep"),
+    skip(ere8, "system_sleep")
+  ]
+  const line = lastRunLine({
+    automation: auto({ lastRunStatus: "skipped", lastSkipReason: "app_not_running", lastRunAt: today8 }),
+    records,
+    now: noon,
+    locale: "zh",
+    t
+  })
+  const drawer = missedGroupSummary({ records, now: noon, locale: "zh", t })
+  assert.equal(line.text, drawer)
+  assert.equal(line.text, "错过 3 次 · 最近 应用未运行 · 今天 08:00")
 })
 
 test("不同原因或补跑会打断连续计数", () => {

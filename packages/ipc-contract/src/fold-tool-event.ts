@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "./index"
 import type { ThreadToolCall } from "./assistant-payload"
+import { isToolNotExecuted } from "./approval-not-executed.ts"
 
 export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void {
   if (event.type === "tool.start") {
@@ -27,14 +28,20 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
     return
   }
   if (event.type === "tool.result") {
+    const current = tools.find((tool) => tool.id === event.toolCallId)
+    const result = mergeResultDecision(current?.result, event.result)
+    const notExecuted = isToolNotExecuted({
+      result,
+      errorText: event.error
+    })
     upsertTool(tools, {
       id: event.toolCallId,
       name: event.name,
       ...(event.args !== undefined ? { args: event.args } : {}),
       ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
-      result: event.result,
+      result,
       errorText: event.error,
-      state: event.error ? "output-error" : "output-available"
+      state: notExecuted ? "output-denied" : event.error ? "output-error" : "output-available"
     })
     return
   }
@@ -48,21 +55,33 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
     return
   }
   if (event.type === "approval.resolved") {
+    const current = tools.find((tool) => tool.id === event.toolCallId)
     upsertTool(tools, {
       id: event.toolCallId,
-      state: event.decision === "deny" ? "output-denied" : "input-available"
+      state: event.decision === "deny" ? "output-denied" : "input-available",
+      result: mergeResultDecision(current?.result, { decision: event.decision })
     })
   }
 }
 
-/** 加载历史时：只收口卡死的 Pending，保留审批中与已完成。 */
+/** 加载历史时：只收口卡死的 Pending。库里的 output-error 原样保留，未执行由渲染层映射。 */
 export function sealAbandonedTools(tools: ThreadToolCall[] | undefined): ThreadToolCall[] | undefined {
   if (!tools) return tools
-  return tools.map((tool) =>
-    tool.state === "input-streaming"
-      ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
-      : tool
-  )
+  return tools.map((tool) => {
+    if (tool.state === "input-streaming") {
+      return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
+    }
+    return tool
+  })
+}
+
+function mergeResultDecision(prev: unknown, next: unknown): unknown {
+  const nextRecord = isArgsRecord(next) ? { ...next } : next !== undefined ? next : {}
+  if (!isArgsRecord(nextRecord)) return nextRecord
+  const prevDecision =
+    isArgsRecord(prev) && typeof prev.decision === "string" ? prev.decision : undefined
+  if (prevDecision && nextRecord.decision == null) nextRecord.decision = prevDecision
+  return nextRecord
 }
 
 function mergeToolArgs(prev: unknown, next: unknown): unknown {

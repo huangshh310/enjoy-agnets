@@ -22,6 +22,7 @@
     "./desktop-notify": "./src/desktop-notify.ts",
     "./automations-missed": "./src/automations-missed.ts",
     "./desktop-act-codes": "./src/desktop-act-codes.ts",
+    "./approval-not-executed": "./src/approval-not-executed.ts",
     "./estimated-cost": "./src/estimated-cost.ts",
     "./session-config": "./src/session-config.ts",
     "./session-title": "./src/session-title.ts",

@@ -2,6 +2,7 @@
  * Attention 纯函数：事件 → 槽位 upsert / 收束。一槽一位。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
 
@@ -23,7 +24,9 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "approval.required") {
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
-  if (event.type === "run.error") return "error"
+  if (event.type === "run.error") {
+    return isApprovalNotExecutedMessage(event.message) ? "complete" : "error"
+  }
   if (event.type === "run.end") return "complete"
   return null
 }
@@ -47,7 +50,9 @@ export function ingestAttentionEvent(
   const cleared =
     kind === "complete" || kind === "error"
       ? resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
-      : aged
+      : kind === "pending_approval" || kind === "ask_user"
+        ? resolveTerminalSlots(aged, input.sessionId)
+        : aged
   const next = upsertSlot(cleared, {
     sessionId: input.sessionId,
     workspaceId: input.workspaceId,
@@ -78,6 +83,18 @@ export function focusAttentionSlot(
 
 export function dismissAttentionSlot(items: AttentionItem[], id: string): AttentionItem[] {
   return items.map((item) => (item.id === id ? { ...item, status: "dismissed" } : item))
+}
+
+/** 新审批进场时只收同会话已完成，未处理的 error 保留。 */
+export function resolveTerminalSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
+  return items.map((item) => {
+    if (item.sessionId !== sessionId) return item
+    if (item.kind !== "complete") return item
+    if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
+      return item
+    }
+    return { ...item, status: "resolved" }
+  })
 }
 
 export function resolveDecisionSlots(

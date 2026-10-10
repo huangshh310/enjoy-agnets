@@ -13,6 +13,7 @@ export type ThreadErrorKind =
   | "remote_cli_missing"
   | "remote_disconnected"
   | "resume_fallback"
+  | "store"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -24,6 +25,7 @@ export const NEED_CLI_OUTDATED = "NEED_CLI_OUTDATED"
 export const HANDOFF_CONFIRM_FAILED = "HANDOFF_CONFIRM_FAILED"
 export const NEED_REMOTE_CONNECTED = "NEED_REMOTE_CONNECTED"
 export const ACP_RESUME_FALLBACK = "ACP_RESUME_FALLBACK"
+export const INTERNAL_STORE_ERROR = "INTERNAL_STORE_ERROR"
 
 const CREDIT_MARKERS = [
   "402",
@@ -39,6 +41,13 @@ const CREDIT_MARKERS = [
 
 export function classifyThreadError(message: string): ThreadErrorKind {
   const lower = message.toLowerCase()
+  if (
+    message === INTERNAL_STORE_ERROR ||
+    lower.includes("unique constraint") ||
+    lower.includes("constraint failed")
+  ) {
+    return "store"
+  }
   if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
   if (
     message === NEED_PROVIDER_KEY ||

@@ -62,6 +62,82 @@ test("同会话同 kind 只占一槽，后到覆盖并保留 workspaceId", () =>
   assert.equal(second[0]?.workspaceId, "ws_1")
 })
 
+test("新审批进场时只收 complete，未处理的 error 保留", () => {
+  const failed = ingestAttentionEvent([], {
+    event: { type: "run.error", runId: "run_old", message: "boom" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const waiting = ingestAttentionEvent(failed, {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(waiting.find((item) => item.kind === "error")?.status, "active")
+  assert.equal(waiting.find((item) => item.kind === "pending_approval")?.status, "active")
+})
+
+test("新审批进场时收掉已完成，需处理与已完成不叠出", () => {
+  const done = ingestAttentionEvent([], {
+    event: { type: "run.end", runId: "run_old" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const waiting = ingestAttentionEvent(done, {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(waiting.find((item) => item.kind === "complete")?.status, "resolved")
+  assert.equal(waiting.find((item) => item.kind === "pending_approval")?.status, "active")
+  assert.equal(stripNeedsCount(waiting), 1)
+  assert.equal(
+    stripVisibleItems(waiting).some((item) => item.kind === "complete"),
+    false
+  )
+})
+
+test("拒绝审批后需处理清零，不当出错", () => {
+  const waiting = ingestAttentionEvent([], {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const denied = ingestAttentionEvent(waiting, {
+    event: { type: "approval.resolved", runId: "run_b", toolCallId: "tc_1", decision: "deny" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(denied.find((item) => item.kind === "pending_approval")?.status, "resolved")
+  assert.equal(denied.some((item) => item.kind === "error"), false)
+  assert.equal(stripNeedsCount(denied), 0)
+  assert.equal(stripApprovalCount(denied), 0)
+})
+
+test("未执行类 run.error 不当出错，徽标清掉", () => {
+  const waiting = ingestAttentionEvent([], {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const finished = ingestAttentionEvent(waiting, {
+    event: { type: "run.error", runId: "run_b", message: "本次未执行。" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(finished.find((item) => item.kind === "pending_approval")?.status, "resolved")
+  assert.equal(finished.some((item) => item.kind === "error"), false)
+  assert.equal(stripApprovalCount(finished), 0)
+})
+
 test("approval.resolved 收束该会话未决审批槽", () => {
   const active = ingestAttentionEvent([], {
     event: approval(),
