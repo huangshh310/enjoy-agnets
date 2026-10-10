@@ -43,6 +43,8 @@ export const enSessionOps = {
   ledgerOpenSources: "Open → this turn",
   ledgerWaitingReview: "Stopped, waiting review",
   ledgerFailed: "Failed",
+  ledgerErrorNoResult: "No result received",
+  ledgerErrorGeneric: "This step did not succeed",
   sourcesFromLedger: "From ledger · {label}",
   sourcesEmptyTitle: "Nothing landed on a file this turn",
   sourcesEmptyHint: "Check the ledger for command and read/edit summaries",

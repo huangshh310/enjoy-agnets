@@ -1,7 +1,7 @@
 /**
  * 侧栏动作按钮与折叠文字。
  */
-import { type ComponentType, type ReactNode } from "react"
+import { type ComponentType, type MouseEvent, type ReactNode } from "react"
 import { cx } from "@/utils/cx"
 
 export type SidebarIcon = ComponentType<{
@@ -19,7 +19,7 @@ export function SidebarAction({
 }: {
   icon: SidebarIcon
   label: string
-  onClick?: () => void
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void
   collapsed?: boolean
   active?: boolean
   testId?: string

@@ -17,6 +17,7 @@ import {
 
 export {
   archivedToastMessage,
+  archiveFailedMessage,
   restoredToastMessage,
   sessionTitleFromStore,
   undoArchiveFailedMessage

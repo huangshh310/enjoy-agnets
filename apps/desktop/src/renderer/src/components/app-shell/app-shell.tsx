@@ -11,15 +11,18 @@ import { useShellNavigation } from "./routing/use-shell-navigation"
 export function AppShell() {
   const { activeModule, isChat, selectModule } = useShellNavigation()
   return (
-    <div className="relative flex h-full min-h-0 gap-3 bg-background-full px-3 pb-3 overflow-hidden">
-      {/* 物理底板柔和漫射环境光 (Ambient Canvas Glow) */}
+    <div
+      data-shell-canvas
+      className="relative flex h-full min-h-0 gap-3 bg-background-full px-3 pb-3 overflow-hidden"
+    >
+      {/* 物理底板柔和漫射环境光。软件 GL 下必须藏掉，否则 12px 缝里会栅成黄半环。 */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-50 dark:opacity-35 transition-opacity duration-1000 select-none"
+        className="skin-ambient-glow pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-50 dark:opacity-35 transition-opacity duration-1000 select-none"
       >
-        <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-accent-500/10 blur-[100px]" />
-        <div className="absolute -right-20 top-1/3 h-[420px] w-[420px] rounded-full bg-accent-500/8 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-chart-5/6 blur-[110px]" />
+        <div className="skin-ambient-orb absolute -left-20 -top-20 h-96 w-96 rounded-full bg-accent-500/10 blur-[100px]" />
+        <div className="skin-ambient-orb absolute -right-20 top-1/3 h-[420px] w-[420px] rounded-full bg-accent-500/8 blur-[120px]" />
+        <div className="skin-ambient-orb absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-chart-5/6 blur-[110px]" />
       </div>
 
       <SetupGuideHost />

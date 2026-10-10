@@ -155,7 +155,7 @@ export const ReviewCommitDock = forwardRef<
               onClick={() => void runPush()}
             >
               <RiUploadCloudLine className="size-3" />
-              <span>{t("chat.reviewPushAction")}</span>
+              <span data-testid="review-push">{t("chat.reviewPushAction")}</span>
             </Button>
           ) : null}
           <Button

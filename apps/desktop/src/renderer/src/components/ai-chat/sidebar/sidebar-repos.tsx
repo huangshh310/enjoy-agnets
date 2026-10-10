@@ -17,7 +17,7 @@ import {
 import { sidebarListHeadingKey } from "@renderer/components/ai-chat/sidebar/sidebar-heading"
 import { sortSessions } from "@renderer/components/ai-chat/sidebar/sort-sessions"
 import { requestCreateProject } from "@renderer/components/workspace/create-project-open"
-import { archiveCurrentSession } from "@renderer/hooks/workspace-lifecycle"
+import { requestArchiveSession } from "@renderer/hooks/deny-then-archive"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
@@ -234,7 +234,7 @@ function ProjectSessionTree({
               className="rounded-xl"
               surface="tree"
               onSelect={() => onSelectSession(session.id)}
-              onArchive={() => void archiveCurrentSession(session.id)}
+              onArchive={() => requestArchiveSession(session.id)}
             />
           ))}
         </div>

@@ -4,7 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
 import { useQuery } from "@tanstack/react-query"
@@ -24,9 +24,12 @@ import { ShortcutSheet } from "@renderer/components/ai-chat/shortcut-sheet"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
+import { AttentionNeedsBar } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStageHeader } from "./chat-stage-header"
 import { useTaskbarTitle } from "./use-taskbar-title"
 import { EmptySessionStart } from "./empty-session-start"
+import { EmptyStatePills } from "@renderer/components/ai-chat/empty-state/empty-state-pills"
+import { focusComposerEnd } from "@renderer/components/ai-chat/empty-state/focus-composer"
 import { NoProjectEmpty } from "./no-project-empty.tsx"
 import { shouldShowNoProjectEmpty } from "./no-project-empty.ts"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -165,7 +168,7 @@ function ChatThreadBody(props: {
     pathname,
     findOpen
   })
-  useEffect(() => {
+  useLayoutEffect(() => {
     queueComposerFocus()
   }, [sessionId, pathname])
   const assistant = lastAssistantTurn(messages)
@@ -197,29 +200,30 @@ function ChatThreadBody(props: {
           })
         }}
       />
-      {props.empty ? (
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-          <EmptySessionStart
-            workspaceName={props.workspaceName}
-            sessionTitle={props.sessionTitle}
-            workspaceRootLabel={props.workspaceRootLabel}
-            changesCount={props.changesCount}
-            onModelChange={props.onModelChange}
-            onSend={props.onSend}
-          />
-          <ThreadFindBar open={findOpen} messages={messages} />
-          <EnvironmentPanel open={environmentOpen} />
-        </div>
-      ) : (
-        <>
+      <AttentionNeedsBar />
+      <div
+        className={
+          props.empty
+            ? "relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+            : "relative flex min-h-0 flex-1 flex-col overflow-hidden"
+        }
+      >
+        {props.empty ? (
+          <div className="flex flex-1 flex-col items-center justify-end px-6 pt-8">
+            <EmptySessionStart
+              workspaceName={props.workspaceName}
+              sessionTitle={props.sessionTitle}
+              workspaceRootLabel={props.workspaceRootLabel}
+              changesCount={props.changesCount}
+            />
+            <ThreadFindBar open={findOpen} messages={messages} />
+            <EnvironmentPanel open={environmentOpen} />
+          </div>
+        ) : (
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
             <div
               data-testid="chat-conversation"
-              className={cx(
-                "flex min-h-0 min-w-0 flex-1 flex-col",
-                environmentOpen && "min-[900px]:pr-72",
-                pendingApproval && "min-h-52"
-              )}
+              className={cx("flex min-h-0 min-w-0 flex-1 flex-col", pendingApproval && "min-h-52")}
             >
               <AiChatThread
                 messages={messages}
@@ -230,15 +234,33 @@ function ChatThreadBody(props: {
             </div>
             <EnvironmentPanel open={environmentOpen} />
             <RunLedgerRail open={ledgerOpen} onClose={() => setLedgerOpen(false)} />
+            <SourcesSheetHost />
           </div>
-          <SourcesSheetHost />
-          <ChatComposerCluster
-            className={pendingApproval ? "min-h-0 overflow-y-auto" : "shrink-0"}
-            onModelChange={props.onModelChange}
-            onSend={props.onSend}
-          />
-        </>
-      )}
+        )}
+        <ChatComposerCluster
+          className={
+            props.empty
+              ? "mx-auto w-full max-w-3xl shrink-0 px-6"
+              : pendingApproval
+                ? "min-h-0 overflow-y-auto"
+                : "shrink-0"
+          }
+          composerClassName={props.empty ? "px-0 pb-2 [&_textarea]:min-h-[72px]" : undefined}
+          autoFocus={props.empty}
+          onModelChange={props.onModelChange}
+          onSend={props.onSend}
+        />
+        {props.empty ? (
+          <div className="flex flex-1 flex-col items-center justify-start px-6 pb-8">
+            <EmptyStatePills
+              onSelectPrompt={(promptText) => {
+                useChatStore.getState().setComposer(promptText)
+                focusComposerEnd(promptText)
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
       <AiChatStatusBar workspaceRootLabel={props.workspaceRootLabel} />
     </div>
   )

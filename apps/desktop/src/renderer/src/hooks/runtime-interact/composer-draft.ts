@@ -19,10 +19,14 @@ import { useChatStore } from "../../stores/chat-store"
 import { listQuotedContexts, takeQuotedContexts } from "../quoted-context"
 import { formatContextChipsForSend, takeSessionContextChips } from "../session-context-chips"
 
+import { flushComposerDomToStore, syncComposerDom } from "../composer-dom"
+
+export { flushComposerDomToStore, syncComposerDom }
+
 /** 取出引用、技能与知识 Chip，并消化句首 /plan、/compact 或 /技能。 */
 export async function takeComposerText(): Promise<string> {
   const store = useChatStore.getState()
-  const parsed = applyLeadingSlash(store.composer, listKnownSkills())
+  const parsed = applyLeadingSlash(flushComposerDomToStore() || store.composer, listKnownSkills())
   if (parsed.mode) store.setMode(parsed.mode)
   if (parsed.command === "compact") {
     const ok = await compactSessionOrReport(store.sessionId)
@@ -78,6 +82,7 @@ export type ComposerDraftSnapshot = {
 export function clearComposerDraft() {
   const store = useChatStore.getState()
   store.setComposer("")
+  syncComposerDom("", true)
   if (store.sessionId) {
     store.clearSessionDraft(store.sessionId)
   }

@@ -12,6 +12,7 @@ import { useT } from "@renderer/i18n"
 import { displaySessionTitle } from "@renderer/lib/session-title"
 import type { SidebarSessionRowProps } from "./sidebar-session-row.types"
 import { useSessionActivity } from "./use-session-activity"
+import { SESSION_TIME_COL_CLASS } from "@renderer/components/app-shell/constants"
 
 export function SidebarSessionRow({
   sessionId,
@@ -50,7 +51,7 @@ export function SidebarSessionRow({
         type="button"
         onClick={onSelect}
         title={label}
-        className="flex min-w-[6rem] flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-2 py-0.5 text-left"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left"
       >
         <SessionAgentMark sessionId={sessionId} />
         {flagged ? (
@@ -101,7 +102,7 @@ function SessionRowIdentity({
   nameClassName?: string
 }) {
   return (
-    <span className={cx("min-w-[4.5rem] flex-1 truncate", nameClassName)} title={label}>
+    <span className={cx("min-w-0 flex-1 truncate", nameClassName)} title={label}>
       {label}
     </span>
   )
@@ -132,7 +133,13 @@ function SessionRowMeta({
   if (running) return <LoadingStateGlyph variant="drive" className={cx("shrink-0", hide)} />
   const time = Number.isFinite(updatedAt) && updatedAt > 0 ? formatTime(updatedAt) : ""
   return (
-    <span className={cx("w-8 shrink-0 text-right text-caption-2-regular text-text-secondary tabular-nums", hide)}>
+    <span
+      className={cx(
+        SESSION_TIME_COL_CLASS,
+        "shrink-0 overflow-visible text-right text-caption-2-regular text-text-secondary tabular-nums",
+        hide
+      )}
+    >
       {time}
     </span>
   )

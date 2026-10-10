@@ -17,6 +17,16 @@ export function focusComposerEnd() {
   focusFn?.()
 }
 
+/** 点「新对话」后从按钮挪走焦点，同步聚焦输入框。已在输入框打字则不抢。 */
+export function focusComposerAfterNewSession() {
+  if (typeof document !== "undefined") {
+    const active = document.activeElement
+    if (active?.closest('[data-testid="composer-input"]')) return
+    if (active instanceof HTMLElement) active.blur()
+  }
+  focusFn?.()
+}
+
 export function isChatThreadPath(pathname: string): boolean {
   const path = pathname.split("?")[0] || "/"
   return path === "/" || path === ""
@@ -52,17 +62,9 @@ export function canClaimComposerFocus(root: Document = document): boolean {
 }
 
 export function queueComposerFocus() {
-  const claim = () => {
-    if (typeof document === "undefined") return
-    if (!canClaimComposerFocus()) return
-    focusComposerEnd()
-  }
-  claim()
-  const raf =
-    typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn: () => void) => setTimeout(fn, 0)
-  raf(() => {
-    raf(claim)
-  })
+  if (typeof document === "undefined") return
+  if (!canClaimComposerFocus()) return
+  focusComposerEnd()
 }
 
 function isProtectedTypingTarget(active: Element | null): boolean {

@@ -248,7 +248,7 @@ export const zhMcpPages = {
   presetSequentialThinkingFeat3: "深度逻辑增强",
   presetGitName: "Git 本地仓库",
   presetGitCategory: "DevOps 与版本控制",
-  presetGitDesc: "深度读取本地 Git 提交历史、分支拓扑、Diff 差异对比及未暂存变更，提供智能版本审计。",
+  presetGitDesc: "深度读取本地 Git 提交历史、分支拓扑、差异对比及未暂存变更，提供智能版本审计。",
   presetGitFeat0: "Git Status 与变更",
   presetGitFeat1: "Commit 历史追溯",
   presetGitFeat2: "分支管理与比对",

@@ -1,7 +1,7 @@
 /**
  * Composer 外壳：拖拽/粘贴附件、自适应输入、引用 Chip 与底栏。工作区名在状态栏，不进输入框顶。
  */
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
 import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
@@ -41,7 +41,8 @@ export function AiChatComposer({
   onSteer,
   onStop,
   onAttach,
-  className
+  className,
+  autoFocus = false
 }: ComposerProps) {
   const t = useT()
   useFollowupAutostart()
@@ -61,7 +62,7 @@ export function AiChatComposer({
     textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 180)}px`
   }, [composer])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const unregister = registerComposerFocus(() => {
       const textarea = textareaRef.current
       if (!textarea) return
@@ -69,9 +70,18 @@ export function AiChatComposer({
       const end = textarea.value.length
       textarea.setSelectionRange(end, end)
     })
-    queueComposerFocus()
+    if (autoFocus) {
+      const textarea = textareaRef.current
+      if (textarea && document.activeElement !== textarea) {
+        textarea.focus()
+        const end = textarea.value.length
+        textarea.setSelectionRange(end, end)
+      }
+    } else {
+      queueComposerFocus()
+    }
     return unregister
-  }, [])
+  }, [autoFocus])
 
   function pickFiles() {
     fileRef.current?.click()
@@ -131,7 +141,12 @@ export function AiChatComposer({
       <ComposerBranchMismatch />
       <ModelSwitchNotice />
       <ComposerActivityFrame />
-      <form data-composer="true" onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
+      <form
+        data-composer="true"
+        data-toast-clearance=""
+        onSubmit={onSubmit}
+        className="relative z-10 w-full min-w-0"
+      >
         <BorderBeam
           size="md"
           colorVariant="ocean"
@@ -184,6 +199,7 @@ export function AiChatComposer({
             onSend={onSend}
             onSteer={onSteer}
             running={running}
+            autoFocus={autoFocus}
             textareaRef={textareaRef}
             onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}

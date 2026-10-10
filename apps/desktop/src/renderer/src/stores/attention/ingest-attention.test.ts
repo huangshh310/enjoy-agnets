@@ -12,6 +12,9 @@ import {
   isStripCompact,
   stripNeedsCount,
   stripApprovalCount,
+  clearActiveCompletes,
+  latestVisibleComplete,
+  stripVisibleForOpenSessions,
   stripVisibleItems,
   clearSessionAttention
 } from "./ingest-attention.ts"
@@ -363,6 +366,15 @@ test("Strip 按优先级排序，当前会话仍可见", () => {
   assert.equal(stripVisibleItems([]).length, 0)
 })
 
+test("胶囊不指向已隐藏会话", () => {
+  const items: AttentionItem[] = [
+    slot({ id: "gone:pending_approval", sessionId: "gone", kind: "pending_approval" }),
+    slot({ id: "live:ask_user", sessionId: "live", kind: "ask_user" })
+  ]
+  const visible = stripVisibleForOpenSessions(items, new Set(["live"]))
+  assert.deepEqual(visible.map((item) => item.sessionId), ["live"])
+})
+
 test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", () => {
   const item = slot({
     id: "ses_a:pending_approval",
@@ -375,7 +387,41 @@ test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", ()
   assert.equal(isStripCompact(item, "ses_b", true, true), false)
 })
 
-test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () => {
+test("已完成约 4s 自消", () => {
+  assert.equal(COMPLETE_TTL_MS, 4_000)
+})
+
+test("多会话完成只留最新一颗，切走就清", () => {
+  const first = ingestAttentionEvent([], {
+    event: { type: "run.end", runId: "run_a", turn: { workflow: "todo", attention: "complete" } },
+    sessionId: "ses_a",
+    sessionTitle: "A",
+    now: 1
+  })
+  const second = ingestAttentionEvent(first, {
+    event: { type: "run.end", runId: "run_b", turn: { workflow: "todo", attention: "complete" } },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  const third = ingestAttentionEvent(second, {
+    event: { type: "run.end", runId: "run_c", turn: { workflow: "todo", attention: "complete" } },
+    sessionId: "ses_c",
+    sessionTitle: "C",
+    now: 3
+  })
+  const live = stripVisibleItems(third).filter((item) => item.kind === "complete")
+  assert.equal(live.length, 1)
+  assert.equal(live[0]?.sessionId, "ses_c")
+  assert.equal(latestVisibleComplete(third)?.sessionId, "ses_c")
+  const cleared = clearActiveCompletes(third)
+  assert.equal(
+    cleared.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
+})
+
+test("点 complete 直接 resolved；dismiss 写 dismissed；约 4s 后过期", () => {
   const done = ingestAttentionEvent([], {
     event: { type: "run.end", runId: "run_b", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_b",

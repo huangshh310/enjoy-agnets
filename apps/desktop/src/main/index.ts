@@ -26,12 +26,29 @@ import {
 } from "./services/single-instance";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
+import {
+  gpuCompositingArg,
+  gpuCompositingFromStatus,
+  hardwareAccelerationForcedOff,
+  type GpuCompositingFlag
+} from "./services/gpu-compositing";
+import {
+  gpuInfoLooksSoftware,
+  softwareRendererSwitchOn
+} from "./services/gpu-compositing-software";
+import {
+  attachGpuCompositingWatch,
+  pushGpuCompositingScript,
+  pushGpuCompositingToWindows
+} from "./services/gpu-compositing-watch";
 
 const isolatedUserData = process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA
 if (isolatedUserData) {
   app.setPath("userData", isolatedUserData);
 }
-if (process.env.ENJOY_E2E_STUB === "1") {
+const e2eStub = process.env.ENJOY_E2E_STUB === "1"
+const disableHaForE2e = e2eStub && process.env.ENJOY_E2E_ALLOW_GPU !== "1"
+if (disableHaForE2e) {
   app.disableHardwareAcceleration();
 }
 
@@ -80,6 +97,8 @@ function lockPreviewWebview(contents: WebContents): void {
 }
 
 function createWindow(): BrowserWindow {
+  const gpuFlag = readLiveGpuFlag()
+  publishGpuFlag(gpuFlag)
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -100,6 +119,7 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      additionalArguments: [gpuCompositingArg(gpuWatch.getFlag())],
       // 右栏浏览器预览用 <webview>，guest 无 node，partition persist:enjoy-preview。
       webviewTag: true
     }
@@ -108,6 +128,9 @@ function createWindow(): BrowserWindow {
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
   });
+  mainWindow.webContents.on("dom-ready", () => {
+    void mainWindow.webContents.executeJavaScript(pushGpuCompositingScript(gpuWatch.getFlag()))
+  })
 
   blockNativeHistoryNavigation(mainWindow);
   lockPreviewWebview(mainWindow.webContents);
@@ -134,6 +157,60 @@ function createWindow(): BrowserWindow {
   }
   return mainWindow;
 }
+
+let lastGpuInfo: unknown = null
+
+/** 只信硬件确认；SwiftShader / 软件 GL / 命令行软件实现一律 off。 */
+function readLiveGpuFlag(): GpuCompositingFlag {
+  const forcedOff = hardwareAccelerationForcedOff({
+    disableHardwareAcceleration: disableHaForE2e,
+    hasSwitch: (name) => app.commandLine.hasSwitch(name)
+  })
+  const software = softwareRendererSwitchOn({
+    switchValue: (name) => app.commandLine.getSwitchValue(name)
+  }) || gpuInfoLooksSoftware(lastGpuInfo)
+  try {
+    return gpuCompositingFromStatus(app.getGPUFeatureStatus(), {
+      hardwareAccelerationDisabled: forcedOff,
+      softwareRenderer: software
+    })
+  } catch {
+    return "off"
+  }
+}
+
+function refreshGpuInfoThenPublish(): void {
+  void app
+    .getGPUInfo("complete")
+    .then((info) => {
+      lastGpuInfo = info
+      publishGpuFlag(readLiveGpuFlag())
+    })
+    .catch(() => {
+      publishGpuFlag("off")
+    })
+}
+
+function publishGpuFlag(flag: GpuCompositingFlag): void {
+  process.env.ENJOY_GPU_COMPOSITING = flag
+  pushGpuCompositingToWindows(flag, BrowserWindow.getAllWindows())
+}
+
+const gpuWatch = attachGpuCompositingWatch({
+  on: (event, listener) => {
+    if (event === "child-process-gone") {
+      app.on("child-process-gone", (nativeEvent, details) => listener(nativeEvent, details))
+      return
+    }
+    app.on("gpu-info-update", () => {
+      refreshGpuInfoThenPublish()
+      listener()
+    })
+  },
+  readFlag: readLiveGpuFlag,
+  publish: publishGpuFlag,
+  current: "off"
+})
 
 function restoreOrphansOnce(window: BrowserWindow): void {
   void import("./services/restore-waiting-runs").then(({ restoreWaitingRuns }) => {
@@ -166,6 +243,12 @@ function bootPrimaryInstance(): void {
     });
     applyMacDockIcon();
     createWindow();
+    refreshGpuInfoThenPublish()
+    if (process.env.ENJOY_DEV_SIMULATE_GPU_GONE === "1") {
+      setImmediate(() => {
+        app.emit("child-process-gone", {}, { type: "GPU", reason: "crashed" })
+      })
+    }
     startAppUpdate();
     void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
       startAutomationScheduler()

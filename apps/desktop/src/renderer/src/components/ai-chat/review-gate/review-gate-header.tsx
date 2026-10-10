@@ -12,7 +12,7 @@ export function ReviewGateHeader({ phase }: { phase: ReviewGatePhase }) {
   return (
     <div
       data-testid="review-gate-phases"
-      className="inline-flex rounded-full bg-background-secondary-default p-0.5 ring-1 ring-border-button-default"
+      className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-background-secondary-default p-0.5 ring-1 ring-border-button-default"
     >
       {PHASES.map((item) => {
         const active = item === phase

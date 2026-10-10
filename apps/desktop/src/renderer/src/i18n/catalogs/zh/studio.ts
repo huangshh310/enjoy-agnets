@@ -270,27 +270,31 @@ export const zhStudio = {
     emptyHint: "点「新建」加一条手动、定时、保存后或本机推送规则。",
     neverRun: "尚未运行",
     lastRun: "上次 · {when}",
+    lastRunOk: "上次成功 · {when}",
+    lastRunFailed: "上次出错 · {when}",
+    lastRunDrawer: "上次：{line}",
     roundOpened: "本轮已开 · 会话列表可见",
     skippedLine: "已跳过 · {reason} · {when}",
-    missedMany: "错过 {n} 次 · {reason} · 最近 {when}",
+    missedMany: "因{reason}错过 {n} 次 · 最近 {when}",
     skipReasonSleep: "电脑睡眠",
     skipReasonClosed: "应用未运行",
     skipReasonBusy: "上次仍在运行",
     skipReasonUnknown: "已错过",
     skipTipSleep: "电脑当时睡着了，这条定时没跑成。不是失败。",
-    skipTipClosed: "Enjoy 当时没开，错过的点只记下来，不会偷偷补跑。",
-    skipTipBusy: "上一轮还没结束，这个点就让过去了。不是出错。",
+    skipTipClosed: "Enjoy 当时没开，错过的那一次只记下来，不会偷偷补跑。",
+    skipTipBusy: "上一轮还没结束，那一次就让过去了。不是出错。",
     catchUpToggle: "错过后补跑最近一次",
     catchUpToggleHint: "只补最近一次，更早的只记录跳过。补跑和手动运行一样需要审批。",
-    catchUpToggleLocal: "记录只留在这台电脑，不会同步到云。回看最多 7 天。超过 24 小时的点只记跳过。",
-    catchUpToggleDefault: "默认关。打开后下一次唤醒或启动，只补最近那个点。",
+    catchUpToggleLocal: "记录只留在这台电脑，不会同步到云。回看最多 7 天。超过 24 小时的那一次只记跳过。",
+    catchUpToggleDefault: "默认关。打开后下一次唤醒或启动，只补最近那一次。",
     missedExpand: "展开错过记录",
     missedExpandAction: "展开",
     missedCollapse: "收起",
     missedEmpty: "最近 7 天没有错过记录",
+    missedRecentCount: "最近 7 天有 {n} 条记录",
     missedCount: "错过记录 · {n} 条",
-    missedGroupSame: "错过 {n} 次 · {reason} · {when}",
-    missedGroupMixed: "错过 {n} 次 · 最近 {reason} · {when}",
+    missedGroupSame: "因{reason}错过 {n} 次 · {when}",
+    missedGroupMixed: "错过 {n} 次 · 最近一次{reason} · {when}",
     missedSkipped: "已跳过 · {reason}",
     catchUpMarker: "补跑",
     catchUpWhen: "计划 {scheduled} · 实际 {actual}",
@@ -381,17 +385,17 @@ export const zhStudio = {
       description: "扫描代码库中潜在的 OWASP 漏洞、硬编码凭据、不安全命令插值与依赖 CVE 风险。",
       slashCommand: "/audit <path>",
       template:
-        "---\nname: security-audit-scanner\ndescription: 代码库静态安全审计与修复补丁建议\n---\n# Security Audit Scanner Skill\n审计代码时：\n1. 排查未消毒输入、命令注入与敏感 Key 泄露。\n2. 输出结构化风险等级矩阵（高 / 中 / 低）。\n3. 提供可直接应用的安全性重构 Diff。"
+        "---\nname: security-audit-scanner\ndescription: 代码库静态安全审计与修复补丁建议\n---\n# Security Audit Scanner Skill\n审计代码时：\n1. 排查未消毒输入、命令注入与敏感 Key 泄露。\n2. 输出结构化风险等级矩阵（高 / 中 / 低）。\n3. 提供可直接应用的安全性重构补丁。"
     }
   },
   projectRules: {
     cleanDiffs: {
-      title: "Clean Code & Surgical Diffs",
+      title: "代码整洁 · 精准小改",
       category: "代码整洁",
       badge: "High Priority",
       description: "强制小粒度原子化修改，零多余冗余代码，单文件不超过 300 行。",
       content:
-        "# Clean Code & Surgical Diffs Rule\n- 优先采用局部针对性修改，避免重写完整文件。\n- 单文件行数严格控制在 300 行以内；超出请主动抽取子模块。\n- 保留既有注释与文档，禁止添加复述代码的无意义行。\n- 严禁引入未格式化代码或多余的 debug log。"
+        "# 代码整洁 · 精准小改\n- 优先采用局部针对性修改，避免重写完整文件。\n- 单文件行数严格控制在 300 行以内；超出请主动抽取子模块。\n- 保留既有注释与文档，禁止添加复述代码的无意义行。\n- 严禁引入未格式化代码或多余的 debug log。"
     },
     strictTsZod: {
       title: "Strict TypeScript & Zod Schemas",
@@ -420,7 +424,7 @@ export const zhStudio = {
   },
   automationTemplates: {
     diffs: {
-      name: "保存时审查 Git Diff",
+      name: "保存时审查改动",
       category: "代码质量",
       prompt: "文件保存时检查工作区最新未提交变更，并总结风险、安全问题与潜在回退。",
       badge: "持续审查"
@@ -434,7 +438,7 @@ export const zhStudio = {
     typecheck: {
       name: "类型检查与 Lint 修复",
       category: "诊断",
-      prompt: "运行项目类型检查，找出类型不匹配或语法异常，并给出可直接应用的补丁 Diff。",
+      prompt: "运行项目类型检查，找出类型不匹配或语法异常，并给出可直接应用的补丁。",
       badge: "一键诊断"
     },
     commitNotes: {

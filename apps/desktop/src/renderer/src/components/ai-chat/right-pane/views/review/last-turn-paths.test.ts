@@ -220,6 +220,22 @@ test("纯聊天没有工具，不算拒绝收工", () => {
 test("按目录分成两级改动树", () => {
   assert.deepEqual(groupChangedPaths(["src/a.ts", "src/b.ts", "readme.md"]), [
     { dir: "src", files: ["a.ts", "b.ts"] },
-    { dir: ".", files: ["readme.md"] }
+    { dir: "", files: ["readme.md"] }
   ])
+})
+
+test("写盘 path 是占位短横时不当成本轮改动", () => {
+  assert.deepEqual(
+    pathsFromTools([{ id: "1", name: "write_file", args: { path: "-" }, state: "output-available" }]),
+    []
+  )
+})
+
+test("根目录与占位短横不进改动树目录行", () => {
+  assert.deepEqual(groupChangedPaths(["readme.md", "-", "·", ".", "-/note.ts"]), [
+    { dir: "", files: ["readme.md", "note.ts"] }
+  ])
+  for (const group of groupChangedPaths(["-", "·", ".", ""])) {
+    assert.equal(group.files.length, 0)
+  }
 })

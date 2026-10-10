@@ -273,27 +273,31 @@ export const enStudio = {
     emptyHint: "Create a manual, schedule, on-save, or local-push rule.",
     neverRun: "Never run",
     lastRun: "Last · {when}",
+    lastRunOk: "Last succeeded · {when}",
+    lastRunFailed: "Last failed · {when}",
+    lastRunDrawer: "Last: {line}",
     roundOpened: "Round opened · visible in the session list",
     skippedLine: "Skipped · {reason} · {when}",
-    missedMany: "Missed {n} times · {reason} · latest {when}",
+    missedMany: "Missed {n} times because {reason} · latest {when}",
     skipReasonSleep: "computer asleep",
     skipReasonClosed: "app not running",
     skipReasonBusy: "previous still running",
     skipReasonUnknown: "missed",
     skipTipSleep: "The computer was asleep, so this scheduled run did not start. Not a failure.",
     skipTipClosed: "Enjoy was closed. The miss is recorded and will not catch up on its own.",
-    skipTipBusy: "The previous round was still running, so this point was let go. Not an error.",
+    skipTipBusy: "The previous round was still running, so that run was let go. Not an error.",
     catchUpToggle: "Catch up the latest miss",
     catchUpToggleHint: "Only the latest miss is replayed; earlier ones stay skipped. Catch-up needs the same approval as a manual run.",
     catchUpToggleLocal: "Records stay on this computer and are not synced to the cloud. Lookback is 7 days. Misses older than 24 hours are recorded only.",
-    catchUpToggleDefault: "Off by default. Once on, the next wake or launch replays only the latest point.",
+    catchUpToggleDefault: "Off by default. Once on, the next wake or launch replays only the latest one.",
     missedExpand: "Show missed records",
     missedExpandAction: "Show",
     missedCollapse: "Hide",
     missedEmpty: "No missed records in the last 7 days",
+    missedRecentCount: "{n} records in the last 7 days",
     missedCount: "Missed records · {n}",
-    missedGroupSame: "Missed {n} times · {reason} · {when}",
-    missedGroupMixed: "Missed {n} times · latest {reason} · {when}",
+    missedGroupSame: "Missed {n} times because {reason} · {when}",
+    missedGroupMixed: "Missed {n} times · last time {reason} · {when}",
     missedSkipped: "Skipped · {reason}",
     catchUpMarker: "Catch-up",
     catchUpWhen: "Scheduled {scheduled} · ran {actual}",
@@ -389,12 +393,12 @@ export const enStudio = {
   },
   projectRules: {
     cleanDiffs: {
-      title: "Clean Code & Surgical Diffs",
+      title: "Clean code · precise edits",
       category: "Clean code",
       badge: "High Priority",
       description: "Force small atomic edits, zero leftover code, files under 300 lines.",
       content:
-        "# Clean Code & Surgical Diffs Rule\n- Prefer precise local edits; avoid rewriting whole files.\n- Keep files strictly under 300 lines; extract modules when they grow.\n- Keep existing comments and docs; do not add lines that merely restate code.\n- Do not introduce unformatted code or extra debug logs."
+        "# Clean code · precise edits\n- Prefer precise local edits; avoid rewriting whole files.\n- Keep files strictly under 300 lines; extract modules when they grow.\n- Keep existing comments and docs; do not add lines that merely restate code.\n- Do not introduce unformatted code or extra debug logs."
     },
     strictTsZod: {
       title: "Strict TypeScript & Zod Schemas",
@@ -423,7 +427,7 @@ export const enStudio = {
   },
   automationTemplates: {
     diffs: {
-      name: "Review Git Diffs on Save",
+      name: "Review changes on save",
       category: "Code Quality",
       prompt:
         "Inspect the latest uncommitted changes in the workspace whenever files are saved and summarize risk, security concerns, and potential regressions.",

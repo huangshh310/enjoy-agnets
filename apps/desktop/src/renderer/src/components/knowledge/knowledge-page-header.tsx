@@ -46,7 +46,7 @@ export function KnowledgePageHeader({
                 : t("pages.knowledge.pendingIndex")}
             </span>
           </div>
-          <p className="mt-0.5 font-mono text-caption-2-regular text-text-tertiary">
+          <p className="mt-0.5 font-mono text-caption-2-regular text-text-secondary">
             <span>{t("pages.knowledge.statsAskable", { n: stats.askableChunks })}</span>
             <span className="mx-1.5">·</span>
             <span>{t("pages.knowledge.statsScanned", { n: stats.scannedFiles })}</span>

@@ -98,7 +98,7 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
       glow: "shadow-blue-500/10",
       pillBg: "bg-accent-500/15"
     },
-    tags: ["代码补全", "规则约束", "IDE 协同", "即时 Diff"],
+    tags: ["代码补全", "规则约束", "IDE 协同", "即时改动"],
     recommendedCuratedIds: ["nextlevelbuilder-ui-ux-pro-max", "pbakaus-impeccable", "obra-superpowers"],
     suggestedSkillNames: ["design-taste-frontend", "polish", "react-modernization", "nextjs"]
   },

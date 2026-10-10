@@ -3,6 +3,7 @@
  */
 import type { Ref } from "react"
 import { cx } from "@/utils/cx"
+import { isApplePlatform } from "@renderer/components/settings/keybindings/keybinding-format"
 import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
 import { ComposerMentionRow } from "./composer-mention-row.tsx"
@@ -37,7 +38,9 @@ export function ComposerMentionList({
         <div className="px-2.5 py-2">
           <p className="text-caption-1-medium text-text-tertiary">{t("chat.mentionEmpty")}</p>
           {kind === "slash" ? (
-            <p className="pt-1 text-caption-2-medium text-text-tertiary">{t("chat.mentionSlashHint")}</p>
+            <p className="pt-1 text-caption-2-medium text-text-tertiary">
+              {t("chat.mentionSlashHint", { mod: isApplePlatform() ? "⌘" : "Ctrl" })}
+            </p>
           ) : null}
           {kind === "at" && !desktopEnabled ? (
             <p className="pt-1 text-caption-2-medium text-text-tertiary">{t("chat.mentionDesktopOffHint")}</p>

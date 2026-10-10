@@ -6,18 +6,22 @@ import { cx } from "@/utils/cx"
 import { PermissionDock } from "@renderer/components/ai-chat/attention/permission-dock"
 import type { ModelOption } from "@renderer/stores/chat-store"
 import { ChatComposer } from "./chat-composer"
+import { ComposerPreparingHint } from "./composer-preparing-hint"
 
 export function ChatComposerCluster(props: {
   className?: string
   composerClassName?: string
+  autoFocus?: boolean
   onModelChange: (model: ModelOption) => void
   onSend: () => void
 }) {
   return (
-    <div className={cx("flex shrink-0 flex-col", props.className)}>
+    <div className={cx("flex shrink-0 flex-col", props.className)} data-toast-clearance="">
       <PermissionDock />
+      <ComposerPreparingHint />
       <ChatComposer
         className={props.composerClassName}
+        autoFocus={props.autoFocus}
         onModelChange={props.onModelChange}
         onSend={props.onSend}
       />

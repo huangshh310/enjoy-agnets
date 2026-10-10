@@ -2,6 +2,10 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { mentionKeyAction } from "./mention-key.ts"
 
+test("组字中 Enter 不选中", () => {
+  assert.deepEqual(mentionKeyAction("Enter", true, 0, 3, true), { type: "none" })
+})
+
 test("面板打开时方向键循环，Enter 选中", () => {
   assert.deepEqual(mentionKeyAction("ArrowDown", true, 0, 3), { type: "move", index: 1 })
   assert.deepEqual(mentionKeyAction("ArrowUp", true, 0, 3), { type: "move", index: 2 })

@@ -88,14 +88,23 @@ export function pathsFromTools(tools: ThreadToolCall[]): string[] {
   return paths
 }
 
-/** 按目录分组，气泡下画两级改动树。 */
+/** 根目录 / 占位短横不画成孤儿「.」或「-」。 */
+export function isPlaceholderChangedDir(dir: string): boolean {
+  const trimmed = dir.trim()
+  return trimmed === "" || trimmed === "." || trimmed === "-" || trimmed === "·"
+}
+
+/** 按目录分组，气泡下画两级改动树。占位 path 整段丢掉，不当文件芯片。 */
 export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: string[] }> {
   const groups = new Map<string, string[]>()
   for (const path of paths) {
     const normalized = path.replace(/\\/g, "/")
+    if (isPlaceholderChangedDir(normalized)) continue
     const slash = normalized.lastIndexOf("/")
-    const dir = slash < 0 ? "." : normalized.slice(0, slash)
+    const rawDir = slash < 0 ? "" : normalized.slice(0, slash)
+    const dir = isPlaceholderChangedDir(rawDir) ? "" : rawDir
     const file = slash < 0 ? normalized : normalized.slice(slash + 1)
+    if (isPlaceholderChangedDir(file)) continue
     const files = groups.get(dir) ?? []
     files.push(file)
     groups.set(dir, files)
@@ -106,7 +115,9 @@ export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: 
 function pathFromTool(tool: ThreadToolCall): string | null {
   if (!isWriteTool(tool.name)) return null
   if (isToolNotExecuted(tool) || isToolNeverSent(tool)) return null
-  return readToolPath(tool.args) ?? readToolPath(tool.result)
+  const path = readToolPath(tool.args) ?? readToolPath(tool.result)
+  if (!path || isPlaceholderChangedDir(path)) return null
+  return path
 }
 
 /** 还在审批的不算。已允许的 input-available 用入参 path，不等 result。 */

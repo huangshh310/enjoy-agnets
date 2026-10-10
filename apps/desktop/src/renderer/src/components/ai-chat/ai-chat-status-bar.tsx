@@ -25,7 +25,10 @@ export function AiChatStatusBar({
   const usagePercent = Math.min(100, Math.max(0, Math.round(inspector.tokenStats.usagePercent)))
 
   return (
-    <div className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-tertiary">
+    <div
+      data-toast-clearance=""
+      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-secondary"
+    >
       <StatusBranchPicker />
       <StatusProjectPicker workspaceRootLabel={workspaceRootLabel} />
       <div className="ml-auto inline-flex shrink-0 items-center gap-2">

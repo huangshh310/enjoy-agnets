@@ -50,26 +50,31 @@ export function ReviewFileTree(props: {
         ) : null}
       </div>
 
-      {/* 目录树展示区 */}
-      <div className="min-h-0 flex-1 overflow-y-auto py-1">
+      {/* 目录树展示区。空态不挂装饰，也不靠不透明底去盖外壳环。 */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {tree.length === 0 ? (
-          <div className="flex h-24 items-center justify-center text-caption-2-medium text-text-tertiary">
+          <div
+            data-testid="review-file-list-empty"
+            className="flex min-h-0 flex-1 items-center justify-center bg-background-primary-default text-caption-2-medium text-text-tertiary"
+          >
             {t("chat.reviewNoMatchingFiles")}
           </div>
         ) : (
-          tree.map((node) => (
-            <FileTreeItem
-              key={node.id}
-              node={node}
-              selectedFilePath={selectedFilePath}
-              onSelectFile={onSelectFile}
-              onStage={(path, action) => {
-                const paths = listedStagePaths(tree, path, action)
-                if (paths.length === 0 || !props.onStage) return
-                props.onStage(paths, action)
-              }}
-            />
-          ))
+          <div className="min-h-0 flex-1 overflow-y-auto py-1">
+            {tree.map((node) => (
+              <FileTreeItem
+                key={node.id}
+                node={node}
+                selectedFilePath={selectedFilePath}
+                onSelectFile={onSelectFile}
+                onStage={(path, action) => {
+                  const paths = listedStagePaths(tree, path, action)
+                  if (paths.length === 0 || !props.onStage) return
+                  props.onStage(paths, action)
+                }}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

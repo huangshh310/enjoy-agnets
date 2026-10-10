@@ -6,7 +6,7 @@ import { RendererErrorBoundary } from "@renderer/components/layout/crash-fallbac
 import { I18nProvider } from "@renderer/i18n"
 import { queryClient } from "@renderer/lib/query-client"
 import { router } from "@renderer/router"
-import { Toaster } from "@/components/ui/sonner"
+import { AppToaster } from "@renderer/components/layout/app-toaster"
 import { initThemeSkin } from "@renderer/hooks/use-theme-skin"
 import { installEnjoyE2eBridge } from "@renderer/lib/enjoy-e2e-bridge"
 
@@ -20,7 +20,7 @@ export default function App() {
           <TooltipProvider>
             <CrashProbe />
             <RouterProvider router={router} />
-            <Toaster />
+            <AppToaster />
           </TooltipProvider>
         </RendererErrorBoundary>
       </I18nProvider>

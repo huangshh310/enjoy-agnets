@@ -5,6 +5,7 @@ import { create } from "zustand"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import type { AttentionItem, AttentionKind, ParkedRun } from "./attention.types"
 import {
+  clearActiveCompletes,
   dismissAttentionSlot,
   expireStaleCompletes,
   focusAttentionSlot,
@@ -31,6 +32,7 @@ type AttentionStore = {
   focusSlot: (sessionId: string, kind?: AttentionKind) => void
   dismiss: (id: string) => void
   expireStale: (now?: number) => void
+  clearCompletes: () => void
   resolveSessionDecisions: (sessionId: string, runId?: string) => void
   clearCompleteIfErrored: (sessionId: string) => void
   clearSession: (sessionId: string) => void
@@ -68,6 +70,7 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
   dismiss: (id) => set((state) => ({ items: dismissAttentionSlot(state.items, id) })),
   expireStale: (now) =>
     set((state) => ({ items: expireStaleCompletes(state.items, now ?? Date.now()) })),
+  clearCompletes: () => set((state) => ({ items: clearActiveCompletes(state.items) })),
   resolveSessionDecisions: (sessionId, runId) =>
     set((state) => ({ items: resolveDecisionSlots(state.items, sessionId, runId) })),
   clearCompleteIfErrored: (sessionId) =>

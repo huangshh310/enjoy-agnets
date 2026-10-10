@@ -133,3 +133,19 @@ test("皮肤 CSS 按文件拆分，globals 只负责 import", () => {
   const sketch = readFileSync(join(stylesDir, "skins/sketch.css"), "utf-8")
   assert.ok(sketch.includes('html[data-skin="sketch"]'))
 })
+
+test("颜色模式开关禁止 displacement 滤镜，避免黄蓝乱线", () => {
+  const roots = [
+    join(process.cwd(), "../../packages/ui/components/application/theme"),
+    join(process.cwd(), "../../../packages/ui/components/application/theme")
+  ]
+  const dir = roots.find((path) => existsSync(join(path, "day-night-toggle.tsx")))
+  assert.ok(dir, "DayNightToggle 必须在 packages/ui")
+  const tsx = readFileSync(join(dir, "day-night-toggle.tsx"), "utf-8")
+  const css = readFileSync(join(dir, "day-night-toggle.css"), "utf-8")
+  assert.doesNotMatch(tsx, /<feDisplacementMap|theme-switch-sketchy|NightDecor/)
+  assert.doesNotMatch(css, /theme-switch-sketchy|url\(#theme-switch/)
+  assert.doesNotMatch(css, /repeating-linear-gradient/)
+  assert.doesNotMatch(css, /rotate\(-0\.7deg\)/)
+  assert.doesNotMatch(css, /conic-gradient/)
+})

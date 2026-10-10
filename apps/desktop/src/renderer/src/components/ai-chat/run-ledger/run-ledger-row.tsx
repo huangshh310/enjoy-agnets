@@ -3,8 +3,11 @@
  */
 import { useState } from "react"
 import { cx } from "@/utils/cx"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
+import { formatLedgerErrorUserText } from "./ledger-error-copy"
 import { ledgerOpensSources } from "./format-ledger-entry"
 import type { RunLedgerEntry } from "./run-ledger.types"
 
@@ -61,9 +64,7 @@ function FileRow({
           </span>
         ) : null}
         {entry.kind === "error" && entry.detail ? (
-          <span className="mt-px block truncate text-caption-2-regular text-status-yellow-text">
-            {entry.detail}
-          </span>
+          <LedgerErrorDetail raw={entry.detail} />
         ) : null}
       </span>
     </button>
@@ -85,11 +86,12 @@ function CommandRow({
   const outcome = entry.failed ? t("sessionOps.ledgerCommandFail") : t("sessionOps.ledgerCommandOk")
   return (
     <div className={cx(selected && "bg-accent-50")}>
+      <Tooltip>
+        <TooltipTrigger asChild>
       <button
         type="button"
         data-testid="run-ledger-row"
         data-kind="command"
-        title={entry.title}
         onClick={() => {
           if (entry.output) setExpanded((open) => !open)
           if (opens) onOpen(entry)
@@ -109,6 +111,14 @@ function CommandRow({
           {outcome}
         </span>
       </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="left"
+          className="max-w-72 whitespace-pre-wrap break-all border border-border-button-default bg-background-primary-default text-caption-2-regular text-text-primary shadow-card"
+        >
+          {entry.title}
+        </TooltipContent>
+      </Tooltip>
       {expanded && entry.output ? (
         <pre
           data-testid="run-ledger-command-output"
@@ -131,6 +141,15 @@ function UsageRow({ entry }: { entry: RunLedgerEntry }) {
         {t("sessionOps.ledgerUsageTokens", { n: formatTokenCount(tokens) })}
       </p>
     </div>
+  )
+}
+
+function LedgerErrorDetail({ raw }: { raw: string }) {
+  const t = useT()
+  return (
+    <span className="mt-px block truncate text-caption-2-regular text-status-yellow-text">
+      {formatLedgerErrorUserText(raw, t, isDevCopyEnabled())}
+    </span>
   )
 }
 

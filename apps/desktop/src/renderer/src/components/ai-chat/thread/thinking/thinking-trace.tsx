@@ -57,7 +57,7 @@ export function ThinkingTrace({
         <span
           className={cx(
             "text-caption-1-medium whitespace-nowrap",
-            streaming ? "bui-agent-thinking-label" : "text-text-secondary"
+            streaming ? "bui-agent-thinking-label" : "text-text-primary"
           )}
           style={streaming ? SHIMMER_TONE : undefined}
         >

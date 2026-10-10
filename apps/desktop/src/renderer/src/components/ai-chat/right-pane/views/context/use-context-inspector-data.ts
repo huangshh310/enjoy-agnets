@@ -11,7 +11,12 @@ import { inspectorContextModel } from "./inspector-context-model"
 import { useEngineHandoffStore } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { publishedContextWindow } from "@enjoy-agents/providers/context-window"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { sessionUsageFor, sessionUsageVersion, subscribeSessionUsage } from "@renderer/stores/session-usage"
+import {
+  reportedTurnTokens,
+  sessionUsageFor,
+  sessionUsageVersion,
+  subscribeSessionUsage
+} from "@renderer/stores/session-usage"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type {
@@ -24,7 +29,11 @@ import type {
 import { applySessionCompaction } from "@enjoy-agents/agent-core/compaction"
 import { citedSourcesFromMessages, toolsFromMessages } from "./thread-run-slice"
 import { contextWindowForModel } from "@renderer/lib/model-context-window"
-import { estimateContextWindowStats, estimateTurnPerformance } from "./context-token-estimator"
+import {
+  estimateContextWindowStats,
+  estimateTurnPerformance,
+  overlayReportedUsage
+} from "./context-token-estimator"
 import { useSessionCompaction } from "./compact-session/use-session-compaction"
 
 export function useContextInspectorData(workspaceId: string | null) {
@@ -54,7 +63,8 @@ export function useContextInspectorData(workspaceId: string | null) {
     catalogs,
     customInstructions,
     compaction,
-    contextWindow
+    contextWindow,
+    reportedTokens: reportedTurnTokens(usage)
   })
 }
 
@@ -66,20 +76,24 @@ function inspectorSnapshot(input: {
   customInstructions: string
   compaction: ReturnType<typeof useSessionCompaction>["compaction"]
   contextWindow: number | undefined
+  reportedTokens: number | null
 }) {
   const { slice, face, chips, catalogs, customInstructions, compaction, contextWindow } = input
   const effectiveMessages = compaction
     ? (applySessionCompaction(slice.messages, compaction) as typeof slice.messages)
     : slice.messages
-  const tokenStats = estimateContextWindowStats(
-    effectiveMessages,
-    contextWindow ?? 0,
-    catalogs.mcp,
-    catalogs.rules,
-    catalogs.skills,
-    chips,
-    customInstructions,
-    slice.runtimeId
+  const tokenStats = overlayReportedUsage(
+    estimateContextWindowStats(
+      effectiveMessages,
+      contextWindow ?? 0,
+      catalogs.mcp,
+      catalogs.rules,
+      catalogs.skills,
+      chips,
+      customInstructions,
+      slice.runtimeId
+    ),
+    input.reportedTokens
   )
   return {
     sessionId: slice.sessionId,

@@ -15,6 +15,10 @@ const DEV_COPY_ALLOWLIST = new Set([
   "chat.paneDesktopAppKey"
 ])
 
+/** 默认中文面禁止 Diff/diff；审查「高级」里的 git apply 可留工程词。 */
+const DIFF_COPY_ALLOWLIST = new Set(["chat.reviewCopyGitApply"])
+const DIFF_TERM_RE = /(?<![A-Za-z])[Dd]iff(?![A-Za-z])/
+
 const TOOL_ID_RE = buildToolIdPattern()
 const BUNDLE_ID_RE = /\b(?:com|org|net|io)\.[a-z][a-z0-9-]*\.[a-z0-9._-]+\b/i
 const SECTION_RE = /§/
@@ -41,9 +45,22 @@ test("开发者文案白名单短且都在词表里", () => {
   }
 })
 
+test("zh 默认词表不含 Diff/diff，高级 git apply 可留", () => {
+  const keys = new Set(flattenEntries(zh).map((row) => row.key))
+  for (const key of DIFF_COPY_ALLOWLIST) {
+    assert.ok(keys.has(key), `missing Diff allowlisted key ${key}`)
+  }
+  assert.equal((zh as { chat: { reviewCopyGitApply: string } }).chat.reviewCopyGitApply, "复制 git apply 命令")
+  for (const { key, value } of flattenEntries(zh)) {
+    if (DIFF_COPY_ALLOWLIST.has(key)) continue
+    assert.doesNotMatch(value, DIFF_TERM_RE, `zh ${key} leaks Diff: ${value}`)
+  }
+})
+
 test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
   const z = zh as {
     chat: Record<string, string> & {
+      usage: { sessionMeterHint: string }
       noProjectEmpty: string
       noChatRouteNotice: string
       needModelNotice: string
@@ -91,6 +108,10 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.flagSession, "加星标")
   assert.equal(z.chat.reviewCommitStaged, "提交已暂存的改动")
   assert.equal(z.chat.reviewCommitChanges, "提交已暂存的改动")
+  assert.equal(z.chat.reviewCopyUnifiedDiff, "复制全部改动")
+  assert.equal(z.chat.reviewAdvanced, "高级")
+  assert.equal(z.chat.intentGitTag, "改动")
+  assert.equal(z.chat.intentGitDesc, "分析未提交的代码差异，排查潜在缺陷与风险")
   assert.equal(z.chat.approvalCycleHint, "工具审批策略 · 空输入时 Shift+Tab 在读取和编辑之间切换")
   assert.equal(z.chat.approvalChipHintReads, "读取：助手改文件或运行命令前会逐条问你")
   assert.equal(z.chat.approvalChipHintEdits, "编辑：助手可直接改文件，运行命令前仍会问你")
@@ -104,7 +125,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.thinkingSources, "来源")
   assert.equal(z.chat.paneTerminalHint, "项目 Shell")
   assert.equal(z.chat.paneFilesHint, "项目目录与文件预览")
-  assert.equal(z.chat.tokenUnit, "tok")
+  assert.equal(z.chat.tokenUnit, "词元")
+  assert.equal(z.chat.usage.sessionMeterHint, "本轮用量 · 上下文占用")
   assert.equal(z.nav.workspace, "项目")
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
   assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
@@ -143,6 +165,12 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.agentTools.manageProviders, "管理模型连接")
   assert.equal(z.chat.noProjectNewChatHint, "先选一个文件夹，才能开新对话。")
   assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
+  assert.equal(z.chat.errorRetryHint, "这一轮没能完成，可以重试")
+  assert.equal(z.chat.errorTitle, "模型这次没回完")
+  assert.equal(z.chat.preparingHint, "正在准备…")
+  assert.equal(z.chat.viewRawJson, "查看原始内容")
+  assert.doesNotMatch(z.chat.approvalHintAll, /sudo|rm -rf|write_file|bash/)
+  assert.doesNotMatch(z.chat.approvalToolQuestion, /\{name\}/)
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
   assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")
   assert.equal(z.studio.automations.workspaceHint, "在当前项目里运行")
@@ -152,6 +180,22 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.runningBar, "正在运行")
   assert.equal(z.studio.automations.cronDaily, "每天 {time}")
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
+  assert.equal(z.studio.automations.missedGroupSame, "因{reason}错过 {n} 次 · {when}")
+  assert.equal(z.studio.automations.missedGroupMixed, "错过 {n} 次 · 最近一次{reason} · {when}")
+  assert.equal(z.studio.automations.missedRecentCount, "最近 7 天有 {n} 条记录")
+  assert.equal(z.studio.automations.missedEmpty, "最近 7 天没有错过记录")
+  assert.equal(
+    (en as { studio: { automations: Record<string, string> } }).studio.automations.missedGroupMixed,
+    "Missed {n} times · last time {reason} · {when}"
+  )
+  assert.equal(z.studio.automations.lastRunOk, "上次成功 · {when}")
+  assert.equal(z.studio.automations.lastRunFailed, "上次出错 · {when}")
+  assert.equal(z.chat.errorTitle, "模型这次没回完")
+  assert.equal(z.chat.writing, "正在写")
+  assert.equal(z.chat.placeholderRunning.includes("{mod}+Enter"), true)
+  assert.equal(z.chat.placeholderRunning.includes("立即插话"), true)
+  assert.equal(z.chat.placeholderRunning.includes("{mod}Enter"), false)
+  assert.equal(z.chat.runtimeSteer.includes("纠偏"), false)
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
   assert.equal(z.studio.automations.deleteTitle, "删除这条自动化\uFF1F")
@@ -168,6 +212,34 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
   assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开；找不到的文件会就地展开片段。")
   assert.doesNotMatch(z.chat.sourcesSheetFooter, /可聚焦|path|跳转/)
+})
+
+const MOD_COPY_ALLOWLIST = new Set([
+  "settings.shortcuts.layoutMac",
+  "settings.shortcuts.needsModifier"
+])
+
+test("默认词表不写死修饰键符号，运行态快捷键走平台修饰键", () => {
+  for (const [locale, tree] of [
+    ["zh", zh],
+    ["en", en]
+  ] as const) {
+    for (const { key, value } of flattenEntries(tree)) {
+      if (MOD_COPY_ALLOWLIST.has(key)) continue
+      assert.equal(value.includes("\u2318"), false, `${locale} ${key} hard-codes a mac modifier`)
+    }
+  }
+  const z = zh as { chat: Record<string, string> }
+  assert.match(z.chat.placeholderRunning, /\{mod\}\+Enter/)
+  assert.match(z.chat.runtimeSteer, /\{mod\}\+Enter/)
+  assert.match(z.chat.mentionSlashHint, /\{mod\}/)
+})
+
+test("zh 默认词表不含 tok 缩写", () => {
+  const tok = /\btok\b/
+  for (const { key, value } of flattenEntries(zh)) {
+    assert.doesNotMatch(value, tok, `zh ${key} leaks tok: ${value}`)
+  }
 })
 
 test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {

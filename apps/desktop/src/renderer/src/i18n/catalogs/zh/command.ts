@@ -10,6 +10,7 @@ export const zhCommand = {
   groupRecent: "最近会话",
   groupMessages: "本会话消息",
   groupShortcuts: "快捷键",
+  quickSearchAndPalette: "快速搜索与命令面板",
   groupAcp: "当前引擎命令",
   chat: "对话",
   knowledge: "知识库与语义检索",

@@ -6,8 +6,8 @@ import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approva
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
 
-/** complete 短时展示后自消，不计入红点。 */
-export const COMPLETE_TTL_MS = 10_000
+/** complete 约 4s 后自消，不计入红点。 */
+export const COMPLETE_TTL_MS = 4_000
 
 export const KIND_PRIORITY: Record<AttentionKind, number> = {
   pending_approval: 0,
@@ -67,7 +67,7 @@ export function ingestAttentionEvent(
     kind === "error"
       ? resolveTerminalSlots(decided, input.sessionId)
       : kind === "complete"
-        ? decided
+        ? resolveDecisionSlots(clearActiveCompletes(aged), input.sessionId, eventRunId(input.event))
         : kind === "pending_approval" || kind === "ask_user"
           ? resolveTerminalSlots(aged, input.sessionId)
           : aged
@@ -187,6 +187,23 @@ export function stripApprovalCount(items: AttentionItem[]): number {
   ).length
 }
 
+/** 胶囊不得指向已隐藏（归档）会话。 */
+export function stripVisibleForOpenSessions(
+  items: AttentionItem[],
+  openSessionIds: ReadonlySet<string>
+): AttentionItem[] {
+  return stripVisibleItems(items).filter((item) => openSessionIds.has(item.sessionId))
+}
+
+export function stripApprovalCountForOpenSessions(
+  items: AttentionItem[],
+  openSessionIds: ReadonlySet<string>
+): number {
+  return stripVisibleForOpenSessions(items, openSessionIds).filter(
+    (item) => item.kind === "pending_approval" || item.kind === "ask_user"
+  ).length
+}
+
 export function isStripCompact(
   item: AttentionItem,
   currentSessionId: string | null,
@@ -195,6 +212,24 @@ export function isStripCompact(
 ): boolean {
   if (!isChat || !dockOpen || item.sessionId !== currentSessionId) return false
   return item.kind === "pending_approval" || item.kind === "ask_user"
+}
+
+/** 切会话 / 新对话时收掉所有已完成胶囊。 */
+export function clearActiveCompletes(items: AttentionItem[]): AttentionItem[] {
+  return items.map((item) => {
+    if (item.kind !== "complete") return item
+    if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
+      return item
+    }
+    return { ...item, status: "resolved" }
+  })
+}
+
+/** 只画最新一条已完成，禁止三颗叠出。 */
+export function latestVisibleComplete(items: AttentionItem[]): AttentionItem | undefined {
+  return stripVisibleItems(items)
+    .filter((item) => item.kind === "complete")
+    .sort((left, right) => right.occurredAt - left.occurredAt)[0]
 }
 
 export function expireStaleCompletes(items: AttentionItem[], now: number): AttentionItem[] {

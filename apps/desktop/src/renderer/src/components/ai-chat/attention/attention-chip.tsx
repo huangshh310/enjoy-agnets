@@ -26,10 +26,13 @@ export function AttentionChip(props: {
 }) {
   const t = useT()
   const { item, compact, now, onOpen, onDismiss } = props
+  const complete = item.kind === "complete"
+
   if (compact) {
     return (
       <button
         type="button"
+        tabIndex={complete ? -1 : 0}
         onClick={() => onOpen(item)}
         aria-label={t("attention.currentSession")}
         className="flex size-4 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
@@ -52,6 +55,7 @@ export function AttentionChip(props: {
     >
       <button
         type="button"
+        tabIndex={complete ? -1 : 0}
         title={`${title} · ${kindLabel}`}
         onClick={() => onOpen(item)}
         className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-left focus-visible:outline-none"
@@ -66,6 +70,7 @@ export function AttentionChip(props: {
       {onDismiss ? (
         <button
           type="button"
+          tabIndex={complete ? -1 : 0}
           onClick={(e) => {
             e.stopPropagation()
             onDismiss(item)

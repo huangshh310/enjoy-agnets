@@ -64,6 +64,13 @@ test("账本只读：无批准 / 提交 / 推送 / 重跑，无第二观测页",
   assert.ok(!surface.includes("workflowStatus"))
 })
 
+test("账本错误走人话，默认面不渲染未翻译英文", () => {
+  assert.ok(files.row.includes("formatLedgerErrorUserText"))
+  assert.ok(files.row.includes("isDevCopyEnabled"))
+  assert.equal(zhSessionOps.ledgerErrorNoResult, "没有收到结果")
+  assert.equal(zhSessionOps.ledgerErrorGeneric, "这一步没有成功")
+})
+
 test("命令默认折叠；文件行开 sheet；芯片仍只开 sheet", () => {
   assert.ok(files.group.includes("ledgerGroupDefaultOpen"))
   assert.ok(files.format.includes('kind === "command"'))

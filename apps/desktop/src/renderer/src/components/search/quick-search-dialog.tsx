@@ -21,6 +21,7 @@ import { QuickSearchAcpCommands } from "./quick-search-acp-commands"
 import { QuickSearchMessages } from "./quick-search-messages"
 import { QuickSearchNav } from "./quick-search-nav"
 import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
+import { filterQuickSearchSessions } from "./filter-quick-search-sessions"
 import { QuickSearchShortcuts } from "./quick-search-shortcuts"
 
 export function openQuickSearch() {
@@ -33,7 +34,10 @@ export function QuickSearchDialog() {
   const [query, setQuery] = useState("")
   const navigate = useNavigate()
   const repositories = useChatStore((state) => state.repositories)
-  const sessionNodes = repositories.filter((item) => item.kind === "session")
+  const sessionNodes = filterQuickSearchSessions(
+    repositories.filter((item) => item.kind === "session"),
+    query
+  )
 
   useKeybindingCommand("search.quick", () => {
     setOpen((prev) => !prev)
@@ -79,15 +83,18 @@ export function QuickSearchDialog() {
           }}
         />
         <QuickSearchAcpCommands onPick={() => setOpen(false)} />
-        <QuickSearchShortcuts onPick={() => setOpen(false)} />
+        <QuickSearchShortcuts query={query} onPick={() => setOpen(false)} />
         <QuickSearchNav navigate={navigate} onSelect={handleSelect} />
         {sessionNodes.length > 0 ? (
           <>
             <CommandSeparator />
             <CommandGroup heading={t("command.groupRecent")}>
-              {sessionNodes.slice(0, 8).map((session) => (
+              {sessionNodes.map((session) => {
+                const title = session.name || t("common.untitledSession")
+                return (
                 <CommandItem
                   key={session.id}
+                  value={`${title} ${session.id}`}
                   onSelect={() =>
                     handleSelect(() => {
                       void selectPersistedSession(session.id)
@@ -96,9 +103,10 @@ export function QuickSearchDialog() {
                   }
                 >
                   <SessionAgentMark sessionId={session.id} size={16} />
-                  <span className="truncate">{session.name || t("common.untitledSession")}</span>
+                  <span className="truncate">{title}</span>
                 </CommandItem>
-              ))}
+                )
+              })}
             </CommandGroup>
           </>
         ) : null}

@@ -84,7 +84,7 @@ export function InspectorPane({
         collapsedSize="0px"
         minSize={`${INSPECTOR_MIN_PX}px`}
         defaultSize={INSPECTOR_DEFAULT_SIZE}
-        className="min-h-0 bg-transparent"
+        className="right-pane-panel min-h-0"
       >
         <InspectorBody
           maximized={maximized}

@@ -12,12 +12,14 @@ export function mentionKeyAction(
   key: string,
   open: boolean,
   activeIndex: number,
-  count: number
+  count: number,
+  composing = false
 ): MentionKeyAction {
   if (!open) return { type: "none" }
   if (key === "ArrowDown") return { type: "move", index: wrapIndex(activeIndex + 1, count) }
   if (key === "ArrowUp") return { type: "move", index: wrapIndex(activeIndex - 1, count) }
   if (key === "Escape") return { type: "dismiss" }
+  if (composing) return { type: "none" }
   if ((key === "Enter" || key === "Tab") && count > 0) {
     return { type: "pick", index: Math.min(activeIndex, count - 1) }
   }

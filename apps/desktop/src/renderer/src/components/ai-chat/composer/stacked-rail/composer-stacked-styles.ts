@@ -19,7 +19,7 @@ export const STACKED_ROW_CLASS_NAME =
 
 export const STACKED_ICON_CLASS_NAME = "size-3.5 shrink-0 text-text-secondary"
 
-export const STACKED_LABEL_CLASS_NAME = "shrink-0 text-text-secondary"
+export const STACKED_LABEL_CLASS_NAME = "shrink-0 text-text-primary"
 
 export const STACKED_PEEK_CLASS_NAME = [
   "min-w-0 flex-1 overflow-hidden whitespace-nowrap text-text-secondary",

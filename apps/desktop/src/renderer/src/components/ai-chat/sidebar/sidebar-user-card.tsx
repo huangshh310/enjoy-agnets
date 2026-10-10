@@ -66,7 +66,7 @@ export function SidebarUserCard({
           <Collapsible collapsed={collapsed}>
             <span className="flex min-w-0 flex-col items-start justify-center text-left">
               <span className="truncate text-caption-1-semibold text-text-primary leading-tight">{userName}</span>
-              <span className="truncate text-caption-2-regular font-mono text-text-tertiary leading-tight">
+              <span className="truncate text-caption-2-regular font-mono text-text-secondary leading-tight">
                 {userEmail}
               </span>
             </span>

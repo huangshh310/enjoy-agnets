@@ -18,12 +18,11 @@ export function startOfLocalWeek(at: number): number {
   return date.getTime()
 }
 
-export function formatClock(at: number, locale: string): string {
-  return new Date(at).toLocaleTimeString(locale.startsWith("zh") ? "zh-CN" : "en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  })
+export function formatClock(at: number, _locale?: string): string {
+  const date = new Date(at)
+  const hour = String(date.getHours()).padStart(2, "0")
+  const minute = String(date.getMinutes()).padStart(2, "0")
+  return `${hour}:${minute}`
 }
 
 export function formatLastRunWhen(at: number, now: number, locale: string): string {

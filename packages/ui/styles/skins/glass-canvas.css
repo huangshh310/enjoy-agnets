@@ -20,13 +20,20 @@ html[data-skin="glass"] [data-testid="window-frame"] > header {
   display: none;
 }
 
-html[data-skin="glass"] .skin-glass-orbs {
+html[data-skin="glass"][data-gpu-compositing="on"] .skin-glass-orbs {
   display: block;
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
+}
+
+html[data-skin="glass"]:not([data-gpu-compositing="on"]) .skin-glass-orbs,
+html[data-skin="glass"]:not([data-gpu-compositing="on"]) .skin-glass-orb,
+html[data-skin="glass"]:not([data-gpu-compositing="on"]) .skin-glass-mesh-gradient,
+html:not([data-gpu-compositing="on"]) .skin-glass-preview-orb {
+  display: none;
 }
 
 html[data-skin="glass"] .skin-glass-mesh-gradient {

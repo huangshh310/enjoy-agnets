@@ -58,7 +58,7 @@ html[data-skin="sketch"] [data-testid="window-frame"]:not(.rounded-none) {
 
 html[data-skin="sketch"] aside.rounded-3xl,
 html[data-skin="sketch"] main,
-html[data-skin="sketch"] .rounded-3xl.shadow-card {
+html[data-skin="sketch"] .rounded-3xl.shadow-card:not([data-pane-shell-deco="off"]) {
   border: 0;
   box-shadow: none;
   background-color: var(--skin-sketch-sheet);
@@ -69,6 +69,11 @@ html[data-skin="sketch"] .rounded-3xl.shadow-card {
     var(--skin-sketch-hatch) 7px,
     var(--skin-sketch-hatch) 8px
   );
+}
+
+html[data-skin="sketch"] [data-pane-shell-deco="off"].rounded-3xl.shadow-card {
+  background-color: var(--color-background-primary-default);
+  background-image: none;
 }
 
 html[data-skin="sketch"] [data-frost="chip"],

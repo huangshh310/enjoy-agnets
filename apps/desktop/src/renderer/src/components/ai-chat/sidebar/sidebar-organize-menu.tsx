@@ -36,11 +36,13 @@ export function SidebarOrganizeMenu() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="end"
+        align="start"
         side="bottom"
-        className="w-48 rounded-xl border border-border-button-default bg-background-primary-default shadow-card"
+        sideOffset={4}
+        collisionPadding={{ left: 16, top: 44, right: 12 }}
+        className="min-w-52 rounded-xl border border-border-button-default bg-background-primary-default shadow-card"
       >
-        <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
+        <DropdownMenuLabel className="px-2 text-caption-2-medium text-text-tertiary">
           {t("chat.organizeSidebar")}
         </DropdownMenuLabel>
         <DropdownMenuRadioGroup

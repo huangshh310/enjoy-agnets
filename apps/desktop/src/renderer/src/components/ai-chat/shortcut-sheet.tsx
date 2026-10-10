@@ -4,7 +4,7 @@
 import { useState } from "react"
 import { resolveKeybindings } from "@enjoy-agents/ipc-contract"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { metaFor } from "@renderer/components/settings/keybindings/keybinding-catalog"
+import { labelKeysForBinding, metaFor } from "@renderer/components/settings/keybindings/keybinding-catalog"
 import { chordGlyphs } from "@renderer/components/settings/keybindings/keybinding-format"
 import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
@@ -21,7 +21,7 @@ export function ShortcutSheet() {
   })
   const rows = resolveKeybindings(data?.preferences.keybindings ?? []).map((rule) => ({
     id: `${rule.command}-${rule.key}`,
-    actionKey: metaFor(rule.command).actionKey,
+    actionKey: labelKeysForBinding(rule.command, rule.key).actionKey,
     category: metaFor(rule.command).category,
     keys: rule.key === "unassigned" ? [t("settings.shortcuts.unassigned")] : chordGlyphs(rule.key)
   }))

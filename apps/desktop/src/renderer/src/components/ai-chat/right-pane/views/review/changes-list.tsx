@@ -32,7 +32,7 @@ export function ChangesList(props: {
   if (gitRepo === false) return <ReviewNotGitEmpty />
   if (changes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 p-5 text-center">
+      <div className="flex flex-col items-center justify-center gap-2 bg-background-primary-default p-5 text-center">
         <p className="text-caption-1-medium text-text-tertiary">{t("chat.treeClean")}</p>
         <Button
           size="sm"

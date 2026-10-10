@@ -43,6 +43,8 @@ export const zhSessionOps = {
   ledgerOpenSources: "点开 → 本轮来源",
   ledgerWaitingReview: "已停，等验收",
   ledgerFailed: "失败",
+  ledgerErrorNoResult: "没有收到结果",
+  ledgerErrorGeneric: "这一步没有成功",
   sourcesFromLedger: "来自账本 · {label}",
   sourcesEmptyTitle: "本轮还没落到文件",
   sourcesEmptyHint: "可从右侧账本查看命令与读改摘要",

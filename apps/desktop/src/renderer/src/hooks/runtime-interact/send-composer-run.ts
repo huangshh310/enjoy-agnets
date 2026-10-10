@@ -20,7 +20,13 @@ import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contra
 import { NEED_MODEL, NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
-import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
+import {
+  clearComposerDraft,
+  flushComposerDomToStore,
+  prefixHostModeForSend,
+  takeComposerText
+} from "./composer-draft"
+import { readComposerDomText } from "../composer-dom"
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
@@ -30,6 +36,7 @@ import {
   composerNeedsSessionReady,
   mergeComposerText,
   restoreComposerAfterFailedSend,
+  restoreComposerDraft,
   SEND_FAILED_RESTORE,
   SESSION_NOT_READY,
   waitThenSendAfterCreate
@@ -56,12 +63,13 @@ type SendPayload = {
 export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
+  if (!prepared) flushComposerDomToStore()
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
-    const text = store.composer
+    const text = readComposerDomText()
     if (!text.trim()) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return
@@ -70,27 +78,44 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next), assets)
     return
   }
+  const firstTurn = !store.messages.some((item) => item.role === "user")
+  if (firstTurn) store.setPreparingHint(true)
   store.setRunning(true)
   if (!guardComposerSend(store)) {
-    store.setRunning(false)
-    const blocked = useChatStore.getState().error
-    if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
-    if (prepared?.content) {
-      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
-    } else if (!store.sessionId) {
-      restoreComposerAfterFailedSend(store.composer, SESSION_NOT_READY)
-    }
+    restoreDraftAfterSendGate(store, prepared)
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
-  const payload = await resolveSendPayload(prepared)
-  if (!payload) {
+  try {
+    const payload = await resolveSendPayload(prepared)
+    if (!payload) {
+      store.setRunning(false)
+      store.setPreparingHint(false)
+      return
+    }
+    const messages = beginOptimisticTurn(store, payload)
+    clearSentComposerText(payload.content)
+    await launchComposerRun(store, payload, messages)
+  } catch (error) {
     store.setRunning(false)
-    return
+    store.setPreparingHint(false)
+    store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
+    if (prepared?.content) {
+      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+    }
   }
-  const messages = beginOptimisticTurn(store, payload)
-  if (prepared) clearSentComposerText(prepared.content)
-  await launchComposerRun(store, payload, messages)
+}
+
+/** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
+function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): void {
+  store.setRunning(false)
+  store.setPreparingHint(false)
+  const blocked = useChatStore.getState().error
+  const draft = prepared?.content || readComposerDomText() || store.composer
+  if (draft) restoreComposerDraft(draft, prepared?.assets)
+  if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
+  if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
+  else if (!store.sessionId) store.setError(SESSION_NOT_READY)
 }
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
@@ -179,6 +204,8 @@ async function launchComposerRun(
     store.setRunning(false)
     store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
     if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
+  } finally {
+    useChatStore.getState().setPreparingHint(false)
   }
 }
 

@@ -24,6 +24,7 @@ import { classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/cl
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
 import { ThreadNeedModelNotice } from "./thread-need-model-notice"
 import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
@@ -168,6 +169,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                     : kind === "run_failed"
                       ? t("chat.runFailed")
                       : humanizeThreadError(error, t))
+  const code = isDevCopyEnabled() ? error : null
 
   return (
     <div
@@ -196,7 +198,12 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               <RiCloseLine className="size-4" />
             </button>
           </div>
-          <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
+          {detail ? (
+            <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
+          ) : null}
+          {code ? (
+            <p className="font-mono text-caption-2-regular break-words text-text-tertiary">{code}</p>
+          ) : null}
           <div className="mt-1 flex flex-wrap items-center gap-2 pt-1">
             {kind === "remote_cli_missing" ? (
               <>

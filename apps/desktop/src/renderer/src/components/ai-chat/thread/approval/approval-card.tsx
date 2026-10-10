@@ -6,7 +6,6 @@ import { useEffect, useState } from "react"
 import { ASK_USER_QUESTIONS_TOOL, type AskUserAnswers, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { formatToolName } from "../tool-summary"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { ApprovalChrome } from "./approval-chrome"
@@ -74,7 +73,6 @@ export function ApprovalCard({
   }
   return (
     <QuestionsApproval
-      toolLabel={formatToolName(pending.name)}
       payload={payloadPreview(args)}
       thumbnailPath={typeof args.thumbnailPath === "string" ? args.thumbnailPath : ""}
       sourceLine={sourceLine}
@@ -151,13 +149,11 @@ function PlanApproval({
 }
 
 function QuestionsApproval({
-  toolLabel,
   payload,
   thumbnailPath,
   sourceLine,
   decide
 }: {
-  toolLabel: string
   payload: string
   thumbnailPath?: string
   sourceLine: string | null
@@ -197,7 +193,7 @@ function QuestionsApproval({
         questions={[
           {
             id: "allow",
-            prompt: t("chat.approvalToolQuestion", { name: toolLabel }),
+            prompt: t("chat.approvalToolQuestion"),
             options: [
               { id: OPTION_ONCE, label: t("chat.allowOnce") },
               { id: OPTION_SESSION, label: t("chat.alwaysAllow") }

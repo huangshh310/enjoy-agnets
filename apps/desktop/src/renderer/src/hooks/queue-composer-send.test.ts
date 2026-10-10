@@ -14,6 +14,8 @@ import {
 import {
   mergeComposerText,
   remainingComposerAfterSend,
+  cancelQueuedComposerSend,
+  hasQueuedComposerSend,
   resetQueuedComposerSendForTest,
   SEND_FAILED_RESTORE,
   SESSION_CREATE_TIMEOUT,
@@ -144,10 +146,30 @@ test("失败还文时把入队附件交给 onFail", async () => {
   assert.deepEqual(failedAssets, ["ast_note"])
 })
 
+test("取消队列后 create 完成不得再发", async () => {
+  resetQueue()
+  const { token } = beginNewSessionCreate()
+  const sent: string[] = []
+  const pending = waitThenSendAfterCreate(
+    "partial",
+    async (prepared) => {
+      sent.push(prepared.content)
+    },
+    undefined,
+    { readSessionId: () => "ses_1" }
+  )
+  cancelQueuedComposerSend()
+  assert.equal(hasQueuedComposerSend(), false)
+  finishNewSessionCreate(token, "ses_1")
+  await pending
+  assert.deepEqual(sent, [])
+})
+
 test("成功只清已发出的正文", () => {
   assert.equal(remainingComposerAfterSend("hello", "hello extra"), "extra")
   assert.equal(remainingComposerAfterSend("hello", "hello"), "")
   assert.equal(remainingComposerAfterSend("hello", "other"), "other")
+  assert.equal(remainingComposerAfterSend("hello world again", "he"), "")
 })
 
 test("未 take 的附件也能入队", async () => {

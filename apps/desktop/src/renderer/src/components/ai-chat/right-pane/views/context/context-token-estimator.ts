@@ -67,7 +67,7 @@ export function estimateContextWindowStats(
     .reduce((sum, chip) => sum + estimateCharTokens(chip.snippet?.length ?? 0), 0)
 
   const usedTokens = messageTokens + systemTokens + mcpTokens + skillsTokens + memoryTokens
-  const usagePercent = maxTokens > 0 ? Number(((usedTokens / maxTokens) * 100).toFixed(1)) : 0
+  const usagePercent = percentOf(usedTokens, maxTokens)
 
   return {
     usedTokens,
@@ -81,6 +81,15 @@ export function estimateContextWindowStats(
       bucket("memory", memoryTokens)
     ]
   }
+}
+
+/** 有实测词元就盖 headline / 占比；分桶仍走估算。没有实测原样返回。 */
+export function overlayReportedUsage(
+  stats: ContextWindowStats,
+  reported: number | null
+): ContextWindowStats {
+  if (reported == null) return stats
+  return { ...stats, usedTokens: reported, usagePercent: percentOf(reported, stats.maxTokens) }
 }
 
 export function estimateTurnPerformance(
@@ -103,6 +112,10 @@ export function countsEnjoyLocalLayers(runtimeId: string): boolean {
 
 function sumMessageChars(messages: ThreadMessage[]): number {
   return messages.reduce((sum, message) => sum + message.content.length + (message.reasoning?.length ?? 0), 0)
+}
+
+function percentOf(usedTokens: number, maxTokens: number): number {
+  return maxTokens > 0 ? Number(((usedTokens / maxTokens) * 100).toFixed(1)) : 0
 }
 
 function bucket(id: TokenSpectrumBucket["id"], tokens: number): TokenSpectrumBucket {

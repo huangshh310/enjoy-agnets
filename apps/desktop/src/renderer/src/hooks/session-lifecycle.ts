@@ -30,6 +30,9 @@ import { workspaceRowFromNode } from "./workspace-row"
 import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
 import { discardCreatedSession } from "./discard-created-session"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
+import { isReusableEmptySession } from "./reuse-empty-session"
+import { focusComposerAfterNewSession, queueComposerFocus } from "./composer-focus"
+import { isDefaultSessionTitle } from "../lib/session-title"
 import {
   beginNewSessionCreate,
   currentCreateToken,
@@ -38,8 +41,9 @@ import {
   isCurrentCreateToken,
   shouldPublishCreatedSession
 } from "./new-session-create"
-import { absorbAssetsIntoQueuedSend } from "./queue-composer-send"
-import { queueComposerFocus } from "./composer-focus"
+import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend, hasQueuedComposerSend } from "./queue-composer-send"
+import { flushComposerDomToStore } from "./composer-dom"
+import { setComposerWritebackHeld } from "./composer-sync-lock"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -99,6 +103,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   const parkedRunning = useAttentionStore.getState().parks[sessionId]?.running === true
   const sessionRunning = (await sessionOwnActiveRunning(sessionId)) || parkedRunning
   if (!sameSession) {
+    useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
       parkForegroundRun()
       saveCurrentSessionDraft()
@@ -129,12 +134,19 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
+  if (isDefaultSessionTitle(customTitle) && isReusableEmptySession(useChatStore.getState(), workspaceId)) {
+    cancelQueuedComposerSend()
+    useAttentionStore.getState().clearCompletes()
+    focusComposerAfterNewSession()
+    return
+  }
+  cancelQueuedComposerSend()
   const { token } = beginNewSessionCreate()
   parkForegroundRun()
-  const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
   bumpSessionHydrateGeneration()
   detachForegroundForCreate()
+  useChatStore.setState({ preparingHint: true })
   try {
     const session = (await getIde().session.create({
       workspaceId,
@@ -159,25 +171,27 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
       await getIde().session.delete({ sessionId: session.id }).catch(() => undefined)
       return
     }
-    const typedDuringCreate = store.composer
+    flushComposerDomToStore()
     const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
     absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
-    if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
-      useChatStore.setState({ composer: typedDuringCreate })
-    }
     finishNewSessionCreate(token, session.id)
+    if (!hasQueuedComposerSend()) setComposerWritebackHeld(false)
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
     await refreshAllWorkspaces()
   } catch (error) {
     failNewSessionCreate(token, error)
     throw error
+  } finally {
+    useChatStore.setState({ preparingHint: false })
+    focusComposerAfterNewSession()
   }
 }
 
 /** 立刻露出欢迎页，但 sessionId 要等 create 回来。发送走排队，不占 running。 */
 function detachForegroundForCreate() {
+  useAttentionStore.getState().clearCompletes()
   useChatStore.setState({
     ...idleComposerPatch(),
     sessionId: null,
@@ -228,7 +242,7 @@ function publishCreatedSession(
   session: SessionRow,
   runtimeId: ReturnType<typeof resolveCreateRuntime>
 ) {
-  useChatStore.setState({ ...idleComposerPatch(), composer: "" })
+  useChatStore.setState({ ...idleComposerPatch() })
   clearComposerAssets()
   setQuotedContexts([])
   useEngineHandoffStore.getState().resetPending()

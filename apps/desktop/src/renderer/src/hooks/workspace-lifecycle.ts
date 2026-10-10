@@ -12,6 +12,7 @@ import { connectSshIfNeeded } from "./ssh-session-switch"
 import { sessionTitleFromStore } from "./archive-session-copy"
 import { notifySessionArchived, notifySessionRestored } from "./archive-session-toast"
 import { undoArchivedSession } from "./archive-session-undo"
+import { restoreUnarchivedSession } from "./restore-unarchived-session"
 import { notifySwitchedProject } from "./switched-project-toast"
 import { pickAdjacentSessionId, visibleSessionIdsForArchive } from "./adjacent-session"
 import { selectPersistedSession } from "./session-lifecycle"
@@ -20,6 +21,7 @@ import { showEmptyHistoryChat } from "@renderer/hooks/nav-history/show-empty-cha
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
 import type { WorkspaceRow } from "./workspace-row"
+import { readDeniedApprovals } from "./session-archive-result"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
@@ -33,7 +35,8 @@ export async function archiveCurrentSession(sessionId: string) {
     sessionId
   )
   const adjacentId = wasCurrent ? pickAdjacentSessionId(visibleIds, sessionId) : null
-  await getIde().session.archive({ sessionId })
+  const archived = await getIde().session.archive({ sessionId })
+  void readDeniedApprovals(archived)
   useAttentionStore.getState().clearSession(sessionId)
   useAttentionStore.getState().takePark(sessionId)
   if (wasCurrent) await landAfterArchive(adjacentId)
@@ -54,9 +57,7 @@ async function landAfterArchive(adjacentId: string | null) {
 
 export async function unarchiveSession(sessionId: string) {
   if (!hasIde()) return
-  await getIde().session.unarchive({ sessionId })
-  await refreshAllWorkspaces()
-  await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
+  await restoreUnarchivedSession(sessionId)
   notifySessionRestored()
 }
 

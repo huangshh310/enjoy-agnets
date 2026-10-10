@@ -2,6 +2,7 @@
  * 设置「已归档的聊天」：按项目分组，可恢复或永久删除。
  */
 import { useMemo, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { RiDeleteBinLine, RiFolder6Line, RiInboxUnarchiveLine, RiSearchLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ import {
 
 export function ArchivedChatsPage() {
   const t = useT()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [query, setQuery] = useState("")
   const [workspaceFilter, setWorkspaceFilter] = useState<string>("all")
@@ -61,7 +63,17 @@ export function ArchivedChatsPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
-        <h1 className="text-title-3-semibold text-text-primary">{t("nav.archived")}</h1>
+        <div className="flex min-w-0 flex-wrap items-baseline gap-3">
+          <h1 className="text-title-3-semibold text-text-primary">{t("nav.archived")}</h1>
+          <button
+            type="button"
+            data-testid="archived-back-to-chat"
+            className="text-caption-1-medium text-text-secondary hover:text-text-primary"
+            onClick={() => void navigate({ to: "/" })}
+          >
+            {t("settings.archived.backToChat")}
+          </button>
+        </div>
       </div>
 
       {rows.length === 0 ? (
@@ -200,7 +212,7 @@ function ArchivedGroup({
                 size="xs"
                 className="gap-1"
                 data-testid="archived-row-restore"
-                onClick={() => void unarchiveSession(chat.id).then(onRefresh)}
+                onClick={() => void unarchiveSession(chat.id).then(() => onRefresh())}
               >
                 <RiInboxUnarchiveLine className="size-3.5" />
                 {t("settings.archived.unarchive")}

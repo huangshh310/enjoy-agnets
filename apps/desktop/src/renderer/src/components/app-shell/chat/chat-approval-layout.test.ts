@@ -19,7 +19,7 @@ test("审批时对话列保底 200px，不再用 min(240px,40%)", () => {
   assert.match(stage, /data-testid="chat-conversation"/)
   assert.match(stage, /pendingApproval && "min-h-52"/)
   assert.doesNotMatch(stage, /min\(240px,40%\)/)
-  assert.match(stage, /pendingApproval \? "min-h-0 overflow-y-auto" : "shrink-0"/)
+  assert.match(stage, /pendingApproval\s*\?\s*"min-h-0 overflow-y-auto"\s*:\s*"shrink-0"/)
 })
 
 test("Dock 不再限高内滚，空截图不占位，改动条在审批时让位", () => {
@@ -64,7 +64,8 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
   const scope = read("ai-chat/right-pane/views/review/header/review-scope-dropdown.tsx")
   assert.match(header, /whitespace-nowrap/)
   assert.match(header, /shrink-0/)
-  assert.match(scope, /truncate whitespace-nowrap/)
+  assert.match(scope, /whitespace-nowrap/)
+  assert.doesNotMatch(scope, /min-w-0 truncate/)
   const drawer = read("settings/settings-side-drawer.tsx")
   assert.match(drawer, /top-9/)
   assert.doesNotMatch(drawer, /fixed inset-0 /)

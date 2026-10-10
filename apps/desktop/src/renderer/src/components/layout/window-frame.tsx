@@ -13,6 +13,7 @@ import { AppUpdateHost } from "@renderer/components/app-update/app-update-host"
 import { NavHistoryHost } from "./nav-history/nav-history-host"
 import { WindowTitleBar } from "./window-title-bar"
 import { WindowQuitGuard } from "./window-quit-guard"
+import { ArchiveApprovalGuard } from "@renderer/components/ai-chat/sidebar/archive-approval-guard"
 import { InkSketchFilters } from "./ink-sketch-filters"
 import { LiquidGlassFilters } from "./liquid-glass-filters"
 
@@ -68,6 +69,7 @@ export function WindowFrame({ children }: { children: ReactNode }) {
 
       <AppUpdateHost />
       <WindowQuitGuard />
+      <ArchiveApprovalGuard />
       <NavHistoryHost />
       <WindowTitleBar
         isMaximized={isMaximized}
