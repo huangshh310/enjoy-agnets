@@ -139,17 +139,17 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     const fileBox = await window.locator('[data-testid="review-file-list-empty"]').boundingBox()
     const gutter = midBox && fileBox
       ? {
-          x: Math.max(0, midBox.x + midBox.width - 24),
-          y: Math.max(0, Math.min(midBox.y, fileBox.y)),
-          width: 96,
-          height: Math.min(Math.max(midBox.height, fileBox.height) + 80, 360)
+          x: Math.max(0, fileBox.x - 48),
+          y: Math.max(0, fileBox.y + 72),
+          width: 112,
+          height: Math.min(Math.max(fileBox.height - 24, 240), 360)
         }
       : fileBox
         ? {
             x: Math.max(0, fileBox.x - 48),
-            y: Math.max(0, fileBox.y),
-            width: 96,
-            height: Math.min(fileBox.height + 80, 360)
+            y: Math.max(0, fileBox.y + 72),
+            width: 112,
+            height: Math.min(fileBox.height, 360)
           }
         : null
     if (gutter) {
@@ -170,7 +170,7 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     })
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
     const noon = window.locator('[data-testid="automation-row"]').filter({ hasText: "午间改动复盘" })
-    await noon.getByText("午间改动复盘").click()
+    await noon.locator('[data-testid="automation-row-open"]').click()
     await window.locator("#automation-editor-title").waitFor({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-time"]')).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-hour"]')).toBeVisible()
