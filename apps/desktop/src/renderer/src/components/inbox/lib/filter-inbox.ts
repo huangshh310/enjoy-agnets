@@ -57,6 +57,7 @@ export function inboxFromPendingApprovals(
 ): InboxNotification[] {
   return rows
     .filter((row) => isLiveInboxSession(row.sessionId, input.repositories))
+    .filter((row) => row.args != null)
     .map((row) => {
       const ask = row.name === ASK_USER_QUESTIONS_TOOL
       const copyKey = ask ? ("ask_user" as const) : ("pending_approval" as const)

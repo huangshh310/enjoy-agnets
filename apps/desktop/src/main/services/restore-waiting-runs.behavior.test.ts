@@ -79,13 +79,9 @@ test("回挂取消结清未决：cancelled run 的 NULL 行不进拍板", () => 
       messages: [{ role: "user", content: "write" }]
     }
   })
-  abandonWaitingRestore("run_abandon", silentWindow(), {
-    status: "cancelled",
-    error: "Missing generation checkpoint.",
-    cause: "failed",
-    sessionId: "ses_abandon"
-  })
+  abandonWaitingRestore("run_abandon", silentWindow(), { sessionId: "ses_abandon" })
   assert.equal(getApproval(db, "apr_abandon")?.decision, "cancelled")
+  assert.equal(getApproval(db, "apr_abandon")?.sdkReason, "restart")
   assert.equal(getApproval(db, "apr_abandon_kept")?.decision, "allow")
   assert.equal(getRun(db, "run_abandon")?.status, "cancelled")
   assert.equal(getRun(db, "run_abandon")?.error, RESTORE_NO_MATCHING_CODE)
@@ -147,12 +143,7 @@ test("回挂取消发 run.error，Composer running 收回", () => {
         }
       }
     } as unknown as BrowserWindow,
-    {
-      status: "cancelled",
-      error: "Missing generation checkpoint.",
-      cause: "failed",
-      sessionId: "ses_abandon_err"
-    }
+    { sessionId: "ses_abandon_err" }
   )
   assert.equal(getActiveRun("run_abandon_err"), undefined)
   assert.deepEqual(sessionActiveRun("ses_abandon_err"), { runId: null, running: false })
@@ -219,7 +210,7 @@ test("检查点里 HMAC 失败行：结束 run，不回 SDK，Inbox 不留未决
     }
   } as unknown as BrowserWindow)
   const stored = getApproval(db, approvalId)
-  assert.equal(getRun(db, runId)?.status, "failed")
+  assert.equal(getRun(db, runId)?.status, "cancelled")
   assert.equal(getRun(db, runId)?.error, RESTORE_NO_MATCHING_CODE)
   assert.equal(stored?.decision, "cancelled")
   assert.equal(stored?.sdkApproved ?? null, null)

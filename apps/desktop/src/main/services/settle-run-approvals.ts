@@ -17,8 +17,10 @@ import { recordSdkApprovalResponse } from "./approval-hmac"
 import { foldDeniedAssistantTool, sessionIdForRun } from "./fold-denied-assistant-tools"
 
 export const RUN_STOPPED_REASON = "run_stopped"
+/** 启动回挂对不上：未决写 cancelled，审计原因 restart，工具行走已停止。 */
+export const APPROVAL_RESTART_REASON = "restart"
 export const APPROVAL_CANCELLED = "cancelled" as const
-export type SettleApprovalCause = "aborted" | "failed" | "catch_up_timeout"
+export type SettleApprovalCause = "aborted" | "failed" | "catch_up_timeout" | "restart"
 export type SettleOptions = { writeSdkResponse?: boolean }
 
 type PendingSettle = { runId: string; approvalId: string; toolCallId: string }
@@ -135,7 +137,8 @@ function settleOne(
       : cause === "failed"
         ? RUN_FAILED_CODE
         : USER_ABORTED_CODE
-  const reason = cause === "aborted" ? RUN_STOPPED_REASON : code
+  const reason =
+    cause === "restart" ? APPROVAL_RESTART_REASON : cause === "aborted" ? RUN_STOPPED_REASON : code
   setApprovalDecision(db, item.approvalId, APPROVAL_CANCELLED)
   if (opts?.writeSdkResponse !== false) {
     recordSdkApprovalResponse(item.approvalId, { approved: false, reason })

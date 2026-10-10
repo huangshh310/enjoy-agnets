@@ -630,6 +630,7 @@ export const zhChat = {
   moreActions: "更多",
   viewRawJson: "查看原始内容",
   restoreNoMatching: "重启后对不上原来的审批，这一轮已结束。",
+  resendLastPrompt: "重新发送",
   runFailed: "这一轮没有执行完。",
   catchUpApprovalTimeout: "补跑等待确认超时，未运行",
   sendFailedRestore: "这次没发出去，文字已放回输入框。",

@@ -45,7 +45,7 @@ function restoreNoMatchingEvent(runId: string, sessionId: string): StreamEvent {
     sessionId,
     message: RESTORE_NO_MATCHING,
     code: RESTORE_NO_MATCHING,
-    turn: { workflow: "todo", attention: "neutral" }
+    turn: { workflow: "todo", attention: "stopped" }
   }
 }
 

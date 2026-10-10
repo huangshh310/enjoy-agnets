@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
+import { RESTORE_NO_MATCHING } from "../../lib/usage/classify-thread-error"
 import { isComposerRunStart, isNonAgentRunKind } from "../stream-run-scope"
 import type { ChatStore } from "../chat-store.types"
 import type { ParkedRun } from "./attention.types"
@@ -83,7 +84,7 @@ export function applyEventToPark(park: ParkedRun, event: StreamEvent): ParkedRun
     return { ...park, running: false, runId: null, pendingApproval: null }
   }
   if (event.type === "run.error") {
-    if (isUserAbortEvent(event)) {
+    if (isUserAbortEvent(event) || event.message === RESTORE_NO_MATCHING) {
       return { ...park, running: false, error: null, pendingApproval: null }
     }
     return { ...park, running: false, error: event.message, pendingApproval: null }

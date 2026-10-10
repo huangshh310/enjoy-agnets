@@ -637,6 +637,7 @@ export const enChat = {
   moreActions: "More",
   viewRawJson: "View raw contents",
   restoreNoMatching: "This run could not match the original approval after restart, so it ended.",
+  resendLastPrompt: "Resend",
   runFailed: "This run did not finish.",
   catchUpApprovalTimeout: "Catch-up waited for approval too long and did not run",
   sendFailedRestore: "That message didn't send. It's back in the input.",

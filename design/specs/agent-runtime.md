@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许仅 user origin 种子；回挂卡带 HMAC args；abandon 发 `run.error`）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许仅 user origin 种子；回挂卡带 HMAC args；abandon 发 `run.error`；回挂对不上记停止；kill-9 / 缺检查点结清未决）
 
 ## 当前真相
 
@@ -123,9 +123,9 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：写后 Stop（尤其非 git 仓）顶栏/横幅已是待验收，Inbox 列空。根因：落库曾异步且可吞错，Inbox 又用 renderer 树或 git dirty 自算。正确做法：`persistSessionWorkflow` 同步写 `workflow_status`，写失败 `console.error` 不得静默；Inbox 只读 `sessions.needsReview` 再与会话列表求交。测试：`list-sessions-needs-review.behavior.test.ts`（非 git + git 中途停下都有行）。
 - **隐患**：未知 `turn.attention` / `workflow` 让整条 `run.end` / `run.error` 过不了 `safeParse`。正确做法：`TurnOutcome.attention` 用 `TurnAttention.catch("neutral")`，`workflow` 用 `TurnWorkflow.catch("todo")`。
 - **隐患**：补跑超时聊天横幅写成「出错」。自动化侧仍 `failed` + `catch_up_approval_timeout`；聊天侧 `turn.attention=neutral`，走 notice「补跑等待确认超时，未运行」，不出红条。工具行 `approval.resolved.code` 也是该码（中性文案），禁止写成 `run_failed`。
-- **隐患**：HMAC 失败行被结清成 cancelled + `sdkApproved=0` 后，检查点里仍在，走 `planSdkReplay` 回 SDK `approved:false`，run 继续。正确做法：检查点里只要有 HMAC 失败行就 `endRestoredRunWithoutSdkReply`；结清 HMAC 失败行不写 `sdkApproved`。回挂四条取消路径 settle 用 `failed`，不是用户 Stop。
-- **隐患**：重启后 HMAC 通过、检查点还在，Inbox 仍有拍板幽灵行，会话里卡没了、write_file 转圈。根因：`restoreWaitingRuns` 会重发 `approval.required`，但 Composer 已 idle，`belongsToForeground` 要求 `running`，事件进不了 `pendingApproval`；没有 park 时 `nextParks` 也丢掉；`did-finish-load` 还可能早于 `agent.onEvent` 订阅。正确做法：同会话空闲时 `approval.required` / `run.error` 归前台；无 park 也要为回挂审批建停车；开会话时若卡仍空且 `restoreSettled`，用 Inbox 活未决回组一张可决策卡。同一会话多张未决**只补最新一张**。卡上 args 必须是库里签 HMAC 的拷贝（剔 park 字段）；缺参 / `agent.sessionActive` 对不上该 run 不得 `running:true`、不得弹允许卡，走 `restore_no_matching_approval`。e2e：`approval-restart.spec.ts`（卡上可见 `e2e-stub.txt`，允许后写出该文件）。
-- **隐患**：`abandonWaitingRestore` 只改库、不发 `run.error`、不删 ActiveRun，Composer 停在「运行中」。正确做法：结清后写 `restore_no_matching_approval`，emit `run.error`（中性 `turn`），再 `deleteActiveRun`；空闲 reducer 也要吃这条并显示人话。
+- **隐患**：HMAC 失败行被结清成 cancelled + `sdkApproved=0` 后，检查点里仍在，走 `planSdkReplay` 回 SDK `approved:false`，run 继续。正确做法：任一 HMAC 失败即整轮对不上，未决 `cancelled`（reason=`restart`），不写 `sdkApproved`，run 记 `cancelled` 停止，禁止 `planSdkReplay` 回 SDK。
+- **隐患**：重启后 HMAC 通过、检查点还在，Inbox 仍有拍板幽灵行，会话里卡没了、write_file 转圈。根因：`restoreWaitingRuns` 会重发 `approval.required`，但 Composer 已 idle，`belongsToForeground` 要求 `running`，事件进不了 `pendingApproval`；没有 park 时 `nextParks` 也丢掉；`did-finish-load` 还可能早于 `agent.onEvent` 订阅。正确做法：同会话空闲时 `approval.required` / `run.error` 归前台；无 park 也要为回挂审批建停车；开会话时若卡仍空且 `restoreSettled`，用 Inbox 活未决回组一张可决策卡。同一会话多张未决**只补最新一张**。卡上 args 必须是库里签 HMAC 的拷贝（剔 park 字段）；缺参 / `agent.sessionActive` 对不上该 run 不得 `running:true`、不得弹允许卡。只有 HMAC 通过 **且** 检查点在 **且** 参数已签才回挂可决策卡。e2e：`approval-restart.spec.ts`（卡上可见 `e2e-stub.txt`，允许后写出该文件；含 kill-9）。
+- **隐患**：`kill -9` / 崩溃重启后 `waiting_review` 停住、审批 `decision=NULL`、线程转圈、Inbox 幽灵「前往审批」。根因：强杀不走 will-quit，检查点可能没刷上；回挂对不上时曾写 `failed` / 只改库不收敛。正确做法：启动时凡不能回挂的 run（无活进程 / 缺检查点 / 缺工作区 / HMAC 失败 / 无匹配行 / 异常）把未决写成 `cancelled`（reason=`restart`），run 记停止不是出错；发 `run.error` + `restore_no_matching_approval` + `turn.attention=stopped`。线程工具行走「已停止」，中性条「重启后对不上原来的审批，这一轮已结束。」+「重新发送」（原文回输入框）。Inbox / 徽标以库为准立刻清空；卡画不出来就不要拍板行，禁止灰掉的「前往审批」。测试：`restore-waiting-restart.behavior.test.ts` + e2e kill-9 有/无检查点。
 - **隐患**：闸按 #130 只拦 `definitely_unusable`；`hasEnjoySecret=false` 且 `verifiedLocal=unknown`（或 `ENJOY_E2E_CHAT_READY` 非法值掉夹具）会放行，随后 `resolveRunSecret` throw 英文 `Add an API key…`，IPC 原句进红条。正确做法：闸规则不动；解析不到 Key 回 `{ok:false, code:no_chat_route}`；classifier 把该英文收成 `no_chat_route`，界面「还差一步」。
 - **隐患**：归档拷贝一份 `abortLiveRun`，`cancelCodingStream` 生产失败被空 catch 吃掉；`cancelInFlightDesktopAct` 无范围，归档 A 会掐 B 的在途 act。正确做法：与 `abortAgent` 共用 `abortActiveRunMemory`；生产环境 log cancel 错误；取消 act 按 session/run 限定。
 - 消息底 ActionChip 与虚线泡「立即纠偏」不是同一件事。Chip 未点击不得自动跑；idle 后自动消费的只是用户主动入队的 followupQueue。`waiting_review` 不要自启下一轮。围栏必须从可见 Markdown 剥离，不要把 `:::enjoy-actions` 渲染进气泡。idle 点 Chip 必须 `takeQuotedContexts` 并进本轮 Prompt，否则引用会漏到下一轮。

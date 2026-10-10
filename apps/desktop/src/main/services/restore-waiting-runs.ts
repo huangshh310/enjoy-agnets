@@ -9,19 +9,17 @@ import { inferAgentRunOrigin, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
-import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { getActiveRun, holdAgentRun } from "./agent-run-state"
 import { claimRestoreWaitingOnce, markRestoreWaitingSettled } from "./restore-once"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
-import {
-  endRestoredRunWithoutSdkReply,
-  RESTORE_NO_MATCHING_CODE
-} from "./restore-checkpoint-approval"
+import { parseStoredApprovalArgs } from "./restore-approval-args"
+import { endRestoredRunWithoutSdkReply } from "./restore-checkpoint-approval"
 import { restoreHeldWaitingApprovals } from "./restore-waiting-approvals"
-import { settleListedApprovals, settlePendingApprovalsForRun } from "./settle-run-approvals"
+import { settleListedApprovals } from "./settle-run-approvals"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -43,7 +41,6 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
       failCatchUpWaitingOnRestart(row.id)
       continue
     }
-    const checkpointPendings = extras.pendingApprovals ?? []
     const { passed: pending, hmacFailed } = partitionHmacPending(row.id, listPendingApprovals(db, row.id))
     if (hmacFailed.length > 0) {
       settleListedApprovals(
@@ -53,40 +50,16 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
           toolCallId: item.toolCallId
         })),
         window,
-        "failed",
+        "restart",
         { writeSdkResponse: false }
       )
-    }
-    if (hmacFailed.some((item) => checkpointPendings.some((pending) => pending.approvalId === item.id))) {
-      endRestoredRunWithoutSdkReply(db, row.id, window)
-      continue
-    }
-    if (!row.workspaceId) {
-      abandonWaitingRestore(row.id, window, {
-        status: "cancelled",
-        error: "No pending approval after restart.",
-        cause: "failed",
-        sessionId: row.sessionId
-      })
+      abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
       continue
     }
     const checkpoint = parseGenerationCheckpoint(row.checkpoint)
-    if (!checkpoint?.request) {
-      abandonWaitingRestore(row.id, window, {
-        status: "cancelled",
-        error: "Missing generation checkpoint.",
-        cause: "failed",
-        sessionId: row.sessionId
-      })
-      continue
-    }
-    if (pending.length === 0 && checkpointPendings.length === 0) {
-      abandonWaitingRestore(row.id, window, {
-        status: "cancelled",
-        error: "No pending approval after restart.",
-        cause: "failed",
-        sessionId: row.sessionId
-      })
+    const decidable = pending.filter((item) => parseStoredApprovalArgs(item) != null)
+    if (!row.workspaceId || !checkpoint?.request || decidable.length === 0) {
+      abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
       continue
     }
     try {
@@ -105,9 +78,8 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
           content: typeof message.content === "string" ? message.content : ""
         }))
       })
-      const { resolveRunSecret, resolveRuntimeId } = await import("./agent-run-helpers")
-      const runtimeId = resolveRuntimeId(input, prefs)
-      const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+      const runtimeId = extras.runtimeId ?? input.runtimeId ?? prefs.runtimeId ?? "enjoy-local"
+      const secret = await resolveRestoreSecret(runtimeId, prefs)
       const messages = Array.isArray(extras.modelMessages)
         ? (extras.modelMessages as ModelMessage[])
         : toModelMessages(input.messages)
@@ -121,36 +93,30 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
       })
       hydrateActiveRunUsage(row.id)
       const run = getActiveRun(row.id)
-      if (!run) continue
+      if (!run) {
+        abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
+        continue
+      }
       run.pendingApprovals = extras.pendingApprovals?.length
         ? extras.pendingApprovals
-        : pending.map((item) => ({
+        : decidable.map((item) => ({
             approvalId: item.id,
             toolCallId: item.toolCallId,
             name: item.name
           }))
       const restored = restoreHeldWaitingApprovals({
         runId: row.id,
-        hmacPending: pending,
+        hmacPending: decidable,
         items: run.pendingApprovals,
         window
       })
       if (restored.ended) continue
       run.pendingApprovals = restored.keep
       if (restored.keep.length === 0) {
-        run.resumeAfterPump = true
-        if (!run.pumping) {
-          const { pumpStream } = await import("./agent-pump.ts")
-          void pumpStream(row.id)
-        }
+        abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
       }
-    } catch (error) {
-      abandonWaitingRestore(row.id, window, {
-        status: "cancelled",
-        error: error instanceof Error ? error.message : "Failed to restore waiting run.",
-        cause: "failed",
-        sessionId: row.sessionId
-      })
+    } catch {
+      abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
     }
   }
 }
@@ -176,23 +142,25 @@ function partitionHmacPending(
   return { passed, hmacFailed }
 }
 
-/** 回挂取消：先结清未决（已决不覆盖），再改 run 终态，并发诚实收工码。 */
+/** 回挂对不上：未决 cancelled（restart），run 记停止，发诚实收工码。 */
 export function abandonWaitingRestore(
   runId: string,
   window: BrowserWindow,
-  input: { status: "cancelled" | "failed"; error: string; cause: "failed"; sessionId?: string }
+  input?: { sessionId?: string }
 ): void {
-  settlePendingApprovalsForRun(runId, window, input.cause)
-  updateRun(getDatabase(), runId, { status: input.status, error: RESTORE_NO_MATCHING_CODE })
-  const run = getActiveRun(runId)
-  emitEvent(window, {
-    type: "run.error",
-    runId,
-    sessionId: input.sessionId ?? run?.input.sessionId,
-    message: RESTORE_NO_MATCHING_CODE,
-    code: RESTORE_NO_MATCHING_CODE,
-    turn: { workflow: "todo", attention: "neutral" }
-  })
-  if (run) deleteActiveRun(runId)
+  endRestoredRunWithoutSdkReply(getDatabase(), runId, window, input?.sessionId)
+}
+
+async function resolveRestoreSecret(
+  runtimeId: string,
+  prefs: ReturnType<typeof readPreferences>
+) {
+  try {
+    const { resolveRunSecret } = await import("./agent-run-helpers")
+    return await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  } catch {
+    // 缺 Key / 测试拆条拉不到 ACP：仍回挂可决策卡，执行时再闸。
+    return undefined
+  }
 }
 

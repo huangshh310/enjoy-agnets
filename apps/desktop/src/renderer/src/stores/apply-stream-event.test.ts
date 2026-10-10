@@ -223,25 +223,39 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
   assert.equal(delta.messages.at(-1)?.content, "好的")
 })
 
-test("空闲时回挂 run.error 要显示人话并停 running", () => {
+test("空闲时回挂对不上走中性 notice，工具封成已停止", () => {
+  const messages: ThreadMessage[] = [
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 1,
+      streaming: true,
+      tools: [{ id: "tool_1", name: "write_file", state: "approval-requested" }]
+    }
+  ]
   const patch = reduceStreamEvent(
-    [],
+    messages,
     {
       type: "run.error",
       runId: "run_wait",
       sessionId: "ses_a",
       message: RESTORE_NO_MATCHING,
       code: RESTORE_NO_MATCHING,
-      turn: { workflow: "todo", attention: "neutral" }
+      turn: { workflow: "todo", attention: "stopped" }
     },
     null
   )
   assert.equal(patch.running, false)
   assert.equal(patch.runId, null)
-  assert.equal(patch.error, RESTORE_NO_MATCHING)
-  assert.equal(classifyThreadError(patch.error ?? ""), "restore_no_matching")
-  assert.equal(humanizeThreadError(patch.error, (path) => path), "chat.restoreNoMatching")
-  assert.notEqual(humanizeThreadError(patch.error, (path) => path), RESTORE_NO_MATCHING)
+  assert.equal(patch.error, null)
+  assert.equal(patch.notice, RESTORE_NO_MATCHING)
+  assert.equal(classifyThreadError(patch.notice ?? ""), "restore_no_matching")
+  assert.equal(humanizeThreadError(patch.notice, (path) => path), "chat.restoreNoMatching")
+  assert.equal(
+    (patch.messages[0]?.tools?.[0]?.result as { code?: string } | undefined)?.code,
+    "user_aborted"
+  )
 })
 
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {

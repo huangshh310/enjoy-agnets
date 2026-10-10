@@ -108,19 +108,26 @@ function replayStoredSdkResponse(
   })
 }
 
-/** HMAC 失败 / 无匹配：结束 run，禁止拿该行回 SDK。 */
-export function endRestoredRunWithoutSdkReply(db: AppDatabase, runId: string, window?: BrowserWindow): void {
+/** 回挂对不上：未决 cancelled（reason=restart），run 记停止，不写 failed。 */
+export function endRestoredRunWithoutSdkReply(
+  db: AppDatabase,
+  runId: string,
+  window?: BrowserWindow,
+  sessionId?: string
+): void {
   const run = getActiveRun(runId)
   const target = window ?? run?.window
-  settlePendingApprovalsForRun(runId, target, "failed")
-  updateRun(db, runId, { status: "failed", error: RESTORE_NO_MATCHING_CODE })
-  if (run) deleteActiveRun(runId)
+  settlePendingApprovalsForRun(runId, target, "restart")
+  updateRun(db, runId, { status: "cancelled", error: RESTORE_NO_MATCHING_CODE })
   if (target) {
     emitEvent(target, {
       type: "run.error",
       runId,
+      sessionId: sessionId ?? run?.input.sessionId,
       message: RESTORE_NO_MATCHING_CODE,
-      code: RESTORE_NO_MATCHING_CODE
+      code: RESTORE_NO_MATCHING_CODE,
+      turn: { workflow: "todo", attention: "stopped" }
     })
   }
+  if (run) deleteActiveRun(runId)
 }

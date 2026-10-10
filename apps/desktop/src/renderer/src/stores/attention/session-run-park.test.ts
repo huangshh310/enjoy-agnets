@@ -102,14 +102,14 @@ test("没有 park 时标题补全 run.start / run.error 不落停车", () => {
   assert.equal(nextParks({}, "ses_wait", titleError), null)
 })
 
-test("没有 park 时回挂 run.error 落停车并把 running 收回", () => {
+test("没有 park 时回挂对不上落停车，running 收回且不写 error", () => {
   const next = nextParks({}, "ses_wait", {
     type: "run.error",
     runId: "run_wait",
     message: "restore_no_matching_approval"
   })
   assert.equal(next?.ses_wait?.running, false)
-  assert.equal(next?.ses_wait?.error, "restore_no_matching_approval")
+  assert.equal(next?.ses_wait?.error, null)
 })
 
 test("切走后才返回的 runId 认领进停车，不 idle", () => {

@@ -204,7 +204,7 @@ test("库无行：不拿内部 id 回 SDK，诚实结束该 run", () => {
   assert.equal(applied.ended, true)
   assert.equal(applied.replies.length, 0)
   assert.equal(getActiveRun(runId), undefined)
-  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
   assert.equal(getRun(getDatabase(), runId)?.error, RESTORE_NO_MATCHING_CODE)
   assert.equal(
     events.some((event) => event.type === "tool-approval-response" || event.approvalId === "apr_ghost_internal"),
@@ -244,7 +244,7 @@ test("desktop_act + sdkApproved=1：planSdkReplay fail closed，不回 approved:
   assert.equal(applied.replies.some((reply) => reply.approved === true), false)
   assert.equal(events.some((event) => event.type === "tool.result"), false)
   assert.equal(getActiveRun(runId), undefined)
-  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
 })
 
 test("sdkApproved=null + decision=allow：planSdkReplay fail closed，不回 approved:false 却标 allow", () => {
@@ -272,7 +272,7 @@ test("sdkApproved=null + decision=allow：planSdkReplay fail closed，不回 app
     events.some((event) => event.type === "tool.result" && event.decision === "allow"),
     false
   )
-  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
 })
 
 test("resume_code=stale_observation：planSdkReplay fail closed，不回放", () => {
@@ -298,7 +298,7 @@ test("resume_code=stale_observation：planSdkReplay fail closed，不回放", ()
   assert.equal(applied.ended, true)
   assert.equal(applied.replies.length, 0)
   assert.equal(events.some((event) => event.type === "tool.result"), false)
-  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
 })
 
 test("runId / toolCallId 对不上：fail closed，不回放", () => {
@@ -325,7 +325,7 @@ test("runId / toolCallId 对不上：fail closed，不回放", () => {
   assert.equal(applied.replies.length, 0)
   assert.equal(events.some((event) => event.type === "tool.result"), false)
   assert.equal(getActiveRun(runId), undefined)
-  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
   const wrongRun = resolveRestoredOrphanApproval(getDatabase(), {
     approvalId: "apr_identity",
     runId: "run_not_this",
