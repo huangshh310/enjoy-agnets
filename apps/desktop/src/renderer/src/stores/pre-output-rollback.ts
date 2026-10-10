@@ -30,14 +30,19 @@ export function rollbackPreOutputTurn(messages: ThreadMessage[]): {
   return { messages: next }
 }
 
+/** 本轮还没出字：空助手或停在用户句。 */
+export function lastTurnHasNoOutput(messages: ThreadMessage[]): boolean {
+  const last = messages.at(-1)
+  if (last?.role === "assistant") return !assistantHasOutput(last)
+  return last?.role === "user"
+}
+
 export function shouldRollbackPreOutput(
   event: { preOutput?: boolean; code?: string | null },
   messages: ThreadMessage[]
 ): boolean {
   if (event.preOutput === true) return true
-  if (event.preOutput === false) return false
   if (!isPreOutputFailureCode(event.code ?? undefined)) return false
-  const last = messages.at(-1)
-  if (last?.role === "assistant") return !assistantHasOutput(last)
-  return last?.role === "user"
+  // Zod `.catch(false)` 把缺省打成 false；闸码且尚未出字仍回滚（ipc 缺省回落）。
+  return lastTurnHasNoOutput(messages)
 }

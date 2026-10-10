@@ -44,6 +44,18 @@ test("关闭 / unload 立刻发 null，blur 后 focus 再报当前会话", async
   resetSessionFocusForTest()
 })
 
+test("未 bind sender 不记 lastSent，挂上后再发", async () => {
+  resetSessionFocusForTest()
+  const sent: Array<string | null> = []
+  reportSessionFocused("ses_a", { immediate: true })
+  bindSessionFocusSender((input) => {
+    sent.push(input.sessionId)
+  })
+  reportSessionFocused("ses_a", { immediate: true })
+  assert.deepEqual(sent, ["ses_a"])
+  resetSessionFocusForTest()
+})
+
 test("sender throw 不得冒泡", () => {
   resetSessionFocusForTest()
   bindSessionFocusSender(() => {

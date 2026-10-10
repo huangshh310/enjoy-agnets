@@ -27,6 +27,10 @@ async function openChat(window: Page): Promise<void> {
   await skipGuideIfOpen(window)
   await hideOverlays(window)
   await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
+  await window.evaluate(() => {
+    window.dispatchEvent(new Event("focus"))
+  })
+  await window.waitForTimeout(200)
 }
 
 function threadBubbles(window: Page) {

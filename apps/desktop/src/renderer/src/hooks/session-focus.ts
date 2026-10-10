@@ -1,8 +1,7 @@
 /**
  * 向 main 报告前台会话。150ms 防抖；blur / unload 传 null。
+ * 未 bind sender 时不记 lastSent，等 useSessionFocus 挂上后再发。
  */
-import { getIde, hasIde } from "../lib/ide"
-
 export const SESSION_FOCUS_DEBOUNCE_MS = 150
 
 export type SessionFocusInput = { sessionId: string | null }
@@ -43,19 +42,12 @@ function flush(sessionId: string | null): void {
     clearTimeout(timer)
     timer = null
   }
+  if (!sender) return
   if (lastSent === sessionId) return
   lastSent = sessionId
-  const send = sender ?? defaultSender
   try {
-    void Promise.resolve(send({ sessionId })).catch(() => undefined)
+    void Promise.resolve(sender({ sessionId })).catch(() => undefined)
   } catch {
     // preload / 测试无 handle 时吞掉
   }
-}
-
-function defaultSender(input: SessionFocusInput): unknown {
-  if (!hasIde()) return
-  const setFocused = getIde().session.setFocused
-  if (typeof setFocused !== "function") return
-  return setFocused(input)
 }

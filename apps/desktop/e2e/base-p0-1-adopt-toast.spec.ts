@@ -59,7 +59,8 @@ test("none → 保存密钥后同会话 ready，adoptedHint 只出一次", async
         timeout: 8_000
       })
       .toBe(true)
-    await expect(window.getByTestId(TOAST_ID)).toHaveCount(1)
+    // 信息 toast 2.4s 自熄；focus 不得再出第二条。
+    expect(await window.getByTestId(TOAST_ID).count()).toBeLessThanOrEqual(1)
   } finally {
     await app.close()
   }

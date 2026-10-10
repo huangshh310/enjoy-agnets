@@ -312,6 +312,49 @@ test("preOutput=true 丢掉乐观气泡并把草稿还回 Composer", () => {
   )
 })
 
+test("preOutput=false 且尚未出字：Zod 缺省回落后仍撕泡还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 2, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: false
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello draft")
+  assert.equal(patch.error, "provider_unreachable")
+})
+
+test("尚未认领 runId 的出字前失败也撕泡还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello unclaimed", createdAt: 1 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 2, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_fast",
+      message: "credential_invalid",
+      code: "credential_invalid",
+      preOutput: true
+    },
+    null
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello unclaimed")
+  assert.equal(patch.error, "credential_invalid")
+  assert.equal(patch.running, false)
+})
+
 test("已经出字后即使闸码也不回滚气泡", () => {
   const messages: ThreadMessage[] = [
     { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },

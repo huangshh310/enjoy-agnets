@@ -82,6 +82,10 @@ function applyTerminalEvent(
   activeRunId: string | null
 ): StreamPatch | null {
   if (event.type !== "run.end" && event.type !== "run.error") return null
+  if (event.type === "run.error") {
+    const preOutput = applyUnclaimedPreOutputError(messages, event, activeRunId)
+    if (preOutput) return preOutput
+  }
   if (!shouldFinalizeComposerRun(event.runId, activeRunId)) return { messages }
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) {
@@ -109,15 +113,7 @@ function applyTerminalEvent(
     }
     const code = chatSendErrorCodeOf(event)
     if (shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) {
-      const rolled = rollbackPreOutputTurn(messages)
-      return {
-        messages: rolled.messages,
-        pendingApproval: null,
-        running: false,
-        runId: null,
-        error: code ?? event.message,
-        ...(rolled.composer ? { composer: rolled.composer } : {})
-      }
+      return rolledPreOutputPatch(messages, code ?? event.message)
     }
     const lastUser = lastUserText(messages)
     return {
@@ -128,6 +124,31 @@ function applyTerminalEvent(
     }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
+}
+
+/** agent.run 返回前 runId 还空：出字前失败仍要撕泡还草稿。 */
+function applyUnclaimedPreOutputError(
+  messages: ThreadMessage[],
+  event: StreamEvent & { type: "run.error" },
+  activeRunId: string | null
+): StreamPatch | null {
+  if (activeRunId && activeRunId !== event.runId) return null
+  const code = chatSendErrorCodeOf(event)
+  if (!shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) return null
+  return rolledPreOutputPatch(messages, code ?? event.message)
+}
+
+function rolledPreOutputPatch(messages: ThreadMessage[], error: string): StreamPatch {
+  const draft = lastUserText(messages)
+  const rolled = rollbackPreOutputTurn(messages)
+  return {
+    messages: rolled.messages,
+    pendingApproval: null,
+    running: false,
+    runId: null,
+    error,
+    composer: rolled.composer || draft
+  }
 }
 
 function applyApprovalEvent(
