@@ -6,6 +6,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import { CLIP_COMMAND_CHARS, clipToolPayload, isMcpWriteToolName, jsonSchemaToZod } from "@enjoy-agents/agent-core"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
+import { rememberMcpReadOnlyHint } from "@enjoy-agents/ipc-contract/tool-names"
 import { isMutatingToolName, mcpAgentToolName } from "@enjoy-agents/mcp"
 import { callServerTool, listVisibleMcpTools } from "./mcp-service"
 
@@ -14,6 +15,7 @@ export function createMcpAgentTools(opts?: { mode?: AgentMode }): Record<string,
   const tools: Record<string, object> = {}
   for (const item of listVisibleMcpTools()) {
     const id = mcpAgentToolName(item.serverId, item.name)
+    rememberMcpReadOnlyHint(id, item.readOnlyHint === true)
     if (readOnly && isMcpWriteToolName(id)) continue
     tools[id] = tool({
       description: `MCP ${item.serverName}: ${item.description ?? item.name}`,

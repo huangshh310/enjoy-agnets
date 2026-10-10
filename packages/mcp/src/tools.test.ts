@@ -16,6 +16,21 @@ test("parseToolsList 保留 inputSchema", () => {
   ])
 })
 
+test("parseToolsList 只在 annotations.readOnlyHint 为 true 时记下", () => {
+  assert.deepEqual(
+    parseToolsList({
+      tools: [
+        { name: "snapshot", annotations: { readOnlyHint: true } },
+        { name: "task", annotations: { readOnlyHint: false } }
+      ]
+    }),
+    [
+      { name: "snapshot", description: undefined, inputSchema: undefined, readOnlyHint: true },
+      { name: "task", description: undefined, inputSchema: undefined }
+    ]
+  )
+})
+
 test("写类工具名视为 mutating", () => {
   assert.equal(isMutatingToolName("read_resource"), false)
   assert.equal(isMutatingToolName("write_file"), true)

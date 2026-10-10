@@ -6,6 +6,7 @@ export type McpToolInfo = {
   name: string
   description?: string
   inputSchema?: unknown
+  readOnlyHint?: boolean
 }
 
 export function parseToolsList(result: unknown): McpToolInfo[] {
@@ -15,10 +16,12 @@ export function parseToolsList(result: unknown): McpToolInfo[] {
   for (const item of tools) {
     const row = asRecord(item)
     if (typeof row.name !== "string" || !row.name.trim()) continue
+    const annotations = asRecord(row.annotations)
     out.push({
       name: row.name,
       description: typeof row.description === "string" ? row.description : undefined,
-      inputSchema: row.inputSchema
+      inputSchema: row.inputSchema,
+      ...(annotations.readOnlyHint === true ? { readOnlyHint: true } : {})
     })
   }
   return out

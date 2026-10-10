@@ -124,6 +124,8 @@ test("只读白名单之外都算写类：未知 MCP 与 ACP move", () => {
   assert.equal(isWriteTypeToolName("todo_write"), false)
   assert.equal(isWriteTypeToolName("ask_user_questions"), false)
   assert.equal(isWriteTypeToolName("delegate"), false)
+  assert.equal(isWriteTypeToolName("mcp_x__snapshot"), true)
+  assert.equal(isWriteTypeToolName("mcp_jira__task"), true)
 })
 
 test("delegate 子工具折进同一份 tools：只读子工具不进待验收，未知 MCP 子工具要进", () => {

@@ -197,6 +197,7 @@ export function listVisibleMcpTools(): Array<{
   name: string
   description?: string
   inputSchema?: unknown
+  readOnlyHint?: boolean
 }> {
   const out: Array<{
     serverId: string
@@ -206,6 +207,7 @@ export function listVisibleMcpTools(): Array<{
     name: string
     description?: string
     inputSchema?: unknown
+    readOnlyHint?: boolean
   }> = []
   for (const row of listMcpServers(getDatabase())) {
     const handle = handles.get(row.id)
@@ -214,7 +216,7 @@ export function listVisibleMcpTools(): Array<{
     for (const tool of handle.tools ?? []) {
       if (visible.length > 0 && !visible.includes(tool.name)) continue
       if (visible.length === 0 && row.trusted !== 1) continue
-      const mutating = isMutatingToolName(tool.name)
+      const mutating = tool.readOnlyHint === true ? false : isMutatingToolName(tool.name)
       const level = permissionLevel(row.id, tool.name)
       if (decideMcpCall({ trusted: row.trusted === 1, level, mutating }) === "deny") continue
       out.push({
@@ -224,7 +226,8 @@ export function listVisibleMcpTools(): Array<{
         level,
         name: tool.name,
         description: tool.description,
-        inputSchema: tool.inputSchema
+        inputSchema: tool.inputSchema,
+        ...(tool.readOnlyHint === true ? { readOnlyHint: true } : {})
       })
     }
   }
