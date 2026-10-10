@@ -147,7 +147,9 @@ export function clearConversationSessionAllow(sessionId: string): void {
   const sid = sessionId.trim()
   if (!sid) return
   const prefix = `${sid}::`
-  for (const key of [...conversationSessionAllow.keys()]) {
+  // keys() 迭代时不能删；先拷一份再扫。
+  const keys = Array.from(conversationSessionAllow.keys())
+  for (const key of keys) {
     if (key === sid || key.startsWith(prefix)) conversationSessionAllow.delete(key)
   }
 }
