@@ -83,6 +83,35 @@ test("没有 park 时回挂 approval.required 也要落停车", () => {
   assert.equal(next?.ses_wait?.running, true)
 })
 
+test("没有 park 时标题补全 run.start / run.error 不落停车", () => {
+  assert.equal(
+    nextParks({}, "ses_wait", {
+      type: "run.start",
+      runId: "run_title",
+      sessionId: "ses_wait",
+      kind: "completion"
+    }),
+    null
+  )
+  const titleError = {
+    type: "run.error" as const,
+    runId: "run_title",
+    message: "title failed",
+    kind: "completion"
+  }
+  assert.equal(nextParks({}, "ses_wait", titleError), null)
+})
+
+test("没有 park 时回挂 run.error 落停车并把 running 收回", () => {
+  const next = nextParks({}, "ses_wait", {
+    type: "run.error",
+    runId: "run_wait",
+    message: "restore_no_matching_approval"
+  })
+  assert.equal(next?.ses_wait?.running, false)
+  assert.equal(next?.ses_wait?.error, "restore_no_matching_approval")
+})
+
 test("切走后才返回的 runId 认领进停车，不 idle", () => {
   const next = attachParkedRunId(park({ runId: null }), "run_late")
   assert.equal(next.runId, "run_late")

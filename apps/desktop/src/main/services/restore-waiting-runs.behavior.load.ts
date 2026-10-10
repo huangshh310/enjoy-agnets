@@ -7,3 +7,4 @@ export { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state.t
 export { abandonWaitingRestore, restoreWaitingRuns } from "./restore-waiting-runs.ts"
 export { resetRestoreWaitingOnceForTests } from "./restore-once.ts"
 export { RESTORE_NO_MATCHING_CODE } from "./restore-checkpoint-approval.ts"
+export { sessionActiveRun } from "./session-active-run.ts"

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   approvalRequiredFromPending,
-  argsForToolCall,
+  hasDecidableApprovalArgs,
   pickLivePendingForSession
 } from "./hydrate-live-pending-approval.ts"
 
@@ -14,31 +14,35 @@ const item = {
   sessionTitle: "Note",
   name: "write_file",
   toolCallId: "tool_1",
-  createdAt: 1
+  createdAt: 1,
+  args: { path: "e2e-stub.txt", content: "from stub" }
 }
 
-test("只取本会话的活未决", () => {
+test("只取本会话最新的活未决", () => {
   assert.equal(
     pickLivePendingForSession(
       [
         { ...item, sessionId: "ses_other", id: "apr_other" },
-        item
+        { ...item, id: "apr_old", createdAt: 1 },
+        { ...item, id: "apr_new", createdAt: 9 }
       ],
       "ses_wait"
     )?.id,
-    "apr_1"
+    "apr_new"
   )
   assert.equal(pickLivePendingForSession([item], "ses_empty"), undefined)
 })
 
-test("回组 approval.required，参数跟工具行", () => {
-  const args = argsForToolCall(
-    [{ tools: [{ id: "tool_1", name: "write_file", state: "approval-requested", args: { path: "note.txt" } }] }],
-    "tool_1"
-  )
-  assert.deepEqual(args, { path: "note.txt" })
-  const event = approvalRequiredFromPending(item, args)
+test("回组 approval.required，参数只信 Inbox 带来的 HMAC 拷贝", () => {
+  const event = approvalRequiredFromPending(item)
+  assert.ok(event)
   assert.equal(event.type, "approval.required")
   assert.equal(event.approvalId, "apr_1")
-  assert.equal(event.args.path, "note.txt")
+  assert.deepEqual(event.args, { path: "e2e-stub.txt", content: "from stub" })
+})
+
+test("缺参不得猜 {}，不组可决策卡", () => {
+  assert.equal(hasDecidableApprovalArgs(undefined), false)
+  assert.equal(hasDecidableApprovalArgs(null), false)
+  assert.equal(approvalRequiredFromPending({ ...item, args: undefined }), null)
 })

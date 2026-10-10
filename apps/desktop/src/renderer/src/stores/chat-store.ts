@@ -61,6 +61,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   mode: "agent",
   running: false,
   runId: null,
+  lastRunId: null,
   runStartedAt: null,
   pendingStreamEvents: [],
   thinkingLabel: "Thinking",
@@ -158,6 +159,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       ...(patch.running === true ? { runStartedAt: get().runStartedAt ?? Date.now() } : {}),
       ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
+      ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
       ...(patch.error !== undefined ? { error: patch.error } : {}),
       ...(patch.notice !== undefined ? { notice: patch.notice } : {})
     })
@@ -180,6 +182,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({
       running,
       runId: runId ?? null,
+      ...(typeof runId === "string" ? { lastRunId: runId } : {}),
       runStartedAt: running ? (get().runStartedAt ?? Date.now()) : null,
       ...(running ? { sessionReviewDismissedKey: null } : {}),
       ...(!running ? { pendingStreamEvents: [] } : {})
@@ -219,6 +222,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         remoteError: null,
         sessionId: null,
         sessionTitle: "新对话",
+        lastRunId: null,
         repositories: [],
         expandedIds: [],
         messages: [],

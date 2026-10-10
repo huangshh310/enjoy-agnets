@@ -108,7 +108,12 @@ function inspectorSnapshot(input: {
     changesCount: slice.changes.length,
     chips,
     tokenStats,
-    turnPerf: estimateTurnPerformance(catalogs.metric, slice.messages, slice.running, slice.runId),
+    turnPerf: estimateTurnPerformance(
+      catalogs.metric,
+      slice.messages,
+      slice.running,
+      slice.runId ?? slice.lastRunId
+    ),
     sources: citedSourcesFromMessages(slice.messages),
     turnTools: toolsFromMessages(slice.messages),
     mcpServers: catalogs.mcp
@@ -155,12 +160,15 @@ function useInspectorChatSlice() {
     changes: useChatStore((state) => state.changes),
     sessionId: useChatStore((state) => state.sessionId),
     runId: useChatStore((state) => state.runId),
+    lastRunId: useChatStore((state) => state.lastRunId),
     runtimeId: useChatStore((state) => state.runtimeId)
   }
 }
 
 function useInspectorCatalogs(workspaceId: string | null) {
   const runId = useChatStore((state) => state.runId)
+  const lastRunId = useChatStore((state) => state.lastRunId)
+  const metricRunId = runId ?? lastRunId
   const mcpQuery = useIdeQuery(["mcp-servers-context"], () => getIde().mcp.servers() as Promise<McpServer[]>)
   const rulesQuery = useIdeQuery(
     ["workspace-rules-context", workspaceId],
@@ -173,9 +181,13 @@ function useInspectorCatalogs(workspaceId: string | null) {
     Boolean(workspaceId)
   )
   const metricsQuery = useIdeQuery(
-    ["latest-turn-metric", runId],
-    () => getIde().observability.metrics({ runId: runId ?? undefined, limit: 1 }) as Promise<TelemetryMetric[]>,
-    Boolean(runId)
+    ["latest-turn-metric", metricRunId],
+    () =>
+      getIde().observability.metrics({
+        runId: metricRunId ?? undefined,
+        limit: 1
+      }) as Promise<TelemetryMetric[]>,
+    Boolean(metricRunId)
   )
   return {
     mcp: mcpQuery.data ?? [],

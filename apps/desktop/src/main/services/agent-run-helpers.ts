@@ -9,6 +9,9 @@ import { listAgentTools } from "./agent-tools-service"
 import { harnessPublicStatus } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
+import { MISSING_RUN_SECRET } from "./missing-run-secret"
+
+export { isMissingRunSecretError, MISSING_RUN_SECRET } from "./missing-run-secret"
 
 /** 会话覆盖 > 入参 > 偏好 > Enjoy Local。 */
 export function resolveRuntimeId(
@@ -87,13 +90,6 @@ export async function resolveRunSecret(
     throw new Error(MISSING_RUN_SECRET)
   }
   return secret
-}
-
-/** 闸已放行但解析密钥时才确定没有 Key。禁止把这句英文 throw 摊进 UI。 */
-export const MISSING_RUN_SECRET = "Add an API key in Settings before running an agent."
-
-export function isMissingRunSecretError(error: unknown): boolean {
-  return error instanceof Error && error.message.includes("Add an API key in Settings")
 }
 
 export async function readResponseMessages(result: unknown): Promise<ModelMessage[]> {

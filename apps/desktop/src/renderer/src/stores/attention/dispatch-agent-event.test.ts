@@ -105,3 +105,21 @@ test("主 run 结束后标题补全 run.start 不归前台", () => {
     false
   )
 })
+
+test("空闲时非 agent 的 run.error 不归前台", () => {
+  assert.equal(
+    belongsToForeground(
+      {
+        type: "run.error",
+        runId: "run_title",
+        message: "title failed",
+        kind: "completion"
+      } as Parameters<typeof belongsToForeground>[0],
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    false
+  )
+})

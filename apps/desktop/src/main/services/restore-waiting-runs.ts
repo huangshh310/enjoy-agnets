@@ -9,19 +9,30 @@ import { inferAgentRunOrigin, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
-import { getActiveRun, holdAgentRun } from "./agent-run-state"
-import { claimRestoreWaitingOnce } from "./restore-once"
+import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { claimRestoreWaitingOnce, markRestoreWaitingSettled } from "./restore-once"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
-import { endRestoredRunWithoutSdkReply } from "./restore-checkpoint-approval"
+import {
+  endRestoredRunWithoutSdkReply,
+  RESTORE_NO_MATCHING_CODE
+} from "./restore-checkpoint-approval"
 import { restoreHeldWaitingApprovals } from "./restore-waiting-approvals"
 import { settleListedApprovals, settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
+  try {
+    await restoreWaitingRunsOnce(window)
+  } finally {
+    markRestoreWaitingSettled()
+  }
+}
+
+async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
   const db = getDatabase()
   const waiting = listRuns(db, {}).filter((row) => row.status === "waiting_review")
   const prefs = readPreferences()
@@ -54,7 +65,8 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       abandonWaitingRestore(row.id, window, {
         status: "cancelled",
         error: "No pending approval after restart.",
-        cause: "failed"
+        cause: "failed",
+        sessionId: row.sessionId
       })
       continue
     }
@@ -63,7 +75,8 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       abandonWaitingRestore(row.id, window, {
         status: "cancelled",
         error: "Missing generation checkpoint.",
-        cause: "failed"
+        cause: "failed",
+        sessionId: row.sessionId
       })
       continue
     }
@@ -71,7 +84,8 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       abandonWaitingRestore(row.id, window, {
         status: "cancelled",
         error: "No pending approval after restart.",
-        cause: "failed"
+        cause: "failed",
+        sessionId: row.sessionId
       })
       continue
     }
@@ -134,7 +148,8 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       abandonWaitingRestore(row.id, window, {
         status: "cancelled",
         error: error instanceof Error ? error.message : "Failed to restore waiting run.",
-        cause: "failed"
+        cause: "failed",
+        sessionId: row.sessionId
       })
     }
   }
@@ -161,13 +176,23 @@ function partitionHmacPending(
   return { passed, hmacFailed }
 }
 
-/** 回挂取消：先结清未决（已决不覆盖），再改 run 终态。 */
+/** 回挂取消：先结清未决（已决不覆盖），再改 run 终态，并发诚实收工码。 */
 export function abandonWaitingRestore(
   runId: string,
   window: BrowserWindow,
-  input: { status: "cancelled" | "failed"; error: string; cause: "failed" }
+  input: { status: "cancelled" | "failed"; error: string; cause: "failed"; sessionId?: string }
 ): void {
   settlePendingApprovalsForRun(runId, window, input.cause)
-  updateRun(getDatabase(), runId, { status: input.status, error: input.error })
+  updateRun(getDatabase(), runId, { status: input.status, error: RESTORE_NO_MATCHING_CODE })
+  const run = getActiveRun(runId)
+  emitEvent(window, {
+    type: "run.error",
+    runId,
+    sessionId: input.sessionId ?? run?.input.sessionId,
+    message: RESTORE_NO_MATCHING_CODE,
+    code: RESTORE_NO_MATCHING_CODE,
+    turn: { workflow: "todo", attention: "neutral" }
+  })
+  if (run) deleteActiveRun(runId)
 }
 

@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`agent.run.origin` 只许 main 写）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`agent.run.origin` 只许 main 写；`approvals.pending.args` 为 HMAC 库拷贝）
 
 ## 当前真相
 
@@ -28,7 +28,7 @@
 | observability | `metrics` `export` `setPolicy` `replay` `cliUsage` | 本地指标与内存 stream 回放；`replay` 可按 `runId` 过滤，摘要可带 `toolName` / `decision`，不含 args；`metrics` 行带可选 `estimatedCostUsd` / `costStatus` / `costMissing`（未知原因；非法枚举 `.catch(undefined)`，不丢整行）；`cliUsage` 入参空对象，返回 catalog 全量 `CliUsageSource`（`CliUsageSourceStatus` 四态）+ 日/模型/项目桶，不含 prompt、jsonl 原文或绝对路径 |
 | terminal | `open` `write` `resize` `close` | node-pty；`resize` 入参 `{ sessionId, cols, rows }` |
 | inbox.state | `list` `put` | Inbox 档案耐久层（SQLite `inbox_state` 表）：已读 / 隐藏状态 + error/complete 条目归档；`put` 合并语义，只覆盖传入的标志 |
-| approvals | `pending` | Inbox 拍板真源：`decision IS NULL` 且会话未归档；入参空对象 `.strict()`，回 `{ items: PendingApprovalItem[] }` |
+| approvals | `pending` | Inbox 拍板真源：`decision IS NULL` 且会话未归档；入参空对象 `.strict()`，回 `{ items: PendingApprovalItem[], restoreSettled? }`。`PendingApprovalItem.args` 是库里签 HMAC 的那份（main 剔 park 字段后再给 renderer）；缺参省略，禁止猜线程 / `{}`。`restoreSettled` 表示 `restoreWaitingRuns` 扫完；未完成时 renderer 不得补可决策卡 |
 | sessions | `needsReview` | Inbox 待验收真源：`workflow_status = needs_review` 且 `archived_at IS NULL`；入参空对象 `.strict()`，回 `{ items: SessionNeedsReviewItem[] }`。顶栏 / 横幅 / Inbox 共用 main 落库的这份，禁止 renderer 用 git dirty / 裸 `run.end` / 本地 `repositories` 自算 |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` `forceQuit` `setTaskbarTitle` `openExternal` | 无边框窗；`forceQuit` 放行后再 `app.quit`。关窗/⌘Q 若有跑中会话，main `before-quit` 先 `preventDefault` 并推 `window.quit-requested`，renderer 确认后才 `forceQuit`。`setTaskbarTitle` 入参 `{ label }`（去换行，最长 80）；main 只写成 `{label} — Enjoy Agents`，空串恢复 `Enjoy Agents`。Win / macOS / Linux 都是 `BrowserWindow.setTitle`。`openExternal` 入参 Zod `WindowOpenExternalInput` `{ url }`（最长 2048，只认 http(s)，拒 userinfo），main 再 `URL` 复验后才 `shell.openExternal`。校验失败回 `{ ok: false, code: OPEN_EXTERNAL_INVALID | OPEN_EXTERNAL_NOT_ALLOWED }`，不抛。`window.openExternal` **只能**从用户手势回调调用（目前是终端 WebLinks 点击）；禁止程序化 / 自动打开。禁止 effect / 定时器 / 自动扫描调用；禁止 renderer `window.open` |
 | app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |
@@ -82,6 +82,7 @@
 
 - renderer 调 `workspace.readFile` 漏 `workspaceId` 会被 Zod 拒，审批预览曾只传 `{ path }`。不是合约缺口。正确做法：统一走 `readWorkspaceFile`，空 id 在渲染层抛 `MissingWorkspaceIdError`，禁止把 `undefined` 丢给 IPC。
 - Inbox 拍板若信 Attention 槽，已决/归档仍涨徽标，空 `repositories` 还会放行全部。正确做法：`approvals.pending` 只列 `decision IS NULL` 且未归档；renderer 空会话列表 fail-closed。
+- **隐患**：回挂补卡若从线程猜 args 或填 `{}`，HMAC 对不上、允许后工具不跑。正确做法：`PendingApprovalItem.args` 只信库拷贝；缺参 fail closed，不弹允许卡。
 - Inbox 待验收若信 renderer `repositories` / git dirty / 裸 `run.end`，非 git 仓写后 Stop 顶栏和横幅已是「待验收」，Inbox 列却空。根因：`persistSessionWorkflow` 曾 `void patchSession().catch()`，Stop 后立刻读库看不到；Inbox 又自己合成。正确做法：main 同步 `UPDATE sessions.workflow_status`；Inbox 只读 `sessions.needsReview`。
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`SESSION_CHANNELS`（含 `session.patch` / `session.recap` / `session.rename`）必须进 `CHANNELS`，否则卸载会留下 handler。
 - `patchSession` / `session.archive` / `session.unarchive` 不碰 `updated_at`；`rename` 才会 bump。归档只写 `archived_at`（`session-archive-stamp.ts`），否则撤销后会话跳顶并挤开当前高亮。归档前必须先走普通 deny 清未决审批。

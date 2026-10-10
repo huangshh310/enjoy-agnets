@@ -5,7 +5,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { insertApproval, insertRun, listLivePendingApprovals } from "@enjoy-agents/db"
 
-const { getDatabase } = await import("./settle-run-approvals.behavior.load.ts")
+const { getDatabase, mapLivePendingItem } = await import("./list-live-pending-approvals.behavior.load.ts")
 
 test("活会话未决进列表，已决与归档不进", () => {
   const db = getDatabase()
@@ -151,4 +151,31 @@ test("已结束 run 的未决不进拍板：cancelled / failed 不列", () => {
   assert.ok(!items.some((item) => item.id === "apr_cancelled_pending"))
   assert.ok(!items.some((item) => item.id === "apr_failed_pending"))
   assert.ok(items.some((item) => item.id === "apr_running_pending"))
+})
+
+test("HMAC 库参进 Inbox args，park 字段剥掉，缺参不补 {}", () => {
+  const row = {
+    id: "apr_map",
+    runId: "run_map",
+    sessionId: "ses_map",
+    workspaceId: "ws_map",
+    sessionTitle: "Note",
+    name: "write_file",
+    toolCallId: "tool_map",
+    createdAt: 1
+  }
+  assert.deepEqual(
+    mapLivePendingItem({
+      ...row,
+      args: JSON.stringify({
+        path: "e2e-stub.txt",
+        content: "from stub",
+        thumbnailPath: "/tmp/shot.png",
+        appKey: "notes"
+      })
+    }).args,
+    { path: "e2e-stub.txt", content: "from stub" }
+  )
+  assert.equal("args" in mapLivePendingItem({ ...row, args: null, requestArgs: null }), false)
+  assert.deepEqual(mapLivePendingItem({ ...row, args: "{}" }).args, {})
 })

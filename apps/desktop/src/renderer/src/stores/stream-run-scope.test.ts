@@ -13,7 +13,15 @@ import {
 test("旁路 Extract 不得新开助手轮", () => {
   assert.equal(canOpenAssistantTurn("run_extract", null), false)
   assert.equal(shouldFinalizeComposerRun("run_extract", null), false)
+  assert.equal(shouldFinalizeComposerRun("run_extract", null, { type: "run.end" }), false)
   assert.equal(isForeignRunId("run_extract", "run_agent"), true)
+})
+
+test("空闲时回挂 run.error 要收轮", () => {
+  assert.equal(
+    shouldFinalizeComposerRun("run_wait", null, { type: "run.error" }),
+    true
+  )
 })
 
 test("当前 composer run 可以挂流式助手并收尾", () => {

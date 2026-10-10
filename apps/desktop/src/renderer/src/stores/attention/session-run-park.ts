@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
+import { isComposerRunStart, isNonAgentRunKind } from "../stream-run-scope"
 import type { ChatStore } from "../chat-store.types"
 import type { ParkedRun } from "./attention.types"
 
@@ -52,9 +53,14 @@ export function nextParks(
   const existing = parks[sessionId]
   if (!existing) {
     if (event.type === "run.start") {
+      if (!isComposerRunStart(event)) return null
       return { ...parks, [sessionId]: seedParkFromRunStart(sessionId, event.runId) }
     }
-    if (event.type === "approval.required" || event.type === "run.error") {
+    if (event.type === "approval.required") {
+      const seeded = seedParkFromRunStart(sessionId, event.runId)
+      return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
+    }
+    if (event.type === "run.error" && !isNonAgentRunKind(event)) {
       const seeded = seedParkFromRunStart(sessionId, event.runId)
       return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
     }
@@ -93,6 +99,7 @@ export function idleComposerPatch(): Pick<
   ChatStore,
   | "running"
   | "runId"
+  | "lastRunId"
   | "runStartedAt"
   | "pendingApproval"
   | "error"
@@ -103,6 +110,7 @@ export function idleComposerPatch(): Pick<
   return {
     running: false,
     runId: null,
+    lastRunId: null,
     runStartedAt: null,
     pendingApproval: null,
     error: null,
@@ -116,6 +124,7 @@ export function parkedComposerPatch(park: ParkedRun): ReturnType<typeof idleComp
   return {
     running: park.running,
     runId: park.runId,
+    lastRunId: park.runId,
     runStartedAt: park.runStartedAt,
     pendingApproval: park.pendingApproval,
     error: park.error,

@@ -205,6 +205,8 @@ export type ChatStore = {
   mode: AgentMode
   running: boolean
   runId: string | null
+  /** 本会话最近一次认领的 run；run.end 清 runId 后检查器仍按它拉指标。切会话必须清空。 */
+  lastRunId: string | null
   /** 本轮 setRunning(true) 的真实起点；停跑清空。禁止编造。 */
   runStartedAt: number | null
   /** composer 尚未拿到 runId 时暂存事件，避免旁路 Extract 写进乐观轮 */

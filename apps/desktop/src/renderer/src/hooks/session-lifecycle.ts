@@ -279,6 +279,7 @@ export function restoreComposerForSession(sessionId: string) {
         ...idleComposerPatch(),
         running: true,
         runId: slot.runId || null,
+        lastRunId: slot.runId || null,
         pendingApproval: slot.approval
       })
     } else {

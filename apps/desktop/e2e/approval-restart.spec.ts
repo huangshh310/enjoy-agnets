@@ -1,13 +1,15 @@
 /**
  * 重启后 HMAC 通过的 waiting 审批必须把卡重新发出，不能只剩 Inbox 幽灵行。
+ * 卡上必须带库里的 args；允许后工具真跑，写出 e2e-stub.txt。
  */
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
 import { sendComposer } from "./send-composer"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
+const stubPath = (workspace: string) => join(workspace, "e2e-stub.txt")
 
 test("重启后待审批卡还在，Inbox 不再是幽灵行", async () => {
   test.setTimeout(180_000)
@@ -44,9 +46,11 @@ test("重启后待审批卡还在，Inbox 不再是幽灵行", async () => {
     await sendComposer(window, composer, "please write a note")
     await window.locator('[data-testid="approval-allow"]').waitFor({ timeout: 15_000 })
     await expect(window.locator('[data-testid="permission-dock"]')).toBeVisible()
+    await expect(window.locator("body")).toContainText("e2e-stub.txt")
   } finally {
     await first.close()
   }
+  expect(existsSync(stubPath(workspace))).toBe(false)
 
   const second = await electron.launch({
     args: launchArgs,
@@ -61,8 +65,14 @@ test("重启后待审批卡还在，Inbox 不再是幽灵行", async () => {
     await expect(window.locator("body")).toContainText("please write a note", { timeout: 20_000 })
     await expect(window.locator('[data-testid="permission-dock"]')).toBeVisible({ timeout: 20_000 })
     await expect(window.locator('[data-testid="approval-allow"]')).toBeVisible()
+    await expect(window.locator("body")).toContainText("e2e-stub.txt")
     await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
     await expect(window.locator("body")).not.toContainText("重启后对不上原来的审批")
+    await window.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
+    await expect
+      .poll(() => existsSync(stubPath(workspace)), { timeout: 20_000 })
+      .toBe(true)
+    expect(readFileSync(stubPath(workspace), "utf8")).toContain("from stub")
   } finally {
     await second.close()
   }

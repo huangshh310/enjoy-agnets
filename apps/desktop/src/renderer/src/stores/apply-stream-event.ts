@@ -78,7 +78,7 @@ function applyTerminalEvent(
   activeRunId: string | null
 ): StreamPatch | null {
   if (event.type !== "run.end" && event.type !== "run.error") return null
-  if (!shouldFinalizeComposerRun(event.runId, activeRunId)) return { messages }
+  if (!shouldFinalizeComposerRun(event.runId, activeRunId, event)) return { messages }
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) {
       return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
@@ -103,7 +103,13 @@ function applyTerminalEvent(
         notice: CATCH_UP_APPROVAL_TIMEOUT
       }
     }
-    return { messages: finalizeRun(messages), running: false, error: event.message }
+    return {
+      messages: finalizeRun(messages),
+      pendingApproval: null,
+      running: false,
+      runId: null,
+      error: event.message
+    }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
 }

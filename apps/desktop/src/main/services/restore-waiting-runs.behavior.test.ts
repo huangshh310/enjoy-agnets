@@ -15,7 +15,8 @@ const {
   holdAgentRun,
   resetRestoreWaitingOnceForTests,
   restoreWaitingRuns,
-  RESTORE_NO_MATCHING_CODE
+  RESTORE_NO_MATCHING_CODE,
+  sessionActiveRun
 } = await import("./restore-waiting-runs.behavior.load.ts")
 
 function silentWindow(): BrowserWindow {
@@ -81,13 +82,88 @@ test("回挂取消结清未决：cancelled run 的 NULL 行不进拍板", () => 
   abandonWaitingRestore("run_abandon", silentWindow(), {
     status: "cancelled",
     error: "Missing generation checkpoint.",
-    cause: "failed"
+    cause: "failed",
+    sessionId: "ses_abandon"
   })
   assert.equal(getApproval(db, "apr_abandon")?.decision, "cancelled")
   assert.equal(getApproval(db, "apr_abandon_kept")?.decision, "allow")
   assert.equal(getRun(db, "run_abandon")?.status, "cancelled")
+  assert.equal(getRun(db, "run_abandon")?.error, RESTORE_NO_MATCHING_CODE)
   assert.ok(!listLivePendingApprovals(db).some((item) => item.id === "apr_abandon"))
+  assert.equal(getActiveRun("run_abandon"), undefined)
+  assert.equal(sessionActiveRun("ses_abandon").running, false)
   deleteActiveRun("run_abandon")
+})
+
+test("回挂取消发 run.error，Composer running 收回", () => {
+  const events: Array<{ type: string; code?: string; message?: string }> = []
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_abandon_err", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ses_abandon_err", "ws_abandon_err", "abandon", 1, 1)
+  insertRun(db, {
+    id: "run_abandon_err",
+    sessionId: "ses_abandon_err",
+    workspaceId: "ws_abandon_err",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  holdAgentRun({
+    runId: "run_abandon_err",
+    window: {
+      isDestroyed: () => false,
+      webContents: {
+        send(_ch: string, event: { type: string; code?: string; message?: string }) {
+          events.push(event)
+        }
+      }
+    } as unknown as BrowserWindow,
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId: "ses_abandon_err",
+      workspaceId: "ws_abandon_err",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "write" }]
+    }
+  })
+  assert.equal(sessionActiveRun("ses_abandon_err").running, true)
+  abandonWaitingRestore(
+    "run_abandon_err",
+    {
+      isDestroyed: () => false,
+      webContents: {
+        send(_ch: string, event: { type: string; code?: string; message?: string }) {
+          events.push(event)
+        }
+      }
+    } as unknown as BrowserWindow,
+    {
+      status: "cancelled",
+      error: "Missing generation checkpoint.",
+      cause: "failed",
+      sessionId: "ses_abandon_err"
+    }
+  )
+  assert.equal(getActiveRun("run_abandon_err"), undefined)
+  assert.deepEqual(sessionActiveRun("ses_abandon_err"), { runId: null, running: false })
+  assert.ok(
+    events.some(
+      (event) =>
+        event.type === "run.error" &&
+        event.code === RESTORE_NO_MATCHING_CODE &&
+        event.message === RESTORE_NO_MATCHING_CODE
+    )
+  )
 })
 
 test("检查点里 HMAC 失败行：结束 run，不回 SDK，Inbox 不留未决", async () => {

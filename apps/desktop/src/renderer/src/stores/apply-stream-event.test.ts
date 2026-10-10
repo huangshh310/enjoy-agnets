@@ -8,6 +8,11 @@ import { isStaleObservationAfterAllow, isToolNotExecuted } from "@enjoy-agents/i
 import { mapToolStatus } from "../components/ai-chat/thread/thinking/extract-step-fields.ts"
 import { reduceStreamEvent } from "./apply-stream-event.ts"
 import type { ThreadMessage } from "./chat-store"
+import {
+  classifyThreadError,
+  humanizeThreadError,
+  RESTORE_NO_MATCHING
+} from "../lib/usage/classify-thread-error.ts"
 
 function assistantWithDeniedTool(): ThreadMessage[] {
   return [
@@ -216,6 +221,27 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
     false
   )
   assert.equal(delta.messages.at(-1)?.content, "好的")
+})
+
+test("空闲时回挂 run.error 要显示人话并停 running", () => {
+  const patch = reduceStreamEvent(
+    [],
+    {
+      type: "run.error",
+      runId: "run_wait",
+      sessionId: "ses_a",
+      message: RESTORE_NO_MATCHING,
+      code: RESTORE_NO_MATCHING,
+      turn: { workflow: "todo", attention: "neutral" }
+    },
+    null
+  )
+  assert.equal(patch.running, false)
+  assert.equal(patch.runId, null)
+  assert.equal(patch.error, RESTORE_NO_MATCHING)
+  assert.equal(classifyThreadError(patch.error ?? ""), "restore_no_matching")
+  assert.equal(humanizeThreadError(patch.error, (path) => path), "chat.restoreNoMatching")
+  assert.notEqual(humanizeThreadError(patch.error, (path) => path), RESTORE_NO_MATCHING)
 })
 
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {

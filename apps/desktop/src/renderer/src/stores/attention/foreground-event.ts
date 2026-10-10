@@ -2,7 +2,7 @@
  * 事件是否属于当前前台 Composer。纯函数，供分发与测试共用。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
-import { isComposerRunStart } from "../stream-run-scope"
+import { isComposerRunStart, isNonAgentRunKind } from "../stream-run-scope"
 
 function eventRunId(event: StreamEvent): string | undefined {
   return "runId" in event ? event.runId : undefined
@@ -24,7 +24,10 @@ export function belongsToForeground(
     return !currentRunId || currentRunId === runId
   }
   // 重启回挂：Composer 已 idle，approval.required / 终态仍要进当前会话。
-  if (isIdleSessionRestoreEvent(event.type) && !running) return true
+  if (isIdleSessionRestoreEvent(event.type) && !running) {
+    if (isNonAgentRunKind(event)) return false
+    return true
+  }
   if (!running) return false
   return !currentRunId || !runId || currentRunId === runId
 }

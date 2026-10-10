@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（拒绝并归档先 deny 再 archive；拍板 SoT=活 run 未决；重启回挂卡与 Inbox 对齐）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（拒绝并归档先 deny 再 archive；回挂只补最新一张；args 来自 HMAC 库拷贝）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -181,7 +181,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：DB 已 deny/cancelled 且会话已归档，Inbox 拍板仍涨、行仍写「等待做出决策」。根因：`inboxFromAttention` 不看 status，归档会话的 pending 仍物化。正确做法：只计 active/focused 拍板，且会话必须仍在 live repositories；`inbox_state` 不得把 pending_approval / ask_user 当档案补回来。
 - **隐患**：归档带未决审批的会话，顶栏变成「需处理 2」+ 两粒「出错」。根因：归档 abort 发普通 `run.error`（attention=error），再切到相邻会话时事件可能再记一槽。正确做法：归档中止走 `user_aborted` + `turn.attention=neutral`，用户 Stop 走 `stopped`，不写 error；`archiveCurrentSession` 之后 `clearSessionAttention` 清掉该会话全部胶囊。
 - **隐患**：finished / cancelled / failed run 的 `decision IS NULL` 行仍进 Inbox。根因：`listLivePendingApprovals` 曾只看未决+未归档，不看 `runs.status`。正确做法：SQL 只列 `waiting_review`/`running`；回挂四条取消路径 `settlePendingApprovalsForRun(..., "failed")`（已决不覆盖，不是用户 Stop）。检查点里有 HMAC 失败行：`endRestoredRunWithoutSdkReply`，结清不写 `sdkApproved`，禁止 `planSdkReplay` 回 SDK。空会话列表 fail-closed；`inbox_state` 不得把 pending_approval / ask_user 当档案补回来。待验收同样与会话列表求交。
-- **隐患**：重启后 Inbox 拍板还在，PermissionDock 空、工具行转圈。根因：回挂 `approval.required` 被空闲 Composer 的前台过滤丢掉；`did-finish-load` 也可能早于 renderer 订阅。卡与拍板 SoT 分叉。正确做法：同会话空闲也吃回挂审批；无 park 也落停车；`loadSession` 再用 `approvals.pending` 补卡。e2e：`approval-restart.spec.ts`。
+- **隐患**：重启后 Inbox 拍板还在，PermissionDock 空、工具行转圈。根因：回挂 `approval.required` 被空闲 Composer 的前台过滤丢掉；`did-finish-load` 也可能早于 renderer 订阅。卡与拍板 SoT 分叉。正确做法：同会话空闲也吃回挂审批；无 park 也落停车；`loadSession` 等 `restoreSettled` 后再用 `approvals.pending` 补**该会话最新一张**；args 只信库拷贝，缺参或 `sessionActive` 未挂上该 run 不得补可决策卡。e2e：`approval-restart.spec.ts`。
 - **隐患**：非 git 仓批准写盘后 Stop，顶栏「待验收」、横幅「中途停下，已改 1 个文件」，Inbox「待验收」却空；git 仓正常写完能进列。根因：Inbox 用 renderer 树 / git dirty / `run.end` 自算，且 `persistSessionWorkflow` 异步可丢。正确做法：main 同步落 `workflow_status`；三处表面都读同一份 `needs_review`；测试覆盖非 git + git 中途停下都进 `listSessionsNeedingReview`。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。侧栏未决审批只加红点，禁止 `focusAttention` 把用户拽回待批会话（Strip / Inbox / handoff 才跳）。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。
