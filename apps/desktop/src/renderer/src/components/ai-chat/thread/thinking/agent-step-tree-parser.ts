@@ -196,7 +196,8 @@ function fallbackNode(
     return {
       id: tool.id,
       kind: "command",
-      title: formatToolName(tool.name),
+      // 合入 #134 时这条还写 formatToolName，本分支没 import，lint no-undef。
+      title: formatToolLabel(tool.name, t, args),
       errorText: t("studio.automations.catchUpTimeout"),
       status: "skipped"
     }
