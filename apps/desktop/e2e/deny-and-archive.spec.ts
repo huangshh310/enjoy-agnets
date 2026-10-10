@@ -64,21 +64,12 @@ test("拒绝并归档：审批 deny、会话 archived_at、胶囊与已归档", 
     await snap(window, "p0_deny_archive_confirm")
     await window.locator('[data-testid="confirm-dialog-confirm"]').click()
 
-    await expect(window.getByText("已拒绝，本次未执行")).toBeVisible({ timeout: 12_000 })
-    await snap(window, "p0_denied_then_archive")
     await expect(window.locator('[data-testid="session-archived-toast"]')).toBeVisible({ timeout: 12_000 })
     await expect(sessionRow(window, sessionName)).toHaveCount(0, { timeout: 8_000 })
     await expect(window.locator('[data-testid="attention-needs-bar"]')).toHaveCount(0)
     const inbox = window.getByRole("button", { name: /^收件箱/ })
     await expect(inbox).toHaveAttribute("aria-label", "收件箱")
     await snap(window, "p0_after_deny_archive")
-
-    await window.evaluate(() => {
-      window.location.hash = "#/settings/archived"
-    })
-    await expect(window.getByText("已归档的聊天").first()).toBeVisible({ timeout: 8_000 })
-    await expect(window.getByText(sessionName)).toBeVisible({ timeout: 8_000 })
-    await snap(window, "p0_archived_list")
 
     const dbPath = join(userData, "app.db")
     await expect.poll(() => existsSync(dbPath), { timeout: 8_000 }).toBeTruthy()
@@ -87,6 +78,22 @@ test("拒绝并归档：审批 deny、会话 archived_at、胶囊与已归档", 
     expect(dump, dump).toMatch(/decision\s*=\s*deny/)
     expect(dump, dump).toMatch(/archived_at\s*=\s*\d+/)
     expect(dump, dump).not.toMatch(/decision\s*=\s*NULL/)
+
+    await window.evaluate(() => {
+      window.location.hash = "#/settings/archived"
+    })
+    await expect(window.getByText("已归档的聊天").first()).toBeVisible({ timeout: 8_000 })
+    await expect(window.getByText(sessionName)).toBeVisible({ timeout: 8_000 })
+    await snap(window, "p0_archived_list")
+    await window.locator('[data-testid="archived-row-restore"]').click()
+    await window.evaluate(() => {
+      window.location.hash = "#/"
+    })
+    await expect(sessionRow(window, sessionName)).toHaveCount(1, { timeout: 8_000 })
+    await sessionRow(window, sessionName).click()
+    await expect(window.getByText("已拒绝，本次未执行")).toBeVisible({ timeout: 12_000 })
+    await expect(window.getByText("写入 e2e-stub.txt")).toBeVisible()
+    await snap(window, "p0_denied_after_restore")
   } finally {
     await closeApp(app)
   }
