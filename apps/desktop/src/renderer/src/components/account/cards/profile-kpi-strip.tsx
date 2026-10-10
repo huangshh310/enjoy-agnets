@@ -14,7 +14,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { growthBadgeClass } from "../constants"
 import { hasGrowthBase } from "../lib/profile-face-copy"
-import { formatContributionUsd } from "../lib/profile-metrics"
+import { formatSpendUsd } from "../lib/profile-metrics"
 import type { ProfileMetricSummary } from "../types/profile.types"
 
 interface ProfileKpiStripProps {
@@ -27,33 +27,34 @@ export function ProfileKpiStrip({ summary, totalAgentsCount }: ProfileKpiStripPr
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-      {/* 1. 本年花费 */}
-      <div className="flex flex-col justify-between rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-accent-500/30">
-        <div className="flex items-center justify-between text-text-tertiary">
-          <span className="text-caption-2-medium font-medium">{t("pages.account.hero.contributions")}</span>
-          <RiMoneyDollarCircleLine className="size-4 text-accent-500" />
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-title-2-semibold tracking-tight text-text-primary">
-            {formatContributionUsd(summary.contributionsCount)}
-          </span>
-          {hasGrowthBase(summary.contributionsGrowth) ? (
-            <span
-              className={cx(
-                "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
-                growthBadgeClass(summary.contributionsGrowth, "success")
-              )}
-            >
-              {summary.contributionsGrowth}
+      {summary.yearSpendUsd != null ? (
+        <div className="flex flex-col justify-between rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-accent-500/30">
+          <div className="flex items-center justify-between text-text-tertiary">
+            <span className="text-caption-2-medium font-medium">{t("pages.account.hero.contributions")}</span>
+            <RiMoneyDollarCircleLine className="size-4 text-accent-500" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-title-2-semibold tracking-tight text-text-primary">
+              {formatSpendUsd(summary.yearSpendUsd)}
             </span>
-          ) : null}
+            {hasGrowthBase(summary.contributionsGrowth) ? (
+              <span
+                className={cx(
+                  "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
+                  growthBadgeClass(summary.contributionsGrowth, "success")
+                )}
+              >
+                {summary.contributionsGrowth}
+              </span>
+            ) : null}
+          </div>
+          <span className="mt-1 text-caption-2-regular text-text-tertiary">
+            {t("pages.account.hero.spendHint")}
+          </span>
         </div>
-        <span className="mt-1 text-caption-2-regular text-text-tertiary">
-          {t("pages.account.hero.spendHint")}
-        </span>
-      </div>
+      ) : null}
 
-      {/* 2. 累计 Token */}
+      {/* 累计 Token */}
       <div className="flex flex-col justify-between rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-accent-500/30">
         <div className="flex items-center justify-between text-text-tertiary">
           <span className="text-caption-2-medium font-medium">{t("pages.account.hero.lifetimeTokens")}</span>

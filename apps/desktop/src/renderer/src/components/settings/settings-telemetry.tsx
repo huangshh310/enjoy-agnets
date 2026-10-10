@@ -1,12 +1,9 @@
 /**
- * Settings → 遥测与隐私：默认面只留收集说明、改进开关、清除记录。
+ * Settings → 遥测与隐私：默认面只留收集说明与本机记录开关。
  * 指标大盘（Local APM / TTFO / P95）只在开发者文案档出现。
  */
-import { useState } from "react"
 import { RiShieldKeyholeLine } from "@remixicon/react"
 import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { useObservabilityPage } from "@renderer/components/observability/use-observability-page"
 import { SettingsCard, SettingsRow } from "./settings-row"
@@ -19,12 +16,11 @@ export function TelemetrySettings() {
   const t = useT()
   const obs = useObservabilityPage()
   const { preferences, update } = usePrefUpdate()
-  const [confirmClear, setConfirmClear] = useState(false)
   const policy = preferences?.telemetryPolicy ?? "local"
   const recording = policy !== "off"
   const avgTtfo = formatAvgTtfoSeconds(obs.metrics)
-  const collectDesc =
-    policy === "otel" ? t("settings.telemetry.collectDescOtel") : t("settings.telemetry.collectDesc")
+  // 默认面只描述默认政策 local：只存在本机，不上传。OTEL 导出句只在开发者档。
+  const collectDesc = t("settings.telemetry.collectDesc")
 
   return (
     <div data-testid="page-telemetry" className="flex flex-col gap-6">
@@ -42,12 +38,12 @@ export function TelemetrySettings() {
 
       <SettingsCard>
         <SettingsRow
-          title={t("settings.telemetry.helpImprove")}
-          description={t("settings.telemetry.helpImproveDesc")}
+          title={t("settings.telemetry.recordLocal")}
+          description={t("settings.telemetry.recordLocalDesc")}
         >
           <Switch
             checked={recording}
-            aria-label={t("settings.telemetry.helpImprove")}
+            aria-label={t("settings.telemetry.recordLocal")}
             onCheckedChange={(on) => {
               void update({ telemetryPolicy: on ? (policy === "otel" ? "otel" : "local") : "off" })
             }}
@@ -55,33 +51,9 @@ export function TelemetrySettings() {
         </SettingsRow>
       </SettingsCard>
 
-      <SettingsCard>
-        <SettingsRow
-          title={t("settings.telemetry.clearLocal")}
-          description={t("settings.telemetry.clearLocalDesc")}
-        >
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 cursor-pointer text-caption-2-medium"
-            onClick={() => setConfirmClear(true)}
-          >
-            {t("settings.telemetry.clearLocal")}
-          </Button>
-        </SettingsRow>
-      </SettingsCard>
+      {/* TODO(kai): 有 observability.clear IPC 后再在默认面放「清除本地记录」。现在没有接口，不画假按钮。 */}
 
       {isDevCopyEnabled() ? <TelemetryDevPanel /> : null}
-
-      <ConfirmDialog
-        open={confirmClear}
-        title={t("settings.telemetry.clearConfirmTitle")}
-        description={t("settings.telemetry.clearConfirmDesc")}
-        onOpenChange={setConfirmClear}
-        onConfirm={() => {
-          // 无现成 observability.clear IPC，不假装已删除。
-        }}
-      />
     </div>
   )
 }

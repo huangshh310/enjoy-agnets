@@ -11,7 +11,7 @@ import { ProfileActivityHeatmap } from "../charts/profile-activity-heatmap"
 import { growthBadgeClass } from "../constants"
 import { GlassCover } from "../glass/glass-cover"
 import { hasGrowthBase } from "../lib/profile-face-copy"
-import { formatContributionUsd } from "../lib/profile-metrics"
+import { formatSpendUsd } from "../lib/profile-metrics"
 import type {
   ExtendedUserProfile,
   GlassCoverPreset,
@@ -132,24 +132,26 @@ export function ProfileHeroCard({
           </p>
         </div>
 
-        <div className="mt-4 flex flex-col gap-1.5 border-t border-separator-border/50 pt-5">
-          <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.hero.contributions")}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-title-1-semibold tracking-tight text-text-primary">
-              {formatContributionUsd(summary.contributionsCount)}
-            </span>
-            {hasGrowthBase(summary.contributionsGrowth) ? (
-              <span
-                className={cx(
-                  "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-caption-2-medium",
-                  growthBadgeClass(summary.contributionsGrowth, "success")
-                )}
-              >
-                {summary.contributionsGrowth}
+        {summary.yearSpendUsd != null ? (
+          <div className="mt-4 flex flex-col gap-1.5 border-t border-separator-border/50 pt-5">
+            <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.hero.contributions")}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-title-1-semibold tracking-tight text-text-primary">
+                {formatSpendUsd(summary.yearSpendUsd)}
               </span>
-            ) : null}
+              {hasGrowthBase(summary.contributionsGrowth) ? (
+                <span
+                  className={cx(
+                    "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-caption-2-medium",
+                    growthBadgeClass(summary.contributionsGrowth, "success")
+                  )}
+                >
+                  {summary.contributionsGrowth}
+                </span>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-2.5 pt-3.5 sm:grid-cols-4">
           <KpiTile value={summary.lifetimeTokens} label={t("pages.account.hero.lifetimeTokens")} />

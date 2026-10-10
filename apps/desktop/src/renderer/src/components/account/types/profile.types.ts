@@ -19,10 +19,11 @@ export interface ExtendedUserProfile extends UserProfileData {
   blobatarConfig: BlobatarConfig
 }
 
-/** 个人成就与 KPI。环比胶囊无上年/上月基数时为空串。 */
+/** 个人成就与 KPI。yearSpendUsd 无真实费用来源时为 null。 */
 export interface ProfileMetricSummary {
   contributionsCount: number
   contributionsGrowth: string
+  yearSpendUsd: number | null
   lifetimeTokens: string
   peakTokens: string
   longestTaskDuration: string

@@ -11,10 +11,12 @@ import {
   computeTopStreak,
   formatContributionUsd,
   formatDurationMs,
+  formatSpendUsd,
   formatTokenAmount,
   growthLabel,
   heatmapLevel,
-  tokenGrowthLabel
+  tokenGrowthLabel,
+  yearSpendUsdFromMetrics
 } from "./profile-metrics.ts"
 
 function metric(partial: Partial<TelemetryMetric> & Pick<TelemetryMetric, "id" | "createdAt">): TelemetryMetric {
@@ -25,6 +27,7 @@ function metric(partial: Partial<TelemetryMetric> & Pick<TelemetryMetric, "id" |
     inputTokens: partial.inputTokens,
     outputTokens: partial.outputTokens,
     durationMs: partial.durationMs,
+    estimatedCostUsd: partial.estimatedCostUsd,
     createdAt: partial.createdAt,
     id: partial.id
   }
@@ -58,10 +61,83 @@ test("buildSummary: 空 metrics 全部为零或破折号，无上年基数不写
   const summary = buildSummary([], new Date("2026-09-04T12:00:00"))
   assert.equal(summary.contributionsCount, 0)
   assert.equal(summary.contributionsGrowth, "")
+  assert.equal(summary.yearSpendUsd, null)
   assert.equal(summary.lifetimeTokens, "0")
   assert.equal(summary.peakTokens, "0")
   assert.equal(summary.longestTaskDuration, "—")
   assert.equal(summary.topStreakDays, "0d")
+})
+
+test("buildSummary: 没有真实费用来源就不出花费行", () => {
+  const now = new Date("2026-09-04T12:00:00")
+  const metrics = [
+    metric({
+      id: "a",
+      createdAt: new Date("2026-03-01T00:00:00").getTime(),
+      inputTokens: 1000
+    }),
+    metric({
+      id: "last-year-cost",
+      createdAt: new Date("2025-03-01T00:00:00").getTime(),
+      estimatedCostUsd: 9.99
+    }),
+    metric({
+      id: "nan",
+      createdAt: new Date("2026-04-01T00:00:00").getTime(),
+      estimatedCostUsd: Number.NaN
+    })
+  ]
+  assert.equal(yearSpendUsdFromMetrics(metrics, now), null)
+  const summary = buildSummary(metrics, now)
+  assert.equal(summary.yearSpendUsd, null)
+  assert.equal(summary.contributionsGrowth, "")
+})
+
+test("buildSummary: 本年 estimatedCostUsd 求和才出花费", () => {
+  const now = new Date("2026-09-04T12:00:00")
+  const summary = buildSummary(
+    [
+      metric({
+        id: "a",
+        createdAt: new Date("2026-03-01T00:00:00").getTime(),
+        estimatedCostUsd: 1.5
+      }),
+      metric({
+        id: "b",
+        createdAt: new Date("2026-04-01T00:00:00").getTime(),
+        estimatedCostUsd: 2.25
+      }),
+      metric({
+        id: "d",
+        createdAt: new Date("2026-05-01T00:00:00").getTime()
+      })
+    ],
+    now
+  )
+  assert.equal(summary.yearSpendUsd, 3.75)
+  assert.equal(summary.contributionsGrowth, "")
+  assert.equal(formatSpendUsd(summary.yearSpendUsd ?? 0), "$3.75")
+})
+
+test("buildSummary: 两年都有真实费用才画环比", () => {
+  const now = new Date("2026-09-04T12:00:00")
+  const summary = buildSummary(
+    [
+      metric({
+        id: "this",
+        createdAt: new Date("2026-03-01T00:00:00").getTime(),
+        estimatedCostUsd: 10
+      }),
+      metric({
+        id: "last",
+        createdAt: new Date("2025-03-01T00:00:00").getTime(),
+        estimatedCostUsd: 8
+      })
+    ],
+    now
+  )
+  assert.equal(summary.yearSpendUsd, 10)
+  assert.equal(summary.contributionsGrowth, "+25.0%")
 })
 
 test("buildSummary: 只统计真实 token / 次数 / 最长任务", () => {
