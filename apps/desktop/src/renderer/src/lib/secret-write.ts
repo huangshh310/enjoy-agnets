@@ -3,10 +3,12 @@
  * 合约枚举只有 KEYCHAIN_UNAVAILABLE（禁止 KEYCHAIN_LOCKED）。未知码走「没存上」。
  */
 import {
+  SecretWriteBlocked,
   secretWriteBlockedCode as contractBlockedCode,
   secretWriteOkPayload,
   SettingsSnapshot,
-  type SecretWriteErrorCode as SecretWriteContractCode
+  type SecretWriteErrorCode as SecretWriteContractCode,
+  type SecretWriteRevokeHint
 } from "@enjoy-agents/ipc-contract"
 
 /** 与合约对齐；UNKNOWN 只给 UI，不进 Zod 枚举。 */
@@ -120,15 +122,26 @@ export function secretWriteUi(
 
 export class SecretWriteUiError extends Error {
   readonly code: SecretWriteErrorCode
+  readonly revokeUrl?: string
+  readonly providerLabel?: string
 
-  constructor(code: SecretWriteErrorCode) {
+  constructor(code: SecretWriteErrorCode, hint?: SecretWriteRevokeHint) {
     super(code)
     this.name = "SecretWriteUiError"
     this.code = code
+    this.revokeUrl = hint?.revokeUrl
+    this.providerLabel = hint?.providerLabel
   }
 }
 
 export function unwrapSecretWrite<T>(result: unknown): T {
+  const blocked = SecretWriteBlocked.safeParse(result)
+  if (blocked.success) {
+    throw new SecretWriteUiError(blocked.data.code, {
+      revokeUrl: blocked.data.revokeUrl,
+      providerLabel: blocked.data.providerLabel
+    })
+  }
   const code = secretWriteBlockedCode(result)
   if (code) throw new SecretWriteUiError(code)
   if (result && typeof result === "object" && "ok" in result && (result as { ok: unknown }).ok === true) {

@@ -16,6 +16,8 @@ export const zhSettings = {
     failed: "没存上，请再试一次",
     notSaved: "没存上",
     deleteBlockedKeychain: "钥匙串不可用，暂时删不了这把密钥，其余密钥不受影响",
+    deleteBlockedRevokeHint: "如果担心这把密钥泄露，可以先到服务商后台作废它",
+    deleteBlockedRevokeAction: "去作废",
     saving: "保存中…"
   },
 

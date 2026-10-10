@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-10（解不开密文一律拒绝；设主引擎先写密钥）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-10（删档案拒绝带精选 revokeUrl）
 
 ## 当前真相
 
@@ -16,7 +16,7 @@
 
 `enabled` 是关闭但保留。关掉的档案不进选择器、不进 CLI 绑定。`activeId` 仍是新会话 Enjoy Local 的默认档案，和 `enabled` 是两件事。关掉当前默认档案时，`activeId` 改到下一张仍开启的档案。设置页「当前」只显示仍开启的默认档案；一张都没开就写「未在使用」，不把已关闭的名字当成当前。关掉的行主按钮是「开启」。页头模型数是收录，含已关闭档案，文案不是「此刻可选」。复制档案在主进程完成，Key 不进 renderer。
 
-密钥只存在主进程 vault（`safeStorage`）。钥匙串不可用时 `settings.upsertProvider` / `saveSecret` 回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`，不要 throw；Linux `basic_text` 当不可用，**禁止明文回落**，没有 `allowInsecure`。`e2e-plain:` 只在 stub+未打包+隔离 userData 写；读侧也只在 stub 认这个前缀。删档案时钥匙串挂了：只在删完一张都不剩才 `clearVault`（不重加密）；只要还剩档案（含无 Key 的 Ollama、只把 token 放在 `customHeaders` / `customBody` / `proxy` 的网关）一律拒绝并回 `KEYCHAIN_UNAVAILABLE`，vault 原密文不动。密文解不开（换机或钥匙串挂了）：无论钥匙串是否可用都拒绝，不得当成空 vault 成功。删空只看 remaining.length，Ollama / header / proxy 网关都算还剩档案。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
+密钥只存在主进程 vault（`safeStorage`）。钥匙串不可用时 `settings.upsertProvider` / `saveSecret` 回 `{ ok:false, code:"KEYCHAIN_UNAVAILABLE" }`，不要 throw；Linux `basic_text` 当不可用，**禁止明文回落**，没有 `allowInsecure`。`e2e-plain:` 只在 stub+未打包+隔离 userData 写；读侧也只在 stub 认这个前缀。删档案时钥匙串挂了：只在删完一张都不剩才 `clearVault`（不重加密）；只要还剩档案（含无 Key 的 Ollama、只把 token 放在 `customHeaders` / `customBody` / `proxy` 的网关）一律拒绝并回 `KEYCHAIN_UNAVAILABLE`，vault 原密文不动。密文解不开（换机或钥匙串挂了）：无论钥匙串是否可用都拒绝，不得当成空 vault 成功。删空只看 remaining.length，Ollama / header / proxy 网关都算还剩档案。拒绝回执可带可选 `revokeUrl` / `providerLabel`：只取该档案 kind 的精选 preset `keysURL`，没有则文档首页 `docsURL`；必须 https；**禁止**用户 `baseURL`；`kind === "custom"` 或解不开密文则省略。本轮不做「重置全部密钥」。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
 
 旧档案没有 `endpoints` 时，`readVault` 做一次迁移：`endpoints[apiStyle] = baseURL`；URL 等于该预设同一区域的官方地址时才补兄弟端点，改过的中转地址不补。已保存的 MiniMax / 智谱 / 豆包 URL 不改去套餐主机。读档失败不当成空 vault 覆盖。
 
@@ -63,7 +63,8 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 ## 已知坑
 
 - **隐患**：`removeProfile` 曾 `writeVault(..., { allowInsecure: true })`。`encryptString` 抛错时 `encryptJson` 把整包写成 `e2e-plain:`+JSON，没有 stub 闸，生产也会中招；读侧只在 stub 认该前缀，钥匙串恢复后 `readVault` 得到 `[]`，另一把密钥以明文躺在 DB。正确做法：去掉 `allowInsecure`；生产永不写明文；钥匙串挂了只在删空才 `clearVault`（remaining.length===0），其余拒绝 `KEYCHAIN_UNAVAILABLE`。行为测走生产加密路径并直接调 `removeProfile`，覆盖 probe C、解不开密文、header 凭证；不要只扫源码正则。
-- **隐患**：`readVault` 解不开密文时回空 vault，删档案会走 `missing` 假成功。正确做法：密文在且解不开一律 `KEYCHAIN_UNAVAILABLE`，钥匙串可用（换机）也一样。
+- **隐患**：`readVault` 解不开密文时回空 vault，删档案会走 `missing` 假成功。正确做法：密文在且解不开一律 `KEYCHAIN_UNAVAILABLE`，钥匙串可用（换机）也一样。拒绝时若 vault 仍可读，附精选 `revokeUrl`（keysURL → docsURL）；自定义 / 解不开密文不附链接。
+- **隐患**：删档案拒绝若只说「暂时删不了」，用户会以为密钥已经暴露又没法作废。正确做法：人话加「如果担心这把密钥泄露，可以先到服务商后台作废它」+ toast「去作废」走 `window.openExternal`；链接只来自精选 preset。
 - **隐患**：设主引擎 / `persistRuntimeId(asDefault)` 先 `patchPreferences({runtimeId})` 再写密钥，`setPreferences` 盖上 `defaultChatRouteExplicit=1`，密钥失败后旗卡住，auto-adopt 永远 skip。正确做法：先 `agentTools.upsert`，成功后才 `patchPreferences`（显式旗仍只在 `ipc-settings` 153–156）；失败不回滚。
 - **隐患**：`settings.upsertProvider` 在无系统钥匙串时抛英文，renderer `void save()` 吞掉后抽屉既不关也不报错。正确做法：renderer `runSecretWrite` 先检 `ok` 再接 throw；① `secretStorageAvailable === false` 黄条+禁保存（输入不锁）；② `KEYCHAIN_UNAVAILABLE` 保存钮上方红字（不提重启）；其它「没存上，请再试一次」；草稿留下。不要在本包定义 `SecretWriteErrorCode` 枚举（#133 ipc-contract）。
 - **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。

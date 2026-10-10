@@ -11,22 +11,41 @@ import { z } from "zod"
 export const SecretWriteErrorCode = z.enum(["KEYCHAIN_UNAVAILABLE"])
 export type SecretWriteErrorCode = z.infer<typeof SecretWriteErrorCode>
 
+/** 删档案拒绝时可带：只 https、只来自精选 preset，没有就省略。 */
+const HttpsRevokeUrl = z.string().refine((value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" && !url.username && !url.password
+  } catch {
+    return false
+  }
+})
+
 export const SecretWriteBlocked = z
   .object({
     ok: z.literal(false),
-    code: SecretWriteErrorCode
+    code: SecretWriteErrorCode,
+    revokeUrl: HttpsRevokeUrl.optional(),
+    providerLabel: z.string().min(1).optional()
   })
   .strict()
 export type SecretWriteBlocked = z.infer<typeof SecretWriteBlocked>
+export type SecretWriteRevokeHint = Pick<SecretWriteBlocked, "revokeUrl" | "providerLabel">
 
 /** 成功基座。各通道把既有 payload 摊在旁边。 */
 export const SecretWriteOk = z.object({ ok: z.literal(true) }).strict()
 export type SecretWriteOk = z.infer<typeof SecretWriteOk>
 
 export function secretWriteBlocked(
-  code: SecretWriteErrorCode = "KEYCHAIN_UNAVAILABLE"
+  code: SecretWriteErrorCode = "KEYCHAIN_UNAVAILABLE",
+  hint?: SecretWriteRevokeHint
 ): SecretWriteBlocked {
-  return { ok: false, code }
+  return SecretWriteBlocked.parse({
+    ok: false,
+    code,
+    ...(hint?.revokeUrl ? { revokeUrl: hint.revokeUrl } : {}),
+    ...(hint?.providerLabel ? { providerLabel: hint.providerLabel } : {})
+  })
 }
 
 export function secretWriteOk<T extends Record<string, unknown>>(

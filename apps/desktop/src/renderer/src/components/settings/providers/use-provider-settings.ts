@@ -23,6 +23,8 @@ import {
 } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { showAppToast } from "@renderer/lib/app-toast"
+import { deleteBlockedToastModel } from "@renderer/lib/delete-blocked-toast"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
 
 export type PingStateMap = Record<
   string,
@@ -140,12 +142,7 @@ function useProviderWrites(
         await persistSnapshot(queryClient, unwrapSettingsWrite(await getIde().settings.removeProvider({ id })))
         if (editor?.id === id) closeEditor()
       } catch (error) {
-        showAppToast(
-          error instanceof SecretWriteUiError
-            ? t("settings.secretWrite.deleteBlockedKeychain")
-            : secretWriteErrorMessage(error, t),
-          { tone: "error" }
-        )
+        showDeleteBlockedToast(error, t)
       }
     },
     duplicate: async (profile: ProviderPublic) => {
@@ -180,6 +177,22 @@ function useProviderWrites(
       }
     }
   }
+}
+
+function showDeleteBlockedToast(error: unknown, t: ReturnType<typeof useT>): void {
+  if (!(error instanceof SecretWriteUiError)) {
+    showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
+    return
+  }
+  const model = deleteBlockedToastModel(t, error.revokeUrl)
+  const revokeUrl = model.revokeUrl
+  showAppToast(model.message, {
+    tone: "error",
+    action:
+      revokeUrl && model.actionLabel
+        ? { label: model.actionLabel, onClick: () => requestOpenExternalQuiet(revokeUrl) }
+        : undefined
+  })
 }
 
 async function writeProviderSnapshot(
