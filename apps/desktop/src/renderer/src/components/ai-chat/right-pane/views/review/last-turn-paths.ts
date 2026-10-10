@@ -1,8 +1,10 @@
 /**
- * 上一轮：最后一条非续跑用户消息之后、助手工具参数里的 path。
+ * 上一轮：最后一条非续跑用户消息之后、**已执行**写盘工具的 path。
+ * 拒绝 / 未执行 / 还在审批的工具不算本轮改动。
  */
 
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
 import type { ThreadMessage } from "../../../../../stores/chat-store.types"
 
@@ -28,15 +30,23 @@ const PATH_WRITE_TOOLS = new Set<string>([
   "strreplace"
 ])
 
-export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
-  let lastUser = -1
+export function lastUserTurnIndex(messages: ThreadMessage[]): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]
-    if (msg?.role === "user" && !isContinueUser(msg.content)) {
-      lastUser = i
-      break
-    }
+    if (msg?.role === "user" && !isContinueUser(msg.content)) return i
   }
+  return -1
+}
+
+/** 本轮有工具但没有一个真正执行（全是拒绝 / 未执行 / 还在审批）。纯聊天不算。 */
+export function lastTurnDeniedOnly(messages: ThreadMessage[]): boolean {
+  const tools = toolsAfterLastUser(messages)
+  if (tools.length === 0) return false
+  return tools.every((tool) => isToolNotExecuted(tool) || tool.state !== "output-available")
+}
+
+export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
+  const lastUser = lastUserTurnIndex(messages)
   if (lastUser < 0) return []
 
   const paths: string[] = []
@@ -51,6 +61,18 @@ export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
     }
   }
   return paths
+}
+
+function toolsAfterLastUser(messages: ThreadMessage[]): ThreadToolCall[] {
+  const lastUser = lastUserTurnIndex(messages)
+  if (lastUser < 0) return []
+  const tools: ThreadToolCall[] = []
+  for (let i = lastUser + 1; i < messages.length; i++) {
+    const msg = messages[i]
+    if (!msg || msg.role === "user") break
+    tools.push(...(msg.tools ?? []))
+  }
+  return tools
 }
 
 /** 单条助手轮里写盘工具的 path，给气泡下改动树。 */
@@ -83,6 +105,7 @@ export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: 
 
 function pathFromTool(tool: ThreadToolCall): string | null {
   if (!isWriteTool(tool.name)) return null
+  if (isToolNotExecuted(tool) || tool.state !== "output-available") return null
   return readToolPath(tool.args) ?? readToolPath(tool.result)
 }
 

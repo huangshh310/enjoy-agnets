@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { groupChangedPaths, pathsFromLastTurn, pathsFromTools } from "./last-turn-paths.ts"
+import { groupChangedPaths, lastTurnDeniedOnly, pathsFromLastTurn, pathsFromTools } from "./last-turn-paths.ts"
 import type { ThreadMessage } from "../../../../stores/chat-store.types.ts"
 
 function msg(partial: Partial<ThreadMessage> & Pick<ThreadMessage, "role" | "content">): ThreadMessage {
@@ -96,6 +96,52 @@ test("单轮工具 path 给气泡改动树", () => {
       { id: "2", name: "read_file", args: { path: "skip.ts" }, state: "output-available" }
     ]),
     ["a.ts"]
+  )
+})
+
+test("拒绝 / 未执行的写盘不算本轮改动", () => {
+  const messages = [
+    msg({ role: "user", content: "write a note" }),
+    msg({
+      role: "assistant",
+      content: "",
+      tools: [
+        {
+          id: "1",
+          name: "write_file",
+          args: { path: "e2e-stub.txt" },
+          state: "output-denied",
+          errorText: "已拒绝，本次未执行"
+        }
+      ]
+    })
+  ]
+  assert.deepEqual(pathsFromLastTurn(messages), [])
+  assert.deepEqual(
+    pathsFromTools([
+      { id: "1", name: "write_file", args: { path: "e2e-stub.txt" }, state: "output-denied" }
+    ]),
+    []
+  )
+  assert.equal(lastTurnDeniedOnly(messages), true)
+})
+
+test("还在审批的写盘也不算本轮改动", () => {
+  assert.deepEqual(
+    pathsFromTools([
+      { id: "1", name: "write_file", args: { path: "e2e-stub.txt" }, state: "approval-requested" }
+    ]),
+    []
+  )
+})
+
+test("纯聊天没有工具，不算拒绝收工", () => {
+  assert.equal(
+    lastTurnDeniedOnly([
+      msg({ role: "user", content: "hello" }),
+      msg({ role: "assistant", content: "stub-ok hello" })
+    ]),
+    false
   )
 })
 

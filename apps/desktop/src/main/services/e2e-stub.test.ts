@@ -180,6 +180,70 @@ test("stubApprovedWrite 识别 tool-approval-response", () => {
   )
 })
 
+test("上一轮允许写盘后，下一句不得复读 allowed write", async () => {
+  assert.equal(
+    stubApprovedWrite([
+      { role: "user", content: "write a note" },
+      {
+        role: "tool",
+        content: [{ type: "tool-approval-response", approved: true }]
+      } as never,
+      { role: "assistant", content: "stub-ok allowed write" },
+      { role: "user", content: "hello again" }
+    ]),
+    false
+  )
+  let text = ""
+  for await (const part of createE2eStubStream(
+    [
+      { role: "user", content: "write a note" },
+      {
+        role: "tool",
+        content: [{ type: "tool-approval-response", approved: true }]
+      } as never,
+      { role: "assistant", content: "stub-ok allowed write" },
+      { role: "user", content: "hello again" }
+    ],
+    new AbortController().signal
+  )) {
+    if (part.type === "text-delta") text += String(part.text ?? "")
+  }
+  assert.match(text, /stub-ok hello again/)
+  assert.doesNotMatch(text, /allowed write/)
+})
+
+test("上一轮拒绝写盘后，下一句仍要回复，不能空 finish", async () => {
+  assert.equal(
+    stubDeniedApproval([
+      { role: "user", content: "write a note" },
+      {
+        role: "tool",
+        content: [{ type: "tool-approval-response", approved: false }]
+      } as never,
+      { role: "user", content: "hello after deny" }
+    ]),
+    false
+  )
+  const parts: string[] = []
+  let text = ""
+  for await (const part of createE2eStubStream(
+    [
+      { role: "user", content: "write a note" },
+      {
+        role: "tool",
+        content: [{ type: "tool-approval-response", approved: false }]
+      } as never,
+      { role: "user", content: "hello after deny" }
+    ],
+    new AbortController().signal
+  )) {
+    parts.push(String(part.type))
+    if (part.type === "text-delta") text += String(part.text ?? "")
+  }
+  assert.equal(parts.includes("tool-approval-request"), false)
+  assert.match(text, /stub-ok hello after deny/)
+})
+
 test("允许一次后桌面 stub 不再重放审批，收工", async () => {
   const allowed = [
     { role: "user" as const, content: "desktop catchup notes" },

@@ -31,6 +31,7 @@ test("宣称收工必须进待验收；失败 / 开跑不走这扇门", () => {
 
 test("流事件分流：成功待验收，失败/开跑回执行中", () => {
   assert.equal(workflowAfterStreamEvent("run.end"), "needs_review")
+  assert.equal(workflowAfterStreamEvent("run.end", { deniedOnly: true }), "todo")
   assert.equal(workflowAfterStreamEvent("run.error"), "in_progress")
   assert.equal(workflowAfterStreamEvent("run.start"), "in_progress")
   assert.equal(workflowAfterStreamEvent("text.delta"), null)

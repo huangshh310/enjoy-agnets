@@ -1,6 +1,9 @@
 /**
  * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  *
+ * 写盘：本文件只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
+ * 允许后由 `executeStoredTool` 落盘。上一轮的审批响应不得让下一句复读结果。
+ *
  * 终端可点链接夹具（给 luna 验悬停）：
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
@@ -64,12 +67,23 @@ export function lastUserText(messages: ModelMessage[]): string {
 }
 
 export function stubApprovedWrite(messages: ModelMessage[]): boolean {
-  return hasApprovalResponse(messages, true)
+  return hasApprovalResponse(currentTurnMessages(messages), true)
 }
 
 /** 拒绝后不得再吐同一张审批卡，否则会撞 approvals.id。 */
 export function stubDeniedApproval(messages: ModelMessage[]): boolean {
-  return hasApprovalResponse(messages, false)
+  return hasApprovalResponse(currentTurnMessages(messages), false)
+}
+
+/** 只看本轮：上一轮允许写盘后，下一句 hello 不得再复读 stub-ok allowed write。 */
+function currentTurnMessages(messages: ModelMessage[]): ModelMessage[] {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message?.role !== "user") continue
+    if (isCiteUser(message)) continue
+    return messages.slice(i)
+  }
+  return messages
 }
 
 function hasApprovalResponse(messages: ModelMessage[], approved: boolean): boolean {

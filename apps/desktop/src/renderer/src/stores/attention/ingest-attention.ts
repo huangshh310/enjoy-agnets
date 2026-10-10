@@ -46,6 +46,9 @@ export function ingestAttentionEvent(
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   const kind = attentionKindFromEvent(input.event)
+  if (kind === "complete" && input.omitComplete) {
+    return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
+  }
   if (!kind) return aged
   const cleared =
     kind === "complete" || kind === "error"
