@@ -94,29 +94,28 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         const rowArgs = pending.find((approval) => approval.id === item.approvalId)
         const args = parseStoredApprovalArgs(rowArgs)
         if (args == null) {
-          if (rowArgs) {
-            setApprovalDecision(db, rowArgs.id, "deny")
-            recordSdkApprovalResponse(rowArgs.id, {
+          const approvalId = rowArgs?.id ?? item.approvalId
+          if (rowArgs) setApprovalDecision(db, rowArgs.id, "deny")
+          recordSdkApprovalResponse(approvalId, {
+            approved: false,
+            reason: APPROVAL_ARGS_MISSING_MESSAGE,
+            resumeCode: APPROVAL_ARGS_MISSING
+          })
+          run.messages.push(
+            approvalResponseMessage({
+              approvalId: rowArgs ? resolvedSdkApprovalId(rowArgs) : approvalId,
               approved: false,
-              reason: APPROVAL_ARGS_MISSING_MESSAGE,
-              resumeCode: APPROVAL_ARGS_MISSING
+              reason: APPROVAL_ARGS_MISSING_MESSAGE
             })
-            run.messages.push(
-              approvalResponseMessage({
-                approvalId: resolvedSdkApprovalId(rowArgs),
-                approved: false,
-                reason: APPROVAL_ARGS_MISSING_MESSAGE
-              })
-            )
-            emitEvent(window, {
-              type: "tool.result",
-              runId: row.id,
-              toolCallId: item.toolCallId,
-              name: item.name,
-              result: { code: APPROVAL_ARGS_MISSING },
-              error: APPROVAL_ARGS_MISSING_MESSAGE
-            })
-          }
+          )
+          emitEvent(window, {
+            type: "tool.result",
+            runId: row.id,
+            toolCallId: item.toolCallId,
+            name: item.name,
+            result: { code: APPROVAL_ARGS_MISSING },
+            error: APPROVAL_ARGS_MISSING_MESSAGE
+          })
           continue
         }
         keep.push({ ...item, args })

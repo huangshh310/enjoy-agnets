@@ -27,8 +27,8 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "run.start") return null
   // 只信 turn.neutral 不当出错（Stop / 归档）。其余一律 error，禁止把 run.error 折成 complete。
   if (event.type === "run.error") {
-    if (isApprovalNotExecutedMessage(event.message)) return "complete"
     if (event.turn?.attention === "neutral") return null
+    if (isApprovalNotExecutedMessage(event.message)) return "complete"
     return "error"
   }
   if (event.type === "run.end" && event.turn) {

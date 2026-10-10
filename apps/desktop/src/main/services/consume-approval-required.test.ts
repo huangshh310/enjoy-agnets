@@ -86,6 +86,7 @@ test("回填不了：库记 deny，SDK approved:false，不弹卡", async () => 
   assert.equal(result.row?.decision, "deny")
   assert.equal(result.row?.sdkApproved, 0)
   assert.equal(result.sdk[0]?.approved, false)
+  assert.equal(result.sdk[0]?.approvalId, result.row?.sdkApprovalId ?? "apr_missing")
   assert.equal(
     result.emitted.some((event) => event.type === "approval.required"),
     false

@@ -17,4 +17,6 @@ test("缺参 deny 写库、推 SDK approved:false、空 keep 续泵", () => {
   assert.ok(src.includes("if (keep.length === 0)"))
   assert.ok(src.includes("run.resumeAfterPump = true"))
   assert.ok(src.includes("void pumpStream(row.id)"))
+  assert.ok(src.includes("const approvalId = rowArgs?.id ?? item.approvalId"))
+  assert.ok(src.includes("recordSdkApprovalResponse(approvalId"))
 })
