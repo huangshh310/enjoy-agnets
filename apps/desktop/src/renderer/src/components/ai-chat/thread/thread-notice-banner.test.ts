@@ -24,5 +24,6 @@ test("回挂对不上：中性条 + 放回输入框，不自动发送", () => {
   assert.equal(zhChat.restoreNoMatching, "重启后对不上原来的审批，这一轮已结束。")
   assert.equal(zhChat.restoreInterrupted, "重启时这一步还没做完，为了安全没有自动继续。")
   assert.equal(zhChat.resendLastPrompt, "放回输入框")
+  assert.equal(zhChat.restartAbandoned, "重启后已中断")
   assert.equal(zhChat.runStopped, "已停止")
 })

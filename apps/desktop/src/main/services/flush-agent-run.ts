@@ -2,7 +2,7 @@
  * 把 ActiveRun 上累积的助手 transcript 写入 SQLite，并回写 runs.status。
  * 流式过程 checkpoint 同一行；complete / fail / abort / before-quit 再封口。
  */
-import { updateRun } from "@enjoy-agents/db"
+import { listPendingApprovals, setApprovalDecision, updateRun } from "@enjoy-agents/db"
 import { persistFinishedAssistant } from "./persist-parts"
 import { flushPayloadFromRun } from "./agent-run-flush"
 import { getDatabase } from "./database"
@@ -78,14 +78,27 @@ export function flushActiveRuns(): void {
   for (const { runId, run } of listActiveRuns()) {
     try {
       if (run.pendingApprovals.length > 0) {
-        persistActiveRun(run, runId, "waiting_review")
         persistWaitingRun(run, runId)
+        persistActiveRun(run, runId, "waiting_review")
       } else {
         persistRunningCheckpoint(run, runId)
         persistActiveRun(run, runId, "running")
       }
     } catch {
-      // 一条坏 JSON 不能挡住其它 run 落库。
+      if (run.pendingApprovals.length > 0) failClosedWaitingOnQuit(runId)
     }
   }
+}
+
+/** will-quit 写检查点失败时不得留下 waiting_review + 未决 NULL。 */
+function failClosedWaitingOnQuit(runId: string): void {
+  const db = getDatabase()
+  for (const item of listPendingApprovals(db, runId)) {
+    if (item.decision == null) setApprovalDecision(db, item.id, "cancelled")
+  }
+  updateRun(db, runId, {
+    status: "cancelled",
+    error: "restore_no_matching_approval",
+    checkpoint: null
+  })
 }

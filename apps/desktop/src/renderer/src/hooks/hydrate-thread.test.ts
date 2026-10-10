@@ -137,3 +137,59 @@ test("无 stamp 的旧信封 runKind 为空", () => {
   assert.equal(message.runKind, undefined)
   assert.equal(message.content, "ok")
 })
+
+test("冷启动回灌：上一轮 output-available 是完成不是转圈，最新一轮从助手行带回工具", () => {
+  const prevContent = JSON.stringify({
+    v: 1,
+    content: "先改了",
+    tools: [
+      { id: "tool_prev", name: "write_file", state: "output-available", args: { path: "a.ts" }, result: { ok: true } }
+    ]
+  })
+  const lastContent = JSON.stringify({
+    v: 1,
+    content: "再跑命令",
+    tools: [{ id: "tool_last", name: "bash", state: "output-available", args: { command: "ls" }, result: { ok: true } }]
+  })
+  const [prev, last] = threadFromRows([
+    { id: "msg_prev", role: "assistant", content: prevContent, createdAt: 1 },
+    { id: "msg_last", role: "assistant", content: lastContent, createdAt: 2 }
+  ])
+  const prevTool = prev?.tools?.[0]
+  const lastTool = last?.tools?.[0]
+  assert.ok(prevTool)
+  assert.ok(lastTool)
+  assert.equal(prevTool.state, "output-available")
+  assert.equal(mapToolStatus(prevTool.state, prevTool), "completed")
+  assert.notEqual(mapToolStatus(prevTool.state, prevTool), "running")
+  assert.equal(lastTool.name, "bash")
+  assert.equal(lastTool.state, "output-available")
+  assert.equal(mapToolStatus(lastTool.state, lastTool), "completed")
+})
+
+test("信封丢了工具：从助手行 parts 补回最新一轮，output-available 仍是完成", () => {
+  const [message] = threadFromRows([
+    {
+      id: "msg_parts",
+      role: "assistant",
+      content: "plain last turn",
+      createdAt: 3,
+      parts: [
+        { type: "text", text: "plain last turn" },
+        {
+          type: "tool",
+          toolCallId: "tool_from_parts",
+          name: "write_file",
+          state: "output-available",
+          result: { ok: true }
+        }
+      ]
+    }
+  ])
+  const tool = message?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(tool.id, "tool_from_parts")
+  assert.equal(tool.state, "output-available")
+  assert.equal(mapToolStatus(tool.state, tool), "completed")
+  assert.notEqual(mapToolStatus(tool.state, tool), "running")
+})

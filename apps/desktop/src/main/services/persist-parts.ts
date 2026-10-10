@@ -1,5 +1,6 @@
 /**
- * 把本轮来源 / 资产 / 结构化折成 UIMessage parts，随 assistant 落库。
+ * 把本轮来源 / 资产 / 结构化 / 工具折成 UIMessage parts，随 assistant 落库。
+ * 工具 parts 供冷启动回灌：最新一轮必须从助手行回来。
  */
 import {
   clampThoughtSeconds,
@@ -13,9 +14,24 @@ import { persistMessage, readMessageContent } from "./persist-session"
 import { hasAssistantPersistableBody } from "./agent-run-flush"
 import { canReuseAssistantRow } from "./assistant-row-ownership"
 
-export function partsFromExtras(content: string, extras: AssistantExtras): UIMessagePart[] {
+export function partsFromExtras(
+  content: string,
+  extras: AssistantExtras,
+  tools?: ThreadToolCall[]
+): UIMessagePart[] {
   const parts: UIMessagePart[] = []
   if (content.trim()) parts.push({ type: "text", text: content })
+  for (const tool of tools ?? []) {
+    parts.push({
+      type: "tool",
+      toolCallId: tool.id,
+      name: tool.name,
+      args: tool.args,
+      result: tool.result,
+      error: tool.errorText,
+      state: tool.state
+    })
+  }
   for (const source of extras.sources ?? []) {
     parts.push({
       type: "source",
@@ -107,7 +123,7 @@ export function persistFinishedAssistant(input: {
     input.sessionId,
     "assistant",
     serializeAssistantEnvelope(input),
-    partsFromExtras(input.content, extras),
+    partsFromExtras(input.content, extras, input.tools),
     reusableAssistantMessageId(input.messageId, input.runId)
   )
 }

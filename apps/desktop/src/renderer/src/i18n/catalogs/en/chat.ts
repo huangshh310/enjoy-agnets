@@ -689,8 +689,10 @@ export const enChat = {
   sessionReviewOpenFile: "Review {name}",
   sessionReviewNoDiff: "No line changes",
   sessionReviewMaybeChanged: "Files may have changed — please review",
+  sessionReviewFilesPlaceholder: "This turn changed files. Check Review to confirm.",
   sessionReviewCommandPlaceholder:
     "This turn ran commands and may have changed files. Check Review to confirm.",
+  sessionReviewUnknownPlaceholder: "This turn may have changed files. Check Review to confirm.",
   sessionReviewDefaultModel: "Enjoy Agents",
   sessionReviewRestoreEmpty: "None of these files have workspace changes to restore",
   sessionReviewOpenPreview: "Open in browser",

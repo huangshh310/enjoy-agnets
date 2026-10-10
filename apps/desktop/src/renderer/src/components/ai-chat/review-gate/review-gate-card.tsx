@@ -21,7 +21,8 @@ export function ReviewGateCard({
   onOpenPreview,
   onOpenFile,
   onReject,
-  onApprove
+  onApprove,
+  placeholderKey = "chat.sessionReviewUnknownPlaceholder"
 }: {
   files: SessionReviewFile[]
   chips: TurnSourceChip[]
@@ -32,6 +33,7 @@ export function ReviewGateCard({
   onOpenFile: (path: string) => void
   onReject: () => void
   onApprove: () => void
+  placeholderKey?: string
 }) {
   const t = useT()
   return (
@@ -51,7 +53,7 @@ export function ReviewGateCard({
         </ul>
       ) : (
         <p data-testid="session-review-peek" className="text-caption-2-regular text-text-tertiary">
-          {t("chat.sessionReviewCommandPlaceholder")}
+          {t(placeholderKey)}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-1.5">

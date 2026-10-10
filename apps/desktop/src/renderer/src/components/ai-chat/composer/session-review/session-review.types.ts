@@ -38,4 +38,6 @@ export type SessionReviewBarProps = {
   hasFiles?: boolean
   /** 本轮写盘才默认展开；工作区脏文件保持折叠。 */
   defaultExpanded?: boolean
+  /** 无 path 占位句。写盘 / 命令 / 中断各走自己的键。 */
+  placeholderKey?: string
 }

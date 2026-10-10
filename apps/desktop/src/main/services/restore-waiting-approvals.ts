@@ -135,6 +135,7 @@ function emitRestoredApprovalCards(
     emitEvent(window, {
       type: "approval.required",
       runId,
+      sessionId: getActiveRun(runId)?.input.sessionId,
       approvalId: item.approvalId,
       toolCallId: item.toolCallId,
       name: item.name,

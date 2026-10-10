@@ -198,6 +198,13 @@ test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
   assert.equal(tools[1]?.parentToolCallId, "parent")
 })
 
+test("冷启动封口：output-available 保持完成，不得改成 pending", () => {
+  const sealed = sealAbandonedTools([
+    { id: "t1", name: "write_file", state: "output-available", result: { ok: true } }
+  ])
+  assert.equal(sealed?.[0]?.state, "output-available")
+})
+
 test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {
   const sealed = sealAbandonedTools([
     {

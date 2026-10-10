@@ -112,6 +112,8 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
       abandonWaitingRestore(row.id, window, { sessionId: row.sessionId, cause: error })
     }
   }
+  // 自动化 / 补跑 / 用户同一套：回挂不上就 fail closed，禁止留下 waiting_review 死卡。
+  sweepUnrestoredWaiting(window)
 }
 
 async function restoreOneWaiting(input: {
@@ -219,6 +221,15 @@ function isUnverifiableCheckpointPending(row: ApprovalRow, checkpointPendingIds:
   if (!checkpointPendingIds.has(row.id)) return false
   if (row.sdkApproved != null) return false
   return !canReplayDecided(row)
+}
+
+/** 扫完仍是 waiting_review 且没挂上 ActiveRun：一律结清，Inbox 不得留死角标。 */
+function sweepUnrestoredWaiting(window: BrowserWindow): void {
+  const db = getDatabase()
+  for (const row of listRuns(db, {}).filter((item) => item.status === "waiting_review")) {
+    if (getActiveRun(row.id)) continue
+    abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
+  }
 }
 
 /** 回挂对不上：未决 cancelled（restart），run 记停止，发诚实收工码。 */
