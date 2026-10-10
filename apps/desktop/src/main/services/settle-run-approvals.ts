@@ -11,7 +11,7 @@ import { recordSdkApprovalResponse } from "./approval-hmac"
 import { foldDeniedAssistantTool, sessionIdForRun } from "./fold-denied-assistant-tools"
 
 export const RUN_STOPPED_REASON = "run_stopped"
-export const APPROVAL_CANCELLED = "cancelled"
+export const APPROVAL_CANCELLED = "cancelled" as const
 
 type PendingSettle = { runId: string; approvalId: string; toolCallId: string }
 

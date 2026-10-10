@@ -34,7 +34,9 @@ export const CURATED_MCP_FINGERPRINTS: readonly CuratedMcpFingerprint[] = [
   { id: "playwright", transport: "stdio", command: "npx -y @modelcontextprotocol/server-playwright" }
 ]
 
-const FINGERPRINT_BY_ID = new Map(CURATED_MCP_FINGERPRINTS.map((item) => [item.id, item]))
+const FINGERPRINT_BY_ID = new Map<string, CuratedMcpFingerprint>(
+  CURATED_MCP_FINGERPRINTS.map((item) => [item.id, item])
+)
 
 export type CuratedMcpRow = {
   curatedPresetId?: string | null
@@ -49,7 +51,7 @@ export function isKnownCuratedPresetId(id: string | undefined | null): boolean {
 }
 
 export function matchesCuratedFingerprint(presetId: string, input: CuratedMcpRow): boolean {
-  const preset = FINGERPRINT_BY_ID.get(presetId as CuratedMcpFingerprint["id"])
+  const preset = FINGERPRINT_BY_ID.get(presetId)
   if (!preset) return false
   if ((input.transport ?? "stdio") !== preset.transport) return false
   if (preset.command && normalizeText(input.command) !== normalizeText(preset.command)) return false

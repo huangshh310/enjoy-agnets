@@ -99,9 +99,12 @@ test("approval.resolved cancelled 折成已停止，不是已拒绝", () => {
     toolCallId: "t1",
     decision: "cancelled"
   })
-  assert.equal(tools[0]?.state, "output-error")
-  assert.equal((tools[0]?.result as { decision?: string; code?: string }).decision, "cancelled")
-  assert.equal((tools[0]?.result as { decision?: string; code?: string }).code, "user_aborted")
+  const row = tools[0]
+  assert.ok(row)
+  assert.equal(row.state, "output-error")
+  const result = row.result as { decision?: string; code?: string }
+  assert.equal(result.decision, "cancelled")
+  assert.equal(result.code, "user_aborted")
 })
 
 test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
