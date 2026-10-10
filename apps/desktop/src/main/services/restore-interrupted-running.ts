@@ -58,10 +58,10 @@ export function writeCancelledRestoreError(runId: string, restoreCode: string): 
   const existing = getRun(db, runId)?.error
   if (existing) {
     console.error("[restore] keep original run.error", { runId, existing, restore: restoreCode })
-    updateRun(db, runId, { status: "cancelled" })
+    updateRun(db, runId, { status: "cancelled", checkpoint: null })
     return
   }
-  updateRun(db, runId, { status: "cancelled", error: restoreCode })
+  updateRun(db, runId, { status: "cancelled", error: restoreCode, checkpoint: null })
 }
 
 /** waiting 放弃与 running 中途共用：只封本轮助手行，返回封口前的工具给收工判定。 */

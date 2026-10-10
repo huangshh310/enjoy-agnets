@@ -637,7 +637,7 @@ export const enChat = {
   moreActions: "More",
   viewRawJson: "View raw contents",
   restoreNoMatching: "This run could not match the original approval after restart, so it ended.",
-  restoreInterrupted: "This step was still running when the app restarted, so it stopped.",
+  restoreInterrupted: "This step wasn't finished when the app restarted, so it didn't continue automatically for safety.",
   restartAbandoned: "Interrupted after restart",
   resendLastPrompt: "Resend",
   approvalDecideHmac: "The approval signature did not match.",

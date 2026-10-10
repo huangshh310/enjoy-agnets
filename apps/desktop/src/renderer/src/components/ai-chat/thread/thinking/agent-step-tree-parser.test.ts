@@ -190,7 +190,7 @@ test("嵌套 args 里的真实路径要显示文件名", () => {
   assert.match(nodes[0]?.title ?? "", /layout\.tsx/)
 })
 
-test("restart_abandoned 显示重启后已中断，不是补跑超时", () => {
+test("restart_abandoned 显示重启后已中断，标题走人话不是 write file", () => {
   const tool = {
     id: "t1",
     name: "write_file",
@@ -198,11 +198,12 @@ test("restart_abandoned 显示重启后已中断，不是补跑超时", () => {
     args: { path: "e2e-stub.txt" },
     result: { code: "restart_abandoned", decision: "cancelled" }
   }
-  assert.match(parserSrc, /function restartStepNode[\s\S]*formatToolLabel/)
   assert.doesNotMatch(parserSrc, /title:\s*formatToolName\(/)
   assert.doesNotThrow(() => parseAgentStepNodes("", [tool], mockT))
   const nodes = parseAgentStepNodes("", [tool], mockT)
   assert.equal(nodes[0]?.status, "restart")
+  assert.equal(nodes[0]?.title, "写入 e2e-stub.txt")
+  assert.doesNotMatch(nodes[0]?.title ?? "", /write file/i)
   assert.equal(nodes[0]?.errorText, "chat.restartAbandoned")
   assert.notEqual(nodes[0]?.errorText, "studio.automations.catchUpTimeout")
 })

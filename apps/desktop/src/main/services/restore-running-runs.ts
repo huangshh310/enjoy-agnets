@@ -87,7 +87,7 @@ function cancelRestoredRun(runId: string, error: string, source: unknown): void 
     const next = getRun(db, runId)
     if (next) queueInterruptedRunningSettle(next)
   } else {
-    updateRun(db, runId, { status: "cancelled", error })
+    updateRun(db, runId, { status: "cancelled", error, checkpoint: null })
   }
   stampUnrestoredCatchUp(runId, source)
 }

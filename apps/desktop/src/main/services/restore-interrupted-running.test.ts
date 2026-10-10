@@ -143,3 +143,46 @@ test("标题 / 补全终态清掉 runs.checkpoint", () => {
   assert.match(generation, /status: "completed", checkpoint: null/)
   assert.match(generation, /status: "failed".*checkpoint: null/)
 })
+
+test("cancelled 终态也清掉 runs.checkpoint", () => {
+  resetInterruptedRunningForTest()
+  const sessionId = "ses_int_ckpt"
+  const runId = "run_int_ckpt"
+  seedSession({ workspaceId: "ws_int_ckpt", sessionId })
+  const db = getDatabase()
+  persistMessage(sessionId, "user", "please write")
+  persistMessage(
+    sessionId,
+    "assistant",
+    serializeAssistantPayload({
+      content: "",
+      tools: [
+        {
+          id: "tool_write",
+          name: "write_file",
+          state: "input-available",
+          args: { path: "note.txt" },
+          result: { decision: "allow" }
+        }
+      ]
+    })
+  )
+  insertRun(db, {
+    id: runId,
+    sessionId,
+    workspaceId: "ws_int_ckpt",
+    kind: "agent",
+    status: "running",
+    modelId: "m",
+    providerId: null,
+    checkpoint: JSON.stringify({ resumeAt: "tool-boundary", request: { modelId: "m" } }),
+    error: null
+  })
+  const row = getRun(db, runId)
+  assert.ok(row)
+  assert.ok(row.checkpoint)
+  queueInterruptedRunningSettle(row)
+  const settled = getRun(db, runId)
+  assert.equal(settled?.status, "cancelled")
+  assert.equal(settled?.checkpoint, null)
+})

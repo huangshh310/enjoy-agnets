@@ -22,7 +22,7 @@ test("abandonRunningRuns 只把 running 标成 cancelled，不动 completed", ()
     status: "running",
     modelId: "grok-4.6",
     providerId: null,
-    checkpoint: null,
+    checkpoint: JSON.stringify({ resumeAt: "tool-boundary" }),
     error: null
   })
   insertRun(db, {
@@ -38,6 +38,7 @@ test("abandonRunningRuns 只把 running 标成 cancelled，不动 completed", ()
   })
   assert.equal(abandonRunningRuns(db), 1)
   assert.equal(getRun(db, "run_live")?.status, "cancelled")
+  assert.equal(getRun(db, "run_live")?.checkpoint, null)
   assert.equal(getRun(db, "run_done")?.status, "completed")
 })
 

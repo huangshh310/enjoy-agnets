@@ -630,7 +630,7 @@ export const zhChat = {
   moreActions: "更多",
   viewRawJson: "查看原始内容",
   restoreNoMatching: "重启后对不上原来的审批，这一轮已结束。",
-  restoreInterrupted: "重启时这一步还没跑完，已经停下。",
+  restoreInterrupted: "重启时这一步还没做完，为了安全没有自动继续。",
   restartAbandoned: "重启后已中断",
   resendLastPrompt: "重新发送",
   approvalDecideHmac: "审批签名对不上。",

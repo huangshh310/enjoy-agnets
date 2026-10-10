@@ -57,7 +57,7 @@ export function parseAgentStepNodes(
       continue
     }
     const node = mapToolToStepNode(item.tool, t)
-    if (node) nodes.push(stampDenied(node, item.tool))
+    if (node) nodes.push(stampRestart(stampDenied(node, item.tool), item.tool, t))
   }
 
   return groupConsecutiveSteps(nestChildSteps(nodes, tools), t)
@@ -68,8 +68,16 @@ function stampDenied(node: AgentStepNode, tool: ThreadToolCall): AgentStepNode {
   return tool.state === "output-denied" ? { ...node, denied: true } : node
 }
 
+function stampRestart(
+  node: AgentStepNode,
+  tool: ThreadToolCall,
+  t: TranslateFn
+): AgentStepNode {
+  if (!toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return node
+  return { ...node, status: "restart", errorText: t("chat.restartAbandoned") }
+}
+
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
-  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return restartStepNode(tool, t)
   if (isDelegateToolName(tool.name)) return mapDelegateToStepNode(tool, t)
   const args = mergeToolArgs(tool)
   const result = asRecord(tool.result)
@@ -190,17 +198,6 @@ function readNode(
   }
 }
 
-function restartStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode {
-  return {
-    id: tool.id,
-    kind: "command",
-    // 必须用已 import 的 formatToolLabel；formatToolName 未引入，ThinkingTrace 同步 parse 会白屏。
-    title: formatToolLabel(tool.name, t, tool.args),
-    errorText: t("chat.restartAbandoned"),
-    status: "restart"
-  }
-}
-
 function fallbackNode(
   tool: ThreadToolCall,
   shell: string | undefined,
@@ -208,7 +205,6 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
-  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return restartStepNode(tool, t)
   if (toolAbortKind(tool) === "neutral") {
     return {
       id: tool.id,
