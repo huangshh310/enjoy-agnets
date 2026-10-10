@@ -40,7 +40,7 @@ export async function dumpSidebarEdgeStrip(window: Page) {
     const scaleY = window.innerHeight / 1200
     const aside = document.querySelector("aside.rounded-3xl")
     const box = aside?.getBoundingClientRect()
-    const ys = [210, 280, 340, 400, 465].map((y) => Math.round(y * scaleY))
+    const ys = [220, 300, 380, 460].map((y) => Math.round(y * scaleY))
     const xs = [175, 185, 195].map((x) => Math.round(x * scaleX))
     const points: Array<{ x: number; y: number; where: string; chain: ReturnType<typeof dumpEl>[] }> = []
     for (const x of xs) {
@@ -96,6 +96,19 @@ export async function assertAmbientHidden(window: Page) {
   return dump
 }
 
+export async function insideStripClip(window: Page) {
+  return window.evaluate(() => {
+    const scaleX = window.innerWidth / 1920
+    const scaleY = window.innerHeight / 1200
+    return {
+      x: Math.max(0, Math.round(175 * scaleX)),
+      y: Math.max(0, Math.round(220 * scaleY)),
+      width: Math.max(20, Math.round(20 * scaleX)),
+      height: Math.max(80, Math.round(240 * scaleY))
+    }
+  })
+}
+
 export async function edgeClip(window: Page) {
   return window.evaluate(() => {
     const aside = document.querySelector("aside.rounded-3xl")?.getBoundingClientRect()
@@ -109,6 +122,23 @@ export async function edgeClip(window: Page) {
   })
 }
 
+export async function assertInsideSidebarFlat(window: Page) {
+  const dump = await dumpSidebarEdgeStrip(window)
+  const inside = dump.points.filter((point) => point.where === "jojo-strip")
+  expect(inside.length).toBe(12)
+  for (const point of inside) {
+    for (const el of point.chain) {
+      expect(el.filter === "none" || !el.filter, `${point.x},${point.y} filter`).toBeTruthy()
+      expect(el.backdrop === "none" || !el.backdrop, `${point.x},${point.y} backdrop`).toBeTruthy()
+      expect(el.shadow === "none" || !el.shadow, `${point.x},${point.y} shadow`).toBeTruthy()
+      expect(el.bgImage === "none" || !el.bgImage, `${point.x},${point.y} bgImage`).toBeTruthy()
+      expect(el.before.bg === "none" || !el.before.bg, `${point.x},${point.y} ::before`).toBeTruthy()
+      expect(el.after.bg === "none" || !el.after.bg, `${point.x},${point.y} ::after`).toBeTruthy()
+    }
+  }
+  return dump
+}
+
 export async function sampleSidebarEdgeStrip(window: Page, label: string) {
   const clips = await window.evaluate(() => {
     const scaleX = window.innerWidth / 1920
@@ -117,9 +147,9 @@ export async function sampleSidebarEdgeStrip(window: Page, label: string) {
     const jojo = {
       name: "jojo-175-195",
       x: Math.max(0, Math.round(175 * scaleX)),
-      y: Math.max(0, Math.round(210 * scaleY)),
-      width: Math.max(16, Math.round(20 * scaleX)),
-      height: Math.max(80, Math.round(255 * scaleY))
+      y: Math.max(0, Math.round(220 * scaleY)),
+      width: Math.max(20, Math.round(20 * scaleX)),
+      height: Math.max(80, Math.round(240 * scaleY))
     }
     const gutter = aside
       ? {

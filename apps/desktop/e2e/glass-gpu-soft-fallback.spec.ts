@@ -8,8 +8,10 @@ import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import {
   assertAmbientHidden,
+  assertInsideSidebarFlat,
   dumpSidebarEdgeStrip,
   edgeClip,
+  insideStripClip,
   sampleSidebarEdgeStrip,
   sendStubMessage
 } from "./glass-gpu-soft-edge"
@@ -64,10 +66,15 @@ test("SwiftShader 非 git 审查空态：浅/暗下右无环（不传 --disable-
     writeFileSync(join(shots, "main-sidebar-elements-from-point.json"), JSON.stringify(lightLayers, null, 2))
     const lightEdge = await assertAmbientHidden(window)
     writeFileSync(join(shots, "sidebar-edge-elements-from-point.json"), JSON.stringify(lightEdge, null, 2))
+    writeFileSync(
+      join(shots, "sidebar-inside-strip-before.json"),
+      JSON.stringify(await assertInsideSidebarFlat(window), null, 2)
+    )
     await sampleReviewLowerRight(window, "light")
     await sampleColumnPatches(window, "light")
     await sampleSidebarEdgeStrip(window, "light-before-send")
     await window.screenshot({ path: join(shots, "p1_sidebar_edge_before.png"), clip: await edgeClip(window) })
+    await window.screenshot({ path: join(shots, "p1_sidebar_inside_strip_before.png"), clip: await insideStripClip(window) })
     await window.evaluate(() => {
       document.documentElement.classList.add("dark")
       document.documentElement.setAttribute("data-skin", "glass")
@@ -79,8 +86,13 @@ test("SwiftShader 非 git 审查空态：浅/暗下右无环（不传 --disable-
       join(shots, "sidebar-edge-elements-from-point-after-send.json"),
       JSON.stringify(await dumpSidebarEdgeStrip(window), null, 2)
     )
+    writeFileSync(
+      join(shots, "sidebar-inside-strip-after.json"),
+      JSON.stringify(await assertInsideSidebarFlat(window), null, 2)
+    )
     await sampleSidebarEdgeStrip(window, "light-after-send")
     await window.screenshot({ path: join(shots, "p1_sidebar_edge_after.png"), clip: await edgeClip(window) })
+    await window.screenshot({ path: join(shots, "p1_sidebar_inside_strip_after.png"), clip: await insideStripClip(window) })
     await window.screenshot({ path: join(shots, "p1_gpu_soft_light_review_nongit.png"), fullPage: true })
     await window.evaluate(() => {
       document.documentElement.classList.add("dark")

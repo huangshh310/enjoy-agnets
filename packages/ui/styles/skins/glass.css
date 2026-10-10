@@ -215,6 +215,18 @@ html[data-skin="glass"]:not([data-gpu-compositing="on"]) {
   --color-background-full: #ffffff;
 }
 
+html[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
+  --color-background-primary-default: #ffffff;
+  --color-background-primary-hover: var(--color-neutral-100);
+  --color-background-secondary-default: #ffffff;
+  --color-background-secondary-hover: var(--color-neutral-100);
+  --color-background-tertiary-default: var(--color-neutral-100);
+  --color-border-button-white: var(--color-neutral-200);
+  --color-border-button-default: var(--color-neutral-200);
+  --shadow-2xs: 0 0 #0000;
+  --shadow-sidebar: none;
+}
+
 html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) {
   --color-background-full: var(--color-neutral-900);
 }

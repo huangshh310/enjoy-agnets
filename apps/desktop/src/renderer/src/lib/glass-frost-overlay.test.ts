@@ -75,6 +75,8 @@ test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰"
   assert.match(globals, /\.skin-ambient-glow[\s\S]*display:\s*none\s*!important/)
   assert.match(globals, /\[data-shell-canvas\][\s\S]*background-color:\s*#ffffff\s*!important/)
   assert.match(globals, /html:not\(\[data-gpu-compositing="on"\]\) aside\.rounded-3xl[\s\S]*box-shadow:\s*none\s*!important/)
+  assert.match(globals, /aside\.rounded-3xl \*[\s\S]*box-shadow:\s*none\s*!important/)
+  assert.match(globals, /aside\.rounded-3xl \*[\s\S]*background-image:\s*none\s*!important/)
   assert.match(globals, /html:not\(\[data-gpu-compositing="on"\]\) aside\.rounded-3xl[\s\S]*background-color:\s*#ffffff\s*!important/)
   assert.match(globals, /html:not\(\[data-gpu-compositing="on"\]\) main::before[\s\S]*content:\s*none\s*!important/)
   const canvas = readSkin("glass-canvas.css")
