@@ -109,16 +109,16 @@ async function readyGlassWindow(app: { firstWindow: () => Promise<Page> }) {
     timeout: 20_000
   })
   await window.setViewportSize({ width: 1440, height: 900 })
-  await window.evaluate(() => {
-    document.documentElement.classList.remove("dark")
-    document.documentElement.setAttribute("data-skin", "glass")
-  })
   await window
     .waitForSelector('button:has-text("跳过设置"), [data-testid="composer-input"]', { timeout: 20_000 })
     .catch(() => undefined)
   const skipGuide = window.getByRole("button", { name: "跳过设置" })
   if ((await skipGuide.count()) > 0) await skipGuide.click()
   await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
+  await window.evaluate(() => {
+    document.documentElement.classList.remove("dark")
+    document.documentElement.setAttribute("data-skin", "glass")
+  })
   return window
 }
 

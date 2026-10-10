@@ -87,6 +87,8 @@ function lockPreviewWebview(contents: WebContents): void {
 }
 
 function createWindow(): BrowserWindow {
+  const gpuFlag = resolveGpuCompositingFlag()
+  process.env.ENJOY_GPU_COMPOSITING = gpuFlag
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -107,7 +109,7 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      additionalArguments: [gpuCompositingArg(resolveGpuCompositingFlag())],
+      additionalArguments: [gpuCompositingArg(gpuFlag)],
       // 右栏浏览器预览用 <webview>，guest 无 node，partition persist:enjoy-preview。
       webviewTag: true
     }
@@ -116,6 +118,11 @@ function createWindow(): BrowserWindow {
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
   });
+  mainWindow.webContents.on("dom-ready", () => {
+    void mainWindow.webContents.executeJavaScript(
+      `document.documentElement.setAttribute("data-gpu-compositing", ${JSON.stringify(gpuFlag)})`
+    )
+  })
 
   blockNativeHistoryNavigation(mainWindow);
   lockPreviewWebview(mainWindow.webContents);

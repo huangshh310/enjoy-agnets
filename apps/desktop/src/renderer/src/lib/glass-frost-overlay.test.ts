@@ -86,6 +86,7 @@ test("无 GPU 旗标关掉棱镜 ::after 和 liquid-glass 滤镜", () => {
   assert.match(main, /additionalArguments/)
   assert.match(main, /gpuCompositingArg/)
   assert.match(preload, /applyGpuCompositingAttr/)
+  assert.match(preload, /enjoyGpuCompositing/)
 })
 
 test("审查空态组件不挂 data-frost，不靠装饰类名", () => {

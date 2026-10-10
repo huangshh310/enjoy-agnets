@@ -43,17 +43,17 @@ test("浅色干净仓库审查空态：elementFromPoint 无黄环，推送完整
       timeout: 20_000
     })
     await window.setViewportSize({ width: 1440, height: 900 })
-    await window.evaluate(() => {
-      document.documentElement.classList.remove("dark")
-      document.documentElement.setAttribute("data-skin", "glass")
-    })
-    await expect(window.locator("html")).toHaveAttribute("data-gpu-compositing", "off")
     await window
       .waitForSelector('button:has-text("跳过设置"), [data-testid="composer-input"]', { timeout: 20_000 })
       .catch(() => undefined)
     const skipGuide = window.getByRole("button", { name: "跳过设置" })
     if ((await skipGuide.count()) > 0) await skipGuide.click()
     await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
+    await window.evaluate(() => {
+      document.documentElement.classList.remove("dark")
+      document.documentElement.setAttribute("data-skin", "glass")
+    })
+    await expect(window.locator("html")).toHaveAttribute("data-gpu-compositing", "off")
 
     await window.keyboard.press("Control+Shift+G")
     const reviewPane = window.locator('[data-testid="right-pane-shell"]')

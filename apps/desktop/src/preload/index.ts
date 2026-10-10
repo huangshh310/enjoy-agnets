@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { applyGpuCompositingAttr } from "./apply-gpu-compositing-attr";
 
-applyGpuCompositingAttr();
+const enjoyGpuCompositing = applyGpuCompositingAttr();
+contextBridge.exposeInMainWorld("enjoyGpuCompositing", enjoyGpuCompositing);
 
 import type {
   BuiltinToolsState,
