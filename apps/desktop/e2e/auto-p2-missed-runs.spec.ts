@@ -80,6 +80,8 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     await closeDrawer(window)
 
     await openRow(window, "午间改动复盘")
+    await expect(row(window, "午间改动复盘")).not.toContainText("错过")
+    await expect(window.locator('[data-testid="automation-missed-summary"]')).not.toContainText("错过")
     const toggle = window.locator('[data-testid="automation-catch-up-toggle"] [role="switch"]')
     await expect(toggle).toHaveAttribute("aria-checked", "true")
     await window.locator('[data-testid="automation-missed-expand"] summary').click()

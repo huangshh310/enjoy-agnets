@@ -20,7 +20,7 @@ import { ComposerTopChrome } from "./composer/composer-top-chrome"
 import { ComposerActivityFrame } from "./composer/stacked-rail/composer-activity-frame"
 import { ComposerBranchMismatch } from "./composer/composer-branch-mismatch"
 import { listComposerAssets } from "@renderer/hooks/composer-assets"
-import { registerComposerFocus } from "@renderer/hooks/composer-focus"
+import { queueComposerFocus, registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
 import { clipboardModifiers, isPasteInlineShortcut, planComposerPaste } from "@renderer/lib/pasted-text"
 import type { ComposerProps } from "./composer/composer.types"
@@ -62,13 +62,15 @@ export function AiChatComposer({
   }, [composer])
 
   useEffect(() => {
-    return registerComposerFocus(() => {
+    const unregister = registerComposerFocus(() => {
       const textarea = textareaRef.current
       if (!textarea) return
       textarea.focus()
       const end = textarea.value.length
       textarea.setSelectionRange(end, end)
     })
+    queueComposerFocus()
+    return unregister
   }, [])
 
   function pickFiles() {

@@ -51,6 +51,16 @@ test("本轮都已提交时回落其余未提交改动", () => {
   assert.equal(files[0]?.path, "notes.md")
 })
 
+test("磁盘上已有文件但本轮没有已执行写盘，不算本轮改动", () => {
+  const pick = describeReviewFiles(
+    [],
+    [{ path: "e2e-stub.txt", status: "untracked", additions: 1, deletions: 0 }],
+    false
+  )
+  assert.equal(pick.fromLastTurn, false)
+  assert.equal(pick.files[0]?.path, "e2e-stub.txt")
+})
+
 test("没有本轮写盘时回落工作区改动，并标记非本轮", () => {
   const pick = describeReviewFiles(
     [],

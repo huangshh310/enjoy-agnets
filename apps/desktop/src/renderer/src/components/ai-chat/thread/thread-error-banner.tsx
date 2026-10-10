@@ -151,13 +151,15 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             ? t("chat.needProviderKeyHint")
             : error.includes("HANDOFF_CONFIRM_FAILED")
               ? t("chat.handoffConfirmFailed")
-              : kind === "store" || kind === "generic"
-                ? isDevCopyEnabled()
-                  ? error
-                  : null
-                : isDevCopyEnabled()
-                  ? error
-                  : null)
+              : kind === "send_restore"
+                ? t("chat.sendFailedRestore")
+                : kind === "store"
+                  ? isDevCopyEnabled()
+                    ? error
+                    : t("chat.errorGenericHint")
+                  : isDevCopyEnabled()
+                    ? error
+                    : null)
 
   return (
     <div

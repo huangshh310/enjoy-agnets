@@ -612,6 +612,7 @@ export const enChat = {
   preparingHint: "Getting ready…",
   moreActions: "More",
   viewRawJson: "View raw contents",
+  sendFailedRestore: "That message didn't send. It's back in the input.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",
   toolStaleObservation: "The screen has changed, so this action was not run. Please confirm again.",

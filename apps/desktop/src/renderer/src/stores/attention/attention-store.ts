@@ -23,7 +23,8 @@ type AttentionStore = {
     event: StreamEvent,
     sessionId: string,
     sessionTitle: string,
-    workspaceId?: string
+    workspaceId?: string,
+    opts?: { omitComplete?: boolean }
   ) => void
   focusSlot: (sessionId: string, kind?: AttentionKind) => void
   dismiss: (id: string) => void
@@ -48,9 +49,15 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
       return { runSessions: { ...next, [runId]: sessionId } }
     }),
   sessionOfRun: (runId) => (runId ? get().runSessions[runId] : undefined),
-  ingest: (event, sessionId, sessionTitle, workspaceId) =>
+  ingest: (event, sessionId, sessionTitle, workspaceId, opts) =>
     set((state) => ({
-      items: ingestAttentionEvent(state.items, { event, sessionId, sessionTitle, workspaceId })
+      items: ingestAttentionEvent(state.items, {
+        event,
+        sessionId,
+        sessionTitle,
+        workspaceId,
+        omitComplete: opts?.omitComplete
+      })
     })),
   focusSlot: (sessionId, kind) =>
     set((state) => ({ items: focusAttentionSlot(state.items, sessionId, kind) })),

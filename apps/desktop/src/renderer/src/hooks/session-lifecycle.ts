@@ -31,8 +31,17 @@ import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-
 import { discardCreatedSession } from "./discard-created-session"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
 import { isReusableEmptySession } from "./reuse-empty-session"
-import { focusComposerAfterNewSession } from "./composer-focus"
+import { focusComposerAfterNewSession, queueComposerFocus } from "./composer-focus"
 import { isDefaultSessionTitle } from "../lib/session-title"
+import {
+  beginNewSessionCreate,
+  currentCreateToken,
+  failNewSessionCreate,
+  finishNewSessionCreate,
+  isCurrentCreateToken,
+  shouldPublishCreatedSession
+} from "./new-session-create"
+import { absorbAssetsIntoQueuedSend } from "./queue-composer-send"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -96,6 +105,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
   applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
+  queueComposerFocus()
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
@@ -105,31 +115,68 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
     focusComposerAfterNewSession()
     return
   }
+  const { token } = beginNewSessionCreate()
   parkForegroundRun()
   const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
   bumpSessionHydrateGeneration()
+  detachForegroundForCreate()
   useChatStore.setState({ preparingHint: true })
   try {
     const session = (await getIde().session.create({
       workspaceId,
       title: customTitle
     })) as SessionRow
-    if (await discardCreatedSession(session.id, stale)) return
+    if (await discardCreatedSession(session.id, stale)) {
+      failNewSessionCreate(token, new Error("SESSION_CREATE_STALE"))
+      return
+    }
     const store = useChatStore.getState()
+    if (
+      !shouldPublishCreatedSession({
+        token,
+        pendingToken: currentCreateToken(),
+        createdWorkspaceId: workspaceId,
+        storeWorkspaceId: store.workspaceId
+      })
+    ) {
+      if (isCurrentCreateToken(token)) {
+        failNewSessionCreate(token, new Error("SESSION_CREATE_WORKSPACE_CHANGED"))
+      }
+      await getIde().session.delete({ sessionId: session.id }).catch(() => undefined)
+      return
+    }
     const typedDuringCreate = store.composer
     const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
+    absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
     if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
       useChatStore.setState({ composer: typedDuringCreate })
     }
+    finishNewSessionCreate(token, session.id)
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
     await refreshAllWorkspaces()
+  } catch (error) {
+    failNewSessionCreate(token, error)
+    throw error
   } finally {
     useChatStore.setState({ preparingHint: false })
     focusComposerAfterNewSession()
   }
+}
+
+/** 立刻露出欢迎页，但 sessionId 要等 create 回来。发送走排队，不占 running。 */
+function detachForegroundForCreate() {
+  useChatStore.setState({
+    ...idleComposerPatch(),
+    sessionId: null,
+    messages: [],
+    sessionTitle: "新对话",
+    composer: "",
+    running: false
+  })
+  queueComposerFocus()
 }
 
 export async function selectPersistedSession(

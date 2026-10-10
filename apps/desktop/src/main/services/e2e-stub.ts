@@ -1,18 +1,42 @@
 /**
  * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  *
+ * 写盘：本文件只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
+ * 活泵允许后有 waiter，`executeStoredTool` 不会跑（那条路只给重启无 wait）。
+ * 允许后必须先吐匹配 `toolCallId` 的 `tool-result`，再写 `ENJOY_E2E_WORKSPACE/e2e-stub.txt`，
+ * 最后才发正文；否则工具停在 input-available，`finalizeRun` 会封成
+ * output-error「No result received.」，账本显示「1 个失败」。
+ * 上一轮的审批响应不得让下一句复读结果。
+ *
  * 终端可点链接夹具（给 luna 验悬停）：
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  */
 import type { ModelMessage } from "ai"
+import { mkdir, writeFile } from "node:fs/promises"
+import { dirname } from "node:path"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
 export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
+/** 开发 / e2e 夹具：发送这句让本轮以存储失败收口，验红条。打包态不生效。 */
+export const STUB_STORE_ERROR_PROMPT = "stub store error"
+export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
+export const STUB_WRITE_PATH = "e2e-stub.txt"
+export const STUB_WRITE_CONTENT = "from stub"
 
 export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
+}
+
+export function isStubStoreErrorPrompt(text: string): boolean {
+  const trimmed = text.trim()
+  return trimmed === STUB_STORE_ERROR_PROMPT || trimmed === STUB_STORE_ERROR_PROMPT_ZH
+}
+
+export function shouldFailStubStore(prompt: string, packaged = false): boolean {
+  return isE2eStub() && !packaged && isStubStoreErrorPrompt(prompt)
 }
 
 let stubWriteSeq = 0
@@ -52,12 +76,23 @@ export function lastUserText(messages: ModelMessage[]): string {
 }
 
 export function stubApprovedWrite(messages: ModelMessage[]): boolean {
-  return hasApprovalResponse(messages, true)
+  return hasApprovalResponse(currentTurnMessages(messages), true)
 }
 
 /** 拒绝后不得再吐同一张审批卡，否则会撞 approvals.id。 */
 export function stubDeniedApproval(messages: ModelMessage[]): boolean {
-  return hasApprovalResponse(messages, false)
+  return hasApprovalResponse(currentTurnMessages(messages), false)
+}
+
+/** 只看本轮：上一轮允许写盘后，下一句 hello 不得再复读 stub-ok allowed write。 */
+function currentTurnMessages(messages: ModelMessage[]): ModelMessage[] {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message?.role !== "user") continue
+    if (isCiteUser(message)) continue
+    return messages.slice(i)
+  }
+  return messages
 }
 
 function hasApprovalResponse(messages: ModelMessage[], approved: boolean): boolean {
@@ -71,12 +106,61 @@ function hasApprovalResponse(messages: ModelMessage[], approved: boolean): boole
   })
 }
 
+/** `apr_stub_N` → `tool_stub_N`，与审批卡同一 id，否则 fold 对不上、finalize 会封成失败。 */
+export function stubApprovedWriteToolCallId(messages: ModelMessage[]): string {
+  const approvalId = currentTurnApprovedId(messages)
+  const match = /^apr_stub_(\d+)$/.exec(approvalId)
+  if (match?.[1]) return `tool_stub_${match[1]}`
+  if (stubWriteSeq > 0) return `tool_stub_${stubWriteSeq}`
+  return "tool_stub_1"
+}
+
+function currentTurnApprovedId(messages: ModelMessage[]): string {
+  for (const message of currentTurnMessages(messages)) {
+    if (message.role !== "tool" || !Array.isArray(message.content)) continue
+    for (const part of message.content) {
+      if (!part || typeof part !== "object") continue
+      const rec = part as { type?: string; approvalId?: string; approved?: boolean }
+      if (rec.type === "tool-approval-response" && rec.approved === true) {
+        return String(rec.approvalId ?? "")
+      }
+    }
+  }
+  return ""
+}
+
+export function stubApprovedWriteResult(toolCallId: string): Record<string, unknown> {
+  return {
+    type: "tool-result",
+    toolCallId,
+    toolName: "write_file",
+    input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT },
+    output: { ok: true, path: STUB_WRITE_PATH }
+  }
+}
+
+/** 活泵允许后补写盘；无工作区根则只吐 tool-result，不假装已经落盘。 */
+export async function writeStubApprovedFile(
+  root = process.env.ENJOY_E2E_WORKSPACE
+): Promise<string | null> {
+  const workspace = root?.trim()
+  if (!workspace) return null
+  const abs = resolveInsideWorkspace(workspace, STUB_WRITE_PATH)
+  await mkdir(dirname(abs), { recursive: true })
+  await writeFile(abs, STUB_WRITE_CONTENT, "utf8")
+  return abs
+}
+
 export async function* createE2eStubStream(
   messages: ModelMessage[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  opts?: { packaged?: boolean }
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  if (shouldFailStubStore(prompt, opts?.packaged === true)) {
+    throw new Error("INTERNAL_STORE_ERROR")
+  }
   if (stubDeniedApproval(messages)) {
     yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
     return
@@ -91,6 +175,9 @@ export async function* createE2eStubStream(
     return
   }
   if (stubApprovedWrite(messages)) {
+    const toolCallId = stubApprovedWriteToolCallId(messages)
+    await writeStubApprovedFile()
+    yield stubApprovedWriteResult(toolCallId)
     yield* emitText("stub-ok allowed write", signal)
     return
   }
@@ -101,7 +188,7 @@ export async function* createE2eStubStream(
       toolCallId: `tool_stub_${stubWriteSeq}`,
       approvalId: `apr_stub_${stubWriteSeq}`,
       toolName: "write_file",
-      input: { path: "e2e-stub.txt", content: "from stub" }
+      input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT }
     }
     return
   }

@@ -17,9 +17,10 @@ export function claimDoneForcesReview(eventType: string): boolean {
 
 /** 流事件 → 会话工单态。失败/取消回执行中，不得长期占待验收。 */
 export function workflowAfterStreamEvent(
-  eventType: string
-): "in_progress" | "needs_review" | null {
+  eventType: string,
+  opts?: { deniedOnly?: boolean }
+): "in_progress" | "needs_review" | "todo" | null {
   if (eventType === "run.start" || eventType === "run.error") return "in_progress"
-  if (eventType === "run.end") return "needs_review"
+  if (eventType === "run.end") return opts?.deniedOnly ? "todo" : "needs_review"
   return null
 }
