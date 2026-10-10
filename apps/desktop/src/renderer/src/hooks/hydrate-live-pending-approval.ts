@@ -1,10 +1,14 @@
 /**
  * 开会话时用 Inbox 活未决补回审批卡。回挂事件若在订阅前丢掉，卡与拍板仍对齐。
- * 参数只信 main 给的 HMAC 库拷贝；缺参不得猜线程 / {}。
+ * 参数只信 main 给的内存 pending 或 HMAC 库拷贝；缺参不得猜线程 / {}，也不自造 run.error。
  */
-import type { ApprovalsPendingResult, PendingApprovalItem, StreamEvent } from "@enjoy-agents/ipc-contract"
+import {
+  parseInboxPendingItems,
+  type ApprovalsPendingResult,
+  type PendingApprovalItem
+} from "@enjoy-agents/ipc-contract/approvals-pending"
+import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
-import { RESTORE_NO_MATCHING } from "../lib/usage/classify-thread-error"
 import { useChatStore } from "../stores/chat-store"
 
 export function pickLivePendingForSession(
@@ -38,17 +42,6 @@ export function approvalRequiredFromPending(
   }
 }
 
-function restoreNoMatchingEvent(runId: string, sessionId: string): StreamEvent {
-  return {
-    type: "run.error",
-    runId,
-    sessionId,
-    message: RESTORE_NO_MATCHING,
-    code: RESTORE_NO_MATCHING,
-    turn: { workflow: "todo", attention: "stopped" }
-  }
-}
-
 /** park / Attention 槽都没有卡时，用拍板 SQL 补一张可决策的卡。 */
 export async function applyHydratedLivePending(sessionId: string): Promise<void> {
   const store = useChatStore.getState()
@@ -62,11 +55,8 @@ export async function applyHydratedLivePending(sessionId: string): Promise<void>
     const attached = await sessionRunAttached(sessionId, item.runId)
     if (useChatStore.getState().sessionId !== sessionId) return
     if (useChatStore.getState().pendingApproval) return
-    if (!hasDecidableApprovalArgs(item.args)) {
-      useChatStore.getState().applyStreamEvent(restoreNoMatchingEvent(item.runId, sessionId))
-      return
-    }
-    if (!attached) return
+    // 缺参交给 main 回挂 fail-closed，禁止 renderer 自造 run.error。
+    if (!hasDecidableApprovalArgs(item.args) || !attached) return
     const card = approvalRequiredFromPending(item)
     if (!card) return
     useChatStore.getState().applyStreamEvent(card)
@@ -78,11 +68,20 @@ export async function applyHydratedLivePending(sessionId: string): Promise<void>
 async function waitForRestoreSettled(): Promise<ApprovalsPendingResult> {
   let last: ApprovalsPendingResult = { items: [] }
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    last = (await getIde().inbox.listPendingApprovals()) as ApprovalsPendingResult
+    last = parseHydratedPendingResult(await getIde().inbox.listPendingApprovals())
     if (last.restoreSettled) return last
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
   return last
+}
+
+function parseHydratedPendingResult(raw: unknown): ApprovalsPendingResult {
+  if (!raw || typeof raw !== "object") return { items: [] }
+  const record = raw as { items?: unknown; restoreSettled?: unknown }
+  return {
+    items: parseInboxPendingItems(record.items),
+    restoreSettled: record.restoreSettled === true
+  }
 }
 
 async function sessionRunAttached(sessionId: string, runId: string): Promise<boolean> {

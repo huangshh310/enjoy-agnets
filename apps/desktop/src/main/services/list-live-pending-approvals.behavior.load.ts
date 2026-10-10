@@ -3,3 +3,4 @@
  */
 export { getDatabase } from "./database.ts"
 export { mapLivePendingItem } from "./list-live-pending-item.ts"
+export { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state.ts"

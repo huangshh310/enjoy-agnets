@@ -93,6 +93,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("run.end"),
     runId: z.string(),
+    /** Composer / Agent 为 `agent`；标题补全等旁路带 generation kind。旧事件缺字段仍过闸。 */
+    kind: z.string().max(40).optional().catch(undefined),
     /** main 收工判定；缺省时 renderer 回落旧逻辑。 */
     turn: TurnOutcome.optional(),
     ...Envelope
@@ -101,6 +103,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("run.error"),
     runId: z.string(),
     message: z.string(),
+    /** Composer / Agent 为 `agent`；标题补全等旁路带 generation kind。旧事件缺字段仍过闸。 */
+    kind: z.string().max(40).optional().catch(undefined),
     /** 用户停 / 归档：`user_aborted`。renderer 只认这码走中性已停止。 */
     code: z.string().optional(),
     turn: TurnOutcome.optional(),

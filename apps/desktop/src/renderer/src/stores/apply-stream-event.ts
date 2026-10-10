@@ -13,6 +13,7 @@ import {
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
+import { isRestoreFamilyCode, restoreFamilyCodeOf } from "@enjoy-agents/ipc-contract/restore-codes"
 import { RESTORE_NO_MATCHING } from "../lib/usage/classify-thread-error"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
@@ -104,14 +105,14 @@ function applyTerminalEvent(
         notice: CATCH_UP_APPROVAL_TIMEOUT
       }
     }
-    if (event.message === RESTORE_NO_MATCHING || event.code === RESTORE_NO_MATCHING) {
+    if (isRestoreFamilyCode(event.message) || isRestoreFamilyCode(event.code)) {
       return {
         messages: finalizeRun(messages, { aborted: true }),
         pendingApproval: null,
         running: false,
         runId: null,
         error: null,
-        notice: RESTORE_NO_MATCHING
+        notice: restoreFamilyCodeOf(event) ?? RESTORE_NO_MATCHING
       }
     }
     return {

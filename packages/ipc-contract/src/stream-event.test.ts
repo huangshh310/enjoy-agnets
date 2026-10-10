@@ -99,6 +99,17 @@ test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
   }
 })
 
+test("run.end / run.error 可选 kind；非法 kind .catch 不拒整条", () => {
+  const end = StreamEvent.safeParse({ type: "run.end", runId: "r1", kind: "completion" })
+  assert.equal(end.success, true)
+  if (end.success && end.data.type === "run.end") assert.equal(end.data.kind, "completion")
+  const oldEnd = StreamEvent.safeParse({ type: "run.end", runId: "r1" })
+  assert.equal(oldEnd.success, true)
+  const bad = StreamEvent.safeParse({ type: "run.error", runId: "r1", message: "boom", kind: 9 })
+  assert.equal(bad.success, true)
+  if (bad.success && bad.data.type === "run.error") assert.equal(bad.data.kind, undefined)
+})
+
 test("未知 attention / workflow 回落，不丢掉整条终态事件", () => {
   const parsed = StreamEvent.safeParse({
     type: "run.error",

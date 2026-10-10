@@ -11,7 +11,7 @@ import type { AppPreferences } from "./preferences"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
 import { MISSING_RUN_SECRET } from "./missing-run-secret"
 
-export { isMissingRunSecretError, MISSING_RUN_SECRET } from "./missing-run-secret"
+export { foldMissingRunSecret, isMissingRunSecretError, MISSING_RUN_SECRET } from "./missing-run-secret"
 
 /** 会话覆盖 > 入参 > 偏好 > Enjoy Local。 */
 export function resolveRuntimeId(

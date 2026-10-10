@@ -14,11 +14,11 @@ import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import {
-  isMissingRunSecretError,
   resolveBoundRunModelId,
   resolveRunSecret,
   resolveRuntimeId
 } from "./agent-run-helpers"
+import { foldMissingRunSecret } from "./missing-run-secret"
 import { peekVerifiedLocalModel } from "./chat-readiness"
 import { hasSecret } from "./secrets"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
@@ -134,7 +134,8 @@ async function beginAgentRun(
   try {
     secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
   } catch (error) {
-    if (isMissingRunSecretError(error)) return { ok: false, code: NO_CHAT_ROUTE }
+    const folded = foldMissingRunSecret(error)
+    if (folded) return folded
     throw error
   }
   if (isE2eCostSeed() && (!input.modelId || input.modelId === "stub-e2e")) {

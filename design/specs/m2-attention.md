@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（拒绝并归档先 deny 再 archive；回挂只补最新一张；args 来自 HMAC 库拷贝；回挂对不上结清拍板；kill-9 不留幽灵行）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（拒绝并归档先 deny 再 archive；回挂只补最新一张；args 来自 HMAC 库拷贝；回挂对不上结清拍板；kill-9 不留幽灵行；空闲只收回挂家族；rememberRun 记 kind；点允许不再一律静默）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -182,6 +182,8 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：归档带未决审批的会话，顶栏变成「需处理 2」+ 两粒「出错」。根因：归档 abort 发普通 `run.error`（attention=error），再切到相邻会话时事件可能再记一槽。正确做法：归档中止走 `user_aborted` + `turn.attention=neutral`，用户 Stop 走 `stopped`，不写 error；`archiveCurrentSession` 之后 `clearSessionAttention` 清掉该会话全部胶囊。
 - **隐患**：finished / cancelled / failed run 的 `decision IS NULL` 行仍进 Inbox。根因：`listLivePendingApprovals` 曾只看未决+未归档，不看 `runs.status`。正确做法：SQL 只列 `waiting_review`/`running`；回挂对不上 `settlePendingApprovalsForRun(..., "restart")`（已决不覆盖）。HMAC 失败 / 无匹配走 `endRestoredRunWithoutSdkReply`，run 记停止，结清不写 `sdkApproved`，禁止 `planSdkReplay`。缺参行不进 `approvals.pending`。空会话列表 fail-closed；`inbox_state` 不得把 pending_approval / ask_user 当档案补回来。待验收同样与会话列表求交。
 - **隐患**：`kill -9` 后拍板幽灵行 + 灰掉的「立即前往审批」，线程转圈无条。根因：强杀不走 will-quit，检查点可能没刷；对不上时未决仍 NULL。正确做法：不能回挂则库里先结清，徽标立刻归零；只有 HMAC+检查点+签参才回挂可决策卡。e2e：`approval-restart.spec.ts`（优雅退出 / kill-9 有检查点 / kill-9 无检查点）。
+- **隐患**：空闲 Composer 把标题补全 `run.error` 当成回挂收工，横幅出现 "Request timed out"，没有 park 时还会新建停车。正确做法：`rememberRun` 记下 kind，两层按 runId 排除旁路；空闲只收回挂家族码。
+- **隐患**：回挂补卡点允许失败一律静默，HMAC / 提问工具 / run 已停也看不到原因。正确做法：只有 `approval_not_reattached` 安静等重发。
 - **隐患**：非 git 仓批准写盘后 Stop，顶栏「待验收」、横幅「中途停下，已改 1 个文件」，Inbox「待验收」却空；git 仓正常写完能进列。根因：Inbox 用 renderer 树 / git dirty / `run.end` 自算，且 `persistSessionWorkflow` 异步可丢。正确做法：main 同步落 `workflow_status`；三处表面都读同一份 `needs_review`；测试覆盖非 git + git 中途停下都进 `listSessionsNeedingReview`。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。侧栏未决审批只加红点，禁止 `focusAttention` 把用户拽回待批会话（Strip / Inbox / handoff 才跳）。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。

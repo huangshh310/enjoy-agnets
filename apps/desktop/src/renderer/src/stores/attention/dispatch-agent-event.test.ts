@@ -106,19 +106,33 @@ test("主 run 结束后标题补全 run.start 不归前台", () => {
   )
 })
 
-test("空闲时非 agent 的 run.error 不归前台", () => {
+test("空闲时标题补全 run.error 不归前台，即使缺 kind", () => {
   assert.equal(
     belongsToForeground(
       {
         type: "run.error",
         runId: "run_title",
-        message: "title failed",
-        kind: "completion"
-      } as Parameters<typeof belongsToForeground>[0],
+        message: "Request timed out"
+      },
       "ses_a",
       null,
       false,
       "ses_a"
+    ),
+    false
+  )
+  assert.equal(
+    belongsToForeground(
+      {
+        type: "run.error",
+        runId: "run_title",
+        message: "Request timed out"
+      },
+      "ses_a",
+      null,
+      false,
+      "ses_a",
+      "completion"
     ),
     false
   )

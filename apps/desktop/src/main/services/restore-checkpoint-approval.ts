@@ -4,6 +4,7 @@
  */
 import {
   getApproval,
+  getRun,
   isSupersededSdkApprovalId,
   planSdkReplay,
   resolvedSdkApprovalId,
@@ -118,7 +119,7 @@ export function endRestoredRunWithoutSdkReply(
   const run = getActiveRun(runId)
   const target = window ?? run?.window
   settlePendingApprovalsForRun(runId, target, "restart")
-  updateRun(db, runId, { status: "cancelled", error: RESTORE_NO_MATCHING_CODE })
+  writeCancelledRestoreError(db, runId)
   if (target) {
     emitEvent(target, {
       type: "run.error",
@@ -130,4 +131,15 @@ export function endRestoredRunWithoutSdkReply(
     })
   }
   if (run) deleteActiveRun(runId)
+}
+
+/** 库里已有原始异常时只记日志，禁止用回挂码盖掉 runs.error。 */
+function writeCancelledRestoreError(db: AppDatabase, runId: string): void {
+  const existing = getRun(db, runId)?.error
+  if (existing) {
+    console.error("[restore] keep original run.error", { runId, existing, restore: RESTORE_NO_MATCHING_CODE })
+    updateRun(db, runId, { status: "cancelled" })
+    return
+  }
+  updateRun(db, runId, { status: "cancelled", error: RESTORE_NO_MATCHING_CODE })
 }

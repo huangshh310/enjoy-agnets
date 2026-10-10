@@ -223,6 +223,33 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
   assert.equal(delta.messages.at(-1)?.content, "好的")
 })
 
+test("空闲时标题补全 run.error 不改前台、不写 error", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_asst", role: "assistant", content: "好的", createdAt: 2, streaming: false }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_title",
+      message: "Request timed out",
+      kind: "completion"
+    },
+    null
+  )
+  assert.equal(patch.running, undefined)
+  assert.equal(patch.error, undefined)
+  assert.equal(patch.notice, undefined)
+  assert.equal(patch.messages.at(-1)?.content, "好的")
+  const noKind = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_title", message: "Request timed out" },
+    null
+  )
+  assert.equal(noKind.running, undefined)
+  assert.equal(noKind.error, undefined)
+})
+
 test("空闲时回挂对不上走中性 notice，工具封成已停止", () => {
   const messages: ThreadMessage[] = [
     {

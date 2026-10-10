@@ -5,7 +5,9 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { insertApproval, insertRun, listLivePendingApprovals } from "@enjoy-agents/db"
 
-const { getDatabase, mapLivePendingItem } = await import("./list-live-pending-approvals.behavior.load.ts")
+const { deleteActiveRun, getActiveRun, getDatabase, holdAgentRun, mapLivePendingItem } = await import(
+  "./list-live-pending-approvals.behavior.load.ts"
+)
 
 test("活会话未决进列表，已决与归档不进", () => {
   const db = getDatabase()
@@ -151,6 +153,57 @@ test("已结束 run 的未决不进拍板：cancelled / failed 不列", () => {
   assert.ok(!items.some((item) => item.id === "apr_cancelled_pending"))
   assert.ok(!items.some((item) => item.id === "apr_failed_pending"))
   assert.ok(items.some((item) => item.id === "apr_running_pending"))
+})
+
+test("内存 pending args 优先于 HMAC 库拷贝，保留 desktop_act 提示", () => {
+  const row = {
+    id: "apr_mem",
+    runId: "run_mem",
+    sessionId: "ses_mem",
+    workspaceId: "ws_mem",
+    sessionTitle: "Note",
+    name: "desktop_act",
+    toolCallId: "tool_mem",
+    createdAt: 1,
+    args: JSON.stringify({ action: "click" }),
+    requestArgs: null
+  }
+  holdAgentRun({
+    runId: "run_mem",
+    window: {
+      isDestroyed: () => false,
+      webContents: { send() {} }
+    } as never,
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId: "ses_mem",
+      workspaceId: "ws_mem",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "click" }]
+    }
+  })
+  const run = getActiveRun("run_mem")
+  run?.pendingApprovals.push({
+    approvalId: "apr_mem",
+    toolCallId: "tool_mem",
+    name: "desktop_act",
+    args: {
+      action: "click",
+      sensitive: false,
+      thumbnailPath: "/tmp/shot.png",
+      needsSecondConfirm: true
+    }
+  })
+  assert.deepEqual(mapLivePendingItem(row).args, {
+    action: "click",
+    sensitive: false,
+    thumbnailPath: "/tmp/shot.png",
+    needsSecondConfirm: true
+  })
+  deleteActiveRun("run_mem")
 })
 
 test("HMAC 库参进 Inbox args，park 字段剥掉，缺参不补 {}", () => {

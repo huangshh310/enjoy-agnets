@@ -1,6 +1,6 @@
 # spec/ai-capabilities
 
-> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（出站闸边沿形状；标题补全不认领前台；stub very slow；CHAT_READY=engine 种已登录 stub；`ENJOY_E2E_WORKSPACES=2`）
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-10-10（终态也带 kind；空闲只收回挂家族；标题补全不认领前台）
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 `GenerationRequest.kind`：`text` `structured-object` `structured-array` `completion` `image` `speech` `transcription` `translation` `video` `embedding` `rerank` `realtime-session` `agent` `workflow`。fullStream 映射在 `packages/agent-core/src/streams/map-part.ts`：SDK 连字符部件按原规则折；已是点号的 Enjoy / ACP 事件只放行显式白名单（原 7 种 + `session.title` / `session.config` / `usage.updated` / `generation.warning` + `commands.update` / `mcp.app`），未知点号类型丢弃。`emitEvent` / `stampAndSend` 出站再 `StreamEvent.safeParse`，失败丢弃并计数（开发态全量 `console.warn`，生产态按 type 10s 限速）；`stampAndSend` / `stampAndBroadcast` 丢掉时返回 `null`，不要把原事件当已发送。终态 `run.end` / `run.error` 被闸丢掉时，`emitEvent` 仍 `settleRun`，避免 `waitForRunSettle` 挂死。映射层先把边沿形状修到可过闸：ACP MCP App 标题截到 200，`srcDoc` 超过 200000 发 `mcp.app` `phase:"error"` + `generation.warning`（`mcp_app_srcdoc_too_large`，不带超长 srcDoc）；ACP `session.title` 截到 200；`host.inject` 名称截到 120、名单封顶 128；`usage.updated` token 四舍五入成整数；`source.added` 的 NaN score 丢掉字段。Agent / `ai.generate` 完成时写 `ttfoMs` 与 `tokensPerSecond`。
 
-StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）/ `session.config`（ACP `configOptions` 与 `config_option_update`，选项形状复用 `SessionConfigOption`；思考档认 `thought_level` 或 `effort` / `reasoning_effort`）/ `session.title`（`session_info_update`，仅默认标题时 `session.rename`）。`run.start` 可带可选 `kind`（Composer / 恢复为 `agent`；标题补全等旁路带自己的 generation kind）。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
+StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）/ `session.config`（ACP `configOptions` 与 `config_option_update`，选项形状复用 `SessionConfigOption`；思考档认 `thought_level` 或 `effort` / `reasoning_effort`）/ `session.title`（`session_info_update`，仅默认标题时 `session.rename`）。`run.start` / `run.end` / `run.error` 可带可选 `kind`（Composer / 恢复为 `agent`；标题补全等旁路带自己的 generation kind；旧事件缺字段 `.catch(undefined)` 仍过闸）。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
 
 消息 parts：`UIMessage` + `migrateContentToParts`。旧 `messages.content` 仍是兼容字段。生成式 UI 只能选 `GENERATIVE_COMPONENT_IDS` 白名单。
 
@@ -41,6 +41,7 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 - 生成式 UI 刷新时只恢复白名单 `componentId`；未知 id 丢弃，不要当成可执行远程组件。
 - 标题补全、Extract `structured-object` 与 Agent 共用 `agent.event`，必须按当前 composer `runId` 过滤。`running && !runId` 先缓冲再回放。没有认领的 `runId` 时，旁路 `structured.delta` / `run.end` 不得写进乐观助手轮，也不得 finalize。Extract / 标题 / 提交说明必须 `collectRunOutput(start)`：先订阅再 IPC。`ENJOY_E2E_STUB` 的 `ai.generate` 先返回 `runId` 再 `setTimeout(0)` 吐事件，否则 structured.delta 在订阅前就结束。
 - **隐患**：主 run 收工后，标题补全的 `run.start` 若只凭同 session + 空闲就被 `belongsToForeground` 认领，reducer 会把它当成活跃 run，随后 `text.delta` 打开空助手气泡。正确做法：只认领 `kind==="agent"` 或带 prompt 的 `run.start`；旁路 generation 带自己的 kind（`completion` 等）。
+- **隐患**：标题补全超时的 `run.error("Request timed out")` 曾写到当前会话横幅，甚至在没有后台 park 时新建停车。根因：空闲时任意带 `runId` 的 `run.error` 都会 `shouldFinalizeComposerRun`；`isNonAgentRunKind` 只看事件字段，而终态以前不带 `kind`。正确做法：`ai.generate` 终态也 stamp `kind`；`rememberRun` 记下 `(runId, kind)`，两层按 runId 排除旁路；空闲只收回挂家族码（`restore_no_matching_approval` / `restore_restart_cancelled`）。
 - `ai.resume` 早期无条件调用 `resumeWorkflow`，会把文本/Agent run 误当成 Workflow。现在按 `runs.kind` 分流；generation 快照不含密钥。聊天刷新恢复走 `hydrate-thread`，不是这条频道。Agent 续跑是同一请求重启循环，不是 SDK 中途 session.detach。
 - kind=`agent` 必须转发 `runAgent`，不要另开无 host 的 ToolLoop；合约拒绝缺 `workspaceId`。
 - `delegate`：Enjoy Local `delegate=true`（主循环注入）。plan/ask 子 Agent 也只读；agent/debug 可写，但 `createSubagentApproval` 必须走同一条 `decideApproval`。没有等待器时拒绝写盘。ACP 宿主 `delegate=false`。

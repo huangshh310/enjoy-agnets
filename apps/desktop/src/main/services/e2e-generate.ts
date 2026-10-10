@@ -48,7 +48,7 @@ async function finishE2eGeneration(
   })
   stampAndSend(
     window,
-    { type: "run.end", runId, turn: { workflow: "todo", attention: "complete" } },
+    { type: "run.end", runId, kind: request.kind, turn: { workflow: "todo", attention: "complete" } },
     request.sessionId
   )
 }

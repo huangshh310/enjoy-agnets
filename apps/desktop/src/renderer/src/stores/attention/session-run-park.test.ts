@@ -96,10 +96,14 @@ test("没有 park 时标题补全 run.start / run.error 不落停车", () => {
   const titleError = {
     type: "run.error" as const,
     runId: "run_title",
-    message: "title failed",
-    kind: "completion"
+    message: "Request timed out"
   }
   assert.equal(nextParks({}, "ses_wait", titleError), null)
+  assert.equal(nextParks({}, "ses_wait", titleError, "completion"), null)
+  assert.equal(
+    nextParks({ ses_wait: park() }, "ses_wait", titleError, "completion"),
+    null
+  )
 })
 
 test("没有 park 时回挂对不上落停车，running 收回且不写 error", () => {

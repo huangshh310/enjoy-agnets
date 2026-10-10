@@ -1,6 +1,7 @@
 /**
  * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
+import { isRestoreFamilyCode, RESTORE_NO_MATCHING_CODE } from "@enjoy-agents/ipc-contract/restore-codes"
 import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 export { NO_CHAT_ROUTE }
@@ -42,7 +43,7 @@ export const SEND_FAILED_RESTORE = "SEND_FAILED_RESTORE"
 export const SESSION_CREATE_TIMEOUT = "SESSION_CREATE_TIMEOUT"
 export const SESSION_NOT_READY = "SESSION_NOT_READY"
 export const USER_STOPPED = "user_aborted"
-export const RESTORE_NO_MATCHING = "restore_no_matching_approval"
+export const RESTORE_NO_MATCHING = RESTORE_NO_MATCHING_CODE
 export const RUN_FAILED = "run_failed"
 export const CATCH_UP_APPROVAL_TIMEOUT = "catch_up_approval_timeout"
 
@@ -66,7 +67,7 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   ) {
     return "stopped"
   }
-  if (message === RESTORE_NO_MATCHING) return "restore_no_matching"
+  if (isRestoreFamilyCode(message)) return "restore_no_matching"
   if (message === RUN_FAILED) return "run_failed"
   if (message === CATCH_UP_APPROVAL_TIMEOUT) return "catch_up_timeout"
   if (

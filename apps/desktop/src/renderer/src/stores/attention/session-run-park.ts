@@ -4,7 +4,7 @@
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { RESTORE_NO_MATCHING } from "../../lib/usage/classify-thread-error"
-import { isComposerRunStart, isNonAgentRunKind } from "../stream-run-scope"
+import { isComposerRunStart, isNonAgentRunKind, isRestoreFamilyEvent } from "../stream-run-scope"
 import type { ChatStore } from "../chat-store.types"
 import type { ParkedRun } from "./attention.types"
 
@@ -45,12 +45,14 @@ export function seedParkFromRunStart(sessionId: string, runId: string, now = Dat
   }
 }
 
-/** 没有 park 时认 run.start，以及回挂的 approval.required / run.error。 */
+/** 没有 park 时认 run.start，以及回挂的 approval.required / 回挂家族 run.error。 */
 export function nextParks(
   parks: Record<string, ParkedRun>,
   sessionId: string,
-  event: StreamEvent
+  event: StreamEvent,
+  rememberedKind?: string
 ): Record<string, ParkedRun> | null {
+  if (isNonAgentRunKind(event, rememberedKind)) return null
   const existing = parks[sessionId]
   if (!existing) {
     if (event.type === "run.start") {
@@ -61,7 +63,7 @@ export function nextParks(
       const seeded = seedParkFromRunStart(sessionId, event.runId)
       return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
     }
-    if (event.type === "run.error" && !isNonAgentRunKind(event)) {
+    if (event.type === "run.error" && isRestoreFamilyEvent(event)) {
       const seeded = seedParkFromRunStart(sessionId, event.runId)
       return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
     }
@@ -84,7 +86,7 @@ export function applyEventToPark(park: ParkedRun, event: StreamEvent): ParkedRun
     return { ...park, running: false, runId: null, pendingApproval: null }
   }
   if (event.type === "run.error") {
-    if (isUserAbortEvent(event) || event.message === RESTORE_NO_MATCHING) {
+    if (isUserAbortEvent(event) || isRestoreFamilyEvent(event) || event.message === RESTORE_NO_MATCHING) {
       return { ...park, running: false, error: null, pendingApproval: null }
     }
     return { ...park, running: false, error: event.message, pendingApproval: null }

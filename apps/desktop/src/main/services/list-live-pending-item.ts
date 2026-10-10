@@ -1,8 +1,12 @@
 /**
- * Inbox 行 → 合约项：args 只用库里 HMAC 拷贝，剔 park 字段，禁止猜 {}。
+ * Inbox 行 → 合约项：args 优先内存 pending（含 desktop_act 提示），否则 HMAC 库拷贝。
  */
 import { stripParkEnrichedFields, type LivePendingApproval } from "@enjoy-agents/db"
-import type { PendingApprovalItem } from "@enjoy-agents/ipc-contract"
+import {
+  parsePendingApprovalArgs,
+  type PendingApprovalItem
+} from "@enjoy-agents/ipc-contract/approvals-pending"
+import { getActiveRun } from "./agent-run-state"
 import { parseStoredApprovalArgs } from "./restore-approval-args"
 
 export function mapLivePendingItem(row: LivePendingApproval): PendingApprovalItem {
@@ -16,7 +20,23 @@ export function mapLivePendingItem(row: LivePendingApproval): PendingApprovalIte
     toolCallId: row.toolCallId,
     createdAt: row.createdAt
   }
+  const args = pickPendingArgs(row)
+  if (args === undefined) return item
+  return { ...item, args }
+}
+
+function pickPendingArgs(row: LivePendingApproval): unknown | undefined {
+  const memory = memoryPendingArgs(row.runId, row.id)
+  if (memory !== undefined) {
+    const capped = parsePendingApprovalArgs(memory)
+    if (capped !== undefined) return capped
+  }
   const parsed = parseStoredApprovalArgs({ args: row.args, requestArgs: row.requestArgs })
-  if (parsed == null) return item
-  return { ...item, args: stripParkEnrichedFields(parsed) }
+  if (parsed == null) return undefined
+  return parsePendingApprovalArgs(stripParkEnrichedFields(parsed))
+}
+
+function memoryPendingArgs(runId: string, approvalId: string): unknown | undefined {
+  const pending = getActiveRun(runId)?.pendingApprovals.find((item) => item.approvalId === approvalId)
+  return pending?.args
 }

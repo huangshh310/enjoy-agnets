@@ -165,7 +165,7 @@ async function runKind(
     })
     stampAndSend(
       window,
-      { type: "run.end", runId, turn: { workflow: "todo", attention: "complete" } },
+      { type: "run.end", runId, kind: request.kind, turn: { workflow: "todo", attention: "complete" } },
       request.sessionId
     )
   } catch (error) {
@@ -184,6 +184,7 @@ async function runKind(
       {
         type: "run.error",
         runId,
+        kind: request.kind,
         message: classified.message,
         turn: { workflow: "in_progress", attention: "error" }
       },

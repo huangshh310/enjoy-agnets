@@ -115,8 +115,8 @@ async function restoreWaitingRunsOnce(window: BrowserWindow): Promise<void> {
       if (restored.keep.length === 0) {
         abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
       }
-    } catch {
-      abandonWaitingRestore(row.id, window, { sessionId: row.sessionId })
+    } catch (error) {
+      abandonWaitingRestore(row.id, window, { sessionId: row.sessionId, cause: error })
     }
   }
 }
@@ -146,8 +146,11 @@ function partitionHmacPending(
 export function abandonWaitingRestore(
   runId: string,
   window: BrowserWindow,
-  input?: { sessionId?: string }
+  input?: { sessionId?: string; cause?: unknown }
 ): void {
+  if (input?.cause) {
+    console.error("[restore] abandon waiting restore", { runId, cause: input.cause })
+  }
   endRestoredRunWithoutSdkReply(getDatabase(), runId, window, input?.sessionId)
 }
 

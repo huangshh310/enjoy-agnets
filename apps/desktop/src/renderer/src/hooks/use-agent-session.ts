@@ -16,6 +16,7 @@ import { applyDefaultChatRoute } from "./apply-default-chat-route"
 import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
+import { approvalDecideUiError } from "./approval-decide-failure"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { pickActiveModel } from "./pick-active-model"
 import {
@@ -185,13 +186,19 @@ export async function decidePendingApprovalOrThrow(
   if (!pending || !runId) {
     throw new Error("没有等待中的审批。")
   }
-  await getIde().agent.decide({
-    runId,
-    toolCallId: pending.toolCallId,
-    approvalId: pending.approvalId,
-    decision,
-    ...(answers ? { answers } : {})
-  })
+  try {
+    await getIde().agent.decide({
+      runId,
+      toolCallId: pending.toolCallId,
+      approvalId: pending.approvalId,
+      decision,
+      ...(answers ? { answers } : {})
+    })
+  } catch (error) {
+    const shown = approvalDecideUiError(error)
+    if (shown) store.setError(shown)
+    else throw error
+  }
 }
 
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {

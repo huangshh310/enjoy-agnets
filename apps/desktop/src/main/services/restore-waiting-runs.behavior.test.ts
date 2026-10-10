@@ -91,6 +91,33 @@ test("回挂取消结清未决：cancelled run 的 NULL 行不进拍板", () => 
   deleteActiveRun("run_abandon")
 })
 
+test("回挂取消保留 runs.error 原异常，不盖成回挂码", () => {
+  const db = getDatabase()
+  db.prepare(
+    "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ws_keep_err", "ws", "/tmp", 1, 1)
+  db.prepare(
+    "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run("ses_keep_err", "ws_keep_err", "keep", 1, 1)
+  insertRun(db, {
+    id: "run_keep_err",
+    sessionId: "ses_keep_err",
+    workspaceId: "ws_keep_err",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: "original boom"
+  })
+  abandonWaitingRestore("run_keep_err", silentWindow(), {
+    sessionId: "ses_keep_err",
+    cause: new Error("workspace missing")
+  })
+  assert.equal(getRun(db, "run_keep_err")?.status, "cancelled")
+  assert.equal(getRun(db, "run_keep_err")?.error, "original boom")
+})
+
 test("回挂取消发 run.error，Composer running 收回", () => {
   const events: Array<{ type: string; code?: string; message?: string }> = []
   const db = getDatabase()
