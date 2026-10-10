@@ -144,8 +144,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       return
     }
     const patch = reduceStreamEvent(get().messages, event, get().runId)
-    if (patch.heldResolved && get().sessionId) {
-      holdApprovalResolved(get().sessionId, patch.heldResolved)
+    const sessionId = get().sessionId
+    if (patch.heldResolved && sessionId) {
+      holdApprovalResolved(sessionId, patch.heldResolved)
     }
     set({
       messages: patch.messages,
