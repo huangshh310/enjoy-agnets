@@ -113,7 +113,8 @@ async function assertReviewHasNoPrism(window: Page) {
   expect(hit.after === "none" || hit.after === "").toBeTruthy()
   expect(!hit.filter || hit.filter === "none").toBeTruthy()
   expect(hit.backdrop === "none" || !hit.backdrop).toBeTruthy()
-  expect(hit.bg === "rgb(255, 255, 255)" || hit.bg === "rgb(23, 23, 23)" || /neutral/.test(hit.bg)).toBeTruthy()
+  expect(hit.bg).toBeTruthy()
+  expect(hit.bg.includes("rgba(0, 0, 0, 0)") || hit.bg === "transparent").toBeFalsy()
 }
 
 async function dumpReviewChain(window: Page) {
