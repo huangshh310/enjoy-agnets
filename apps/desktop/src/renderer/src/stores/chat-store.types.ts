@@ -96,8 +96,6 @@ export type RepositoryNode = {
   workflowStatus?: SessionWorkflowStatus | null
   goal?: string | null
   recap?: string | null
-  changedFiles?: { names: string[]; total: number }
-  completedAt?: string
 }
 
 export type ChangedFileRow = {
@@ -158,8 +156,6 @@ export type WorkspaceSessionHydrate = {
     workflowStatus?: SessionWorkflowStatus | null
     goal?: string | null
     recap?: string | null
-    changedFiles?: RepositoryNode["changedFiles"]
-    completedAt?: string
   }>
 }
 

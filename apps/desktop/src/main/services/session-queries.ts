@@ -3,26 +3,13 @@ import { listMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
 import { backfillUserFileParts } from "./persist-user-attachments"
-import { parseReviewChangedFiles } from "./session-review-persist.ts"
 import { getWorkspace } from "./workspace"
-
-function reviewFields(
-  files: string | null | undefined,
-  completedAt: string | null | undefined
-): Pick<SessionSummary, "changedFiles" | "completedAt"> {
-  const changedFiles = parseReviewChangedFiles(files)
-  return {
-    ...(changedFiles ? { changedFiles } : {}),
-    ...(completedAt ? { completedAt } : {})
-  }
-}
 
 export async function listSessions(workspaceId: string): Promise<SessionSummary[]> {
   const rows = getDatabase()
     .prepare(
       `SELECT id, workspace_id as workspaceId, title, created_at as createdAt, updated_at as updatedAt,
-              flagged, workflow_status as workflowStatus, goal, recap,
-              review_changed_files as reviewChangedFiles, review_completed_at as reviewCompletedAt
+              flagged, workflow_status as workflowStatus, goal, recap
        FROM sessions WHERE workspace_id = ? AND archived_at IS NULL ORDER BY updated_at DESC`
     )
     .all(workspaceId) as Array<{
@@ -35,8 +22,6 @@ export async function listSessions(workspaceId: string): Promise<SessionSummary[
     workflowStatus: string | null
     goal: string | null
     recap: string | null
-    reviewChangedFiles: string | null
-    reviewCompletedAt: string | null
   }>
 
   return rows.map((r) => ({
@@ -48,8 +33,7 @@ export async function listSessions(workspaceId: string): Promise<SessionSummary[
     flagged: Boolean(r.flagged),
     workflowStatus: (r.workflowStatus as SessionSummary["workflowStatus"]) ?? null,
     goal: r.goal ?? null,
-    recap: r.recap ?? null,
-    ...reviewFields(r.reviewChangedFiles, r.reviewCompletedAt)
+    recap: r.recap ?? null
   }))
 }
 

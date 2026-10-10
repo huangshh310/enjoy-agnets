@@ -67,9 +67,7 @@ export function synthesizeNeedsReviewInbox(input: {
       workspaceId: session.workspaceId ?? session.parentId ?? null,
       title: session.name,
       updatedAt: session.updatedAt,
-      workflowStatus: "needs_review" as const,
-      ...(session.changedFiles ? { changedFiles: session.changedFiles } : {}),
-      ...(session.completedAt ? { completedAt: session.completedAt } : {})
+      workflowStatus: "needs_review" as const
     }))
   return inboxFromNeedsReviewSessions(rows, input)
 }

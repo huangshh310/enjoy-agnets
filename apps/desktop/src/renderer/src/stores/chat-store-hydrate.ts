@@ -48,9 +48,7 @@ export function buildWorkspaceTree(
         flagged: session.flagged,
         workflowStatus: session.workflowStatus,
         goal: session.goal,
-        recap: session.recap,
-        changedFiles: session.changedFiles,
-        completedAt: session.completedAt
+        recap: session.recap
       })
     }
   }
@@ -68,8 +66,6 @@ export function buildSessionTree(
     workflowStatus?: RepositoryNode["workflowStatus"]
     goal?: string | null
     recap?: string | null
-    changedFiles?: RepositoryNode["changedFiles"]
-    completedAt?: string
   }>
 ): RepositoryNode[] {
   return [
@@ -89,9 +85,7 @@ export function buildSessionTree(
       flagged: session.flagged,
       workflowStatus: session.workflowStatus,
       goal: session.goal,
-      recap: session.recap,
-      changedFiles: session.changedFiles,
-      completedAt: session.completedAt
+      recap: session.recap
     }))
   ]
 }

@@ -2,7 +2,6 @@
  * 会话 IPC：改名走 Zod，未知字段即拒。
  */
 import { z } from "zod"
-import { ReviewChangedFiles } from "./credential-check.ts"
 
 export const SessionRenameInput = z
   .object({
@@ -46,9 +45,7 @@ export const SessionSummary = z.object({
   workflowStatus: SessionWorkflowStatus.nullable().optional(),
   goal: z.string().nullable().optional(),
   recap: z.string().nullable().optional(),
-  relativeTime: z.string().optional(),
-  changedFiles: ReviewChangedFiles.optional(),
-  completedAt: z.string().optional()
+  relativeTime: z.string().optional()
 })
 export type SessionSummary = z.infer<typeof SessionSummary>
 
