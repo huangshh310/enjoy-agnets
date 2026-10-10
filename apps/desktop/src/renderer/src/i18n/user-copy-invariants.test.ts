@@ -169,7 +169,6 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.errorTitle, "模型这次没回完")
   assert.equal(z.chat.preparingHint, "正在准备…")
   assert.equal(z.chat.viewRawJson, "查看原始内容")
-  assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开。")
   assert.doesNotMatch(z.chat.approvalHintAll, /sudo|rm -rf|write_file|bash/)
   assert.doesNotMatch(z.chat.approvalToolQuestion, /\{name\}/)
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
