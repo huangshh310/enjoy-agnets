@@ -1,6 +1,6 @@
 /**
  * 一轮收工判定：main 在 run.end / run.error 上算一次，renderer 只消费。
- * 写类名走 `isWriteTypeToolName`（MUTATING_TOOLS + 已有叶子启发式），不另开名单。
+ * 写类名走 `isWriteTypeToolName`（只读白名单之外都算可能改盘）。
  */
 import { z } from "zod"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
@@ -42,21 +42,20 @@ export function sealTurnTools<T extends TurnToolSnapshot>(tools: readonly T[]): 
 }
 
 /**
- * 出错 / 用户停：不进待验收、不标完成。
+ * 出错 / 用户停：Attention 仍是出错/已停止；若写类已开始执行则工单进待验收。
  * 全拒绝或从未发出：回待办、Attention 中性。
  * 只读轮：回待办，Attention 仍可完成。
  * 写类已执行或执行中被掐（封成 output-error）：待验收 + 完成。
  */
 export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
-  if (input.ended === "error" || input.ended === "abort") {
-    return { workflow: "in_progress", attention: "error" }
-  }
   const tools = sealTurnTools(input.tools)
-  if (tools.length === 0) return { workflow: "todo", attention: "complete" }
   const acted = tools.filter((tool) => tool.state !== "approval-requested" && !isToolNotExecuted(tool))
-  if (acted.length === 0) return { workflow: "todo", attention: "neutral" }
-  if (acted.some((tool) => isWriteTypeToolName(tool.name))) {
-    return { workflow: "needs_review", attention: "complete" }
+  const wrote = acted.some((tool) => isWriteTypeToolName(tool.name))
+  if (input.ended === "error" || input.ended === "abort") {
+    return { workflow: wrote ? "needs_review" : "in_progress", attention: "error" }
   }
+  if (tools.length === 0) return { workflow: "todo", attention: "complete" }
+  if (acted.length === 0) return { workflow: "todo", attention: "neutral" }
+  if (wrote) return { workflow: "needs_review", attention: "complete" }
   return { workflow: "todo", attention: "complete" }
 }
