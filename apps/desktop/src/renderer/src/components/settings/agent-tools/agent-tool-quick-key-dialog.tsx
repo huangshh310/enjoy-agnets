@@ -28,7 +28,6 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { runSecretWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
-import { SecretStorageWarning } from "../secret-storage-warning"
 import { persistSnapshot } from "../providers/provider-editor-writes"
 
 type QuickPresetMeta = {
@@ -243,7 +242,6 @@ export function AgentToolQuickKeyDialog({
           </DialogDescription>
           {secretBlocked ? <SecretWritePreflight /> : null}
         </DialogHeader>
-        <SecretStorageWarning />
 
         <div className="flex flex-col gap-3.5 py-2">
           {/* API Key 输入框 */}

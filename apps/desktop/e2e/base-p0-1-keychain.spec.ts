@@ -4,7 +4,7 @@
  * ② 写失败红字：e2e 桥强制 KEYCHAIN_UNAVAILABLE，不依赖本机钥匙串。
  */
 import { expect, test, type Page } from "@playwright/test"
-import { canLaunchElectron, launchEnjoy, openConnectModelStep, snap } from "./base-p0-1-launch"
+import { canLaunchElectron, hideOverlays, launchEnjoy, openConnectModelStep, skipGuideIfOpen, snap } from "./base-p0-1-launch"
 
 async function openAddKeyForm(window: Page): Promise<void> {
   await window.getByTestId("connect-model-api_key").click()
@@ -72,6 +72,52 @@ test("① skip-until-#133：夹具不可用时向导与加钥表单黄条且禁�
     await expect(save).toBeDisabled()
     await expect(form.getByTestId("provider-simple-fields")).toBeVisible()
     await snap(window, "p0-1-keychain-preflight-form")
+  } finally {
+    await app.close()
+  }
+})
+
+test("钥匙串不可用时进阶编辑器只有一条黄条，列表没有", async () => {
+  test.setTimeout(180_000)
+  const blocked = canLaunchElectron()
+  test.skip(Boolean(blocked), blocked ?? "")
+  const { app, window } = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "none",
+    ENJOY_E2E_KEYCHAIN: "unavailable"
+  })
+  try {
+    await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 20_000 })
+    await skipGuideIfOpen(window)
+    await hideOverlays(window)
+    await window.evaluate(() => {
+      location.hash = "#/settings/providers"
+      const current = window.__enjoyE2e?.getChatReadiness()
+      if (current?.secretStorageAvailable === false) return
+      window.__enjoyE2e?.setChatReadiness({
+        ready: false,
+        engineCount: current?.engineCount ?? 0,
+        engines: current?.engines ?? [],
+        localModels: current?.localModels ?? [],
+        apiKeys: current?.apiKeys ?? [],
+        secretStorageAvailable: false
+      })
+    })
+    await expect(window.getByRole("heading", { name: "模型供应商" })).toBeVisible({ timeout: 15_000 })
+    const yellow = window.locator('[data-testid="secret-write-notice"], [data-testid="secret-storage-unavailable"]')
+    await expect(yellow).toHaveCount(0)
+    await window.getByTestId("provider-add-custom").click()
+    await expect(window.getByTestId("provider-editor-fields")).toBeVisible({ timeout: 8_000 })
+    await expect(yellow).toHaveCount(1)
+    const notice = window.getByTestId("secret-write-notice")
+    await expect(notice).toHaveAttribute("data-kind", "preflight")
+    await expect(notice).toContainText(PREFLIGHT_TITLE)
+    await expect(notice).toContainText(PREFLIGHT_BODY)
+    await expect(window.getByTestId("secret-storage-unavailable")).toHaveCount(0)
+    const save = window.getByTestId("provider-editor-save")
+    await expect(save).toBeDisabled()
+    await expect(window.getByTestId("secret-write-save-tip")).toHaveAttribute("title", SAVE_TIP)
+    await snap(window, "p0-1-keychain-preflight-advanced")
   } finally {
     await app.close()
   }
