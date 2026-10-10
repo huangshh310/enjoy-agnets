@@ -70,7 +70,7 @@ export function rememberApproval(input: {
 }) {
   const db = getDatabase()
   const args = input.args ?? {}
-  const requestArgs = input.requestArgs ?? args
+  const requestArgs = input.requestArgs !== undefined ? input.requestArgs : args
   const sdkApprovalId = input.approvalId
   const existing = getApprovalBySdkIdentity(db, {
     sdkApprovalId,

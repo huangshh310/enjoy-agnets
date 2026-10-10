@@ -8,6 +8,11 @@ import { checkpointActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { armCatchUpPark } from "./park-catch-up-approval"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
+import {
+  APPROVAL_ARGS_MISSING,
+  APPROVAL_ARGS_MISSING_MESSAGE,
+  isMissingApprovalArgs
+} from "./resolve-approval-args"
 
 export async function waitForSubagentApproval(
   run: ActiveRun,
@@ -23,6 +28,18 @@ export async function waitForSubagentApproval(
       name: toolName,
       args,
       error: "Explore mode is read-only."
+    })
+    return "deny"
+  }
+  if (isMissingApprovalArgs(args)) {
+    emitEvent(run.window, {
+      type: "tool.result",
+      runId,
+      toolCallId,
+      name: toolName,
+      args,
+      result: { code: APPROVAL_ARGS_MISSING },
+      error: APPROVAL_ARGS_MISSING_MESSAGE
     })
     return "deny"
   }

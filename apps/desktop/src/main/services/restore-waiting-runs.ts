@@ -4,7 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
-import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
+import { listPendingApprovals, listRuns, setApprovalDecision, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
@@ -14,8 +14,10 @@ import { claimRestoreWaitingOnce } from "./restore-once"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
-import { assertApprovalHmac } from "./approval-hmac"
+import { assertApprovalHmac, recordSdkApprovalResponse } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
+import { parseStoredApprovalArgs } from "./restore-approval-args"
+import { APPROVAL_ARGS_MISSING, APPROVAL_ARGS_MISSING_MESSAGE } from "./resolve-approval-args"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -85,14 +87,22 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
             toolCallId: item.toolCallId,
             name: item.name
           }))
+      const keep: typeof run.pendingApprovals = []
       for (const item of run.pendingApprovals) {
         const rowArgs = pending.find((approval) => approval.id === item.approvalId)
-        let args: unknown = {}
-        try {
-          args = rowArgs ? JSON.parse(rowArgs.args) : {}
-        } catch {
-          args = {}
+        const args = parseStoredApprovalArgs(rowArgs)
+        if (args == null) {
+          if (rowArgs) {
+            setApprovalDecision(db, rowArgs.id, "deny")
+            recordSdkApprovalResponse(rowArgs.id, {
+              approved: false,
+              reason: APPROVAL_ARGS_MISSING_MESSAGE,
+              resumeCode: APPROVAL_ARGS_MISSING
+            })
+          }
+          continue
         }
+        keep.push({ ...item, args })
         emitEvent(window, {
           type: "approval.required",
           runId: row.id,
@@ -102,6 +112,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
           args
         })
       }
+      run.pendingApprovals = keep
     } catch (error) {
       updateRun(db, row.id, {
         status: "cancelled",

@@ -94,7 +94,7 @@ test("人工审批 request 才映射为 approval.required", () => {
   )
 })
 
-test("Enjoy 已成型的 approval.required 缺 args 也补成空对象", () => {
+test("Enjoy 已成型的 approval.required 缺 args 原样放行，不补 {}", () => {
   assert.deepEqual(
     mapStreamPart(
       {
@@ -111,13 +111,12 @@ test("Enjoy 已成型的 approval.required 缺 args 也补成空对象", () => {
       runId: "run_1",
       toolCallId: "tool_enjoy",
       approvalId: "apr_enjoy",
-      name: "write_file",
-      args: {}
+      name: "write_file"
     }
   )
 })
 
-test("审批 request 缺 args 仍映射，补成空对象", () => {
+test("审批 request 缺 args 仍映射，不补 {}", () => {
   assert.deepEqual(
     mapStreamPart(
       {
@@ -133,8 +132,7 @@ test("审批 request 缺 args 仍映射，补成空对象", () => {
       runId: "run_1",
       toolCallId: "tool_empty",
       approvalId: "apr_empty",
-      name: "write_file",
-      args: {}
+      name: "write_file"
     }
   )
 })

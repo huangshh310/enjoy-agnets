@@ -7,6 +7,11 @@ import { rememberReparkApproval } from "./approval-hmac"
 import type { PendingApproval } from "./consume-stream"
 import { persistWaitingRun } from "./persist-waiting-run"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
+import {
+  APPROVAL_ARGS_MISSING,
+  APPROVAL_ARGS_MISSING_MESSAGE,
+  isMissingApprovalArgs
+} from "./resolve-approval-args"
 
 export async function reparkDesktopSecondConfirm(input: {
   run: ActiveRun
@@ -18,6 +23,18 @@ export async function reparkDesktopSecondConfirm(input: {
   const { enrichSecondConfirmApprovalArgs, mergeSecondConfirmArgs } = await import(
     "./builtin-tools/computer-use/desktop-second-confirm-park"
   )
+  if (isMissingApprovalArgs(input.pending.args)) {
+    emitEvent(input.window, {
+      type: "tool.result",
+      runId: input.runId,
+      toolCallId: input.pending.toolCallId,
+      name: "desktop_act",
+      args: input.pending.args,
+      result: { code: APPROVAL_ARGS_MISSING },
+      error: APPROVAL_ARGS_MISSING_MESSAGE
+    })
+    return
+  }
   const original = asRecord(input.pending.args)
   const parked = await enrichSecondConfirmApprovalArgs(mergeSecondConfirmArgs(original, input.result))
   const approvalId = rememberReparkApproval({
@@ -42,7 +59,7 @@ export async function reparkDesktopSecondConfirm(input: {
     approvalId,
     toolCallId: next.toolCallId,
     name: next.name,
-    args: parked ?? {}
+    args: parked
   })
 }
 

@@ -5,12 +5,15 @@
 
 export const APPROVAL_ARGS_MISMATCH = "APPROVAL_ARGS_MISMATCH"
 export const APPROVAL_REPLAY_DENIED = "APPROVAL_REPLAY_DENIED"
+export const APPROVAL_ARGS_MISSING = "approval_args_missing"
 export const APPROVAL_ARGS_MISMATCH_COPY = "审批参数已变化，本次未执行。"
 export const APPROVAL_REPLAY_DENIED_COPY = "本次未执行。"
+export const APPROVAL_ARGS_MISSING_COPY = "没拿到这次操作的参数，已拒绝，未执行"
 
 const NOT_EXECUTED_CODES = new Set([
   APPROVAL_ARGS_MISMATCH,
   APPROVAL_REPLAY_DENIED,
+  APPROVAL_ARGS_MISSING,
   "stale_observation",
   "needs_foreground",
   "action_failed"
@@ -19,6 +22,7 @@ const NOT_EXECUTED_CODES = new Set([
 const NOT_EXECUTED_TEXT = new Set([
   APPROVAL_ARGS_MISMATCH_COPY,
   APPROVAL_REPLAY_DENIED_COPY,
+  APPROVAL_ARGS_MISSING_COPY,
   "已拒绝，本次未执行",
   "Declined, not run this time"
 ])
