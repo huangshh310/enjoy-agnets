@@ -67,8 +67,8 @@ test("拒绝并归档：审批 deny、会话 archived_at、胶囊与已归档", 
     await expect(window.locator('[data-testid="session-archived-toast"]')).toBeVisible({ timeout: 12_000 })
     await expect(sessionRow(window, sessionName)).toHaveCount(0, { timeout: 8_000 })
     await expect(window.locator('[data-testid="attention-needs-bar"]')).toHaveCount(0)
-    const inbox = window.getByRole("button", { name: /^收件箱/ })
-    await expect(inbox).toHaveAttribute("aria-label", "收件箱")
+    const inbox = window.getByRole("button", { name: /^消息/ })
+    await expect(inbox).toHaveAttribute("aria-label", "消息")
     await snap(window, "p0_after_deny_archive")
 
     const dbPath = join(userData, "app.db")

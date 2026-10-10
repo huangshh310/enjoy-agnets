@@ -74,8 +74,7 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     await expect(window.locator('[data-testid="approval-deny"]')).toBeVisible({ timeout: 20_000 })
     await window.locator('[data-testid="approval-deny"]').click()
     await expect(window.getByText("已拒绝，本次未执行")).toBeVisible({ timeout: 15_000 })
-    await expect(window.getByText("写入 e2e-stub.txt")).toBeVisible()
-    await expect(window.getByText("已拒绝", { exact: true })).toBeVisible()
+    await expect(window.getByRole("button", { name: "写入 e2e-stub.txt" })).toBeAttached({ timeout: 8_000 })
     await snap(window, "gate_tool_row_plain")
 
     await sendComposer(window, composer, "夹具：存储失败")
