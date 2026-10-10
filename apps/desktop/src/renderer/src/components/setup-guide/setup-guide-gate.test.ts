@@ -6,7 +6,8 @@ import { test } from "node:test"
 import {
   nextSetupGuideStep,
   previousSetupGuideStep,
-  resolveSetupGuideGate
+  resolveSetupGuideGate,
+  SETUP_GUIDE_STEPS
 } from "./setup-guide-gate.ts"
 
 const settled = {
@@ -51,5 +52,10 @@ test("记过完成时间或查询失败就保持关闭", () => {
 test("步骤前后走，停在两端", () => {
   assert.equal(nextSetupGuideStep("intro"), "capabilities")
   assert.equal(previousSetupGuideStep("intro"), "intro")
+  assert.equal(nextSetupGuideStep("engines"), "connect-model")
+  assert.equal(nextSetupGuideStep("connect-model"), "appearance")
+  assert.equal(previousSetupGuideStep("appearance"), "connect-model")
   assert.equal(nextSetupGuideStep("ready"), "ready")
+  assert.equal(SETUP_GUIDE_STEPS.length, 7)
+  assert.equal(SETUP_GUIDE_STEPS[3], "connect-model")
 })

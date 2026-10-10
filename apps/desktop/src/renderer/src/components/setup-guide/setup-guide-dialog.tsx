@@ -7,10 +7,13 @@ import { useQueryClient } from "@tanstack/react-query"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { AppearanceChoice } from "./appearance-choice"
 import { CapabilityCards } from "./capability-cards"
+import { ConnectModelStep } from "./connect-model-step"
 import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
+import { readyGuideFinishes, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { GUIDE_INSET_CLASS } from "./setup-guide-frame"
 import {
   isSetupGuideChoiceStep,
@@ -32,11 +35,13 @@ export function SetupGuideDialog() {
   const [workspaceName, setWorkspaceName] = useState("")
   const finishing = useRef(false)
   const queryClient = useQueryClient()
+  const chatReady = useChatReadiness().data?.ready === true
 
   useEffect(() => {
     if (!open) return
-    setStep("intro")
-    setWorkspaceName("")
+    const resume = useSetupGuideStore.getState().takeResumeStep()
+    setStep(resume ?? "intro")
+    if (!resume) setWorkspaceName("")
   }, [open])
   useEffect(() => {
     if (isSetupGuideChoiceStep(step)) markEngaged()
@@ -46,6 +51,10 @@ export function SetupGuideDialog() {
     void finishSetupGuide(finishing, hide, () => queryClient.invalidateQueries({ queryKey: ["settings"] }))
   }
   const onNext = () => {
+    if (step === "ready" && !readyGuideFinishes(chatReady)) {
+      setStep("connect-model")
+      return
+    }
     if (SETUP_GUIDE_FACE[step].finishes) finish()
     else setStep(nextSetupGuideStep(step))
   }
@@ -59,17 +68,28 @@ export function SetupGuideDialog() {
       >
         <SetupGuideHeader
           step={step}
+          titleKey={step === "ready" ? readyGuideTitleKey(chatReady) : undefined}
+          readyMark={step === "ready" ? chatReady : undefined}
           summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} /> : undefined}
         />
         <div className={cx("flex min-h-0 flex-col overflow-hidden pt-6", GUIDE_INSET_CLASS, SETUP_GUIDE_FACE[step].mark === "ready" && "justify-center overflow-y-auto pb-6")}>
-          <SetupGuideBody step={step} workspaceName={workspaceName} onOpened={setWorkspaceName} />
+          <SetupGuideBody
+            step={step}
+            workspaceName={workspaceName}
+            onOpened={setWorkspaceName}
+            onSkipConnect={() => setStep(nextSetupGuideStep("connect-model"))}
+          />
         </div>
         <SetupGuideFooter
           step={step}
           hasWorkspace={Boolean(workspaceName)}
+          primaryKey={step === "ready" ? readyGuidePrimaryKey(chatReady) : undefined}
+          secondaryKey={step === "ready" && !chatReady ? "settings.setupGuide.browseFirst" : undefined}
+          autoFocusPrimary={step === "intro"}
           onBack={() => setStep(previousSetupGuideStep(step))}
           onNext={onNext}
           onSkip={finish}
+          onSecondary={finish}
         />
       </DialogContent>
     </Dialog>
@@ -79,19 +99,25 @@ export function SetupGuideDialog() {
 function SetupGuideBody({
   step,
   workspaceName,
-  onOpened
+  onOpened,
+  onSkipConnect
 }: {
   step: SetupGuideStep
   workspaceName: string
   onOpened: (name: string) => void
+  onSkipConnect: () => void
 }) {
-  return STEP_BODY[step]({ workspaceName, onOpened })
+  return STEP_BODY[step]({ workspaceName, onOpened, onSkipConnect })
 }
 
-const STEP_BODY: Record<SetupGuideStep, (props: { workspaceName: string; onOpened: (name: string) => void }) => ReactNode> = {
+const STEP_BODY: Record<
+  SetupGuideStep,
+  (props: { workspaceName: string; onOpened: (name: string) => void; onSkipConnect: () => void }) => ReactNode
+> = {
   intro: () => <IntroPoints />,
   capabilities: () => <CapabilityCards />,
   engines: () => <EngineInstallList />,
+  "connect-model": ({ onSkipConnect }) => <ConnectModelStep onSkip={onSkipConnect} />,
   appearance: () => <AppearanceChoice />,
   workspace: ({ workspaceName, onOpened }) => <WorkspaceChoice name={workspaceName} onOpened={onOpened} />,
   ready: () => <ReadyShortcuts />

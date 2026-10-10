@@ -3,8 +3,8 @@
  * 采用双视图 Tabbed 架构解耦“已配置服务商 (Configured)”与“预设市场 (Explore Presets)”，
  * 保证配置项和预设增多时交互整洁、层次分明。
  */
-import { useMemo, useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate, useSearch } from "@tanstack/react-router"
 import { RiCompass3Line, RiStackLine } from "@remixicon/react"
 import { agentRefsForProvider } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
@@ -18,13 +18,26 @@ import { ProviderPresetsTab } from "./provider-presets-tab"
 import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
+import { parseSettingsSectionSearch } from "../settings-section-search"
+import { OFFICIAL_CREATE, OFFICIAL_PRESET_KIND, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
+import { resumeSetupGuide } from "@renderer/components/setup-guide/setup-guide-store"
 
 export function ProviderSettings() {
   const t = useT()
   const navigate = useNavigate()
+  const search = parseSettingsSectionSearch(useSearch({ strict: false }))
   const settings = useProviderSettings()
   const agentTools = useSettingsSnapshot().data?.agentTools ?? []
-  const [activeTab, setActiveTab] = useState<"configured" | "presets">("configured")
+  const [activeTab, setActiveTab] = useState<"configured" | "presets">(
+    search.create === OFFICIAL_CREATE ? "presets" : "configured"
+  )
+  const openedOfficial = useRef(false)
+  useEffect(() => {
+    if (openedOfficial.current || search.create !== OFFICIAL_CREATE) return
+    openedOfficial.current = true
+    setActiveTab("presets")
+    settings.openCreate(OFFICIAL_PRESET_KIND)
+  }, [search.create, settings])
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string; agents: string } | null>(
     null
   )
@@ -68,6 +81,18 @@ export function ProviderSettings() {
           <p className="mt-0.5 text-caption-1-medium text-text-secondary">
             {t("settings.providers.subtitle")}
           </p>
+          {search.from === SETUP_GUIDE_FROM ? (
+            <button
+              type="button"
+              onClick={() => {
+                resumeSetupGuide()
+                void navigate({ to: "/" })
+              }}
+              className="mt-1 cursor-pointer text-caption-2-medium text-accent-600 hover:underline"
+            >
+              {t("settings.setupGuide.returnGuide")}
+            </button>
+          ) : null}
         </div>
 
         {/* 顶部操作区 */}
@@ -175,7 +200,13 @@ export function ProviderSettings() {
         onChange={settings.updateEditor}
         onFetchModels={() => void settings.fetchModels()}
         onDetect={() => void settings.detect()}
-        onSave={() => void settings.save(true)}
+        onSave={() => {
+          void settings.save(true).then(() => {
+            if (search.from !== SETUP_GUIDE_FROM) return
+            resumeSetupGuide()
+            void navigate({ to: "/" })
+          })
+        }}
         onOpenAgent={openAgent}
       />
 

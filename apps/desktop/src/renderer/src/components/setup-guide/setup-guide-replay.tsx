@@ -1,5 +1,5 @@
 /**
- * 设置里再打开一次启动引导。
+ * 设置里再打开一次入门向导。
  */
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"

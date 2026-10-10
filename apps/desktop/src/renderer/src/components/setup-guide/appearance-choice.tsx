@@ -23,7 +23,7 @@ export function AppearanceChoice() {
           {THEME_ACCENTS.map((item) => (
             <AccentCell
               key={item.id}
-              name={item.name}
+              name={t(item.nameKey)}
               color={item.color}
               selected={item.id === current}
               onSelect={() => applyThemeAccent(item.id)}

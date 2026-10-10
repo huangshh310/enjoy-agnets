@@ -43,11 +43,11 @@ test("开发者文案白名单短且都在词表里", () => {
 
 test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
   const z = zh as {
-    chat: Record<string, string>
+    chat: Record<string, string> & { noProjectEmpty: string; noChatRouteNotice: string }
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
-      setupGuide: { replayDesc: string }
+      setupGuide: { replayDesc: string; replay: string }
       update: { devSkip: string }
       builtinTools: { browserBridgeTitle: string }
       providers: Record<string, string>
@@ -86,7 +86,10 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.nav.workspace, "项目")
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
   assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
-  assert.equal(z.settings.setupGuide.replayDesc, "再走一遍引擎安装、外观和打开项目。")
+  assert.equal(z.settings.setupGuide.replayDesc, "再走一遍连模型、装引擎、外观和打开文件夹。")
+  assert.equal(z.settings.setupGuide.replay, "重新打开入门向导")
+  assert.equal(z.chat.noProjectEmpty, "选一个文件夹开始。Enjoy 只在你选的文件夹里读写。")
+  assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
   assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
   assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
   assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")
@@ -111,6 +114,12 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+})
+
+test("用户可见词表不含供应商密钥，统一连接模型 / API 密钥", () => {
+  for (const { key, value } of flattenEntries(zh)) {
+    assert.doesNotMatch(value, /供应商密钥/, `zh ${key} uses banned copy: ${value}`)
+  }
 })
 
 test("中文词条不用半角 ? !，确认问句走全角问号", () => {

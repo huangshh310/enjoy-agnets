@@ -19,6 +19,7 @@ export function useSetupGuide(): void {
   const open = useSetupGuideStore((state) => state.open)
   const reason = useSetupGuideStore((state) => state.reason)
   const engaged = useSetupGuideStore((state) => state.engaged)
+  const paused = useSetupGuideStore((state) => state.paused)
   const show = useSetupGuideStore((state) => state.show)
   const hide = useSetupGuideStore((state) => state.hide)
   const queryClient = useQueryClient()
@@ -37,9 +38,9 @@ export function useSetupGuide(): void {
       void stampExistingInstall(stamped, () => queryClient.invalidateQueries({ queryKey: ["settings"] }))
       return
     }
-    if (gate === "show" && !open) show("first-run")
+    if (gate === "show" && !open && !paused) show("first-run")
     if (gate === "hidden" && open && reason === "first-run" && !engaged) hide()
-  }, [engaged, gate, hide, open, queryClient, reason, show])
+  }, [engaged, gate, hide, open, paused, queryClient, reason, show])
 }
 
 async function stampExistingInstall(
