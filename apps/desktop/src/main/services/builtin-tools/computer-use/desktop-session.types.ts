@@ -62,6 +62,7 @@ export type DesktopSession = {
   screenshot: (pid?: number) => Promise<Record<string, unknown>>
   peek: (observationId: string) => Observation | null
   lookup: (observationId: string) => Observation | null
+  put: (observation: Observation) => void
   freeze: (observationId: string) => boolean
   release: (observationId: string) => void
   /** 停手势：取消已派出的 act。没有在途请求时是 no-op。 */

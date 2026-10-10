@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   classifyThreadError,
+  INTERNAL_STORE_ERROR,
   NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
@@ -27,6 +28,11 @@ test("429 才是速率限制", () => {
 test("普通供应商错误保持 generic", () => {
   assert.equal(classifyThreadError("model not found"), "generic")
   assert.equal(classifyThreadError("No output generated"), "generic")
+})
+
+test("库约束原文不进 generic 详情", () => {
+  assert.equal(classifyThreadError(INTERNAL_STORE_ERROR), "store")
+  assert.equal(classifyThreadError("UNIQUE constraint failed: approvals.id"), "store")
 })
 
 test("ACP 未登录不是可重试供应商错误", () => {

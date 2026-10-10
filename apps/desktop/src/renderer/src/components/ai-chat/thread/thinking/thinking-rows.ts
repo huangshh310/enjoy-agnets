@@ -2,6 +2,10 @@
  * 按本轮实际输出拼 Thinking 时间线：思考段落 + 搜索/编码/其它工具，不是手动 Tab。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import {
+  isStaleObservationAfterAllow,
+  isToolNotExecuted
+} from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { asRecord } from "@renderer/lib/record"
 import { formatToolLabel, summarizeToolArgs, toolKind } from "../tool-summary"
 import type { TranslateFn } from "@renderer/i18n"
@@ -47,7 +51,12 @@ export function thinkingHeadline(
     if (tools.length > 0) return t("chat.runningTools")
     return t("chat.thinking")
   }
-  if (tools.length > 0) return t("chat.ranTools", { count: tools.length })
+  const executed = tools.filter((tool) => !isToolNotExecuted(tool))
+  if (executed.length > 0) return t("chat.ranTools", { count: executed.length })
+  if (tools.length > 0) {
+    if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
+    return t("chat.toolDenied")
+  }
   if (seconds) return t("chat.thoughtSeconds", { seconds })
   return t("chat.thoughtFew")
 }
@@ -79,9 +88,9 @@ function toolRow(tool: ThreadToolCall, t: TranslateFn): TraceRow {
     mono: kind === "coding",
     add,
     del,
-    done: tool.state === "output-available",
+    done: tool.state === "output-available" && !isToolNotExecuted(tool),
     working: tool.state === "input-streaming" || tool.state === "input-available",
-    failed: tool.state === "output-error" || tool.state === "output-denied"
+    failed: tool.state === "output-error" && !isToolNotExecuted(tool)
   }
 }
 

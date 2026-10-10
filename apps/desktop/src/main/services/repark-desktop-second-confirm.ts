@@ -3,9 +3,8 @@
  * 不立刻 tool.result 给模型，也不续泵；等人确认后才对**新**观察 act。
  */
 import type { BrowserWindow } from "electron"
-import { rememberApproval } from "./approval-hmac"
+import { rememberReparkApproval } from "./approval-hmac"
 import type { PendingApproval } from "./consume-stream"
-import { createId } from "./ids"
 import { persistWaitingRun } from "./persist-waiting-run"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
 
@@ -21,7 +20,14 @@ export async function reparkDesktopSecondConfirm(input: {
   )
   const original = asRecord(input.pending.args)
   const parked = await enrichSecondConfirmApprovalArgs(mergeSecondConfirmArgs(original, input.result))
-  const approvalId = createId("apr")
+  const approvalId = rememberReparkApproval({
+    existingApprovalId: input.pending.approvalId,
+    runId: input.runId,
+    toolCallId: input.pending.toolCallId,
+    name: "desktop_act",
+    args: parked,
+    requestArgs: original
+  }).id
   const next: PendingApproval = {
     approvalId,
     toolCallId: input.pending.toolCallId,
@@ -29,13 +35,6 @@ export async function reparkDesktopSecondConfirm(input: {
     args: parked
   }
   input.run.pendingApprovals.push(next)
-  rememberApproval({
-    runId: input.runId,
-    approvalId,
-    toolCallId: next.toolCallId,
-    name: next.name,
-    args: parked
-  })
   persistWaitingRun(input.run, input.runId)
   emitEvent(input.window, {
     type: "approval.required",

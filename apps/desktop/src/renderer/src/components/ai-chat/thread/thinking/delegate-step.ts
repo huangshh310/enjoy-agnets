@@ -6,6 +6,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "../../../../lib/record.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import type { AgentStepNode, SubagentKind } from "./agent-step-tree.types.ts"
+import { isDeniedTool } from "../tool-denied-copy.ts"
 import { mergeToolArgs, mapToolStatus } from "./extract-step-fields.ts"
 
 const TITLE_MAX = 80
@@ -17,8 +18,11 @@ export function mapDelegateToStepNode(tool: ThreadToolCall, t: TranslateFn): Age
   const subagentKind = inferSubagentKind(args)
   const heading = pickDelegateTitle(args)
   const errorText = delegateErrorText(tool, result)
-  const status =
-    errorText || result.error != null || tool.state === "output-error" ? "error" : mapToolStatus(tool.state)
+  const status = isDeniedTool(tool)
+    ? "denied"
+    : errorText || result.error != null || tool.state === "output-error"
+      ? "error"
+      : mapToolStatus(tool.state, tool)
   return {
     id: tool.id,
     kind: "delegate",
