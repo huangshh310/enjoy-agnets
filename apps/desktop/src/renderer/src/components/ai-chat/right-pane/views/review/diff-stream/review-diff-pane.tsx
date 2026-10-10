@@ -6,7 +6,9 @@
 import { useEffect } from "react"
 import { RiCheckLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
+import { useChatStore } from "@renderer/stores/chat-store"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
+import { ReviewNotGitEmpty } from "../review-not-git-empty"
 import { ChangesFileDiff } from "../../../../diff/changes-file-diff"
 import { sameReviewPath } from "../same-review-path"
 import type { DiffPalette } from "../../../../diff/diff-palette"
@@ -34,7 +36,9 @@ export function ReviewDiffPane(props: {
     if (activePath) onSelectFile(activePath)
   }, [activePath, selectedFilePath, onSelectFile])
 
+  const gitRepo = useChatStore((state) => state.gitRepo)
   if (changes.length === 0 && !activePath) {
+    if (gitRepo === false) return <ReviewNotGitEmpty />
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-text-tertiary">
         <div className="flex size-10 items-center justify-center rounded-full bg-state-success-text/10 text-state-success-text">

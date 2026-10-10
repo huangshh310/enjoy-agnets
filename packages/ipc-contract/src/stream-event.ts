@@ -7,6 +7,7 @@ import { AutomationRunSource } from "./automations-missed.ts"
 import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
+import { TurnOutcome } from "./turn-outcome.ts"
 
 const Envelope = {
   sequence: z.number().int().optional(),
@@ -78,8 +79,20 @@ export const StreamEvent = z.discriminatedUnion("type", [
     kind: z.enum(["created", "modified", "deleted"]),
     ...Envelope
   }),
-  z.object({ type: z.literal("run.end"), runId: z.string(), ...Envelope }),
-  z.object({ type: z.literal("run.error"), runId: z.string(), message: z.string(), ...Envelope }),
+  z.object({
+    type: z.literal("run.end"),
+    runId: z.string(),
+    /** main 收工判定；缺省时 renderer 回落旧逻辑。 */
+    turn: TurnOutcome.optional(),
+    ...Envelope
+  }),
+  z.object({
+    type: z.literal("run.error"),
+    runId: z.string(),
+    message: z.string(),
+    turn: TurnOutcome.optional(),
+    ...Envelope
+  }),
   z.object({
     type: z.literal("message.part.start"),
     runId: z.string(),

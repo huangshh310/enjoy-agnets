@@ -2,10 +2,11 @@
  * 会话归档 / 恢复 / 永久删除。只动 SQLite，不删工作区磁盘文件。
  */
 import { clearConversationDesktopAllow } from "@enjoy-agents/agent-core"
-import { deleteAcpRemoteIfLive, disposeAcpSession } from "@enjoy-agents/agent-harness"
 import { syncActiveRunsDesktopAllow } from "./conversation-desktop-allow-sync"
 import { getDatabase } from "./database"
+import type { BrowserWindow } from "electron"
 import { stampSessionArchived, stampSessionUnarchived } from "./session-archive-stamp"
+import { denyPendingApprovalsForSession } from "./archive-deny-pending"
 
 export function listArchivedSessions() {
   return getDatabase()
@@ -20,12 +21,13 @@ export function listArchivedSessions() {
     .all()
 }
 
-export function archiveSession(sessionId: string) {
+export async function archiveSession(sessionId: string, window?: BrowserWindow) {
+  const deniedApprovals = await denyPendingApprovalsForSession(sessionId, window)
   const now = Date.now()
   const changes = stampSessionArchived(getDatabase(), sessionId, now)
   if (changes === 0) throw new Error("Unknown or already archived session.")
   forgetConversationDesktopAllow(sessionId)
-  return { id: sessionId, archivedAt: now }
+  return { id: sessionId, archivedAt: now, deniedApprovals }
 }
 
 export function unarchiveSession(sessionId: string) {
@@ -39,7 +41,9 @@ export function deleteSession(sessionId: string) {
   const db = getDatabase()
   const exists = db.prepare("SELECT id FROM sessions WHERE id = ?").get(sessionId)
   if (!exists) throw new Error("Unknown session.")
-  void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))
+  void import("@enjoy-agents/agent-harness").then(({ deleteAcpRemoteIfLive, disposeAcpSession }) => {
+    void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))
+  })
   db.exec("BEGIN")
   try {
     db.prepare(

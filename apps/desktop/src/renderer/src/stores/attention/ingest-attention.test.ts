@@ -175,6 +175,36 @@ test("本轮工具全未执行：run.end 收束审批但不弹已完成", () => 
   )
 })
 
+test("存储失败 turn.error：只出出错，收掉同会话已完成", () => {
+  const done = ingestAttentionEvent([], {
+    event: {
+      type: "run.end",
+      runId: "run_old",
+      turn: { workflow: "todo", attention: "complete" }
+    },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const failed = ingestAttentionEvent(done, {
+    event: {
+      type: "run.error",
+      runId: "run_err",
+      message: "INTERNAL_STORE_ERROR",
+      turn: { workflow: "in_progress", attention: "error" }
+    },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(failed.find((item) => item.kind === "error")?.status, "active")
+  assert.equal(failed.find((item) => item.kind === "complete")?.status, "resolved")
+  assert.equal(
+    failed.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
+})
+
 test("run.end 收束审批并 upsert complete", () => {
   const waiting = ingestAttentionEvent([], {
     event: approval(),

@@ -5,7 +5,7 @@
 import { RiGitBranchLine } from "@remixicon/react"
 import { Switch } from "@/components/ui/switch"
 import { useQuery } from "@tanstack/react-query"
-import type { ChangedFile } from "@enjoy-agents/ipc-contract"
+import { readWorkspaceChangesResult } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { SettingsCard, SettingsRow } from "./settings-row"
@@ -19,7 +19,8 @@ export function GitSettings() {
   const changesQuery = useQuery({
     queryKey: ["changes", workspaceId],
     enabled: hasIde() && Boolean(workspaceId),
-    queryFn: () => getIde().workspace.changes({ workspaceId }) as Promise<ChangedFile[]>
+    queryFn: async () =>
+      readWorkspaceChangesResult(await getIde().workspace.changes({ workspaceId })).files
   })
   const changes = changesQuery.data ?? []
   const additions = changes.reduce((sum, file) => sum + (file.additions ?? 0), 0)

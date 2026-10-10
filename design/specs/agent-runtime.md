@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（StreamEvent 显式白名单；合入 main #125–#127：stub 允许写盘先吐 tool-result，repark 换新内部 id）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（收工判定在 main：`run.end`/`run.error` 可选 `turn`；只读轮不进待验收）
 
 ## 当前真相
 
@@ -50,7 +50,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 ### 流事件（实现已有）
 
-`run.start`（心跳可带可选 `prompt`，前台空闲时补用户句）→ `text.delta` / `reasoning.delta` / `tool.*` / `approval.*` / `file.changed` / v2：`message.part.*` `structured.delta` `source.added` `asset.created` `usage.updated`（可带 `noCacheTokens` / `cacheReadTokens` / `cacheWriteTokens` / `reasoningTokens` / `estimatedCost`；没返回的分项省略，不要写成 0）`step.*` `workflow.*` `mcp.*` `realtime.*` `generation.warning` → `run.end` | `run.error`
+`run.start`（心跳可带可选 `prompt`，前台空闲时补用户句）→ `text.delta` / `reasoning.delta` / `tool.*` / `approval.*` / `file.changed` / v2：`message.part.*` `structured.delta` `source.added` `asset.created` `usage.updated`（可带 `noCacheTokens` / `cacheReadTokens` / `cacheWriteTokens` / `reasoningTokens` / `estimatedCost`；没返回的分项省略，不要写成 0）`step.*` `workflow.*` `mcp.*` `realtime.*` `generation.warning` → `run.end` | `run.error`（均可带可选 `turn`：`{ workflow, attention }`。main 在收工时按 `run.tools` + 结局算一次并写会话 `workflowStatus`；renderer 只消费。`acceptStreamEvent` 必须留下 `turn`，禁止当未知字段剥掉。写类名走 `isWriteTypeToolName` / `MUTATING_TOOLS`，不另开名单。出错 / 用户停：`workflow=in_progress`、`attention=error`，不进待验收、不标完成。全拒绝或从未发出：`todo` + `neutral`。只读轮（无写类或写类都未执行）：`todo`，Attention 仍可 `complete`。写类已执行或执行中被掐（`input-available` 由 `finalizeRun` / `sealTurnTools` 封成 `output-error`）：`needs_review` + `complete`。ACP `tool_call_update` `completed`/`failed` 才发 `tool.result`，fold 成 `output-available` / `output-error`；缺 status 会停在 `input-available`，收工按可能已改盘算。）
 
 `delegate` 独立上下文回 `SubagentSummary`，同时把子循环工具事件挂到父 `toolCallId`。`createCodingTools(host, { mode })`：plan/ask 只有读工具 + `todo_write` + `ask_user_questions` + `git_status` / `git_diff` / `git_log`；agent/debug 再加写工具。`createMcpAgentTools({ mode })`：plan/ask 不注册写名 MCP（leaf 匹配 `write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send`，与 `isMcpWriteToolName` 同一规则）；只读 MCP 在规划里是 `not-applicable`。子 Agent `includeAskUser: false` 且不再套 delegate。写盘 / bash 经 `createSubagentApproval` 挂到主 run 的 `approval.required`。没有等待器时拒绝，不偷偷执行。检查器 `toolNames` 与开流注册集一致（含按 mode 过滤的 MCP）。写盘成功后 main 记 `refs/enjoy/checkpoints/<stamp>`（临时 index + `commit-tree`，含未跟踪；不进用户当前分支）。开流另记一条 `kind=baseline`。Enjoy Local 的 `writeFile`/`editFile` 带 active run 记 `kind=turn`；ACP `file.changed` 每个 run 最多再记一次 `kind=turn`。Review「检查点」用临时 index + `checkout-index` 还原工作区文件，不移动 HEAD、不改用户暂存区；未跟踪删除先 dry-run 再 Confirm。成功后留在检查点时间线。Enjoy Local 用户气泡可「从这里重来」：先还原该轮 baseline（失败则停），成功后再 `session.truncateFrom`。乐观用户气泡 id 与落库 id 相同。ACP `supportsConversationRollback=false`，按钮禁用。`agent.run` 带 `commandId`；排队自启走 `DrainableQueue.drain()`。`applySettingsSnapshot` **不得**用 `preferences.defaultMode` 覆盖当前会话 mode。新建会话才 `modeForNewSession(defaultMode)`。UIMessage parts 与旧 `content` 并存。
 

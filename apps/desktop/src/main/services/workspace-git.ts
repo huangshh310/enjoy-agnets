@@ -10,11 +10,19 @@ import { resolveInsideWorkspace } from "./paths"
 import { parseGitLogStdout } from "./workspace-git-log"
 import { parsePorcelainLine, type ChangeRow } from "./workspace-git-status"
 import { readBranchFiles, readUpstream } from "./workspace-git-remote"
+import { detectGitRepo } from "./workspace-git-repo"
 
 export type { ChangeRow }
 export { parsePorcelainLine }
 
-export async function changedFiles(workspaceRoot: string): Promise<ChangeRow[]> {
+export type WorkspaceChangesSnapshot = {
+  files: ChangeRow[]
+  gitRepo: boolean
+}
+
+export async function changedFiles(workspaceRoot: string): Promise<WorkspaceChangesSnapshot> {
+  const gitRepo = await detectGitRepo(workspaceRoot)
+  if (!gitRepo) return { files: [], gitRepo: false }
   const status = (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout
   const counts = await readNumstat(workspaceRoot)
   const rows = status
@@ -24,7 +32,7 @@ export async function changedFiles(workspaceRoot: string): Promise<ChangeRow[]> 
     .map((line) => parsePorcelainLine(line, counts))
     .filter((row): row is ChangeRow => row !== null)
   await fillUntrackedCounts(workspaceRoot, rows)
-  return rows
+  return { files: rows, gitRepo: true }
 }
 
 export async function readFileDiff(

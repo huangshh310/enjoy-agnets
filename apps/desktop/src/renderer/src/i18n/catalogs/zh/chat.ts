@@ -921,6 +921,7 @@ export const zhChat = {
   uncommitted: "{count} 项未提交改动",
   shareChanges: "分享改动",
   treeClean: "工作区没有未提交改动。",
+  reviewNotGit: "这个文件夹没有用 Git 管理，没法列出未提交改动",
   selectChanged: "选择一个改动文件以预览。",
   reviewTabChanges: "变更",
   reviewTabCommits: "提交",

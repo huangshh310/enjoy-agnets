@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   createE2eStubStream,
+  isE2eStub,
   lastUserText,
   shouldFailStubStore,
   stubApprovedWrite,
@@ -323,6 +324,8 @@ test("开发态 stub 存储失败夹具：打包态不扔", async () => {
   const previous = process.env.ENJOY_E2E_STUB
   process.env.ENJOY_E2E_STUB = "1"
   try {
+    assert.equal(isE2eStub(false), true)
+    assert.equal(isE2eStub(true), false)
     assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, false), true)
     assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT_ZH, false), true)
     assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, true), false)

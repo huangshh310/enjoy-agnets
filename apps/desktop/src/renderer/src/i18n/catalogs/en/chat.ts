@@ -932,6 +932,7 @@ export const enChat = {
   uncommitted: "{count} Uncommitted changes",
   shareChanges: "Share changes",
   treeClean: "Working tree is clean.",
+  reviewNotGit: "This folder isn't managed by Git, so uncommitted changes can't be listed.",
   selectChanged: "Select a changed file to preview.",
   reviewTabChanges: "Changes",
   reviewTabCommits: "Commits",

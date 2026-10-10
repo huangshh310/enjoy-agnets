@@ -3,6 +3,7 @@
  */
 import { mkdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
+import { app } from "electron"
 import { setSetting } from "./database"
 import { isE2eStub } from "./e2e-stub"
 import { createSession } from "./session-queries"
@@ -15,7 +16,7 @@ import { addKnowledgeSource, indexKnowledgeSource } from "./knowledge-service"
 import { e2eSessionCount } from "./e2e-session-count"
 
 export async function bootstrapE2eStub(): Promise<void> {
-  if (!isE2eStub()) return
+  if (!isE2eStub(app.isPackaged)) return
   const root = process.env.ENJOY_E2E_WORKSPACE
   if (!root) return
   await mkdir(root, { recursive: true })

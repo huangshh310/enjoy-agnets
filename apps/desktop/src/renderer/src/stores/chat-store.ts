@@ -68,6 +68,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   selectedFilePath: null,
   selectedFileContent: "",
   changes: [],
+  gitRepo: null,
   additions: 0,
   deletions: 0,
   sessionReviewDismissedKey: null,
@@ -241,10 +242,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>
     set({ selectedFilePath, selectedFileContent }),
-  setChanges: (changes: ChangedFileRow[]) => {
+  setChanges: (changes: ChangedFileRow[], gitRepo?: boolean | null) => {
     const additions = changes.reduce((sum, file) => sum + file.additions, 0)
     const deletions = changes.reduce((sum, file) => sum + file.deletions, 0)
-    set({ changes, additions, deletions })
+    set({
+      changes,
+      additions,
+      deletions,
+      gitRepo: gitRepo === undefined ? get().gitRepo : gitRepo
+    })
   },
   setSessionReviewDismissedKey: (sessionReviewDismissedKey) => set({ sessionReviewDismissedKey }),
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),

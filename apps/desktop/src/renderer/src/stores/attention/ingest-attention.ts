@@ -24,6 +24,11 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "approval.required") {
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
+  if ((event.type === "run.end" || event.type === "run.error") && event.turn) {
+    if (event.turn.attention === "complete") return "complete"
+    if (event.turn.attention === "error") return "error"
+    return null
+  }
   if (event.type === "run.error") {
     return isApprovalNotExecutedMessage(event.message) ? "complete" : "error"
   }
@@ -46,16 +51,19 @@ export function ingestAttentionEvent(
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   const kind = attentionKindFromEvent(input.event)
-  if (kind === "complete" && input.omitComplete) {
+  if (isNeutralTurn(input) || (kind === "complete" && input.omitComplete)) {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   if (!kind) return aged
+  const decided = resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   const cleared =
-    kind === "complete" || kind === "error"
-      ? resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
-      : kind === "pending_approval" || kind === "ask_user"
-        ? resolveTerminalSlots(aged, input.sessionId)
-        : aged
+    kind === "error"
+      ? resolveTerminalSlots(decided, input.sessionId)
+      : kind === "complete"
+        ? decided
+        : kind === "pending_approval" || kind === "ask_user"
+          ? resolveTerminalSlots(aged, input.sessionId)
+          : aged
   const next = upsertSlot(cleared, {
     sessionId: input.sessionId,
     workspaceId: input.workspaceId,
@@ -173,6 +181,11 @@ function upsertSlot(
   const index = items.findIndex((item) => item.id === id)
   if (index < 0) return [...items, next]
   return items.map((item, i) => (i === index ? { ...next, workspaceId: next.workspaceId ?? item.workspaceId } : item))
+}
+
+function isNeutralTurn(input: IngestAttentionInput): boolean {
+  const event = input.event
+  return (event.type === "run.end" || event.type === "run.error") && event.turn?.attention === "neutral"
 }
 
 function summaryFor(kind: AttentionKind, input: IngestAttentionInput): string {

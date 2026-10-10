@@ -73,3 +73,37 @@ export const MUTATING_TOOLS: readonly string[] = [
   ...COMMIT_TOOLS,
   ...HOST_CONTROL_TOOLS
 ]
+
+/** 任务清单 / 问卷：名字带 write 但不是写盘。与 ledger `isTodoWriteName` 对齐。 */
+const NOT_WRITE_TYPE_LEAVES = new Set(["todo_write", "todo", "update_todos", "ask_user_questions"])
+
+/** 与 agent-core `isMcpWriteToolName` / MCP `isMutatingToolName` 同一套叶子启发式。 */
+const MUTATING_LEAF = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
+const MUTATING_SHELL_LEAF = /^(bash|shell|sh|zsh|cmd|command|run_command|run-command|terminal)$/i
+
+/** MCP `mcp_server__leaf` 与 ACP 弱名都取叶子。 */
+export function toolNameLeaf(name: string): string {
+  const trimmed = name.trim()
+  const sep = trimmed.indexOf("__")
+  return sep >= 0 ? trimmed.slice(sep + 2) : trimmed
+}
+
+/**
+ * 写类：MUTATING_TOOLS + 已有 MCP/ACP 叶子启发式。
+ * 收工判定用这份，不要再维护 PATH_WRITE_TOOLS 之类的第二份名单。
+ */
+export function isWriteTypeToolName(name: string): boolean {
+  const trimmed = name.trim()
+  if (!trimmed) return false
+  const leaf = toolNameLeaf(trimmed)
+  const normalized = leaf.toLowerCase().replace(/[\s-]/g, "_")
+  if (NOT_WRITE_TYPE_LEAVES.has(normalized)) return false
+  if (
+    MUTATING_TOOLS.includes(trimmed) ||
+    MUTATING_TOOLS.includes(leaf) ||
+    MUTATING_TOOLS.includes(normalized)
+  ) {
+    return true
+  }
+  return MUTATING_LEAF.test(leaf) || MUTATING_SHELL_LEAF.test(normalized)
+}

@@ -65,6 +65,16 @@ test("带 resumeCode 的 tool.result 也折成 output-denied", () => {
   assert.equal(tools[0]?.state, "output-denied")
 })
 
+test("收工封口：input-available 也封成 output-error，approval-requested 不动", () => {
+  const sealed = sealAbandonedTools([
+    { id: "t1", name: "write_file", state: "input-available" },
+    { id: "t2", name: "write_file", state: "approval-requested" }
+  ])
+  assert.equal(sealed?.[0]?.state, "output-error")
+  assert.equal(sealed?.[0]?.errorText, "No result received.")
+  assert.equal(sealed?.[1]?.state, "approval-requested")
+})
+
 test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {
   const sealed = sealAbandonedTools([
     {

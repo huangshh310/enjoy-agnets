@@ -5,9 +5,11 @@ import { RiGitCommitLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { useChatStore } from "@renderer/stores/chat-store"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { PANE_FOCUS } from "../../constants"
 import { splitReviewPath } from "./path-label"
+import { ReviewNotGitEmpty } from "./review-not-git-empty"
 
 const STATUS_MARK: Record<ChangedFileRow["status"], { mark: string; tone: string }> = {
   added: { mark: "A", tone: "text-state-success-text" },
@@ -25,7 +27,9 @@ export function ChangesList(props: {
   const { changes, selectedFilePath, onSelectFile, onOpenCommits } = props
   const t = useT()
 
+  const gitRepo = useChatStore((state) => state.gitRepo)
   if (changes.length === 0) {
+    if (gitRepo === false) return <ReviewNotGitEmpty />
     return (
       <div className="flex flex-col items-center justify-center gap-2 p-5 text-center">
         <p className="text-caption-1-medium text-text-tertiary">{t("chat.treeClean")}</p>

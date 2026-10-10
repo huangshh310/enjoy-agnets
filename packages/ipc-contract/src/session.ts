@@ -56,6 +56,14 @@ export const SessionIdInput = z
   .strict()
 export type SessionIdInput = z.infer<typeof SessionIdInput>
 
+/** 归档前会走一遍 deny 待批；deniedApprovals 缺省=旧客户端。 */
+export const SessionArchiveResult = z.object({
+  id: z.string(),
+  archivedAt: z.number().int(),
+  deniedApprovals: z.number().int().nonnegative().optional()
+})
+export type SessionArchiveResult = z.infer<typeof SessionArchiveResult>
+
 /** 删掉该条及之后的消息，把 Prompt 退回 Composer。 */
 export const SessionTruncateFromInput = z
   .object({

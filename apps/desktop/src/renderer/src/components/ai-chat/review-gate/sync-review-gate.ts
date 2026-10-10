@@ -8,6 +8,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { lastTurnDeniedOnly } from "../right-pane/views/review/last-turn-paths"
 import { patchSessionWorkflow } from "./patch-session-workflow"
 import { workflowAfterStreamEvent } from "./review-gate-phase"
+import { turnFromEvent } from "./turn-from-event"
 
 export function syncReviewGateAfterEvent(
   event: StreamEvent,
@@ -16,9 +17,9 @@ export function syncReviewGateAfterEvent(
 ): void {
   if (!sessionId) return
   const chat = useChatStore.getState()
-  const deniedOnly =
-    event.type === "run.end" && sessionId === chat.sessionId && lastTurnDeniedOnly(chat.messages)
-  const next = workflowAfterStreamEvent(event.type, { deniedOnly })
+  const turn = turnFromEvent(event)
+  const deniedOnly = !turn && event.type === "run.end" && lastTurnDeniedOnly(chat.messages)
+  const next = workflowAfterStreamEvent(event.type, { deniedOnly, turn })
   if (!next) return
   void patchSessionWorkflow(sessionId, next)
 }

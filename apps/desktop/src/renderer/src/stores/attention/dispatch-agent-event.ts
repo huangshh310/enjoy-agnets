@@ -13,6 +13,7 @@ import { shouldRefineSessionTitle } from "@renderer/lib/session-title"
 import { visibleUserText } from "@renderer/lib/user-message-text"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { lastTurnDeniedOnly } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
+import { omitCompleteFromTurn } from "@renderer/components/ai-chat/review-gate/turn-from-event"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 
@@ -26,8 +27,10 @@ export function dispatchAgentEvent(event: StreamEvent): void {
     const meta = sessionMetaOf(sessionId)
     const chat = useChatStore.getState()
     useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId, {
-      omitComplete:
-        event.type === "run.end" && sessionId === chat.sessionId && lastTurnDeniedOnly(chat.messages)
+      omitComplete: omitCompleteFromTurn(
+        event,
+        event.type === "run.end" && lastTurnDeniedOnly(chat.messages)
+      )
     })
   }
 

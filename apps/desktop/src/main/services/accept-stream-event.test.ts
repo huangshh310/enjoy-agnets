@@ -40,3 +40,32 @@ test("#126/#127 出站事件仍过 safeParse，不会被闸丢掉", () => {
   assert.equal(result?.type, "tool.result")
   if (result?.type === "tool.result") assert.equal(result.error, "No result received.")
 })
+
+test("run.end / run.error 的 turn 过 safeParse，不会被剥掉", () => {
+  const end = acceptStreamEvent({
+    type: "run.end",
+    runId: "r1",
+    turn: { workflow: "todo", attention: "complete" }
+  })
+  assert.equal(end?.type, "run.end")
+  if (end?.type === "run.end") {
+    assert.deepEqual(end.turn, { workflow: "todo", attention: "complete" })
+  }
+  const error = acceptStreamEvent({
+    type: "run.error",
+    runId: "r1",
+    message: "INTERNAL_STORE_ERROR",
+    turn: { workflow: "in_progress", attention: "error" }
+  })
+  assert.equal(error?.type, "run.error")
+  if (error?.type === "run.error") {
+    assert.deepEqual(error.turn, { workflow: "in_progress", attention: "error" })
+  }
+  const denied = acceptStreamEvent({
+    type: "run.end",
+    runId: "r1",
+    turn: { workflow: "todo", attention: "neutral" }
+  })
+  assert.equal(denied?.type, "run.end")
+  if (denied?.type === "run.end") assert.equal(denied.turn?.attention, "neutral")
+})

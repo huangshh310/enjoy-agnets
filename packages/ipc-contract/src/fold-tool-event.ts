@@ -64,14 +64,12 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   }
 }
 
-/** 加载历史时：只收口卡死的 Pending。库里的 output-error 原样保留，未执行由渲染层映射。 */
+/** 加载历史 / 收工：input-streaming 与 input-available 封成 output-error。approval-requested 不动。 */
 export function sealAbandonedTools(tools: ThreadToolCall[] | undefined): ThreadToolCall[] | undefined {
   if (!tools) return tools
   return tools.map((tool) => {
-    if (tool.state === "input-streaming") {
-      return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
-    }
-    return tool
+    if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
+    return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
   })
 }
 
