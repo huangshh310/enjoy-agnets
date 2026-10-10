@@ -166,12 +166,19 @@ export function apiKeyRoutes(providers: readonly PublicKeyProvider[]): ChatApiKe
 /** 只认 127.0.0.1 / ::1；localhost 与局域网不算，不 ping。空地址当本机默认。 */
 export function isLoopbackModelBaseUrl(url: string | undefined): boolean {
   if (!url?.trim()) return true
-  try {
-    const host = new URL(url).hostname.replace(/^\[|\]$/g, "")
-    return host === "127.0.0.1" || host === "::1"
-  } catch {
-    return false
+  const host = loopbackHostOf(url)
+  return host === "127.0.0.1" || host === "::1"
+}
+
+function loopbackHostOf(url: string): string {
+  const withoutScheme = url.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "")
+  const authority = withoutScheme.split("/")[0] ?? ""
+  const hostPort = authority.includes("@") ? (authority.split("@").pop() ?? "") : authority
+  if (hostPort.startsWith("[")) {
+    const end = hostPort.indexOf("]")
+    return end > 0 ? hostPort.slice(1, end) : ""
   }
+  return hostPort.split(":")[0] ?? ""
 }
 
 /**
