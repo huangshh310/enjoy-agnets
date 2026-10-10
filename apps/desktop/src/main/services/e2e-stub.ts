@@ -30,6 +30,11 @@ export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
 }
 
+/** COST-P3 复检夹具：开发态 stub 才吐带单价的 totalUsage。 */
+export function isE2eCostSeed(): boolean {
+  return isE2eStub() && process.env.ENJOY_DEV_SEED_COST === "1"
+}
+
 export function isStubStoreErrorPrompt(text: string): boolean {
   const trimmed = text.trim()
   return trimmed === STUB_STORE_ERROR_PROMPT || trimmed === STUB_STORE_ERROR_PROMPT_ZH
@@ -214,6 +219,25 @@ async function* emitText(
     yield { type: "text-delta", text: `${chunk} ` }
   }
   yield { type: "text-end", id: "text" }
+  if (isE2eCostSeed()) {
+    yield {
+      type: "finish-step",
+      id: "s1",
+      usage: { inputTokens: 800_000, outputTokens: 20_000 }
+    }
+    yield {
+      type: "finish",
+      usage: { inputTokens: 1, outputTokens: 1 },
+      totalUsage: {
+        inputTokens: 1_000_000,
+        outputTokens: 20_000,
+        totalTokens: 1_020_000,
+        cachedInputTokens: 200_000,
+        reasoningTokens: 8_000
+      }
+    }
+    return
+  }
   yield { type: "finish", usage: { inputTokens: 4, outputTokens: 8, totalTokens: 12 } }
 }
 

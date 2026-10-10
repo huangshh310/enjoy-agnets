@@ -2,6 +2,7 @@
  * 本地指标与导出。外部 OTEL 默认关闭。
  */
 import { z } from "zod"
+import { CostMissingItem, CostStatus } from "./estimated-cost.ts"
 
 export const TelemetryMetric = z.object({
   id: z.string(),
@@ -15,10 +16,9 @@ export const TelemetryMetric = z.object({
   cacheWriteTokens: z.number().int().optional(),
   reasoningTokens: z.number().int().optional(),
   estimatedCostUsd: z.number().optional(),
-  costStatus: z
-    .enum(["estimated", "unknown", "local_unbilled", "not_reported", "reported"])
-    .optional()
-    .catch(undefined),
+  costStatus: CostStatus.optional().catch(undefined),
+  /** 未知原因；旧行 / 非法枚举丢掉本字段，不丢整行。 */
+  costMissing: z.array(CostMissingItem).optional().catch(undefined),
   durationMs: z.number().int().optional(),
   ttfoMs: z.number().int().optional(),
   tokensPerSecond: z.number().optional(),

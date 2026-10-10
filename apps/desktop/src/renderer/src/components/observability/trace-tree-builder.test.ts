@@ -71,6 +71,16 @@ test("trace 从指标接估算，未知不写 0", () => {
     costStatus: "estimated"
   }
   assert.equal(buildTraceDataFromMetric(priced).estimatedCost, 0.42)
+  assert.equal(buildTraceDataFromMetric(priced).costStatus, "estimated")
+  const unknownReason: TelemetryMetric = {
+    ...unknown,
+    id: "met_cost_tier",
+    costStatus: "unknown",
+    costMissing: ["tier"]
+  }
+  assert.equal(buildTraceDataFromMetric(unknownReason).estimatedCost, undefined)
+  assert.equal(buildTraceDataFromMetric(unknownReason).costStatus, "unknown")
+  assert.deepEqual(buildTraceDataFromMetric(unknownReason).costMissing, ["tier"])
 })
 
 test("缺 duration 与 token 时不填 1000ms / 850 token", () => {
