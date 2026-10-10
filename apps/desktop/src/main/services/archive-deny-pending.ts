@@ -16,7 +16,7 @@ type PendingDeny = { runId: string; approvalId: string; toolCallId: string }
 export async function abortLiveRunsForSession(sessionId: string): Promise<void> {
   for (const { runId, run } of listActiveRuns()) {
     if (run.input.sessionId !== sessionId) continue
-    abortActiveRunMemory(runId)
+    abortActiveRunMemory(runId, { reason: "archive" })
     await cancelLiveStreamBestEffort(runId, sessionId)
   }
 }

@@ -49,9 +49,9 @@ export type ReviewFilePick = {
 }
 
 /**
- * 运行中先列本轮写盘；停跑后 git 仓只留本轮仍 dirty 的。
- * 非 git 仓停跑后仍列本轮 path，禁止再和空 git 表求交。
- * 没有本轮写盘、或本轮都已提交：空列表。审查栏才看整仓 git。
+ * 有写盘 path 就用 run.tools 的 path。可与 git 表对齐增减，但求交为空时
+ * 必须回落 path（父仓 + 未跟踪目录常见），禁止掉进占位句。
+ * 没有本轮写盘：空列表。审查栏才看整仓 git。
  */
 export function describeReviewFiles(
   lastTurnPaths: string[],
@@ -63,7 +63,9 @@ export function describeReviewFiles(
   if (running || gitRepo === false) {
     return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
   }
-  return { files: collectDirtySessionFiles(lastTurnPaths, changes), fromLastTurn: true }
+  const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
+  if (dirty.length > 0) return { files: dirty, fromLastTurn: true }
+  return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
 }
 
 export function pickReviewFiles(

@@ -33,8 +33,11 @@ test("已提交、Git 里没有的 path 不进 dirty 列表", () => {
   )
 })
 
-test("停跑后本轮已提交文件不再出现", () => {
-  assert.deepEqual(pickReviewFiles(["src/a.ts", "src/b.ts"], [], false), [])
+test("停跑后 git 表对不上仍回落本轮 path", () => {
+  assert.deepEqual(
+    pickReviewFiles(["src/a.ts", "src/b.ts"], [], false).map((file) => file.path),
+    ["src/a.ts", "src/b.ts"]
+  )
 })
 
 test("运行中 Git 未跟上仍列出本轮写盘", () => {
@@ -42,13 +45,25 @@ test("运行中 Git 未跟上仍列出本轮写盘", () => {
   assert.equal(files[0]?.path, "src/a.ts")
 })
 
-test("本轮都已提交时不回落工作区其它未提交", () => {
+test("本轮 path 与 git 表求交为空时回落 path，不拿整仓脏文件", () => {
   const files = pickReviewFiles(
     ["src/a.ts"],
     [{ path: "notes.md", status: "untracked", additions: 1, deletions: 0 }],
     false
   )
-  assert.deepEqual(files, [])
+  assert.deepEqual(
+    files.map((file) => file.path),
+    ["src/a.ts"]
+  )
+})
+
+test("父仓内未跟踪目录：write_file path 仍上横幅", () => {
+  const pick = describeReviewFiles(["e2e-stub.txt"], [{ path: "app/", status: "untracked", additions: 0, deletions: 0 }], false, true)
+  assert.equal(pick.fromLastTurn, true)
+  assert.deepEqual(
+    pick.files.map((file) => file.path),
+    ["e2e-stub.txt"]
+  )
 })
 
 test("磁盘上已有文件但本轮没有已执行写盘，不算本轮改动", () => {

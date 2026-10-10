@@ -50,7 +50,7 @@ export function ReviewGateCard({
           ))}
         </ul>
       ) : (
-        <p className="text-caption-2-regular text-text-tertiary">
+        <p data-testid="session-review-peek" className="text-caption-2-regular text-text-tertiary">
           {t("chat.sessionReviewCommandPlaceholder")}
         </p>
       )}

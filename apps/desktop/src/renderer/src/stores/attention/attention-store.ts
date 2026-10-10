@@ -10,7 +10,8 @@ import {
   focusAttentionSlot,
   clearCompleteIfSessionErrored,
   ingestAttentionEvent,
-  resolveDecisionSlots
+  resolveDecisionSlots,
+  clearSessionAttention
 } from "./ingest-attention"
 import { attachParkedRunId, nextParks } from "./session-run-park"
 
@@ -32,6 +33,7 @@ type AttentionStore = {
   expireStale: (now?: number) => void
   resolveSessionDecisions: (sessionId: string, runId?: string) => void
   clearCompleteIfErrored: (sessionId: string) => void
+  clearSession: (sessionId: string) => void
   putPark: (park: ParkedRun) => void
   takePark: (sessionId: string) => ParkedRun | undefined
   applyParkEvent: (sessionId: string, event: StreamEvent) => void
@@ -70,6 +72,8 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
     set((state) => ({ items: resolveDecisionSlots(state.items, sessionId, runId) })),
   clearCompleteIfErrored: (sessionId) =>
     set((state) => ({ items: clearCompleteIfSessionErrored(state.items, sessionId) })),
+  clearSession: (sessionId) =>
+    set((state) => ({ items: clearSessionAttention(state.items, sessionId) })),
   putPark: (park) => set((state) => ({ parks: { ...state.parks, [park.sessionId]: park } })),
   takePark: (sessionId) => {
     const park = get().parks[sessionId]

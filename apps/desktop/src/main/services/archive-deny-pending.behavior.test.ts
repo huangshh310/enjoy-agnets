@@ -17,7 +17,7 @@ const {
   denyPendingApprovalsForSession
 } = await import("./archive-deny-pending.behavior.load.ts")
 
-type SentEvent = { type: string; decision?: string }
+type SentEvent = { type: string; decision?: string; turn?: { attention?: string }; sessionId?: string }
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -98,6 +98,9 @@ test("归档带未决审批的会话：走 deny，清 pending，回 deniedApprov
   assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
   assert.equal(getActiveRun(runId), undefined)
   assert.ok(events.some((event) => event.type === "approval.resolved" && event.decision === "deny"))
+  const abortEvent = events.find((event) => event.type === "run.error")
+  assert.equal(abortEvent?.turn?.attention, "neutral")
+  assert.equal(abortEvent?.sessionId, sessionId)
   const stored = getApproval(getDatabase(), "apr_archive_deny")
   assert.equal(stored?.decision, "deny")
   assert.equal(stored?.sdkApproved, 0)

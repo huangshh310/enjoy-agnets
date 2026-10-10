@@ -13,6 +13,7 @@ export function SessionReviewBar({
   files,
   running,
   runStartedAt,
+  waitingApproval,
   modelLabel,
   onOpenReview,
   onOpenFile,
@@ -72,6 +73,7 @@ export function SessionReviewBar({
               <SessionReviewRuntime
                 modelLabel={modelLabel || t("chat.sessionReviewDefaultModel")}
                 startedAt={runStartedAt}
+                waiting={Boolean(waitingApproval)}
               />
             </div>
           ) : null}

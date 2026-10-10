@@ -1,5 +1,6 @@
 /**
- * 非 git 工作区：允许写盘后打开审查栏，必须看到「没有用 Git 管理」+ 本轮文件，不能白屏。
+ * 非 git 工作区：菜单「审查」和 Ctrl+Shift+G 都不得白屏。
+ * 空态主句 / 副句固定，不要「初始化 Git」。
  */
 import { mkdtempSync, writeFileSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -9,19 +10,12 @@ import { sendComposer } from "./send-composer"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
 
-test("非 git 允许写盘后开审查：空态 + 本轮 e2e-stub.txt", async () => {
-  test.setTimeout(90_000)
-  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+async function launchStub(workspace: string) {
   const playwright = await import("playwright")
   const electron = playwright._electron
-  if (!electron?.launch) {
-    test.skip(true, "playwright electron launcher unavailable")
-    return
-  }
-  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-nongit-"))
+  if (!electron?.launch) return null
   const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-ud-nongit-"))
-  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
-  const app = await electron.launch({
+  return electron.launch({
     args: [mainEntry],
     cwd: process.cwd(),
     timeout: 45_000,
@@ -32,11 +26,43 @@ test("非 git 允许写盘后开审查：空态 + 本轮 e2e-stub.txt", async ()
       ENJOY_E2E_USERDATA: userData
     }
   })
+}
+
+async function assertNotGitEmpty(window: import("@playwright/test").Page, file?: string) {
+  const empty = window.locator('[data-testid="review-not-git-empty"]')
+  await empty.waitFor({ timeout: 12_000 })
+  await expect(empty).toContainText("这个文件夹没有用 Git 管理")
+  await expect(empty).toContainText("本轮改过的文件仍会列在下面。")
+  if (file) await expect(empty).toContainText(file)
+  await expect(window.locator("body")).not.toContainText("初始化 Git")
+  await expect(window.locator("body")).not.toContainText("Maximum update depth exceeded")
+}
+
+test("非 git 空会话：Ctrl+Shift+G 与审查入口都不炸", async () => {
+  test.setTimeout(90_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-nongit-"))
+  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  const app = await launchStub(workspace)
+  if (!app) {
+    test.skip(true, "playwright electron launcher unavailable")
+    return
+  }
   try {
     const window = await app.firstWindow()
     await window.waitForSelector("#root", { timeout: 20_000 })
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.waitFor({ timeout: 20_000 })
+
+    await window.keyboard.press("Control+Shift+G")
+    await assertNotGitEmpty(window)
+
+    const picker = window.locator('[data-testid="pane-pick-review"]')
+    if (await picker.isVisible().catch(() => false)) {
+      await picker.click()
+      await assertNotGitEmpty(window)
+    }
+
     await sendComposer(window, composer, "please write a note")
     await window.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
     await window.waitForFunction(() => document.body.innerText.includes("allowed write"), undefined, {
@@ -47,14 +73,9 @@ test("非 git 允许写盘后开审查：空态 + 本轮 e2e-stub.txt", async ()
     if (await barOpen.isVisible().catch(() => false)) {
       await barOpen.click()
     } else {
-      await window.locator('[data-testid="pane-pick-review"]').click({ timeout: 8_000 })
+      await window.keyboard.press("Control+Shift+G")
     }
-
-    const empty = window.locator('[data-testid="review-not-git-empty"]')
-    await empty.waitFor({ timeout: 12_000 })
-    await expect(empty).toContainText("没有用 Git 管理")
-    await expect(empty).toContainText("e2e-stub.txt")
-    await expect(window.locator("body")).not.toContainText("Maximum update depth exceeded")
+    await assertNotGitEmpty(window, "e2e-stub.txt")
   } finally {
     await app.close()
   }

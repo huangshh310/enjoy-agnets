@@ -12,7 +12,13 @@ import {
   STUB_TERMINAL_LINK_ECHO,
   STUB_TERMINAL_LINK_URL
 } from "./e2e-stub.ts"
-import { isVerySlowPrompt, STUB_VERY_SLOW_MS, verySlowDelayMs, verySlowHead } from "./e2e-stub-slow.ts"
+import {
+  isVerySlowPrompt,
+  isWriteSlowNotePrompt,
+  STUB_VERY_SLOW_MS,
+  verySlowDelayMs,
+  verySlowHead
+} from "./e2e-stub-slow.ts"
 import {
   applyStubDesktopObservation,
   stubDesktopStreamParts,
@@ -65,6 +71,48 @@ test("very slow 只在 stub 开发态认，打包态当普通句", async () => {
     assert.match(text, /one two three four five/)
     assert.equal(types.includes("tool-approval-request"), true)
     assert.equal(types.at(-1), "tool-approval-request")
+  } finally {
+    process.env.ENJOY_E2E_STUB = previous
+    if (previousSlow == null) delete process.env.ENJOY_E2E_STUB_SLOW_MS
+    else process.env.ENJOY_E2E_STUB_SLOW_MS = previousSlow
+  }
+})
+
+test("please write slow note：先审批，允许后写盘再慢流", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  const previousSlow = process.env.ENJOY_E2E_STUB_SLOW_MS
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_STUB_SLOW_MS = "0"
+  try {
+    assert.equal(isWriteSlowNotePrompt("please write slow note", false), true)
+    assert.equal(isWriteSlowNotePrompt("please write slow note", true), false)
+    const first: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: "please write slow note" }],
+      new AbortController().signal
+    )) {
+      first.push(String(part.type))
+    }
+    assert.deepEqual(first, ["tool-approval-request"])
+
+    let text = ""
+    const after: string[] = []
+    for await (const part of createE2eStubStream(
+      [
+        { role: "user", content: "please write slow note" },
+        {
+          role: "tool",
+          content: [{ type: "tool-approval-response", approved: true }]
+        } as never
+      ],
+      new AbortController().signal
+    )) {
+      after.push(String(part.type))
+      if (part.type === "text-delta") text += String(part.text ?? "")
+    }
+    assert.equal(after.includes("tool-result"), true)
+    assert.match(text, /one two three/)
+    assert.doesNotMatch(text, /stub-ok allowed write/)
   } finally {
     process.env.ENJOY_E2E_STUB = previous
     if (previousSlow == null) delete process.env.ENJOY_E2E_STUB_SLOW_MS

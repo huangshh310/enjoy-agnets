@@ -98,6 +98,17 @@ export function dismissAttentionSlot(items: AttentionItem[], id: string): Attent
   return items.map((item) => (item.id === id ? { ...item, status: "dismissed" } : item))
 }
 
+/** 归档后清掉该会话全部胶囊：需处理 / 出错 / 已完成都不留。 */
+export function clearSessionAttention(items: AttentionItem[], sessionId: string): AttentionItem[] {
+  return items.map((item) => {
+    if (item.sessionId !== sessionId) return item
+    if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
+      return item
+    }
+    return { ...item, status: "resolved" }
+  })
+}
+
 /** 新审批进场时只收同会话已完成，未处理的 error 保留。 */
 /** 切到已出错会话 / 新 error 进场：收掉该会话旧的已完成，禁止两粒并排。 */
 export function clearCompleteIfSessionErrored(

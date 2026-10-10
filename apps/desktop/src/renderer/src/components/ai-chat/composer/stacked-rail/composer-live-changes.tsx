@@ -22,6 +22,7 @@ import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-ga
 import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
 import { openSourcesSheet } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import type { TurnSourceChip } from "../../thread/sources/source-chip"
+import { reviewBannerPeek } from "../session-review/review-banner-peek"
 import type { SessionReviewFile } from "../session-review/session-review.types"
 
 export function ComposerLiveChanges() {
@@ -29,6 +30,7 @@ export function ComposerLiveChanges() {
   const queryClient = useQueryClient()
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
+  const error = useChatStore((state) => state.error)
   const sessionId = useChatStore((state) => state.sessionId)
   const model = useSessionReviewModel()
   const preview = useOpenSessionPreview()
@@ -46,12 +48,11 @@ export function ComposerLiveChanges() {
   const files = model.files
   const additions = files.reduce((sum, file) => sum + file.additions, 0)
   const deletions = files.reduce((sum, file) => sum + file.deletions, 0)
-  const peek =
-    files.length > 0
-      ? t("chat.stackedFilesChanged", { n: files.length })
-      : showGate
-        ? t("chat.sessionReviewCommandPlaceholder")
-        : t("chat.environmentChanges")
+  const peek = reviewBannerPeek(
+    files,
+    { stopped: Boolean(error) && !running, placeholder: showGate },
+    t
+  )
   const chips = chipsFromLastAssistant(lastAssistantTurn(messages), (name) =>
     t("chat.sourceSkillLabel", { name })
   )
@@ -137,6 +138,7 @@ function LiveChangesRow({
       icon={<RiFileEditLine className="size-3.5 text-accent-500" />}
       label={showGate ? t("sessionOps.gateSubtitle") : peek}
       peek={showGate ? peek : undefined}
+      peekTestId="session-review-peek"
       meta={<DiffStat additions={additions} deletions={deletions} />}
       open={filesOpen}
       onToggle={onToggle}

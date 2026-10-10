@@ -12,7 +12,8 @@ import {
   isStripCompact,
   stripNeedsCount,
   stripApprovalCount,
-  stripVisibleItems
+  stripVisibleItems,
+  clearSessionAttention
 } from "./ingest-attention.ts"
 import type { AttentionItem } from "./attention.types.ts"
 
@@ -371,4 +372,58 @@ test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () 
     now: 10 + COMPLETE_TTL_MS + 1
   })
   assert.equal(expired.find((item) => item.kind === "complete")?.status, "expired")
+})
+
+test("归档中止 run.error 中性：不当出错，审批槽收掉", () => {
+  const waiting = ingestAttentionEvent([], {
+    event: approval("write_file"),
+    sessionId: "ses_arch",
+    sessionTitle: "归档中",
+    now: 1
+  })
+  const archived = ingestAttentionEvent(waiting, {
+    event: {
+      type: "run.error",
+      runId: "run_b",
+      message: "Aborted by user.",
+      turn: { workflow: "in_progress", attention: "neutral" },
+      sessionId: "ses_arch"
+    },
+    sessionId: "ses_arch",
+    sessionTitle: "归档中",
+    now: 2
+  })
+  assert.equal(archived.find((item) => item.kind === "pending_approval")?.status, "resolved")
+  assert.equal(archived.some((item) => item.kind === "error" && item.status === "active"), false)
+  assert.equal(stripNeedsCount(archived), 0)
+})
+
+test("归档后清掉该会话需处理 / 出错 / 已完成", () => {
+  let items = ingestAttentionEvent([], {
+    event: approval("write_file"),
+    sessionId: "ses_arch",
+    sessionTitle: "归档中",
+    now: 1
+  })
+  items = ingestAttentionEvent(items, {
+    event: { type: "run.error", runId: "run_other", message: "boom" },
+    sessionId: "ses_keep",
+    sessionTitle: "留下",
+    now: 2
+  })
+  items = ingestAttentionEvent(items, {
+    event: { type: "run.end", runId: "run_done", turn: { workflow: "todo", attention: "complete" } },
+    sessionId: "ses_arch",
+    sessionTitle: "归档中",
+    now: 3
+  })
+  const cleared = clearSessionAttention(items, "ses_arch")
+  assert.equal(
+    cleared.some(
+      (item) => item.sessionId === "ses_arch" && (item.status === "active" || item.status === "focused")
+    ),
+    false
+  )
+  assert.equal(cleared.find((item) => item.sessionId === "ses_keep" && item.kind === "error")?.status, "active")
+  assert.equal(stripNeedsCount(cleared), 1)
 })

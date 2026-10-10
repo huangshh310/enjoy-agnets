@@ -4,6 +4,7 @@
  */
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
+import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
 import { refreshAllWorkspaces } from "./use-agent-session"
 import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
@@ -33,6 +34,8 @@ export async function archiveCurrentSession(sessionId: string) {
   )
   const adjacentId = wasCurrent ? pickAdjacentSessionId(visibleIds, sessionId) : null
   await getIde().session.archive({ sessionId })
+  useAttentionStore.getState().clearSession(sessionId)
+  useAttentionStore.getState().takePark(sessionId)
   if (wasCurrent) await landAfterArchive(adjacentId)
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })

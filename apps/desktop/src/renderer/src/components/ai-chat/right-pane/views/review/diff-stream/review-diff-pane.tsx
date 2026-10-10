@@ -25,18 +25,20 @@ export function ReviewDiffPane(props: {
 }) {
   const { workspaceId, changes, selectedFilePath, selectedFileContent, onSelectFile, options, palette } = props
   const t = useT()
+  const gitRepo = useChatStore((state) => state.gitRepo)
 
   const matched = selectedFilePath
     ? changes.find((file) => sameReviewPath(file.path, selectedFilePath))
     : undefined
   const activePath = matched?.path ?? selectedFilePath ?? changes[0]?.path ?? null
 
+  // 非 git 禁止自动选文件：onSelectFile 每渲一次新引用，选不中就会 Maximum update depth。
   useEffect(() => {
+    if (gitRepo === false) return
     if (selectedFilePath) return
     if (activePath) onSelectFile(activePath)
-  }, [activePath, selectedFilePath, onSelectFile])
+  }, [activePath, selectedFilePath, onSelectFile, gitRepo])
 
-  const gitRepo = useChatStore((state) => state.gitRepo)
   if (gitRepo === false) return <ReviewNotGitEmpty />
   if (changes.length === 0 && !activePath) {
     return (

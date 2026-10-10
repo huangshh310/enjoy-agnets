@@ -3,6 +3,7 @@
  * 只给 isE2eStub 用，用来验 Stop → 已停止，以及写后 Stop → 待验收。
  */
 export const STUB_VERY_SLOW_PROMPT = "very slow"
+export const STUB_WRITE_SLOW_NOTE_PROMPT = "please write slow note"
 export const STUB_VERY_SLOW_MS = 1500
 
 /** 单测可把 ENJOY_E2E_STUB_SLOW_MS=0，避免真等 15s。 */
@@ -28,6 +29,15 @@ export const STUB_VERY_SLOW_WORDS = [
 /** 与 isE2eStub 同一旗标，避免和 e2e-stub.ts 循环 import。 */
 export function isVerySlowPrompt(prompt: string, packaged = false): boolean {
   return process.env.ENJOY_E2E_STUB === "1" && packaged !== true && /\bvery slow\b/i.test(prompt)
+}
+
+/** 先停写盘审批，允许后再慢流正文，方便中途 Stop / 出错。 */
+export function isWriteSlowNotePrompt(prompt: string, packaged = false): boolean {
+  return (
+    process.env.ENJOY_E2E_STUB === "1" &&
+    packaged !== true &&
+    /please write slow note/i.test(prompt)
+  )
 }
 
 export function verySlowHead(): string {

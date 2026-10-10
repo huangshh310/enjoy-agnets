@@ -16,7 +16,14 @@ import type { ModelMessage } from "ai"
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
-import { isVerySlowPrompt, verySlowDelayMs, verySlowHead, verySlowTail } from "./e2e-stub-slow.ts"
+import {
+  isVerySlowPrompt,
+  isWriteSlowNotePrompt,
+  STUB_VERY_SLOW_WORDS,
+  verySlowDelayMs,
+  verySlowHead,
+  verySlowTail
+} from "./e2e-stub-slow.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
@@ -186,6 +193,10 @@ export async function* createE2eStubStream(
     const toolCallId = stubApprovedWriteToolCallId(messages)
     await writeStubApprovedFile(undefined, opts?.packaged === true)
     yield stubApprovedWriteResult(toolCallId)
+    if (isWriteSlowNotePrompt(prompt, opts?.packaged === true)) {
+      yield* emitText(STUB_VERY_SLOW_WORDS.join(" "), signal, verySlowDelayMs())
+      return
+    }
     if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
       yield* emitText(verySlowTail(), signal, verySlowDelayMs())
       return
