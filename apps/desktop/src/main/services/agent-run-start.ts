@@ -10,6 +10,8 @@ import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
 import { createId } from "./ids"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
+import { applyAgentRunSessionAllowReset } from "./conversation-session-allow"
+import { maybeTruncateSessionToIncomingHistory } from "./session-truncate"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
@@ -27,6 +29,7 @@ import { getWorkspace } from "./workspace"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { peekCommandReceipt, rememberCommandReceipt } from "./command-receipts"
 import {
+  stampForegroundUserOrigin,
   stripUntrustedAutomationFlags,
   trustedAutomationFlags,
   type TrustedRunAgentOptions
@@ -46,7 +49,8 @@ export async function runAgent(
   trust: TrustedRunAgentOptions = {}
 ) {
   const parsed = RunAgentInput.parse(rawInput)
-  const input = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
+  const stripped = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
+  const input = stampForegroundUserOrigin(stripped, trust)
   return beginAgentRun(window, input, {
     persistUser: input.persistUser !== false,
     rememberMru: trust.rememberMru
@@ -161,6 +165,10 @@ async function beginAgentRun(
     if (existing) return { ok: true, runId: existing }
   }
   const runId = options.runId ?? createId("run")
+  if (!options.runId) {
+    await maybeTruncateSessionToIncomingHistory(input.sessionId, input.messages)
+  }
+  applyAgentRunSessionAllowReset(input)
   const modelMessages = await modelMessagesForStart(
     input,
     options.resumeMessages,
@@ -174,7 +182,11 @@ async function beginAgentRun(
     secret,
     messages: modelMessages
   })
-  if (options.runId) hydrateActiveRunUsage(runId)
+  if (options.runId) {
+    hydrateActiveRunUsage(runId)
+    const run = getActiveRun(runId)
+    if (run) run.reaskReason = "restore"
+  }
   if (input.commandId) rememberCommandReceipt(input.commandId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })

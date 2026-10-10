@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { stripUntrustedAutomationFlags, trustedAutomationFlags } from "./agent-run-trust.ts"
+import {
+  BACKGROUND_AGENT_TRUST,
+  stampForegroundUserOrigin,
+  stripUntrustedAutomationFlags,
+  trustedAutomationFlags
+} from "./agent-run-trust.ts"
 
 const source = {
   automationId: "auto_1",
@@ -33,4 +38,21 @@ test("续跑 / 检查点 extras 保留补跑闸", () => {
   assert.equal(flags.origin, "catch_up")
   assert.equal(trustedAutomationFlags({ denyAnyDesktop: false }).denyAnyDesktop, undefined)
   assert.equal(trustedAutomationFlags({ origin: "heartbeat" }).origin, "heartbeat")
+  assert.equal(trustedAutomationFlags({}).origin, undefined)
+})
+
+test("Composer 才盖 user，后台与已信任自动化不冒充", () => {
+  const base = {
+    sessionId: "ses",
+    workspaceId: "ws",
+    modelId: "m",
+    messages: [{ role: "user" as const, content: "hi" }]
+  }
+  assert.equal(stampForegroundUserOrigin(base, {}).origin, "user")
+  assert.equal(stampForegroundUserOrigin(base, BACKGROUND_AGENT_TRUST).origin, undefined)
+  assert.equal(stampForegroundUserOrigin(base, { trustAutomationFlags: true }).origin, undefined)
+  assert.equal(
+    stampForegroundUserOrigin({ ...base, origin: "automation" }, { trustAutomationFlags: true }).origin,
+    "automation"
+  )
 })

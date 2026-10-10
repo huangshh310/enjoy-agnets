@@ -3,6 +3,8 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
+import { sessionAllowScopeFor } from "../../../../../packages/agent-core/src/policies/session-allow-scope.ts"
+import { sessionTableAllowsTool } from "../../../../../packages/agent-core/src/tool-approval.ts"
 import { seedRunSessionAllow } from "./conversation-session-allow"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
@@ -61,6 +63,8 @@ export type ActiveRun = {
   userCancelled?: boolean
   /** 补跑 Dock 超时：abort 前同步打上，谁先 fail 都写超时码。 */
   catchUpApprovalTimedOut?: boolean
+  /** 重启回挂 waiting=restart；续跑 / 回挂 running=restore。 */
+  reaskReason?: "restart" | "restore"
 }
 
 const activeRuns = new Map<string, ActiveRun>()
@@ -74,7 +78,7 @@ export type RunSettleResult = { status: "end" | "error"; summary: string }
 const SETTLED_RUNS_CAP = 200
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
-  const next = acceptStreamEvent(withAutomationApprovalSource(event))
+  const next = acceptStreamEvent(withAutomationApprovalSource(withSessionAllowMarks(event)))
   if (!next) {
     const fallback = droppedTerminalSettle(event)
     if (fallback) settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
@@ -95,6 +99,34 @@ function withAutomationApprovalSource(event: StreamEvent): StreamEvent {
   if (event.type !== "approval.required" || event.automationSource) return event
   const source = getActiveRun(event.runId)?.input.automationSource
   return source ? { ...event, automationSource: source } : event
+}
+
+function withSessionAllowMarks(event: StreamEvent): StreamEvent {
+  if (event.type !== "tool.start" && event.type !== "tool.result" && event.type !== "approval.required") {
+    return event
+  }
+  const run = getActiveRun(event.runId)
+  const policy = run
+    ? {
+        requireWriteApproval: true,
+        requireBashApproval: true,
+        requireCommitApproval: true,
+        sessionApprovedTools: run.sessionApprovedTools,
+        sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes]
+      }
+    : undefined
+  const allowedBySession = policy ? sessionTableAllowsTool(event.name, policy, event.args) : false
+  const sessionAllowScope =
+    allowedBySession && policy ? sessionAllowScopeFor(event.name, policy, event.args) : undefined
+  const reaskReason =
+    event.type === "approval.required" ? (event.reaskReason ?? run?.reaskReason) : undefined
+  if (event.type === "approval.required" && run?.reaskReason) run.reaskReason = undefined
+  return {
+    ...event,
+    allowedBySession,
+    ...(sessionAllowScope ? { sessionAllowScope } : {}),
+    ...(reaskReason ? { reaskReason } : {})
+  }
 }
 
 /** Workflow / Automation 等待同一 run 收工。 */
@@ -191,7 +223,8 @@ export function holdAgentRun(
     // 本会话允许：user 才并写盘/bash 表；心跳/自动化/补跑只并 desktop 表。
     ...seedRunSessionAllow(patch.input.sessionId, {
       denyAnyDesktop: patch.input.denyAnyDesktop,
-      origin: patch.input.origin
+      origin: patch.input.origin,
+      runtimeId: patch.input.runtimeId
     }),
     approvalGate: createApprovalGate(),
     pumping: false,

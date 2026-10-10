@@ -8,6 +8,7 @@ import { APPROVAL_RESOLVED_CODES } from "./desktop-notify.ts"
 import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
+import { SessionAllowScope } from "./session-allow.ts"
 import { TurnOutcome } from "./turn-outcome.ts"
 
 const Envelope = {
@@ -20,6 +21,17 @@ const Envelope = {
 export const MCP_APP_TITLE_MAX = 200
 export const MCP_APP_SRC_DOC_MAX = 200_000
 export const SESSION_TITLE_MAX = 200
+
+/** 重启回挂 waiting = restart；续跑 / 回挂 running = restore。mike 画卡片脚注。 */
+export const ApprovalReaskReason = z.enum(["restart", "restore"])
+export type ApprovalReaskReason = z.infer<typeof ApprovalReaskReason>
+
+/** 本会话允许标记：是否靠会话表跳过卡片、命中的范围、为何再问。 */
+const SessionAllowMarks = {
+  allowedBySession: z.boolean().optional(),
+  sessionAllowScope: SessionAllowScope.optional(),
+  reaskReason: ApprovalReaskReason.optional()
+}
 
 export const StreamEvent = z.discriminatedUnion("type", [
   z.object({
@@ -42,6 +54,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     name: z.string(),
     args: z.unknown().optional(),
     parentToolCallId: z.string().optional(),
+    ...SessionAllowMarks,
     ...Envelope
   }),
   z.object({
@@ -60,6 +73,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     args: z.unknown().optional(),
     error: z.string().optional(),
     parentToolCallId: z.string().optional(),
+    ...SessionAllowMarks,
     ...Envelope
   }),
   z.object({
@@ -71,6 +85,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     args: z.unknown().optional(),
     /** 自动化补跑 / 准点来源；缺省不是自动化。 */
     automationSource: AutomationRunSource.optional(),
+    ...SessionAllowMarks,
     ...Envelope
   }),
   z.object({

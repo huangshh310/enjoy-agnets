@@ -150,6 +150,33 @@ test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
   assert.equal(tools[1]?.parentToolCallId, "parent")
 })
 
+test("本会话允许标记折进 ThreadToolCall", () => {
+  const tools: ThreadToolCall[] = []
+  foldToolEvent(tools, {
+    type: "tool.start",
+    runId: "r1",
+    toolCallId: "t1",
+    name: "write_file",
+    args: { path: "a.ts" },
+    allowedBySession: true,
+    sessionAllowScope: { kind: "tool", toolName: "write_file" }
+  })
+  foldToolEvent(tools, {
+    type: "approval.required",
+    runId: "r1",
+    toolCallId: "t2",
+    approvalId: "a1",
+    name: "bash",
+    args: { command: "git status" },
+    allowedBySession: false,
+    reaskReason: "restart"
+  })
+  assert.equal(tools[0]?.allowedBySession, true)
+  assert.deepEqual(tools[0]?.sessionAllowScope, { kind: "tool", toolName: "write_file" })
+  assert.equal(tools[1]?.allowedBySession, false)
+  assert.equal(tools[1]?.reaskReason, "restart")
+})
+
 test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {
   const sealed = sealAbandonedTools([
     {

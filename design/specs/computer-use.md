@@ -48,7 +48,7 @@
 - `action_failed` 不得签发或附带可继续 act 的新观察。需要新观察必须再 `desktop_snapshot` / `desktop_screenshot`。
 - darwin：`desktop_doctor.success` 只在 spawn helper 签名匹配且该进程过 AX 时为真。开通绿必须看 `helperSigned`，禁止用宿主 `signed` / `hostAccessibility` 冒充。
 - 未开「任意桌面」时，禁止裸 `desktop_act` 会话级放行；开了只命中 `desktop_act:*`。
-- 会话 Allow / anyDesktop 只活在 `conversationDesktopAllow`（按 sessionId）。禁止当全局 `builtin_tools` 偏好。归档或删除该对话必须清表；同一钩子也清非 desktop 的写盘 / bash 本会话允许（`conversationSessionAllow`），敏感 / 二次确认仍不吃任一张表。
+- 会话 Allow / anyDesktop 只活在 `conversationDesktopAllow`（按 sessionId）。禁止当全局 `builtin_tools` 偏好。归档或删除该对话必须清表；同一钩子也清非 desktop 的写盘 / bash 本会话允许（`conversationSessionAllow`），`session.truncateFrom` 同样清写盘 / bash 表，敏感 / 二次确认仍不吃任一张表。
 - 设置页无焦点 `sessionId` 时，「本会话任意桌面」开关必须禁用并提示先打开对话；禁止看起来能开、main 却 no-op。
 - 闸判断时账本未知或过期的 `observationId`：会话 Allow / 任意桌面 / Always-allow 簿不得命中，必须 Dock（`user-approval`）。禁止依赖后续 `stale_observation`。
 - `DesktopActApprovalArgs.sensitive` 必填（MUST）。renderer 仅当 `sensitive === false` 才露会话/始终允许；缺省 / 非 false 当敏感。`applyApprovalDecision` 对 `allow_session` / `allow_always` 再算，敏感或未解析观察只当一次允许，不写表不写簿。
@@ -61,7 +61,7 @@
 - §3.6 诚实闸：`packages/agent-core/src/computer-use/desktop-act-honesty.ts`（`refuseBareDesktopCoord` / `denyBareDesktopCoordApproval` / `sanitizeDesktopActFailure`）；稳定码 SoT `@enjoy-agents/ipc-contract/desktop-act-codes`；SDK `tool-output-denied` → `mapStreamPart` 写成 `tool.result.result.code`；执行面 `desktop-session-act.ts`；prefs `desktopAdvancedCoords`
 - 宿主：`desktop-session.ts`（无 Electron）；act / 重拍：`desktop-session-act.ts`；医生：`doctor-report.ts`
 - helper 身份 / codesign：`executor-identity.ts`；打包签名：`apps/desktop/scripts/codesign-helper.cjs`
-- 会话 Allow 表：`packages/agent-core/src/computer-use/conversation-desktop-allow.ts`（只含 `desktop_act:<appKey>` / `desktop_act:*`）；写盘 / bash 本会话允许是另一张进程内表 `conversation-session-allow.ts`，归档 / 删除走同一 `forgetConversationDesktopAllow`。run 复制 / write-through：`agent-run-state.ts` / `decide-approval.ts`；归档删除清表：`session-lifecycle.ts`
+- 会话 Allow 表：`packages/agent-core/src/computer-use/conversation-desktop-allow.ts`（只含 `desktop_act:<appKey>` / `desktop_act:*`）；写盘 / bash 本会话允许是另一张进程内表 `conversation-session-allow.ts`，归档 / 删除走同一 `forgetConversationDesktopAllow`，截断走 `session-truncate.ts`。run 复制 / write-through：`agent-run-state.ts` / `decide-approval.ts`；归档删除清表：`session-lifecycle.ts`
 - 账本 / 冻结 / 重拍匹配：`packages/agent-core/src/computer-use/`
 - 闸判断前并观察身份：`desktop-act-observation-gate.ts`（`prepareDesktopActGateInput` / `desktopGrantShouldPersist`）；main 接线 `peekDesktopObservation` → `ApprovalPolicy.lookupDesktopObservation`；父循环与子 Agent 共用 `resolveToolApproval`；落盘闸在 `agent-runner.applyApprovalDecision`
 - 协议：`apps/desktop/native/computer-use/protocol.md`

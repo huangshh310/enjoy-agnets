@@ -129,6 +129,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/skills-catalog.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/bash-prefix",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/bash-prefix.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -250,6 +254,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/tool-names",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/tool-names.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/bash-prefix",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/bash-prefix.ts")
         },
         {
           find: /^@enjoy-agents\/ipc-contract$/,

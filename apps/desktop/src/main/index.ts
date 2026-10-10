@@ -41,8 +41,9 @@ import {
   pushGpuCompositingScript,
   pushGpuCompositingToWindows
 } from "./services/gpu-compositing-watch";
+import { isolatedUserDataOverride } from "./services/e2e-stub-gate";
 
-const isolatedUserData = process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA
+const isolatedUserData = isolatedUserDataOverride()
 if (isolatedUserData) {
   app.setPath("userData", isolatedUserData);
 }

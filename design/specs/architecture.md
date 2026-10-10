@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（e2e-window：完整 agent-stub.spec.ts）
+> 进程边界与安全基线。最后更新：2026-10-10（读不到 app 只让 stub 当打包；明确已打包才忽略隔离 userData）
 
 ## 当前真相
 
@@ -72,7 +72,7 @@ Main Process（可信）
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
 - 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。审批 SDK 列（014 / #118）：`approvals.request_args` / `sdk_approved` / `sdk_reason` / `resume_code` / `sdk_approval_id` + UNIQUE `approvals_sdk_identity`。015（#119）：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。014 / 015 的 ADD 都有列存在性守卫；若本地库已经把 v14 记成旧 `cost-missing`，启动时按列补上审批 SDK 列（含 `sdk_approval_id` 与 UNIQUE 索引）和 `cost_missing`，不必重建库。向量存在 SQLite，检索在本机。
-- 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。
+- 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。`isE2eStub()` 自己读 `app.isPackaged`（测试可注入；读不到 app 当打包）：必须 `ENJOY_E2E_STUB=1` **且**隔离 userData **且**未打包。**明确已打包**才忽略 `ENJOY_E2E_USERDATA` / `ENJOY_DEV_USERDATA`，即使有 stub 环境变量也不走 stub，vault 不得走 `e2e-plain:` 明文。读不到 app 时 `index.ts` 仍认隔离目录。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
 - 本机 CLI 账号探测：main 可读 Cursor IDE `state.vscdb` 的 `cursorAuth/accessToken`、Grok `~/.grok/auth.json` 的 `key`，只用于打官方账单接口。token / key **不**进 IPC、**不**进 renderer、**不**写回文件。
@@ -121,13 +121,14 @@ Main Process（可信）
 
 - AI SDK 7 的 `execute()` 只注入 `toolsContext[name]`，不会把 `runtimeContext` 放进 `options.context`。工具 host 必须在建工具时闭包注入，否则审批通过后会报 `Workspace host is missing`。见 `packages/agent-core/src/tools/index.ts`。
 - 不要把 `@ai-sdk/react` 的 `useChat`（HTTP）当桌面主路径。流从 main `webContents.send("agent.event")` 来。
-- electron-vite 把 `@enjoy-agents/db` 别名到 `index.ts` 文件时，`@enjoy-agents/db/path-safe` 会变成 `index.ts/path-safe`。主进程别名必须精确匹配包名，子路径单独写（含 `@enjoy-agents/agent-core/compaction`）。路径安全也可从 `@enjoy-agents/db` 主入口导入。渲染进程禁止打 `@enjoy-agents/agent-core` 主入口（会带进 `node:`）。renderer 的 `@enjoy-agents/ipc-contract` 同样必须 `^…$`：字符串前缀会把 `@enjoy-agents/ipc-contract/runtime-capabilities` 拼成 `index.ts/runtime-capabilities`，Vite overlay 红屏。
+- electron-vite 把 `@enjoy-agents/db` 别名到 `index.ts` 文件时，`@enjoy-agents/db/path-safe` 会变成 `index.ts/path-safe`。主进程别名必须精确匹配包名，子路径单独写（含 `@enjoy-agents/agent-core/compaction`）。路径安全也可从 `@enjoy-agents/db` 主入口导入。渲染进程禁止打 `@enjoy-agents/agent-core` 主入口（会带进 `node:`）。本会话 bash 前缀用 `@enjoy-agents/ipc-contract/bash-prefix` 叶子，不要为它再开 agent-core 子路径。renderer 的 `@enjoy-agents/ipc-contract` 同样必须 `^…$`：字符串前缀会把 `@enjoy-agents/ipc-contract/runtime-capabilities` 拼成 `index.ts/runtime-capabilities`，Vite overlay 红屏。
 - 主进程 workspace 包必须进 `externalizeDepsPlugin.exclude` 并别名到 `src/index.ts`。漏掉 `assets` / `knowledge` / `mcp` 时，Electron 会直接加载源码，`from "./hash"` 无后缀会报 `ERR_MODULE_NOT_FOUND`。新包先写进 `electron.vite.config.ts` 的 `MAIN_WORKSPACE_PACKAGES`。
 - macos-latest 上 `pnpm build`（electron-vite 打 main）默认堆会 OOM；`pnpm test` 过了才暴露。CI `check` 的 build 步加 `NODE_OPTIONS=--max-old-space-size=8192`，不要为过 CI 砍产物。
 - Rules/Skills 的 `read`/`delete`/`reveal` 若只信 `filePath` 字符串，renderer 可指到任意盘符。必须 `assertAllowedRuleFile` / `assertAllowedSkillPackage`，工作区路径还要能对上 `workspaces.root_path`。
 - 右栏浏览器用 `<webview>`，窗口必须 `webviewTag: true`。guest 走 `partition persist:enjoy-preview`，禁止 nodeIntegration。main `will-attach-webview` 强制这些偏好、剥掉 guest preload，且只放行 http(s) `src`。只加载 `parseHttpUrl` 通过的 http(s)。Windows 上 webview 是独立 HWND，父级 CSS 圆角可能切不掉。
 - 技能来源：renderer 不读 `~/.enjoy-agents/skill-sources/` JSON。git clone / pull 只在 main，且 `shell: false`。部署目的地仅 `customize-roots` 白名单（`globalSkillRoots` ∪ 已登记工作区 `workspaceSkillRoots`）。SSH / `git@` / `clawhub:` 一律 `UNSUPPORTED_SOURCE`，不要半套协议。
 - `path-safe` / Customize 白名单单测不能在 Linux 上用 `C:/...`：POSIX 下不是绝对路径，`join`/`resolve` 会拼进 runner cwd。POSIX 用 `/proj/...`，Windows 用盘符。工作区显示名回退最后一段时要同时切 `/` 与 `\`。
+- **隐患**：`isE2eStub(packaged = false)` 默认未打包，大多数调用方不传参，打包态 vault / restore / desktop-tools 会当 stub。正确做法：闸自己读 `app.isPackaged`，读不到当打包（不开 stub）；明确已打包才忽略隔离 userData；读不到 app 仍认隔离目录；调用方不再传参；测试用 `setE2eStubPackagedForTest`。
 - **隐患**：MCP stdio / 自定义 ACP / 供应商 `customHeaders` 曾把明文密钥经 IPC 回 renderer。正确做法：`toPublic` 只回键的占位；编辑态空值保留已存；连接与开流仍只在 main 读明文。MCP spawn 必须剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`。
 - **隐患**：在 macOS 终端里 `spawn("npm")` 能跑，Windows Electron 里 `npm.cmd` 无 `shell` 会直接失败；Linux 没有 `/opt/homebrew`。正确做法：PATH 用 `lookupOnPath` / `pathDirs()`（补 linuxbrew、nodejs、Roaming npm、`~/.grok/bin`、`~/.factory/bin`）；安装与探最新版走 `spawnPathCommand`；MCP stdio 同款 Windows `.cmd` / `.bat` 才 `shell: true`；brew 配方在 Windows 降为 copy。
 - CLI 用量探测会读本机已登录会话（Cursor `state.vscdb`、Grok `auth.json` 的 `key`）。这些密钥只在 main 内存里用一次打官方 HTTPS，禁止写进 `InspectAgentToolResult` 或 vault。Dashboard / billing 失败就空条 + `—`，不要回落 CLI `about`/`status` 里的猜数字段。

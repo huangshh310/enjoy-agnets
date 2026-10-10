@@ -17,7 +17,14 @@ const {
   restoreHeldWaitingApprovals
 } = await import("./restore-waiting-approvals.behavior.load.ts")
 
-type SentEvent = { type: string; approvalId?: string; message?: string; code?: string }
+type SentEvent = {
+  type: string
+  approvalId?: string
+  message?: string
+  code?: string
+  allowedBySession?: boolean
+  reaskReason?: string
+}
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -186,6 +193,8 @@ test("superseded 跳过后补发替换行，并并入检查点没有的 HMAC 未
   assert.equal(cards.length, 2)
   assert.ok(cards.some((event) => event.approvalId === "apr_replacement"))
   assert.ok(cards.some((event) => event.approvalId === "apr_extra_hmac"))
+  assert.ok(cards.every((event) => event.reaskReason === "restart"))
+  assert.ok(cards.every((event) => event.allowedBySession === false))
   deleteActiveRun(runId)
 })
 

@@ -239,6 +239,9 @@ const ide = {
     listStates: () => ipcRenderer.invoke("inbox.state.list", {}),
     putStates: (input: unknown) => ipcRenderer.invoke("inbox.state.put", input),
     listPendingApprovals: () => ipcRenderer.invoke("approvals.pending", {}),
+    listSessionAllows: (sessionId: string) =>
+      ipcRenderer.invoke("approvals.listSessionAllows", { sessionId }),
+    revokeSessionAllow: (input: unknown) => ipcRenderer.invoke("approvals.revokeSessionAllow", input),
     listNeedsReview: () => ipcRenderer.invoke("sessions.needsReview", {})
   },
   mcp: {

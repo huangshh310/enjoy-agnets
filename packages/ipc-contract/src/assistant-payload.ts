@@ -3,6 +3,7 @@
  * 纯文本消息保持原样；带思考 / 工具 / runKind / 引导词的消息用 JSON 信封存储，加载时再拆开。
  */
 import { takeActionChips, type ActionChip } from "./action-chip.ts"
+import type { SessionAllowScope } from "./session-allow.ts"
 
 export type ToolCallState =
   | "input-streaming"
@@ -24,6 +25,12 @@ export type ThreadToolCall = {
   reasoningChars?: number
   /** 子 Agent 工具挂到父 delegate 的 toolCallId。 */
   parentToolCallId?: string
+  /** 这次执行是否靠本会话允许跳过卡片。mike 画工具行灰前缀。 */
+  allowedBySession?: boolean
+  /** 命中的会话允许范围，给可撤销芯片。MCP 用全名。 */
+  sessionAllowScope?: SessionAllowScope
+  /** 为何再问：重启回挂 waiting=restart，续跑 / 回挂 running=restore。 */
+  reaskReason?: "restart" | "restore"
 }
 
 export type CitedSource = {

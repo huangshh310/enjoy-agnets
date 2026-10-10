@@ -108,6 +108,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       hydrateActiveRunUsage(row.id)
       const run = getActiveRun(row.id)
       if (!run) continue
+      run.reaskReason = "restart"
       run.pendingApprovals = extras.pendingApprovals?.length
         ? extras.pendingApprovals
         : pending.map((item) => ({

@@ -7,6 +7,7 @@ import { test } from "node:test"
 import type { BrowserWindow } from "electron"
 
 const {
+  applyAgentRunSessionAllowReset,
   archiveSession,
   clearAllConversationSessionAllows,
   deleteActiveRun,
@@ -14,7 +15,11 @@ const {
   grantConversationToolAllow,
   holdAgentRun,
   getActiveRun,
-  snapshotConversationSessionAllow
+  maybeTruncateSessionToIncomingHistory,
+  peekSessionAllowWatermark,
+  persistMessage,
+  snapshotConversationSessionAllow,
+  truncateSessionFrom
 } = await import("./conversation-session-allow.behavior.load.ts")
 
 function fakeWindow(): BrowserWindow {
@@ -61,6 +66,110 @@ test("归档会话后本会话允许表清空，新 run 不再种子 write_file"
   assert.ok(run)
   assert.equal(run.sessionApprovedTools.has("write_file"), false)
   deleteActiveRun(runId)
+})
+
+test("regenerate / edit-and-resend 经 clearSessionAllow 清表", () => {
+  const sessionId = "ses_allow_regen"
+  grantConversationToolAllow(sessionId, "write_file")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  applyAgentRunSessionAllowReset({ sessionId, clearSessionAllow: true })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+})
+
+function persistTurn(sessionId: string, userId: string, assistantId: string): void {
+  persistMessage(sessionId, "user", "hello", undefined, userId)
+  persistMessage(sessionId, "assistant", "ok", undefined, assistantId)
+}
+
+test("regenerate 不带 clearSessionAllow 仍清表", async () => {
+  const sessionId = "ses_allow_regen_noflag"
+  seedSession(sessionId)
+  persistTurn(sessionId, "msg_regen_u", "msg_regen_ua")
+  grantConversationToolAllow(sessionId, "write_file")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  assert.deepEqual(peekSessionAllowWatermark(sessionId), {
+    lastMessageId: "msg_regen_ua",
+    messageCount: 2
+  })
+  getDatabase().prepare("DELETE FROM messages WHERE id = ?").run("msg_regen_ua")
+  applyAgentRunSessionAllowReset({ sessionId })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+  assert.equal(peekSessionAllowWatermark(sessionId), undefined)
+})
+
+test("连续多轮普通发送仍继承本会话允许", () => {
+  const sessionId = "ses_allow_inherit_turns"
+  seedSession(sessionId)
+  persistTurn(sessionId, "msg_inh_u1", "msg_inh_u1a")
+  grantConversationToolAllow(sessionId, "write_file")
+  persistTurn(sessionId, "msg_inh_u2", "msg_inh_u2a")
+  persistTurn(sessionId, "msg_inh_u3", "msg_inh_u3a")
+  applyAgentRunSessionAllowReset({ sessionId })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  assert.deepEqual(peekSessionAllowWatermark(sessionId), {
+    lastMessageId: "msg_inh_u3a",
+    messageCount: 6
+  })
+})
+
+test("普通发送助手 id 对不上时不截尾巴，本会话允许仍继承", async () => {
+  const sessionId = "ses_allow_ordinary_send"
+  seedSession(sessionId)
+  persistTurn(sessionId, "msg_ord_u", "msg_ord_ua")
+  grantConversationToolAllow(sessionId, "write_file")
+  await maybeTruncateSessionToIncomingHistory(sessionId, [
+    { id: "msg_ord_u", role: "user" },
+    { id: "msg_pending_asst", role: "assistant" },
+    { id: "msg_ord_u2", role: "user" }
+  ])
+  applyAgentRunSessionAllowReset({ sessionId })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  const rows = getDatabase()
+    .prepare("SELECT id FROM messages WHERE session_id = ? ORDER BY created_at ASC, id ASC")
+    .all(sessionId) as Array<{ id: string }>
+  assert.deepEqual(
+    rows.map((row) => row.id),
+    ["msg_ord_u", "msg_ord_ua"]
+  )
+})
+
+test("edit-and-resend 不带 clearSessionAllow 仍清表", async () => {
+  const sessionId = "ses_allow_edit_noflag"
+  seedSession(sessionId)
+  persistTurn(sessionId, "msg_edit_u", "msg_edit_ua")
+  grantConversationToolAllow(sessionId, "write_file")
+  await maybeTruncateSessionToIncomingHistory(sessionId, [{ id: "msg_edit_u", role: "user" }])
+  applyAgentRunSessionAllowReset({ sessionId })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+  assert.equal(peekSessionAllowWatermark(sessionId), undefined)
+})
+
+test("截断会话后本会话允许表清空", async () => {
+  const sessionId = "ses_allow_truncate"
+  seedSession(sessionId)
+  const db = getDatabase()
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "msg_cut",
+    sessionId,
+    "user",
+    "hello",
+    1
+  )
+  grantConversationToolAllow(sessionId, "write_file")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  await truncateSessionFrom(sessionId, "msg_cut")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+})
+
+test("rewind / regenerate / edit-and-resend 都经 main 清本会话允许", () => {
+  const rewind = readFileSync(new URL("../../renderer/src/hooks/rewind-from-here.ts", import.meta.url), "utf8")
+  const regen = readFileSync(new URL("../../renderer/src/hooks/regenerate-turn.ts", import.meta.url), "utf8")
+  const start = readFileSync(new URL("./agent-run-start.ts", import.meta.url), "utf8")
+  assert.match(rewind, /session\.truncateFrom/)
+  assert.match(regen, /clearSessionAllow:\s*true/)
+  assert.match(regen, /id:\s*m\.id/)
+  assert.match(start, /maybeTruncateSessionToIncomingHistory/)
+  assert.match(start, /applyAgentRunSessionAllowReset\(input\)/)
 })
 
 test("永久删除与归档走同一 forget，清 desktop 表和写盘/bash 表", () => {

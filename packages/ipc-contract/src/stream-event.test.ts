@@ -153,6 +153,53 @@ test("approval.required 带 automationSource 与 estimatedCost 过闸", () => {
   assert.equal(usage.success, true)
 })
 
+test("tool / approval 事件可带 allowedBySession 与 reaskReason", () => {
+  const start = StreamEvent.safeParse({
+    type: "tool.start",
+    runId: "r1",
+    toolCallId: "t1",
+    name: "write_file",
+    allowedBySession: true,
+    sessionAllowScope: { kind: "tool", toolName: "write_file" }
+  })
+  const result = StreamEvent.safeParse({
+    type: "tool.result",
+    runId: "r1",
+    toolCallId: "t1",
+    name: "write_file",
+    allowedBySession: true
+  })
+  const card = StreamEvent.safeParse({
+    type: "approval.required",
+    runId: "r1",
+    toolCallId: "t1",
+    approvalId: "a1",
+    name: "write_file",
+    allowedBySession: false,
+    reaskReason: "restart"
+  })
+  const resume = StreamEvent.safeParse({
+    type: "approval.required",
+    runId: "r1",
+    toolCallId: "t2",
+    approvalId: "a2",
+    name: "bash",
+    allowedBySession: false,
+    reaskReason: "restore"
+  })
+  assert.equal(start.success, true)
+  assert.equal(result.success, true)
+  assert.equal(card.success, true)
+  assert.equal(resume.success, true)
+  if (start.success && start.data.type === "tool.start") {
+    assert.equal(start.data.allowedBySession, true)
+    assert.deepEqual(start.data.sessionAllowScope, { kind: "tool", toolName: "write_file" })
+  }
+  if (card.success && card.data.type === "approval.required") {
+    assert.equal(card.data.reaskReason, "restart")
+  }
+})
+
 test("approval.required 缺 args 仍过闸（P1-a：zod4 的 z.unknown() 必填会丢整条）", () => {
   const parsed = StreamEvent.safeParse({
     type: "approval.required",
