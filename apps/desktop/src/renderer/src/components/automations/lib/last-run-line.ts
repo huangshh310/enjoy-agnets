@@ -2,6 +2,7 @@
  * 列表次行：已跳过 / 错过 N 次 / 中性超时。名称旁不挂重复小标。
  */
 import type { Automation, AutomationMissedRecord, AutomationSkipReason } from "@enjoy-agents/ipc-contract"
+import { joinSegments } from "../../../lib/join-segments"
 import { formatLastRunWhen } from "./last-run-label"
 import { errorCodeCopy, errorCodeTip, isNeutralErrorCode, skipReasonCopy, skipReasonTip } from "./missed-copy"
 
@@ -43,7 +44,7 @@ export function lastRunLine(input: {
     const when = formatLastRunWhen(automation.lastRunAt ?? now, now, locale)
     return {
       kind: "neutral",
-      text: `${neutral} · ${when}`,
+      text: joinSegments(neutral, when),
       tip: errorCodeTip(automation.lastRunErrorCode, t),
       testId: "automation-row-neutral"
     }
@@ -55,11 +56,12 @@ export function lastRunLine(input: {
     return skippedLine(automation, records, now, locale, t)
   }
   if (automation.lastRunAt) {
-    return {
-      kind: "last",
-      text: t("studio.automations.lastRun", { when: formatLastRunWhen(automation.lastRunAt, now, locale) }),
-      testId: "automation-row-last"
-    }
+    const latestAny = [...records].sort((left, right) => right.scheduledAt - left.scheduledAt)[0]
+    const text =
+      latestAny && isSuccessfulCatchUp(latestAny)
+        ? missedGroupSummary({ records, now, locale, t })
+        : t("studio.automations.lastRun", { when: formatLastRunWhen(automation.lastRunAt, now, locale) })
+    return { kind: "last", text, testId: "automation-row-last" }
   }
   return { kind: "never", text: t("studio.automations.neverRun"), testId: "automation-row-never" }
 }
@@ -76,8 +78,9 @@ function skippedLine(
     .sort((left, right) => right.scheduledAt - left.scheduledAt)[0]
   const reason = latest?.reason ?? automation.lastSkipReason
   const tip = skipReasonTip(reason, t)
-  // 列表次行与抽屉折叠条必须走同一句，禁止再数 consecutiveSkipStreak。
-  if (records.length >= 2) {
+  // 列表次行与抽屉折叠条必须走同一句。N 只数 skipped，禁止把成功补跑算进错过。
+  const skippedCount = records.filter((row) => row.kind === "skipped").length
+  if (skippedCount >= 2) {
     return {
       kind: "missed_many",
       text: missedGroupSummary({ records, now, locale, t }),
@@ -97,7 +100,7 @@ function skippedLine(
   }
 }
 
-/** 抽屉折叠条：同因不写「最近」；混因才标最近原因，条数按整组。 */
+/** 抽屉折叠条：N 只数 skipped；最新一条成功补跑时不写「错过」。 */
 export function missedGroupSummary(input: {
   records: AutomationMissedRecord[]
   now: number
@@ -106,21 +109,29 @@ export function missedGroupSummary(input: {
 }): string {
   const { records, now, locale, t } = input
   if (records.length === 0) return t("studio.automations.missedEmpty")
-  const skipped = [...records]
-    .filter((row) => row.kind === "skipped")
-    .sort((left, right) => right.scheduledAt - left.scheduledAt)
+  const ordered = [...records].sort((left, right) => right.scheduledAt - left.scheduledAt)
+  const latestAny = ordered[0]
+  if (latestAny && isSuccessfulCatchUp(latestAny)) {
+    return t("studio.automations.lastRun", {
+      when: formatLastRunWhen(latestAny.recordedAt ?? latestAny.scheduledAt, now, locale)
+    })
+  }
+  const skipped = ordered.filter((row) => row.kind === "skipped")
   const latest = skipped[0]
-  if (!latest) return t("studio.automations.missedCount", { n: records.length })
+  if (!latest) return t("studio.automations.missedEmpty")
   const when = formatLastRunWhen(latest.scheduledAt, now, locale)
   const reason = skipReasonCopy(latest.reason, t)
-  if (records.length === 1) {
+  if (skipped.length === 1) {
     return t("studio.automations.skippedLine", { reason, when })
   }
   const reasons = new Set(skipped.map((row) => row.reason))
-  const same = reasons.size === 1 && skipped.length === records.length
-  return t(same ? "studio.automations.missedGroupSame" : "studio.automations.missedGroupMixed", {
-    n: records.length,
+  return t(reasons.size === 1 ? "studio.automations.missedGroupSame" : "studio.automations.missedGroupMixed", {
+    n: skipped.length,
     reason,
     when
   })
+}
+
+function isSuccessfulCatchUp(row: AutomationMissedRecord): boolean {
+  return (row.kind === "catch_up" || row.isCatchUp === true) && row.status === "ok"
 }

@@ -77,7 +77,7 @@ export function ProviderConnectionFields({
         {proxyBlocksSave(editor.proxy) ? (
           <p className="text-caption-2-medium text-text-error-primary">{t("settings.providers.proxySocks")}</p>
         ) : (
-          <p className="text-caption-2-regular text-text-tertiary">{t("settings.providers.proxySocks")}</p>
+          <p className="text-caption-2-regular text-text-secondary">{t("settings.providers.proxySocks")}</p>
         )}
       </div>
     </div>

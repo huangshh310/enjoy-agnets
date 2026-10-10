@@ -23,9 +23,23 @@ import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
+import {
+  clearSentComposerText,
+  composerNeedsSessionReady,
+  mergeComposerText,
+  restoreComposerAfterFailedSend,
+  SEND_FAILED_RESTORE,
+  SESSION_NOT_READY,
+  waitThenSendAfterCreate
+} from "../queue-composer-send"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
-type PreparedSend = { content: string; assets?: QueuedComposerAsset[]; executePlan?: boolean }
+type PreparedSend = {
+  content: string
+  assets?: QueuedComposerAsset[]
+  executePlan?: boolean
+  sessionId?: string
+}
 
 type SendPayload = {
   content: string
@@ -36,13 +50,32 @@ type SendPayload = {
   computerUseOnce?: boolean
 }
 
-/** 先 setRunning 占位，避免双击连发两轮。 */
+/** 先 setRunning 占位，避免双击连发两轮。创建窗内先入队，禁止清输入空转。 */
 export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
+  if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
+    restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+    return
+  }
+  if (composerNeedsSessionReady() && !prepared) {
+    const text = store.composer
+    if (!text.trim()) {
+      restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
+      return
+    }
+    const assets = takeComposerAssetDetails()
+    await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next), assets)
+    return
+  }
   store.setRunning(true)
   if (!guardComposerSend(store)) {
     store.setRunning(false)
+    if (prepared?.content) {
+      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+    } else if (!store.sessionId) {
+      restoreComposerAfterFailedSend(store.composer, SESSION_NOT_READY)
+    }
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
@@ -52,6 +85,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   const messages = beginOptimisticTurn(store, payload)
+  if (prepared) clearSentComposerText(prepared.content)
   await launchComposerRun(store, payload, messages)
 }
 
@@ -132,7 +166,8 @@ async function launchComposerRun(
   } catch (error) {
     dropEmptyPendingAssistant()
     store.setRunning(false)
-    store.setError(error instanceof Error ? error.message : String(error))
+    store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
+    if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
   }
 }
 

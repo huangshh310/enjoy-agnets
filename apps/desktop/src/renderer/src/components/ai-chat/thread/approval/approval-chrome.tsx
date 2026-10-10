@@ -70,7 +70,7 @@ export function ApprovalChrome({
             : "border-separator-border/80"
       )}
     >
-      <header className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <span
           className={cx(
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md",
@@ -83,9 +83,11 @@ export function ApprovalChrome({
         >
           <Icon className="size-3.5" aria-hidden />
         </span>
-        <h3 className="min-w-0 flex-1 text-caption-1-semibold text-text-primary">{title}</h3>
-      </header>
-      {children}
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <h3 className="text-caption-1-semibold leading-6 text-text-primary">{title}</h3>
+          {children}
+        </div>
+      </div>
       <footer className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary">
           <RiLock2Line className="size-3.5 shrink-0" aria-hidden />

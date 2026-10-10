@@ -20,6 +20,7 @@ import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledge
 import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
 import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
 import { EnvironmentPanel } from "@renderer/components/ai-chat/environment/environment-panel"
+import { useEnvironmentDismiss } from "@renderer/components/ai-chat/environment/use-environment-dismiss"
 import { ShortcutSheet } from "@renderer/components/ai-chat/shortcut-sheet"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
@@ -34,6 +35,7 @@ import {
   useThreadFindOpen
 } from "@renderer/components/ai-chat/thread/thread-find/use-thread-find-hotkey"
 import { ThreadFindBar } from "@renderer/components/ai-chat/thread/thread-find/thread-find-bar"
+import { queueComposerFocus } from "@renderer/hooks/composer-focus"
 
 export function ChatStage() {
   const t = useT()
@@ -141,10 +143,21 @@ function ChatThreadBody(props: {
   const [ledgerOpen, setLedgerOpen] = useState(false)
   const [environmentOpen, setEnvironmentOpen] = useState(false)
   const findOpen = useThreadFindOpen()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   useEffect(() => {
     if (pendingApproval) setEnvironmentOpen(false)
   }, [pendingApproval])
+  useEnvironmentDismiss({
+    open: environmentOpen,
+    onClose: () => setEnvironmentOpen(false),
+    sessionId,
+    pathname,
+    findOpen
+  })
+  useEffect(() => {
+    queueComposerFocus()
+  }, [sessionId, pathname])
   const assistant = lastAssistantTurn(messages)
   const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
 

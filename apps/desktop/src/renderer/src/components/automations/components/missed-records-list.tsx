@@ -31,13 +31,13 @@ export function MissedRecordsList({
       <summary className="cursor-pointer list-none px-2.5 py-2 text-caption-1-medium text-text-primary [&::-webkit-details-marker]:hidden">
         <span className="flex items-center justify-between gap-2">
           <span data-testid="automation-missed-summary">{summary}</span>
-          <span className="text-caption-2-regular text-text-tertiary" data-testid="automation-missed-toggle">
+          <span className="text-caption-2-regular text-text-secondary" data-testid="automation-missed-toggle">
             {missedExpandLabel(open, t)}
           </span>
         </span>
       </summary>
       {ordered.length === 0 ? (
-        <p className="border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-tertiary">
+        <p className="border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-secondary">
           {t("studio.automations.missedEmpty")}
         </p>
       ) : (

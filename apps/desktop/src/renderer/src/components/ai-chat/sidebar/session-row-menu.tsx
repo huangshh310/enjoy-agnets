@@ -196,7 +196,7 @@ export function SessionRowMenu({
                 e.stopPropagation()
                 onArchive()
               }}
-              className="cursor-pointer text-text-secondary hover:text-text-primary"
+              className="cursor-pointer"
             >
               <RiInboxArchiveLine className="mr-2 size-4" />
               <span>{t("chat.archiveSession")}</span>

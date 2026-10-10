@@ -50,10 +50,14 @@ export function ensureApprovalSdkColumns(sqlite: DatabaseSync): void {
 
 export function ensureApprovalsSdkIdentityIndex(sqlite: DatabaseSync): void {
   if (!tableExists(sqlite, "approvals") || indexExists(sqlite, APPROVALS_SDK_IDENTITY_INDEX)) return
-  sqlite.exec(
-    `CREATE UNIQUE INDEX ${APPROVALS_SDK_IDENTITY_INDEX}
-      ON approvals (run_id, tool_call_id, COALESCE(sdk_approval_id, id))`
-  )
+  try {
+    sqlite.exec(
+      `CREATE UNIQUE INDEX ${APPROVALS_SDK_IDENTITY_INDEX}
+        ON approvals (run_id, tool_call_id, COALESCE(sdk_approval_id, id))`
+    )
+  } catch (error) {
+    console.error("approvals_sdk_identity unique index skipped; boot continues", error)
+  }
 }
 
 function indexExists(sqlite: DatabaseSync, name: string): boolean {

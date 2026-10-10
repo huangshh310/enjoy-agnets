@@ -17,6 +17,7 @@ import { ProviderEditorDrawer } from "./provider-editor-drawer"
 import { ProviderPresetsTab } from "./provider-presets-tab"
 import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
+import { joinSegments } from "@renderer/lib/join-segments"
 
 export function ProviderSettings() {
   const t = useT()
@@ -143,7 +144,7 @@ export function ProviderSettings() {
                 setPendingRemove({
                   id,
                   name: profile.name,
-                  agents: refs.map((item) => item.label).join(" · ")
+                  agents: joinSegments(...refs.map((item) => item.label))
                 })
                 return
               }

@@ -5,6 +5,7 @@ import { useThemeMode } from "@/components/application/theme/theme-toggle"
 import { composerAgentTabs } from "@renderer/components/ai-chat/agent-picker/composer-agents"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
+import { joinSegments } from "@renderer/lib/join-segments"
 import { guideEngineShowsReady } from "./guide-engine-ready"
 
 export function ReadySummary({ workspaceName }: { workspaceName: string }) {
@@ -18,7 +19,7 @@ export function ReadySummary({ workspaceName }: { workspaceName: string }) {
     : t("settings.setupGuide.readyNoWorkspace")
   return (
     <p className="text-center text-headline-regular leading-normal text-text-secondary">
-      {[t("settings.setupGuide.readyEngines", { count: ready }), themeLabel, workspace].join(" · ")}
+      {joinSegments(t("settings.setupGuide.readyEngines", { count: ready }), themeLabel, workspace)}
     </p>
   )
 }

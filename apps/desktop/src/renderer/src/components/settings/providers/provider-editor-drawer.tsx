@@ -6,6 +6,7 @@ import type { AgentBindRef } from "@enjoy-agents/ipc-contract"
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
+import { handleDrawerClosePointer } from "../settings-drawer-close"
 import { SettingsSideDrawer } from "../settings-side-drawer"
 import { presetBlurb } from "./provider-blurb"
 import { ProviderEditorFields } from "./provider-editor-fields"
@@ -173,6 +174,7 @@ function EditorDrawerHeader({
       </div>
       <button
         type="button"
+        onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
         onClick={onClose}
         data-app-region="no-drag"
         className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary [app-region:no-drag] hover:bg-background-secondary-default hover:text-text-primary"

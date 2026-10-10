@@ -2,7 +2,11 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, MIGRATIONS } from "./runner.ts"
-import { columnExists } from "./column-guard.ts"
+import {
+  columnExists,
+  ensureApprovalsSdkIdentityIndex,
+  repairClaimedV14
+} from "./column-guard.ts"
 
 test("cost_missing 已存在时 015 不报错", () => {
   const db = new DatabaseSync(":memory:")
@@ -48,6 +52,20 @@ test("旧分支把 v14 记成 cost-missing 时补上审批 SDK 列", () => {
     .all() as Array<{ name: string }>
   assert.equal(indexes.length, 1)
   assert.deepEqual(applyMigrations(db), [])
+})
+
+test("库里有重复三元组时建 UNIQUE 不挡住启动", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  db.exec("DROP INDEX IF EXISTS approvals_sdk_identity")
+  db.exec(`
+    INSERT INTO approvals (id, run_id, tool_call_id, name, args, hmac, decision, created_at, sdk_approval_id)
+    VALUES
+      ('apr_a', 'run_dup', 'tool_dup', 'write_file', '{}', 'h', NULL, 1, 'apr_sdk'),
+      ('apr_b', 'run_dup', 'tool_dup', 'write_file', '{}', 'h', NULL, 2, 'apr_sdk')
+  `)
+  assert.doesNotThrow(() => repairClaimedV14(db))
+  assert.doesNotThrow(() => ensureApprovalsSdkIdentityIndex(db))
 })
 
 test("没有 v14 记账时不提前加 sdk 列", () => {

@@ -154,6 +154,27 @@ test("approval.resolved 收束该会话未决审批槽", () => {
   assert.equal(resolved[0]?.status, "resolved")
 })
 
+test("本轮工具全未执行：run.end 收束审批但不弹已完成", () => {
+  const waiting = ingestAttentionEvent([], {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const quiet = ingestAttentionEvent(waiting, {
+    event: { type: "run.end", runId: "run_b" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2,
+    omitComplete: true
+  })
+  assert.equal(quiet.find((item) => item.kind === "pending_approval")?.status, "resolved")
+  assert.equal(
+    quiet.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
+})
+
 test("run.end 收束审批并 upsert complete", () => {
   const waiting = ingestAttentionEvent([], {
     event: approval(),

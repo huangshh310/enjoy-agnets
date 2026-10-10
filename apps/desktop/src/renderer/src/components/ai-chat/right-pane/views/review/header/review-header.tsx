@@ -80,9 +80,9 @@ export function ReviewHeader(props: {
   return (
     <header className="flex shrink-0 flex-col border-b border-separator-border bg-background-primary-default select-none">
       {/* 第一行主工具条 */}
-      <div className="flex h-11 items-center justify-between gap-2 px-3">
+      <div className="flex min-h-11 min-w-0 items-center justify-between gap-2 px-3">
         {/* 左侧：作用域下拉 + 全局增减行统计徽标 */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <ReviewScopeDropdown scope={scope} onSelectScope={onSelectScope} />
 
           <div className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-semibold font-semibold">
@@ -92,7 +92,7 @@ export function ReviewHeader(props: {
         </div>
 
         {/* 右侧：操作按钮群 */}
-        <div className="flex items-center gap-1 text-text-secondary">
+        <div className="flex shrink-0 items-center gap-1 text-text-secondary">
           {/* 更多菜单 ... */}
           <ReviewMoreMenu
             options={options}
@@ -148,10 +148,10 @@ export function ReviewHeader(props: {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="ml-1 inline-flex items-center gap-1 rounded-full bg-button-primary px-3 py-1 text-caption-2-medium font-semibold text-text-white shadow-xs hover:bg-button-primary/90 active:scale-98 cursor-pointer transition-all"
+                className="ml-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-button-primary px-3 py-1 text-caption-2-medium font-semibold text-text-white shadow-xs hover:bg-button-primary/90 active:scale-98 cursor-pointer transition-all"
               >
-                <RiGitCommitLine className="size-3.5" />
-                <span>{t("chat.reviewCommitOrPush")}</span>
+                <RiGitCommitLine className="size-3.5 shrink-0" />
+                <span className="whitespace-nowrap">{t("chat.reviewCommitOrPush")}</span>
                 <RiArrowDownSLine className="size-3.5 opacity-80" />
               </button>
             </DropdownMenuTrigger>

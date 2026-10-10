@@ -10,6 +10,7 @@ import {
   resolveHarnessAdapter,
   streamHarnessTurn
 } from "@enjoy-agents/agent-harness"
+import { app } from "electron"
 import { createE2eStubStream, isE2eStub } from "./e2e-stub"
 import { readHarnessSecret } from "./harness-secrets"
 import { captureOpenStreamPrompt } from "./inspect-prompt-service"
@@ -51,7 +52,7 @@ async function rememberOpened(
 
 function openedE2eStub(input: OpenCodingStreamInput): OpenedCodingStream {
   return {
-    stream: createE2eStubStream(input.messages, input.abortSignal),
+    stream: createE2eStubStream(input.messages, input.abortSignal, { packaged: app.isPackaged }),
     result: {},
     dispose: async () => undefined,
     hostInject: assembleHostInject({

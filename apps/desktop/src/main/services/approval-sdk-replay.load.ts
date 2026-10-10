@@ -3,6 +3,7 @@
  */
 export {
   rememberApproval,
+  rememberReparkApproval,
   recordApprovalDecision,
   recordSdkApprovalResponse,
   sdkApprovalIdFor
