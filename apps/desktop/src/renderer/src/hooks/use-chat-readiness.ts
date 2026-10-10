@@ -5,16 +5,26 @@ import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide.ts"
+import { showAppToast } from "../lib/app-toast.ts"
 import { applyDefaultChatRoute } from "./apply-default-chat-route.ts"
 import { rememberChatReadiness } from "./chat-readiness-cache.ts"
 
 export const CHAT_READINESS_QUERY_KEY = ["chat-readiness"] as const
+
+let toastedAdoptedName: string | undefined
 
 function acceptReadiness(raw: unknown): ChatReadiness | undefined {
   const parsed = ChatReadiness.safeParse(raw)
   if (!parsed.success) return undefined
   rememberChatReadiness(parsed.data)
   applyDefaultChatRoute(parsed.data)
+  const hint = parsed.data.adoptedHint
+  if (hint && toastedAdoptedName !== hint.name) {
+    toastedAdoptedName = hint.name
+    showAppToast(`已把「${hint.name}」设为新对话的默认，可在设置里改`, {
+      testId: "adopted-default-route-toast"
+    })
+  }
   return parsed.data
 }
 

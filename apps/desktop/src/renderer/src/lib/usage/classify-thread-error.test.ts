@@ -11,6 +11,7 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
+  NEED_MODEL,
   NEED_PROVIDER_KEY,
   NO_CHAT_ROUTE,
   ACP_RESUME_FALLBACK,
@@ -58,6 +59,8 @@ test("ACP 未登录不是可重试供应商错误", () => {
   )
   assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "needs_key")
   assert.notEqual(classifyThreadError(NO_CHAT_ROUTE), "generic")
+  assert.equal(classifyThreadError(NEED_MODEL), "needs_model")
+  assert.equal(classifyThreadError("Choose a model in Settings → Providers before running an agent."), "needs_model")
   assert.equal(classifyThreadError(NEED_PROVIDER_KEY), "needs_key")
   assert.equal(
     classifyThreadError("Add a provider API key in Settings → Providers before using this bound profile."),

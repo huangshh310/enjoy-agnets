@@ -9,7 +9,7 @@ export type SelectedRouteGateInput = {
   skip: boolean
   runtimeId: string
   codingRuntime: "local" | "harness"
-  /** 快照 apiKeys，不是 hasSecret（ollama 无密钥也是 true）。 */
+  /** 路由 hasSecret()：无密钥档案（Ollama / LM Studio，含远端）为 true。 */
   hasEnjoySecret: boolean | "unknown"
   /**
    * 缓存里是否有 ping 通过的本机模型。
@@ -29,7 +29,7 @@ export function shouldSkipSelectedRouteGate(input: {
   return Boolean(input.isResume || input.isHeartbeat)
 }
 
-/** 只有 enjoy-local 且没密钥、也没已验证本机模型时回 no_chat_route。 */
+/** 只有 enjoy-local 且确定没密钥、也没已验证本机时回 no_chat_route。 */
 export function selectedRouteGateCode(input: SelectedRouteGateInput): typeof NO_CHAT_ROUTE | null {
   return chatRouteGateCode(input)
 }

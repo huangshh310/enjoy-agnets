@@ -190,12 +190,18 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   // 会话 mode 由 Composer / 句首斜杠决定。默认项只在设置页写入，refetch 不得打回 agent。
   const readySnap = peekChatReadiness()
   if (readySnap?.defaultRoute) applyDefaultChatRoute(readySnap)
+  const after = useChatStore.getState()
   const preferred =
-    readySnap?.defaultRoute?.runtimeId ?? snapshot.preferences?.runtimeId ?? "enjoy-local"
+    after.preferredRuntimeId ||
+    readySnap?.defaultRoute?.runtimeId ||
+    snapshot.preferences?.runtimeId ||
+    "enjoy-local"
   store.setPreferredRuntimeId(preferred)
   store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
   store.setSessionModels(snapshot.sessionModels ?? {})
-  store.setRuntimeId(pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, preferred))
+  store.setRuntimeId(
+    pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, after.runtimeId || preferred)
+  )
   if (!store.preferredModelId && snapshot.defaultModelId) {
     store.setPreferredModelId(snapshot.defaultModelId)
   }

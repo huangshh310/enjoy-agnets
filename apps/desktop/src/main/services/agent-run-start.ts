@@ -13,7 +13,8 @@ import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
-import { peekHasEnjoyApiKey, peekVerifiedLocalModel } from "./chat-readiness"
+import { peekVerifiedLocalModel } from "./chat-readiness"
+import { hasSecret } from "./secrets"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
@@ -110,7 +111,7 @@ async function beginAgentRun(
     }),
     runtimeId,
     codingRuntime: prefs.codingRuntime,
-    hasEnjoySecret: peekHasEnjoyApiKey(),
+    hasEnjoySecret: await hasSecret().catch(() => "unknown" as const),
     verifiedLocal: peekVerifiedLocalModel()
   })
   if (blocked) return { ok: false, code: NO_CHAT_ROUTE }

@@ -1,9 +1,9 @@
 /**
- * 发送前置：Enjoy Local 只信 main 分路快照，不信 hasKey。
+ * 发送前置：Enjoy Local 共用 chatRouteGateCode；无快照放行。
  */
-import { isVerifiedLocalModel } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { chatRouteGateCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { rememberedAgentTool } from "../agent-tools-cache.ts"
-import { peekChatReadiness } from "../chat-readiness-cache.ts"
+import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts"
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
@@ -13,6 +13,7 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
+  NEED_MODEL,
   NEED_PROVIDER_KEY,
   NEED_REMOTE_CONNECTED,
   NO_CHAT_ROUTE
@@ -30,15 +31,21 @@ type ComposerGuardStore = {
   setAgentPickerOpen: (open: boolean) => void
 }
 
-/** Enjoy Local：只看 main 快照的 apiKeys / 已验证本机，不看 hasKey。 */
-export function enjoyLocalRouteReady(): boolean {
+function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
   const snap = peekChatReadiness()
-  if (!snap) return false
-  if (snap.apiKeys.length > 0) return true
-  return snap.localModels.some(isVerifiedLocalModel)
+  return chatRouteGateCode({
+    runtimeId: "enjoy-local",
+    codingRuntime: peekCodingRuntime(),
+    hasEnjoySecret: snap ? (snap.hasEnjoySecret ?? (snap.apiKeys.length > 0 || snap.localModels.length > 0)) : "unknown",
+    verifiedLocal: snap ? snap.localModels.some((row) => row.verified === true) : "unknown"
+  })
 }
 
-/** 发送盘是否亮成可发：Enjoy Local 信快照；CLI 仍看登录 / 检测。 */
+function enjoyLocalAllowsSend(): boolean {
+  return enjoyLocalGateCode() === null
+}
+
+/** 发送盘是否亮成可发：Enjoy Local 信共享闸；CLI 仍看登录 / 检测。 */
 export function composerSendReady(
   store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">
 ): boolean {
@@ -46,7 +53,12 @@ export function composerSendReady(
     const status = store.remoteStatus ?? "disconnected"
     if (status !== "connected") return false
   }
-  if (store.runtimeId === "enjoy-local") return enjoyLocalRouteReady()
+  if (store.runtimeId === "enjoy-local") {
+    if (!enjoyLocalAllowsSend()) return false
+    const snap = peekChatReadiness()
+    if (snap?.apiKeys.length && !store.modelId.trim()) return false
+    return true
+  }
   const tool = rememberedAgentTool(store.runtimeId)
   if (!tool) return false
   const input = readinessInputOf(tool)
@@ -74,8 +86,14 @@ export function guardComposerSend(
     }
   }
   if (store.runtimeId === "enjoy-local") {
-    if (!enjoyLocalRouteReady()) {
+    if (enjoyLocalGateCode()) {
       store.setError(NO_CHAT_ROUTE)
+      return false
+    }
+    const snap = peekChatReadiness()
+    if (snap?.apiKeys.length && !store.modelId.trim()) {
+      store.setError(NEED_MODEL)
+      store.setAgentPickerOpen(true)
       return false
     }
     return true

@@ -7,6 +7,7 @@ import {
   apiKeyRoutes,
   buildChatReadiness,
   chatRouteAllowsSend,
+  chatRouteGateKind,
   countAvailableEngines,
   isLoopbackModelBaseUrl,
   isVerifiedLocalModel,
@@ -101,7 +102,7 @@ test("comingSoon / skillOnly 不计入引擎数", () => {
   )
 })
 
-test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 可选", () => {
+test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 坏了不丢整张", () => {
   assert.equal(NO_CHAT_ROUTE, "no_chat_route")
   assert.throws(() => ChatReadiness.parse({ ready: true, engineCount: 0, extra: 1 }))
   const parsed = ChatReadiness.parse({
@@ -112,6 +113,16 @@ test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 
     apiKeys: []
   })
   assert.equal(parsed.defaultRoute, undefined)
+  const recovered = ChatReadiness.parse({
+    ready: true,
+    engineCount: 1,
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    defaultRoute: { runtimeId: "" }
+  })
+  assert.equal(recovered.ready, true)
+  assert.equal(recovered.defaultRoute, undefined)
 })
 
 test("已登录外置引擎单独构成路线；enjoy-local 即使 loggedIn 也不进 engines", () => {
@@ -196,7 +207,43 @@ test("未显式选择时第一次连上的可用路线盖过出厂 enjoy-local",
   )
 })
 
-test("ready === 默认路线发送闸放行（key / CLI / 本机 ping / 远端未验证 / 全无）", () => {
+test("闸三分态：无密钥档案 ok；未算过 uncertain；没档案且 ping 失败才拦", () => {
+  assert.equal(
+    chatRouteGateKind({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    "ok"
+  )
+  assert.equal(
+    chatRouteGateKind({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: false,
+      verifiedLocal: "unknown"
+    }),
+    "uncertain"
+  )
+  assert.equal(
+    chatRouteGateKind({
+      runtimeId: "enjoy-local",
+      codingRuntime: "harness",
+      hasEnjoySecret: false,
+      verifiedLocal: false
+    }),
+    "ok"
+  )
+  assert.equal(
+    chatRouteGateKind({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: false,
+      verifiedLocal: false
+    }),
+    "definitely_unusable"
+  )
+})
+
+test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () => {
   const cases: Array<{
     name: string
     explicit?: boolean
@@ -243,6 +290,25 @@ test("ready === 默认路线发送闸放行（key / CLI / 本机 ping / 远端�
       hasEnjoySecret: input.apiKeys.length > 0,
       verifiedLocal: input.localModels.some(isVerifiedLocalModel)
     })
-    assert.equal(snap.ready, allows, input.name)
+    assert.ok(!snap.ready || allows, input.name)
   }
+})
+
+test("远端 Ollama：向导未 ready，hasSecret 为真时闸放行", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [REMOTE],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: true
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    true
+  )
 })

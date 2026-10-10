@@ -24,6 +24,7 @@ import {
   probePi
 } from "./probes"
 import { emptyInspectResult } from "./inspect-empty"
+import { e2eStubEngineInspect } from "../e2e-chat-readiness"
 import { attachInspectVersion } from "./inspect-version"
 import { probeLatestVersion } from "../agent-tools-latest"
 import { getToolSpendStats } from "./tool-spend.ts"
@@ -36,6 +37,8 @@ export async function inspectAgentTool(
   id: AgentToolId,
   refresh = false
 ): Promise<InspectAgentToolResult> {
+  const stub = e2eStubEngineInspect(id)
+  if (stub) return stub
   const hit = readInspectCache(id)
   if (!refresh && isInspectFresh(hit) && hit) return hit.value
   if (!refresh && hit) {

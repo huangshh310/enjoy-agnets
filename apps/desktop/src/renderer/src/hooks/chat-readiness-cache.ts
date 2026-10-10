@@ -4,9 +4,18 @@
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 let last: ChatReadiness | undefined
+let codingRuntime: "local" | "harness" = "local"
 
 export function rememberChatReadiness(snapshot: ChatReadiness | undefined): void {
   last = snapshot
+}
+
+export function rememberCodingRuntime(next: "local" | "harness" | undefined): void {
+  codingRuntime = next === "harness" ? "harness" : "local"
+}
+
+export function peekCodingRuntime(): "local" | "harness" {
+  return codingRuntime
 }
 
 export function peekChatReady(): boolean | undefined {

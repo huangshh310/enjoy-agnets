@@ -1,6 +1,6 @@
 /**
- * 可对话路线真源：向导末屏、默认路线与发送闸共用同一套判断。
- * 发送闸读缓存的分路结果，不同步等 ping。
+ * 可对话路线真源：向导末屏、默认路线与发送闸。
+ * 发送闸读 hasSecret()；ping 失败只驱动向导，不拦发送。
  */
 import { app, BrowserWindow } from "electron"
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
@@ -12,7 +12,7 @@ import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./def
 import { e2eChatReadiness } from "./e2e-chat-readiness"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { isE2eStub } from "./e2e-stub"
-import { listPublicProviders } from "./secrets"
+import { hasSecret, listPublicProviders } from "./secrets"
 
 export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
 
@@ -32,29 +32,24 @@ export function peekVerifiedLocalModel(): boolean | "unknown" {
   return cached.localModels.some(isVerifiedLocalModel)
 }
 
-/** 发送闸读缓存：有 requiresKey 的已存密钥。不是 hasSecret（ollama 无密钥也是 true）。 */
-export function peekHasEnjoyApiKey(): boolean | "unknown" {
-  if (!cached) return "unknown"
-  return cached.apiKeys.length > 0
-}
-
 export async function computeChatReadiness(): Promise<ChatReadiness> {
   const packaged = app.isPackaged
   try {
-    await seedE2eChatReadyRoute(packaged)
+    await seedE2eChatReadyRoute({
+      packaged,
+      userData: app.getPath("userData")
+    })
   } catch {
     // 夹具种档案失败仍走快照，避免向导空白。
   }
+  const enjoySecret = await hasSecret().catch(() => undefined)
   const fixture = e2eChatReadiness(process.env, packaged)
   if (fixture) {
-    persistAdoptedDefaultRoute(fixture)
-    cached = fixture
-    return fixture
+    return rememberSnapshot(withSecretAndAdopt(fixture, enjoySecret))
   }
   const [tools, providers, live] = await Promise.all([
     listAgentTools(),
     listPublicProviders(),
-    // e2e 显式注入本机路线，不放宽生产组装（已启用档案 ≠ ping 通过）。
     isE2eStub() ? Promise.resolve(["ollama"] as Array<"ollama" | "lmstudio">) : pingLocalModelServices()
   ])
   const listed = tools.map((tool) => ({
@@ -71,7 +66,17 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
     loggedInToolIds(listed),
     defaultChatRouteAssembleInput()
   )
-  persistAdoptedDefaultRoute(snapshot)
+  return rememberSnapshot(withSecretAndAdopt(snapshot, enjoySecret))
+}
+
+function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): ChatReadiness {
+  const withSecret =
+    enjoySecret === undefined ? snapshot : { ...snapshot, hasEnjoySecret: enjoySecret }
+  const adopted = persistAdoptedDefaultRoute(withSecret)
+  return adopted.hint ? { ...withSecret, adoptedHint: adopted.hint } : withSecret
+}
+
+function rememberSnapshot(snapshot: ChatReadiness): ChatReadiness {
   cached = snapshot
   return snapshot
 }

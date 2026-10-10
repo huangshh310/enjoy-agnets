@@ -137,6 +137,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
         ? t("chat.needRemoteConnectedTitle")
         : kind === "remote_cli_missing"
           ? t("chat.remoteCliMissingTitle")
+          : kind === "needs_model"
+            ? t("chat.needModelTitle")
           : kind === "needs_key"
             ? t("chat.needProviderKeyTitle")
             : kind === "rate_limit"
@@ -150,6 +152,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
         ? t("chat.needRemoteConnectedHint")
         : kind === "remote_cli_missing"
           ? t("chat.remoteCliMissingHint")
+          : kind === "needs_model"
+            ? t("chat.needModelHint")
           : kind === "needs_key"
             ? t("chat.needProviderKeyHint")
             : error.includes("HANDOFF_CONFIRM_FAILED")
@@ -268,6 +272,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             ) : null}
             {kind !== "auth" &&
             kind !== "needs_key" &&
+            kind !== "needs_model" &&
             kind !== "inspecting" &&
             kind !== "authorizing" &&
             kind !== "login_failed" &&

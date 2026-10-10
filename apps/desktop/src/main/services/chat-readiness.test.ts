@@ -45,7 +45,7 @@ test("已启用本机档案但没 ping 不算 ready", () => {
   assert.deepEqual(snap.localModels, [])
 })
 
-test("远端 Ollama 不 ping，verified:false，不算 ready", () => {
+test("远端 Ollama 不 ping，verified:false，不算 ready；hasSecret 时闸放行", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
     [
@@ -62,6 +62,16 @@ test("远端 Ollama 不 ping，verified:false，不算 ready", () => {
   )
   assert.equal(snap.ready, false)
   assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
+  assert.equal(
+    selectedRouteGateCode({
+      skip: false,
+      runtimeId: "enjoy-local",
+      codingRuntime: "local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    null
+  )
 })
 
 test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不含密钥", () => {
@@ -162,16 +172,16 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
       hasEnjoySecret: snap.apiKeys.length > 0,
       verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
     })
-    assert.equal(snap.ready, allows, item.name)
-    assert.equal(
-      selectedRouteGateCode({
-        skip: false,
-        runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
-        codingRuntime: "local",
-        hasEnjoySecret: snap.apiKeys.length > 0,
-        verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
-      }) === null,
-      snap.ready,
+    assert.ok(!snap.ready || allows, item.name)
+    assert.ok(
+      !snap.ready ||
+        selectedRouteGateCode({
+          skip: false,
+          runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
+          codingRuntime: "local",
+          hasEnjoySecret: snap.apiKeys.length > 0,
+          verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
+        }) === null,
       item.name
     )
   }

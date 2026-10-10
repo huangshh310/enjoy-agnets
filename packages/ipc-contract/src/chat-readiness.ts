@@ -1,11 +1,18 @@
 /**
- * 可对话路线真源：向导末屏、默认路线与发送闸共用同一套判断。
- * ready = 新对话默认路线可发；引擎就绪 ≠ 可以开始。
+ * 可对话路线真源：向导末屏、默认路线与发送闸。
+ * ready = 新对话默认路线已验证可发；闸更宽（ready ⇒ 放行）。
  */
 import { z } from "zod"
+import { chatRouteAllowsSend, NO_CHAT_ROUTE } from "./chat-route-gate.ts"
 
-/** 没有任何可对话路线。区别于密钥无效 / 网络失败 / 额度用完。 */
-export const NO_CHAT_ROUTE = "no_chat_route"
+export {
+  chatRouteAllowsSend,
+  chatRouteGateCode,
+  chatRouteGateKind,
+  NO_CHAT_ROUTE,
+  type ChatRouteGateInput,
+  type ChatRouteGateKind
+} from "./chat-route-gate.ts"
 
 export const ChatReadinessInput = z.object({}).strict()
 export type ChatReadinessInput = z.infer<typeof ChatReadinessInput>
@@ -85,7 +92,12 @@ export const ChatReadiness = z
     engines: z.array(ChatEngineRoute),
     localModels: z.array(ChatLocalModelRoute),
     apiKeys: z.array(ChatApiKeyRoute),
-    defaultRoute: ChatDefaultRoute.optional()
+    /** 单字段坏掉不丢整张快照。 */
+    defaultRoute: ChatDefaultRoute.optional().catch(undefined),
+    /** 路由 hasSecret()；缺省时渲染闸当 uncertain。 */
+    hasEnjoySecret: z.boolean().optional(),
+    /** 第一次自动收默认路线时带一次，给 toast。 */
+    adoptedHint: z.object({ name: z.string().min(1) }).strict().optional()
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>
@@ -124,26 +136,6 @@ export function countAvailableEngines(tools: readonly AvailableEngineTool[]): nu
 
 export function isVerifiedLocalModel(route: ChatLocalModelRoute): boolean {
   return route.verified === true
-}
-
-/** 发送闸与 ready 同一套：只拦确定不可用的 enjoy-local。 */
-export function chatRouteGateCode(input: {
-  skip?: boolean
-  runtimeId: string
-  codingRuntime?: "local" | "harness"
-  hasEnjoySecret: boolean | "unknown"
-  verifiedLocal: boolean | "unknown"
-}): typeof NO_CHAT_ROUTE | null {
-  if (input.skip) return null
-  if (input.codingRuntime === "harness") return null
-  if (input.runtimeId !== "enjoy-local") return null
-  if (input.hasEnjoySecret === true || input.hasEnjoySecret === "unknown") return null
-  if (input.verifiedLocal === "unknown" || input.verifiedLocal === true) return null
-  return NO_CHAT_ROUTE
-}
-
-export function chatRouteAllowsSend(input: Parameters<typeof chatRouteGateCode>[0]): boolean {
-  return chatRouteGateCode(input) === null
 }
 
 export type ResolveDefaultChatRouteInput = {
@@ -227,6 +219,8 @@ export function buildChatReadiness(input: {
   preferredRuntimeId?: string
   explicit?: boolean
   modelId?: string
+  hasEnjoySecret?: boolean
+  adoptedHint?: { name: string }
 }): ChatReadiness {
   const engines = [...input.engines]
   const localModels = [...input.localModels]
@@ -245,7 +239,9 @@ export function buildChatReadiness(input: {
     engines,
     localModels,
     apiKeys,
-    defaultRoute
+    defaultRoute,
+    ...(input.hasEnjoySecret === undefined ? {} : { hasEnjoySecret: input.hasEnjoySecret }),
+    ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {})
   })
 }
 

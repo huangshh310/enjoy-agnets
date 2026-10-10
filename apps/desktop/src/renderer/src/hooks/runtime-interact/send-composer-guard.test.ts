@@ -7,6 +7,7 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
+  NEED_MODEL,
   NEED_PROVIDER_KEY,
   NEED_REMOTE_CONNECTED,
   NO_CHAT_ROUTE
@@ -16,7 +17,7 @@ import {
   useCliLoginLoopStore
 } from "../../components/ai-chat/agent-picker/cli-login-loop.ts"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { rememberChatReadiness } from "../chat-readiness-cache.ts"
+import { rememberChatReadiness, rememberCodingRuntime } from "../chat-readiness-cache.ts"
 import { composerSendReady, guardComposerSend } from "./send-composer-guard.ts"
 
 function readyKey() {
@@ -48,6 +49,7 @@ function readyLocal() {
 
 test.beforeEach(() => {
   rememberChatReadiness(undefined)
+  rememberCodingRuntime("local")
 })
 
 function store(partial: {
@@ -76,6 +78,16 @@ function store(partial: {
   }
 }
 
+test("无快照时 Enjoy Local 放行，Harness 也放行", () => {
+  rememberChatReadiness(undefined)
+  const noSnap = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "m" })
+  assert.equal(guardComposerSend(noSnap as never, { ideReady: true }), true)
+  rememberCodingRuntime("harness")
+  rememberChatReadiness(readyNone())
+  const harness = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "" })
+  assert.equal(guardComposerSend(harness as never, { ideReady: true }), true)
+})
+
 test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", () => {
   rememberChatReadiness(readyNone())
   const chat = store({ runtimeId: "enjoy-local", hasKey: true })
@@ -84,14 +96,16 @@ test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", ()
   assert.equal(chat.read().picker, false)
 })
 
-test("Enjoy Local 信快照不信 hasKey；无快照即使有 hasKey 也拦", () => {
+test("Enjoy Local 信共享闸；无快照放行；有密钥没模型单独提示", () => {
   rememberChatReadiness(readyKey())
-  const keyed = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "" })
+  const keyed = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "m" })
   assert.equal(guardComposerSend(keyed as never, { ideReady: true }), true)
+  const noModel = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
+  assert.equal(guardComposerSend(noModel as never, { ideReady: true }), false)
+  assert.equal(noModel.read().error, NEED_MODEL)
   rememberChatReadiness(undefined)
   const noSnap = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "m" })
-  assert.equal(guardComposerSend(noSnap as never, { ideReady: true }), false)
-  assert.equal(noSnap.read().error, NO_CHAT_ROUTE)
+  assert.equal(guardComposerSend(noSnap as never, { ideReady: true }), true)
 })
 
 test("已装未登录 CLI 打开 Picker，不打 agent.run", () => {
@@ -199,11 +213,12 @@ test("发送盘：Enjoy Local 只信快照，不信 hasKey；CLI 未登录不亮
   rememberChatReadiness(readyNone())
   assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m" }), false)
   rememberChatReadiness(readyKey())
-  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false, modelId: "" }), true)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false, modelId: "m" }), true)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false, modelId: "" }), false)
   rememberChatReadiness(readyLocal())
   assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false, modelId: "" }), true)
   rememberChatReadiness(undefined)
-  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m" }), false)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m" }), true)
   assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true, modelId: "m" }), false)
 })
 

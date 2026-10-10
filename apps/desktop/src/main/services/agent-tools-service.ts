@@ -31,6 +31,7 @@ import { safeCustomBinaryPath } from "./agent-tools-guard"
 import { homeSyncedFor } from "./agent-tools-home-sync"
 import { readAgentToolOverrides, writeAgentToolOverride } from "./agent-tools-vault"
 import { readVault } from "./secrets-vault"
+import { applyE2eStubEngine } from "./e2e-chat-readiness"
 
 export async function listAgentTools(): Promise<AgentToolPublic[]> {
   const overrides = readAgentToolOverrides()
@@ -39,7 +40,7 @@ export async function listAgentTools(): Promise<AgentToolPublic[]> {
     AGENT_TOOL_PRESETS.map((preset) => toPublic(preset, overrides[preset.id], names))
   )
   const custom = await Promise.all(readCustomAgents().map((record) => toPublicCustom(record)))
-  return [...builtin, ...custom]
+  return applyE2eStubEngine([...builtin, ...custom])
 }
 
 export async function detectAgentTools(): Promise<AgentToolPublic[]> {
