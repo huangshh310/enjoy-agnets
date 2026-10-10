@@ -67,6 +67,8 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     })
     await window.getByTestId("setup-guide-replay").waitFor({ timeout: 12_000 })
     await expect(window.getByTestId("setup-guide-replay")).toHaveText("重新打开入门向导")
+    await window.getByTestId("setup-guide-replay").scrollIntoViewIfNeeded()
+    await snap(window, "s1-4-settings-replay")
     const search = window.locator('input[type="search"]').first()
     await search.fill("向导")
     await expect(window.locator('[data-testid="module-nav-scroll"]')).toContainText("通用")
@@ -74,7 +76,7 @@ test("S1-1/3/4/5 向导连模型、还差一步、空态、重开", async () => 
     await expect(window.locator('[data-testid="module-nav-scroll"]')).toContainText("通用")
     await search.fill("引导")
     await expect(window.locator('[data-testid="module-nav-scroll"]')).toContainText("通用")
-    await snap(window, "s1-4-settings-replay")
+    await snap(window, "s1-4-settings-search")
 
     await window.getByTestId("setup-guide-replay").click()
     await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 8_000 })
@@ -98,6 +100,10 @@ test("S1-2 添加表单、已连上、末屏可以开始了", async () => {
     await form.window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
       timeout: 8_000
     })
+    await form.window.evaluate(() => {
+      window.__enjoyE2e?.hideGuide()
+    })
+    await expect(form.window.getByTestId("setup-guide-connect-model")).toHaveCount(0)
     await snap(form.window, "s1-2-add-key-form")
   } finally {
     await form.app.close()
@@ -177,6 +183,15 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
     await expect(window.getByTestId("no-project-empty")).toHaveCount(0)
     await expect(window.getByText("打开工作区", { exact: true })).toHaveCount(0)
     await snap(window, "s1-7-project-present-light")
+    await window.evaluate(() => {
+      document.documentElement.classList.add("dark")
+      document.documentElement.dataset.theme = "dark"
+    })
+    await snap(window, "s1-7-project-present-dark")
+    await window.evaluate(() => {
+      document.documentElement.classList.remove("dark")
+      document.documentElement.dataset.theme = "light"
+    })
 
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.fill("还差一步也要留下草稿")
@@ -202,12 +217,6 @@ test("S1-6/7 无路线中性横幅、已有项目、密钥无效红卡", async (
     })
     await expect(window.getByText("Incorrect API key provided")).toBeVisible()
     await snap(window, "s1-6-invalid-key-red")
-
-    await window.evaluate(() => {
-      document.documentElement.classList.add("dark")
-      document.documentElement.dataset.theme = "dark"
-    })
-    await snap(window, "s1-7-project-present-dark")
   } finally {
     await app.close()
   }
