@@ -4,6 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  adoptPlanRestamp,
   adoptedRouteLabel,
   formatAdoptedRouteFace,
   planAdoptedDefaultRoute
@@ -60,6 +61,13 @@ test("升级首次已有路线只 stamp，不 toast", () => {
   )
 })
 
+test("stamp / lock 后立刻 restamp，adopt 不用", () => {
+  assert.equal(adoptPlanRestamp("stamp"), true)
+  assert.equal(adoptPlanRestamp("lock"), true)
+  assert.equal(adoptPlanRestamp("adopt"), false)
+  assert.equal(adoptPlanRestamp("skip"), false)
+})
+
 test("已有非出厂偏好只盖章不改写", () => {
   assert.equal(
     planAdoptedDefaultRoute({
@@ -84,6 +92,27 @@ test("已有非出厂偏好只盖章不改写", () => {
       ready: true,
       currentRuntimeId: "claude",
       routeRuntimeId: "claude",
+      hadNoUsableRoute: true
+    }),
+    "adopt"
+  )
+})
+
+test("单条 unverified 密钥 ready，从无到有可 adopt", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [{ kind: "api_key", providerId: "prov_1", presetId: "openai" }],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    credentialCheck: { state: "unverified", code: "timeout" }
+  })
+  assert.equal(snap.ready, true)
+  assert.equal(snap.defaultRoute?.profileId, "prov_1")
+  assert.equal(
+    planAdoptedDefaultRoute({
+      ready: snap.ready,
+      routeRuntimeId: snap.defaultRoute?.runtimeId,
       hadNoUsableRoute: true
     }),
     "adopt"

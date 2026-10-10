@@ -15,6 +15,7 @@ import {
   WireApiStyle
 } from "./provider-profile"
 import { KeybindingRuleList } from "./keybindings"
+import { CredentialCheck } from "./credential-check"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 
 export {
@@ -95,7 +96,9 @@ export const ProviderPublic = z.object({
   keys: z.array(ProviderKeyPublic).default([]),
   modelsURL: z.string().optional(),
   reasoningFamily: ReasoningFamilyInput.default("auto"),
-  proxy: z.string().optional()
+  proxy: z.string().optional(),
+  /** main 落盘的密钥校验。缺省 / 坏字段当 unverified。 */
+  credentialCheck: CredentialCheck.optional()
 })
 export type ProviderPublic = z.infer<typeof ProviderPublic>
 

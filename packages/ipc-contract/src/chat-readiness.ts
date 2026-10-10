@@ -1,9 +1,24 @@
 /**
  * 可对话路线真源：向导末屏、默认路线与发送闸。
- * ready = 新对话默认路线已验证可发；闸更宽（ready ⇒ 放行）。
+ * ready = 新对话默认路线可发（ok / unverified 都算；invalid 不算）。
+ * 闸更宽：ready ⇒ 放行。
  */
 import { z } from "zod"
-import { chatRouteAllowsSend, NO_CHAT_ROUTE } from "./chat-route-gate.ts"
+import {
+  CredentialCheck,
+  CREDENTIAL_INVALID,
+  PROVIDER_UNREACHABLE,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_BILLING,
+  type CredentialCheckState
+} from "./credential-check.ts"
+import { NO_CHAT_ROUTE } from "./chat-route-gate.ts"
+import {
+  defaultRouteReady,
+  enjoySecretOf,
+  keyStatesFromChecks,
+  resolveDefaultChatRoute
+} from "./chat-route-pick.ts"
 
 export {
   chatRouteAllowsSend,
@@ -13,6 +28,20 @@ export {
   type ChatRouteGateInput,
   type ChatRouteGateKind
 } from "./chat-route-gate.ts"
+export {
+  CREDENTIAL_INVALID,
+  PROVIDER_UNREACHABLE,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_BILLING,
+  ChatSendErrorCode,
+  CredentialCheck,
+  CredentialCheckCode,
+  classifyChatSendFailure,
+  credentialCheckAfterAuthRejected,
+  credentialCheckAfterOkSend,
+  parseCredentialCheck,
+  type CredentialCheckState
+} from "./credential-check.ts"
 
 export const ChatReadinessInput = z.object({}).strict()
 export type ChatReadinessInput = z.infer<typeof ChatReadinessInput>
@@ -37,7 +66,13 @@ export const ChatLocalModelRoute = z
 export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
 
 /** 发送闸稳定码。main `agent.run` 失败回 `{ ok:false, code }`，不要 throw 以免 IPC 加前缀。 */
-export const SendGateCode = z.enum([NO_CHAT_ROUTE])
+export const SendGateCode = z.enum([
+  NO_CHAT_ROUTE,
+  CREDENTIAL_INVALID,
+  PROVIDER_UNREACHABLE,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_BILLING
+])
 export type SendGateCode = z.infer<typeof SendGateCode>
 
 export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()
@@ -102,7 +137,9 @@ export const ChatReadiness = z
      * 系统钥匙串能否加密存密钥。缺省 / 坏字段 `.catch(true)`，旧快照不当成挂掉。
      * Linux `basic_text` 算 false。禁止明文回落。
      */
-    secretStorageAvailable: z.boolean().catch(true)
+    secretStorageAvailable: z.boolean().catch(true),
+    /** 当前默认路线的密钥校验。缺省 / 坏字段当 unverified。 */
+    credentialCheck: CredentialCheck.optional().catch({ state: "unverified" })
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>
@@ -128,6 +165,7 @@ export type PublicKeyProvider = {
   active?: boolean
   /** 用来判断远端 Ollama / LM Studio，不进快照。 */
   baseURL?: string
+  credentialCheck?: CredentialCheck
 }
 
 /** 已装 / 已探测到的引擎数。enjoy-local 算一台引擎，但不等于可以对话。 */
@@ -148,6 +186,8 @@ export function isVerifiedLocalModel(route: ChatLocalModelRoute): boolean {
 export type ResolveDefaultChatRouteInput = {
   /** 用户亲手选过默认（设为主引擎 / setDefaultModel / setPreferences.runtimeId）。 */
   explicit?: boolean
+  /** 已经 adopt 过：默认路线跟当前档案，不再另挑 ok。 */
+  adopted?: boolean
   preferredRuntimeId?: string
   modelId?: string
   engines: readonly ChatEngineRoute[]
@@ -157,80 +197,16 @@ export type ResolveDefaultChatRouteInput = {
   hasEnjoySecret?: boolean
   /** 当前档案若是带密钥的，才写 defaultRoute.profileId。 */
   activeKeyProfileId?: string | null
+  /** 当前路线密钥校验。缺省当 unverified：ready 且发送放行。 */
+  credentialState?: CredentialCheck["state"]
+  /** 各带密钥档案的校验。挑默认时 ok 优先于 unverified。 */
+  keyStates?: Readonly<Record<string, CredentialCheckState>>
 }
 
-function chatDefaultRouteOf(
-  runtimeId: string,
-  modelId?: string,
-  profileId?: string
-): ChatDefaultRoute {
-  return {
-    runtimeId,
-    ...(modelId ? { modelId } : {}),
-    ...(profileId ? { profileId } : {})
-  }
-}
-
-function activeKeyProfileIdOf(input: ResolveDefaultChatRouteInput): string | undefined {
-  if (input.activeKeyProfileId !== undefined) return input.activeKeyProfileId ?? undefined
-  if (input.hasEnjoySecret === false) return undefined
-  return input.apiKeys[0]?.providerId
-}
-
-function enjoySecretOf(input: Pick<ResolveDefaultChatRouteInput, "hasEnjoySecret" | "apiKeys">): boolean {
-  if (input.hasEnjoySecret !== undefined) return input.hasEnjoySecret
-  return input.apiKeys.length > 0
-}
-
-/** 新对话默认路线。未显式选择时，第一次连上的可用路线优先于出厂 enjoy-local。 */
-export function resolveDefaultChatRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute {
-  const preferred = input.preferredRuntimeId?.trim() || "enjoy-local"
-  const modelId = input.modelId?.trim() || undefined
-  const keyProfile = preferred === "enjoy-local" ? activeKeyProfileIdOf(input) : undefined
-  if (input.explicit) return chatDefaultRouteOf(preferred, modelId, keyProfile)
-  const keep = chatDefaultRouteOf(preferred, modelId, keyProfile)
-  if (defaultRouteUsable(keep, input)) return keep
-  return firstUsableDefaultRoute(input) ?? chatDefaultRouteOf("enjoy-local", modelId)
-}
-
-function defaultRouteUsable(
-  route: ChatDefaultRoute,
-  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels" | "hasEnjoySecret">
-): boolean {
-  return chatRouteAllowsSend({
-    runtimeId: route.runtimeId,
-    hasEnjoySecret: enjoySecretOf(input),
-    verifiedLocal: input.localModels.some(isVerifiedLocalModel)
-  })
-}
-
-function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute | null {
-  const modelId = input.modelId?.trim() || undefined
-  const keyProfile = activeKeyProfileIdOf(input)
-  if (enjoySecretOf(input)) {
-    return chatDefaultRouteOf("enjoy-local", modelId, keyProfile)
-  }
-  if (input.localModels.some(isVerifiedLocalModel)) {
-    return { runtimeId: "enjoy-local", ...(modelId ? { modelId } : {}) }
-  }
-  const engine = input.engines[0]
-  if (engine) return { runtimeId: engine.runtimeId }
-  return null
-}
-
-export function chatReadyFromRoutes(input: {
-  engines: readonly ChatEngineRoute[]
-  localModels: readonly ChatLocalModelRoute[]
-  apiKeys: readonly ChatApiKeyRoute[]
-  preferredRuntimeId?: string
-  explicit?: boolean
-  modelId?: string
-  hasEnjoySecret?: boolean
-  activeKeyProfileId?: string | null
-}): boolean {
-  const route = resolveDefaultChatRoute(input)
-  return defaultRouteUsable(route, input)
-}
+export {
+  chatReadyFromRoutes,
+  resolveDefaultChatRoute
+} from "./chat-route-pick.ts"
 
 export function buildChatReadiness(input: {
   engines: readonly ChatEngineRoute[]
@@ -239,29 +215,45 @@ export function buildChatReadiness(input: {
   engineCount: number
   preferredRuntimeId?: string
   explicit?: boolean
+  adopted?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
   activeKeyProfileId?: string | null
   adoptedHint?: { name: string }
+  credentialCheck?: CredentialCheck
+  keyStates?: Readonly<Record<string, CredentialCheckState>>
+  keyChecks?: Readonly<Record<string, CredentialCheck>>
 }): ChatReadiness {
   const engines = [...input.engines]
   const localModels = [...input.localModels]
   const apiKeys = [...input.apiKeys]
+  const keyStates = input.keyStates ?? keyStatesFromChecks(input.keyChecks)
+  const credentialState = input.credentialCheck?.state
   const defaultRoute = resolveDefaultChatRoute({
     explicit: input.explicit,
+    adopted: input.adopted,
     preferredRuntimeId: input.preferredRuntimeId,
     modelId: input.modelId,
     engines,
     localModels,
     apiKeys,
     hasEnjoySecret: input.hasEnjoySecret,
-    activeKeyProfileId: input.activeKeyProfileId
+    activeKeyProfileId: input.activeKeyProfileId,
+    credentialState,
+    keyStates
   })
+  const pickedCheck =
+    (defaultRoute.profileId && input.keyChecks?.[defaultRoute.profileId]) || input.credentialCheck
+  const credentialCheck =
+    pickedCheck ?? (defaultRoute.profileId ? { state: "unverified" as const } : undefined)
   return ChatReadiness.parse({
-    ready: defaultRouteUsable(defaultRoute, {
+    ready: defaultRouteReady(defaultRoute, {
       apiKeys,
       localModels,
-      hasEnjoySecret: input.hasEnjoySecret
+      hasEnjoySecret: input.hasEnjoySecret,
+      credentialState,
+      keyStates,
+      engines
     }),
     engineCount: input.engineCount,
     engines,
@@ -269,7 +261,8 @@ export function buildChatReadiness(input: {
     apiKeys,
     defaultRoute,
     hasEnjoySecret: enjoySecretOf(input),
-    ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {})
+    ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {}),
+    ...(credentialCheck ? { credentialCheck } : {})
   })
 }
 

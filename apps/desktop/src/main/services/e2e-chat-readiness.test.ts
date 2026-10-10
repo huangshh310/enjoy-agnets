@@ -46,6 +46,7 @@ test("写盘夹具必须隔离 userData", () => {
 test("stub + key 带可发默认路线，不含秘密", () => {
   const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "key" })
   assert.equal(snap?.ready, true)
+  assert.equal(snap?.credentialCheck?.state, "ok")
   assert.equal(snap?.apiKeys[0]?.presetId, "openai")
   assert.equal(snap?.defaultRoute?.runtimeId, "enjoy-local")
   assert.equal(snap?.defaultRoute?.modelId, "stub-e2e")
@@ -59,6 +60,38 @@ test("stub + key 带可发默认路线，不含秘密", () => {
     true
   )
   assert.equal(JSON.stringify(snap).includes("sk-"), false)
+})
+
+test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
+  const isolated = { ENJOY_E2E_STUB: "1", ENJOY_E2E_USERDATA: "/tmp/e2e-ud", ENJOY_E2E_CHAT_READY: "key" }
+  const ok = e2eChatReadiness({
+    ...isolated,
+    ENJOY_E2E_CREDENTIAL: "ok"
+  })
+  assert.equal(ok?.ready, true)
+  assert.equal(ok?.credentialCheck?.state, "ok")
+  const invalid = e2eChatReadiness({
+    ...isolated,
+    ENJOY_E2E_CREDENTIAL: "invalid"
+  })
+  assert.equal(invalid?.ready, false)
+  assert.equal(invalid?.credentialCheck?.state, "invalid")
+  assert.equal(invalid?.credentialCheck?.code, "auth_rejected")
+  const unverified = e2eChatReadiness({
+    ...isolated,
+    ENJOY_E2E_CREDENTIAL: "unverified"
+  })
+  assert.equal(unverified?.ready, true)
+  assert.equal(unverified?.credentialCheck?.state, "unverified")
+  assert.equal(unverified?.credentialCheck?.code, "unknown")
+  assert.equal(unverified?.defaultRoute?.profileId, "e2e")
+  const timed = e2eChatReadiness({
+    ...isolated,
+    ENJOY_E2E_CREDENTIAL: "unverified:timeout"
+  })
+  assert.equal(timed?.ready, true)
+  assert.equal(timed?.credentialCheck?.state, "unverified")
+  assert.equal(timed?.credentialCheck?.code, "timeout")
 })
 
 test("stub + none 引擎数不能冒充可以开始", () => {
@@ -75,11 +108,12 @@ test("stub + none 引擎数不能冒充可以开始", () => {
   )
 })
 
-test("stub + unverified 露出远端本机模型；hasSecret 为真则 ready，闸放行", () => {
+test("stub + unverified 露出远端本机模型；有密钥则 ready，闸放行", () => {
   const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "unverified" })
   assert.equal(snap?.ready, true)
   assert.deepEqual(snap?.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
   assert.equal(snap?.hasEnjoySecret, true)
+  assert.equal(snap?.credentialCheck?.state, "unverified")
   assert.equal(
     chatRouteAllowsSend({
       runtimeId: "enjoy-local",

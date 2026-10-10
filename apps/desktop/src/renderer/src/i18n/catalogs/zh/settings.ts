@@ -97,6 +97,8 @@ export const zhSettings = {
     returnGuide: "返回入门向导",
     readyNeedTitle: "还差一步：连一个模型",
     readyNeedSummary: "已装 {count} 个引擎 · 还没连模型",
+    readyUnverifiedTitle: "可以开始了 · 密钥还没验证",
+    readyUnverifiedHint: "可以开始了 · 密钥还没验证，发第一句时会再试一次",
     engineSummary: "{ready} 个就绪 · {missing} 个未安装",
     redetect: "重新探测",
     readyState: "就绪",

@@ -1,9 +1,21 @@
 /**
  * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
-import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
+import {
+  CREDENTIAL_INVALID,
+  NO_CHAT_ROUTE,
+  PROVIDER_BILLING,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_UNREACHABLE
+} from "@enjoy-agents/ipc-contract/chat-readiness"
 
-export { NO_CHAT_ROUTE }
+export {
+  CREDENTIAL_INVALID,
+  NO_CHAT_ROUTE,
+  PROVIDER_BILLING,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_UNREACHABLE
+}
 
 export type ThreadErrorKind =
   | "credit"
@@ -14,6 +26,10 @@ export type ThreadErrorKind =
   | "needs_key"
   | "needs_model"
   | "no_chat_route"
+  | "credential_invalid"
+  | "provider_unreachable"
+  | "provider_forbidden"
+  | "provider_billing"
   | "inspecting"
   | "outdated"
   | "remote_cli_missing"
@@ -58,7 +74,20 @@ const CREDIT_MARKERS = [
   "billing"
 ]
 
-export function classifyThreadError(message: string): ThreadErrorKind {
+export function classifyThreadError(message: string, code?: string | null): ThreadErrorKind {
+  if (code === PROVIDER_BILLING || message === PROVIDER_BILLING || message.includes(PROVIDER_BILLING)) {
+    return "provider_billing"
+  }
+  if (code === CREDENTIAL_INVALID || message === CREDENTIAL_INVALID || message.includes(CREDENTIAL_INVALID)) {
+    return "credential_invalid"
+  }
+  if (code === PROVIDER_FORBIDDEN || message === PROVIDER_FORBIDDEN || message.includes(PROVIDER_FORBIDDEN)) {
+    return "provider_forbidden"
+  }
+  if (code === PROVIDER_UNREACHABLE || message === PROVIDER_UNREACHABLE || message.includes(PROVIDER_UNREACHABLE)) {
+    return "provider_unreachable"
+  }
+  if (code === NO_CHAT_ROUTE || message.includes(NO_CHAT_ROUTE)) return "no_chat_route"
   const lower = message.toLowerCase()
   if (
     message === USER_STOPPED ||
@@ -84,7 +113,6 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     return "send_restore"
   }
   if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
-  if (message === NO_CHAT_ROUTE || message.includes(NO_CHAT_ROUTE)) return "no_chat_route"
   if (message === NEED_MODEL || lower.includes("choose a model") || message.includes("先选一个模型")) {
     return "needs_model"
   }

@@ -4,6 +4,7 @@
  */
 import { z } from "zod"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
+import { ReviewChangedFiles } from "./credential-check.ts"
 import { USER_ABORTED_CODE } from "./desktop-notify.ts"
 import { isWriteTypeToolName } from "./tool-names.ts"
 
@@ -16,7 +17,9 @@ export type TurnAttention = z.infer<typeof TurnAttention>
 
 export const TurnOutcome = z.object({
   workflow: TurnWorkflow.catch("todo"),
-  attention: TurnAttention.catch("neutral")
+  attention: TurnAttention.catch("neutral"),
+  changedFiles: ReviewChangedFiles.optional(),
+  completedAt: z.string().optional()
 })
 export type TurnOutcome = z.infer<typeof TurnOutcome>
 
@@ -25,6 +28,7 @@ export type TurnToolSnapshot = {
   state?: string
   result?: unknown
   errorText?: string
+  args?: unknown
 }
 
 export type DecideTurnInput = {

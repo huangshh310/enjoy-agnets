@@ -11,6 +11,7 @@ import { settleRun } from "./agent-run-state"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import type { ActiveRun } from "./agent-run-state"
 import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
+import { persistCredentialAfterSend } from "./credential-send-outcome.ts"
 
 export function completeAgentRun(input: {
   runId: string
@@ -22,6 +23,7 @@ export function completeAgentRun(input: {
   // 取消 / abort 后泵可能仍走到这里；禁止覆盖 cancelled、禁止发 run.end。
   if (run.userCancelled || run.abort.signal.aborted) return
   persistActiveRun(run, runId, "completed")
+  void persistCredentialAfterSend(run, "ok")
   persistRunUsageFromActive(runId, run)
   recordCompletedRunMetric(runId, run)
   // 摘要给 Workflow / Automation 的 waitForRunSettle 用：子 run 的真实产出尾巴。

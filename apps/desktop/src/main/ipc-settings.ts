@@ -4,6 +4,7 @@
 import { ipcMain } from "electron"
 import {
   ProviderIdInput,
+  RecheckProviderInput,
   RemoveComposerPresetInput,
   SaveComposerPresetInput,
   SaveSecretInput,
@@ -30,10 +31,16 @@ import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secr
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
 import { scheduleChatReadinessPush } from "./services/chat-readiness"
+import {
+  recheckProviderCredential,
+  scheduleCredentialCheck
+} from "./services/credential-check-schedule.ts"
+import { credentialProbeNeeded } from "./services/credential-fingerprint.ts"
 import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
+  findProfileById,
   getActiveProfile,
   hasSecret,
   listAllPublicModels,
@@ -61,6 +68,7 @@ export const SETTINGS_CHANNELS = [
   "settings.detectProvider",
   "settings.duplicateProvider",
   "settings.setProviderEnabled",
+  "settings.recheckProvider",
   "settings.presets",
   "settings.composerPresets",
   "settings.saveComposerPreset",
@@ -111,6 +119,8 @@ function registerCoreSettingsIpc() {
       baseURL: input.baseURL,
       modelId: input.modelId
     })
+    const active = await getActiveProfile()
+    if (active) scheduleCredentialCheck(active.id)
     scheduleChatReadinessPush()
     return settingsSnapshot()
   })
@@ -163,7 +173,8 @@ function registerProviderIpc() {
   ipcMain.handle("settings.presets", async () => PROVIDER_PRESETS)
   ipcMain.handle("settings.upsertProvider", async (_event, raw) => {
     const input = UpsertProviderInput.parse(raw)
-    await upsertProfile({
+    const existing = input.id ? await findProfileById(input.id) : undefined
+    const saved = await upsertProfile({
       id: input.id,
       name: input.name,
       kind: asKind(input.kind),
@@ -190,8 +201,12 @@ function registerProviderIpc() {
       reasoningFamily: input.reasoningFamily,
       proxy: input.proxy
     })
+    if (credentialProbeNeeded(existing, input)) scheduleCredentialCheck(saved.id)
     scheduleChatReadinessPush()
     return settingsSnapshot()
+  })
+  ipcMain.handle("settings.recheckProvider", async (_event, raw) => {
+    return recheckProviderCredential(RecheckProviderInput.parse(raw).id)
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
     await removeProfile(ProviderIdInput.parse(raw).id)

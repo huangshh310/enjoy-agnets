@@ -52,7 +52,10 @@ async function rememberOpened(
 
 function openedE2eStub(input: OpenCodingStreamInput): OpenedCodingStream {
   return {
-    stream: createE2eStubStream(input.messages, input.abortSignal, { packaged: app.isPackaged }),
+    stream: createE2eStubStream(input.messages, input.abortSignal, {
+      packaged: app.isPackaged,
+      userData: app.getPath("userData")
+    }),
     result: {},
     dispose: async () => undefined,
     hostInject: assembleHostInject({

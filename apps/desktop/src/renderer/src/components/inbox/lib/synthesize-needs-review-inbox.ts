@@ -45,7 +45,9 @@ export function inboxFromNeedsReviewSessions(
         actionKey: "openSession" as const,
         actionLabel: input.t("pages.inbox.actions.openSession"),
         status: "resolved" as const,
-        sessionTitle: session.title
+        sessionTitle: session.title,
+        ...(session.changedFiles ? { changedFiles: session.changedFiles } : {}),
+        ...(session.completedAt ? { completedAt: session.completedAt } : {})
       }
     })
     .filter((item) => !hidden.has(item.id))

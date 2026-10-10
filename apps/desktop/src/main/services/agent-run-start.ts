@@ -13,8 +13,13 @@ import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
-import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
-import { peekVerifiedLocalModel } from "./chat-readiness"
+import {
+  activeProfileCredentialState,
+  resolveBoundRunModelId,
+  resolveRunSecret,
+  resolveRuntimeId
+} from "./agent-run-helpers"
+import { peekCachedChatReadiness, peekVerifiedLocalModel } from "./chat-readiness"
 import { hasSecret } from "./secrets"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
 import { writeSessionRuntime } from "./agent-tools-vault"
@@ -35,7 +40,6 @@ import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compactio
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eCostSeed, isE2eStub } from "./e2e-stub"
 import type { AgentRunResult } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
@@ -113,9 +117,11 @@ async function beginAgentRun(
     runtimeId,
     codingRuntime: prefs.codingRuntime,
     hasEnjoySecret: await hasSecret().catch(() => "unknown" as const),
-    verifiedLocal: peekVerifiedLocalModel()
+    verifiedLocal: peekVerifiedLocalModel(),
+    credentialState:
+      (await activeProfileCredentialState()) ?? peekCachedChatReadiness()?.credentialCheck?.state
   })
-  if (blocked) return { ok: false, code: NO_CHAT_ROUTE }
+  if (blocked) return { ok: false, code: blocked }
   writeSessionRuntime(input.sessionId, runtimeId)
   input.runtimeId = runtimeId
   const overlayModel = await resolveBoundRunModelId(input, runtimeId)
@@ -123,7 +129,8 @@ async function beginAgentRun(
   if (isAcpHostRuntime(runtimeId) && !input.modelId) {
     input.modelId = `cli:${runtimeId}`
   }
-  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  const resolved = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  const secret = resolved?.secret
   if (isE2eCostSeed() && (!input.modelId || input.modelId === "stub-e2e")) {
     input.modelId = COST_LIVE_MODEL_ID
   } else if (isE2eStub() && !input.modelId) {
@@ -169,6 +176,8 @@ async function beginAgentRun(
     input,
     workspaceRoot: workspace.rootPath,
     secret,
+    profileId: resolved?.profileId,
+    credentialFingerprint: resolved?.fingerprint,
     messages: modelMessages
   })
   if (options.runId) hydrateActiveRunUsage(runId)

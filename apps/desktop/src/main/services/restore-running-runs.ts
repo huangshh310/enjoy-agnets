@@ -107,13 +107,15 @@ async function holdAndPump(
     })
     return false
   }
-  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  const resolved = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
   holdAgentRun({
     runId: row.id,
     window,
     input,
     workspaceRoot: workspace.rootPath,
-    secret,
+    secret: resolved?.secret,
+    profileId: resolved?.profileId,
+    credentialFingerprint: resolved?.fingerprint,
     messages: extras.modelMessages as ModelMessage[]
   })
   hydrateActiveRunUsage(row.id)

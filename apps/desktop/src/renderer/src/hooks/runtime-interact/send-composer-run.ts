@@ -17,7 +17,7 @@ import {
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { NEED_MODEL, NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
+import { CREDENTIAL_INVALID, NEED_MODEL, NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
@@ -74,7 +74,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   if (!guardComposerSend(store)) {
     store.setRunning(false)
     const blocked = useChatStore.getState().error
-    if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
+    if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL || blocked === CREDENTIAL_INVALID) return
     if (prepared?.content) {
       restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     } else if (!store.sessionId) {

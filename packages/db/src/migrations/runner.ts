@@ -18,6 +18,7 @@ import { runUsageCostMigration } from "./run-usage-cost.ts"
 import { approvalSdkResponseMigration } from "./approval-sdk-response.ts"
 import { costMissingMigration } from "./cost-missing.ts"
 import { mcpCuratedMigration } from "./mcp-curated.ts"
+import { sessionReviewMigration } from "./session-review.ts"
 import { ensureCuratedPresetIdColumn, repairClaimedV14, tableExists } from "./column-guard.ts"
 import type { Migration } from "./types.ts"
 
@@ -38,7 +39,8 @@ export const MIGRATIONS: Migration[] = [
   runUsageCostMigration,
   approvalSdkResponseMigration,
   costMissingMigration,
-  mcpCuratedMigration
+  mcpCuratedMigration,
+  sessionReviewMigration
 ]
 
 function ensureMigrationTable(sqlite: DatabaseSync): void {

@@ -3,11 +3,11 @@ import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, appliedVersions } from "./runner.ts"
 
-test("空库依次跑全部迁移至 16（含精选 MCP marker）", () => {
+test("空库依次跑全部迁移至 17（含待验收改动文件）", () => {
   const db = new DatabaseSync(":memory:")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .all() as Array<{ name: string }>
@@ -28,6 +28,8 @@ test("空库依次跑全部迁移至 16（含精选 MCP marker）", () => {
   assert.ok(sColNames.includes("workflow_status"))
   assert.ok(sColNames.includes("goal"))
   assert.ok(sColNames.includes("recap"))
+  assert.ok(sColNames.includes("review_changed_files"))
+  assert.ok(sColNames.includes("review_completed_at"))
   assert.ok(sColNames.includes("acp_runtime_id"))
   assert.ok(sColNames.includes("acp_session_id"))
   assert.ok(sColNames.includes("forked_from"))
@@ -66,8 +68,8 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
     );
   `)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
   const mcpCols = db.prepare("PRAGMA table_info(mcp_servers)").all() as Array<{ name: string }>
   assert.ok(mcpCols.some((col) => col.name === "curated_preset_id"))
   const runCols = db.prepare("PRAGMA table_info(runs)").all() as Array<{ name: string }>
@@ -79,6 +81,10 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
   assert.ok(approvalNames.includes("sdk_approved"))
   assert.ok(approvalNames.includes("request_args"))
   assert.ok(approvalNames.includes("sdk_approval_id"))
+  const sessionCols = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>
+  const sessionNames = sessionCols.map((col) => col.name)
+  assert.ok(sessionNames.includes("review_changed_files"))
+  assert.ok(sessionNames.includes("review_completed_at"))
   const indexes = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'approvals_sdk_identity'")
     .all() as Array<{ name: string }>

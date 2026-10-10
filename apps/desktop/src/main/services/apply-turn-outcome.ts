@@ -6,7 +6,9 @@ import type { TurnOutcome } from "@enjoy-agents/ipc-contract"
 import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import type { ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
+import { persistSessionReview } from "./session-review-persist.ts"
 import { shouldWriteSessionWorkflow, stickyTurnOutcome } from "./session-workflow-sticky"
+import { reviewFilesFromTools } from "./turn-changed-files.ts"
 
 export { shouldWriteSessionWorkflow, stickyTurnOutcome }
 
@@ -14,14 +16,22 @@ export function turnOutcomeForRun(
   run: Pick<ActiveRun, "tools" | "input">,
   ended: "end" | "error" | "abort" | "archive"
 ): TurnOutcome {
-  return stickyTurnOutcome(
+  const base = stickyTurnOutcome(
     decideTurnOutcome({ ended, tools: run.tools }),
     readSessionWorkflow(run.input.sessionId)
   )
+  if (base.workflow !== "needs_review") return base
+  const changedFiles = reviewFilesFromTools(run.tools)
+  return {
+    ...base,
+    ...(changedFiles ? { changedFiles } : {}),
+    completedAt: new Date().toISOString()
+  }
 }
 
-/** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。 */
+/** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。先写改动文件，再改工单态。 */
 export function persistTurnWorkflow(sessionId: string | undefined, turn: TurnOutcome): void {
+  persistSessionReview(sessionId, turn)
   persistSessionWorkflow(sessionId, turn.workflow)
 }
 

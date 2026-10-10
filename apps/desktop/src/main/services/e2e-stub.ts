@@ -11,6 +11,9 @@
  * 终端可点链接夹具（给 luna 验悬停）：
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
+ *
+ * 首发失败夹具（luna 录屏）：`ENJOY_E2E_SEND=unreachable|rejected|forbidden|billing`
+ * 走真实 classify / persist，闸同 seed（stub + 未打包 + 隔离 userData）。
  */
 import type { ModelMessage } from "ai"
 import { mkdir, writeFile } from "node:fs/promises"
@@ -24,6 +27,7 @@ import {
   verySlowHead,
   verySlowTail
 } from "./e2e-stub-slow.ts"
+import { e2eSendFixture, e2eSendFixtureError } from "./e2e-send-fixture.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
@@ -169,10 +173,12 @@ export async function writeStubApprovedFile(
 export async function* createE2eStubStream(
   messages: ModelMessage[],
   signal: AbortSignal,
-  opts?: { packaged?: boolean }
+  opts?: { packaged?: boolean; env?: NodeJS.ProcessEnv; userData?: string }
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  const sendFail = e2eSendFixture(opts?.env ?? process.env, opts?.packaged === true, opts?.userData)
+  if (sendFail) throw e2eSendFixtureError(sendFail)
   if (shouldFailStubStore(prompt, opts?.packaged === true)) {
     throw new Error("INTERNAL_STORE_ERROR")
   }

@@ -12,6 +12,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
+import { ChatSendErrorCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
@@ -30,6 +31,7 @@ export type StreamPatch = {
   runId?: string | null
   error?: string | null
   notice?: string | null
+  composer?: string
   /** 消息还没回灌：先挂住，applySessionHydrate 后再折。 */
   heldResolved?: StreamEvent & { type: "approval.resolved" }
 }
@@ -103,7 +105,14 @@ function applyTerminalEvent(
         notice: CATCH_UP_APPROVAL_TIMEOUT
       }
     }
-    return { messages: finalizeRun(messages), running: false, error: event.message }
+    const code = chatSendErrorCodeOf(event)
+    const lastUser = [...messages].reverse().find((item) => item.role === "user")
+    return {
+      messages: finalizeRun(messages),
+      running: false,
+      error: code ?? event.message,
+      ...(code && lastUser?.content ? { composer: lastUser.content } : {})
+    }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
 }
@@ -293,6 +302,13 @@ function attachAssistant(
   }
   messages.push(created)
   return created
+}
+
+function chatSendErrorCodeOf(event: { code?: string; message: string }): string | null {
+  const fromCode = ChatSendErrorCode.safeParse(event.code)
+  if (fromCode.success) return fromCode.data
+  const fromMessage = ChatSendErrorCode.safeParse(event.message)
+  return fromMessage.success ? fromMessage.data : null
 }
 
 function finalizeRun(messages: ThreadMessage[], opts?: { aborted?: boolean }): ThreadMessage[] {

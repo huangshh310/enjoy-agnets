@@ -14,7 +14,11 @@ import {
   NEED_CLI_OUTDATED,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
+  CREDENTIAL_INVALID,
   NO_CHAT_ROUTE,
+  PROVIDER_BILLING,
+  PROVIDER_FORBIDDEN,
+  PROVIDER_UNREACHABLE,
   ACP_RESUME_FALLBACK,
   NEED_REMOTE_CONNECTED,
   RESTORE_NO_MATCHING,
@@ -27,6 +31,15 @@ test("402 / spend / credit 走 L4，不并进泛化限流", () => {
   assert.equal(classifyThreadError("You've hit your spend limit"), "credit")
   assert.equal(classifyThreadError("insufficient credits on this plan"), "credit")
   assert.equal(classifyThreadError("quota exceeded for included usage"), "credit")
+})
+
+test("有结构化码时 provider_billing 优先，正文额度只是无码回落", () => {
+  assert.equal(
+    classifyThreadError("quota exceeded for included usage", PROVIDER_BILLING),
+    "provider_billing"
+  )
+  assert.equal(classifyThreadError("quota exceeded for included usage"), "credit")
+  assert.notEqual(classifyThreadError("quota exceeded", PROVIDER_BILLING), "credit")
 })
 
 test("429 才是速率限制", () => {
@@ -69,6 +82,14 @@ test("ACP 未登录不是可重试供应商错误", () => {
     "auth"
   )
   assert.equal(classifyThreadError(NO_CHAT_ROUTE), "no_chat_route")
+  assert.equal(classifyThreadError(CREDENTIAL_INVALID), "credential_invalid")
+  assert.equal(classifyThreadError(PROVIDER_FORBIDDEN), "provider_forbidden")
+  assert.equal(classifyThreadError(PROVIDER_BILLING), "provider_billing")
+  assert.notEqual(classifyThreadError(PROVIDER_FORBIDDEN), "credential_invalid")
+  assert.notEqual(classifyThreadError(PROVIDER_BILLING), "credit")
+  assert.equal(classifyThreadError(PROVIDER_UNREACHABLE), "provider_unreachable")
+  assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "no_chat_route")
+  assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "generic")
   assert.equal(
     classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
     "no_chat_route"
