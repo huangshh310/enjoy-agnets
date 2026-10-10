@@ -3,10 +3,20 @@
  */
 import { useChatStore } from "../stores/chat-store"
 
+export function composerInputEl(): HTMLTextAreaElement | null {
+  if (typeof document === "undefined") return null
+  return document.querySelector('[data-testid="composer-input"]') as HTMLTextAreaElement | null
+}
+
+/** 发送清稿后立刻对齐 DOM，避免受控框还没重绘时 flush 把旧字写回 store。 */
+export function syncComposerDom(value: string): void {
+  const el = composerInputEl()
+  if (el && el.value !== value) el.value = value
+}
+
 export function flushComposerDomToStore(): string {
   const store = useChatStore.getState()
-  if (typeof document === "undefined") return store.composer
-  const el = document.querySelector('[data-testid="composer-input"]') as HTMLTextAreaElement | null
+  const el = composerInputEl()
   const fromDom = el?.value ?? store.composer
   if (fromDom !== store.composer) store.setComposer(fromDom)
   return fromDom

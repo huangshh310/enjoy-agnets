@@ -3,6 +3,7 @@
  * 二次 Enter 替换队列；还文与已键入合并；成功只清已发出的正文。
  */
 import { useChatStore } from "../stores/chat-store"
+import { syncComposerDom } from "./composer-dom"
 import {
   listComposerAssets,
   setComposerAssets,
@@ -58,8 +59,8 @@ export function remainingComposerAfterSend(sent: string, current: string): strin
 export function clearSentComposerText(sent: string): void {
   const store = useChatStore.getState()
   const next = remainingComposerAfterSend(sent, store.composer)
-  if (next === store.composer) return
-  store.setComposer(next)
+  if (next !== store.composer) store.setComposer(next)
+  syncComposerDom(next)
   if (!next && store.sessionId) store.clearSessionDraft(store.sessionId)
 }
 

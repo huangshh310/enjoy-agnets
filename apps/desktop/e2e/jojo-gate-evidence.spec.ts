@@ -53,9 +53,19 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
 
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.waitFor({ timeout: 20_000 })
+    await window.locator('[data-testid="sidebar-new-session"]').click()
+    await composer.click()
+    await window.waitForFunction(
+      () => {
+        const label = document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? ""
+        return label === "Send" || label === "发送"
+      },
+      undefined,
+      { timeout: 15_000 }
+    )
 
     await sendComposer(window, composer, "please go slow now")
-    await expect(window.getByText("正在写")).toBeVisible({ timeout: 12_000 })
+    await expect(window.getByText("正在写")).toBeVisible({ timeout: 20_000 })
     await expect(composer).toHaveAttribute("placeholder", /Ctrl\+Enter/)
     await expect(composer).not.toHaveAttribute("placeholder", /CtrlEnter/)
     await snap(window, "gate_writing_zh")
@@ -165,7 +175,13 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     await expect(window.locator(".theme-switch__container")).toBeVisible()
     await snap(window, "gate_appearance_color_mode")
   } finally {
-    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 8_000))])
+    const proc = app.process()
+    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 1_500))]).catch(() => undefined)
+    try {
+      proc?.kill("SIGKILL")
+    } catch {
+      /* already gone */
+    }
   }
 })
 

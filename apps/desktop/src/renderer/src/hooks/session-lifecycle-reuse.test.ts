@@ -22,8 +22,12 @@ test("创建完成不得清空正在打的字，也不得无 Enter 就发", () =
 
 test("发送成功一律按已发正文清输入，禁止只清 prepared 路径", () => {
   const send = readFileSync(new URL("./runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
+  const queue = readFileSync(new URL("./queue-composer-send.ts", import.meta.url), "utf8")
+  const draft = readFileSync(new URL("./runtime-interact/composer-draft.ts", import.meta.url), "utf8")
   assert.match(send, /clearSentComposerText\(payload\.content\)/)
   assert.doesNotMatch(send, /if \(prepared\) clearSentComposerText/)
+  assert.match(queue, /syncComposerDom\(next\)/)
+  assert.match(draft, /syncComposerDom\(""\)/)
 })
 
 test("归档调用容忍可选 deniedApprovals，不改 IPC", () => {

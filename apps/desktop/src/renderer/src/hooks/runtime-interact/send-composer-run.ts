@@ -88,15 +88,24 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
-  const payload = await resolveSendPayload(prepared)
-  if (!payload) {
+  try {
+    const payload = await resolveSendPayload(prepared)
+    if (!payload) {
+      store.setRunning(false)
+      store.setPreparingHint(false)
+      return
+    }
+    const messages = beginOptimisticTurn(store, payload)
+    clearSentComposerText(payload.content)
+    await launchComposerRun(store, payload, messages)
+  } catch (error) {
     store.setRunning(false)
     store.setPreparingHint(false)
-    return
+    store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
+    if (prepared?.content) {
+      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+    }
   }
-  const messages = beginOptimisticTurn(store, payload)
-  clearSentComposerText(payload.content)
-  await launchComposerRun(store, payload, messages)
 }
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
