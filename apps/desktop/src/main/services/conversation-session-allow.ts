@@ -1,6 +1,7 @@
 /**
  * 本会话允许（非 desktop_act）：进程内表，按 Enjoy sessionId + runtimeId。
  * 不落盘；归档 / 删除 / 截断 / regenerate / edit-and-resend / 进程退出才清。重启后空。
+ * 水位（授权时最后一条消息 id + 条数）是截断真源；clearSessionAllow 只是加紧信号。
  * sessionId 不得含 `::`。找不到 MCP 服务器不记。写入类撤销整组。
  * 只有 user 开跑才种子写盘 / bash；心跳 / 自动化 / 补跑只吃 desktop 表。
  */
@@ -9,6 +10,12 @@ import {
   commandFromToolInput,
   writeThroughDesktopActSessionAllow
 } from "@enjoy-agents/agent-core"
+import {
+  resetAllSessionAllowWatermarks,
+  resetSessionAllowWatermark,
+  sessionAllowHistoryLooksTruncated,
+  stampSessionAllowWatermark
+} from "./conversation-session-allow-history.ts"
 import {
   desktopActNeedsSecondConfirm,
   desktopGrantShouldPersist,
@@ -138,6 +145,7 @@ export function grantConversationToolAllow(sessionId: string, toolName: string, 
   const slot = bucket(sid, runtimeId)
   if (!slot) return
   lruSet(slot.toolNames, name, {}, MAX_TOOLS)
+  stampSessionAllowWatermark(sid)
 }
 
 export function grantConversationBashPrefix(sessionId: string, prefix: string, runtimeId?: string): void {
@@ -147,6 +155,7 @@ export function grantConversationBashPrefix(sessionId: string, prefix: string, r
   const slot = bucket(sid, runtimeId)
   if (!slot) return
   lruSet(slot.bashPrefixes, value, true, MAX_PREFIXES)
+  stampSessionAllowWatermark(sid)
 }
 
 export function grantConversationMcpAllow(
@@ -162,14 +171,31 @@ export function grantConversationMcpAllow(
   const slot = bucket(sid, runtimeId)
   if (!slot) return
   lruSet(slot.toolNames, name, { fingerprint: fp }, MAX_TOOLS)
+  stampSessionAllowWatermark(sid)
 }
 
-/** regenerate / edit-and-resend 经 agent.run 清表。 */
+/**
+ * 种子前对账。旗标只是加紧信号；水位对库才是真源。
+ * 水位消息没了、条数变少、或读不到库：清表。拿不准就清。
+ */
 export function applyAgentRunSessionAllowReset(input: {
   sessionId: string
   clearSessionAllow?: boolean
 }): void {
-  if (input.clearSessionAllow) clearConversationSessionAllow(input.sessionId)
+  if (input.clearSessionAllow) {
+    clearConversationSessionAllow(input.sessionId)
+    return
+  }
+  if (!sessionHasAllowEntries(input.sessionId)) return
+  if (sessionAllowHistoryLooksTruncated(input.sessionId)) {
+    clearConversationSessionAllow(input.sessionId)
+  }
+}
+
+function sessionHasAllowEntries(sessionId: string): boolean {
+  return bucketsForSession(sessionId).some(
+    ({ bucket }) => bucket.toolNames.size > 0 || bucket.bashPrefixes.size > 0
+  )
 }
 
 /** 删除 / 归档 / 截断该对话时丢掉所有引擎桶。 */
@@ -182,10 +208,12 @@ export function clearConversationSessionAllow(sessionId: string): void {
   for (const key of keys) {
     if (key === sid || key.startsWith(prefix)) conversationSessionAllow.delete(key)
   }
+  resetSessionAllowWatermark(sid)
 }
 
 export function clearAllConversationSessionAllows(): void {
   conversationSessionAllow.clear()
+  resetAllSessionAllowWatermarks()
 }
 
 export function conversationSessionAllowSize(): number {

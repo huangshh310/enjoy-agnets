@@ -81,6 +81,7 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 
   const assetIds = (userMessage.assets ?? []).map((a) => a.assetId)
   const history = truncatedMessages.map((m) => ({
+    id: m.id,
     role: m.role,
     content: m.content,
     reasoning: m.reasoning
@@ -151,6 +152,7 @@ export async function editAndResendUserTurn(
 
   const assetIds = (oldUserMsg.assets ?? []).map((a) => a.assetId)
   const history = truncatedMessages.map((m) => ({
+    id: m.id,
     role: m.role,
     content: m.content,
     reasoning: m.reasoning
@@ -171,7 +173,12 @@ async function startTurnIpc(
   store: ChatStore,
   runKind: ReturnType<typeof composerRunKind>,
   prompt: string,
-  history: Array<{ role: ChatStore["messages"][number]["role"]; content: string; reasoning?: string }>,
+  history: Array<{
+    id?: string
+    role: ChatStore["messages"][number]["role"]
+    content: string
+    reasoning?: string
+  }>,
   assetIds: string[]
 ) {
   if (runKind === "image" || runKind === "video") {
