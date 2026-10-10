@@ -13,6 +13,7 @@ import { AGENT_TOOLS_CHANNELS, registerAgentToolsIpc } from "./ipc-agent-tools"
 import { APP_UPDATE_CHANNELS, registerAppUpdateIpc } from "./ipc-app-update"
 import { BUILTIN_TOOLS_CHANNELS, registerBuiltinToolsIpc } from "./ipc-builtin-tools"
 import { APPSNAP_CHANNELS, registerAppsnapIpc, unregisterAppsnapIpc } from "./ipc-appsnap"
+import { CHAT_READINESS_CHANNELS, registerChatReadinessIpc } from "./ipc-chat-readiness"
 import { handleCaptionDoubleClick, queryIsMaximized, WM_NCLBUTTONDBLCLK } from "./services/window-maximize"
 
 const CHANNELS = [
@@ -26,7 +27,8 @@ const CHANNELS = [
   ...AGENT_TOOLS_CHANNELS,
   ...APP_UPDATE_CHANNELS,
   ...BUILTIN_TOOLS_CHANNELS,
-  ...APPSNAP_CHANNELS
+  ...APPSNAP_CHANNELS,
+  ...CHAT_READINESS_CHANNELS
 ] as const
 
 let ipcRegistered = false
@@ -46,6 +48,7 @@ export function registerIpc(window: BrowserWindow) {
   registerAppsnapIpc()
   registerAiIpc()
   registerAppUpdateIpc()
+  registerChatReadinessIpc()
 }
 
 export function unregisterIpc() {

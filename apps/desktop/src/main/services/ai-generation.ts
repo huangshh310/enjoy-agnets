@@ -18,6 +18,8 @@ import { stampAndSend } from "./event-bus"
 import { createId } from "./ids"
 import { recordMetric } from "./telemetry-service"
 import { readPreferences } from "./preferences"
+import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { BACKGROUND_AGENT_TRUST } from "./agent-run-trust"
 import { abortAgent, resumeAgentRun, runAgent } from "./agent-runner"
 import { startE2eGeneration } from "./e2e-generate"
 import { isE2eStub } from "./e2e-stub"
@@ -37,15 +39,20 @@ async function startAgentKind(
   const messages = request.messages?.length
     ? request.messages
     : [{ role: "user" as const, content: request.prompt ?? "" }]
-  const started = await runAgent(window, {
-    sessionId: request.sessionId,
-    workspaceId: request.workspaceId,
-    modelId: request.modelId,
-    messages,
-    attachments: request.attachments
-  })
-  rememberGenerationRun({ runId: started.runId, request })
-  return { runId: started.runId, kind: "agent" as const }
+  const started = await runAgent(
+    window,
+    {
+      sessionId: request.sessionId,
+      workspaceId: request.workspaceId,
+      modelId: request.modelId,
+      messages,
+      attachments: request.attachments
+    },
+    BACKGROUND_AGENT_TRUST
+  )
+  const runId = requireAgentRunId(started)
+  rememberGenerationRun({ runId, request })
+  return { runId, kind: "agent" as const }
 }
 
 export async function startGeneration(window: BrowserWindow, raw: unknown) {
