@@ -87,7 +87,7 @@ export function AccountProfileSection() {
 
           <ProfileTokensAreaChart
             points={analytics.tokenTrendPoints}
-            totalTokensFormatted={`${analytics.summary.lifetimeTokens} tokens`}
+            totalTokensFormatted={analytics.summary.lifetimeTokens}
             growthRate={analytics.tokensGrowth}
           />
         </div>

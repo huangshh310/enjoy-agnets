@@ -58,9 +58,9 @@ export function ProfileKpiStrip({ summary, totalAgentsCount }: ProfileKpiStripPr
           <span className="text-title-2-semibold tracking-tight text-text-primary">
             {summary.lifetimeTokens}
           </span>
-          <span className="font-mono text-caption-2-regular text-text-tertiary">Tokens</span>
+          <span className="font-mono text-caption-2-regular text-text-tertiary">用量</span>
         </div>
-        <span className="mt-1 text-caption-2-regular text-text-tertiary">上下文总吞吐</span>
+        <span className="mt-1 text-caption-2-regular text-text-tertiary">累计对话用量</span>
       </div>
 
       {/* 3. 峰值 Token */}
@@ -90,7 +90,7 @@ export function ProfileKpiStrip({ summary, totalAgentsCount }: ProfileKpiStripPr
           </span>
           <span className="font-mono text-caption-2-regular text-text-tertiary">{t("pages.account.charts.runsUnit")}</span>
         </div>
-        <span className="mt-1 text-caption-2-regular text-text-tertiary">智能体调度执行</span>
+        <span className="mt-1 text-caption-2-regular text-text-tertiary">助手调度次数</span>
       </div>
 
       {/* 5. 最长连续天数 */}
