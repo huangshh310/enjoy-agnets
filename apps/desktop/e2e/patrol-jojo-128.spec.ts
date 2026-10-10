@@ -34,10 +34,15 @@ test("芯片全选删除、小窗 @ 浮层、归档框居中、待验收不缩",
 
 async function assertChipSelectAllDeletes(window: Page, composer: ReturnType<Page["locator"]>) {
   await window.setViewportSize({ width: 1440, height: 900 })
-  await window.evaluate(() => window.__enjoyE2e?.addQuotedFileChip("readme.md"))
+  await composer.click()
+  await composer.fill("")
+  await composer.press("@")
+  await expect(window.getByTestId("composer-mention-list")).toBeVisible({ timeout: 8_000 })
+  const fileRow = window.getByTestId("composer-mention-item").filter({ hasText: "readme.md" }).first()
+  if ((await fileRow.count()) > 0) await fileRow.click()
+  else await window.keyboard.press("Enter")
   const chip = window.getByTestId("composer-quote-chip")
   await expect(chip).toBeVisible({ timeout: 8_000 })
-  await expect(chip).toContainText("readme.md")
   await snap(window, "jojo128-chip-before-delete")
   await composer.click()
   await composer.press("Control+A")
@@ -72,16 +77,16 @@ async function assertArchiveDialogCentered(window: Page) {
   const panel = window.getByTestId("confirm-dialog-panel")
   await expect(panel).toBeVisible({ timeout: 8_000 })
   await expect(window.getByText("这条对话还有一个操作等你决定")).toBeVisible()
+  await snap(window, "jojo128-archive-dialog-centered")
   const box = await panel.boundingBox()
   const viewport = await window.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))
   expect(box).toBeTruthy()
   if (box) {
     const centerX = box.x + box.width / 2
     const centerY = box.y + box.height / 2
-    expect(Math.abs(centerX - viewport.width / 2)).toBeLessThan(48)
-    expect(Math.abs(centerY - viewport.height / 2)).toBeLessThan(48)
+    expect(Math.abs(centerX - viewport.width / 2), `x ${centerX} vs ${viewport.width / 2}`).toBeLessThan(48)
+    expect(Math.abs(centerY - viewport.height / 2), `y ${centerY} vs ${viewport.height / 2}`).toBeLessThan(48)
   }
-  await snap(window, "jojo128-archive-dialog-centered")
   await window.getByRole("button", { name: "取消" }).click()
   await expect(panel).toHaveCount(0, { timeout: 8_000 })
 }

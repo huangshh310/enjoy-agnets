@@ -63,6 +63,18 @@ export function ConfirmDialog({
         data-testid="confirm-dialog"
         showCloseButton={false}
         overlayClassName={cx(SETTINGS_DRAWER_Z_CLASS.modal, "fixed inset-0")}
+        style={{
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          transform: "none",
+          width: "100%",
+          maxWidth: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
         className={cx(
           SETTINGS_DRAWER_Z_CLASS.modal,
           "fixed inset-0 left-0 top-0 flex h-full w-full max-w-none translate-x-0 translate-y-0 items-center justify-center border-0 bg-transparent p-0 shadow-none"
