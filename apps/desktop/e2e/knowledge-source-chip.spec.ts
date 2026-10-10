@@ -135,9 +135,9 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
         timeout: 4_000
       })
       .toBe("files")
-    await expect(window.locator('[data-testid="source-file-path"]')).toContainText("readme.md")
-    await expect(window.locator('[data-testid="source-file-view-mode"]')).toContainText("查看文件")
-    const preview = window.locator('[data-testid="source-file-preview"]')
+    await expect(window.locator('[data-testid="source-file-path"]').first()).toContainText("readme.md")
+    await expect(window.locator('[data-testid="source-file-view-mode"]').first()).toContainText("查看文件")
+    const preview = window.locator('[data-testid="source-file-preview"]').first()
     await expect(preview).toBeVisible()
     await expect(preview).not.toContainText("@@")
     await expect(preview).not.toContainText("+")
@@ -213,8 +213,15 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await snapSheet(sheet, "knowledge-source-drawer-sheet-dark")
     const darkReadme = window.locator('[data-testid="turn-source-row"][data-path="readme.md"]')
     await darkReadme.click()
-    await expect(window.locator('[data-testid="source-file-preview"]')).toBeVisible({ timeout: 8_000 })
+    await expect(window.locator('[data-testid="source-file-preview"]').first()).toBeVisible({
+      timeout: 8_000
+    })
     await expect(window.locator('[data-testid="source-file-diff"]')).toHaveCount(0)
+    await expect
+      .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.paneKind ?? ""), {
+        timeout: 4_000
+      })
+      .toBe("files")
     await snapWindow(window, "knowledge-source-file-preview-dark")
   } finally {
     await closeApp(app)
