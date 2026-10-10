@@ -73,6 +73,7 @@ function denyMissingArgs(
     tools: ThreadToolCall[]
     transcript: RunTranscript
     onDecidedReplay?: (message: ModelMessage) => void
+    onCheckpoint?: () => void
     emit: (event: StreamEvent) => void
   },
   toolCallId: string,
