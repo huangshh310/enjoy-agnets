@@ -27,7 +27,9 @@ test("发送成功一律按已发正文清输入，禁止只清 prepared 路径"
   const send = readFileSync(new URL("./runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
   const queue = readFileSync(new URL("./queue-composer-send.ts", import.meta.url), "utf8")
   const draft = readFileSync(new URL("./runtime-interact/composer-draft.ts", import.meta.url), "utf8")
-  assert.match(send, /clearSentComposerText\(payload\.content\)/)
+  // 按输入框原文清，不按垫了引用 / 前缀的 content：否则对不上，React 回写的旧字被当成「还没发」塞回去。
+  assert.match(send, /clearSentComposerText\(payload\.typed\)/)
+  assert.doesNotMatch(send, /clearSentComposerText\(payload\.content\)/)
   assert.doesNotMatch(send, /if \(prepared\) clearSentComposerText/)
   assert.match(queue, /syncComposerDom\(next, true\)/)
   assert.match(draft, /syncComposerDom\("", true\)/)
