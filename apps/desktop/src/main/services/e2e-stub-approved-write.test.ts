@@ -9,6 +9,7 @@ import { test } from "node:test"
 import type { ModelMessage } from "ai"
 import {
   createE2eStubStream,
+  setE2eStubPackagedForTest,
   stubApprovedWriteResult,
   stubApprovedWriteToolCallId,
   STUB_WRITE_CONTENT,
@@ -66,8 +67,11 @@ test("允许后写入 ENJOY_E2E_WORKSPACE/e2e-stub.txt", async () => {
   const root = await mkdtemp(join(tmpdir(), "enjoy-stub-write-"))
   const previous = process.env.ENJOY_E2E_WORKSPACE
   const previousStub = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_E2E_WORKSPACE = root
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
+  setE2eStubPackagedForTest(false)
   try {
     const written = await writeStubApprovedFile()
     // macOS `/tmp` → `/private/tmp`；跟 jail 同一套 realpath，不要和 mkdtemp 字面路径比。
@@ -75,18 +79,27 @@ test("允许后写入 ENJOY_E2E_WORKSPACE/e2e-stub.txt", async () => {
     assert.ok(written)
     assert.equal(await readFile(written, "utf8"), STUB_WRITE_CONTENT)
   } finally {
+    setE2eStubPackagedForTest(undefined)
     process.env.ENJOY_E2E_WORKSPACE = previous
     process.env.ENJOY_E2E_STUB = previousStub
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
     await rm(root, { recursive: true, force: true })
   }
 })
 
 test("打包态不写 stub 盘", async () => {
   const previousStub = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
+  setE2eStubPackagedForTest(true)
   try {
-    assert.equal(await writeStubApprovedFile("/tmp/not-used", true), null)
+    assert.equal(await writeStubApprovedFile("/tmp/not-used"), null)
   } finally {
+    setE2eStubPackagedForTest(undefined)
     process.env.ENJOY_E2E_STUB = previousStub
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
   }
 })

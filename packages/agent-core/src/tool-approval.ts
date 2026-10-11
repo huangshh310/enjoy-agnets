@@ -13,7 +13,11 @@ import {
   isMcpToolName,
   isWriteTypeToolName
 } from "@enjoy-agents/ipc-contract/tool-names"
-import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
+import {
+  commandFromToolInput,
+  sessionAllowsBash,
+  sessionAllowUsesBashTable
+} from "./policies/bash-prefix.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
 import { denyBareDesktopCoordApproval } from "./computer-use/desktop-act-honesty.ts"
 import {
@@ -32,8 +36,8 @@ export type ApprovalPolicy = {
   requireBashApproval: boolean
   requireCommitApproval: boolean
   sessionApprovedTools?: ReadonlySet<string>
-  /** 本会话放行的 bash 命令前缀（如 `git status`），不是整个 bash 工具。 */
-  sessionApprovedBashPrefixes?: readonly string[]
+  /** 本会话放行的 bash 整条命令（规范化后完全相同才放行，如 `git status`），不是前缀、也不是整个 bash 工具。 */
+  sessionApprovedBashCommands?: readonly string[]
   /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗 / 二次确认仍每次问。 */
   anyDesktopSession?: boolean
   /**
@@ -122,9 +126,10 @@ export function resolveToolApproval(
   if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) {
     return "user-approval"
   }
+  // 只有 bash 吃本会话命令表；code_mode 只允许一次，绝不按 command 匹配（脚本内容不在键里）。
   if (
-    BASH_SET.has(toolName) &&
-    sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashPrefixes)
+    sessionAllowUsesBashTable(toolName) &&
+    sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashCommands)
   ) {
     return "approved"
   }
@@ -180,6 +185,30 @@ function resolveMcpApproval(
   if (sessionAllows(toolName, policy.sessionApprovedTools)) return "approved"
   if (isMcpWriteToolName(toolName)) return "user-approval"
   return "not-applicable"
+}
+
+/**
+ * 只看会话表（工具名 / bash 整条命令 / desktop 会话），不看 prefs Auto / 持久簿。
+ * 给 tool / approval 事件的 `allowedBySession` 用。
+ */
+export function sessionTableAllowsTool(
+  toolName: string,
+  policy: ApprovalPolicy,
+  input?: unknown
+): boolean {
+  if (toolName === ASK_USER_QUESTIONS_TOOL || toolName === SET_SESSION_HEARTBEAT_TOOL) return false
+  if (toolName.startsWith("mcp_")) return sessionAllows(toolName, policy.sessionApprovedTools)
+  if (toolName === "desktop_act") {
+    const desktopInput = prepareDesktopActGateInput(input, policy.lookupDesktopObservation)
+    if (desktopActSkipsApproval(desktopInput) || desktopActAlwaysAsks(desktopInput)) return false
+    return sessionAllowsDesktopAct(desktopInput, policy)
+  }
+  if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) return false
+  if (BASH_SET.has(toolName)) {
+    if (!sessionAllowUsesBashTable(toolName)) return false
+    return sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashCommands)
+  }
+  return sessionAllows(toolName, policy.sessionApprovedTools)
 }
 
 function sessionAllows(toolName: string, session?: ReadonlySet<string>): boolean {

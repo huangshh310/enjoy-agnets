@@ -11,7 +11,6 @@ import {
   resolveHarnessAdapter,
   streamHarnessTurn
 } from "@enjoy-agents/agent-harness"
-import { app } from "electron"
 import { createE2eStubStream, isE2eStub } from "./e2e-stub"
 import { readHarnessSecret } from "./harness-secrets"
 import { captureOpenStreamPrompt } from "./inspect-prompt-service"
@@ -32,7 +31,7 @@ export async function openCodingStream(
   input: OpenCodingStreamInput
 ): Promise<OpenedCodingStream> {
   const policy = approvalPolicyFromPrefs(input)
-  if (isE2eStub(app.isPackaged)) return rememberOpened(input, openedE2eStub(input, policy))
+  if (isE2eStub()) return rememberOpened(input, openedE2eStub(input, policy))
   if (isAcpHostRuntime(input.runtimeId)) {
     return rememberOpened(input, await openedAcpStream(input))
   }
@@ -57,7 +56,6 @@ function openedE2eStub(
 ): OpenedCodingStream {
   return {
     stream: createE2eStubStream(input.messages, input.abortSignal, {
-      packaged: app.isPackaged,
       isToolApproved: (toolName, toolInput) =>
         resolveToolApproval(toolName, input.mode, policy, toolInput) === "approved"
     }),

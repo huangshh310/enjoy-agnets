@@ -21,6 +21,7 @@
       "@enjoy-agents/agent-core/diff": ["../../packages/agent-core/src/diff.ts"],
       "@enjoy-agents/providers/presets": ["../../packages/providers/src/presets.ts"],
       "@enjoy-agents/providers/capabilities": ["../../packages/providers/src/capabilities/catalog.ts"],
+      "@enjoy-agents/ipc-contract/bash-prefix": ["../../packages/ipc-contract/src/bash-prefix.ts"],
       "@enjoy-agents/ipc-contract/estimated-cost": ["../../packages/ipc-contract/src/estimated-cost.ts"],
       "@enjoy-agents/ipc-contract/chat-readiness": ["../../packages/ipc-contract/src/chat-readiness.ts"],
       "@enjoy-agents/ipc-contract/agent-tools": ["../../packages/ipc-contract/src/agent-tools.ts"],

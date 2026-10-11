@@ -10,7 +10,11 @@ import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
 import { createId } from "./ids"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
-import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { applyAgentRunSessionAllowReset } from "./conversation-session-allow"
+import { applyExplicitSessionTruncate } from "./session-truncate"
+import { emitEvent, getActiveRun } from "./agent-run-state"
+import { holdRunThenPersistUser, outgoingUserIdConflict } from "./agent-run-hold"
+import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import {
@@ -32,6 +36,7 @@ import { getWorkspace } from "./workspace"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { peekCommandReceipt, rememberCommandReceipt } from "./command-receipts"
 import {
+  stampForegroundUserOrigin,
   stripUntrustedAutomationFlags,
   trustedAutomationFlags,
   type TrustedRunAgentOptions
@@ -51,7 +56,8 @@ export async function runAgent(
   trust: TrustedRunAgentOptions = {}
 ) {
   const parsed = RunAgentInput.parse(rawInput)
-  const input = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
+  const stripped = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
+  const input = stampForegroundUserOrigin(stripped, trust)
   return beginAgentRun(window, input, {
     persistUser: input.persistUser !== false,
     rememberMru: trust.rememberMru
@@ -173,25 +179,64 @@ async function beginAgentRun(
     if (existing) return { ok: true, runId: existing }
   }
   const runId = options.runId ?? createId("run")
+  const lastUser = lastOutgoingUser(input)
+  // leo 小修 2：用户句 id 已属别的会话就别开跑（不清允许、不截断、不挂 run）。
+  if (options.persistUser && outgoingUserIdConflict(input.sessionId, lastUser?.id)) {
+    return { ok: false, code: MESSAGE_ID_SESSION_MISMATCH }
+  }
+  applyAgentRunSessionAllowReset({
+    sessionId: input.sessionId,
+    clearSessionAllow: input.clearSessionAllow,
+    incomingMessageCount: input.messages.length
+  })
+  if (!options.runId && input.truncateAfterMessageId && input.expectedTailIds) {
+    const cut = applyExplicitSessionTruncate({
+      sessionId: input.sessionId,
+      afterMessageId: input.truncateAfterMessageId,
+      expectedTailIds: input.expectedTailIds,
+      reason: "agent.run",
+      persistUser:
+        options.persistUser && lastUser && !isTodoContinueUserMessage(lastUser.content)
+          ? {
+              content: lastUser.content,
+              messageId: lastUser.id,
+              attached: metasFromAssetIds(input.attachments)
+            }
+          : undefined
+    })
+    if (!cut.ok) return { ok: false, code: cut.code === "TRUNCATE_MESSAGE_NOT_FOUND" ? "TRUNCATE_STALE_SNAPSHOT" : cut.code }
+  }
   const modelMessages = await modelMessagesForStart(
     input,
     options.resumeMessages,
     secret?.contextWindow
   )
-  holdAgentRun({
-    runId,
-    window,
-    input,
-    workspaceRoot: workspace.rootPath,
-    secret,
-    messages: modelMessages
-  })
-  if (options.runId) hydrateActiveRunUsage(runId)
+  // 挂 run 后紧接着落用户句；失败就撤 run 回稳定码，不留下永远 RUN_ACTIVE 的会话。
+  const held = holdRunThenPersistUser(
+    {
+      runId,
+      window,
+      input,
+      workspaceRoot: workspace.rootPath,
+      secret,
+      messages: modelMessages
+    },
+    () => {
+      if (options.runId || !input.truncateAfterMessageId) {
+        persistOutgoingUser(input, options.persistUser)
+      }
+    }
+  )
+  if (!held.ok) return held
+  if (options.runId) {
+    hydrateActiveRunUsage(runId)
+    const run = getActiveRun(runId)
+    if (run) run.reaskReason = "restore"
+  }
   if (input.commandId) rememberCommandReceipt(input.commandId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }
-  persistOutgoingUser(input, options.persistUser)
   emitRunStart(window, input, runId, options.promptEcho)
   if (!options.resumeMessages && workspace.kind !== "ssh") {
     void recordEnjoyCheckpoint(workspace.rootPath, {

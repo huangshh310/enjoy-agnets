@@ -6,6 +6,7 @@ import { AutomationRunSource } from "./automations-missed.ts"
 import { DesktopMentionBias } from "./desktop-mention-apps"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 import { AgentRunOrigin } from "./agent-run-origin.ts"
+import { TruncateMessageId, TruncateTailIds } from "./session-truncate.ts"
 
 export {
   coerceAgentRunOrigin,
@@ -57,8 +58,17 @@ export const RunAgentInput = z.object({
   /** 补跑：审批闸丢掉 desktop_act:*，按应用会话放行与簿照常。 */
   denyAnyDesktop: z.boolean().optional(),
   /** 待审批 Dock / 通知用来源句。补跑必带。 */
-  automationSource: AutomationRunSource.optional()
-})
+  automationSource: AutomationRunSource.optional(),
+  /** 加紧信号。截断真源是 main 水位对库；漏旗标仍应清表。 */
+  clearSessionAllow: z.boolean().optional(),
+  /** 显式截断：保留这条，删后面的尾巴。没有这两项时 agent.run 绝不删消息。 */
+  truncateAfterMessageId: TruncateMessageId.optional(),
+  expectedTailIds: TruncateTailIds.optional()
+}).refine(
+  (value) =>
+    (value.truncateAfterMessageId == null) === (value.expectedTailIds == null),
+  { message: "truncateAfterMessageId and expectedTailIds must be sent together" }
+)
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 
 export const AbortAgentInput = z.object({

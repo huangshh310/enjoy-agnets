@@ -192,6 +192,231 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
   }
 })
 
+test("命令夹具：本会话允许 ls 后 ls 不弹卡、ls -la 再弹卡；run code / long / pipe 只允许一次", async () => {
+  const app = await launchStubApp("# e2e shell fixtures\n", 240_000, { lang: "zh" })
+  if (!app) return
+  try {
+    const window = await readyWindow(app)
+    await window.setViewportSize({ width: 1440, height: 900 })
+    const composer = window.locator('[data-testid="composer-input"]')
+    const allowOnce = window.locator('[data-testid="approval-allow"]')
+    const allowSession = window.locator('[data-testid="approval-session"]')
+    const alwaysApp = window.locator('[data-testid="approval-always-app"]')
+
+    await sendComposer(window, composer, "run bash ls")
+    await expect(allowSession).toBeVisible({ timeout: 20_000 })
+    await allowSession.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "ls", 1)
+
+    // 同一条完全相同的命令：不弹卡直接（假）执行。
+    await sendComposer(window, composer, "run bash ls")
+    await waitRanCount(window, "ls", 2)
+    await expect(allowOnce).toHaveCount(0)
+    await expect(allowSession).toHaveCount(0)
+
+    // 同前缀不同命令：仍要问。
+    await sendComposer(window, composer, "run bash ls -la")
+    await expect(allowSession).toBeVisible({ timeout: 20_000 })
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "lsla", 1)
+
+    for (const [trigger, key] of [
+      ["run code", "code"],
+      ["run long", "long"],
+      ["run pipe", "pipe"]
+    ] as const) {
+      await sendComposer(window, composer, trigger)
+      await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+      await expect(allowSession).toHaveCount(0)
+      await expect(alwaysApp).toHaveCount(0)
+      await allowOnce.click({ timeout: 8_000, force: true })
+      await waitRanCount(window, key, 1)
+    }
+  } finally {
+    await closeApp(app)
+  }
+})
+
+test("run long 命令卡：默认与 733×480 下拒绝 / 运行与 Composer 都在窗口内，展开 / 收起可用", async () => {
+  const app = await launchStubApp("# e2e long command card\n", 240_000, { lang: "zh" })
+  if (!app) return
+  try {
+    const window = await readyWindow(app)
+    const composer = window.locator('[data-testid="composer-input"]')
+    const allowOnce = window.locator('[data-testid="approval-allow"]')
+    const deny = window.locator('[data-testid="approval-deny"]')
+    const command = window.locator('[data-testid="approval-command"]')
+    const toggle = window.locator('[data-testid="approval-command-toggle"]')
+
+    // 短命令：不出展开链接。
+    await sendComposer(window, composer, "run bash ls")
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expect(command).toBeVisible()
+    await expect(toggle).toHaveCount(0)
+    await shot(window, "run-bash-ls-light")
+    await forceStubTheme(window, "dark")
+    await shot(window, "run-bash-ls-dark")
+    await forceStubTheme(window, "light")
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "ls", 1)
+
+    await sendComposer(window, composer, "run long")
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expect(toggle).toHaveText("展开全部（共 4205 字）")
+    await expect(command).toHaveAttribute("data-expanded", "false")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await expectCommandReadable(window, "run long default collapsed")
+    await shot(window, "run-long-light")
+    await shot(window, "large-runlong")
+
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "true")
+    await expect(toggle).toHaveText("收起")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await shot(window, "run-long-expanded-light")
+    await forceStubTheme(window, "dark")
+    await shot(window, "run-long-expanded-dark")
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "false")
+    await shot(window, "run-long-dark")
+    await forceStubTheme(window, "light")
+
+    await window.setViewportSize({ width: 733, height: 480 })
+    await shot(window, "small-runlong-collapsed")
+    await logBoxes(window, "run long 733x480 collapsed")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    // 小窗：命令区不被压缩（至少 2 行），「展开全部」不滚动就看得见，同时按钮可见。
+    await expectCommandReadable(window, "run long 733x480 collapsed")
+    await expectUnclipped(toggle)
+    await expectUnclipped(allowOnce)
+    await expectUnclipped(deny)
+    await shot(window, "small-runlong-collapsed")
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "true")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await expectCommandReadable(window, "run long 733x480 expanded")
+    await expectUnclipped(allowOnce)
+    await shot(window, "small-runlong-expanded")
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "false")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await expectUnclipped(toggle)
+
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "long", 1)
+    await sendComposer(window, composer, "run bash ls")
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await expectCommandReadable(window, "run bash ls 733x480")
+    await expectUnclipped(allowOnce)
+    await expectUnclipped(deny)
+    await expectUnclipped(window.locator('[data-testid="approval-session"]'))
+    await shot(window, "small-bashls")
+    // 大窗再看一眼 run bash ls。
+    await window.setViewportSize({ width: 1280, height: 800 })
+    await expectCommandReadable(window, "run bash ls 1280x800")
+    await shot(window, "large-bashls")
+  } finally {
+    await closeApp(app)
+  }
+})
+
+/** 命令区可读：可见高度 ≥ min(实际行数, 2) × 行高，且上下沿都没被裁（elementFromPoint 命中自己）。 */
+async function expectCommandReadable(window: Page, label: string) {
+  const pre = window.locator('[data-testid="approval-command"]')
+  await expect(pre).toBeVisible({ timeout: 10_000 })
+  const m = await pre.evaluate((el) => {
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight)
+    return { clientHeight: el.clientHeight, scrollHeight: el.scrollHeight, lineHeight }
+  })
+  const lines = Math.max(1, Math.round(m.scrollHeight / m.lineHeight))
+  console.log(`[command-area] ${label} ${JSON.stringify({ ...m, lines })}`)
+  expect(m.clientHeight).toBeGreaterThanOrEqual(Math.min(lines, 2) * m.lineHeight - 1)
+  await expectUnclipped(pre)
+}
+
+/** 调试与报告：Dock / 卡片 / 命令区 / 底栏 / Composer 的高度。 */
+async function logBoxes(window: Page, label: string) {
+  const boxes = await window.evaluate(() => {
+    const pick = (sel: string) => {
+      const el = document.querySelector(sel)
+      if (!el) return null
+      const r = el.getBoundingClientRect()
+      return { top: Math.round(r.top), height: Math.round(r.height) }
+    }
+    return {
+      viewport: innerHeight,
+      dock: pick('[data-testid="permission-dock"]'),
+      card: pick('[data-testid="permission-dock"] article'),
+      block: pick('[data-testid="approval-command-block"]'),
+      toggle: pick('[data-testid="approval-command-toggle"]'),
+      footer: pick('[data-testid="permission-dock"] footer'),
+      composer: pick('[data-testid="composer-input"]')
+    }
+  })
+  console.log(`[boxes] ${label} ${JSON.stringify(boxes)}`)
+}
+
+/** 不滚动就能看见：元素上沿与下沿处的 elementFromPoint 都落在它自己身上（没被滚动容器裁掉、没被盖住）。 */
+async function expectUnclipped(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).toBeVisible({ timeout: 10_000 })
+  await expect
+    .poll(() =>
+      locator.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        if (r.height < 1 || r.width < 1) return false
+        const x = r.left + Math.min(6, r.width / 2)
+        return [r.top + 1.5, r.bottom - 1.5].every((y) => {
+          const hit = document.elementFromPoint(x, y)
+          return Boolean(hit && (hit === el || el.contains(hit)))
+        })
+      })
+    )
+    .toBe(true)
+}
+
+/** 整个元素都在视口内（不是只露一角）。 */
+async function expectFullyInViewport(window: Page, locators: Array<ReturnType<Page["locator"]>>) {
+  const viewport = await window.evaluate(() => ({ width: innerWidth, height: innerHeight }))
+  for (const locator of locators) {
+    await expect(locator).toBeVisible({ timeout: 10_000 })
+    const box = await locator.boundingBox()
+    expect(box, "boundingBox").not.toBeNull()
+    if (!box) continue
+    expect(box.height).toBeGreaterThan(0)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 0.5)
+  }
+}
+
+/** 仅本机设 ENJOY_E2E_SHOTS_DIR 时截图给 luna；CI 不写盘。 */
+async function shot(window: Page, name: string) {
+  const dir = process.env.ENJOY_E2E_SHOTS_DIR
+  if (!dir) return
+  await window.waitForTimeout(250)
+  await window.screenshot({ path: join(dir, `${name}.png`) }).catch(() => undefined)
+}
+
+async function forceStubTheme(window: Page, theme: "light" | "dark") {
+  await window.evaluate((next) => {
+    document.documentElement.classList.toggle("dark", next === "dark")
+    document.documentElement.dataset.theme = next
+    window.dispatchEvent(new CustomEvent("boardui:theme-change", { detail: next }))
+  }, theme)
+}
+
+/** 数正文里 `stub-ok ran <key>`（\b 防 ls 吃到 lsla）。 */
+async function waitRanCount(window: Page, key: string, count: number) {
+  await window.waitForFunction(
+    ({ key, count }) =>
+      (document.body.innerText.match(new RegExp(`stub-ok ran ${key}\\b`, "g"))?.length ?? 0) >= count,
+    { key, count },
+    { timeout: 20_000 }
+  )
+}
+
 async function launchStubApp(
   readme: string,
   timeoutMs = 90_000,

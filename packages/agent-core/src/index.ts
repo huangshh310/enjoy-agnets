@@ -3,6 +3,7 @@ export type { CodingAgentOptions, StreamCodingAgentOptions } from "./coding-agen
 export { joinInstructions } from "./join-instructions";
 export {
   resolveToolApproval,
+  sessionTableAllowsTool,
   isExploreMutatingDeny,
   isMcpWriteToolName,
   mcpToolLeafName,
@@ -12,6 +13,7 @@ export {
   type HarnessApprovalSettings,
   type HarnessToolApprovalMap
 } from "./tool-approval";
+export { sessionAllowScopeFor } from "./policies/session-allow-scope";
 export { createCodingTools } from "./tools";
 export { SET_SESSION_HEARTBEAT_TOOL, type SessionHeartbeatRequest } from "./tools/session-heartbeat-name";
 export {
@@ -82,8 +84,9 @@ export { runDurableWorkflow, type DurableStep, type WorkflowCheckpoint } from ".
 export { orderWorkflowSteps, layerWorkflowSteps } from "./agents/workflow-graph";
 export { assertSandboxCommand, type SandboxPolicy } from "./policies/sandbox";
 export {
-  bashAllowPrefix,
+  bashAllowCommand,
   bashCommandHasUnsafeOperators,
+  bashCommandIsInterpreterStyle,
   sessionAllowsBash,
   commandFromToolInput
 } from "./policies/bash-prefix";

@@ -39,7 +39,7 @@ export type OpenCodingStreamInput = {
   thoughtLevel?: string
   fast?: boolean
   sessionApprovedTools: ReadonlySet<string>
-  sessionApprovedBashPrefixes?: readonly string[]
+  sessionApprovedBashCommands?: readonly string[]
   executePlan?: boolean
   /** Composer `@桌面` / `@应用` 偏置。Explore 开流仍不注册 desktop_*。 */
   desktopBias?: DesktopMentionBias
@@ -69,7 +69,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools,
-    sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
+    sessionApprovedBashCommands: input.sessionApprovedBashCommands,
     anyDesktopSession,
     desktopAlwaysAllowAppKeys: listDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys),
     lookupDesktopObservation: peekDesktopObservation,

@@ -1,7 +1,9 @@
 /**
- * 从某条用户消息重来：先还原该轮 baseline（失败则停），再截断 SQLite 对话。
- * ACP 禁止对话回滚。乐观气泡 id 必须与落库 id 相同。
+ * 从某条用户消息重来：先做截断预检（活 run / 尾巴对不上就停，不碰文件），再还原该轮 baseline（失败则停），
+ * 最后截断 SQLite 对话。ACP 禁止对话回滚。乐观气泡 id 必须与落库 id 相同。
+ * STALE 时只有刷新后尾巴与原名单完全相同才重试（truncate-retry.ts，leo MF-A）。
  */
+import { TRUNCATE_STALE_SNAPSHOT } from "@enjoy-agents/ipc-contract/session-truncate"
 import { supportsConversationRollback } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import {
   ListCheckpointsResult,
@@ -14,6 +16,9 @@ import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
 import { visibleUserText } from "../lib/user-message-text"
 import { useChatStore } from "../stores/chat-store"
+import { loadSession } from "./session-lifecycle"
+import { isTruncateRetryable } from "./truncate-notice"
+import { decideTruncateRetry } from "./truncate-retry"
 
 export type RewindResult =
   | { ok: true }
@@ -40,19 +45,28 @@ export async function rewindFromUserTurn(input: {
   const target = messages[index]
   if (!target || target.role !== "user") return { ok: false, code: "REWIND_MESSAGE_NOT_FOUND" }
 
+  const sessionId = store.sessionId
+  const sessionTitle = store.sessionTitle ?? ""
+  const expectedTailIds = messages.slice(index).map((message) => message.id)
+  const guarded = (dryRun: boolean) =>
+    truncateWithGuardedRetry({ sessionId, sessionTitle, messageId: target.id, expectedTailIds, dryRun })
+
   if (input.restoreFiles) {
+    // soft 4：活 run / 尾巴对不上先停，不能先改盘再发现截不了。
+    const precheck = await guarded(true)
+    if (precheck) return { ok: false, code: precheck }
     const files = await restoreTurnFiles(target.createdAt, messages, index, input.confirmDeleteUntracked)
     if (!files.ok) return files
   }
 
-  try {
-    await getIde().session.truncateFrom({ sessionId: store.sessionId, messageId: target.id })
-  } catch (error) {
-    return { ok: false, code: error instanceof Error ? error.message : "TRUNCATE_MESSAGE_NOT_FOUND" }
-  }
-  store.setMessages(messages.slice(0, index))
-  store.setComposer(visibleUserText(target.content) || target.content)
-  for (const asset of target.assets ?? []) {
+  const cut = await guarded(false)
+  if (cut) return { ok: false, code: cut }
+  const latest = useChatStore.getState()
+  const keepIndex = latest.messages.findIndex((message) => message.id === input.userMessageId)
+  const keep = keepIndex >= 0 ? latest.messages[keepIndex] : target
+  latest.setMessages(keepIndex >= 0 ? latest.messages.slice(0, keepIndex) : messages.slice(0, index))
+  latest.setComposer(visibleUserText(keep.content) || keep.content)
+  for (const asset of keep.assets ?? []) {
     queueComposerAsset({
       id: asset.assetId,
       name: asset.name,
@@ -100,6 +114,49 @@ async function restoreTurnFiles(
     queryClient.invalidateQueries({ queryKey: ["checkpoints", store.workspaceId] })
   ])
   return { ok: true }
+}
+
+/**
+ * 截断（或 dryRun 预检）。STALE：刷新，尾巴与原名单完全相同才带原名单重试一次；否则 TRUNCATE_TAIL_CHANGED。
+ * 返回 null 表示通过。
+ */
+async function truncateWithGuardedRetry(input: {
+  sessionId: string
+  sessionTitle: string
+  messageId: string
+  expectedTailIds: string[]
+  dryRun: boolean
+}): Promise<string | null> {
+  const call = () =>
+    getIde().session.truncateFrom({
+      sessionId: input.sessionId,
+      messageId: input.messageId,
+      expectedTailIds: input.expectedTailIds,
+      ...(input.dryRun ? { dryRun: true } : {})
+    })
+  try {
+    const firstCode = truncateBlockedCode(await call())
+    if (!firstCode) return null
+    if (!isTruncateRetryable(firstCode)) return firstCode
+    await loadSession(input.sessionId, input.sessionTitle)
+    const decision = decideTruncateRetry({
+      mode: "from",
+      anchorId: input.messageId,
+      expectedTailIds: input.expectedTailIds,
+      refreshedIds: useChatStore.getState().messages.map((message) => message.id)
+    })
+    if (!decision.retry) return decision.code
+    return truncateBlockedCode(await call())
+  } catch (error) {
+    return error instanceof Error ? error.message : "TRUNCATE_MESSAGE_NOT_FOUND"
+  }
+}
+
+function truncateBlockedCode(result: unknown): string | null {
+  if (result && typeof result === "object" && "ok" in result && (result as { ok?: unknown }).ok === false) {
+    return String((result as { code?: string }).code ?? TRUNCATE_STALE_SNAPSHOT)
+  }
+  return null
 }
 
 function nextUserCreatedAt(

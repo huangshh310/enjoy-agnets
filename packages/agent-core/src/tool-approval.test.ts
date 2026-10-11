@@ -5,8 +5,10 @@ import {
   isExploreMutatingDeny,
   isMcpWriteToolName,
   resolveToolApproval,
+  sessionTableAllowsTool,
   toHarnessApprovalSettings
 } from "./tool-approval.ts"
+import { sessionAllowScopeFor } from "./policies/session-allow-scope.ts"
 
 const REQUIRE_ALL = {
   requireWriteApproval: true,
@@ -228,7 +230,7 @@ test("Auto 下普通 bash 放行，高风险命令仍暂停", () => {
 })
 
 test("本会话放行 git push 后，force / +refspec / 管道仍要停", () => {
-  const policy = { ...REQUIRE_ALL, sessionApprovedBashPrefixes: ["git push"] }
+  const policy = { ...REQUIRE_ALL, sessionApprovedBashCommands: ["git push origin main"] }
   assert.equal(
     resolveToolApproval("bash", "agent", policy, { command: "git push origin main" }),
     "approved"
@@ -262,10 +264,14 @@ test("本会话放行 git push 后，force / +refspec / 管道仍要停", () => 
 })
 
 test("本会话放行 npm test 后，管道与命令替换仍要停", () => {
-  const policy = { ...REQUIRE_ALL, sessionApprovedBashPrefixes: ["npm test"] }
+  const policy = { ...REQUIRE_ALL, sessionApprovedBashCommands: ["npm test"] }
+  assert.equal(
+    resolveToolApproval("bash", "agent", policy, { command: "npm test" }),
+    "approved"
+  )
   assert.equal(
     resolveToolApproval("bash", "agent", policy, { command: "npm test src/a.ts" }),
-    "approved"
+    "user-approval"
   )
   assert.equal(
     resolveToolApproval("bash", "agent", policy, { command: "npm test && cat ~/.ssh/id_rsa" }),
@@ -285,11 +291,15 @@ test("本会话放行 npm test 后，管道与命令替换仍要停", () => {
   )
 })
 
-test("本会话 bash 只放行命令前缀，不是整个 bash 工具", () => {
-  const policy = { ...REQUIRE_ALL, sessionApprovedBashPrefixes: ["pnpm test"] }
+test("本会话 bash 只放行完全相同的命令，不是整个 bash 工具", () => {
+  const policy = { ...REQUIRE_ALL, sessionApprovedBashCommands: ["pnpm test"] }
+  assert.equal(
+    resolveToolApproval("bash", "agent", policy, { command: "pnpm test" }),
+    "approved"
+  )
   assert.equal(
     resolveToolApproval("bash", "agent", policy, { command: "pnpm test src/a.ts" }),
-    "approved"
+    "user-approval"
   )
   assert.equal(
     resolveToolApproval("bash", "agent", policy, { command: "git push" }),
@@ -309,6 +319,31 @@ test("会话放行 write 时，write_file / edit 一并放行", () => {
   assert.equal(resolveToolApproval("write", "agent", policy), "approved")
   assert.equal(resolveToolApproval("write_file", "agent", policy), "approved")
   assert.equal(resolveToolApproval("edit_file", "agent", policy), "approved")
+})
+
+test("sessionTableAllowsTool 只认会话表，不认 prefs Auto", () => {
+  const session = {
+    ...REQUIRE_ALL,
+    sessionApprovedTools: new Set(["write_file"]),
+    sessionApprovedBashCommands: ["git push origin main"]
+  }
+  assert.equal(sessionTableAllowsTool("write_file", session), true)
+  assert.equal(sessionTableAllowsTool("edit_file", session), true)
+  assert.equal(sessionTableAllowsTool("bash", session, { command: "git push origin main" }), true)
+  assert.equal(sessionTableAllowsTool("bash", session, { command: "bash -c 'whoami'" }), false)
+  assert.equal(sessionTableAllowsTool("write_file", AUTO_ALL), false)
+  assert.equal(sessionTableAllowsTool("read_file", session), false)
+  assert.deepEqual(sessionAllowScopeFor("write_file", session), { kind: "tool", toolName: "write_file" })
+  assert.deepEqual(sessionAllowScopeFor("bash", session, { command: "git push origin main" }), {
+    kind: "bash_command",
+    command: "git push origin main"
+  })
+  assert.equal(sessionAllowScopeFor("bash", session, { command: "git push origin dev" }), undefined)
+  assert.deepEqual(sessionAllowScopeFor("mcp_demo__edit", {
+    ...REQUIRE_ALL,
+    sessionApprovedTools: new Set(["mcp_demo__edit"])
+  }), { kind: "tool", toolName: "mcp_demo__edit" })
+  assert.equal(sessionAllowScopeFor("write_file", AUTO_ALL), undefined)
 })
 
 test("Ask 模式即使会话已放行也拒绝", () => {

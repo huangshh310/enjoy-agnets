@@ -1,6 +1,7 @@
 /**
  * 会话落库：消息写入（checkpoint 同 id 覆盖）、首轮自动改名、流式文本/思考累积。
  */
+import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
 import {
   absorbTextDelta,
   foldToolEvent,
@@ -14,6 +15,7 @@ import { formatOptimisticTitle, isDefaultSessionTitle } from "@enjoy-agents/ipc-
 import { deleteMessageParts, insertMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
+import { advanceSessionAllowWatermark } from "./conversation-session-allow-history.ts"
 
 export type RunTranscript = ThinkBuffer
 
@@ -57,16 +59,23 @@ export function persistMessage(
   role: string,
   content: string,
   parts?: UIMessagePart[],
-  messageId?: string
+  messageId?: string,
+  opts?: { inTransaction?: boolean }
 ): string {
   const now = Date.now()
   const db = getDatabase()
   const id = messageId ?? createId("msg")
+  const nested = opts?.inTransaction === true
 
-  db.exec("BEGIN IMMEDIATE;")
+  if (!nested) db.exec("BEGIN IMMEDIATE;")
   try {
-    if (messageId && messageExists(id)) {
-      db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(content, id)
+    const owner = messageId ? messageSessionId(id) : undefined
+    if (owner !== undefined && owner !== sessionId) {
+      // soft 5：同 id 落在别的会话，禁止覆盖内容或删它的 parts。
+      throw new Error(MESSAGE_ID_SESSION_MISMATCH)
+    }
+    if (owner === sessionId) {
+      db.prepare("UPDATE messages SET content = ? WHERE id = ? AND session_id = ?").run(content, id, sessionId)
       deleteMessageParts(db, id)
     } else {
       db.prepare(
@@ -86,16 +95,30 @@ export function persistMessage(
       }))
     )
     db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
-    db.exec("COMMIT;")
+    if (!nested) {
+      db.exec("COMMIT;")
+      advanceSessionAllowWatermark(sessionId)
+    }
     return id
   } catch (err) {
-    db.exec("ROLLBACK;")
+    if (!nested) db.exec("ROLLBACK;")
     throw err
   }
 }
 
-function messageExists(id: string): boolean {
-  return Boolean(getDatabase().prepare("SELECT 1 FROM messages WHERE id = ?").get(id))
+export { MESSAGE_ID_SESSION_MISMATCH }
+
+/** 这个 id 已落在别的会话（开跑前预检用；不存在或同会话都返回 false）。 */
+export function messageIdBelongsToOtherSession(sessionId: string, messageId: string): boolean {
+  const owner = messageSessionId(messageId)
+  return owner !== undefined && owner !== sessionId
+}
+
+function messageSessionId(id: string): string | undefined {
+  const row = getDatabase().prepare("SELECT session_id FROM messages WHERE id = ?").get(id) as
+    | { session_id: string }
+    | undefined
+  return row?.session_id
 }
 
 export function readMessageContent(messageId: string): string | undefined {

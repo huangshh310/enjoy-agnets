@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  TRUNCATE_RUN_ACTIVE,
+  TRUNCATE_STALE_SNAPSHOT
+} from "./session-truncate.ts"
+import {
   AgentRunResult,
   ChatReadiness,
   NO_CHAT_ROUTE,
@@ -198,6 +202,14 @@ test("agent.run 结果是 { ok, runId|code }；发送闸码在枚举里", () => 
   assert.deepEqual(AgentRunResult.parse({ ok: false, code: NO_CHAT_ROUTE }), {
     ok: false,
     code: NO_CHAT_ROUTE
+  })
+  assert.deepEqual(AgentRunResult.parse({ ok: false, code: TRUNCATE_STALE_SNAPSHOT }), {
+    ok: false,
+    code: TRUNCATE_STALE_SNAPSHOT
+  })
+  assert.deepEqual(AgentRunResult.parse({ ok: false, code: TRUNCATE_RUN_ACTIVE }), {
+    ok: false,
+    code: TRUNCATE_RUN_ACTIVE
   })
   assert.equal(requireAgentRunId({ ok: true, runId: "run_1" }), "run_1")
   assert.throws(() => requireAgentRunId({ ok: false, code: NO_CHAT_ROUTE }), /no_chat_route/)

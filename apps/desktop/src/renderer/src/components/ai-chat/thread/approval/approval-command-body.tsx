@@ -1,14 +1,30 @@
 /**
  * command 表面：工作目录 + 即将执行的 shell。
+ * 最多 4 行 + 渐隐；超过才出「展开全部（共 {n} 字）」，展开后最高 40% 会话区、区内滚动（luna #144）。
  */
+import { useCallback, useLayoutEffect, useState } from "react"
+import { useT } from "@renderer/i18n"
+import { estimateCommandOverflow, renderCommandBlock } from "./approval-command-collapse"
+
 export function ApprovalCommandBody({ cwd, command }: { cwd: string; command: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-lg bg-background-secondary-default px-3 py-2.5">
-      <p className="font-mono text-caption-2-regular text-text-tertiary">{cwd}</p>
-      <pre className="m-0 whitespace-pre-wrap break-words font-mono text-caption-1-regular leading-relaxed text-text-primary">
-        <span className="mr-1.5 select-none text-text-tertiary">$</span>
-        {command || "—"}
-      </pre>
-    </div>
-  )
+  const t = useT()
+  const [expanded, setExpanded] = useState(false)
+  const [overflowing, setOverflowing] = useState(() => estimateCommandOverflow(command))
+  const [pre, setPre] = useState<HTMLPreElement | null>(null)
+
+  useLayoutEffect(() => {
+    setExpanded(false)
+  }, [command])
+
+  useLayoutEffect(() => {
+    if (!pre || expanded) return
+    const measure = () => setOverflowing(pre.scrollHeight > pre.clientHeight + 1)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(pre)
+    return () => observer.disconnect()
+  }, [pre, expanded, command])
+
+  const onToggle = useCallback(() => setExpanded((value) => !value), [])
+  return renderCommandBlock({ cwd, command, expanded, overflowing, t, onToggle, preRef: setPre })
 }

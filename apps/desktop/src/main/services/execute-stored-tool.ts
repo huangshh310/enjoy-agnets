@@ -13,6 +13,8 @@ import { getApproval } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
+import { isE2eStub } from "./e2e-stub-gate.ts"
+import { isStubShellFixtureInput } from "./e2e-stub-shell.ts"
 
 export type StoredToolOutcome =
   | { kind: "ok" }
@@ -42,6 +44,8 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     const { resumeDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
     return { kind: "desktop_act", result: await resumeDesktopAct(args) }
   }
+  // stub 命令夹具（run bash ls / run code …）只给假输出，重启无 waiter 时也绝不真跑。
+  if (isE2eStub() && isStubShellFixtureInput(pending.name, args)) return { kind: "ok" }
   const host = await hostForRun(run)
   const path = typeof args.path === "string" ? args.path : ""
   if (pending.name === "write_file" && path && typeof args.content === "string") {

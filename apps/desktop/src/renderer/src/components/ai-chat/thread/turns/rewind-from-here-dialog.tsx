@@ -144,6 +144,9 @@ function rewindErrorMessage(code: string, t: (key: string) => string): string {
   if (code.includes("REWIND_PROVIDER_UNSUPPORTED")) return t("chat.rewindUnsupported")
   if (code.includes("REWIND_NO_CHECKPOINT")) return t("chat.rewindNoCheckpoint")
   if (code.includes("TRUNCATE_MESSAGE_NOT_FOUND")) return t("chat.rewindTruncateMissing")
+  if (code.includes("TRUNCATE_STALE_SNAPSHOT")) return t("chat.truncateStaleSnapshot")
+  if (code.includes("TRUNCATE_TAIL_CHANGED")) return t("chat.truncateTailChanged")
+  if (code.includes("TRUNCATE_RUN_ACTIVE")) return t("chat.truncateRunActive")
   if (code.includes("CHECKPOINT")) return t("chat.reviewCheckpointRestoreFailed")
   return t("chat.rewindFailed")
 }

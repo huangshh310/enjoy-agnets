@@ -16,6 +16,11 @@ import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
+import { agentRunBlockedCode } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { loadSession } from "./session-lifecycle"
+import { tailIdsAfterKeep } from "./session-truncate-intent"
+import { translateTruncateNotice } from "./truncate-notice"
+import { isBlockedStart, startWithTruncateRetry, type RetryHistoryEntry } from "./truncate-retry"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -51,6 +56,7 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
   }
 
   // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）
+  const expectedTailIds = tailIdsAfterKeep(messages, userMessage.id)
   const truncatedMessages = messages.slice(0, userIndex + 1)
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -81,16 +87,21 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 
   const assetIds = (userMessage.assets ?? []).map((a) => a.assetId)
   const history = truncatedMessages.map((m) => ({
+    id: m.id,
     role: m.role,
     content: m.content,
     reasoning: m.reasoning
   }))
 
   try {
-    await claimStartedRun(
-      sessionId,
-      startTurnIpc(store, runKind, userMessage.content, history, assetIds)
-    )
+    const started = await startTurnWithTruncateRetry(store, runKind, userMessage.content, history, assetIds, {
+      keepId: userMessage.id,
+      expectedTailIds,
+      before: messages,
+      pending: nextMessages[nextMessages.length - 1]!
+    })
+    if (agentRunBlockedCode(started) || isBlockedStart(started)) return
+    await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
     store.setRunning(false)
@@ -120,7 +131,7 @@ export async function editAndResendUserTurn(
     createdAt: Date.now()
   }
 
-  // 截断到当前用户消息位置并替换内容
+  const expectedTailIds = tailIdsAfterKeep(messages, oldUserMsg.id)
   const truncatedMessages = [...messages.slice(0, userIndex), updatedUserMsg]
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -151,28 +162,94 @@ export async function editAndResendUserTurn(
 
   const assetIds = (oldUserMsg.assets ?? []).map((a) => a.assetId)
   const history = truncatedMessages.map((m) => ({
+    id: m.id,
     role: m.role,
     content: m.content,
     reasoning: m.reasoning
   }))
 
   try {
-    await claimStartedRun(
-      sessionId,
-      startTurnIpc(store, runKind, newContent.trim(), history, assetIds)
-    )
+    const started = await startTurnWithTruncateRetry(store, runKind, newContent.trim(), history, assetIds, {
+      keepId: updatedUserMsg.id,
+      expectedTailIds,
+      before: messages,
+      pending: nextMessages[nextMessages.length - 1]!,
+      keepMessage: updatedUserMsg
+    })
+    if (agentRunBlockedCode(started) || isBlockedStart(started)) return
+    await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Execution failed.")
     store.setRunning(false)
   }
 }
 
+type ThreadMessages = ChatStore["messages"]
+type TurnHistoryEntry = RetryHistoryEntry & { role: ThreadMessages[number]["role"] }
+
+/**
+ * 截断 + 起跑，STALE 时按 leo MF-A / MF-B 决定是否重试（见 truncate-retry.ts）：
+ * 尾巴完全相同才重试；保留点那条带原请求内容（编辑重发的新内容）；其余失败撤回乐观截断并提示。
+ */
+async function startTurnWithTruncateRetry(
+  store: ChatStore,
+  runKind: ReturnType<typeof composerRunKind>,
+  prompt: string,
+  history: TurnHistoryEntry[],
+  assetIds: string[],
+  opts: {
+    keepId: string
+    expectedTailIds: string[]
+    /** 乐观截断前的视图，失败时放回。 */
+    before: ThreadMessages
+    pending: ThreadMessages[number]
+    /** 编辑重发：保留点要显示 / 发送的新内容。 */
+    keepMessage?: ThreadMessages[number]
+  }
+) {
+  const sessionId = store.sessionId
+  return startWithTruncateRetry<unknown, TurnHistoryEntry>(
+    {
+      start: (nextHistory, nextTail) =>
+        startTurnIpc(useChatStore.getState(), runKind, prompt, nextHistory, assetIds, opts.keepId, nextTail),
+      blockedCode: (result) => agentRunBlockedCode(result),
+      restoreView: async () => {
+        const live = useChatStore.getState()
+        live.setRunning(false)
+        if (live.sessionId !== sessionId || !sessionId) return
+        live.setMessages(opts.before)
+        await loadSession(sessionId, live.sessionTitle ?? "")
+      },
+      readMessages: () =>
+        useChatStore.getState().messages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          reasoning: message.reasoning
+        })),
+      reapplyOptimistic: () => {
+        const live = useChatStore.getState()
+        const keepIndex = live.messages.findIndex((message) => message.id === opts.keepId)
+        if (keepIndex < 0) return
+        const keep = opts.keepMessage ?? live.messages[keepIndex]!
+        live.setMessages([...live.messages.slice(0, keepIndex), keep, opts.pending])
+        live.setRunning(true)
+        live.setError(null)
+      },
+      notice: (code) => useChatStore.getState().setError(translateTruncateNotice(code))
+    },
+    { keepId: opts.keepId, expectedTailIds: opts.expectedTailIds, history }
+  )
+}
+
 async function startTurnIpc(
   store: ChatStore,
   runKind: ReturnType<typeof composerRunKind>,
   prompt: string,
-  history: Array<{ role: ChatStore["messages"][number]["role"]; content: string; reasoning?: string }>,
-  assetIds: string[]
+  history: TurnHistoryEntry[],
+  assetIds: string[],
+  keepId: string,
+  expectedTailIds: string[]
 ) {
   if (runKind === "image" || runKind === "video") {
     return getIde().ai.generate({
@@ -191,6 +268,9 @@ async function startTurnIpc(
     messages: history,
     attachments: assetIds,
     commandId: crypto.randomUUID(),
+    clearSessionAllow: true,
+    truncateAfterMessageId: keepId,
+    expectedTailIds,
     ...(desktopBias ? { desktopBias } : {})
   })
 }

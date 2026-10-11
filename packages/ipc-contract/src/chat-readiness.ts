@@ -4,6 +4,11 @@
  */
 import { z } from "zod"
 import { chatRouteAllowsSend, NO_CHAT_ROUTE } from "./chat-route-gate.ts"
+import {
+  MESSAGE_ID_SESSION_MISMATCH,
+  TRUNCATE_RUN_ACTIVE,
+  TRUNCATE_STALE_SNAPSHOT
+} from "./session-truncate.ts"
 
 export {
   chatRouteAllowsSend,
@@ -40,16 +45,24 @@ export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
 export const SendGateCode = z.enum([NO_CHAT_ROUTE])
 export type SendGateCode = z.infer<typeof SendGateCode>
 
+export const AgentRunErrorCode = z.enum([
+  NO_CHAT_ROUTE,
+  TRUNCATE_STALE_SNAPSHOT,
+  TRUNCATE_RUN_ACTIVE,
+  MESSAGE_ID_SESSION_MISMATCH
+])
+export type AgentRunErrorCode = z.infer<typeof AgentRunErrorCode>
+
 export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()
 export type AgentRunOk = z.infer<typeof AgentRunOk>
 
-export const AgentRunBlocked = z.object({ ok: z.literal(false), code: SendGateCode }).strict()
+export const AgentRunBlocked = z.object({ ok: z.literal(false), code: AgentRunErrorCode }).strict()
 export type AgentRunBlocked = z.infer<typeof AgentRunBlocked>
 
 export const AgentRunResult = z.discriminatedUnion("ok", [AgentRunOk, AgentRunBlocked])
 export type AgentRunResult = z.infer<typeof AgentRunResult>
 
-export function agentRunBlockedCode(result: unknown): SendGateCode | null {
+export function agentRunBlockedCode(result: unknown): AgentRunErrorCode | null {
   const parsed = AgentRunResult.safeParse(result)
   return parsed.success && !parsed.data.ok ? parsed.data.code : null
 }

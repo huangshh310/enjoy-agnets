@@ -141,8 +141,8 @@ async function maybeReparkSecondConfirm(
 function applyApprovalDecision(
   run: {
     sessionApprovedTools: Set<string>
-    sessionApprovedBashPrefixes: Set<string>
-    input: { sessionId: string }
+    sessionApprovedBashCommands: Set<string>
+    input: { sessionId: string; runtimeId?: string }
   },
   decision: "allow" | "deny" | "allow_session" | "allow_always",
   pending: { name: string; args?: unknown }
@@ -154,7 +154,7 @@ function applyApprovalDecision(
     return
   }
   if (decision !== "allow_session") return
-  applySessionAllowDecision(run.input.sessionId, run, pending, peekDesktopObservation)
+  applySessionAllowDecision(run.input.sessionId, run, pending, peekDesktopObservation, run.input.runtimeId)
 }
 
 function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {

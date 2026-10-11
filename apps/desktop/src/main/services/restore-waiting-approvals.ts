@@ -139,7 +139,9 @@ function emitRestoredApprovalCards(
       approvalId: item.approvalId,
       toolCallId: item.toolCallId,
       name: item.name,
-      args: item.args ?? {}
+      args: item.args ?? {},
+      allowedBySession: false,
+      reaskReason: "restart"
     })
   }
 }

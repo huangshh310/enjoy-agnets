@@ -5,6 +5,7 @@ import {
   createE2eStubStream,
   isE2eStub,
   lastUserText,
+  setE2eStubPackagedForTest,
   shouldFailStubStore,
   stubApprovedWrite,
   stubDeniedApproval,
@@ -40,26 +41,30 @@ test("lastUserText 取最后一条用户字", () => {
 
 test("very slow 只在 stub 开发态认，打包态当普通句", async () => {
   const previous = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   const previousSlow = process.env.ENJOY_E2E_STUB_SLOW_MS
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
   process.env.ENJOY_E2E_STUB_SLOW_MS = "0"
   try {
-    assert.equal(isVerySlowPrompt("please go very slow now", false), true)
-    assert.equal(isVerySlowPrompt("please go very slow now", true), false)
+    setE2eStubPackagedForTest(false)
+    assert.equal(isVerySlowPrompt("please go very slow now"), true)
+    setE2eStubPackagedForTest(true)
+    assert.equal(isVerySlowPrompt("please go very slow now"), false)
     assert.ok(STUB_VERY_SLOW_MS >= 1500)
     assert.equal(verySlowDelayMs(), 0)
     assert.ok(verySlowHead().startsWith("one"))
     const packed: string[] = []
     for await (const part of createE2eStubStream(
       [{ role: "user", content: "please go very slow now" }],
-      new AbortController().signal,
-      { packaged: true }
+      new AbortController().signal
     )) {
       packed.push(String(part.type))
     }
     assert.equal(packed.includes("tool-approval-request"), false)
     assert.ok(packed.includes("text-delta"))
 
+    setE2eStubPackagedForTest(false)
     const types: string[] = []
     let text = ""
     for await (const part of createE2eStubStream(
@@ -73,7 +78,10 @@ test("very slow 只在 stub 开发态认，打包态当普通句", async () => {
     assert.equal(types.includes("tool-approval-request"), true)
     assert.equal(types.at(-1), "tool-approval-request")
   } finally {
+    setE2eStubPackagedForTest(undefined)
     process.env.ENJOY_E2E_STUB = previous
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
     if (previousSlow == null) delete process.env.ENJOY_E2E_STUB_SLOW_MS
     else process.env.ENJOY_E2E_STUB_SLOW_MS = previousSlow
   }
@@ -81,12 +89,17 @@ test("very slow 只在 stub 开发态认，打包态当普通句", async () => {
 
 test("please write slow note：先审批，允许后写盘再慢流", async () => {
   const previous = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   const previousSlow = process.env.ENJOY_E2E_STUB_SLOW_MS
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
   process.env.ENJOY_E2E_STUB_SLOW_MS = "0"
   try {
-    assert.equal(isWriteSlowNotePrompt("please write slow note", false), true)
-    assert.equal(isWriteSlowNotePrompt("please write slow note", true), false)
+    setE2eStubPackagedForTest(false)
+    assert.equal(isWriteSlowNotePrompt("please write slow note"), true)
+    setE2eStubPackagedForTest(true)
+    assert.equal(isWriteSlowNotePrompt("please write slow note"), false)
+    setE2eStubPackagedForTest(false)
     const first: string[] = []
     for await (const part of createE2eStubStream(
       [{ role: "user", content: "please write slow note" }],
@@ -115,7 +128,10 @@ test("please write slow note：先审批，允许后写盘再慢流", async () =
     assert.match(text, /one two three/)
     assert.doesNotMatch(text, /stub-ok allowed write/)
   } finally {
+    setE2eStubPackagedForTest(undefined)
     process.env.ENJOY_E2E_STUB = previous
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
     if (previousSlow == null) delete process.env.ENJOY_E2E_STUB_SLOW_MS
     else process.env.ENJOY_E2E_STUB_SLOW_MS = previousSlow
   }
@@ -280,8 +296,10 @@ test("桌面 stub 吐日历审批、终端审批、坐标硬拒", async () => {
 })
 
 test("成本夹具 stub finish 带 SDK v7 totalUsage", async () => {
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_DEV_SEED_COST = "1"
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
   try {
     const parts: Record<string, unknown>[] = []
     for await (const part of createE2eStubStream(
@@ -300,6 +318,8 @@ test("成本夹具 stub finish 带 SDK v7 totalUsage", async () => {
   } finally {
     delete process.env.ENJOY_DEV_SEED_COST
     delete process.env.ENJOY_E2E_STUB
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
   }
 })
 
@@ -443,14 +463,15 @@ test("拒绝后继续不再重放同一张审批", async () => {
 
 test("开发态 stub 存储失败夹具：打包态不扔", async () => {
   const previous = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
   try {
-    assert.equal(isE2eStub(false), true)
-    assert.equal(isE2eStub(true), false)
-    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, false), true)
-    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT_ZH, false), true)
-    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT, true), false)
-    assert.equal(shouldFailStubStore("hello", false), false)
+    setE2eStubPackagedForTest(false)
+    assert.equal(isE2eStub(), true)
+    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT), true)
+    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT_ZH), true)
+    assert.equal(shouldFailStubStore("hello"), false)
     await assert.rejects(
       (async () => {
         for await (const _part of createE2eStubStream(
@@ -462,16 +483,49 @@ test("开发态 stub 存储失败夹具：打包态不扔", async () => {
       })(),
       /INTERNAL_STORE_ERROR/
     )
+    setE2eStubPackagedForTest(true)
+    assert.equal(isE2eStub(), false)
+    assert.equal(shouldFailStubStore(STUB_STORE_ERROR_PROMPT), false)
     const safe: string[] = []
     for await (const part of createE2eStubStream(
       [{ role: "user", content: STUB_STORE_ERROR_PROMPT }],
-      new AbortController().signal,
-      { packaged: true }
+      new AbortController().signal
     )) {
       safe.push(String(part.type))
     }
     assert.ok(safe.includes("finish"))
   } finally {
+    setE2eStubPackagedForTest(undefined)
     process.env.ENJOY_E2E_STUB = previous
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+  }
+})
+
+test("stub 第三闸：没有隔离 userData 不算 e2e stub", () => {
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  const previousDev = process.env.ENJOY_DEV_USERDATA
+  process.env.ENJOY_E2E_STUB = "1"
+  delete process.env.ENJOY_E2E_USERDATA
+  delete process.env.ENJOY_DEV_USERDATA
+  try {
+    setE2eStubPackagedForTest(false)
+    assert.equal(isE2eStub(), false)
+    process.env.ENJOY_E2E_USERDATA = "/tmp/e2e-ud"
+    assert.equal(isE2eStub(), true)
+    delete process.env.ENJOY_E2E_USERDATA
+    process.env.ENJOY_DEV_USERDATA = "/tmp/dev-ud"
+    assert.equal(isE2eStub(), true)
+    setE2eStubPackagedForTest(true)
+    assert.equal(isE2eStub(), false)
+  } finally {
+    setE2eStubPackagedForTest(undefined)
+    if (previousStub == null) delete process.env.ENJOY_E2E_STUB
+    else process.env.ENJOY_E2E_STUB = previousStub
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+    if (previousDev == null) delete process.env.ENJOY_DEV_USERDATA
+    else process.env.ENJOY_DEV_USERDATA = previousDev
   }
 })

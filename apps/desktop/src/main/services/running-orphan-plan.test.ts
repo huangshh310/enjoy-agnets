@@ -58,9 +58,10 @@ test("parseAgentCheckpointExtras 读 resumeAt", () => {
 
 test("running extras 带 denyAnyDesktop", () => {
   const extras = parseAgentCheckpointExtras(
-    JSON.stringify({ ...JSON.parse(base.checkpoint), denyAnyDesktop: true })
+    JSON.stringify({ ...JSON.parse(base.checkpoint), denyAnyDesktop: true, origin: "heartbeat" })
   )
   assert.equal(extras.denyAnyDesktop, true)
+  assert.equal(extras.origin, "heartbeat")
 })
 
 test("running extras 带 origin，hb_ 前缀不算心跳", () => {

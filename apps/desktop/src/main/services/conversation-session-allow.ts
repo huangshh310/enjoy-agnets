@@ -1,8 +1,23 @@
 /**
- * 本会话允许（非 desktop_act）：进程内 Map，按 Enjoy sessionId。
- * 不落盘；归档 / 删除 / 进程退出才清。与 desktop 会话表同寿命，重启后空。
+ * 本会话允许（非 desktop_act）：进程内表，按 Enjoy sessionId + runtimeId。
+ * 不落盘；归档 / 删除 / 截断 / regenerate / edit-and-resend / 进程退出才清。重启后空。
+ * 水位（授权时 id 序列哈希 + 条数）是截断真源；clearSessionAllow 只是加紧信号。
+ * sessionId 不得含 `::`。找不到 MCP 服务器不记。写入类撤销整组。
+ * 只有 user 开跑才种子写盘 / bash；心跳 / 自动化 / 补跑只吃 desktop 表。
+ * bash 只记整条命令、只认完全相同（leo MF-C）；以后要「前缀 + 参数」须按工具参数白名单另开 PR。
  */
-import { bashAllowPrefix, commandFromToolInput, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
+import { SESSION_BASH_COMMAND_MAX_CHARS } from "@enjoy-agents/ipc-contract/bash-prefix"
+import {
+  bashAllowCommand,
+  commandFromToolInput,
+  writeThroughDesktopActSessionAllow
+} from "@enjoy-agents/agent-core"
+import {
+  resetAllSessionAllowWatermarks,
+  resetSessionAllowWatermark,
+  sessionAllowHistoryLooksTruncated,
+  stampSessionAllowWatermark
+} from "./conversation-session-allow-history.ts"
 import {
   desktopActNeedsSecondConfirm,
   desktopGrantShouldPersist,
@@ -11,112 +26,361 @@ import {
   type LookupDesktopObservation
 } from "@enjoy-agents/agent-core/computer-use"
 import { isUserInitiatedRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
-import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
+import type { SessionAllowItem, SessionAllowScope } from "@enjoy-agents/ipc-contract/session-allow"
+import { ASK_USER_QUESTIONS_TOOL, WRITE_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
+import { mcpFingerprintForTool } from "./mcp-session-fingerprint.ts"
 
 export type ConversationSessionAllow = {
   toolNames: Set<string>
-  bashPrefixes: Set<string>
+  bashCommands: Set<string>
+  mcpFingerprints: Map<string, string>
 }
 
-const conversationSessionAllow = new Map<string, ConversationSessionAllow>()
+export type SeedRunSessionAllowOpts = {
+  denyAnyDesktop?: boolean
+  origin?: string
+  runtimeId?: string
+  mcpFingerprintNow?: (toolName: string) => string | undefined
+}
 
-function bucket(sessionId: string): ConversationSessionAllow {
+const DEFAULT_RUNTIME = "enjoy-local"
+export const SESSION_ALLOW_MAX_BASH_COMMANDS = 64
+export const SESSION_ALLOW_MAX_TOOLS = 64
+export const SESSION_ALLOW_MAX_SESSIONS = 500
+const MAX_BASH_COMMANDS = SESSION_ALLOW_MAX_BASH_COMMANDS
+const MAX_TOOLS = SESSION_ALLOW_MAX_TOOLS
+const MAX_SESSIONS = SESSION_ALLOW_MAX_SESSIONS
+
+type ToolGrant = { fingerprint?: string }
+
+type Bucket = {
+  toolNames: Map<string, ToolGrant>
+  bashCommands: Map<string, true>
+  lastUsed: number
+}
+
+const conversationSessionAllow = new Map<string, Bucket>()
+
+function usableSessionId(sessionId: string): string | undefined {
   const sid = sessionId.trim()
-  const current = conversationSessionAllow.get(sid)
-  if (current) return current
-  const next = { toolNames: new Set<string>(), bashPrefixes: new Set<string>() }
-  conversationSessionAllow.set(sid, next)
+  if (!sid || sid.includes("::")) return undefined
+  return sid
+}
+
+export function sessionAllowKey(sessionId: string, runtimeId?: string): string {
+  const sid = usableSessionId(sessionId)
+  if (!sid) throw new Error("session allow sessionId must not contain ::")
+  const runtime = (runtimeId ?? DEFAULT_RUNTIME).trim() || DEFAULT_RUNTIME
+  return `${sid}::${runtime}`
+}
+
+function evictOldestSession(): void {
+  let oldestKey: string | undefined
+  let oldest = Infinity
+  for (const [key, bucket] of conversationSessionAllow) {
+    if (bucket.lastUsed < oldest) {
+      oldest = bucket.lastUsed
+      oldestKey = key
+    }
+  }
+  if (oldestKey) conversationSessionAllow.delete(oldestKey)
+}
+
+function lruSet<T>(map: Map<string, T>, key: string, value: T, max: number): void {
+  if (map.has(key)) map.delete(key)
+  map.set(key, value)
+  while (map.size > max) {
+    const first = map.keys().next().value
+    if (first === undefined) break
+    map.delete(first)
+  }
+}
+
+function bucket(sessionId: string, runtimeId?: string): Bucket | undefined {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return undefined
+  const key = sessionAllowKey(sid, runtimeId)
+  const current = conversationSessionAllow.get(key)
+  if (current) {
+    current.lastUsed = Date.now()
+    return current
+  }
+  while (conversationSessionAllow.size >= MAX_SESSIONS) evictOldestSession()
+  const next: Bucket = {
+    toolNames: new Map(),
+    bashCommands: new Map(),
+    lastUsed: Date.now()
+  }
+  conversationSessionAllow.set(key, next)
   return next
 }
 
-/** 复制一份给 ActiveRun。调用方可变副本，不得拿回内部 Set。 */
-export function snapshotConversationSessionAllow(sessionId: string): ConversationSessionAllow {
-  const current = conversationSessionAllow.get(sessionId.trim())
+function snapshotBucket(current: Bucket | undefined): ConversationSessionAllow {
+  const mcpFingerprints = new Map<string, string>()
+  if (current) {
+    for (const [name, grant] of current.toolNames) {
+      if (grant.fingerprint) mcpFingerprints.set(name, grant.fingerprint)
+    }
+  }
   return {
-    toolNames: current ? new Set(current.toolNames) : new Set(),
-    bashPrefixes: current ? new Set(current.bashPrefixes) : new Set()
+    toolNames: current ? new Set(current.toolNames.keys()) : new Set(),
+    bashCommands: current ? new Set(current.bashCommands.keys()) : new Set(),
+    mcpFingerprints
   }
 }
 
-export function grantConversationToolAllow(sessionId: string, toolName: string): void {
-  const sid = sessionId.trim()
+/** 复制一份给 ActiveRun。调用方可变副本，不得拿回内部 Map。 */
+export function snapshotConversationSessionAllow(
+  sessionId: string,
+  runtimeId?: string
+): ConversationSessionAllow {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return snapshotBucket(undefined)
+  return snapshotBucket(conversationSessionAllow.get(sessionAllowKey(sid, runtimeId)))
+}
+
+export function grantConversationToolAllow(sessionId: string, toolName: string, runtimeId?: string): void {
+  const sid = usableSessionId(sessionId)
   const name = toolName.trim()
   if (!sid || !name || name === ASK_USER_QUESTIONS_TOOL || name === "desktop_act") return
-  bucket(sid).toolNames.add(name)
+  if (name === "bash" || name === "code_mode") return
+  if (name.startsWith("mcp_")) return
+  const slot = bucket(sid, runtimeId)
+  if (!slot) return
+  lruSet(slot.toolNames, name, {}, MAX_TOOLS)
+  stampSessionAllowWatermark(sid)
 }
 
-export function grantConversationBashPrefix(sessionId: string, prefix: string): void {
-  const sid = sessionId.trim()
-  const value = prefix.trim()
-  if (!sid || !value) return
-  bucket(sid).bashPrefixes.add(value)
+/** 记整条命令（按 ASCII 空格 / Tab 切词后单空格拼回）。只做完全相同匹配，不是前缀。 */
+export function grantConversationBashCommand(sessionId: string, command: string, runtimeId?: string): void {
+  const sid = usableSessionId(sessionId)
+  const value = command.trim()
+  if (!sid || !value || value.length > SESSION_BASH_COMMAND_MAX_CHARS) return
+  const slot = bucket(sid, runtimeId)
+  if (!slot) return
+  lruSet(slot.bashCommands, value, true, MAX_BASH_COMMANDS)
+  stampSessionAllowWatermark(sid)
 }
 
-/** 删除 / 归档该对话时整表丢掉。 */
-export function clearConversationSessionAllow(sessionId: string): void {
-  conversationSessionAllow.delete(sessionId.trim())
-}
-
-/** 进程退出时清全部。内存本就会没，测试与 will-quit 显式收口。 */
-export function clearAllConversationSessionAllows(): void {
-  conversationSessionAllow.clear()
+export function grantConversationMcpAllow(
+  sessionId: string,
+  toolName: string,
+  fingerprint: string,
+  runtimeId?: string
+): void {
+  const sid = usableSessionId(sessionId)
+  const name = toolName.trim()
+  const fp = fingerprint.trim()
+  if (!sid || !name || !fp) return
+  const slot = bucket(sid, runtimeId)
+  if (!slot) return
+  lruSet(slot.toolNames, name, { fingerprint: fp }, MAX_TOOLS)
+  stampSessionAllowWatermark(sid)
 }
 
 /**
- * 新 run 种子。user 才并本会话写盘 / bash；心跳 / 自动化 / 补跑只并 desktop 表。
- * denyAnyDesktop 只摘 desktop_act:*，写盘名留下。
+ * 种子前对账。旗标只是加紧信号；水位对库才是真源。
+ * 水位消息没了、条数变少、或读不到库：清表。拿不准就清。
+ */
+export function applyAgentRunSessionAllowReset(input: {
+  sessionId: string
+  clearSessionAllow?: boolean
+  incomingMessageCount?: number
+}): void {
+  if (input.clearSessionAllow) {
+    clearConversationSessionAllow(input.sessionId)
+    return
+  }
+  if (!sessionHasAllowEntries(input.sessionId)) return
+  if (sessionAllowHistoryLooksTruncated(input.sessionId, input.incomingMessageCount)) {
+    clearConversationSessionAllow(input.sessionId)
+  }
+}
+
+function sessionHasAllowEntries(sessionId: string): boolean {
+  return bucketsForSession(sessionId).some(
+    ({ bucket }) => bucket.toolNames.size > 0 || bucket.bashCommands.size > 0
+  )
+}
+
+/** 删除 / 归档 / 截断该对话时丢掉所有引擎桶。 */
+export function clearConversationSessionAllow(sessionId: string): void {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return
+  const prefix = `${sid}::`
+  // keys() 迭代时不能删；先拷一份再扫。
+  const keys = Array.from(conversationSessionAllow.keys())
+  for (const key of keys) {
+    if (key === sid || key.startsWith(prefix)) conversationSessionAllow.delete(key)
+  }
+  resetSessionAllowWatermark(sid)
+}
+
+export function clearAllConversationSessionAllows(): void {
+  conversationSessionAllow.clear()
+  resetAllSessionAllowWatermarks()
+}
+
+export function conversationSessionAllowSize(): number {
+  return conversationSessionAllow.size
+}
+
+function runtimeIdFromKey(key: string, sessionId: string): string {
+  const prefix = `${sessionId}::`
+  return key.startsWith(prefix) ? key.slice(prefix.length) || DEFAULT_RUNTIME : DEFAULT_RUNTIME
+}
+
+function bucketsForSession(sessionId: string, runtimeId?: string): Array<{ runtimeId: string; bucket: Bucket }> {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return []
+  if (runtimeId) {
+    const current = conversationSessionAllow.get(sessionAllowKey(sid, runtimeId))
+    return current ? [{ runtimeId: (runtimeId.trim() || DEFAULT_RUNTIME), bucket: current }] : []
+  }
+  const prefix = `${sid}::`
+  const rows: Array<{ runtimeId: string; bucket: Bucket }> = []
+  for (const [key, bucket] of conversationSessionAllow) {
+    if (key === sid || key.startsWith(prefix)) {
+      rows.push({ runtimeId: runtimeIdFromKey(key, sid), bucket })
+    }
+  }
+  return rows
+}
+
+/** 列出该会话全部引擎桶的允许项。MCP 用全名。 */
+export function listConversationSessionAllows(sessionId: string): SessionAllowItem[] {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return []
+  const items: SessionAllowItem[] = []
+  for (const { runtimeId, bucket } of bucketsForSession(sid)) {
+    for (const toolName of bucket.toolNames.keys()) {
+      items.push({ runtimeId, scope: { kind: "tool", toolName } })
+    }
+    for (const command of bucket.bashCommands.keys()) {
+      items.push({ runtimeId, scope: { kind: "bash_command", command } })
+    }
+  }
+  return items
+}
+
+/**
+ * 只改会话表，不碰 ActiveRun 副本。本轮已种子的放行仍有效，下一轮才停。
+ * 不传 runtimeId 则该会话所有引擎桶都撤这一条。
+ * 撤销写入类工具撤整组 WRITE_TOOLS。
+ */
+export function revokeConversationSessionAllow(
+  sessionId: string,
+  scope: SessionAllowScope,
+  runtimeId?: string
+): SessionAllowItem[] {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return []
+  for (const { bucket } of bucketsForSession(sid, runtimeId)) {
+    if (scope.kind === "tool") {
+      const names = WRITE_TOOLS.includes(scope.toolName) ? WRITE_TOOLS : [scope.toolName]
+      for (const name of names) bucket.toolNames.delete(name)
+    } else {
+      bucket.bashCommands.delete(scope.command)
+    }
+  }
+  return listConversationSessionAllows(sid)
+}
+
+function liveToolNames(
+  session: ConversationSessionAllow,
+  fingerprintNow?: (toolName: string) => string | undefined
+): Set<string> {
+  const lookup = fingerprintNow ?? safeMcpFingerprint
+  const tools = new Set<string>()
+  for (const name of session.toolNames) {
+    const stored = session.mcpFingerprints.get(name)
+    if (stored && lookup(name) !== stored) continue
+    tools.add(name)
+  }
+  return tools
+}
+
+function safeMcpFingerprint(toolName: string): string | undefined {
+  try {
+    return mcpFingerprintForTool(toolName)
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * 新 run 种子。user 才并本会话写盘 / bash；其余只并 desktop 表。
+ * denyAnyDesktop 只摘 desktop_act:*。
  */
 export function seedRunSessionAllow(
   sessionId: string,
-  opts?: { denyAnyDesktop?: boolean; origin?: string }
-): { sessionApprovedTools: Set<string>; sessionApprovedBashPrefixes: Set<string> } {
+  opts?: SeedRunSessionAllowOpts
+): { sessionApprovedTools: Set<string>; sessionApprovedBashCommands: Set<string> } {
   const desktop = snapshotConversationDesktopAllow(sessionId)
   const userTurn = isUserInitiatedRunOrigin(opts?.origin)
-  const session = userTurn
-    ? snapshotConversationSessionAllow(sessionId)
-    : { toolNames: new Set<string>(), bashPrefixes: new Set<string>() }
-  const tools = new Set([...desktop, ...session.toolNames])
+  const session = userTurn ? snapshotConversationSessionAllow(sessionId, opts?.runtimeId) : snapshotBucket(undefined)
+  const tools = new Set([...desktop, ...(userTurn ? liveToolNames(session, opts?.mcpFingerprintNow) : [])])
   return {
     sessionApprovedTools: opts?.denyAnyDesktop ? stripAnyDesktopSessionAllow(tools) : tools,
-    sessionApprovedBashPrefixes: userTurn ? session.bashPrefixes : new Set()
+    sessionApprovedBashCommands: userTurn ? session.bashCommands : new Set()
   }
 }
 
 /**
- * allow_session write-through：会话表 + 本轮 run 副本。
+ * allow_session write-through：按 runtime 分桶。
  * desktop_act 仍走 desktop 表；敏感 / 二次确认 / 未解析观察不写任何表。
  */
 export function applySessionAllowDecision(
   sessionId: string,
   run: {
     sessionApprovedTools: Set<string>
-    sessionApprovedBashPrefixes: Set<string>
+    sessionApprovedBashCommands: Set<string>
   },
   pending: { name: string; args?: unknown },
-  lookupDesktopObservation?: LookupDesktopObservation
+  lookupDesktopObservation?: LookupDesktopObservation,
+  runtimeId?: string
 ): void {
   if (pending.name === ASK_USER_QUESTIONS_TOOL) return
-  if (pending.name === "bash" || pending.name === "code_mode") {
-    rememberBashPrefix(sessionId, run, pending.args)
+  // code_mode 只允许一次（脚本 path / source 不在键里）：不写任何表。
+  if (pending.name === "code_mode") return
+  if (pending.name === "bash") {
+    rememberBashCommand(sessionId, run, pending.args, runtimeId)
     return
   }
   if (pending.name === "desktop_act") {
     rememberDesktopActSession(sessionId, run, pending.args, lookupDesktopObservation)
     return
   }
-  grantConversationToolAllow(sessionId, pending.name)
+  if (pending.name.startsWith("mcp_")) {
+    rememberMcpAllow(sessionId, run, pending.name, runtimeId)
+    return
+  }
+  grantConversationToolAllow(sessionId, pending.name, runtimeId)
   run.sessionApprovedTools.add(pending.name)
 }
 
-function rememberBashPrefix(
+function rememberBashCommand(
   sessionId: string,
-  run: { sessionApprovedBashPrefixes: Set<string> },
-  args: unknown
+  run: { sessionApprovedBashCommands: Set<string> },
+  args: unknown,
+  runtimeId?: string
 ): void {
-  const prefix = bashAllowPrefix(commandFromToolInput(args))
-  if (!prefix) return
-  grantConversationBashPrefix(sessionId, prefix)
-  run.sessionApprovedBashPrefixes.add(prefix)
+  const command = bashAllowCommand(commandFromToolInput(args))
+  if (!command) return
+  grantConversationBashCommand(sessionId, command, runtimeId)
+  run.sessionApprovedBashCommands.add(command)
+}
+
+function rememberMcpAllow(
+  sessionId: string,
+  run: { sessionApprovedTools: Set<string> },
+  toolName: string,
+  runtimeId?: string
+): void {
+  const fingerprint = safeMcpFingerprint(toolName)
+  if (!fingerprint) return
+  grantConversationMcpAllow(sessionId, toolName, fingerprint, runtimeId)
+  run.sessionApprovedTools.add(toolName)
 }
 
 function rememberDesktopActSession(

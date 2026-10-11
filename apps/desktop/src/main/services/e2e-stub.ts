@@ -1,5 +1,6 @@
 /**
- * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
+ * 仅 ENJOY_E2E_STUB=1 且未打包（读不到 app 当打包）、且有隔离 userData：
+ * 不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  *
  * 写盘：未放行时只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
  * 会话策略已放行（`isToolApproved`）时直接 tool-call + 落盘 +「stub-ok allowed write」，不弹卡。
@@ -10,11 +11,15 @@
  * output-error「No result received.」，账本显示「1 个失败」。
  * 上一轮的审批响应不得让下一句复读结果。
  *
+ * 命令夹具（「run bash ls」/「run bash ls -la」/「run code」/「run long」/「run pipe」）见
+ * `e2e-stub-shell.ts`：真审批卡、假输出，绝不真跑命令。
+ *
  * 终端可点链接夹具（给 luna 验悬停）：
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  */
 import type { ModelMessage } from "ai"
+import { isE2eStub } from "./e2e-stub-gate.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 import {
   isVerySlowPrompt,
@@ -31,6 +36,22 @@ import {
   STUB_WRITE_INPUT,
   writeStubApprovedFile
 } from "./e2e-stub-write.ts"
+import {
+  nextStubShellIds,
+  stubShellApprovalPart,
+  stubShellDoneText,
+  stubShellFixtureFor,
+  stubShellResultPart,
+  stubShellToolCallIdFor,
+  stubShellToolCallPart,
+  type StubShellFixture
+} from "./e2e-stub-shell.ts"
+
+export {
+  STUB_LONG_COMMAND,
+  STUB_SHELL_FIXTURES,
+  stubShellFixtureFor
+} from "./e2e-stub-shell.ts"
 
 export {
   stubApprovedWriteResult,
@@ -46,18 +67,15 @@ export const STUB_STORE_ERROR_PROMPT = "stub store error"
 export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
 
 export type E2eStubStreamOpts = {
-  packaged?: boolean
   /** 会话策略已放行写盘时为真，stub 直接执行、不弹卡。 */
   isToolApproved?: (toolName: string, input: unknown) => boolean
 }
 
-export function isE2eStub(packaged = false): boolean {
-  return process.env.ENJOY_E2E_STUB === "1" && packaged !== true
-}
+export { isE2eStub, setE2eStubPackagedForTest } from "./e2e-stub-gate.ts"
 
 /** COST-P3 复检夹具：开发态 stub 才吐带单价的 totalUsage。 */
-export function isE2eCostSeed(packaged = false): boolean {
-  return isE2eStub(packaged) && process.env.ENJOY_DEV_SEED_COST === "1"
+export function isE2eCostSeed(): boolean {
+  return isE2eStub() && process.env.ENJOY_DEV_SEED_COST === "1"
 }
 
 export function isStubStoreErrorPrompt(text: string): boolean {
@@ -65,8 +83,8 @@ export function isStubStoreErrorPrompt(text: string): boolean {
   return trimmed === STUB_STORE_ERROR_PROMPT || trimmed === STUB_STORE_ERROR_PROMPT_ZH
 }
 
-export function shouldFailStubStore(prompt: string, packaged = false): boolean {
-  return isE2eStub(packaged) && isStubStoreErrorPrompt(prompt)
+export function shouldFailStubStore(prompt: string): boolean {
+  return isE2eStub() && isStubStoreErrorPrompt(prompt)
 }
 
 let stubWriteSeq = 0
@@ -166,7 +184,7 @@ export async function* createE2eStubStream(
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
-  if (shouldFailStubStore(prompt, opts?.packaged === true)) {
+  if (shouldFailStubStore(prompt)) {
     throw new Error("INTERNAL_STORE_ERROR")
   }
   if (stubDeniedApproval(messages)) {
@@ -182,23 +200,28 @@ export async function* createE2eStubStream(
     for (const part of desktop) yield part
     return
   }
+  const shell = stubShellFixtureFor(prompt)
+  if (shell) {
+    yield* emitStubShellTurn(shell, messages, signal, opts)
+    return
+  }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
     if (process.env.ENJOY_E2E_SLOW_TOOL === "1") await wait(8_000)
-    await writeStubApprovedFile(undefined, opts?.packaged === true)
+    await writeStubApprovedFile()
     yield stubApprovedWriteResult(toolCallId)
-    if (isWriteSlowNotePrompt(prompt, opts?.packaged === true)) {
+    if (isWriteSlowNotePrompt(prompt)) {
       yield* emitText(STUB_VERY_SLOW_WORDS.join(" "), signal, verySlowDelayMs())
       return
     }
-    if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+    if (isVerySlowPrompt(prompt)) {
       yield* emitText(verySlowTail(), signal, verySlowDelayMs())
       return
     }
     yield* emitText("stub-ok allowed write", signal)
     return
   }
-  if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+  if (isVerySlowPrompt(prompt)) {
     yield* emitText(verySlowHead(), signal, verySlowDelayMs())
     yield* emitStubWriteTurn(signal, opts)
     return
@@ -217,14 +240,36 @@ export async function* createE2eStubStream(
   yield* emitText(body, signal, slow ? 400 : 0)
 }
 
+/** 命令夹具：允许后吐假结果；会话已放行（真实 resolveToolApproval）则不弹卡直接假执行；否则吐审批卡。 */
+async function* emitStubShellTurn(
+  fixture: StubShellFixture,
+  messages: ModelMessage[],
+  signal: AbortSignal,
+  opts?: E2eStubStreamOpts
+): AsyncGenerator<Record<string, unknown>> {
+  const approvedCallId = stubShellToolCallIdFor(currentTurnApprovedId(messages))
+  if (approvedCallId) {
+    yield stubShellResultPart(fixture, approvedCallId)
+    yield* emitText(stubShellDoneText(fixture), signal)
+    return
+  }
+  const ids = nextStubShellIds(fixture)
+  if (opts?.isToolApproved?.(fixture.toolName, fixture.input)) {
+    yield stubShellToolCallPart(fixture, ids.toolCallId)
+    yield stubShellResultPart(fixture, ids.toolCallId)
+    yield* emitText(stubShellDoneText(fixture), signal)
+    return
+  }
+  yield stubShellApprovalPart(fixture, ids)
+}
+
 async function* emitStubWriteTurn(
   signal: AbortSignal,
   opts?: E2eStubStreamOpts
 ): AsyncGenerator<Record<string, unknown>> {
   stubWriteSeq += 1
-  const packaged = opts?.packaged === true
   if (opts?.isToolApproved?.("write_file", STUB_WRITE_INPUT)) {
-    for (const part of await stubPolicyAllowedWriteParts(`tool_stub_${stubWriteSeq}`, packaged)) {
+    for (const part of await stubPolicyAllowedWriteParts(`tool_stub_${stubWriteSeq}`)) {
       yield part
     }
     yield* emitText("stub-ok allowed write", signal)

@@ -35,6 +35,7 @@ type ApprovalChromeProps = ApprovalActionIds & {
   footer?: ApprovalFooter
   approveDisabled?: boolean
   approveTitle?: string
+  sessionHint?: string
   tone?: ApprovalTone
   decide: ApprovalDecide
 }
@@ -50,6 +51,7 @@ export function ApprovalChrome({
   footer = "buttons",
   approveDisabled,
   approveTitle,
+  sessionHint,
   tone,
   denyTestId,
   allowTestId,
@@ -62,7 +64,7 @@ export function ApprovalChrome({
       data-variant={variant}
       data-tone={tone}
       className={cx(
-        "flex flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card",
+        "flex min-h-0 flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card [@media(max-height:600px)]:gap-0.5 [@media(max-height:600px)]:p-1",
         tone === "danger"
           ? "border-border-error-default/40"
           : tone === "warn"
@@ -70,10 +72,12 @@ export function ApprovalChrome({
             : "border-separator-border/80"
       )}
     >
-      <div className="flex items-start gap-2">
+      {/* 正文区可压缩、区内滚；底栏 shrink-0，拒绝 / 运行永远可见（luna #144）。
+          小窗（高 ≤ 600px）：图标 / 标题让位，标题挪到底栏一行；命令区不压缩。 */}
+      <div className="flex min-h-0 shrink items-start gap-2 overflow-hidden">
         <span
           className={cx(
-            "inline-flex size-6 shrink-0 items-center justify-center rounded-md",
+            "inline-flex size-6 shrink-0 items-center justify-center rounded-md [@media(max-height:600px)]:hidden",
             tone === "danger"
               ? "bg-background-tertiary-error text-text-error-primary"
               : tone === "warn"
@@ -83,13 +87,26 @@ export function ApprovalChrome({
         >
           <Icon className="size-3.5" aria-hidden />
         </span>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto">
-          <h3 className="text-caption-1-semibold leading-6 text-text-primary">{title}</h3>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto">
+          <h3 className="shrink-0 truncate text-caption-1-semibold leading-6 text-text-primary [@media(max-height:600px)]:hidden">
+            {title}
+          </h3>
           {children}
+          {sessionHint ? (
+            <p className="text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:truncate">
+              {sessionHint}
+            </p>
+          ) : null}
         </div>
       </div>
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-0.5">
-        <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary">
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-0.5 [@media(max-height:600px)]:flex-nowrap [@media(max-height:600px)]:pt-0">
+        <h3
+          data-testid="approval-compact-title"
+          className="hidden max-w-[45%] shrink-0 truncate text-caption-1-semibold text-text-primary [@media(max-height:600px)]:block"
+        >
+          {title}
+        </h3>
+        <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:hidden">
           <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">
             {t(isDevCopyEnabled() ? "chat.hmacBoundNotice" : "chat.approvalConfirmNotice")}
@@ -100,6 +117,7 @@ export function ApprovalChrome({
           approveLabel={approveLabel}
           denyLabel={denyLabel}
           alwaysLabel={alwaysLabel}
+          alwaysHint={sessionHint}
           showAlways={showAlways}
           footer={footer}
           approveDisabled={approveDisabled}

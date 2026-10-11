@@ -3,6 +3,7 @@
  */
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
+import { isE2eStub } from "./e2e-stub-gate.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_WRITE_PATH = "e2e-stub.txt"
@@ -41,10 +42,9 @@ export function stubApprovedWriteResult(toolCallId: string): Record<string, unkn
 
 /** 活泵允许后补写盘；无工作区根则只吐 tool-result，不假装已经落盘。 */
 export async function writeStubApprovedFile(
-  root = process.env.ENJOY_E2E_WORKSPACE,
-  packaged = false
+  root = process.env.ENJOY_E2E_WORKSPACE
 ): Promise<string | null> {
-  if (process.env.ENJOY_E2E_STUB !== "1" || packaged === true) return null
+  if (!isE2eStub()) return null
   const workspace = root?.trim()
   if (!workspace) return null
   const abs = resolveInsideWorkspace(workspace, STUB_WRITE_PATH)
@@ -55,9 +55,8 @@ export async function writeStubApprovedFile(
 
 /** 策略已放行：先落盘，再 tool-call + tool-result，调用方再发正文。 */
 export async function stubPolicyAllowedWriteParts(
-  toolCallId: string,
-  packaged = false
+  toolCallId: string
 ): Promise<Record<string, unknown>[]> {
-  await writeStubApprovedFile(undefined, packaged)
+  await writeStubApprovedFile()
   return [stubWriteToolCallPart(toolCallId), stubApprovedWriteResult(toolCallId)]
 }

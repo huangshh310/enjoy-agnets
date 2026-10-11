@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import { selectForkTurns, visibleSessionTurns } from "./session-fork.ts"
 import { SessionHeartbeatPutInput } from "./session-heartbeat.ts"
+import { TruncateMessageId, TruncateTailIds } from "./session-truncate.ts"
 import {
   SessionDeleteInput,
   SessionForkInput,
@@ -33,15 +35,60 @@ test("session.delete 可带 onlyIfEmpty", () => {
   assert.equal(SessionDeleteInput.safeParse({ sessionId: "s1", extra: 1 }).success, false)
 })
 
-test("session.truncateFrom 只要 sessionId + messageId", () => {
+test("session.truncateFrom 必须带看见的尾巴", () => {
   assert.equal(
     SessionTruncateFromInput.safeParse({ sessionId: "s1", messageId: "m1" }).success,
+    false
+  )
+  assert.equal(
+    SessionTruncateFromInput.safeParse({
+      sessionId: "s1",
+      messageId: "m1",
+      expectedTailIds: ["m1"]
+    }).success,
     true
   )
   assert.equal(
-    SessionTruncateFromInput.safeParse({ sessionId: "s1", messageId: "m1", extra: true }).success,
+    SessionTruncateFromInput.safeParse({
+      sessionId: "s1",
+      messageId: "m1",
+      expectedTailIds: []
+    }).success,
     false
   )
+  assert.equal(
+    SessionTruncateFromInput.safeParse({
+      sessionId: "s1",
+      messageId: "m1",
+      expectedTailIds: ["m1"],
+      extra: true
+    }).success,
+    false
+  )
+})
+
+test("soft 2：截断 id ≤ 128 字符、名单 ≤ 200 条；dryRun 可选", () => {
+  const base = { sessionId: "s1", messageId: "m1", expectedTailIds: ["m1"] }
+  assert.equal(SessionTruncateFromInput.safeParse({ ...base, dryRun: true }).success, true)
+  assert.equal(SessionTruncateFromInput.safeParse({ ...base, messageId: "x".repeat(128) }).success, true)
+  assert.equal(SessionTruncateFromInput.safeParse({ ...base, messageId: "x".repeat(129) }).success, false)
+  assert.equal(
+    SessionTruncateFromInput.safeParse({ ...base, expectedTailIds: ["y".repeat(129)] }).success,
+    false
+  )
+  const ids = (n: number) => Array.from({ length: n }, (_, i) => `m${i}`)
+  assert.equal(SessionTruncateFromInput.safeParse({ ...base, expectedTailIds: ids(200) }).success, true)
+  assert.equal(SessionTruncateFromInput.safeParse({ ...base, expectedTailIds: ids(201) }).success, false)
+  assert.equal(TruncateTailIds.safeParse([]).success, true)
+  assert.equal(TruncateTailIds.safeParse(ids(201)).success, false)
+  assert.equal(TruncateMessageId.safeParse("z".repeat(129)).success, false)
+})
+
+test("agent.run 截断必须 after + 尾巴成对（不 value-import chat.ts）", () => {
+  const src = readFileSync(new URL("./chat.ts", import.meta.url), "utf8")
+  assert.match(src, /truncateAfterMessageId: TruncateMessageId\.optional\(\)/)
+  assert.match(src, /expectedTailIds: TruncateTailIds\.optional\(\)/)
+  assert.match(src, /truncateAfterMessageId and expectedTailIds must be sent together/)
 })
 
 test("session.fork 只要 sessionId + messageId", () => {
