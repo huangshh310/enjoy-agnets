@@ -11,6 +11,9 @@
  * output-error「No result received.」，账本显示「1 个失败」。
  * 上一轮的审批响应不得让下一句复读结果。
  *
+ * 命令夹具（「run bash ls」/「run bash ls -la」/「run code」/「run long」/「run pipe」）见
+ * `e2e-stub-shell.ts`：真审批卡、假输出，绝不真跑命令。
+ *
  * 终端可点链接夹具（给 luna 验悬停）：
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
@@ -33,6 +36,22 @@ import {
   STUB_WRITE_INPUT,
   writeStubApprovedFile
 } from "./e2e-stub-write.ts"
+import {
+  nextStubShellIds,
+  stubShellApprovalPart,
+  stubShellDoneText,
+  stubShellFixtureFor,
+  stubShellResultPart,
+  stubShellToolCallIdFor,
+  stubShellToolCallPart,
+  type StubShellFixture
+} from "./e2e-stub-shell.ts"
+
+export {
+  STUB_LONG_COMMAND,
+  STUB_SHELL_FIXTURES,
+  stubShellFixtureFor
+} from "./e2e-stub-shell.ts"
 
 export {
   stubApprovedWriteResult,
@@ -181,6 +200,11 @@ export async function* createE2eStubStream(
     for (const part of desktop) yield part
     return
   }
+  const shell = stubShellFixtureFor(prompt)
+  if (shell) {
+    yield* emitStubShellTurn(shell, messages, signal, opts)
+    return
+  }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
     if (process.env.ENJOY_E2E_SLOW_TOOL === "1") await wait(8_000)
@@ -214,6 +238,29 @@ export async function* createE2eStubStream(
   const body = `stub-ok ${prompt.slice(0, 48)}`.trim()
   const slow = /\bslow\b/i.test(prompt)
   yield* emitText(body, signal, slow ? 400 : 0)
+}
+
+/** 命令夹具：允许后吐假结果；会话已放行（真实 resolveToolApproval）则不弹卡直接假执行；否则吐审批卡。 */
+async function* emitStubShellTurn(
+  fixture: StubShellFixture,
+  messages: ModelMessage[],
+  signal: AbortSignal,
+  opts?: E2eStubStreamOpts
+): AsyncGenerator<Record<string, unknown>> {
+  const approvedCallId = stubShellToolCallIdFor(currentTurnApprovedId(messages))
+  if (approvedCallId) {
+    yield stubShellResultPart(fixture, approvedCallId)
+    yield* emitText(stubShellDoneText(fixture), signal)
+    return
+  }
+  const ids = nextStubShellIds(fixture)
+  if (opts?.isToolApproved?.(fixture.toolName, fixture.input)) {
+    yield stubShellToolCallPart(fixture, ids.toolCallId)
+    yield stubShellResultPart(fixture, ids.toolCallId)
+    yield* emitText(stubShellDoneText(fixture), signal)
+    return
+  }
+  yield stubShellApprovalPart(fixture, ids)
 }
 
 async function* emitStubWriteTurn(

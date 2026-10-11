@@ -192,6 +192,61 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
   }
 })
 
+test("命令夹具：本会话允许 ls 后 ls 不弹卡、ls -la 再弹卡；run code / long / pipe 只允许一次", async () => {
+  const app = await launchStubApp("# e2e shell fixtures\n", 240_000, { lang: "zh" })
+  if (!app) return
+  try {
+    const window = await readyWindow(app)
+    await window.setViewportSize({ width: 1440, height: 900 })
+    const composer = window.locator('[data-testid="composer-input"]')
+    const allowOnce = window.locator('[data-testid="approval-allow"]')
+    const allowSession = window.locator('[data-testid="approval-session"]')
+    const alwaysApp = window.locator('[data-testid="approval-always-app"]')
+
+    await sendComposer(window, composer, "run bash ls")
+    await expect(allowSession).toBeVisible({ timeout: 20_000 })
+    await allowSession.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "ls", 1)
+
+    // 同一条完全相同的命令：不弹卡直接（假）执行。
+    await sendComposer(window, composer, "run bash ls")
+    await waitRanCount(window, "ls", 2)
+    await expect(allowOnce).toHaveCount(0)
+    await expect(allowSession).toHaveCount(0)
+
+    // 同前缀不同命令：仍要问。
+    await sendComposer(window, composer, "run bash ls -la")
+    await expect(allowSession).toBeVisible({ timeout: 20_000 })
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "lsla", 1)
+
+    for (const [trigger, key] of [
+      ["run code", "code"],
+      ["run long", "long"],
+      ["run pipe", "pipe"]
+    ] as const) {
+      await sendComposer(window, composer, trigger)
+      await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+      await expect(allowSession).toHaveCount(0)
+      await expect(alwaysApp).toHaveCount(0)
+      await allowOnce.click({ timeout: 8_000, force: true })
+      await waitRanCount(window, key, 1)
+    }
+  } finally {
+    await closeApp(app)
+  }
+})
+
+/** 数正文里 `stub-ok ran <key>`（\b 防 ls 吃到 lsla）。 */
+async function waitRanCount(window: Page, key: string, count: number) {
+  await window.waitForFunction(
+    ({ key, count }) =>
+      (document.body.innerText.match(new RegExp(`stub-ok ran ${key}\\b`, "g"))?.length ?? 0) >= count,
+    { key, count },
+    { timeout: 20_000 }
+  )
+}
+
 async function launchStubApp(
   readme: string,
   timeoutMs = 90_000,
