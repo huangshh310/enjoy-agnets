@@ -1,6 +1,8 @@
 /**
- * jojo P1：「有新内容」提示卡上的「重新生成」必须重跑**最初点的那一轮**，不能回落「最后一轮」。
- * regenerate / edit 起跑前记下目标（用户句 id 稳定；助手 id 刷新后会从占位换成库 id），起跑成功清掉。
+ * jojo P1 / leo #147 MF-2：「有新内容」等截断闸红卡上的「重新生成」重跑**最初点的那一轮**。
+ * 目标绑在那条错误上（`store.errorRetry`，`setError(text, target)`），不是模块级全局：
+ * 换了错误（429 等）、新发送、切会话都会盖掉，旧目标不会被后来的红卡捡到。
+ * 记用户句 id（稳定）；助手 id 刷新后会从占位换成库 id，按位置重新解析。
  */
 export type RetryTarget =
   | { kind: "regenerate"; sessionId: string; userId: string }
@@ -10,25 +12,20 @@ export type ResolvedRetryTarget =
   | { kind: "regenerate"; assistantId: string }
   | { kind: "edit"; userId: string; content: string }
 
-let current: RetryTarget | null = null
-
-export function rememberRetryTarget(target: RetryTarget): void {
-  current = target
+/** 只有当前错误就是挂目标的那一句才认。 */
+export function retryTargetForError(
+  error: string | null,
+  errorRetry: { error: string; target: RetryTarget } | null
+): RetryTarget | null {
+  if (!error || !errorRetry || errorRetry.error !== error) return null
+  return errorRetry.target
 }
 
-export function clearRetryTarget(): void {
-  current = null
-}
-
-export function peekRetryTarget(): RetryTarget | null {
-  return current
-}
-
-/** 按当前视图解析记住的目标；会话变了或那句用户话已不在：null（调用方走原来的兜底）。 */
+/** 按当前视图解析目标；会话变了或那句用户话已不在：null（调用方走原来的兜底）。 */
 export function resolveRetryTarget(
   sessionId: string | null,
   messages: ReadonlyArray<{ id: string; role: string }>,
-  target: RetryTarget | null = current
+  target: RetryTarget | null
 ): ResolvedRetryTarget | null {
   if (!target || !sessionId || target.sessionId !== sessionId) return null
   const userIndex = messages.findIndex((message) => message.id === target.userId)

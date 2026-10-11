@@ -256,13 +256,16 @@ function emitRunStart(
   promptEcho?: boolean
 ): void {
   const echoed = promptEcho ? lastUserContent(input) : ""
+  const echoedId = echoed ? lastOutgoingUser(input)?.id : undefined
   persistSessionWorkflow(input.sessionId, "in_progress")
   emitEvent(window, {
     type: "run.start",
     runId,
     sessionId: input.sessionId,
     kind: "agent",
-    ...(echoed ? { prompt: echoed } : {})
+    ...(echoed ? { prompt: echoed } : {}),
+    // leo #147 MF-1：代发用户句落库用的就是这个 id，气泡直接用它。
+    ...(echoed && echoedId && echoedId.length <= 128 ? { promptMessageId: echoedId } : {})
   })
 }
 

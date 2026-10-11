@@ -14,7 +14,11 @@ import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
 import { editAndResendUserTurn, regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
-import { laterTurnCount, resolveRetryTarget } from "@renderer/hooks/regenerate-retry-target"
+import {
+  laterTurnCount,
+  resolveRetryTarget,
+  retryTargetForError
+} from "@renderer/hooks/regenerate-retry-target"
 import { RegenerateConfirmDialog } from "./turns/regenerate-confirm-dialog"
 import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
@@ -54,6 +58,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
   const sessionId = useChatStore((state) => state.sessionId)
+  const errorRetry = useChatStore((state) => state.errorRetry)
   const [copiedInstall, setCopiedInstall] = useState(false)
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null)
   const kind = classifyThreadError(error)
@@ -72,7 +77,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
 
   function handleRetry() {
     // jojo P1：被截断闸挡下的重新生成 / 编辑重发，重试的是最初点的那一轮，不是「最后一轮」。
-    const target = resolveRetryTarget(sessionId, messages)
+    // leo #147 MF-2：目标只认挂在**这条**错误上的；别的错误（429 等）走原来的兜底。
+    const target = resolveRetryTarget(sessionId, messages, retryTargetForError(error, errorRetry))
     if (target?.kind === "edit") {
       setError(null)
       void editAndResendUserTurn(target.userId, target.content)

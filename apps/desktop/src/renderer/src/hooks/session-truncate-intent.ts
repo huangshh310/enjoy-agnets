@@ -1,84 +1,84 @@
+import { parseAssistantPayload } from "@enjoy-agents/ipc-contract/assistant-payload"
 /**
- * regenerate / edit / rewind：算出保留点之后 renderer 看见的尾巴。
+ * regenerate / edit / rewind：算出保留点之后 renderer 看见的尾巴（只用**权威**落库 id）。
+ *
+ * leo #147 MF-1：不读库猜。活视图助手气泡是占位 id（`msg_pending_*` / `msg_${runId}`），
+ * main 落库后发 `message.persisted` 回报真 id，绑在 `persistedId` 上；回灌来的行本身就是库 id。
+ * 仍是占位（没收到回报：出错 / 中断 / 空轮没落库，或切走漏了回报）的气泡当**不存在**于视图：
+ * 不进名单。库里若真有对应行（或任何后台行），main 尾巴比对不上 → STALE → 刷新后原名单仍不同
+ * → 「有新内容」，什么都不删。用户句 id 是 renderer 生成并原样落库的，本来就权威。
  */
-export function tailIdsAfterKeep(
-  messages: ReadonlyArray<{ id: string }>,
-  keepId: string
-): string[] {
+export type TailMessage = { id: string; runId?: string; persistedId?: string }
+
+export function isPlaceholderMessage(message: TailMessage): boolean {
+  if (message.persistedId) return false
+  if (message.id.startsWith("msg_pending_")) return true
+  if (!message.runId) return false
+  return message.id === `msg_${message.runId}` || message.id === `msg_user_${message.runId}`
+}
+
+/** 截断名单里用的 id：权威落库 id；占位返回 null（当不存在）。 */
+export function persistedIdOf(message: TailMessage): string | null {
+  if (message.persistedId) return message.persistedId
+  return isPlaceholderMessage(message) ? null : message.id
+}
+
+function persistedIds(messages: ReadonlyArray<TailMessage>): string[] {
+  return messages.map(persistedIdOf).filter((id): id is string => id != null)
+}
+
+export function tailIdsAfterKeep(messages: ReadonlyArray<TailMessage>, keepId: string): string[] {
   const index = messages.findIndex((message) => message.id === keepId)
   if (index < 0) return []
-  return messages.slice(index + 1).map((message) => message.id)
+  return persistedIds(messages.slice(index + 1))
 }
 
-export function tailIdsFromInclusive(
-  messages: ReadonlyArray<{ id: string }>,
-  fromId: string
-): string[] {
+export function tailIdsFromInclusive(messages: ReadonlyArray<TailMessage>, fromId: string): string[] {
   const index = messages.findIndex((message) => message.id === fromId)
   if (index < 0) return []
-  return messages.slice(index).map((message) => message.id)
+  return persistedIds(messages.slice(index))
 }
 
-export type TailRow = { id: string; role: string; content?: string }
+export type DbTailRow = { id: string; role: string; content: string }
+
+/** 助手行信封里的 runId（旧行 / 纯文本没有 → undefined，永远绑不上）。 */
+export function runIdOfAssistantContent(content: string): string | undefined {
+  try {
+    return parseAssistantPayload(content).runId ?? undefined
+  } catch {
+    return undefined
+  }
+}
 
 /**
- * jojo P1：活视图里助手气泡的 id 是 renderer 占位（`msg_pending_*`），库里是 main 另起的 `msg_*`，
- * 直接拿视图 id 当 expectedTailIds 永远对不上 → 误报 STALE / 有新内容。
- *
- * 这里把「视图尾巴」对到「库尾巴」，返回库 id 名单；对不上返回 null（调用方刷新 + 提示，不删任何东西）。
- * 规则（fail closed，MF-A 不放松）：
- * - 锚点（用户句）必须同 id 同时出现在视图与库里；
- * - 同 id：直接配对；
- * - 视图里的占位助手（id 不在库里）只能配一条**库里有、视图里没有**的助手行（一对一，不吞多行）；
- *   后面紧跟的不是助手行：说明这个气泡没落库（空轮），跳过，它不会让库里多删任何东西；
- * - 库里相邻重复的用户句（视图 dedupe 过）跟着前一条用户句走；
- * - 库尾里任何没被配上的行（心跳 hb_u / hb_a、后台多出的助手行）→ null。
+ * leo #147 MF-1（host 定的主方案）：占位气泡**只**能绑库里 `parseAssistantPayload(content).runId === bubble.runId`
+ * 的那一条助手行（恰好一条、且没被视图别的消息占用）。绑不上 → 气泡当不在视图里（不进名单）。
+ * 不按位置猜、不吞「视图里没有的助手行」、不跳过重复用户句；库里任何没被解释的行留给 main 精确比对
+ * → STALE → 刷新后原名单仍不同 → 「有新内容」，什么都不删。心跳 / 自动化行的 runId 不会等于前台气泡的 runId。
+ * main `message.persisted` 已绑的 persistedId 优先（它本身就是权威 id）。
  */
-export function reconcileTailWithDb(input: {
-  view: ReadonlyArray<TailRow>
-  db: ReadonlyArray<TailRow>
-  anchorId: string
-  mode: "after" | "from"
-}): string[] | null {
-  const viewIndex = input.view.findIndex((row) => row.id === input.anchorId)
-  const dbIndex = input.db.findIndex((row) => row.id === input.anchorId)
-  if (viewIndex < 0 || dbIndex < 0) return null
-  const offset = input.mode === "after" ? 1 : 0
-  const viewTail = input.view.slice(viewIndex + offset)
-  const dbTail = input.db.slice(dbIndex + offset)
-  const dbIds = new Set(input.db.map((row) => row.id))
-  const viewIds = new Set(input.view.map((row) => row.id))
-  let cursor = 0
-  const skipDedupedUsers = () => {
-    while (cursor < dbTail.length) {
-      const row = dbTail[cursor]!
-      const prev = cursor > 0 ? dbTail[cursor - 1] : input.db[dbIndex + offset - 1]
-      const deduped =
-        row.role === "user" &&
-        !viewIds.has(row.id) &&
-        prev?.role === "user" &&
-        prev.content != null &&
-        prev.content === row.content
-      if (!deduped) return
-      cursor += 1
-    }
+export function bindPlaceholdersByRunId<T extends TailMessage>(
+  view: ReadonlyArray<T>,
+  db: ReadonlyArray<DbTailRow>,
+  runIdOf: (content: string) => string | undefined
+): T[] {
+  const byRun = new Map<string, string[]>()
+  for (const row of db) {
+    if (row.role !== "assistant") continue
+    const runId = runIdOf(row.content)
+    if (!runId) continue
+    byRun.set(runId, [...(byRun.get(runId) ?? []), row.id])
   }
-  for (const message of viewTail) {
-    skipDedupedUsers()
-    const row = dbTail[cursor]
-    if (row && row.id === message.id) {
-      cursor += 1
-      continue
-    }
-    const placeholder = message.role === "assistant" && !dbIds.has(message.id)
-    if (!placeholder) return null
-    if (row && row.role === "assistant" && !viewIds.has(row.id)) {
-      cursor += 1
-      continue
-    }
-    // 没落库的空气泡：跳过。
+  const used = new Set<string>()
+  for (const message of view) {
+    const id = persistedIdOf(message)
+    if (id) used.add(id)
   }
-  skipDedupedUsers()
-  if (cursor !== dbTail.length) return null
-  return dbTail.map((row) => row.id)
+  return view.map((message) => {
+    if (!isPlaceholderMessage(message) || !message.runId) return message
+    const ids = byRun.get(message.runId) ?? []
+    if (ids.length !== 1 || used.has(ids[0]!)) return message
+    used.add(ids[0]!)
+    return { ...message, persistedId: ids[0]! }
+  })
 }

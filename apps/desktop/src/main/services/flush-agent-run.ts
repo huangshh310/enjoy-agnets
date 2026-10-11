@@ -13,6 +13,7 @@ import { persistRunUsageFromActive, markPumpMissingUsage, usageNeverRecorded } f
 import { listActiveRuns, type ActiveRun } from "./agent-run-state"
 import { writeCancelledRestoreError } from "./restore-interrupted-running"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+import { announcePersistedMessage } from "./announce-persisted-message"
 export { shouldFlushRunsOnWindowAllClosed } from "./flush-on-window-all-closed"
 
 const FINISHED = new Set(["completed", "failed", "cancelled"])
@@ -33,7 +34,7 @@ export function persistActiveRun(
   status: RunFlushStatus,
   error?: string
 ): boolean {
-  const wrote = writeAssistantRow(run)
+  const wrote = writeAssistantRow(run, runId)
   if (wrote) run.assistantPersisted = true
   updateRun(getDatabase(), runId, {
     status,
@@ -58,8 +59,8 @@ export function checkpointActiveRun(run: ActiveRun): boolean {
   return writeAssistantRow(run)
 }
 
-function writeAssistantRow(run: ActiveRun): boolean {
-  const runId = listActiveRuns().find((item) => item.run === run)?.runId
+function writeAssistantRow(run: ActiveRun, knownRunId?: string): boolean {
+  const runId = knownRunId ?? listActiveRuns().find((item) => item.run === run)?.runId
   const payload = flushPayloadFromRun({
     assistantPersisted: run.assistantPersisted,
     sessionId: run.input.sessionId,
@@ -74,11 +75,16 @@ function writeAssistantRow(run: ActiveRun): boolean {
   })
   if (!payload) return false
   try {
+    const previous = run.assistantMessageId
     const id = persistFinishedAssistant({
       ...payload,
       messageId: run.assistantMessageId
     })
     if (id) run.assistantMessageId = id
+    if (id && id !== previous && runId) {
+      // leo #147 MF-1：真 id 回给 renderer，气泡绑上（首次插行 / 不能复用旧行换新行时各发一次）。
+      announcePersistedMessage({ runId, sessionId: run.input.sessionId, messageId: id, role: "assistant" })
+    }
     return Boolean(id)
   } catch {
     return false

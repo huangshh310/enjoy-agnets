@@ -4,6 +4,8 @@
 
 export type AssetBearingMessage = {
   id?: string
+  /** main 回报的真实落库 id（leo #147 MF-1）。 */
+  persistedId?: string
   role: string
   content: string
   assets?: unknown[]

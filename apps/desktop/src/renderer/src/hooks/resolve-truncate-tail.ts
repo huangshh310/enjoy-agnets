@@ -1,26 +1,32 @@
 /**
- * regenerate / edit-and-resend / rewind 开截前：读库尾，把视图尾巴对成库 id 名单（见 reconcileTailWithDb）。
- * 对不上返回 null：调用方刷新视图、提示「有新内容」，不截断。
+ * regenerate / edit-and-resend / rewind 开截前：读库，**只**按 runId 把占位气泡绑到同 run 的助手行
+ * （bindPlaceholdersByRunId），再算名单。读库失败：不绑，占位气泡都不进名单（更保守）。
+ * 这里不判断「对不对得上」——由 main 精确比对 + truncate-retry 决定，库里多出的行一律「有新内容」。
  */
 import { getIde } from "../lib/ide"
-import { reconcileTailWithDb, type TailRow } from "./session-truncate-intent"
+import {
+  bindPlaceholdersByRunId,
+  runIdOfAssistantContent,
+  tailIdsAfterKeep,
+  tailIdsFromInclusive,
+  type DbTailRow,
+  type TailMessage
+} from "./session-truncate-intent"
 
 export async function resolveTruncateTail(input: {
   sessionId: string
-  messages: ReadonlyArray<TailRow>
+  messages: ReadonlyArray<TailMessage>
   anchorId: string
   mode: "after" | "from"
-}): Promise<string[] | null> {
-  let rows: TailRow[]
+}): Promise<string[]> {
+  let bound: ReadonlyArray<TailMessage> = input.messages
   try {
-    rows = (await getIde().session.messages({ sessionId: input.sessionId })) as TailRow[]
+    const rows = (await getIde().session.messages({ sessionId: input.sessionId })) as DbTailRow[]
+    bound = bindPlaceholdersByRunId(input.messages, rows, runIdOfAssistantContent)
   } catch {
-    return null
+    // 读不到库：占位气泡不进名单。
   }
-  return reconcileTailWithDb({
-    view: input.messages.map((row) => ({ id: row.id, role: row.role, content: row.content })),
-    db: rows.map((row) => ({ id: row.id, role: row.role, content: row.content })),
-    anchorId: input.anchorId,
-    mode: input.mode
-  })
+  return input.mode === "after"
+    ? tailIdsAfterKeep(bound, input.anchorId)
+    : tailIdsFromInclusive(bound, input.anchorId)
 }

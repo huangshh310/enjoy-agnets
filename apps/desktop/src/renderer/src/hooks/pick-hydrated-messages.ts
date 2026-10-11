@@ -26,6 +26,8 @@ export function preferLiveToolProgress<T extends AssetBearingMessage>(dbMessages
   const liveById = new Map<string, T>()
   for (const message of liveMessages) {
     if (message.id) liveById.set(message.id, message)
+    // leo #147 MF-1：活气泡绑了真 id 时，库行按真 id 也能认回它。
+    if (message.persistedId) liveById.set(message.persistedId, message)
   }
   return dbMessages.map((db) => {
     const live = db.id ? liveById.get(db.id) : undefined

@@ -46,11 +46,14 @@ export function reduceStreamEvent(
   event: StreamEvent,
   activeRunId: string | null = null
 ): StreamPatch {
+  if (event.type === "message.persisted") return { messages: bindPersistedMessage(messages, event) }
   if (event.type === "run.start") {
     if (isForeignRunId(event.runId, activeRunId)) return { messages }
     if (activeRunId !== event.runId && !isComposerRunStart(event)) return { messages }
     return {
-      messages: event.prompt ? appendPromptTurn(messages, event.prompt, event.runId) : messages,
+      messages: event.prompt
+        ? appendPromptTurn(messages, event.prompt, event.runId, event.promptMessageId)
+        : messages,
       running: true,
       runId: event.runId,
       error: null
@@ -163,15 +166,42 @@ function applyApprovalEvent(
   return { messages: next, pendingApproval: null }
 }
 
-function appendPromptTurn(messages: ThreadMessage[], prompt: string, runId: string): ThreadMessage[] {
+function appendPromptTurn(
+  messages: ThreadMessage[],
+  prompt: string,
+  runId: string,
+  promptMessageId?: string
+): ThreadMessage[] {
   const text = prompt.trim()
   if (!text) return messages
   const lastUser = [...messages].reverse().find((row) => row.role === "user")
   if (lastUser?.content.trim() === text) return messages
   return [
     ...messages,
-    { id: `msg_user_${runId}`, role: "user", content: text, createdAt: Date.now() }
+    { id: promptMessageId ?? `msg_user_${runId}`, role: "user", content: text, createdAt: Date.now(), runId }
   ]
+}
+
+/**
+ * leo #147 MF-1：main 回报的真实落库 id 绑到同 runId 的气泡（最后一条同角色）。
+ * 不改 `id`（React key / host-inject 认 `msg_${runId}`），记在 `persistedId`；截断名单只认它。
+ * 找不到气泡（切走 / 已回灌成库 id）就不动——回灌的行本来就是库 id。
+ */
+export function bindPersistedMessage(
+  messages: ThreadMessage[],
+  event: { runId: string; messageId: string; role: "assistant" | "user" }
+): ThreadMessage[] {
+  if (messages.some((message) => message.id === event.messageId || message.persistedId === event.messageId)) {
+    return messages
+  }
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]!
+    if (message.role !== event.role || message.runId !== event.runId) continue
+    const next = messages.slice()
+    next[index] = { ...message, persistedId: event.messageId }
+    return next
+  }
+  return messages
 }
 
 function eventRunId(event: StreamEvent): string | undefined {

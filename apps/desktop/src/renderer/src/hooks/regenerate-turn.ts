@@ -18,15 +18,10 @@ import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 import { agentRunBlockedCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { loadSession } from "./session-lifecycle"
+import type { RetryTarget } from "./regenerate-retry-target"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
-import { clearRetryTarget, rememberRetryTarget } from "./regenerate-retry-target"
 import { translateTruncateNotice } from "./truncate-notice"
-import {
-  isBlockedStart,
-  startWithTruncateRetry,
-  TRUNCATE_TAIL_CHANGED,
-  type RetryHistoryEntry
-} from "./truncate-retry"
+import { isBlockedStart, startWithTruncateRetry, type RetryHistoryEntry } from "./truncate-retry"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -62,20 +57,16 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
   }
 
   // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）。
-  // jojo P1：名单必须是库 id（视图助手气泡是占位 id），先读库对账；对不上就刷新提示，不截。
+  // jojo P1 / leo #147 MF-1：名单只用权威 id：回灌的库 id、message.persisted 绑的 persistedId、或按 runId 严格绑上的库行；绑不上的占位气泡不进名单。
   const sessionAtStart = store.sessionId
-  rememberRetryTarget({ kind: "regenerate", sessionId: sessionAtStart, userId: userMessage.id })
   const expectedTailIds = await resolveTruncateTail({
     sessionId: sessionAtStart,
     messages,
     anchorId: userMessage.id,
     mode: "after"
   })
-  if (!expectedTailIds) {
-    await refreshAfterTailMismatch(sessionAtStart)
-    return
-  }
   if (!stillIdle(sessionAtStart)) return
+  const retryTarget: RetryTarget = { kind: "regenerate", sessionId: sessionAtStart, userId: userMessage.id }
   const truncatedMessages = messages.slice(0, userIndex + 1)
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -117,10 +108,10 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
       keepId: userMessage.id,
       expectedTailIds,
       before: messages,
-      pending: nextMessages[nextMessages.length - 1]!
+      pending: nextMessages[nextMessages.length - 1]!,
+      retryTarget
     })
     if (agentRunBlockedCode(started) || isBlockedStart(started)) return
-    clearRetryTarget()
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
@@ -153,23 +144,19 @@ export async function editAndResendUserTurn(
   }
 
   const sessionAtStart = store.sessionId
-  rememberRetryTarget({
-    kind: "edit",
-    sessionId: sessionAtStart,
-    userId: oldUserMsg.id,
-    content: newContent.trim()
-  })
   const expectedTailIds = await resolveTruncateTail({
     sessionId: sessionAtStart,
     messages,
     anchorId: oldUserMsg.id,
     mode: "after"
   })
-  if (!expectedTailIds) {
-    await refreshAfterTailMismatch(sessionAtStart)
-    return
-  }
   if (!stillIdle(sessionAtStart)) return
+  const retryTarget: RetryTarget = {
+    kind: "edit",
+    sessionId: sessionAtStart,
+    userId: oldUserMsg.id,
+    content: newContent.trim()
+  }
   const truncatedMessages = [...messages.slice(0, userIndex), updatedUserMsg]
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -212,10 +199,10 @@ export async function editAndResendUserTurn(
       expectedTailIds,
       before: messages,
       pending: nextMessages[nextMessages.length - 1]!,
-      keepMessage: updatedUserMsg
+      keepMessage: updatedUserMsg,
+      retryTarget
     })
     if (agentRunBlockedCode(started) || isBlockedStart(started)) return
-    clearRetryTarget()
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Execution failed.")
@@ -224,18 +211,10 @@ export async function editAndResendUserTurn(
   }
 }
 
-/** 读库对账期间别人起跑了或切了会话：放弃这次。 */
+/** 读库期间别人起跑了或切了会话：放弃这次。 */
 function stillIdle(sessionId: string): boolean {
   const live = useChatStore.getState()
   return !live.running && live.sessionId === sessionId
-}
-
-/** 视图尾巴与库对不上：刷新视图，提示「有新内容」，什么都不删。 */
-async function refreshAfterTailMismatch(sessionId: string): Promise<void> {
-  const live = useChatStore.getState()
-  if (live.sessionId !== sessionId) return
-  await loadSession(sessionId, live.sessionTitle ?? "")
-  useChatStore.getState().setError(translateTruncateNotice(TRUNCATE_TAIL_CHANGED))
 }
 
 /**
@@ -275,6 +254,8 @@ async function startTurnWithTruncateRetry(
     pending: ThreadMessages[number]
     /** 编辑重发：保留点要显示 / 发送的新内容。 */
     keepMessage?: ThreadMessages[number]
+    /** 被闸挡下时挂在红卡上的重试目标（leo #147 MF-2）。 */
+    retryTarget: RetryTarget
   }
 ) {
   const sessionId = store.sessionId
@@ -306,7 +287,7 @@ async function startTurnWithTruncateRetry(
         live.setRunning(true)
         live.setError(null)
       },
-      notice: (code) => useChatStore.getState().setError(translateTruncateNotice(code))
+      notice: (code) => useChatStore.getState().setError(translateTruncateNotice(code), opts.retryTarget)
     },
     { keepId: opts.keepId, expectedTailIds: opts.expectedTailIds, history }
   )

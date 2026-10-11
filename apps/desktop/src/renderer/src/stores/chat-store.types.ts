@@ -10,6 +10,7 @@ import type {
   ThreadToolCall
 } from "@enjoy-agents/ipc-contract"
 import type { RestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
+import type { RetryTarget } from "../hooks/regenerate-retry-target"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -77,6 +78,8 @@ export type ThreadMessage = {
   runtimeId?: string
   /** 本轮 run。新一轮禁止折进上一轮终态行。 */
   runId?: string
+  /** main `message.persisted` 回报的真实落库 id（leo #147 MF-1）。截断名单只认它或回灌来的库 id。 */
+  persistedId?: string
   /** 落库的真实回挂码，冷启动横幅用这个，不发明 interrupted。 */
   restartNotice?: RestoreFamilyCode
   modelLabel?: string
@@ -229,6 +232,11 @@ export type ChatStore = {
   sessionReviewDismissedKey: string | null
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
+  /**
+   * leo #147 MF-2：这条错误自带的重试目标（截断闸挡下的重新生成 / 编辑重发）。
+   * 只在 `error` 仍是同一句时有效；任何不带目标的 setError / 新发送 / 切会话都会盖掉。
+   */
+  errorRetry: { error: string; target: RetryTarget } | null
   /** 建会话或首句排队：Composer 上沿「正在准备…」，不走 toast。 */
   preparingHint: boolean
   /** 非失败提示（如 ACP resume 回落），不走错误条。 */
@@ -279,7 +287,7 @@ export type ChatStore = {
   appendUserMessage: (content: string, assets?: ThreadAsset[]) => ThreadMessage[]
   setRunning: (running: boolean, runId?: string | null) => void
   setHasKey: (hasKey: boolean) => void
-  setError: (message: string | null) => void
+  setError: (message: string | null, retryTarget?: RetryTarget) => void
   setPreparingHint: (preparing: boolean) => void
   setNotice: (message: string | null) => void
   setAgentPickerOpen: (open: boolean) => void
