@@ -3,7 +3,7 @@
  */
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { BASH_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
-import { bashAllowPrefix, commandFromToolInput } from "../policies/bash-prefix.ts"
+import { bashAllowCommand, commandFromToolInput } from "../policies/bash-prefix.ts"
 import { resolveToolApproval, type ApprovalPolicy, type ToolApprovalDecision } from "../tool-approval.ts"
 
 const BASH_SET = new Set<string>(BASH_TOOLS)
@@ -22,7 +22,7 @@ export function createSubagentApproval(options: {
   waitForApproval?: WaitForSubagentApproval
 }) {
   const sessionApproved = new Set(options.policy.sessionApprovedTools ?? [])
-  const bashPrefixes = [...(options.policy.sessionApprovedBashPrefixes ?? [])]
+  const bashCommands = [...(options.policy.sessionApprovedBashCommands ?? [])]
   return async function decide(toolCall: {
     toolName: string
     toolCallId?: string
@@ -31,7 +31,7 @@ export function createSubagentApproval(options: {
     const policy: ApprovalPolicy = {
       ...options.policy,
       sessionApprovedTools: sessionApproved,
-      sessionApprovedBashPrefixes: bashPrefixes
+      sessionApprovedBashCommands: bashCommands
     }
     const decision = resolveToolApproval(toolCall.toolName, options.mode, policy, toolCall.input)
     if (!needsUser(decision)) return decision
@@ -44,7 +44,7 @@ export function createSubagentApproval(options: {
       input: toolCall.input
     })
     if (user === "deny") return { type: "denied", reason: "user denied subagent tool." }
-    if (user === "allow_session") rememberSessionAllow(toolCall, sessionApproved, bashPrefixes)
+    if (user === "allow_session") rememberSessionAllow(toolCall, sessionApproved, bashCommands)
     return "approved"
   }
 }
@@ -52,11 +52,11 @@ export function createSubagentApproval(options: {
 function rememberSessionAllow(
   toolCall: { toolName: string; input?: unknown },
   sessionApproved: Set<string>,
-  bashPrefixes: string[]
+  bashCommands: string[]
 ): void {
   if (BASH_SET.has(toolCall.toolName)) {
-    const prefix = bashAllowPrefix(commandFromToolInput(toolCall.input))
-    if (prefix) bashPrefixes.push(prefix)
+    const command = bashAllowCommand(commandFromToolInput(toolCall.input))
+    if (command) bashCommands.push(command)
     return
   }
   sessionApproved.add(toolCall.toolName)

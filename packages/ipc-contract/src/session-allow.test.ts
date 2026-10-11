@@ -9,11 +9,11 @@ import {
 
 test("sessionAllowScope 认 tool 全名与 bash 前缀", () => {
   const tool = SessionAllowScope.parse({ kind: "tool", toolName: "mcp_demo__edit" })
-  const bash = SessionAllowScope.parse({ kind: "bash_prefix", prefix: "git push" })
+  const bash = SessionAllowScope.parse({ kind: "bash_command", command: "git push" })
   assert.equal(tool.kind, "tool")
   assert.equal(tool.toolName, "mcp_demo__edit")
-  assert.equal(bash.kind, "bash_prefix")
-  assert.equal(bash.prefix, "git push")
+  assert.equal(bash.kind, "bash_command")
+  assert.equal(bash.command, "git push")
   assert.equal(SessionAllowScope.safeParse({ kind: "tool" }).success, false)
   assert.equal(SessionAllowScope.safeParse({ kind: "desktop", appKey: "x" }).success, false)
 })
@@ -28,8 +28,8 @@ test("list / revoke 入参过闸，撤销回 ok 与剩余列表", () => {
   assert.equal(revoke.runtimeId, undefined)
   const result = RevokeSessionAllowResult.parse({
     ok: true,
-    items: [{ runtimeId: "enjoy-local", scope: { kind: "bash_prefix", prefix: "pnpm test" } }]
+    items: [{ runtimeId: "enjoy-local", scope: { kind: "bash_command", command: "pnpm test" } }]
   })
   assert.equal(result.ok, true)
-  assert.equal(result.items[0]?.scope.kind, "bash_prefix")
+  assert.equal(result.items[0]?.scope.kind, "bash_command")
 })

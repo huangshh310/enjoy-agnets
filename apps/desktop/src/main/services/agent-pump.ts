@@ -152,7 +152,7 @@ async function openRunStream(
     thoughtLevel: run.input.thoughtLevel,
     fast: run.input.fast,
     sessionApprovedTools: run.sessionApprovedTools,
-    sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes],
+    sessionApprovedBashCommands: [...run.sessionApprovedBashCommands],
     executePlan: run.input.executePlan,
     desktopBias: run.input.desktopBias,
     computerUseOnce: run.input.computerUseOnce,

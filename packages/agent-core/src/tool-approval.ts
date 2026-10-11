@@ -32,8 +32,8 @@ export type ApprovalPolicy = {
   requireBashApproval: boolean
   requireCommitApproval: boolean
   sessionApprovedTools?: ReadonlySet<string>
-  /** 本会话放行的 bash 命令前缀（如 `git status`），不是整个 bash 工具。 */
-  sessionApprovedBashPrefixes?: readonly string[]
+  /** 本会话放行的 bash 整条命令（规范化后完全相同才放行，如 `git status`），不是前缀、也不是整个 bash 工具。 */
+  sessionApprovedBashCommands?: readonly string[]
   /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗 / 二次确认仍每次问。 */
   anyDesktopSession?: boolean
   /**
@@ -124,7 +124,7 @@ export function resolveToolApproval(
   }
   if (
     BASH_SET.has(toolName) &&
-    sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashPrefixes)
+    sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashCommands)
   ) {
     return "approved"
   }
@@ -183,7 +183,7 @@ function resolveMcpApproval(
 }
 
 /**
- * 只看会话表（工具名 / bash 前缀 / desktop 会话），不看 prefs Auto / 持久簿。
+ * 只看会话表（工具名 / bash 整条命令 / desktop 会话），不看 prefs Auto / 持久簿。
  * 给 tool / approval 事件的 `allowedBySession` 用。
  */
 export function sessionTableAllowsTool(
@@ -200,7 +200,7 @@ export function sessionTableAllowsTool(
   }
   if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) return false
   if (BASH_SET.has(toolName)) {
-    return sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashPrefixes)
+    return sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashCommands)
   }
   return sessionAllows(toolName, policy.sessionApprovedTools)
 }

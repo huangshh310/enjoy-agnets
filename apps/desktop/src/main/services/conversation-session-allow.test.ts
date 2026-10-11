@@ -14,7 +14,7 @@ import {
   applySessionAllowDecision,
   clearAllConversationSessionAllows,
   clearConversationSessionAllow,
-  grantConversationBashPrefix,
+  grantConversationBashCommand,
   grantConversationToolAllow,
   seedRunSessionAllow,
   snapshotConversationSessionAllow
@@ -39,9 +39,9 @@ test.beforeEach(() => {
   clearAllConversationDesktopAllows()
 })
 
-test("新 run 从会话表种子工具名与 bash 前缀", () => {
+test("新 run 从会话表种子工具名与 bash 整条命令", () => {
   grantConversationToolAllow("ses_seed", "write_file")
-  grantConversationBashPrefix("ses_seed", "pnpm test")
+  grantConversationBashCommand("ses_seed", "pnpm test")
   const runId = "run_seed_allow"
   holdAgentRun({
     runId,
@@ -61,7 +61,7 @@ test("新 run 从会话表种子工具名与 bash 前缀", () => {
   const run = getActiveRun(runId)
   assert.ok(run)
   assert.equal(run.sessionApprovedTools.has("write_file"), true)
-  assert.equal(run.sessionApprovedBashPrefixes.has("pnpm test"), true)
+  assert.equal(run.sessionApprovedBashCommands.has("pnpm test"), true)
   assert.equal(
     resolveToolApproval("write_file", "agent", { ...REQUIRE_ALL, sessionApprovedTools: run.sessionApprovedTools }, {
       path: "e2e-stub.txt",
@@ -86,7 +86,7 @@ test("desktop_act 敏感不吃会话允许，也不写入工具名表", () => {
   )
   const run = {
     sessionApprovedTools: new Set<string>(),
-    sessionApprovedBashPrefixes: new Set<string>()
+    sessionApprovedBashCommands: new Set<string>()
   }
   applySessionAllowDecision("ses_term", run, { name: "desktop_act", args: TERM })
   assert.equal(run.sessionApprovedTools.size, 0)
@@ -97,7 +97,7 @@ test("desktop_act 敏感不吃会话允许，也不写入工具名表", () => {
 test("二次确认 desktop_act 不写会话表", () => {
   const run = {
     sessionApprovedTools: new Set<string>(),
-    sessionApprovedBashPrefixes: new Set<string>()
+    sessionApprovedBashCommands: new Set<string>()
   }
   applySessionAllowDecision("ses_repark", run, {
     name: "desktop_act",
@@ -116,15 +116,39 @@ test("二次确认 desktop_act 不写会话表", () => {
 test("allow_session 双写会话表与本轮 run 副本", () => {
   const run = {
     sessionApprovedTools: new Set<string>(),
-    sessionApprovedBashPrefixes: new Set<string>()
+    sessionApprovedBashCommands: new Set<string>()
   }
   applySessionAllowDecision("ses_write", run, { name: "write_file" })
   applySessionAllowDecision("ses_write", run, { name: "bash", args: { command: "pnpm test src/a.ts" } })
   assert.equal(run.sessionApprovedTools.has("write_file"), true)
-  assert.equal(run.sessionApprovedBashPrefixes.has("pnpm test"), true)
+  assert.equal(run.sessionApprovedBashCommands.has("pnpm test src/a.ts"), true)
+  assert.equal(run.sessionApprovedBashCommands.has("pnpm test"), false)
   const snap = snapshotConversationSessionAllow("ses_write")
   assert.equal(snap.toolNames.has("write_file"), true)
-  assert.equal(snap.bashPrefixes.has("pnpm test"), true)
+  assert.equal(snap.bashCommands.has("pnpm test src/a.ts"), true)
+  assert.equal(snap.bashCommands.has("pnpm test"), false)
+})
+
+test("MF-C：本会话允许 npm test 后，下一轮完全相同的 npm test 不弹卡，多一个参数仍弹卡", () => {
+  const first = {
+    sessionApprovedTools: new Set<string>(),
+    sessionApprovedBashCommands: new Set<string>()
+  }
+  applySessionAllowDecision("ses_next_turn", first, { name: "bash", args: { command: "npm test" } })
+  // 下一轮：新 run 只从会话表种子（user origin）。
+  const seeded = seedRunSessionAllow("ses_next_turn", { origin: "user" })
+  const policy = {
+    ...REQUIRE_ALL,
+    sessionApprovedTools: seeded.sessionApprovedTools,
+    sessionApprovedBashCommands: [...seeded.sessionApprovedBashCommands]
+  }
+  assert.deepEqual([...seeded.sessionApprovedBashCommands], ["npm test"])
+  assert.equal(resolveToolApproval("bash", "agent", policy, { command: "npm test" }), "approved")
+  assert.equal(resolveToolApproval("bash", "agent", policy, { command: "npm test --watch" }), "user-approval")
+  assert.equal(
+    resolveToolApproval("bash", "agent", policy, { command: "npm test --script-sh /tmp/evil.sh" }),
+    "user-approval"
+  )
 })
 
 test("clear 后新 run 不再带上写盘允许", () => {

@@ -4,9 +4,10 @@
  * 水位（授权时 id 序列哈希 + 条数）是截断真源；clearSessionAllow 只是加紧信号。
  * sessionId 不得含 `::`。找不到 MCP 服务器不记。写入类撤销整组。
  * 只有 user 开跑才种子写盘 / bash；心跳 / 自动化 / 补跑只吃 desktop 表。
+ * bash 只记整条命令、只认完全相同（leo MF-C）；以后要「前缀 + 参数」须按工具参数白名单另开 PR。
  */
 import {
-  bashAllowPrefix,
+  bashAllowCommand,
   commandFromToolInput,
   writeThroughDesktopActSessionAllow
 } from "@enjoy-agents/agent-core"
@@ -30,7 +31,7 @@ import { mcpFingerprintForTool } from "./mcp-session-fingerprint.ts"
 
 export type ConversationSessionAllow = {
   toolNames: Set<string>
-  bashPrefixes: Set<string>
+  bashCommands: Set<string>
   mcpFingerprints: Map<string, string>
 }
 
@@ -42,10 +43,10 @@ export type SeedRunSessionAllowOpts = {
 }
 
 const DEFAULT_RUNTIME = "enjoy-local"
-export const SESSION_ALLOW_MAX_PREFIXES = 64
+export const SESSION_ALLOW_MAX_BASH_COMMANDS = 64
 export const SESSION_ALLOW_MAX_TOOLS = 64
 export const SESSION_ALLOW_MAX_SESSIONS = 500
-const MAX_PREFIXES = SESSION_ALLOW_MAX_PREFIXES
+const MAX_BASH_COMMANDS = SESSION_ALLOW_MAX_BASH_COMMANDS
 const MAX_TOOLS = SESSION_ALLOW_MAX_TOOLS
 const MAX_SESSIONS = SESSION_ALLOW_MAX_SESSIONS
 
@@ -53,7 +54,7 @@ type ToolGrant = { fingerprint?: string }
 
 type Bucket = {
   toolNames: Map<string, ToolGrant>
-  bashPrefixes: Map<string, true>
+  bashCommands: Map<string, true>
   lastUsed: number
 }
 
@@ -106,7 +107,7 @@ function bucket(sessionId: string, runtimeId?: string): Bucket | undefined {
   while (conversationSessionAllow.size >= MAX_SESSIONS) evictOldestSession()
   const next: Bucket = {
     toolNames: new Map(),
-    bashPrefixes: new Map(),
+    bashCommands: new Map(),
     lastUsed: Date.now()
   }
   conversationSessionAllow.set(key, next)
@@ -122,7 +123,7 @@ function snapshotBucket(current: Bucket | undefined): ConversationSessionAllow {
   }
   return {
     toolNames: current ? new Set(current.toolNames.keys()) : new Set(),
-    bashPrefixes: current ? new Set(current.bashPrefixes.keys()) : new Set(),
+    bashCommands: current ? new Set(current.bashCommands.keys()) : new Set(),
     mcpFingerprints
   }
 }
@@ -148,13 +149,14 @@ export function grantConversationToolAllow(sessionId: string, toolName: string, 
   stampSessionAllowWatermark(sid)
 }
 
-export function grantConversationBashPrefix(sessionId: string, prefix: string, runtimeId?: string): void {
+/** 记整条命令（按 ASCII 空格 / Tab 切词后单空格拼回）。只做完全相同匹配，不是前缀。 */
+export function grantConversationBashCommand(sessionId: string, command: string, runtimeId?: string): void {
   const sid = usableSessionId(sessionId)
-  const value = prefix.trim()
+  const value = command.trim()
   if (!sid || !value) return
   const slot = bucket(sid, runtimeId)
   if (!slot) return
-  lruSet(slot.bashPrefixes, value, true, MAX_PREFIXES)
+  lruSet(slot.bashCommands, value, true, MAX_BASH_COMMANDS)
   stampSessionAllowWatermark(sid)
 }
 
@@ -195,7 +197,7 @@ export function applyAgentRunSessionAllowReset(input: {
 
 function sessionHasAllowEntries(sessionId: string): boolean {
   return bucketsForSession(sessionId).some(
-    ({ bucket }) => bucket.toolNames.size > 0 || bucket.bashPrefixes.size > 0
+    ({ bucket }) => bucket.toolNames.size > 0 || bucket.bashCommands.size > 0
   )
 }
 
@@ -252,8 +254,8 @@ export function listConversationSessionAllows(sessionId: string): SessionAllowIt
     for (const toolName of bucket.toolNames.keys()) {
       items.push({ runtimeId, scope: { kind: "tool", toolName } })
     }
-    for (const prefix of bucket.bashPrefixes.keys()) {
-      items.push({ runtimeId, scope: { kind: "bash_prefix", prefix } })
+    for (const command of bucket.bashCommands.keys()) {
+      items.push({ runtimeId, scope: { kind: "bash_command", command } })
     }
   }
   return items
@@ -276,7 +278,7 @@ export function revokeConversationSessionAllow(
       const names = WRITE_TOOLS.includes(scope.toolName) ? WRITE_TOOLS : [scope.toolName]
       for (const name of names) bucket.toolNames.delete(name)
     } else {
-      bucket.bashPrefixes.delete(scope.prefix)
+      bucket.bashCommands.delete(scope.command)
     }
   }
   return listConversationSessionAllows(sid)
@@ -311,14 +313,14 @@ function safeMcpFingerprint(toolName: string): string | undefined {
 export function seedRunSessionAllow(
   sessionId: string,
   opts?: SeedRunSessionAllowOpts
-): { sessionApprovedTools: Set<string>; sessionApprovedBashPrefixes: Set<string> } {
+): { sessionApprovedTools: Set<string>; sessionApprovedBashCommands: Set<string> } {
   const desktop = snapshotConversationDesktopAllow(sessionId)
   const userTurn = isUserInitiatedRunOrigin(opts?.origin)
   const session = userTurn ? snapshotConversationSessionAllow(sessionId, opts?.runtimeId) : snapshotBucket(undefined)
   const tools = new Set([...desktop, ...(userTurn ? liveToolNames(session, opts?.mcpFingerprintNow) : [])])
   return {
     sessionApprovedTools: opts?.denyAnyDesktop ? stripAnyDesktopSessionAllow(tools) : tools,
-    sessionApprovedBashPrefixes: userTurn ? session.bashPrefixes : new Set()
+    sessionApprovedBashCommands: userTurn ? session.bashCommands : new Set()
   }
 }
 
@@ -330,7 +332,7 @@ export function applySessionAllowDecision(
   sessionId: string,
   run: {
     sessionApprovedTools: Set<string>
-    sessionApprovedBashPrefixes: Set<string>
+    sessionApprovedBashCommands: Set<string>
   },
   pending: { name: string; args?: unknown },
   lookupDesktopObservation?: LookupDesktopObservation,
@@ -338,7 +340,7 @@ export function applySessionAllowDecision(
 ): void {
   if (pending.name === ASK_USER_QUESTIONS_TOOL) return
   if (pending.name === "bash" || pending.name === "code_mode") {
-    rememberBashPrefix(sessionId, run, pending.args, runtimeId)
+    rememberBashCommand(sessionId, run, pending.args, runtimeId)
     return
   }
   if (pending.name === "desktop_act") {
@@ -353,16 +355,16 @@ export function applySessionAllowDecision(
   run.sessionApprovedTools.add(pending.name)
 }
 
-function rememberBashPrefix(
+function rememberBashCommand(
   sessionId: string,
-  run: { sessionApprovedBashPrefixes: Set<string> },
+  run: { sessionApprovedBashCommands: Set<string> },
   args: unknown,
   runtimeId?: string
 ): void {
-  const prefix = bashAllowPrefix(commandFromToolInput(args))
-  if (!prefix) return
-  grantConversationBashPrefix(sessionId, prefix, runtimeId)
-  run.sessionApprovedBashPrefixes.add(prefix)
+  const command = bashAllowCommand(commandFromToolInput(args))
+  if (!command) return
+  grantConversationBashCommand(sessionId, command, runtimeId)
+  run.sessionApprovedBashCommands.add(command)
 }
 
 function rememberMcpAllow(

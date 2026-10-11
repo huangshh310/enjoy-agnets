@@ -10,8 +10,8 @@ export const SessionAllowScope = z.discriminatedUnion("kind", [
     toolName: z.string().min(1)
   }),
   z.object({
-    kind: z.literal("bash_prefix"),
-    prefix: z.string().min(1)
+    kind: z.literal("bash_command"),
+    command: z.string().min(1).max(4096)
   })
 ])
 export type SessionAllowScope = z.infer<typeof SessionAllowScope>

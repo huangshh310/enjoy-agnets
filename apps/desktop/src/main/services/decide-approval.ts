@@ -141,7 +141,7 @@ async function maybeReparkSecondConfirm(
 function applyApprovalDecision(
   run: {
     sessionApprovedTools: Set<string>
-    sessionApprovedBashPrefixes: Set<string>
+    sessionApprovedBashCommands: Set<string>
     input: { sessionId: string; runtimeId?: string }
   },
   decision: "allow" | "deny" | "allow_session" | "allow_always",

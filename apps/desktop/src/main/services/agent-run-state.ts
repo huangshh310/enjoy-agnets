@@ -25,7 +25,7 @@ export type ActiveRun = {
   secret?: StoredSecret
   pendingApprovals: PendingApproval[]
   sessionApprovedTools: Set<string>
-  sessionApprovedBashPrefixes: Set<string>
+  sessionApprovedBashCommands: Set<string>
   approvalGate: ApprovalGate
   pumping: boolean
   resumeAfterPump: boolean
@@ -112,7 +112,7 @@ function withSessionAllowMarks(event: StreamEvent): StreamEvent {
         requireBashApproval: true,
         requireCommitApproval: true,
         sessionApprovedTools: run.sessionApprovedTools,
-        sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes]
+        sessionApprovedBashCommands: [...run.sessionApprovedBashCommands]
       }
     : undefined
   const allowedBySession = policy ? sessionTableAllowsTool(event.name, policy, event.args) : false

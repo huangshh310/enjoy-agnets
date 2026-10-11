@@ -16,10 +16,10 @@ export function sessionAllowScopeFor(
   if (!sessionTableAllowsTool(toolName, policy, input)) return undefined
   if (BASH_SET.has(toolName)) {
     const command = commandFromToolInput(input)
-    const matched = policy.sessionApprovedBashPrefixes?.find((prefix) =>
-      sessionAllowsBash(command, [prefix])
+    const matched = policy.sessionApprovedBashCommands?.find((allowed) =>
+      sessionAllowsBash(command, [allowed])
     )
-    return matched ? { kind: "bash_prefix", prefix: matched } : undefined
+    return matched ? { kind: "bash_command", command: matched } : undefined
   }
   const tools = policy.sessionApprovedTools
   if (!tools) return undefined

@@ -1,27 +1,52 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
-  bashAllowPrefix,
+  bashAllowCommand,
   bashCommandHasUnsafeOperators,
   bashCommandIsInterpreterStyle,
   sessionAllowsBash
 } from "./bash-prefix.ts"
 
-test("前缀取前两个 token", () => {
-  assert.equal(bashAllowPrefix("git status --porcelain"), "git status")
-  assert.equal(bashAllowPrefix("ls"), "ls")
-  assert.equal(bashAllowPrefix("  pnpm   test  --watch"), "pnpm test")
+test("记整条命令：按空格 / Tab 切词后单空格拼回，不截前两个 token", () => {
+  assert.equal(bashAllowCommand("git status --porcelain"), "git status --porcelain")
+  assert.equal(bashAllowCommand("ls"), "ls")
+  assert.equal(bashAllowCommand("  pnpm   test \t --watch"), "pnpm test --watch")
 })
 
-test("本会话只放行匹配前缀", () => {
+test("本会话只放行完全相同的命令（token 序列逐个相等）", () => {
   const allowed = ["git status", "pnpm test"]
-  assert.equal(sessionAllowsBash("git status -sb", allowed), true)
+  assert.equal(sessionAllowsBash("git status", allowed), true)
+  assert.equal(sessionAllowsBash("  git\tstatus ", allowed), true)
+  assert.equal(sessionAllowsBash("git status -sb", allowed), false)
   assert.equal(sessionAllowsBash("git push origin main", allowed), false)
-  assert.equal(sessionAllowsBash("pnpm test src/a.ts", allowed), true)
+  assert.equal(sessionAllowsBash("pnpm test src/a.ts", allowed), false)
+  assert.equal(sessionAllowsBash("pnpm", allowed), false)
   assert.equal(sessionAllowsBash("curl https://x", allowed), false)
 })
 
-test("管道 / 重定向 / 命令替换不记前缀也不吃已记前缀", () => {
+test("leo MF-C 反例：已记命令加尾参 / 附着选项都不放行", () => {
+  const allowed = ["make", "make test", "npm test", "find ."]
+  const probes = [
+    "make -fevil.mk",
+    "make -kfevil.mk",
+    "make --makefile evil.mk",
+    "make --fi evil.mk",
+    "make -C/tmp/other",
+    "make --direc /tmp/other",
+    "npm test --script-sh /tmp/evil.sh",
+    "find . -fprintf x y",
+    "find . -fprint0 x",
+    "find . -fls x",
+    "make test extra",
+    "npm test extra"
+  ]
+  for (const command of probes) {
+    assert.equal(sessionAllowsBash(command, allowed), false, command)
+  }
+  assert.equal(sessionAllowsBash("npm test", allowed), true)
+})
+
+test("管道 / 重定向 / 命令替换不记也不吃已记命令", () => {
   const git = ["git push"]
   const npm = ["npm test"]
   const probes = [
@@ -38,13 +63,14 @@ test("管道 / 重定向 / 命令替换不记前缀也不吃已记前缀", () =>
   ]
   for (const command of probes) {
     assert.equal(bashCommandHasUnsafeOperators(command), true, command)
-    assert.equal(bashAllowPrefix(command), "", command)
+    assert.equal(bashAllowCommand(command), "", command)
     assert.equal(sessionAllowsBash(command, git), false, command)
     assert.equal(sessionAllowsBash(command, npm), false, command)
   }
-  assert.equal(bashAllowPrefix("git push origin main"), "git push")
-  assert.equal(sessionAllowsBash("git push origin main", git), true)
-  assert.equal(sessionAllowsBash("npm test src/a.ts", npm), true)
+  assert.equal(bashAllowCommand("git push origin main"), "git push origin main")
+  assert.equal(sessionAllowsBash("git push origin main", git), false)
+  assert.equal(sessionAllowsBash("git push origin main", ["git push origin main"]), true)
+  assert.equal(sessionAllowsBash("npm test src/a.ts", npm), false)
 })
 
 test("失败关闭：包装器 / 赋值 / 可疑字符 / 子命令不记也不匹配", () => {
@@ -80,19 +106,19 @@ test("失败关闭：包装器 / 赋值 / 可疑字符 / 子命令不记也不�
     "rsync -a ./ ./out"
   ]
   for (const command of probes) {
-    assert.equal(bashCommandIsInterpreterStyle(command) || bashAllowPrefix(command) === "", true, command)
-    assert.equal(bashAllowPrefix(command), "", command)
+    assert.equal(bashCommandIsInterpreterStyle(command) || bashAllowCommand(command) === "", true, command)
+    assert.equal(bashAllowCommand(command), "", command)
     assert.equal(sessionAllowsBash(command, planted), false, command)
   }
   assert.equal(sessionAllowsBash("node --eval x", ["node"]), false)
-  assert.equal(bashAllowPrefix("pnpm test --watch"), "pnpm test")
-  assert.equal(sessionAllowsBash("pnpm test src/a.ts", ["pnpm test"]), true)
-  assert.equal(bashAllowPrefix("python script.py"), "")
+  assert.equal(bashAllowCommand("pnpm test --watch"), "pnpm test --watch")
+  assert.equal(sessionAllowsBash("pnpm test src/a.ts", ["pnpm test"]), false)
+  assert.equal(bashAllowCommand("python script.py"), "")
   assert.equal(bashCommandIsInterpreterStyle("git status"), false)
-  assert.equal(bashAllowPrefix("make test"), "make test")
+  assert.equal(bashAllowCommand("make test"), "make test")
 })
 
-test("尾参含 = 或配置入口选项不记前缀，git config 永不记", () => {
+test("尾参含 = 或配置入口选项不记，git config 永不记", () => {
   const planted = ["npm test", "git log", "git config", "make SHELL", "make -f", "find ."]
   const probes = [
     "npm test --node-options=--require=/tmp/e.js",
@@ -108,20 +134,20 @@ test("尾参含 = 或配置入口选项不记前缀，git config 永不记", () 
     "find . -fprint /tmp/x"
   ]
   for (const command of probes) {
-    assert.equal(bashAllowPrefix(command), "", command)
+    assert.equal(bashAllowCommand(command), "", command)
     assert.equal(sessionAllowsBash(command, planted), false, command)
   }
-  assert.equal(bashAllowPrefix("git config user.name"), "")
+  assert.equal(bashAllowCommand("git config user.name"), "")
 })
 
 test("首词按原样比；只按空格 Tab 切，其它空白整句拒", () => {
-  assert.equal(bashAllowPrefix("NPM test"), "NPM test")
+  assert.equal(bashAllowCommand("NPM test"), "NPM test")
   assert.equal(sessionAllowsBash("NPM test", ["npm test"]), false)
-  assert.equal(bashAllowPrefix("git -C /tmp status"), "")
+  assert.equal(bashAllowCommand("git -C /tmp status"), "")
   assert.equal(sessionAllowsBash("git -C /tmp status", ["git status"]), false)
   assert.equal(bashCommandIsInterpreterStyle("npm\u00A0test"), true)
-  assert.equal(bashAllowPrefix("npm\u00A0test"), "")
-  assert.equal(bashAllowPrefix("npm\rtest"), "")
-  assert.equal(bashAllowPrefix("npm\vtest"), "")
+  assert.equal(bashAllowCommand("npm\u00A0test"), "")
+  assert.equal(bashAllowCommand("npm\rtest"), "")
+  assert.equal(bashAllowCommand("npm\vtest"), "")
   assert.equal(sessionAllowsBash("npm\u00A0test", ["npm test"]), false)
 })

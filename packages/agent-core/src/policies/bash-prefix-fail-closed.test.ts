@@ -9,7 +9,7 @@ const PLANTED = {
   requireWriteApproval: true,
   requireBashApproval: true,
   requireCommitApproval: true,
-  sessionApprovedBashPrefixes: [
+  sessionApprovedBashCommands: [
     "npm test",
     "pnpm lint",
     "git status",
@@ -65,13 +65,13 @@ const LEO_MF2_HOLES = [
   "find . -fprint /tmp/x"
 ]
 
-test("leo M1-a–e 与 doas 探针不得吃已记前缀", () => {
+test("leo M1-a–e 与 doas 探针不得吃已记命令", () => {
   for (const command of LEO_APPROVED_HOLES) {
     assert.equal(decision(command), "user-approval", command)
   }
 })
 
-test("leo MF-2 尾参注入 env/config 不得吃已记前缀", () => {
+test("leo MF-2 尾参注入 env/config 不得吃已记命令", () => {
   for (const command of LEO_MF2_HOLES) {
     assert.equal(decision(command), "user-approval", command)
   }
@@ -85,7 +85,7 @@ test("首词按原样比，其它空白整句拒", () => {
   assert.equal(decision("npm\vtest"), "user-approval")
 })
 
-test("普通 npm/pnpm/git/ls 仍可记前缀并匹配", () => {
+test("普通 npm/pnpm/git/ls 完全相同时仍放行", () => {
   for (const command of STILL_ALLOWED) {
     assert.equal(decision(command), "approved", command)
   }

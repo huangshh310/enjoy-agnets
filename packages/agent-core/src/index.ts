@@ -84,7 +84,7 @@ export { runDurableWorkflow, type DurableStep, type WorkflowCheckpoint } from ".
 export { orderWorkflowSteps, layerWorkflowSteps } from "./agents/workflow-graph";
 export { assertSandboxCommand, type SandboxPolicy } from "./policies/sandbox";
 export {
-  bashAllowPrefix,
+  bashAllowCommand,
   bashCommandHasUnsafeOperators,
   bashCommandIsInterpreterStyle,
   sessionAllowsBash,

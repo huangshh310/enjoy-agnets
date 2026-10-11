@@ -103,7 +103,9 @@ function CommandApproval({
       ? t("chat.alwaysAllowInterpreterHint")
       : allow.onceOnly
         ? t("chat.alwaysAllowOnceHint")
-        : t("chat.alwaysAllowHint", { target: allow.target })
+        : allow.bashExact
+          ? t("chat.alwaysAllowBashExactHint", { command: allow.target })
+          : t("chat.alwaysAllowHint", { target: allow.target })
   return (
     <ApprovalChrome
       variant="command"
