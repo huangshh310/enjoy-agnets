@@ -275,6 +275,7 @@ async function expectReviewAligned(window: Page, label: string): Promise<Box> {
   expect(frame.y + frame.height, `${label}: review bar overlaps composer`).toBeLessThanOrEqual(form.y + 1)
   // 待验收条紧贴 Composer：间距 ≤ 12px（luna：原约 52px 收到约 8px）。
   const gap = form.y - (frame.y + frame.height)
+  console.log(`[review-gap] ${label} ${gap.toFixed(1)}px`)
   expect(gap, `${label}: review bar ↔ composer gap ${gap}px`).toBeLessThanOrEqual(12)
   return frame
 }

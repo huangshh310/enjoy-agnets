@@ -27,7 +27,7 @@ test("审批时对话列保底 13rem / 25% 主体，消息区自身保 min-h-8�
   assert.match(stage, /pendingApproval\s*\?\s*"shrink-0"\s*:\s*"min-h-0 shrink"/)
   assert.match(stage, /pendingApproval \? "shrink-0" : "min-h-0"/)
   assert.match(stage, /flex min-h-14 min-w-0 flex-1 flex-col/)
-  assert.match(thread, /relative flex min-h-8 min-w-0 flex-1 flex-col/)
+  assert.match(thread, /relative flex min-h-6 min-w-0 flex-1 flex-col/)
   assert.match(dock, /flex min-h-0 shrink flex-col/)
   // 一套高度规则：command 卡不压，其余卡限高、正文卡内滚、标题行与底栏常驻。
   assert.match(chrome, /variant === "command"\s*\?\s*"shrink-0"\s*:\s*"max-h-\[min\(45vh,22rem\)\] min-h-20/)

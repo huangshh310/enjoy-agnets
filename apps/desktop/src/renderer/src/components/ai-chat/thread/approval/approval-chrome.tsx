@@ -94,7 +94,7 @@ export function ApprovalChrome({
         </span>
         <div
           data-testid="approval-card-body"
-          className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto overscroll-contain"
+          className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto overscroll-contain [@media(max-height:600px)]:gap-0.5"
         >
           <h3 className="shrink-0 truncate text-caption-1-semibold leading-6 text-text-primary [@media(max-height:600px)]:hidden">
             {title}
