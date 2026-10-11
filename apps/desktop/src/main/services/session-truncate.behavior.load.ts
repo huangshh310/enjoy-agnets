@@ -14,3 +14,4 @@ export {
   grantConversationToolAllow,
   snapshotConversationSessionAllow
 } from "./conversation-session-allow.ts"
+export { persistMessage, MESSAGE_ID_SESSION_MISMATCH } from "./persist-session.ts"

@@ -68,8 +68,13 @@ export function persistMessage(
 
   if (!nested) db.exec("BEGIN IMMEDIATE;")
   try {
-    if (messageId && messageExists(id)) {
-      db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(content, id)
+    const owner = messageId ? messageSessionId(id) : undefined
+    if (owner !== undefined && owner !== sessionId) {
+      // soft 5：同 id 落在别的会话，禁止覆盖内容或删它的 parts。
+      throw new Error(MESSAGE_ID_SESSION_MISMATCH)
+    }
+    if (owner === sessionId) {
+      db.prepare("UPDATE messages SET content = ? WHERE id = ? AND session_id = ?").run(content, id, sessionId)
       deleteMessageParts(db, id)
     } else {
       db.prepare(
@@ -100,8 +105,13 @@ export function persistMessage(
   }
 }
 
-function messageExists(id: string): boolean {
-  return Boolean(getDatabase().prepare("SELECT 1 FROM messages WHERE id = ?").get(id))
+export const MESSAGE_ID_SESSION_MISMATCH = "MESSAGE_ID_SESSION_MISMATCH"
+
+function messageSessionId(id: string): string | undefined {
+  const row = getDatabase().prepare("SELECT session_id FROM messages WHERE id = ?").get(id) as
+    | { session_id: string }
+    | undefined
+  return row?.session_id
 }
 
 export function readMessageContent(messageId: string): string | undefined {

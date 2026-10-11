@@ -144,7 +144,9 @@ function registerSessionLifecycleIpc() {
   })
   ipcMain.handle("session.truncateFrom", async (_event, raw) => {
     const input = SessionTruncateFromInput.parse(raw)
-    return truncateSessionFrom(input.sessionId, input.messageId, input.expectedTailIds)
+    return truncateSessionFrom(input.sessionId, input.messageId, input.expectedTailIds, {
+      dryRun: input.dryRun === true
+    })
   })
 }
 

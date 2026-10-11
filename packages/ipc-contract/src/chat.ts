@@ -6,6 +6,7 @@ import { AutomationRunSource } from "./automations-missed.ts"
 import { DesktopMentionBias } from "./desktop-mention-apps"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 import { AgentRunOrigin } from "./agent-run-origin.ts"
+import { TruncateMessageId, TruncateTailIds } from "./session-truncate.ts"
 
 export {
   coerceAgentRunOrigin,
@@ -61,8 +62,8 @@ export const RunAgentInput = z.object({
   /** 加紧信号。截断真源是 main 水位对库；漏旗标仍应清表。 */
   clearSessionAllow: z.boolean().optional(),
   /** 显式截断：保留这条，删后面的尾巴。没有这两项时 agent.run 绝不删消息。 */
-  truncateAfterMessageId: z.string().min(1).optional(),
-  expectedTailIds: z.array(z.string().min(1)).optional()
+  truncateAfterMessageId: TruncateMessageId.optional(),
+  expectedTailIds: TruncateTailIds.optional()
 }).refine(
   (value) =>
     (value.truncateAfterMessageId == null) === (value.expectedTailIds == null),

@@ -31,6 +31,8 @@ export type ExplicitTruncateInput = {
   afterMessageId?: string
   fromMessageId?: string
   persistUser?: { content: string; messageId?: string; attached: UserFileAsset[] }
+  /** 只做活 run / 尾巴预检，通过也不删（rewind 还原文件前先问）。 */
+  dryRun?: boolean
 }
 
 let throwAfterFirstDeleteForTest = false
@@ -102,6 +104,10 @@ export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): Sess
       db.exec("ROLLBACK;")
       return { ok: false, code: TRUNCATE_STALE_SNAPSHOT }
     }
+    if (input.dryRun) {
+      db.exec("ROLLBACK;")
+      return { ok: true, deleted: 0 }
+    }
     if (dbTail.length === 0 && !input.persistUser) {
       db.exec("ROLLBACK;")
       return { ok: true, deleted: 0 }
@@ -148,13 +154,15 @@ export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): Sess
 export async function truncateSessionFrom(
   sessionId: string,
   messageId: string,
-  expectedTailIds: string[]
+  expectedTailIds: string[],
+  opts?: { dryRun?: boolean }
 ): Promise<SessionTruncateResult> {
   return applyExplicitSessionTruncate({
     sessionId,
     fromMessageId: messageId,
     expectedTailIds,
-    reason: "rewind"
+    reason: "rewind",
+    dryRun: opts?.dryRun === true
   })
 }
 

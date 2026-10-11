@@ -10,6 +10,7 @@ import {
   TRUNCATE_RUN_ACTIVE,
   TRUNCATE_STALE_SNAPSHOT
 } from "@enjoy-agents/ipc-contract/session-truncate"
+import { TRUNCATE_TAIL_CHANGED } from "./truncate-retry.ts"
 
 export function translateTruncateNotice(code: string): string {
   const language =
@@ -21,6 +22,7 @@ export function translateTruncateNotice(code: string): string {
   const messages = resolveLocale(language) === "en" ? en : zh
   if (code === TRUNCATE_RUN_ACTIVE) return translate(messages, "chat.truncateRunActive")
   if (code === TRUNCATE_STALE_SNAPSHOT) return translate(messages, "chat.truncateStaleSnapshot")
+  if (code === TRUNCATE_TAIL_CHANGED) return translate(messages, "chat.truncateTailChanged")
   return translate(messages, "chat.rewindFailed")
 }
 

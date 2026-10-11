@@ -2,6 +2,7 @@
  * 会话 IPC：改名走 Zod，未知字段即拒。
  */
 import { z } from "zod"
+import { TruncateMessageId, TruncateTailIds } from "./session-truncate.ts"
 
 export const SessionRenameInput = z
   .object({
@@ -73,12 +74,16 @@ export const SessionArchiveResult = z.object({
 })
 export type SessionArchiveResult = z.infer<typeof SessionArchiveResult>
 
-/** 删掉该条及之后的消息，把 Prompt 退回 Composer。尾巴必须与库里完全一致。 */
+/**
+ * 删掉该条及之后的消息，把 Prompt 退回 Composer。尾巴必须与库里完全一致。
+ * `dryRun`：只做活 run / 尾巴预检，不删（rewind 还原文件前先问一次）。
+ */
 export const SessionTruncateFromInput = z
   .object({
     sessionId: z.string().min(1),
-    messageId: z.string().min(1),
-    expectedTailIds: z.array(z.string().min(1)).min(1)
+    messageId: TruncateMessageId,
+    expectedTailIds: TruncateTailIds.min(1),
+    dryRun: z.boolean().optional()
   })
   .strict()
 export type SessionTruncateFromInput = z.infer<typeof SessionTruncateFromInput>

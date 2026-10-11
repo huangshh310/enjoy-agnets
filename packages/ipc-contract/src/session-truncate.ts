@@ -14,6 +14,12 @@ export const SessionTruncateErrorCode = z.enum([
 ])
 export type SessionTruncateErrorCode = z.infer<typeof SessionTruncateErrorCode>
 
+/** 截断名单上限（soft 2）：单个 id ≤ 128 字符，名单 ≤ 200 条。超了直接拒，不进 main。 */
+export const TRUNCATE_ID_MAX_CHARS = 128
+export const TRUNCATE_TAIL_MAX_IDS = 200
+export const TruncateMessageId = z.string().min(1).max(TRUNCATE_ID_MAX_CHARS)
+export const TruncateTailIds = z.array(TruncateMessageId).max(TRUNCATE_TAIL_MAX_IDS)
+
 export const SessionTruncateOk = z.object({ ok: z.literal(true), deleted: z.number().int() }).strict()
 export const SessionTruncateBlocked = z
   .object({ ok: z.literal(false), code: SessionTruncateErrorCode })

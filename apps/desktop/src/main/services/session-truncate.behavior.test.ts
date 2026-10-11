@@ -14,6 +14,8 @@ const {
   grantConversationToolAllow,
   holdAgentRun,
   insertRun,
+  MESSAGE_ID_SESSION_MISMATCH,
+  persistMessage,
   setTruncateThrowAfterFirstDeleteForTest,
   snapshotConversationSessionAllow,
   truncateSessionFrom
@@ -260,4 +262,93 @@ test("session-truncate 没有隐式推断，也不 trim id", () => {
   const src = readFileSync(new URL("./session-truncate.ts", import.meta.url), "utf8")
   assert.doesNotMatch(src, /maybeTruncate/)
   assert.doesNotMatch(src, /\.trim\(\)/)
+})
+
+test("soft 4：rewind 预检 dryRun 通过也不删，活 run / 尾巴不对照样拒", () => {
+  const sessionId = "ses_trunc_dry"
+  const [u1, a1, u2, a2] = ids(sessionId, "u1", "a1", "u2", "a2")
+  seedSession(sessionId)
+  insertMessage(sessionId, u1, "user", 1)
+  insertMessage(sessionId, a1, "assistant", 2)
+  insertMessage(sessionId, u2, "user", 3)
+  insertMessage(sessionId, a2, "assistant", 4)
+  grantConversationToolAllow(sessionId, "write_file")
+  const ok = applyExplicitSessionTruncate({
+    sessionId,
+    fromMessageId: u2,
+    expectedTailIds: [u2, a2],
+    reason: "rewind",
+    dryRun: true
+  })
+  assert.deepEqual(ok, { ok: true, deleted: 0 })
+  assert.deepEqual(messageIds(sessionId), [u1, a1, u2, a2])
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  const stale = applyExplicitSessionTruncate({
+    sessionId,
+    fromMessageId: u2,
+    expectedTailIds: [u2],
+    reason: "rewind",
+    dryRun: true
+  })
+  assert.deepEqual(stale, { ok: false, code: "TRUNCATE_STALE_SNAPSHOT" })
+  holdAgentRun({
+    runId: "run_trunc_dry",
+    window: fakeWindow(),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId,
+      workspaceId: "ws_trunc",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "hi" }]
+    }
+  })
+  try {
+    const busy = applyExplicitSessionTruncate({
+      sessionId,
+      fromMessageId: u2,
+      expectedTailIds: [u2, a2],
+      reason: "rewind",
+      dryRun: true
+    })
+    assert.deepEqual(busy, { ok: false, code: "TRUNCATE_RUN_ACTIVE" })
+  } finally {
+    deleteActiveRun("run_trunc_dry")
+  }
+  assert.deepEqual(messageIds(sessionId), [u1, a1, u2, a2])
+})
+
+test("soft 5：persistMessage 按 id 覆盖必须同会话，不能改写别的会话的消息", () => {
+  const mine = "ses_persist_mine"
+  const other = "ses_persist_other"
+  seedSession(mine)
+  seedSession(other)
+  const otherId = persistMessage(other, "user", "theirs", undefined, `${other}_u1`)
+  const partsBefore = (
+    getDatabase().prepare("SELECT COUNT(*) as n FROM message_parts WHERE message_id = ?").get(otherId) as {
+      n: number
+    }
+  ).n
+  assert.throws(
+    () => persistMessage(mine, "user", "hijack", undefined, otherId),
+    new RegExp(MESSAGE_ID_SESSION_MISMATCH)
+  )
+  const row = getDatabase()
+    .prepare("SELECT session_id, content FROM messages WHERE id = ?")
+    .get(otherId) as { session_id: string; content: string }
+  assert.deepEqual({ ...row }, { session_id: other, content: "theirs" })
+  assert.ok(partsBefore > 0)
+  const partsAfter = (
+    getDatabase().prepare("SELECT COUNT(*) as n FROM message_parts WHERE message_id = ?").get(otherId) as {
+      n: number
+    }
+  ).n
+  assert.equal(partsAfter, partsBefore)
+  // 同会话同 id 仍可覆盖（checkpoint）。
+  const ownId = persistMessage(mine, "assistant", "v1", undefined, `${mine}_a1`)
+  persistMessage(mine, "assistant", "v2", undefined, ownId)
+  const own = getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(ownId) as { content: string }
+  assert.equal(own.content, "v2")
 })
