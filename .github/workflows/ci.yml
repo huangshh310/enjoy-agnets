@@ -51,7 +51,7 @@ jobs:
       - run: pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts contracts.spec.ts
 
   e2e-window:
-    # xvfb + Electron：agent-stub（含本会话允许跨轮）+ 回挂审批 + 知识库芯片。禁止 -g / only。
+    # xvfb + Electron：agent-stub（含本会话允许跨轮）+ 回挂审批 + 知识库芯片 + 新对话/重启首发清稿。禁止 -g / only。
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -71,4 +71,11 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
       - name: Playwright window e2e
         working-directory: apps/desktop
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts approval-restart.spec.ts knowledge-source-chip.spec.ts
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts approval-restart.spec.ts knowledge-source-chip.spec.ts first-send-bubble.spec.ts first-send-composer-clear.spec.ts
+      - name: Upload first-send screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-send-composer-clear-shots
+          path: apps/desktop/test-results/first-send-composer-clear/
+          if-no-files-found: ignore
