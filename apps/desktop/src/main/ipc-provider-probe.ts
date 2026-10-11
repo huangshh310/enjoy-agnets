@@ -18,6 +18,7 @@ import {
 } from "@enjoy-agents/providers"
 import { duplicateProfile, setProfileEnabled } from "./services/secrets"
 import { readVault, writeVault } from "./services/secrets"
+import { runSecretWrite } from "./services/secret-write-guard.ts"
 
 export function asKind(value: string): ProviderKind {
   return parseProviderKind(value)
@@ -46,7 +47,12 @@ export async function probeStoredProvider(raw: unknown) {
     const presetModels = stored.models?.length ? stored.models : presetFor(kind).models
     stored.models = mergeDiscoveredModels(presetModels, result.models)
     if (!stored.modelId) stored.modelId = stored.models[0]?.id ?? ""
-    await writeVault(vault)
+    const written = await runSecretWrite(async () => {
+      await writeVault(vault)
+      return { saved: true as const }
+    })
+    if (!written.ok) return { ...result, saved: false as const }
+    return { ...result, saved: true as const }
   }
   return result
 }

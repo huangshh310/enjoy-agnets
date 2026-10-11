@@ -1,6 +1,6 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-10-10（指纹表与 renderer 共用 ipc-contract 叶子）
+> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-10-10（超大 srcDoc 中性提示；curated_preset_id 幂等补列；指纹表与 renderer 共用 ipc-contract 叶子）
 
 ## 当前真相
 
@@ -12,7 +12,7 @@
 
 路由 `#/mcp` 在 `AppShell` 内换轨（情境栏=已配置服务/JSON 规格配置两栏，Stage=对应视图），不要弹出「返回应用」页。Stage 用 `contentWidth="fill"` + `hideChrome`：只保留 `McpHeader`，不要再叠 `SecondaryPageChrome`。顶栏固定，已配置服务空态可链回 `#/settings/extensions` 或就地注册自定义服务；JSON 编辑区铺满剩余高度。`#/mcp` 是协议运行时控制台（状态、连通性测试、工具 Allow/Ask/Deny、沙箱 App、JSON 配置）。对齐原型 Slide 10 与 13 ⑧（Trust 印章与声明）。卡片印章走 i18n（已信任 / 未信任），不要写死英文 TRUSTED。信任操作提供完整声明确认卡；顶部展示服务统计。支持 Ping 连通性测试、工具探索与细粒度权限控制 (Allow/Ask/Deny)、环境变量管理与沙箱 UI App 实时交互。服务注册编辑、工具探索权限与沙箱 App 均统一使用右侧内缩悬浮抽屉（`inset-y-3 right-3 rounded-3xl shadow-card`），与 Skills 抽屉规范一致，禁止使用居中阻断弹框。仅 **trusted** Server 可 `mcp.openApp`。能从允许的 resource URI 读到 HTML 才返回 `srcDoc`；否则 `available=false`、`srcDoc=null`，UI 写明没有 App。`ENJOY_E2E_STUB` 才返回 demo HTML。iframe `sandbox="allow-scripts"`、无 `allow-same-origin`。`postMessage` 必须 `event.source === iframe.contentWindow`，再经 `mcp.appMessage` 在 main 消毒；`ui/log` 回显，`resources/read` 仅在已连接且 URI 白名单内走本机会话，`tools/result` 只展示已批准结果，**不会**从 iframe 自动执行写工具。发 `mcp.app` 事件。Composer `@` 发现面板可列出已连 MCP（`kind: "mcp"`），选中只钉 `@mcp:名` 文本到输入框，**不是**授权、也不是 `mcp.call`。
 
-ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny** 的 `#/mcp` 行映射进 `session/new.mcpServers`。stdio 在 main 把白名单裸 bin 解析成绝对路径；SSH 工作区用远端 `command -v` 换成远端 abs，找不到就跳过，**禁止**把本机 `/opt/homebrew/bin/npx` 塞给远端 CLI。HTTP/SSE 仅当握手广告了 `mcpCapabilities`。Enjoy Local 仍走 ToolLoop `createMcpAgentTools`，不要给同一会话再把 MCP 工具注入 ToolLoop。增删 MCP / 改信任会 `disposeAllAcpSessions`，下一轮重 `session/new`。MCP Apps iframe：`#/mcp` 打开时若未 Connect 会先建本机会话；ACP 工具结果里的 HTML / `ui://` 资源映射为 `mcp.app`，在助手气泡内嵌同一隔离 iframe。Pi 静态 `hostMcp=none`，不假装透传。
+ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny** 的 `#/mcp` 行映射进 `session/new.mcpServers`。stdio 在 main 把白名单裸 bin 解析成绝对路径；SSH 工作区用远端 `command -v` 换成远端 abs，找不到就跳过，**禁止**把本机 `/opt/homebrew/bin/npx` 塞给远端 CLI。HTTP/SSE 仅当握手广告了 `mcpCapabilities`。Enjoy Local 仍走 ToolLoop `createMcpAgentTools`，不要给同一会话再把 MCP 工具注入 ToolLoop。增删 MCP / 改信任会 `disposeAllAcpSessions`，下一轮重 `session/new`。MCP Apps iframe：`#/mcp` 打开时若未 Connect 会先建本机会话；ACP 工具结果里的 HTML / `ui://` 资源映射为 `mcp.app`，在助手气泡内嵌同一隔离 iframe。`srcDoc` 超过 200000 时映射层发 `mcp.app phase:error`（不带 srcDoc）+ `generation.warning(mcp_app_srcdoc_too_large)`；助手轮工具行只留中性提示「这个应用界面太大，没法在这里打开。」，禁止字数、禁止 iframe。开发态 stub 发送 `huge mcp app` / `超大 MCP 应用`（`isE2eStub` 且未打包）可复现。Pi 静态 `hostMcp=none`，不假装透传。
 
 ## 不变量
 
@@ -45,6 +45,7 @@ ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny*
 - **隐患**：Stop 若 `disposeAcpSession` 会丢掉 CLI 上下文，下一轮只有最后一句用户句。正确做法：Stop 只 `session/cancel`。
 - **隐患**：SSH 把本机 stdio abs 传给远端 CLI，npx 路径在远端不存在。正确做法：`lookupRemoteStdioBin` + `command -v`。
 - **隐患**：ACP 会话里点 Open App 因未 Connect 读不到 HTML。正确做法：`openMcpApp` 先 `connectServerIfNeeded`。ACP 内联 HTML 走 `mcp.app.srcDoc`，不要再 spawn 第二份工具会话进 ToolLoop。
+- **隐患**：`srcDoc` 超上限后用户什么都看不见。根因：`turn-mcp-apps` 对 `phase:error` 早退，renderer 也不折 `generation.warning(mcp_app_srcdoc_too_large)`。正确做法：空占位 + 警告标 `tooLarge`，工具行只留中性提示，不带字数、不挂 iframe。
 - Stage `fill` 子层是 `overflow-hidden`。已配置列表、市场网格、JSON 正文必须自带 `min-h-0 overflow-y-auto`；JSON 行号与 textarea 同一滚动容器，不要各滚各的。
 - 本仓锁定的 `ai@7.0.84` 没有 `createMCPClient` 导出。连接时先动态探测该符号；没有则 stdio 走换行分帧 JSON-RPC 会话（标准 MCP stdio 为 ndjson，兼容 LSP Content-Length），SSE/HTTP 走 `rpcPost`（带 `mcp-session-id`）。`tools/list` 失败仍可标 connected，工具列表为空，不假装已发现工具。
 - **stdio 协议分帧与进程退出**：标准 MCP 使用换行符 `\n` 分帧（ndjson），若按 LSP `Content-Length:` 发送，主流基于官方 SDK 的 MCP 服务（如 stitch-mcp）不会返回有效响应；解析端需支持 ndjson 并自动跳过 stdout 非 JSON 诊断日志行。子进程异常退出（如缺少环境变量、Key 报错）必须由 `stderr` 收集与 `exit/close` 事件捕获，立即 reject 并抛出真实根因，不得死等 timeout。握手超时由 8s 宽限至 25s 适应 cold npx 与远程 API 代理。

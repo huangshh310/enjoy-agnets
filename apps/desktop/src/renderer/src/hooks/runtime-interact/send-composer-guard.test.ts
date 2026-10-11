@@ -18,6 +18,7 @@ import {
 } from "../../components/ai-chat/agent-picker/cli-login-loop.ts"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { rememberChatReadiness, rememberCodingRuntime } from "../chat-readiness-cache.ts"
+import { markModelsListed, resetModelsListed } from "../models-listed.ts"
 import { composerSendReady, guardComposerSend } from "./send-composer-guard.ts"
 
 function readyKey() {
@@ -25,7 +26,8 @@ function readyKey() {
     engines: [],
     localModels: [],
     apiKeys: [{ kind: "api_key", providerId: "p", presetId: "openai" }],
-    engineCount: 1
+    engineCount: 1,
+    activeKeyProfileId: "p"
   })
 }
 
@@ -50,6 +52,8 @@ function readyLocal() {
 test.beforeEach(() => {
   rememberChatReadiness(undefined)
   rememberCodingRuntime("local")
+  resetModelsListed()
+  markModelsListed()
 })
 
 function store(partial: {
@@ -94,6 +98,49 @@ test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", ()
   assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
   assert.equal(chat.read().error, NO_CHAT_ROUTE)
   assert.equal(chat.read().picker, false)
+})
+
+test("模型列表还在加载或失败时不催 NEED_MODEL，交给主闸", () => {
+  resetModelsListed()
+  rememberChatReadiness(readyKey())
+  const loading = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
+  assert.equal(guardComposerSend(loading as never, { ideReady: true }), true)
+  assert.equal(loading.read().error, null)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "" }), true)
+})
+
+test("无密钥 Ollama 掉回 enjoy-local 不催 NEED_MODEL", () => {
+  rememberChatReadiness(
+    buildChatReadiness({
+      engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],
+      localModels: [],
+      apiKeys: [],
+      engineCount: 1,
+      preferredRuntimeId: "claude",
+      hasEnjoySecret: true,
+      activeKeyProfileId: null
+    })
+  )
+  const chat = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "" })
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), true)
+  assert.equal(chat.read().error, null)
+})
+
+test("默认路线是 CLI、会话掉回 enjoy-local 时仍催选模型", () => {
+  rememberChatReadiness(
+    buildChatReadiness({
+      engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],
+      localModels: [],
+      apiKeys: [{ kind: "api_key", providerId: "e2e", presetId: "openai" }],
+      engineCount: 1,
+      preferredRuntimeId: "claude",
+      hasEnjoySecret: true,
+      activeKeyProfileId: "e2e"
+    })
+  )
+  const chat = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+  assert.equal(chat.read().error, NEED_MODEL)
 })
 
 test("Enjoy Local 信共享闸；无快照放行；当前档案有密钥没模型单独提示", () => {

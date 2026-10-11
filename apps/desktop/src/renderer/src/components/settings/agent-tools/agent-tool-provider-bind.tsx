@@ -21,6 +21,7 @@ import {
 import { useT } from "@renderer/i18n"
 import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { runSecretWrite } from "@renderer/lib/secret-write"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ModelBrandIcon, ProviderIcon } from "../providers/provider-icons"
 import { adviseCatalogUrl, isApiStyle } from "@enjoy-agents/providers/presets"
@@ -180,12 +181,15 @@ function ApplyToOthers({
   async function toggle(target: AgentToolPublic) {
     if (!hasIde()) return
     const using = target.useCustomProvider && target.providerId === profile.id
-    await getIde().agentTools.upsert({
-      id: target.id as AgentToolId,
-      useCustomProvider: !using,
-      providerId: using ? undefined : profile.id,
-      modelId: using ? undefined : modelId
-    })
+    const outcome = await runSecretWrite(() =>
+      getIde().agentTools.upsert({
+        id: target.id as AgentToolId,
+        useCustomProvider: !using,
+        providerId: using ? undefined : profile.id,
+        modelId: using ? undefined : modelId
+      })
+    )
+    if (!outcome.ok) return
     await queryClient.invalidateQueries({ queryKey: ["settings"] })
   }
 

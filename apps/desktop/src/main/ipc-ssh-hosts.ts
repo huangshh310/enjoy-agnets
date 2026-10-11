@@ -20,6 +20,7 @@ import { getSshHost, listSshHosts, removeSshHost, upsertSshHost } from "./servic
 import { browseSsh } from "./services/ssh/ssh-browse.ts"
 import { probeSsh } from "./services/ssh/ssh-probe.ts"
 import { deleteSshPassword, getSshPassword, setSshPassword } from "./services/ssh/ssh-password-vault.ts"
+import { guardPasswordWrite, runSecretWrite } from "./services/secret-write-guard.ts"
 import type { SshConnSpec } from "./services/ssh/ssh.types.ts"
 
 export const SSH_HOST_CHANNELS = [
@@ -36,9 +37,13 @@ export function registerSshHostIpc() {
   ipcMain.handle("workspace.sshHosts.list", () => listSshHosts(getDatabase()))
   ipcMain.handle("workspace.sshHosts.upsert", (_event, raw) => {
     const input = SshHostUpsertInput.parse(raw)
-    const host = upsertSshHost(input, getDatabase())
-    if (input.password) setSshPassword(host.id, input.password)
-    return host
+    const blocked = guardPasswordWrite(input.password)
+    if (blocked) return blocked
+    return runSecretWrite(() => {
+      const host = upsertSshHost(input, getDatabase())
+      if (input.password) setSshPassword(host.id, input.password)
+      return host
+    })
   })
   ipcMain.handle("workspace.sshHosts.remove", (_event, raw) => {
     const id = SshHostRemoveInput.parse(raw).id

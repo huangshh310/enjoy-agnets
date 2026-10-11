@@ -42,6 +42,7 @@ export function ProviderEditorFields({
 }) {
   const t = useT()
   return (
+    <div data-testid="provider-editor-fields" className="flex flex-col gap-3">
     <Tabs defaultValue="connection" className="w-full">
       {/* 顶部 Tab 导航栏 */}
       <TabsList className="grid w-full grid-cols-4 rounded-xl bg-background-tertiary-default p-1 mb-2">
@@ -114,5 +115,6 @@ export function ProviderEditorFields({
         />
       </TabsContent>
     </Tabs>
+    </div>
   )
 }

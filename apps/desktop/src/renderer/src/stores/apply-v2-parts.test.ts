@@ -31,6 +31,21 @@ test("mcp.app 把 srcDoc 折进当前助手消息", () => {
   assert.equal(patch?.thinkingLabel, "MCP App")
 })
 
+test("mcp.app phase=error 只留空占位，不带 srcDoc", () => {
+  const next = assistant()
+  const patch = applyV2Part([next], next, {
+    type: "mcp.app",
+    runId: "run_1",
+    serverId: "acp",
+    resourceUri: "ui://huge",
+    phase: "error",
+    title: "Huge"
+  })
+  assert.equal(patch?.messages[0]?.mcpApps?.[0]?.resourceUri, "ui://huge")
+  assert.equal(patch?.messages[0]?.mcpApps?.[0]?.srcDoc, "")
+  assert.equal(patch?.messages[0]?.mcpApps?.[0]?.tooLarge, undefined)
+})
+
 test("source.added 折进当前助手消息", () => {
   const next = assistant()
   const patch = applyV2Part([next], next, {

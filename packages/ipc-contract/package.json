@@ -19,6 +19,7 @@
     "./workspace-preview": "./src/workspace-preview.ts",
     "./quoted-context": "./src/quoted-context.ts",
     "./chat-readiness": "./src/chat-readiness.ts",
+    "./secret-write": "./src/secret-write.ts",
     "./host-inject": "./src/host-inject.ts",
     "./stream-event": "./src/stream-event.ts",
     "./desktop-notify": "./src/desktop-notify.ts",

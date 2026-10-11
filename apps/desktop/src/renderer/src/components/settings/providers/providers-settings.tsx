@@ -10,11 +10,11 @@ import { agentRefsForProvider } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
-import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ProviderConfiguredTab } from "./provider-configured-tab"
 import { ProviderEditorDrawer } from "./provider-editor-drawer"
 import { ProviderPresetsTab } from "./provider-presets-tab"
+import { ProviderRemoveDialog, type ProviderRemovePending } from "./provider-remove-dialog"
 import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
@@ -55,9 +55,7 @@ export function ProviderSettings() {
       void navigate({ to: "/" })
     }
   }
-  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string; agents: string } | null>(
-    null
-  )
+  const [pendingRemove, setPendingRemove] = useState<ProviderRemovePending | null>(null)
   const refsByProvider = useMemo(() => {
     const map: Record<string, ReturnType<typeof agentRefsForProvider>> = {}
     for (const profile of settings.providers) {
@@ -75,6 +73,19 @@ export function ProviderSettings() {
     () => PROVIDER_PRESETS.filter((p) => p.kind !== "custom").length,
     []
   )
+
+  async function confirmRemove() {
+    const id = pendingRemove?.id
+    if (!id) return
+    const result = await settings.remove(id)
+    if (result.ok) {
+      setPendingRemove(null)
+      return
+    }
+    if (result.kind === "keychain") {
+      setPendingRemove((current) => (current && current.id === id ? { ...current, refused: result.hint } : current))
+    }
+  }
 
   function handleSelectPreset(kind: ProviderKind, apiStyle: ApiStyle) {
     setPicking(false)
@@ -182,16 +193,13 @@ export function ProviderSettings() {
             onSetEnabled={(id, enabled) => void settings.setEnabled(id, enabled)}
             onRemove={(id) => {
               const profile = settings.providers.find((item) => item.id === id)
+              if (!profile) return
               const refs = refsByProvider[id] ?? []
-              if (refs.length > 0 && profile) {
-                setPendingRemove({
-                  id,
-                  name: profile.name,
-                  agents: joinSegments(...refs.map((item) => item.label))
-                })
-                return
-              }
-              void settings.remove(id)
+              setPendingRemove({
+                id,
+                name: profile.name,
+                agents: joinSegments(...refs.map((item) => item.label))
+              })
             }}
             onAddCustom={handleSelectPreset}
             onExplorePresets={() => setActiveTab("presets")}
@@ -247,18 +255,11 @@ export function ProviderSettings() {
         onOpenAgent={openAgent}
       />
 
-      <ConfirmDialog
-        open={Boolean(pendingRemove)}
-        title={t("settings.providers.removeBoundTitle", { name: pendingRemove?.name ?? "" })}
-        description={t("settings.providers.removeBoundDesc", { agents: pendingRemove?.agents ?? "" })}
-        confirmLabel={t("common.delete")}
-        destructive
-        onOpenChange={(open) => {
-          if (!open) setPendingRemove(null)
-        }}
+      <ProviderRemoveDialog
+        pending={pendingRemove}
+        onClose={() => setPendingRemove(null)}
         onConfirm={() => {
-          const id = pendingRemove?.id
-          if (id) void settings.remove(id)
+          void confirmRemove()
         }}
       />
     </div>

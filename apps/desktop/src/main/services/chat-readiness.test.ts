@@ -35,18 +35,28 @@ test("只有探测到的本机模型时 ready", () => {
   assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: true }])
 })
 
-test("已启用无密钥档案即使没 ping 也 ready，与闸一致", () => {
+test("已启用无密钥本机档案没 ping 过：不 ready，闸仍放行", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
     [{ id: "prv_ollama", kind: "ollama", enabled: true, hasKey: false, requiresKey: false }],
     []
   )
-  assert.equal(snap.ready, true)
+  assert.equal(snap.ready, false)
   assert.equal(snap.hasEnjoySecret, true)
   assert.deepEqual(snap.localModels, [])
+  assert.equal(
+    selectedRouteGateCode({
+      skip: false,
+      runtimeId: "enjoy-local",
+      codingRuntime: "local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    null
+  )
 })
 
-test("远端 Ollama 不 ping，verified:false；hasSecret 为真则 ready，闸放行", () => {
+test("远端 Ollama 不 ping，verified:false；不 ready，闸仍放行", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
     [
@@ -61,7 +71,7 @@ test("远端 Ollama 不 ping，verified:false；hasSecret 为真则 ready，闸�
     ],
     []
   )
-  assert.equal(snap.ready, true)
+  assert.equal(snap.ready, false)
   assert.equal(snap.hasEnjoySecret, true)
   assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
   assert.equal(
@@ -145,7 +155,7 @@ test("显式 enjoy-local 时即使已登录 CLI 也不改默认", () => {
   assert.equal(snap.ready, false)
 })
 
-test("组装快照 ready === 默认路线发送闸放行", () => {
+test("组装快照 ready ⇒ 默认路线发送闸放行", () => {
   const cases = [
     {
       name: "key",
@@ -169,7 +179,7 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
       loggedIn: new Set<string>()
     },
     {
-      name: "remote ollama unverified",
+      name: "remote ollama unverified not ready",
       tools: [{ id: "enjoy-local", status: "ready" }],
       providers: [
         {
@@ -212,4 +222,32 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
       item.name
     )
   }
+})
+
+test("远端无密钥 ollama 不 ready，闸仍放行", () => {
+  const snap = assembleChatReadiness(
+    [{ id: "enjoy-local", status: "ready" }],
+    [
+      {
+        id: "prv_remote",
+        kind: "ollama",
+        enabled: true,
+        hasKey: false,
+        requiresKey: false,
+        baseURL: "http://10.0.0.8:11434"
+      }
+    ],
+    [],
+    new Set()
+  )
+  assert.equal(snap.ready, false)
+  assert.equal(snap.localModels[0]?.verified, false)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    true
+  )
 })

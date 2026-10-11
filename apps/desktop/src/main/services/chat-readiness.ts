@@ -12,6 +12,7 @@ import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./def
 import { e2eChatReadiness } from "./e2e-chat-readiness"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { isE2eStub } from "./e2e-stub"
+import { isSecretStorageAvailable } from "./secret-storage.ts"
 import { hasSecret, listPublicProviders } from "./secrets"
 
 export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
@@ -45,7 +46,7 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
   const enjoySecret = await hasSecret().catch(() => undefined)
   const fixture = e2eChatReadiness(process.env, packaged)
   if (fixture) {
-    return rememberSnapshot(withSecretAndAdopt(fixture, enjoySecret))
+    return rememberSnapshot(withSecretAndAdopt(fixture, enjoySecret, true))
   }
   const [tools, providers, live] = await Promise.all([
     listAgentTools(),
@@ -66,14 +67,27 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
     loggedInToolIds(listed),
     { ...defaultChatRouteAssembleInput(), hasEnjoySecret: enjoySecret }
   )
-  return rememberSnapshot(withSecretAndAdopt(snapshot, enjoySecret))
+  return rememberSnapshot(
+    withSecretAndAdopt(snapshot, enjoySecret, chatRouteProbesSettled(listed))
+  )
 }
 
-function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): ChatReadiness {
+function chatRouteProbesSettled(tools: readonly { id: string; status?: string }[]): boolean {
+  return !tools.some(
+    (tool) => tool.id !== "enjoy-local" && tool.status === "ready" && inspectLoggedIn(tool.id) === "miss"
+  )
+}
+
+function withSecretAndAdopt(
+  snapshot: ChatReadiness,
+  enjoySecret: boolean | undefined,
+  probesSettled: boolean
+): ChatReadiness {
   const withSecret =
     enjoySecret === undefined ? snapshot : { ...snapshot, hasEnjoySecret: enjoySecret }
-  const adopted = persistAdoptedDefaultRoute(withSecret)
-  return adopted.hint ? { ...withSecret, adoptedHint: adopted.hint } : withSecret
+  const withStorage = { ...withSecret, secretStorageAvailable: isSecretStorageAvailable() }
+  const adopted = persistAdoptedDefaultRoute(withStorage, { probesSettled })
+  return adopted.hint ? { ...withStorage, adoptedHint: adopted.hint } : withStorage
 }
 
 function rememberSnapshot(snapshot: ChatReadiness): ChatReadiness {
@@ -86,6 +100,17 @@ export function emitChatReadiness(snapshot: ChatReadiness): void {
     if (window.isDestroyed()) continue
     window.webContents.send("chat.readiness", snapshot)
   }
+}
+
+/** 存密钥后立刻算新快照，renderer 解开回包时 peek 才不是旧的。 */
+export async function pushChatReadinessNow(): Promise<ChatReadiness> {
+  if (pushTimer) {
+    clearTimeout(pushTimer)
+    pushTimer = undefined
+  }
+  const snapshot = await computeChatReadiness()
+  emitChatReadiness(snapshot)
+  return snapshot
 }
 
 /** 连续 inspect / detect 合并成一次推送。 */
