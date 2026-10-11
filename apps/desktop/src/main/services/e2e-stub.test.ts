@@ -6,9 +6,12 @@ import {
   isE2eStub,
   lastUserText,
   setE2eStubPackagedForTest,
+  shouldEmitHugeMcpApp,
   shouldFailStubStore,
   stubApprovedWrite,
   stubDeniedApproval,
+  STUB_HUGE_MCP_APP_PROMPT,
+  STUB_HUGE_MCP_APP_PROMPT_ZH,
   STUB_STORE_ERROR_PROMPT,
   STUB_STORE_ERROR_PROMPT_ZH,
   STUB_TERMINAL_LINK_ECHO,
@@ -459,6 +462,52 @@ test("拒绝后继续不再重放同一张审批", async () => {
   }
   assert.equal(parts.includes("tool-approval-request"), false)
   assert.deepEqual(parts, ["finish"])
+})
+
+test("开发态 stub 超大 MCP App：打包态不吐警告", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
+  try {
+    setE2eStubPackagedForTest(false)
+    assert.equal(shouldEmitHugeMcpApp(STUB_HUGE_MCP_APP_PROMPT), true)
+    assert.equal(shouldEmitHugeMcpApp(STUB_HUGE_MCP_APP_PROMPT_ZH), true)
+    setE2eStubPackagedForTest(true)
+    assert.equal(shouldEmitHugeMcpApp(STUB_HUGE_MCP_APP_PROMPT), false)
+    setE2eStubPackagedForTest(false)
+    const types: string[] = []
+    const codes: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: STUB_HUGE_MCP_APP_PROMPT }],
+      new AbortController().signal
+    )) {
+      types.push(String(part.type))
+      if (part.type === "generation.warning") codes.push(String(part.code ?? ""))
+      if (part.type === "mcp.app") {
+        assert.equal(part.phase, "error")
+        assert.equal(part.srcDoc, undefined)
+      }
+    }
+    assert.ok(types.includes("mcp.app"))
+    assert.ok(types.includes("generation.warning"))
+    assert.deepEqual(codes, ["mcp_app_srcdoc_too_large"])
+    setE2eStubPackagedForTest(true)
+    const packaged: string[] = []
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: STUB_HUGE_MCP_APP_PROMPT }],
+      new AbortController().signal
+    )) {
+      packaged.push(String(part.type))
+    }
+    assert.equal(packaged.includes("generation.warning"), false)
+    assert.ok(packaged.includes("text-delta"))
+  } finally {
+    setE2eStubPackagedForTest(undefined)
+    process.env.ENJOY_E2E_STUB = previous
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+  }
 })
 
 test("开发态 stub 存储失败夹具：打包态不扔", async () => {

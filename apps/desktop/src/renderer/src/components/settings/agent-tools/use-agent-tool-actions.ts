@@ -10,6 +10,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { runSecretWrite, secretWriteCopyKey } from "@renderer/lib/secret-write"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
@@ -57,12 +58,18 @@ export function useAgentToolActions(tool: AgentToolPublic) {
   }) {
     if (!hasIde()) return
     try {
-      await getIde().agentTools.upsert({
-        id: tool.id as AgentToolId,
-        useCustomProvider: tool.useCustomProvider,
-        providerId: tool.providerId,
-        ...patch
-      })
+      const outcome = await runSecretWrite(() =>
+        getIde().agentTools.upsert({
+          id: tool.id as AgentToolId,
+          useCustomProvider: tool.useCustomProvider,
+          providerId: tool.providerId,
+          ...patch
+        })
+      )
+      if (!outcome.ok) {
+        setFeedbackMessage(t(secretWriteCopyKey(outcome.code)))
+        return
+      }
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
       setFeedbackMessage(null)
     } catch (err) {

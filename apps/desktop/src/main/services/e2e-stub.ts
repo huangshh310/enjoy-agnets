@@ -21,6 +21,7 @@
 import type { ModelMessage } from "ai"
 import { isE2eStub } from "./e2e-stub-gate.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+import { shouldEmitHugeMcpApp, stubHugeMcpAppParts } from "./e2e-stub-mcp-app.ts"
 import {
   isVerySlowPrompt,
   isWriteSlowNotePrompt,
@@ -90,6 +91,11 @@ export function shouldFailStubStore(prompt: string): boolean {
 let stubWriteSeq = 0
 
 export { isE2eCuReady } from "./e2e-stub-desktop.ts"
+export {
+  STUB_HUGE_MCP_APP_PROMPT,
+  STUB_HUGE_MCP_APP_PROMPT_ZH,
+  shouldEmitHugeMcpApp
+} from "./e2e-stub-mcp-app.ts"
 
 function userText(message: ModelMessage | undefined): string {
   if (!message) return ""
@@ -186,6 +192,11 @@ export async function* createE2eStubStream(
   const prompt = userText(real)
   if (shouldFailStubStore(prompt)) {
     throw new Error("INTERNAL_STORE_ERROR")
+  }
+  if (shouldEmitHugeMcpApp(prompt)) {
+    for (const part of stubHugeMcpAppParts()) yield part
+    yield* emitText("stub-ok huge mcp app", signal)
+    return
   }
   if (stubDeniedApproval(messages)) {
     yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }

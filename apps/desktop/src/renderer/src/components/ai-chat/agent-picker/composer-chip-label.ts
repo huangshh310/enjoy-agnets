@@ -4,6 +4,7 @@
  */
 import { sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract/session-overlay"
 import { joinSegments } from "../../../lib/join-segments"
+import { resolveModelDisplayName } from "../../../lib/model-display-name"
 
 const ENJOY_LOCAL = "enjoy-local"
 
@@ -64,16 +65,17 @@ export function composerActiveModelId(input: ComposerActiveModelInput): string {
 /** Enjoy Local 用档案目录；ACP 用会话覆盖或 CLI selectedModel。绑定档案时不要用 inspect 假目录。 */
 export function composerActiveModelLabel(input: ComposerActiveModelInput): string {
   if (input.runtimeId === ENJOY_LOCAL) {
-    return input.catalogLabel.trim() || input.catalogId.trim()
+    return resolveModelDisplayName(input.catalogId, input.catalogLabel)
   }
   const selected = sessionModelOnEngine(input) || input.agent?.selectedModel?.trim()
   const fromList = selected
-    ? (input.agent?.models?.find((item) => item.id === selected)?.label ?? selected)
-    : ""
+    ? input.agent?.models?.find((item) => item.id === selected)?.label
+    : undefined
+  if (selected) return resolveModelDisplayName(selected, fromList)
   if (input.agent?.useCustomProvider) {
-    return fromList || input.agent.boundProviderName?.trim() || input.agent.label?.trim() || input.runtimeId
+    return input.agent.boundProviderName?.trim() || input.agent.label?.trim() || input.runtimeId
   }
-  return fromList || input.agent?.label?.trim() || input.runtimeId
+  return input.agent?.label?.trim() || input.runtimeId
 }
 
 /** 绑定档案时 title 带档案名；胶囊正文仍是引擎 · 模型。 */

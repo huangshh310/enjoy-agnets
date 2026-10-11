@@ -17,6 +17,13 @@ export const enSettings = {
     saving: "Saving…"
   },
 
+  secrets: {
+    keychainUnavailable:
+      "This computer cannot store secrets securely right now. Unlock the system keychain — we will not fall back to plaintext.",
+    keychainUnavailableHint:
+      "On Linux, unlock GNOME Keyring or KWallet first. Dev commands are in the architecture spec."
+  },
+
   general: {
     title: "General details",
     hubTitle: "Application defaults",
@@ -127,6 +134,7 @@ export const enSettings = {
     readyEngines: "{count} engines",
     readyWorkspace: "Project {name}",
     readyNoWorkspace: "No project yet",
+    configuredUnverified: "Configured · unverified",
     shortcutsToday: "Shortcuts worth learning today",
     shortcutSettings: "Open settings",
     shortcutApproval: "Cycle approval",

@@ -2,7 +2,11 @@
  * 发送闸：只拦本轮选中的路线确定不可用。与 ready 共用 chatRouteGateCode。
  * 不确定（自定义 ACP / 未 inspect 的 CLI / Harness）放行，失败按真实错误分类。
  */
-import { chatRouteGateCode, NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
+import {
+  chatRouteGateCode,
+  NO_CHAT_ROUTE,
+  type AgentRunResult
+} from "@enjoy-agents/ipc-contract/chat-readiness"
 
 export type SelectedRouteGateInput = {
   /** 自动化 / 工作流子步 / ai.generate / 续跑 / 心跳不进闸。 */
@@ -32,4 +36,10 @@ export function shouldSkipSelectedRouteGate(input: {
 /** 只有 enjoy-local 且确定没密钥、也没已验证本机时回 no_chat_route。 */
 export function selectedRouteGateCode(input: SelectedRouteGateInput): typeof NO_CHAT_ROUTE | null {
   return chatRouteGateCode(input)
+}
+
+/** beginAgentRun 被闸时回 {ok:false}，不要 throw。 */
+export function beginAgentRunGate(input: SelectedRouteGateInput): AgentRunResult | null {
+  const code = selectedRouteGateCode(input)
+  return code ? { ok: false, code } : null
 }

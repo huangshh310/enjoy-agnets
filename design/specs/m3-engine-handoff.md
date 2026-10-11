@@ -1,6 +1,6 @@
 # spec/m3-engine-handoff
 
-> M3 **只**管换引擎与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-24
+> M3 **只**管换引擎与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-10-10
 > 同引擎中途换模型是 **I1**，不是本里程碑的 handoff。产品锁 [`../references/i1-mid-model-switch.md`](../references/i1-mid-model-switch.md)。视觉真源（设计锁，不宣称应用 1:1）：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)。
 > 引擎可选显示名是 **P2**，不是 handoff / 换模。已接线引擎级标签（`preferences.agentDisplayNames`）；换名不是换引擎。产品锁 [`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)；【视觉真源】[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)。
 > 产品锁：M2 收完后做本文，再做 M4。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -142,7 +142,7 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 ## 已知坑
 
 - I1 同引擎换模若走 `requestEngineSwitch` 会进 handoff。必须 `requestModelSwitch` → `persistSessionModel`。ACP 可 `disposeSession` 再带 `--model` 开流，这是桥实现，**Enjoy session id 不变**；C 端禁止「已切换引擎」「已交接」「换模会重开会话」「本机助手会话会重开」。`models===none` 必须禁用芯片；入口与 persist 对 none 回 failed 并回滚，禁止空表成功。
-- 设置「设为主引擎」若直接 `persistRuntimeId`，会绕过 `planComposerSwitch` / dispose / brief，有用户轮时假续跑。必须走 `requestEngineSwitch`；pending / blocked 再回 Chat 出坞。确认 IPC 失败必须 `setError(HANDOFF_CONFIRM_FAILED)`，坞留在 `handoff_pending`，不要静默。
+- 设置「设为主引擎」若直接 `persistRuntimeId`，会绕过 `planComposerSwitch` / dispose / brief，有用户轮时假续跑。必须走 `requestEngineSwitch({ asDefault: true })`；noop（已经是这台引擎）也要写偏好；handoff 确认把 `asDefault` 传给 `persistRuntimeId`。`setPreferences.runtimeId` 会盖显式章，避免随后 auto-adopt 改掉。pending / blocked 再回 Chat 出坞。确认 IPC 失败必须 `setError(HANDOFF_CONFIRM_FAILED)`，坞留在 `handoff_pending`，不要静默。
 - `beginAgentRun` 禁止一上来 `takeSessionHandoff`。第一发 `ACP_AUTH_REQUIRED` / 缺密钥 / spawn 失败后 brief 必须还在；登录后再发仍带 `[Engine handoff — hidden context]`，且不是用户气泡。`openCodingStream` 失败同样不得 `captureOpenStreamPrompt`。
 - 交接后旧气泡若仍按当前引擎铬渲染，会像假续跑。必须按 `sessionHandoffCuts` 降级，并在旧→新交界（或全是旧气泡时列表末尾）画分界。
 - ACP 进程身份必须含 `toolId`（`acpProcessKey`）。旧实现只用 modelId+env，Claude→Cursor 会复用旧 stdio，看起来像假续跑。

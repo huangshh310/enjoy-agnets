@@ -12,6 +12,7 @@ import {
   type ChatReadiness,
   type PublicKeyProvider
 } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { pickActiveEnabled } from "./pick-active-enabled"
 
 export type AssembleChatReadinessRoute = {
   preferredRuntimeId?: string
@@ -57,13 +58,10 @@ export function assembleChatReadiness(
 function activePublicProvider(
   providers: readonly PublicKeyProvider[]
 ): PublicKeyProvider | undefined {
-  const enabled = providers.filter((row) => row.enabled !== false)
-  const marked = enabled.find((row) => row.active)
-  if (marked) return marked
-  if (enabled.some((row) => row.active === false)) {
-    return enabled.find((row) => row.active !== false)
-  }
-  return enabled[0]
+  return pickActiveEnabled(providers, {
+    enabled: (row) => row.enabled !== false,
+    active: (row) => row.active
+  })
 }
 
 export const LOCAL_MODEL_PING_MS = 400

@@ -3,6 +3,7 @@
  */
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { resolveModelDisplayName } from "@renderer/lib/model-display-name"
 import { formatHistoryModelLabel } from "@renderer/lib/model-switch-state"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 
@@ -17,14 +18,16 @@ export function TurnModelLabel({ message }: { message: ThreadMessage }) {
         message.runtimeId)
       : undefined
   const model =
-    message.modelLabel?.trim() ||
-    (message.modelId
-      ? (catalog.find((item) => item.id === message.modelId)?.label ??
-        tools
-          .find((tool) => tool.id === message.runtimeId)
-          ?.models.find((item) => item.id === message.modelId)?.label ??
-        message.modelId)
-      : undefined)
+    message.modelId
+      ? resolveModelDisplayName(
+          message.modelId,
+          message.modelLabel?.trim() ||
+            catalog.find((item) => item.id === message.modelId)?.label ||
+            tools
+              .find((tool) => tool.id === message.runtimeId)
+              ?.models.find((item) => item.id === message.modelId)?.label
+        )
+      : undefined
   const text = formatHistoryModelLabel({ engineLabel: engine, modelLabel: model })
   if (!text) return null
   return <p className="mt-1 text-caption-2-regular text-text-tertiary">{text}</p>

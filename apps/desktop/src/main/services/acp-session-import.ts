@@ -26,6 +26,7 @@ export async function listImportableAcpSessions(
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
+    console.warn("agentTools.listAcpSessions failed", runtimeId, error)
     return { supported: true, sessions: [], error: message }
   }
   const imported = listBoundAcpSessionIds(workspaceId, runtimeId)

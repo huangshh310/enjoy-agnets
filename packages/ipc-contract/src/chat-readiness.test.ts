@@ -336,6 +336,27 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
   }
 })
 
+test("显式选了未登录 CLI 时不 ready，默认路线仍是该引擎", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    engineCount: 2,
+    explicit: true,
+    preferredRuntimeId: "claude"
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.defaultRoute?.runtimeId, "claude")
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "claude",
+      hasEnjoySecret: false,
+      verifiedLocal: false
+    }),
+    true
+  )
+})
+
 test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸也拦", () => {
   const snap = buildChatReadiness({
     engines: [],
@@ -358,15 +379,18 @@ test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸�
   )
 })
 
-test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
+test("当前档案是未 ping 的 Ollama、另一份 OpenAI 有密钥：不 ready（看 activeKeyProfileId）", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [REMOTE],
-    apiKeys: [],
+    apiKeys: [KEY],
     engineCount: 1,
-    hasEnjoySecret: true
+    hasEnjoySecret: true,
+    activeKeyProfileId: null
   })
-  assert.equal(snap.ready, true)
+  assert.equal(snap.ready, false)
+  assert.equal(snap.activeKeyProfileId, undefined)
+  assert.equal(snap.hasEnjoySecret, true)
   assert.equal(
     chatRouteAllowsSend({
       runtimeId: "enjoy-local",
@@ -375,4 +399,31 @@ test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
     }),
     true
   )
+})
+
+test("远端 / 未 ping 的无密钥本机：不 ready，闸仍放行", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [REMOTE],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: true
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: "enjoy-local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
+    }),
+    true
+  )
+  const pinged = buildChatReadiness({
+    engines: [],
+    localModels: [LOCAL_OK],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: true
+  })
+  assert.equal(pinged.ready, true)
 })

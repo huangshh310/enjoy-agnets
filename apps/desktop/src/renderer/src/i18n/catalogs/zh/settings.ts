@@ -17,6 +17,11 @@ export const zhSettings = {
     saving: "保存中…"
   },
 
+  secrets: {
+    keychainUnavailable: "这台电脑现在没法安全保存密钥。请先解锁系统钥匙串，我们不会改用明文存储。",
+    keychainUnavailableHint: "Linux 需先解锁 GNOME Keyring 或 KWallet。开发命令见 architecture spec。"
+  },
+
   general: {
     title: "基本信息",
     hubTitle: "应用默认设置",
@@ -127,6 +132,7 @@ export const zhSettings = {
     readyEngines: "{count} 个引擎",
     readyWorkspace: "项目 {name}",
     readyNoWorkspace: "还没打开项目",
+    configuredUnverified: "已配置·未验证",
     shortcutsToday: "今天值得记住的快捷键",
     shortcutSettings: "打开设置",
     shortcutApproval: "切换审批",

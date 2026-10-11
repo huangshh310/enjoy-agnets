@@ -5,6 +5,11 @@
 import { createRequire } from "node:module"
 import { deleteSecretValue, getSecretValue, setSecretValue } from "@enjoy-agents/db"
 import { getDatabase } from "../database.ts"
+import {
+  SecretWriteFailure,
+  isSecretStorageAvailable,
+  readSecretStorageProbe
+} from "../secret-storage.ts"
 
 const require = createRequire(import.meta.url)
 const PREFIX = "ssh-password:"
@@ -28,10 +33,28 @@ export function deleteSshPassword(hostId: string): void {
 
 function encrypt(plain: string): string {
   const safeStorage = loadSafeStorage()
-  if (!safeStorage?.isEncryptionAvailable()) {
-    throw new Error("OS keychain encryption is not available on this machine.")
+  if (
+    !safeStorage ||
+    !isSecretStorageAvailable({
+      ...readSecretStorageProbe(),
+      encryptionAvailable: safeStorage.isEncryptionAvailable(),
+      linuxBackend: readLinuxBackend(safeStorage)
+    })
+  ) {
+    throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   }
   return safeStorage.encryptString(plain).toString("base64")
+}
+
+function readLinuxBackend(
+  storage: { getSelectedStorageBackend?: () => string }
+): string | undefined {
+  if (process.platform !== "linux") return undefined
+  try {
+    return storage.getSelectedStorageBackend?.()
+  } catch {
+    return undefined
+  }
 }
 
 function decrypt(stored: string): string | undefined {
@@ -45,7 +68,12 @@ function decrypt(stored: string): string | undefined {
 }
 
 function loadSafeStorage():
-  | { isEncryptionAvailable: () => boolean; encryptString: (plain: string) => Buffer; decryptString: (buf: Buffer) => string }
+  | {
+      isEncryptionAvailable: () => boolean
+      getSelectedStorageBackend?: () => string
+      encryptString: (plain: string) => Buffer
+      decryptString: (buf: Buffer) => string
+    }
   | undefined {
   try {
     return (require("electron") as typeof import("electron")).safeStorage

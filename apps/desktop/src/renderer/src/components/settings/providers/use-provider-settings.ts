@@ -15,8 +15,9 @@ import {
 } from "./provider-editor-writes"
 import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
+import { secretWriteErrorMessage, unwrapSettingsWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
+import { showAppToast } from "@renderer/lib/app-toast"
 
 export type PingStateMap = Record<
   string,
@@ -126,26 +127,28 @@ function useProviderWrites(
     },
     activate: async (id: string) => {
       if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.activateProvider({ id })) as SettingsSnapshot)
+      await writeProviderSnapshot(() => getIde().settings.activateProvider({ id }), queryClient, t)
     },
     remove: async (id: string) => {
       if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.removeProvider({ id })) as SettingsSnapshot)
+      await writeProviderSnapshot(() => getIde().settings.removeProvider({ id }), queryClient, t)
       if (editor?.id === id) closeEditor()
     },
     duplicate: async (profile: ProviderPublic) => {
       if (!hasIde()) return
       const name = `${profile.name} ${t("settings.providers.copySuffix")}`.trim()
-      await persistSnapshot(
+      await writeProviderSnapshot(
+        () => getIde().settings.duplicateProvider({ id: profile.id, name }),
         queryClient,
-        (await getIde().settings.duplicateProvider({ id: profile.id, name })) as SettingsSnapshot
+        t
       )
     },
     setEnabled: async (id: string, enabled: boolean) => {
       if (!hasIde()) return
-      await persistSnapshot(
+      await writeProviderSnapshot(
+        () => getIde().settings.setProviderEnabled({ id, enabled }),
         queryClient,
-        (await getIde().settings.setProviderEnabled({ id, enabled })) as SettingsSnapshot
+        t
       )
     },
     fetchModels: async () => {
@@ -162,6 +165,18 @@ function useProviderWrites(
         setDetecting(false)
       }
     }
+  }
+}
+
+async function writeProviderSnapshot(
+  write: () => Promise<unknown>,
+  queryClient: QueryClient,
+  t: ReturnType<typeof useT>
+) {
+  try {
+    await persistSnapshot(queryClient, unwrapSettingsWrite(await write()))
+  } catch (error) {
+    showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
   }
 }
 

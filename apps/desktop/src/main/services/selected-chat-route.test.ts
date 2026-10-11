@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route.ts"
+import { beginAgentRunGate, selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route.ts"
 
 test("自定义 ACP / 未 inspect 的 CLI / Harness 不挡", () => {
   assert.equal(
@@ -67,6 +67,29 @@ test("enjoy-local 没模型且没密钥才回 no_chat_route", () => {
       codingRuntime: "local",
       hasEnjoySecret: false,
       verifiedLocal: "unknown"
+    }),
+    null
+  )
+})
+
+test("beginAgentRun 被闸时回 {ok:false}，不要 throw", () => {
+  assert.deepEqual(
+    beginAgentRunGate({
+      skip: false,
+      runtimeId: "enjoy-local",
+      codingRuntime: "local",
+      hasEnjoySecret: false,
+      verifiedLocal: false
+    }),
+    { ok: false, code: NO_CHAT_ROUTE }
+  )
+  assert.equal(
+    beginAgentRunGate({
+      skip: false,
+      runtimeId: "enjoy-local",
+      codingRuntime: "local",
+      hasEnjoySecret: true,
+      verifiedLocal: false
     }),
     null
   )
