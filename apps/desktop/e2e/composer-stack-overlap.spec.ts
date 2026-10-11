@@ -15,6 +15,7 @@ import {
   relaunchElectron,
   stubPath
 } from "./approval-restart-helpers"
+import { sendComposer } from "./send-composer"
 
 const SIZES = [
   { width: 733, height: 480 },
@@ -54,7 +55,7 @@ test("重启后已中断小卡在消息流里，待验收条与 Composer 同宽�
     await expect(window.locator('[data-testid="chat-conversation"] [data-testid="thread-notice-banner"]')).toHaveCount(1)
 
     for (const theme of ["light", "dark"] as const) {
-      if (theme === "dark") await setDark(window)
+      if (theme === "dark") await setTheme(window, "dark")
       for (const size of SIZES) {
         await window.setViewportSize(size)
         await setGateOpen(window, false)
@@ -106,20 +107,37 @@ test("写了 .txt 的待验收条：展开列出文件胶囊，不出「在浏�
   }
 })
 
-test("733×480 待审批：卡限高卡内滚，Composer 保住最小高度，面包屑可读", async () => {
-  test.setTimeout(180_000)
+/** 三种审批卡：计划概览（写文件）、短命令、长命令（#144 夹具）。 */
+const APPROVAL_PROMPTS = [
+  ["please write a note", "note"],
+  ["run bash ls", "ls"],
+  ["run long", "long"]
+] as const
+
+test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与消息区都在，面包屑可读", async () => {
+  test.setTimeout(300_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const env = await bootPendingApproval()
   try {
     const window = await firstWindow(env.app)
-    for (const theme of ["light", "dark"] as const) {
-      if (theme === "dark") await setDark(window)
-      for (const size of SIZES) {
-        await window.setViewportSize(size)
-        await window.waitForTimeout(500)
-        await snap(window, `${size.width}x${size.height}-approval-${theme}`)
-        await expectApprovalLayout(window, `${size.width} approval ${theme}`, size.height)
+    for (const [prompt, slug] of APPROVAL_PROMPTS) {
+      if (slug !== "note") {
+        await window.setViewportSize(SIZES[1])
+        await window.locator('[data-testid="approval-deny"]').click()
+        await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0, { timeout: 15_000 })
+        await sendComposer(window, window.locator('[data-testid="composer-input"]'), prompt)
+        await window.locator('[data-testid="approval-allow"]').waitFor({ timeout: 20_000 })
       }
+      for (const theme of ["light", "dark"] as const) {
+        await setTheme(window, theme)
+        for (const size of SIZES) {
+          await window.setViewportSize(size)
+          await window.waitForTimeout(500)
+          await snap(window, `${size.width}x${size.height}-approval-${slug}-${theme}`)
+          await expectApprovalLayout(window, `${size.width} approval ${slug} ${theme}`, size.height)
+        }
+      }
+      await setTheme(window, "light")
     }
   } finally {
     await closeForRelaunch(env.app)
@@ -128,51 +146,74 @@ test("733×480 待审批：卡限高卡内滚，Composer 保住最小高度，�
 
 /** Composer 输入框最小高度（ai-chat-composer 自适应下限 52px）。 */
 const COMPOSER_INPUT_MIN = 52
+/** 审批时消息区至少露一行。 */
+const MESSAGES_MIN_VISIBLE = 24
 
 async function expectApprovalLayout(window: Page, label: string, viewportHeight: number): Promise<void> {
   const dock = await box(window.locator('[data-testid="permission-dock"]'))
-  const card = window.locator('[data-testid="permission-dock-card"]')
+  const card = window.locator('[data-testid="permission-dock"] article')
   const cardBox = await box(card)
   const form = await box(window.locator("form[data-composer]"))
   const input = await box(window.locator('[data-testid="composer-input"]'))
+  const thread = await box(window.locator('[data-testid="chat-conversation"] > div').first())
+  const debug = JSON.stringify({ thread, dock, card: cardBox, form })
   expect(input.height, `${label}: composer input squeezed`).toBeGreaterThanOrEqual(COMPOSER_INPUT_MIN - 0.5)
   expect(form.y + form.height, `${label}: composer cut off`).toBeLessThanOrEqual(viewportHeight)
+  // 消息区不被卡挤成 0：至少露一行。
+  expect(thread.height, `${label}: messages squeezed ${debug}`).toBeGreaterThanOrEqual(MESSAGES_MIN_VISIBLE)
+  expect(thread.y + thread.height, `${label}: messages under card`).toBeLessThanOrEqual(dock.y + 1)
+  // 同一条审批的卡已摊开时，「需处理」条不重复占行。
+  await expect(window.locator('[data-testid="attention-needs-bar"]')).toHaveCount(0)
   // 卡在对话列（消息流）里，不占 Composer 的位置：Composer 完整可见、在对话列之下。
   await expect(window.locator('[data-testid="chat-conversation"] [data-testid="permission-dock"]')).toHaveCount(1)
   const conv = await box(window.locator('[data-testid="chat-conversation"]'))
   expect(form.y, `${label}: composer under conversation`).toBeGreaterThanOrEqual(conv.y + conv.height - 1)
   const formFull = await window.locator("form[data-composer]").evaluate((el) => el.scrollHeight <= el.clientHeight + 1)
   expect(formFull, `${label}: composer clipped`).toBe(true)
-  expect(intersects(cardBox, form), `${label}: card ∩ composer`).toBe(false)
+  expect(intersects(cardBox, form), `${label}: card ∩ composer ${debug}`).toBe(false)
   expect(dock.y + dock.height, `${label}: dock overlaps composer`).toBeLessThanOrEqual(form.y + 1)
   const review = window.locator('[data-testid="composer-review-frame"]:visible')
   if ((await review.count()) > 0) {
     expect(intersects(cardBox, await box(review)), `${label}: card ∩ review bar`).toBe(false)
   }
-  // 卡限高、卡内滚：容器有 max-height + overflow auto；正文溢出时能滚，允许钮始终在卡内可见。
-  const scroll = await card.evaluate((el) => {
-    const style = getComputedStyle(el)
-    const body = el.querySelector<HTMLElement>('[data-testid="approval-card-body"]')
-    const target = body && body.scrollHeight > body.clientHeight + 1 ? body : el
-    const overflows = target.scrollHeight > target.clientHeight + 1
-    if (overflows) target.scrollTop = target.scrollHeight
-    return {
-      maxHeight: style.maxHeight,
-      overflowY: style.overflowY,
-      bodyOverflowY: body ? getComputedStyle(body).overflowY : "",
-      overflows,
-      scrolled: target.scrollTop > 0
-    }
-  })
-  expect(scroll.maxHeight, `${label}: card has no max height`).not.toBe("none")
-  expect(scroll.overflowY).toBe("auto")
-  expect(scroll.bodyOverflowY).toBe("auto")
-  if (scroll.overflows) expect(scroll.scrolled, `${label}: card does not scroll`).toBe(true)
-  const allow = await box(window.locator('[data-testid="approval-allow"]'))
-  expect(
-    allow.y >= dock.y && allow.y + allow.height <= dock.y + dock.height + 1,
-    `${label}: allow hidden ${JSON.stringify({ allow, dock, card: cardBox, form })}`
-  ).toBe(true)
+  // 一套高度规则：command 卡命令区优先、不被压；其余卡限高，正文卡内滚。
+  const variant = await card.getAttribute("data-variant")
+  if (variant === "command") {
+    const pre = await window.locator('[data-testid="approval-command"]').evaluate((el) => {
+      const lineHeight = parseFloat(getComputedStyle(el).lineHeight)
+      const lines = Math.max(1, Math.round(el.scrollHeight / lineHeight))
+      const body = el.closest<HTMLElement>('[data-testid="approval-card-body"]')
+      return {
+        clientHeight: el.clientHeight,
+        need: Math.min(lines, 2) * lineHeight - 1,
+        bodyScrolls: body ? body.scrollHeight > body.clientHeight + 1 : false
+      }
+    })
+    expect(pre.clientHeight, `${label}: command area squeezed`).toBeGreaterThanOrEqual(pre.need)
+    expect(pre.bodyScrolls, `${label}: command scrolled inside card`).toBe(false)
+  } else {
+    const scroll = await card.evaluate((el) => {
+      const body = el.querySelector<HTMLElement>('[data-testid="approval-card-body"]')
+      const overflows = body ? body.scrollHeight > body.clientHeight + 1 : false
+      if (body && overflows) body.scrollTop = body.scrollHeight
+      return {
+        maxHeight: getComputedStyle(el).maxHeight,
+        bodyOverflowY: body ? getComputedStyle(body).overflowY : "",
+        overflows,
+        scrolled: (body?.scrollTop ?? 0) > 0
+      }
+    })
+    expect(scroll.maxHeight, `${label}: card has no max height`).not.toBe("none")
+    expect(scroll.bodyOverflowY).toBe("auto")
+    if (scroll.overflows) expect(scroll.scrolled, `${label}: card does not scroll`).toBe(true)
+  }
+  for (const id of ["approval-allow", "approval-deny"]) {
+    const button = await box(window.locator(`[data-testid="${id}"]`))
+    expect(
+      button.y >= dock.y && button.y + button.height <= dock.y + dock.height + 1,
+      `${label}: ${id} hidden ${JSON.stringify({ button, dock, card: cardBox, form })}`
+    ).toBe(true)
+  }
   // 面包屑不缩成「w…」：项目名至少 4.5rem 或完整显示。
   const crumb = await window.locator('[data-testid="chat-breadcrumb-project"]').evaluate((el) => ({
     width: el.getBoundingClientRect().width,
@@ -232,6 +273,9 @@ async function expectReviewAligned(window: Page, label: string): Promise<Box> {
   expect(Math.abs(frame.x - form.x), `${label}: left edge`).toBeLessThanOrEqual(1)
   expect(Math.abs(frame.x + frame.width - (form.x + form.width)), `${label}: right edge`).toBeLessThanOrEqual(1)
   expect(frame.y + frame.height, `${label}: review bar overlaps composer`).toBeLessThanOrEqual(form.y + 1)
+  // 待验收条紧贴 Composer：间距 ≤ 12px（luna：原约 52px 收到约 8px）。
+  const gap = form.y - (frame.y + frame.height)
+  expect(gap, `${label}: review bar ↔ composer gap ${gap}px`).toBeLessThanOrEqual(12)
   return frame
 }
 
@@ -245,9 +289,13 @@ function intersects(a: Box, b: Box): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
 }
 
-async function setDark(window: Page): Promise<void> {
-  await window.getByRole("button", { name: "深色" }).click()
-  await expect.poll(() => window.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(true)
+async function setTheme(window: Page, theme: "light" | "dark"): Promise<void> {
+  const dark = await window.evaluate(() => document.documentElement.classList.contains("dark"))
+  if (dark === (theme === "dark")) return
+  await window.getByRole("button", { name: theme === "dark" ? "深色" : "浅色" }).click()
+  await expect
+    .poll(() => window.evaluate(() => document.documentElement.classList.contains("dark")))
+    .toBe(theme === "dark")
   await window.waitForTimeout(1_000)
 }
 
