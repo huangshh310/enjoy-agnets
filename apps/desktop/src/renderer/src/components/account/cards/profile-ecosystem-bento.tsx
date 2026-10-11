@@ -17,7 +17,12 @@ import {
   RiTrophyLine
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useChatStore } from "@renderer/stores/chat-store"
 import type { AgentToolPublic, ProviderPublic } from "@enjoy-agents/ipc-contract"
+import { isApplePlatform } from "@renderer/components/settings/keybindings/keybinding-format"
+import { profileOsName, vaultChipKey, vaultCopyKey, vaultFace } from "../lib/profile-face-copy"
 import type { ExtendedUserProfile, ProfileMetricSummary } from "../types/profile.types"
 
 interface ProfileEcosystemBentoProps {
@@ -42,9 +47,20 @@ export function ProfileEcosystemBento({
   activeEndpoint
 }: ProfileEcosystemBentoProps) {
   const navigate = useNavigate()
-  const readyTools = agentTools.filter((t) => t.status === "ready" || t.id === "enjoy-local")
+  const t = useT()
+  const hasKey = useChatStore((state) => state.hasKey)
+  const storageOk = useChatReadiness().data?.secretStorageAvailable
+  const face = vaultFace({ hasKey, secretStorageAvailable: storageOk })
+  const keychainOn = protectedVault || face === "keychain"
+  const readyTools = agentTools.filter((tool) => tool.status === "ready" || tool.id === "enjoy-local")
   const activeProvider = providers.find((p) => p.active) ?? providers[0]
   const currentDevice = profile.activeDevices.find((d) => d.isCurrent) ?? profile.activeDevices[0]
+  const osName = profileOsName(currentDevice?.os)
+  const computerLabel = osName
+    ? t("pages.account.security.thisComputer", { os: osName })
+    : t("pages.account.security.thisComputerOnly")
+  const vaultLabel = t(vaultCopyKey(face, isApplePlatform()))
+  const vaultShort = t(vaultChipKey(face))
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -119,19 +135,19 @@ export function ProfileEcosystemBento({
             <span
               className={cx(
                 "rounded-md px-2 py-0.5 text-caption-2-regular font-mono",
-                protectedVault
+                keychainOn
                   ? "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
                   : "bg-background-secondary-default text-text-tertiary"
               )}
             >
-              {protectedVault ? "已加密保护" : "待配置"}
+              {vaultLabel}
             </span>
           </div>
 
           <div className="mt-3.5 flex flex-col gap-2.5">
             <div className="flex items-center justify-between text-caption-2-medium">
               <span className="text-text-secondary">密钥保管</span>
-              <span className="font-medium text-text-primary">本机已加密保管</span>
+              <span className="font-medium text-text-primary">{t("pages.account.security.vaultNeutral")}</span>
             </div>
 
             <div className="flex items-center justify-between text-caption-2-medium">
@@ -141,9 +157,7 @@ export function ProfileEcosystemBento({
 
             <div className="flex items-center justify-between text-caption-2-medium">
               <span className="text-text-secondary">当前设备</span>
-              <span className="font-mono text-text-primary">
-                {currentDevice?.name} ({currentDevice?.os})
-              </span>
+              <span className="font-mono text-text-primary">{computerLabel}</span>
             </div>
 
             <div className="flex items-center justify-between text-caption-2-medium">
@@ -197,7 +211,7 @@ export function ProfileEcosystemBento({
               <RiShieldCheckLine className="size-4 shrink-0 text-state-success-text" />
               <div className="flex flex-col min-w-0">
                 <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">凭据护盾</span>
-                <span className="text-pretty font-mono text-caption-2-regular text-text-secondary">密钥已加密保管</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-secondary">{vaultShort}</span>
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-10-10（归档/删除同时清非 desktop 的本会话允许表）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-10（归档/删除同时清非 desktop 的本会话允许表；overlay 顶栏「按 Esc 停止」）
 
 ## 当前真相
 

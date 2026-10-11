@@ -6,8 +6,10 @@
  * 4. 开发者生态、安全凭据与成长里程碑 (3 栏全维 Bento)
  */
 import { useMemo, useState } from "react"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { vaultFace } from "./lib/profile-face-copy"
 import { BlobatarPickerDialog } from "../avatar/blobatar-picker-dialog"
 import { ProfileActivityCard } from "./cards/profile-activity-card"
 import { ProfileEcosystemBento } from "./cards/profile-ecosystem-bento"
@@ -32,7 +34,8 @@ export function AccountProfileSection() {
   const remoteLabel = useChatStore((state) => state.remoteLabel)
   const activeEndpoint = workspaceKind === "ssh" && remoteLabel ? remoteLabel : undefined
   const hasKey = useChatStore((state) => state.hasKey)
-  const protectedVault = hasKey || profile.safeStorageActive
+  const storageOk = useChatReadiness().data?.secretStorageAvailable
+  const protectedVault = vaultFace({ hasKey, secretStorageAvailable: storageOk }) === "keychain"
 
   const activeEngineLabel = useMemo(() => {
     const found = agentTools.find((t) => t.id === runtimeId)

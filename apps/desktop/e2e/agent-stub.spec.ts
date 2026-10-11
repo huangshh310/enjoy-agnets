@@ -56,11 +56,16 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
       timeout: 12_000
     })
 
+    // TTFO 大盘只在开发者文案档出现（#142）；这里临时打开再关上
     await window.evaluate(() => {
+      localStorage.setItem("enjoy-agents-dev-copy", "1")
       location.hash = "#/observability"
     })
     await window.waitForFunction(() => document.body.innerText.includes("TTFO"), undefined, {
       timeout: 8_000
+    })
+    await window.evaluate(() => {
+      localStorage.removeItem("enjoy-agents-dev-copy")
     })
 
     await window.evaluate(() => {

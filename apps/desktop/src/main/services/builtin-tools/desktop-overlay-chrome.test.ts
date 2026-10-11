@@ -33,7 +33,7 @@ test("overlay 窗带 SoT testid，无红警 / 霓虹 / 空成功条", () => {
   assert.match(html, /data-testid="cu-overlay-frame"/)
   assert.match(html, /data-testid="cu-overlay-stop"/)
   assert.match(html, /正在操控/)
-  assert.match(html, /Esc 停一手势/)
+  assert.match(html, /按 Esc 停止/)
   assert.doesNotMatch(html, /操控完成/)
   assert.doesNotMatch(html, /Computer Use/)
   assert.doesNotMatch(html, /radar-dot|#10b981|click-beacon|#ef4444|#dc2626|#b42318/)

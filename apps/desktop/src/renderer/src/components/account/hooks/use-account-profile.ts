@@ -35,8 +35,8 @@ export function buildInitialProfile(userName: string, hasKey: boolean): Extended
     activeDevices: [
       {
         id: "local",
-        name: "Enjoy Agents Desktop",
-        os: typeof navigator === "undefined" ? "Desktop" : navigator.platform || "Desktop",
+        name: "this-computer",
+        os: typeof navigator === "undefined" ? "" : navigator.platform || "",
         ip: "",
         lastActive: "",
         isCurrent: true

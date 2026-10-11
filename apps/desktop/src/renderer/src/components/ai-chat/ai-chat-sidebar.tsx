@@ -12,12 +12,11 @@ import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar
 import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos"
 import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
-import {
-  chordGlyphs,
-  isApplePlatform
-} from "@renderer/components/settings/keybindings/keybinding-format"
+import { chordGlyphs } from "@renderer/components/settings/keybindings/keybinding-format"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+
+const QUICK_SEARCH_CHORD = "mod+l"
 
 
 export function AiChatSidebar({
@@ -130,7 +129,7 @@ function SidebarHeader({
 
 function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand?: () => void }) {
   const t = useT()
-  const searchKeys = isApplePlatform() ? chordGlyphs("mod+l").join("") : chordGlyphs("mod+l").join("+")
+  const searchKeys = chordGlyphs(QUICK_SEARCH_CHORD).join(" ")
   return (
     <button
       type="button"
