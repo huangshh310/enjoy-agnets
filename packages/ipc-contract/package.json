@@ -26,6 +26,7 @@
     "./desktop-act-codes": "./src/desktop-act-codes.ts",
     "./approval-not-executed": "./src/approval-not-executed.ts",
     "./turn-outcome": "./src/turn-outcome.ts",
+    "./bash-read-only": "./src/bash-read-only.ts",
     "./mcp-curated": "./src/mcp-curated.ts",
     "./approvals-pending": "./src/approvals-pending.ts",
     "./restore-codes": "./src/restore-codes.ts",
