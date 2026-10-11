@@ -64,7 +64,7 @@ export function ApprovalChrome({
       data-variant={variant}
       data-tone={tone}
       className={cx(
-        "flex flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card",
+        "flex min-h-0 flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card",
         tone === "danger"
           ? "border-border-error-default/40"
           : tone === "warn"
@@ -72,7 +72,8 @@ export function ApprovalChrome({
             : "border-separator-border/80"
       )}
     >
-      <div className="flex items-start gap-2">
+      {/* 正文区可压缩、区内滚；底栏 shrink-0，拒绝 / 运行永远可见（luna #144）。 */}
+      <div className="flex min-h-0 shrink items-start gap-2 overflow-hidden">
         <span
           className={cx(
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md",
@@ -85,7 +86,7 @@ export function ApprovalChrome({
         >
           <Icon className="size-3.5" aria-hidden />
         </span>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto">
           <h3 className="text-caption-1-semibold leading-6 text-text-primary">{title}</h3>
           {children}
           {sessionHint ? (

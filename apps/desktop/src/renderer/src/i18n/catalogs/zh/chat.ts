@@ -794,6 +794,8 @@ export const zhChat = {
   alwaysAllowOnceHint: "含管道或重定向的命令只允许这一次，不会记下。",
   alwaysAllowInterpreterHint: "这是在运行一段代码，只允许这一次，不会记下。",
   alwaysAllowTooLongHint: "命令太长，只允许这一次，不会记下。",
+  commandExpandAll: "展开全部（共 {n} 字）",
+  commandCollapse: "收起",
   alwaysAllowWriteHint: "本会话放行所有写入类工具。后续每轮生效，重启后失效。",
   alwaysAllow: "本会话总是允许",
   allowOnce: "仅允许本次",

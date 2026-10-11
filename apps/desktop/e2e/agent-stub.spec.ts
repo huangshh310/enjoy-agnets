@@ -237,6 +237,102 @@ test("命令夹具：本会话允许 ls 后 ls 不弹卡、ls -la 再弹卡；ru
   }
 })
 
+test("run long 命令卡：默认与 733×480 下拒绝 / 运行与 Composer 都在窗口内，展开 / 收起可用", async () => {
+  const app = await launchStubApp("# e2e long command card\n", 240_000, { lang: "zh" })
+  if (!app) return
+  try {
+    const window = await readyWindow(app)
+    const composer = window.locator('[data-testid="composer-input"]')
+    const allowOnce = window.locator('[data-testid="approval-allow"]')
+    const deny = window.locator('[data-testid="approval-deny"]')
+    const command = window.locator('[data-testid="approval-command"]')
+    const toggle = window.locator('[data-testid="approval-command-toggle"]')
+
+    // 短命令：不出展开链接。
+    await sendComposer(window, composer, "run bash ls")
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expect(command).toBeVisible()
+    await expect(toggle).toHaveCount(0)
+    await shot(window, "run-bash-ls-light")
+    await forceStubTheme(window, "dark")
+    await shot(window, "run-bash-ls-dark")
+    await forceStubTheme(window, "light")
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "ls", 1)
+
+    await sendComposer(window, composer, "run long")
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expect(toggle).toHaveText("展开全部（共 4205 字）")
+    await expect(command).toHaveAttribute("data-expanded", "false")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await shot(window, "run-long-light")
+
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "true")
+    await expect(toggle).toHaveText("收起")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await shot(window, "run-long-expanded-light")
+    await forceStubTheme(window, "dark")
+    await shot(window, "run-long-expanded-dark")
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "false")
+    await shot(window, "run-long-dark")
+    await forceStubTheme(window, "light")
+
+    await window.setViewportSize({ width: 733, height: 480 })
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await shot(window, "run-long-small")
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "true")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await shot(window, "run-long-small-expanded")
+    await toggle.click()
+    await expect(command).toHaveAttribute("data-expanded", "false")
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await waitRanCount(window, "long", 1)
+    await sendComposer(window, composer, "run bash ls")
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await shot(window, "run-bash-ls-small")
+  } finally {
+    await closeApp(app)
+  }
+})
+
+/** 整个元素都在视口内（不是只露一角）。 */
+async function expectFullyInViewport(window: Page, locators: Array<ReturnType<Page["locator"]>>) {
+  const viewport = await window.evaluate(() => ({ width: innerWidth, height: innerHeight }))
+  for (const locator of locators) {
+    await expect(locator).toBeVisible({ timeout: 10_000 })
+    const box = await locator.boundingBox()
+    expect(box, "boundingBox").not.toBeNull()
+    if (!box) continue
+    expect(box.height).toBeGreaterThan(0)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 0.5)
+  }
+}
+
+/** 仅本机设 ENJOY_E2E_SHOTS_DIR 时截图给 luna；CI 不写盘。 */
+async function shot(window: Page, name: string) {
+  const dir = process.env.ENJOY_E2E_SHOTS_DIR
+  if (!dir) return
+  await window.waitForTimeout(250)
+  await window.screenshot({ path: join(dir, `${name}.png`) }).catch(() => undefined)
+}
+
+async function forceStubTheme(window: Page, theme: "light" | "dark") {
+  await window.evaluate((next) => {
+    document.documentElement.classList.toggle("dark", next === "dark")
+    document.documentElement.dataset.theme = next
+    window.dispatchEvent(new CustomEvent("boardui:theme-change", { detail: next }))
+  }, theme)
+}
+
 /** 数正文里 `stub-ok ran <key>`（\b 防 ls 吃到 lsla）。 */
 async function waitRanCount(window: Page, key: string, count: number) {
   await window.waitForFunction(

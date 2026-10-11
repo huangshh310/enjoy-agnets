@@ -14,12 +14,18 @@ function read(rel: string) {
   return readFileSync(join(renderer, rel), "utf8")
 }
 
-test("审批时对话列保底 200px，不再用 min(240px,40%)", () => {
+test("审批时对话列保底 200px（小窗让位到 25%），Composer 簇可压缩、Dock 区内滚（luna #144）", () => {
   const stage = read("app-shell/chat/chat-stage.tsx")
+  const dock = read("ai-chat/attention/permission-dock.tsx")
+  const chrome = read("ai-chat/thread/approval/approval-chrome.tsx")
   assert.match(stage, /data-testid="chat-conversation"/)
-  assert.match(stage, /pendingApproval && "min-h-52"/)
+  assert.match(stage, /pendingApproval && "min-h-\[min\(13rem,25cqh\)\]"/)
+  assert.match(stage, /overflow-hidden \[container-type:size\]/)
   assert.doesNotMatch(stage, /min\(240px,40%\)/)
-  assert.match(stage, /pendingApproval\s*\?\s*"min-h-0 overflow-y-auto"\s*:\s*"shrink-0"/)
+  assert.match(stage, /pendingApproval\s*\?\s*"min-h-0 shrink"\s*:\s*"shrink-0"/)
+  assert.match(dock, /flex min-h-0 shrink flex-col/)
+  assert.match(chrome, /flex min-h-0 shrink items-start gap-2 overflow-hidden/)
+  assert.match(chrome, /<footer className="flex shrink-0/)
 })
 
 test("Dock 不再限高内滚，空截图不占位，改动条在审批时让位", () => {
@@ -76,7 +82,7 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
 test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {
   const chrome = read("ai-chat/thread/approval/approval-chrome.tsx")
   const stacked = read("ai-chat/composer/stacked-rail/composer-stacked-styles.ts")
-  assert.match(chrome, /flex min-h-0 min-w-0 flex-1 flex-col gap-1\.5 overflow-y-auto/)
+  assert.match(chrome, /flex min-h-0 min-w-0 flex-1 flex-col gap-1\.5 self-stretch overflow-y-auto/)
   assert.match(chrome, /leading-6 text-text-primary/)
   assert.match(stacked, /flex w-full min-w-0 flex-col/)
   assert.match(stacked, /mb-2/)

@@ -205,7 +205,7 @@ function ChatThreadBody(props: {
         className={
           props.empty
             ? "relative flex min-h-0 flex-1 flex-col overflow-y-auto"
-            : "relative flex min-h-0 flex-1 flex-col overflow-hidden"
+            : "relative flex min-h-0 flex-1 flex-col overflow-hidden [container-type:size]"
         }
       >
         {props.empty ? (
@@ -223,7 +223,7 @@ function ChatThreadBody(props: {
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
             <div
               data-testid="chat-conversation"
-              className={cx("flex min-h-0 min-w-0 flex-1 flex-col", pendingApproval && "min-h-52")}
+              className={cx("flex min-h-0 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)]")}
             >
               <AiChatThread
                 messages={messages}
@@ -242,7 +242,7 @@ function ChatThreadBody(props: {
             props.empty
               ? "mx-auto w-full max-w-3xl shrink-0 px-6"
               : pendingApproval
-                ? "min-h-0 overflow-y-auto"
+                ? "min-h-0 shrink"
                 : "shrink-0"
           }
           composerClassName={props.empty ? "px-0 pb-2 [&_textarea]:min-h-[72px]" : undefined}
