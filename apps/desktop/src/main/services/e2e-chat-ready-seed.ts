@@ -16,7 +16,8 @@ import {
 } from "./e2e-chat-readiness"
 import { writeInspectCache } from "./agent-tools-account/inspect-store"
 import { isE2eStub } from "./e2e-stub"
-import { upsertProfile } from "./secrets"
+import { readVault, upsertProfile } from "./secrets"
+import { existingSeedProfileId } from "./e2e-seed-profile"
 
 export { applyE2eStubEngine, e2eStubEngineInspect }
 
@@ -34,8 +35,11 @@ export async function seedE2eChatReadyRoute(input: {
   if (!isE2eStub() || !e2eChatReadySeedAllowed(input)) return false
   const kind = e2eChatReadyKind()
   if (kind === "key") {
+    const vault = await readVault()
     await upsertProfile({
-      id: E2E_CHAT_READY_KEY_PROFILE_ID,
+      id:
+        existingSeedProfileId(vault.profiles, { name: "E2E Stub Key", kind: "openai" }) ??
+        E2E_CHAT_READY_KEY_PROFILE_ID,
       name: "E2E Stub Key",
       kind: "openai",
       apiKey: "sk-e2e-stub",
