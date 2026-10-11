@@ -14,7 +14,7 @@ function fakeRunning(initial: boolean) {
   }
   const set = (next: boolean) => {
     running = next
-    for (const listener of [...listeners]) listener()
+    for (const listener of Array.from(listeners)) listener()
   }
   return { deps, set, listenerCount: () => listeners.size }
 }
