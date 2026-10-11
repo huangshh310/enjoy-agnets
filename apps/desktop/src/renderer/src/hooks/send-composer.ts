@@ -8,6 +8,7 @@ import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
 import { useChatStore } from "../stores/chat-store"
+import { traceSend } from "./send-debug"
 import { clearComposerDraft, snapshotComposerDraft, takeComposerText } from "./runtime-interact/composer-draft"
 import { sendComposerMessage } from "./runtime-interact/send-composer-run"
 import { steerPreparedText } from "./runtime-interact/steer-composer"
@@ -21,13 +22,17 @@ export { steerPreparedText } from "./runtime-interact/steer-composer"
 export async function submitComposer(requested: ComposerSubmitIntent = "send") {
   const store = useChatStore.getState()
   const intent = resolveComposerIntent(store.running, requested)
+  traceSend("submit", { intent, running: store.running, sessionId: store.sessionId })
   if (intent === "send") return sendComposerMessage()
 
   const { quotes, skills, draft } = snapshotComposerDraft()
   const content = await takeComposerText()
   if (!content) return
   if (intent === "queue") {
-    if (!store.sessionId) return
+    if (!store.sessionId) {
+      traceSend("submit:queue-no-session")
+      return
+    }
     enqueueFollowup({
       sessionId: store.sessionId,
       prompt: content,

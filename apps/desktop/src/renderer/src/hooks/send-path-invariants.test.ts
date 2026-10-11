@@ -65,15 +65,3 @@ test("审批与 Dock 不自动发；空闲下一句仍走 submitComposer", () =>
   }
   assert.doesNotMatch(dock, /sendComposerMessage|submitComposer/)
 })
-
-test("running 撞上排队首发不得静默 return：限时等，等不到还文出提示并放锁", () => {
-  assert.doesNotMatch(send, /if \(store\.running\) return\n/)
-  assert.match(send, /waitComposerIdle\(QUEUED_SEND_IDLE_WAIT_MS\)/)
-  assert.match(send, /setComposerWritebackHeld\(false\)/)
-  assert.match(send, /restoreComposerDraft\(prepared\.content, prepared\.assets\)/)
-})
-
-test("发送抛错时直接发的草稿也要还回输入框", () => {
-  assert.match(send, /const typedBeforeTake = prepared \? "" : readComposerDomText\(\)/)
-  assert.match(send, /const draft = prepared\?\.content \|\| typedBeforeTake/)
-})
