@@ -75,3 +75,33 @@ test("QuestionsApproval 不展示本会话放行 hint", () => {
   assert.doesNotMatch(src.slice(start, end), /alwaysAllowHint/)
   assert.doesNotMatch(src.slice(start, end), /sessionHint=/)
 })
+
+test("code_mode 只允许一次（脚本内容不在键里），卡片 onceOnly", () => {
+  assert.deepEqual(sessionAllowCardState("code_mode", "./probe.sh"), {
+    showSession: false,
+    target: "",
+    onceOnly: true,
+    onceKind: "interpreter"
+  })
+  assert.deepEqual(sessionAllowCardState("code_mode", "make"), {
+    showSession: false,
+    target: "",
+    onceOnly: true,
+    onceKind: "interpreter"
+  })
+})
+
+test("超过 4096 字符的 bash 卡片 onceOnly，文案说命令太长", async () => {
+  assert.deepEqual(sessionAllowCardState("bash", `echo ${"a".repeat(6001)}`), {
+    showSession: false,
+    target: "",
+    onceOnly: true,
+    onceKind: "too_long"
+  })
+  const { zh } = await import("../../../../i18n/catalogs/zh/index.ts")
+  const { en } = await import("../../../../i18n/catalogs/en/index.ts")
+  assert.match(zh.chat.alwaysAllowTooLongHint, /命令太长/)
+  assert.match(en.chat.alwaysAllowTooLongHint, /too long/)
+  const src = readFileSync(new URL("./approval-card.tsx", import.meta.url), "utf8")
+  assert.match(src, /allow\.onceKind === "too_long"/)
+})

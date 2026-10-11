@@ -3,7 +3,7 @@
  */
 import { BASH_TOOLS, WRITE_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
 import type { SessionAllowScope } from "@enjoy-agents/ipc-contract/session-allow"
-import { commandFromToolInput, sessionAllowsBash } from "./bash-prefix.ts"
+import { commandFromToolInput, sessionAllowsBash, sessionAllowUsesBashTable } from "./bash-prefix.ts"
 import { sessionTableAllowsTool, type ApprovalPolicy } from "../tool-approval.ts"
 
 const BASH_SET = new Set<string>(BASH_TOOLS)
@@ -15,6 +15,7 @@ export function sessionAllowScopeFor(
 ): SessionAllowScope | undefined {
   if (!sessionTableAllowsTool(toolName, policy, input)) return undefined
   if (BASH_SET.has(toolName)) {
+    if (!sessionAllowUsesBashTable(toolName)) return undefined
     const command = commandFromToolInput(input)
     const matched = policy.sessionApprovedBashCommands?.find((allowed) =>
       sessionAllowsBash(command, [allowed])

@@ -3,7 +3,7 @@
  */
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { BASH_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
-import { bashAllowCommand, commandFromToolInput } from "../policies/bash-prefix.ts"
+import { bashAllowCommand, commandFromToolInput, sessionAllowUsesBashTable } from "../policies/bash-prefix.ts"
 import { resolveToolApproval, type ApprovalPolicy, type ToolApprovalDecision } from "../tool-approval.ts"
 
 const BASH_SET = new Set<string>(BASH_TOOLS)
@@ -55,6 +55,8 @@ function rememberSessionAllow(
   bashCommands: string[]
 ): void {
   if (BASH_SET.has(toolCall.toolName)) {
+    // code_mode 只允许一次：不记命令表，也不把工具名放进 sessionApproved。
+    if (!sessionAllowUsesBashTable(toolCall.toolName)) return
     const command = bashAllowCommand(commandFromToolInput(toolCall.input))
     if (command) bashCommands.push(command)
     return

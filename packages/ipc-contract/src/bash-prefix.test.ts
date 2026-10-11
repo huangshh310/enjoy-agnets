@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  SESSION_BASH_COMMAND_MAX_CHARS,
+  sessionAllowUsesBashTable,
   bashAllowCommand,
   bashCommandHasUnsafeOperators,
   bashCommandIsInterpreterStyle,
@@ -150,4 +152,20 @@ test("首词按原样比；只按空格 Tab 切，其它空白整句拒", () => 
   assert.equal(bashAllowCommand("npm\rtest"), "")
   assert.equal(bashAllowCommand("npm\vtest"), "")
   assert.equal(sessionAllowsBash("npm\u00A0test", ["npm test"]), false)
+})
+
+test("超过 4096 字符的命令永不记，也不匹配（与 Zod 上限一致）", () => {
+  const long = `echo ${"a".repeat(6000)}`
+  assert.equal(long.length, 6005)
+  assert.equal(bashAllowCommand(long), "")
+  assert.equal(sessionAllowsBash(long, [long]), false)
+  const edge = `ls ${"b".repeat(SESSION_BASH_COMMAND_MAX_CHARS - 3)}`
+  assert.equal(edge.length, SESSION_BASH_COMMAND_MAX_CHARS)
+  assert.equal(bashAllowCommand(edge), edge)
+  assert.equal(bashAllowCommand(`${edge}c`), "")
+})
+
+test("只有 bash 走命令表，code_mode 不走", () => {
+  assert.equal(sessionAllowUsesBashTable("bash"), true)
+  assert.equal(sessionAllowUsesBashTable("code_mode"), false)
 })

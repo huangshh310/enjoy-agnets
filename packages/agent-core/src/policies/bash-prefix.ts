@@ -7,5 +7,7 @@ export {
   bashCommandIsInterpreterStyle,
   commandBasename,
   commandFromToolInput,
-  sessionAllowsBash
+  sessionAllowsBash,
+  sessionAllowUsesBashTable,
+  SESSION_BASH_COMMAND_MAX_CHARS
 } from "@enjoy-agents/ipc-contract/bash-prefix"

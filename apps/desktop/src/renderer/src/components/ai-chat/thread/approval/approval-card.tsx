@@ -101,11 +101,13 @@ function CommandApproval({
   const sessionHint =
     allow.onceKind === "interpreter"
       ? t("chat.alwaysAllowInterpreterHint")
-      : allow.onceOnly
-        ? t("chat.alwaysAllowOnceHint")
-        : allow.bashExact
-          ? t("chat.alwaysAllowBashExactHint", { command: allow.target })
-          : t("chat.alwaysAllowHint", { target: allow.target })
+      : allow.onceKind === "too_long"
+        ? t("chat.alwaysAllowTooLongHint")
+        : allow.onceOnly
+          ? t("chat.alwaysAllowOnceHint")
+          : allow.bashExact
+            ? t("chat.alwaysAllowBashExactHint", { command: allow.target })
+            : t("chat.alwaysAllowHint", { target: allow.target })
   return (
     <ApprovalChrome
       variant="command"

@@ -5,6 +5,22 @@
  * git config）只决定「这条命令能不能被记下」。以后要「前缀 + 参数」必须按工具做参数白名单，另开 PR。
  * 禁止剥引号 / VAR= / 包装器。叶子文件，renderer 卡面与 main 共用（文件名沿用 bash-prefix）。
  */
+/**
+ * 只有 `bash` 走本会话命令表。`code_mode`（同属 BASH_TOOLS）的真正行为在 path + source，
+ * 只看 command 会被 `./probe.sh` / `make` 换脚本骗过：本版只允许一次，永不记、永不匹配（leo MF）。
+ * 以后要支持，须另立键 `{ command, path, sha256(source) }`，与 bash 表分开，另开 PR。
+ */
+export function sessionAllowUsesBashTable(toolName: string): boolean {
+  return toolName === "bash"
+}
+
+/** 与 Zod `SessionAllowScope.command` 同上限。超过不记，卡片只允许一次。 */
+export const SESSION_BASH_COMMAND_MAX_CHARS = 4096
+
+export function bashCommandTooLongForSession(command: string): boolean {
+  return command.length > SESSION_BASH_COMMAND_MAX_CHARS
+}
+
 const SESSION_BASH_UNSAFE = /[;&|`<>\n]|\$\(/
 const TOKEN_CHARSET = /^[A-Za-z0-9._+/:=@%,-]+$/
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/
@@ -222,6 +238,7 @@ export function bashCommandIsInterpreterStyle(command: string): boolean {
  * 记下的是整条命令，不是前两个 token。
  */
 export function bashAllowCommand(command: string): string {
+  if (bashCommandTooLongForSession(command)) return ""
   if (bashCommandHasUnsafeOperators(command) || bashCommandIsInterpreterStyle(command)) return ""
   const tokens = tokensOf(command)
   if (!tokens || tokens.length === 0) return ""
@@ -234,6 +251,7 @@ export function sessionAllowsBash(
   allowedCommands: readonly string[] | undefined
 ): boolean {
   if (!allowedCommands?.length) return false
+  if (bashCommandTooLongForSession(command)) return false
   const normalized = bashAllowCommand(command)
   if (!normalized) return false
   return allowedCommands.some((allowed) => {

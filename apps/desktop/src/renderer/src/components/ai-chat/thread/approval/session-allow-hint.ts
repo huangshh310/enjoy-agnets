@@ -5,11 +5,12 @@
 import {
   bashAllowCommand,
   bashCommandHasUnsafeOperators,
-  bashCommandIsInterpreterStyle
+  bashCommandIsInterpreterStyle,
+  bashCommandTooLongForSession
 } from "@enjoy-agents/ipc-contract/bash-prefix"
 import { WRITE_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
 
-export type SessionAllowOnceKind = "pipe" | "interpreter"
+export type SessionAllowOnceKind = "pipe" | "interpreter" | "too_long"
 
 export function sessionAllowCardState(
   name: string,
@@ -24,7 +25,14 @@ export function sessionAllowCardState(
 } {
   const tool = name.trim()
   const text = command.trim()
-  if (tool === "bash" || tool === "code_mode") {
+  // code_mode 跑的是一段脚本（path + source），本版只允许一次，不记。
+  if (tool === "code_mode") {
+    return { showSession: false, target: "", onceOnly: true, onceKind: "interpreter" }
+  }
+  if (tool === "bash") {
+    if (text && bashCommandTooLongForSession(text)) {
+      return { showSession: false, target: "", onceOnly: true, onceKind: "too_long" }
+    }
     if (text && bashCommandIsInterpreterStyle(text)) {
       return { showSession: false, target: "", onceOnly: true, onceKind: "interpreter" }
     }

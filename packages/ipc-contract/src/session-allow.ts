@@ -3,6 +3,7 @@
  * MCP 用工具全名（`mcp_server__leaf`），不是叶子名。
  */
 import { z } from "zod"
+import { SESSION_BASH_COMMAND_MAX_CHARS } from "./bash-prefix.ts"
 
 export const SessionAllowScope = z.discriminatedUnion("kind", [
   z.object({
@@ -11,7 +12,7 @@ export const SessionAllowScope = z.discriminatedUnion("kind", [
   }),
   z.object({
     kind: z.literal("bash_command"),
-    command: z.string().min(1).max(4096)
+    command: z.string().min(1).max(SESSION_BASH_COMMAND_MAX_CHARS)
   })
 ])
 export type SessionAllowScope = z.infer<typeof SessionAllowScope>

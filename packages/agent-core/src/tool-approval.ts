@@ -13,7 +13,11 @@ import {
   isMcpToolName,
   isWriteTypeToolName
 } from "@enjoy-agents/ipc-contract/tool-names"
-import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
+import {
+  commandFromToolInput,
+  sessionAllowsBash,
+  sessionAllowUsesBashTable
+} from "./policies/bash-prefix.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
 import { denyBareDesktopCoordApproval } from "./computer-use/desktop-act-honesty.ts"
 import {
@@ -122,8 +126,9 @@ export function resolveToolApproval(
   if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) {
     return "user-approval"
   }
+  // 只有 bash 吃本会话命令表；code_mode 只允许一次，绝不按 command 匹配（脚本内容不在键里）。
   if (
-    BASH_SET.has(toolName) &&
+    sessionAllowUsesBashTable(toolName) &&
     sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashCommands)
   ) {
     return "approved"
@@ -200,6 +205,7 @@ export function sessionTableAllowsTool(
   }
   if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) return false
   if (BASH_SET.has(toolName)) {
+    if (!sessionAllowUsesBashTable(toolName)) return false
     return sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashCommands)
   }
   return sessionAllows(toolName, policy.sessionApprovedTools)

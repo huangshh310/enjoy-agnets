@@ -6,6 +6,7 @@
  * 只有 user 开跑才种子写盘 / bash；心跳 / 自动化 / 补跑只吃 desktop 表。
  * bash 只记整条命令、只认完全相同（leo MF-C）；以后要「前缀 + 参数」须按工具参数白名单另开 PR。
  */
+import { SESSION_BASH_COMMAND_MAX_CHARS } from "@enjoy-agents/ipc-contract/bash-prefix"
 import {
   bashAllowCommand,
   commandFromToolInput,
@@ -142,6 +143,7 @@ export function grantConversationToolAllow(sessionId: string, toolName: string, 
   const sid = usableSessionId(sessionId)
   const name = toolName.trim()
   if (!sid || !name || name === ASK_USER_QUESTIONS_TOOL || name === "desktop_act") return
+  if (name === "bash" || name === "code_mode") return
   if (name.startsWith("mcp_")) return
   const slot = bucket(sid, runtimeId)
   if (!slot) return
@@ -153,7 +155,7 @@ export function grantConversationToolAllow(sessionId: string, toolName: string, 
 export function grantConversationBashCommand(sessionId: string, command: string, runtimeId?: string): void {
   const sid = usableSessionId(sessionId)
   const value = command.trim()
-  if (!sid || !value) return
+  if (!sid || !value || value.length > SESSION_BASH_COMMAND_MAX_CHARS) return
   const slot = bucket(sid, runtimeId)
   if (!slot) return
   lruSet(slot.bashCommands, value, true, MAX_BASH_COMMANDS)
@@ -339,7 +341,9 @@ export function applySessionAllowDecision(
   runtimeId?: string
 ): void {
   if (pending.name === ASK_USER_QUESTIONS_TOOL) return
-  if (pending.name === "bash" || pending.name === "code_mode") {
+  // code_mode 只允许一次（脚本 path / source 不在键里）：不写任何表。
+  if (pending.name === "code_mode") return
+  if (pending.name === "bash") {
     rememberBashCommand(sessionId, run, pending.args, runtimeId)
     return
   }
