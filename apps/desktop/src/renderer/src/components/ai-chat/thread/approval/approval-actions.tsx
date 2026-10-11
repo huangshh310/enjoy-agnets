@@ -1,5 +1,5 @@
 /**
- * 审批底栏：command/plan 仍是拒绝 / 本会话 / 主操作。
+ * 审批底栏：command/plan 是 本会话 · 拒绝 / 主操作；拒绝与主操作同组不拆行，窄时本会话落第二行。
  * 桌面首次允许改四选一，底栏只留「继续」。会话钮 testid 是 approval-session。禁止再用 approval-always。
  */
 import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
@@ -57,17 +57,11 @@ export function ApprovalActions({
   const denyTone =
     variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
-    <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-      <Button
-        size="sm"
-        variant="ghost"
-        data-testid={denyTestId}
-        onClick={decide.onDeny}
-        className={cx("h-8 text-caption-1-medium", denyTone)}
-      >
-        <RiCloseLine className="size-3.5" />
-        {denyLabel}
-      </Button>
+    // 换行时「本会话总是允许」落到第二行，「拒绝 / 运行」同一行不拆（luna #144 v2）：wrap-reverse 让 DOM 第一行沉底。
+    <div
+      data-testid="approval-actions"
+      className="ml-auto flex min-w-0 flex-wrap-reverse items-center justify-end gap-1.5"
+    >
       {showAlways ? (
         <Button
           size="sm"
@@ -75,24 +69,36 @@ export function ApprovalActions({
           data-testid="approval-session"
           onClick={decide.onAllowSession}
           title={alwaysHint ?? t("chat.alwaysAllowHint")}
-          className="h-8 text-caption-1-medium"
+          className="h-8 text-caption-1-medium [@media(max-height:600px)]:h-7"
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
           {alwaysLabel ?? t("chat.alwaysAllow")}
         </Button>
       ) : null}
-      <Button
-        size="sm"
-        variant="default"
-        data-testid={allowTestId}
-        disabled={approveDisabled}
-        title={approveTitle}
-        onClick={decide.onApprove}
-        className="h-8 text-caption-1-semibold"
-      >
-        <RiCheckLine className="size-3.5" />
-        {approveLabel}
-      </Button>
+      <div data-testid="approval-primary-actions" className="flex shrink-0 flex-nowrap items-center gap-1.5">
+        <Button
+          size="sm"
+          variant="ghost"
+          data-testid={denyTestId}
+          onClick={decide.onDeny}
+          className={cx("h-8 text-caption-1-medium [@media(max-height:600px)]:h-7", denyTone)}
+        >
+          <RiCloseLine className="size-3.5" />
+          {denyLabel}
+        </Button>
+        <Button
+          size="sm"
+          variant="default"
+          data-testid={allowTestId}
+          disabled={approveDisabled}
+          title={approveTitle}
+          onClick={decide.onApprove}
+          className="h-8 text-caption-1-semibold [@media(max-height:600px)]:h-7"
+        >
+          <RiCheckLine className="size-3.5" />
+          {approveLabel}
+        </Button>
+      </div>
     </div>
   )
 }

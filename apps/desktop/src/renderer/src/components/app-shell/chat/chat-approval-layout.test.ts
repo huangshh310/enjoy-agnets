@@ -19,7 +19,7 @@ test("审批时对话列保底 200px（小窗让位到 25%），Composer 簇可�
   const dock = read("ai-chat/attention/permission-dock.tsx")
   const chrome = read("ai-chat/thread/approval/approval-chrome.tsx")
   assert.match(stage, /data-testid="chat-conversation"/)
-  assert.match(stage, /pendingApproval && "min-h-\[min\(13rem,25cqh\)\]"/)
+  assert.match(stage, /pendingApproval && "min-h-\[min\(13rem,25cqh\)\] \[@media\(max-height:600px\)\]:min-h-0"/)
   assert.match(stage, /overflow-hidden \[container-type:size\]/)
   assert.doesNotMatch(stage, /min\(240px,40%\)/)
   assert.match(stage, /pendingApproval\s*\?\s*"min-h-0 shrink"\s*:\s*"shrink-0"/)

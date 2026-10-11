@@ -265,7 +265,9 @@ test("run long 命令卡：默认与 733×480 下拒绝 / 运行与 Composer 都
     await expect(toggle).toHaveText("展开全部（共 4205 字）")
     await expect(command).toHaveAttribute("data-expanded", "false")
     await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await expectCommandReadable(window, "run long default collapsed")
     await shot(window, "run-long-light")
+    await shot(window, "large-runlong")
 
     await toggle.click()
     await expect(command).toHaveAttribute("data-expanded", "true")
@@ -280,26 +282,98 @@ test("run long 命令卡：默认与 733×480 下拒绝 / 运行与 Composer 都
     await forceStubTheme(window, "light")
 
     await window.setViewportSize({ width: 733, height: 480 })
+    await shot(window, "small-runlong-collapsed")
+    await logBoxes(window, "run long 733x480 collapsed")
     await expectFullyInViewport(window, [allowOnce, deny, composer])
-    await shot(window, "run-long-small")
+    // 小窗：命令区不被压缩（至少 2 行），「展开全部」不滚动就看得见，同时按钮可见。
+    await expectCommandReadable(window, "run long 733x480 collapsed")
+    await expectUnclipped(toggle)
+    await expectUnclipped(allowOnce)
+    await expectUnclipped(deny)
+    await shot(window, "small-runlong-collapsed")
     await toggle.click()
     await expect(command).toHaveAttribute("data-expanded", "true")
     await expectFullyInViewport(window, [allowOnce, deny, composer])
-    await shot(window, "run-long-small-expanded")
+    await expectCommandReadable(window, "run long 733x480 expanded")
+    await expectUnclipped(allowOnce)
+    await shot(window, "small-runlong-expanded")
     await toggle.click()
     await expect(command).toHaveAttribute("data-expanded", "false")
     await expectFullyInViewport(window, [allowOnce, deny, composer])
+    await expectUnclipped(toggle)
 
     await allowOnce.click({ timeout: 8_000, force: true })
     await waitRanCount(window, "long", 1)
     await sendComposer(window, composer, "run bash ls")
     await expect(allowOnce).toBeVisible({ timeout: 20_000 })
     await expectFullyInViewport(window, [allowOnce, deny, composer])
-    await shot(window, "run-bash-ls-small")
+    await expectCommandReadable(window, "run bash ls 733x480")
+    await expectUnclipped(allowOnce)
+    await expectUnclipped(deny)
+    await expectUnclipped(window.locator('[data-testid="approval-session"]'))
+    await shot(window, "small-bashls")
+    // 大窗再看一眼 run bash ls。
+    await window.setViewportSize({ width: 1280, height: 800 })
+    await expectCommandReadable(window, "run bash ls 1280x800")
+    await shot(window, "large-bashls")
   } finally {
     await closeApp(app)
   }
 })
+
+/** 命令区可读：可见高度 ≥ min(实际行数, 2) × 行高，且上下沿都没被裁（elementFromPoint 命中自己）。 */
+async function expectCommandReadable(window: Page, label: string) {
+  const pre = window.locator('[data-testid="approval-command"]')
+  await expect(pre).toBeVisible({ timeout: 10_000 })
+  const m = await pre.evaluate((el) => {
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight)
+    return { clientHeight: el.clientHeight, scrollHeight: el.scrollHeight, lineHeight }
+  })
+  const lines = Math.max(1, Math.round(m.scrollHeight / m.lineHeight))
+  console.log(`[command-area] ${label} ${JSON.stringify({ ...m, lines })}`)
+  expect(m.clientHeight).toBeGreaterThanOrEqual(Math.min(lines, 2) * m.lineHeight - 1)
+  await expectUnclipped(pre)
+}
+
+/** 调试与报告：Dock / 卡片 / 命令区 / 底栏 / Composer 的高度。 */
+async function logBoxes(window: Page, label: string) {
+  const boxes = await window.evaluate(() => {
+    const pick = (sel: string) => {
+      const el = document.querySelector(sel)
+      if (!el) return null
+      const r = el.getBoundingClientRect()
+      return { top: Math.round(r.top), height: Math.round(r.height) }
+    }
+    return {
+      viewport: innerHeight,
+      dock: pick('[data-testid="permission-dock"]'),
+      card: pick('[data-testid="permission-dock"] article'),
+      block: pick('[data-testid="approval-command-block"]'),
+      toggle: pick('[data-testid="approval-command-toggle"]'),
+      footer: pick('[data-testid="permission-dock"] footer'),
+      composer: pick('[data-testid="composer-input"]')
+    }
+  })
+  console.log(`[boxes] ${label} ${JSON.stringify(boxes)}`)
+}
+
+/** 不滚动就能看见：元素上沿与下沿处的 elementFromPoint 都落在它自己身上（没被滚动容器裁掉、没被盖住）。 */
+async function expectUnclipped(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).toBeVisible({ timeout: 10_000 })
+  await expect
+    .poll(() =>
+      locator.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        if (r.height < 1 || r.width < 1) return false
+        const x = r.left + Math.min(6, r.width / 2)
+        return [r.top + 1.5, r.bottom - 1.5].every((y) => {
+          const hit = document.elementFromPoint(x, y)
+          return Boolean(hit && (hit === el || el.contains(hit)))
+        })
+      })
+    )
+    .toBe(true)
+}
 
 /** 整个元素都在视口内（不是只露一角）。 */
 async function expectFullyInViewport(window: Page, locators: Array<ReturnType<Page["locator"]>>) {

@@ -223,7 +223,7 @@ function ChatThreadBody(props: {
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
             <div
               data-testid="chat-conversation"
-              className={cx("flex min-h-0 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)]")}
+              className={cx("flex min-h-0 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)] [@media(max-height:600px)]:min-h-0")}
             >
               <AiChatThread
                 messages={messages}
