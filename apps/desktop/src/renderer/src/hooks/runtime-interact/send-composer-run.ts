@@ -53,6 +53,8 @@ type PreparedSend = {
 
 type SendPayload = {
   content: string
+  /** 输入框里真正打出去的那段原文。content 可能垫了引用 / 技能 / 宿主模式前缀，不能拿它对输入框。 */
+  typed: string
   assetIds: string[]
   messageAssets: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
   executePlan?: boolean
@@ -107,7 +109,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
       return
     }
     const messages = beginOptimisticTurn(store, payload)
-    clearSentComposerText(payload.content)
+    clearSentComposerText(payload.typed)
     await launchComposerRun(store, payload, messages, prepared?.sessionId)
   } catch (error) {
     store.setRunning(false)
@@ -133,6 +135,7 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
   const fromDraft = !prepared
+  const typed = prepared?.content ?? readComposerDomText()
   const raw = prepared?.content ?? (await takeComposerText())
   if (!raw.trim()) return null
   const slash = takeComputerUseSlash(raw)
@@ -142,6 +145,7 @@ async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload 
   const queuedAssets = prepared?.assets ?? takeComposerAssetDetails()
   return {
     content,
+    typed,
     assetIds: queuedAssets.map((item) => item.id),
     messageAssets: queuedAssets.map((item) => ({
       assetId: item.id,
