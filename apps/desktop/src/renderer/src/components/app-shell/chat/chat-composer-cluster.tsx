@@ -1,6 +1,7 @@
 /**
- * Composer 簇：PermissionDock 夹在会话内容与 Composer 之间，
- * 贴 Composer 顶边。不要钉在 Conversation 顶，也不进会话滚动区。
+ * Composer 簇：空会话时 PermissionDock 贴 Composer 顶边。
+ * 有消息时 Dock 挂在对话列底部（chat-stage），可被压、卡内滚，永不占 Composer 的高度。
+ * 不要钉在 Conversation 顶，也不进会话滚动区。
  */
 import { cx } from "@/utils/cx"
 import { PermissionDock } from "@renderer/components/ai-chat/attention/permission-dock"
@@ -14,10 +15,12 @@ export function ChatComposerCluster(props: {
   autoFocus?: boolean
   onModelChange: (model: ModelOption) => void
   onSend: () => void
+  /** 有消息时 Dock 由对话列承载，这里不再画。 */
+  dock?: boolean
 }) {
   return (
     <div className={cx("flex shrink-0 flex-col", props.className)} data-toast-clearance="">
-      <PermissionDock />
+      {props.dock === false ? null : <PermissionDock />}
       <ComposerPreparingHint />
       <ChatComposer
         className={props.composerClassName}

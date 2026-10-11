@@ -31,7 +31,7 @@ export function AiChatStatusBar({
     >
       <StatusBranchPicker />
       <StatusProjectPicker workspaceRootLabel={workspaceRootLabel} />
-      <div className="ml-auto inline-flex shrink-0 items-center gap-2">
+      <div className="ml-auto inline-flex min-w-0 shrink items-center gap-2 whitespace-nowrap [&>*]:shrink-0 [&>*:last-child]:shrink">
         <CompactSessionButton sessionId={sessionId} messageCount={messageCount} />
         <Popover>
           <PopoverTrigger asChild>
@@ -42,10 +42,11 @@ export function AiChatStatusBar({
                   ? t("chat.contextTokensHintCompacted", { percent: compaction.savedPercent })
                   : t("chat.contextTokensHint")
               }
-              className="inline-flex items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+              data-testid="status-context-meter"
+              className="inline-flex min-w-0 items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
               <ContextRing value={capKnown ? usagePercent : 0} />
-              <span className="font-medium font-mono">
+              <span className="min-w-12 max-w-40 truncate font-medium font-mono">
                 {capKnown
                   ? `${usagePercent}%`
                   : inspector.modelLabel
@@ -73,7 +74,7 @@ function ContextRing({ value }: { value: number }) {
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (value / 100) * circumference
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 16 16" className="shrink-0" aria-hidden>
       <circle cx="8" cy="8" r={radius} fill="none" stroke="currentColor" strokeWidth="2" className="text-border-button-default" />
       <circle
         cx="8"

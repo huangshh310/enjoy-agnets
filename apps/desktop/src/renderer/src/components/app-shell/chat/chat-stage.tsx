@@ -22,6 +22,7 @@ import { EnvironmentPanel } from "@renderer/components/ai-chat/environment/envir
 import { useEnvironmentDismiss } from "@renderer/components/ai-chat/environment/use-environment-dismiss"
 import { ShortcutSheet } from "@renderer/components/ai-chat/shortcut-sheet"
 import { ChatComposerCluster } from "./chat-composer-cluster"
+import { PermissionDock } from "@renderer/components/ai-chat/attention/permission-dock"
 import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
 import { AttentionNeedsBar } from "@renderer/components/ai-chat/attention/attention-strip"
@@ -220,10 +221,11 @@ function ChatThreadBody(props: {
             <EnvironmentPanel open={environmentOpen} />
           </div>
         ) : (
-          <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+          <div className="relative flex min-h-14 min-w-0 flex-1 overflow-hidden">
             <div
               data-testid="chat-conversation"
-              className={cx("flex min-h-0 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)] [@media(max-height:600px)]:min-h-0")}
+              // 审批时对话列保底 13rem / 25% 主体（#144）；矮窗里消息区自身保 min-h-8，不被卡挤成 0。
+              className={cx("flex min-h-14 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)]")}
             >
               <AiChatThread
                 messages={messages}
@@ -231,6 +233,7 @@ function ChatThreadBody(props: {
                 thinkingLabel={thinkingLabel}
                 error={error}
               />
+              <PermissionDock />
             </div>
             <EnvironmentPanel open={environmentOpen} />
             <RunLedgerRail open={ledgerOpen} onClose={() => setLedgerOpen(false)} />
@@ -242,11 +245,14 @@ function ChatThreadBody(props: {
             props.empty
               ? "mx-auto w-full max-w-3xl shrink-0 px-6"
               : pendingApproval
-                ? "min-h-0 shrink"
-                : "shrink-0"
+                ? "shrink-0"
+                : "min-h-0 shrink"
           }
-          composerClassName={props.empty ? "px-0 pb-2 [&_textarea]:min-h-[72px]" : undefined}
+          composerClassName={
+            props.empty ? "px-0 pb-2 [&_textarea]:min-h-[72px]" : pendingApproval ? "shrink-0" : "min-h-0"
+          }
           autoFocus={props.empty}
+          dock={props.empty}
           onModelChange={props.onModelChange}
           onSend={props.onSend}
         />

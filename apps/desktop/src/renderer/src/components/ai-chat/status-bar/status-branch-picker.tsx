@@ -69,7 +69,7 @@ export function StatusBranchPicker() {
         <button
           type="button"
           title={t("chat.switchBranch")}
-          className="inline-flex min-w-0 max-w-36 cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 hover:bg-background-secondary-hover hover:text-text-primary"
+          className="inline-flex min-w-16 max-w-36 cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 hover:bg-background-secondary-hover hover:text-text-primary"
         >
           <RiGitBranchLine className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">{label}</span>

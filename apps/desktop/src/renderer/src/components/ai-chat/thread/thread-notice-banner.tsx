@@ -1,5 +1,7 @@
 /**
- * 非失败提示：用户停 / 回挂对不上 / ACP resume 回落。中性条，不是错误卡。
+ * 非失败提示：用户停 / 回挂对不上 / ACP resume 回落。中性小卡，不是错误卡。
+ * 挂在消息流里那一轮「重启后已中断」行下面（AiChatThread 定锚），不浮在 Composer 上，
+ * 不与 Composer 上方的待验收条争位置。
  * no_chat_route 由 ThreadErrorBanner → ThreadNoChatRouteNotice 画，这里不再叠一条。
  */
 import { RiCloseLine, RiRefreshLine } from "@remixicon/react"
@@ -49,11 +51,11 @@ export function ThreadNoticeBanner() {
   return (
     <div
       data-testid="thread-notice-banner"
-      className="my-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-primary-default p-3 shadow-card"
+      className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5"
     >
       <span
         className={cx(
-          "mt-1.5 size-2 shrink-0 rounded-full",
+          "mt-1 size-2 shrink-0 rounded-full",
           stopped || restoreFamily || catchUpTimeout ? "bg-text-tertiary" : "bg-status-yellow-text"
         )}
         aria-hidden
@@ -66,7 +68,7 @@ export function ThreadNoticeBanner() {
             type="button"
             data-testid="thread-resend"
             onClick={handleResend}
-            className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs hover:border-accent-500/40 hover:bg-background-secondary-hover"
+            className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary hover:border-accent-500/40 hover:bg-background-secondary-hover"
           >
             <RiRefreshLine className="size-3 text-accent-500" />
             <span>{t("chat.resendLastPrompt")}</span>
@@ -75,8 +77,10 @@ export function ThreadNoticeBanner() {
       </div>
       <button
         type="button"
+        data-testid="thread-notice-dismiss"
         onClick={() => setNotice(null)}
         title={t("chat.dismissError")}
+        aria-label={t("chat.dismissError")}
         className="cursor-pointer text-text-tertiary hover:text-text-primary"
       >
         <RiCloseLine className="size-4" />

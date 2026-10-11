@@ -21,6 +21,8 @@ export function ReviewGateHeader({ phase }: { phase: ReviewGatePhase }) {
             key={item}
             className={cx(
               "rounded-full px-2.5 py-1 text-caption-2-medium",
+              // 窄顶栏只留当前段，让面包屑可读；宽时三段全显。
+              !active && "hidden @[44rem]/header:inline",
               active
                 ? "bg-accent-50 font-semibold text-accent-500"
                 : "text-text-tertiary"
