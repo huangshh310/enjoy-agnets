@@ -29,6 +29,7 @@ import {
   takeComposerText
 } from "./composer-draft"
 import { readComposerDomText } from "../composer-dom"
+import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
@@ -64,8 +65,19 @@ type SendPayload = {
 
 /** 先 setRunning 占位，避免双击连发两轮。创建窗内先入队，禁止清输入空转。 */
 export async function sendComposerMessage(prepared?: PreparedSend) {
-  const store = useChatStore.getState()
-  if (store.running) return
+  let store = useChatStore.getState()
+  if (store.running) {
+    // 排队首发撞上还没落下的 running：限时等，等不到就还文出提示。禁止静默 return 把锁和字卡在输入框。
+    if (!prepared || !(await waitComposerIdle(QUEUED_SEND_IDLE_WAIT_MS))) {
+      setComposerWritebackHeld(false)
+      if (prepared) {
+        restoreComposerDraft(prepared.content, prepared.assets)
+        useChatStore.getState().setError(SEND_FAILED_RESTORE)
+      }
+      return
+    }
+    store = useChatStore.getState()
+  }
   if (!prepared) flushComposerDomToStore()
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
@@ -101,6 +113,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
+  const typedBeforeTake = prepared ? "" : readComposerDomText()
   try {
     const payload = await resolveSendPayload(prepared)
     if (!payload) {
@@ -115,10 +128,27 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     store.setRunning(false)
     store.setPreparingHint(false)
     store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
-    if (prepared?.content) {
-      restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
-    }
+    const draft = prepared?.content || typedBeforeTake
+    if (draft) restoreComposerAfterFailedSend(draft, SEND_FAILED_RESTORE, prepared?.assets)
   }
+}
+
+const QUEUED_SEND_IDLE_WAIT_MS = 5_000
+
+function waitComposerIdle(timeoutMs: number): Promise<boolean> {
+  if (!useChatStore.getState().running) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      unsubscribe()
+      resolve(false)
+    }, timeoutMs)
+    const unsubscribe = useChatStore.subscribe((state) => {
+      if (state.running) return
+      clearTimeout(timer)
+      unsubscribe()
+      resolve(true)
+    })
+  })
 }
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */

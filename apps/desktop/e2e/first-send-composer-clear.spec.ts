@@ -54,14 +54,9 @@ async function launch(env: NodeJS.ProcessEnv): Promise<{ app: ElectronApplicatio
   return { app, window }
 }
 
+/** 首发后常有待审批，裸 close 会撞退出确认框；统一 forceQuit + 兜底 kill。 */
 async function shutdown(app: ElectronApplication): Promise<void> {
-  const proc = app.process()
-  await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 5_000))]).catch(() => undefined)
-  try {
-    proc?.kill("SIGKILL")
-  } catch {
-    /* already gone */
-  }
+  await closeForRelaunch(app)
 }
 
 async function waitSendReady(window: Page): Promise<void> {
