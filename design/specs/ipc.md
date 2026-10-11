@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`AutomationRunSource.scheduledAt` 可选，立即运行写 `startedAt`；本会话允许标记 `allowedBySession` / `reaskReason`；本会话允许范围 / list+revoke；本会话允许范围 / list+revoke；bash-prefix 叶子；RunAgentInput.clearSessionAllow；sessionId 不得含 ::；会话允许水位对库；clearSessionAllow 只是加紧；sessionId 不得含 ::；显式截断 `truncateAfterMessageId` + `expectedTailIds`；`truncateFrom` 必须带尾巴；水位改为 id 哈希；2026-10-11：会话允许 bash 项改 `bash_command`（整条命令）；截断 id / 名单 Zod 上限；`truncateFrom.dryRun`；#133：`ready` = 闸放行 ∧ 当前档案密钥或本机 ping；`seenNoUsableChatRoute` 看闸不看 ready；写密钥 union；stub 钥匙串第三闸隔离 userData；#133：删档案只在删空才 clear；解不开密文回 KEYCHAIN_UNAVAILABLE；#133：解不开密文一律拒绝；设主引擎先写密钥；#133：删档案拒绝可带 revokeUrl；#133：revokeUrl 只认 keysURL）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`AutomationRunSource.scheduledAt` 可选，立即运行写 `startedAt`；本会话允许标记 `allowedBySession` / `reaskReason`；本会话允许范围 / list+revoke；本会话允许范围 / list+revoke；bash-prefix 叶子；RunAgentInput.clearSessionAllow；sessionId 不得含 ::；会话允许水位对库；clearSessionAllow 只是加紧；sessionId 不得含 ::；显式截断 `truncateAfterMessageId` + `expectedTailIds`；`truncateFrom` 必须带尾巴；水位改为 id 哈希；2026-10-11：会话允许 bash 项改 `bash_command`（整条命令）；截断 id / 名单 Zod 上限；`truncateFrom.dryRun`；#133：revokeUrl 只认 keysURL）
 
 ## 当前真相
 
