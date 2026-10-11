@@ -14,7 +14,7 @@ test("stub 启动默认不自动 addKnowledgeSource 工作区根", () => {
   assert.match(src, /addKnowledgeSource/)
   assert.match(src, /indexKnowledgeSource/)
   assert.match(src, /process\.env\.ENJOY_E2E_KNOWLEDGE !== "1"/)
-  assert.match(src, /isE2eStub\(app\.isPackaged\)/)
+  assert.match(src, /!isE2eStub\(\)/)
   assert.match(src, /ENJOY_E2E_USERDATA/)
   assert.match(src, /ENJOY_DEV_USERDATA/)
   assert.match(src, /!isolated/)
