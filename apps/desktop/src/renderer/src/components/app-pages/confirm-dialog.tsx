@@ -65,7 +65,7 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        data-testid={testId ?? "confirm-dialog"}
+        data-testid="confirm-dialog"
         showCloseButton={false}
         overlayClassName={cx(SETTINGS_DRAWER_Z_CLASS.modal, "fixed inset-0")}
         style={{
@@ -89,7 +89,7 @@ export function ConfirmDialog({
           data-testid="confirm-dialog-panel"
           className="w-full max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
         >
-          <form onSubmit={(event) => void submitConfirm(event)}>
+          <form data-testid={testId} onSubmit={(event) => void submitConfirm(event)}>
             <DialogHeader>
               <DialogTitle className="text-title-3-semibold text-text-primary">{title}</DialogTitle>
               <DialogDescription

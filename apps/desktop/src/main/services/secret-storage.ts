@@ -6,8 +6,9 @@
  * GNOME 上没装钥匙串仍可能是 `gnome_libsecret`）。encrypt 失败也只有同一句
  * "Encryption is not available."。不要猜 `KEYCHAIN_LOCKED`。
  */
-import { app, safeStorage } from "electron"
+import { safeStorage } from "electron"
 import type { SecretWriteErrorCode } from "@enjoy-agents/ipc-contract"
+import { e2eStubPackaged } from "./e2e-stub-gate.ts"
 
 /** Linux 不安全后端：Electron 明文回落，产品视为钥匙串不可用。 */
 export const LINUX_INSECURE_SECRET_BACKEND = "basic_text"
@@ -64,7 +65,8 @@ export function readSecretStorageProbe(): SecretStorageProbe {
     encryptionAvailable: safeStorage.isEncryptionAvailable(),
     linuxBackend: readLinuxSecretBackend(),
     platform: process.platform,
-    packaged: readPackaged(),
+    // 与 isE2eStub() 同一闸：测试可注入；读不到 app 当打包（stub 明文夹具失败关闭）。
+    packaged: e2eStubPackaged(),
     isolatedUserData: Boolean(process.env.ENJOY_E2E_USERDATA || process.env.ENJOY_DEV_USERDATA),
     env: process.env
   }
@@ -86,13 +88,5 @@ function readLinuxSecretBackend(): string | undefined {
     return safeStorage.getSelectedStorageBackend?.()
   } catch {
     return undefined
-  }
-}
-
-function readPackaged(): boolean {
-  try {
-    return app.isPackaged
-  } catch {
-    return false
   }
 }
