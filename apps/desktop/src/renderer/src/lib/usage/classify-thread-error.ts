@@ -7,6 +7,7 @@ import {
   RESTORE_NO_MATCHING_CODE
 } from "@enjoy-agents/ipc-contract/restore-codes"
 import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
 
 export { NO_CHAT_ROUTE }
 
@@ -31,6 +32,7 @@ export type ThreadErrorKind =
   | "restore_interrupted"
   | "run_failed"
   | "catch_up_timeout"
+  | "message_id_mismatch"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -76,6 +78,8 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   if (isRestoreFamilyCode(message)) return "restore_no_matching"
   if (message === RUN_FAILED) return "run_failed"
   if (message === CATCH_UP_APPROVAL_TIMEOUT) return "catch_up_timeout"
+  // leo soft 2：普通 Composer 发送被 main 以 MESSAGE_ID_SESSION_MISMATCH 拒，横幅给人话，不摊机器码。
+  if (message === MESSAGE_ID_SESSION_MISMATCH) return "message_id_mismatch"
   if (
     message === INTERNAL_STORE_ERROR ||
     lower.includes("unique constraint") ||
@@ -142,6 +146,7 @@ export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined 
   if (kind === "store") return "chat.errorGenericHint"
   if (kind === "send_restore") return "chat.sendFailedRestore"
   if (kind === "stopped") return "chat.runStopped"
+  if (kind === "message_id_mismatch") return "chat.messageIdSessionMismatch"
   return undefined
 }
 
