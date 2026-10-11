@@ -6,6 +6,7 @@ import { mkdtempSync, writeFileSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
+import { closeForRelaunch } from "./approval-restart-helpers"
 import { sendComposer } from "./send-composer"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
@@ -62,7 +63,8 @@ test("新建对话首次发送后主区出现气泡，且跨会话仍弹审批�
     await expect(stage).not.toContainText(/What should we do in|在 .* 里做什么/)
     await expect(window.locator('[data-testid="approval-deny"]')).toBeVisible({ timeout: 20_000 })
   } finally {
-    await app.close()
+    // 跨会话仍有待审批，裸 close 会撞退出确认框挂满超时。
+    await closeForRelaunch(app)
   }
 })
 
@@ -105,7 +107,8 @@ test("新对话创建窗内立刻发送：气泡仍要出现，不能吞掉输�
     await expect(stage).toContainText("hello during create")
     await expect(stage).not.toContainText(/What should we do in|在 .* 里做什么/)
   } finally {
-    await app.close()
+    // 跨会话仍有待审批，裸 close 会撞退出确认框挂满超时。
+    await closeForRelaunch(app)
   }
 })
 
@@ -155,7 +158,8 @@ test("新对话创建窗内带附件首发：气泡要带附件，不能丢掉",
     await expect(stage).toContainText("attached:note.txt")
     await expect(stage).not.toContainText(/What should we do in|在 .* 里做什么/)
   } finally {
-    await app.close()
+    // 跨会话仍有待审批，裸 close 会撞退出确认框挂满超时。
+    await closeForRelaunch(app)
   }
 })
 
@@ -209,6 +213,7 @@ test("新对话后不必点输入框，直接打字回车就能发出", async ()
       await expect(stage).not.toContainText(/What should we do in|在 .* 里做什么/)
     }
   } finally {
-    await app.close()
+    // 跨会话仍有待审批，裸 close 会撞退出确认框挂满超时。
+    await closeForRelaunch(app)
   }
 })
