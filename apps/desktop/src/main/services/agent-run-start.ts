@@ -49,6 +49,7 @@ import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
+import { isInteractiveComposerRun, preStartModelCode, preStartSessionCode } from "./agent-run-prestart"
 
 export async function runAgent(
   window: BrowserWindow,
@@ -154,7 +155,15 @@ async function beginAgentRun(
     if (source) input.automationSource = source
   }
   input.origin = inferAgentRunOrigin(input.origin, input.automationSource)
-  if (!isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId) {
+  const interactive = isInteractiveComposerRun({
+    isResume: Boolean(options.runId),
+    isHeartbeat: Boolean(options.promptEcho),
+    automationSource: input.automationSource
+  })
+  const needsModel = !isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId
+  const modelCode = preStartModelCode({ interactive, needsModel })
+  if (modelCode) return { ok: false, code: modelCode }
+  if (needsModel) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }
 
@@ -162,6 +171,8 @@ async function beginAgentRun(
   const session = getDatabase()
     .prepare("SELECT id FROM sessions WHERE id = ? AND workspace_id = ?")
     .get(input.sessionId, input.workspaceId) as { id: string } | undefined
+  const sessionCode = preStartSessionCode({ interactive, sessionExists: Boolean(session) })
+  if (sessionCode) return { ok: false, code: sessionCode }
   if (!session) throw new Error("Unknown session for this workspace.")
   if (
     shouldRememberWorkspaceOnRun({
@@ -174,16 +185,17 @@ async function beginAgentRun(
     rememberWorkspaceOpened(workspace.id)
   }
 
-  if (input.commandId && !options.runId) {
-    const existing = peekCommandReceipt(input.commandId)
-    if (existing) return { ok: true, runId: existing }
-  }
-  const runId = options.runId ?? createId("run")
+  // 开跑前顺序：no_chat_route → 缺密钥 → NEED_MODEL → SESSION_NOT_READY → id 串会话预检 → 回执 → 挂 run。
   const lastUser = lastOutgoingUser(input)
   // leo 小修 2：用户句 id 已属别的会话就别开跑（不清允许、不截断、不挂 run）。
   if (options.persistUser && outgoingUserIdConflict(input.sessionId, lastUser?.id)) {
     return { ok: false, code: MESSAGE_ID_SESSION_MISMATCH }
   }
+  if (input.commandId && !options.runId) {
+    const existing = peekCommandReceipt(input.commandId)
+    if (existing) return { ok: true, runId: existing }
+  }
+  const runId = options.runId ?? createId("run")
   applyAgentRunSessionAllowReset({
     sessionId: input.sessionId,
     clearSessionAllow: input.clearSessionAllow,

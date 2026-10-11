@@ -41,12 +41,22 @@ export const ChatLocalModelRoute = z
   .strict()
 export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
 
-/** 发送闸稳定码。main `agent.run` 失败回 `{ ok:false, code }`，不要 throw 以免 IPC 加前缀。 */
-export const SendGateCode = z.enum([NO_CHAT_ROUTE])
+/** 开跑前缺模型：renderer 译成「先选一个模型」，草稿留着。与 classify-thread-error 同串。 */
+export const NEED_MODEL_CODE = "NEED_MODEL"
+/** 会话还没在库里（刚建 / 已删 / 不属于该工作区）：renderer 译成可读提示并删本次空会话。 */
+export const SESSION_NOT_READY_CODE = "SESSION_NOT_READY"
+
+/**
+ * 发送闸稳定码。main `agent.run` 开跑前失败回 `{ ok:false, code }`，不要 throw：
+ * IPC 会加 "Error invoking remote method" 英文前缀，界面只能露原文。
+ */
+export const SendGateCode = z.enum([NO_CHAT_ROUTE, NEED_MODEL_CODE, SESSION_NOT_READY_CODE])
 export type SendGateCode = z.infer<typeof SendGateCode>
 
 export const AgentRunErrorCode = z.enum([
   NO_CHAT_ROUTE,
+  NEED_MODEL_CODE,
+  SESSION_NOT_READY_CODE,
   TRUNCATE_STALE_SNAPSHOT,
   TRUNCATE_RUN_ACTIVE,
   MESSAGE_ID_SESSION_MISMATCH
