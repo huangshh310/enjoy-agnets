@@ -13,7 +13,9 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
-import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { editAndResendUserTurn, regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { laterTurnCount, resolveRetryTarget } from "@renderer/hooks/regenerate-retry-target"
+import { RegenerateConfirmDialog } from "./turns/regenerate-confirm-dialog"
 import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
@@ -51,7 +53,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
+  const sessionId = useChatStore((state) => state.sessionId)
   const [copiedInstall, setCopiedInstall] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null)
   const kind = classifyThreadError(error)
   if (kind === "stopped" || kind === "catch_up_timeout") return null
   if (kind === "no_chat_route") {
@@ -67,6 +71,22 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const lastUser = messages.filter((item) => item.role === "user").at(-1)
 
   function handleRetry() {
+    // jojo P1：被截断闸挡下的重新生成 / 编辑重发，重试的是最初点的那一轮，不是「最后一轮」。
+    const target = resolveRetryTarget(sessionId, messages)
+    if (target?.kind === "edit") {
+      setError(null)
+      void editAndResendUserTurn(target.userId, target.content)
+      return
+    }
+    if (target?.kind === "regenerate") {
+      if (laterTurnCount(messages, target.assistantId) > 0) {
+        setConfirmTarget(target.assistantId)
+        return
+      }
+      setError(null)
+      void regenerateAssistantTurn(target.assistantId)
+      return
+    }
     setError(null)
     if (lastUser && isTodoContinueUserMessage(lastUser.content)) {
       void continueTodoTurn()
@@ -294,6 +314,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             !running ? (
               <button
                 type="button"
+                data-testid="thread-error-retry"
                 onClick={handleRetry}
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs hover:border-accent-500/40 hover:bg-background-secondary-hover"
               >
@@ -304,6 +325,19 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
           </div>
         </div>
       </div>
+      <RegenerateConfirmDialog
+        open={confirmTarget != null}
+        laterTurns={confirmTarget ? laterTurnCount(messages, confirmTarget) : 0}
+        onConfirm={() => {
+          const id = confirmTarget
+          setConfirmTarget(null)
+          setError(null)
+          if (id) void regenerateAssistantTurn(id)
+        }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmTarget(null)
+        }}
+      />
     </div>
   )
 }

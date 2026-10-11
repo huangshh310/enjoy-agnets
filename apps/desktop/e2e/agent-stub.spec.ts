@@ -237,6 +237,74 @@ test("命令夹具：本会话允许 ls 后 ls 不弹卡、ls -la 再弹卡；ru
   }
 })
 
+test("重新生成非最后一条：确认删掉后面几轮、重跑点的那一轮；审批 / 命令轮重新生成不误报「有新内容」", async () => {
+  const app = await launchStubApp("# e2e regenerate middle\n", 240_000, { lang: "zh" })
+  if (!app) return
+  try {
+    const window = await readyWindow(app)
+    await window.setViewportSize({ width: 1440, height: 900 })
+    const composer = window.locator('[data-testid="composer-input"]')
+    const regen = window.getByRole("button", { name: "重新生成回复" })
+    const banner = window.locator('[data-testid="thread-error-banner"]')
+    const dialog = window.locator('[data-testid="regenerate-confirm-dialog"]')
+    const allowOnce = window.locator('[data-testid="approval-allow"]')
+    const countText = (re: string) =>
+      window.evaluate((source) => document.body.innerText.match(new RegExp(source, "g"))?.length ?? 0, re)
+
+    // 1) 两轮纯文本：重新生成第一条。
+    await sendComposer(window, composer, "hello")
+    await expect.poll(() => countText("stub-ok hello(?! two)")).toBe(1)
+    await sendComposer(window, composer, "hello two")
+    await expect.poll(() => countText("stub-ok hello two")).toBe(1)
+    await expect(regen).toHaveCount(2, { timeout: 10_000 })
+    await regen.first().click({ force: true })
+    await expect(dialog).toBeVisible({ timeout: 8_000 })
+    await expect(dialog).toContainText("1 轮")
+    await window.locator('[data-testid="regenerate-confirm"]').click()
+    // 后面那轮删掉，第一轮重跑完；没有「有新内容」红卡。
+    await expect.poll(() => countText("stub-ok hello two"), { timeout: 20_000 }).toBe(0)
+    await expect.poll(() => countText("stub-ok hello(?! two)"), { timeout: 20_000 }).toBe(1)
+    await expect(regen).toHaveCount(1, { timeout: 20_000 })
+    await expect(window.getByText("有新内容")).toHaveCount(0)
+    await expect(banner).toHaveCount(0)
+
+    // 2) 审批轮（write_file）是最后一条：不弹确认，直接重跑这一轮（再出审批卡）。
+    await sendComposer(window, composer, "please write a note")
+    await allowOnce.click({ timeout: 15_000, force: true })
+    await expect.poll(() => countText("stub-ok allowed write"), { timeout: 15_000 }).toBe(1)
+    await regen.last().click({ force: true })
+    await expect(dialog).toHaveCount(0)
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expect(banner).toHaveCount(0)
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await expect.poll(() => countText("stub-ok allowed write"), { timeout: 15_000 }).toBe(1)
+
+    // 3) 命令轮（bash ls）是最后一条：同样不误报。
+    await sendComposer(window, composer, "run bash ls")
+    await allowOnce.click({ timeout: 20_000, force: true })
+    await waitRanCount(window, "ls", 1)
+    await regen.last().click({ force: true })
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await expect(banner).toHaveCount(0)
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await expect.poll(() => countText("stub-ok ran ls\\b"), { timeout: 15_000 }).toBe(1)
+
+    // 4) 审批轮在中间（后面还有命令轮）：确认删 1 轮，重跑写文件这一轮，命令轮不再出现。
+    const writeRegen = regen.nth(1)
+    await writeRegen.click({ force: true })
+    await expect(dialog).toContainText("1 轮")
+    await window.locator('[data-testid="regenerate-confirm"]').click()
+    await expect(allowOnce).toBeVisible({ timeout: 20_000 })
+    await allowOnce.click({ timeout: 8_000, force: true })
+    await expect.poll(() => countText("stub-ok allowed write"), { timeout: 15_000 }).toBe(1)
+    await expect.poll(() => countText("stub-ok ran ls\\b"), { timeout: 15_000 }).toBe(0)
+    await expect(window.getByText("有新内容")).toHaveCount(0)
+    await expect(banner).toHaveCount(0)
+  } finally {
+    await closeApp(app)
+  }
+})
+
 test("run long 命令卡：默认与 733×480 下拒绝 / 运行与 Composer 都在窗口内，展开 / 收起可用", async () => {
   const app = await launchStubApp("# e2e long command card\n", 240_000, { lang: "zh" })
   if (!app) return

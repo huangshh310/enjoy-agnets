@@ -667,6 +667,10 @@ export const enChat = {
   extractObject: "Extract object",
   regenerating: "Regenerating…",
   regenerate: "Regenerate response",
+  regenerateMiddleTitle: "Regenerate this reply?",
+  regenerateMiddleBody:
+    "The {n} later turn(s) will be removed from this conversation, then this reply is regenerated. Files in the workspace are not restored.",
+  regenerateMiddleConfirm: "Remove later turns and regenerate",
   copyResponse: "Copy response",
   copyMessage: "Copy message",
   nothingToCopy: "Nothing to copy from this message.",

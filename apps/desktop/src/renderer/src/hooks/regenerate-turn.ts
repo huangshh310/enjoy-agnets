@@ -18,9 +18,15 @@ import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 import { agentRunBlockedCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { loadSession } from "./session-lifecycle"
-import { tailIdsAfterKeep } from "./session-truncate-intent"
+import { resolveTruncateTail } from "./resolve-truncate-tail"
+import { clearRetryTarget, rememberRetryTarget } from "./regenerate-retry-target"
 import { translateTruncateNotice } from "./truncate-notice"
-import { isBlockedStart, startWithTruncateRetry, type RetryHistoryEntry } from "./truncate-retry"
+import {
+  isBlockedStart,
+  startWithTruncateRetry,
+  TRUNCATE_TAIL_CHANGED,
+  type RetryHistoryEntry
+} from "./truncate-retry"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -55,8 +61,21 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
     return
   }
 
-  // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）
-  const expectedTailIds = tailIdsAfterKeep(messages, userMessage.id)
+  // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）。
+  // jojo P1：名单必须是库 id（视图助手气泡是占位 id），先读库对账；对不上就刷新提示，不截。
+  const sessionAtStart = store.sessionId
+  rememberRetryTarget({ kind: "regenerate", sessionId: sessionAtStart, userId: userMessage.id })
+  const expectedTailIds = await resolveTruncateTail({
+    sessionId: sessionAtStart,
+    messages,
+    anchorId: userMessage.id,
+    mode: "after"
+  })
+  if (!expectedTailIds) {
+    await refreshAfterTailMismatch(sessionAtStart)
+    return
+  }
+  if (!stillIdle(sessionAtStart)) return
   const truncatedMessages = messages.slice(0, userIndex + 1)
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -101,10 +120,12 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
       pending: nextMessages[nextMessages.length - 1]!
     })
     if (agentRunBlockedCode(started) || isBlockedStart(started)) return
+    clearRetryTarget()
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
     store.setRunning(false)
+    await resyncAfterStartThrow(sessionId)
   }
 }
 
@@ -131,7 +152,24 @@ export async function editAndResendUserTurn(
     createdAt: Date.now()
   }
 
-  const expectedTailIds = tailIdsAfterKeep(messages, oldUserMsg.id)
+  const sessionAtStart = store.sessionId
+  rememberRetryTarget({
+    kind: "edit",
+    sessionId: sessionAtStart,
+    userId: oldUserMsg.id,
+    content: newContent.trim()
+  })
+  const expectedTailIds = await resolveTruncateTail({
+    sessionId: sessionAtStart,
+    messages,
+    anchorId: oldUserMsg.id,
+    mode: "after"
+  })
+  if (!expectedTailIds) {
+    await refreshAfterTailMismatch(sessionAtStart)
+    return
+  }
+  if (!stillIdle(sessionAtStart)) return
   const truncatedMessages = [...messages.slice(0, userIndex), updatedUserMsg]
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -177,11 +215,43 @@ export async function editAndResendUserTurn(
       keepMessage: updatedUserMsg
     })
     if (agentRunBlockedCode(started) || isBlockedStart(started)) return
+    clearRetryTarget()
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Execution failed.")
     store.setRunning(false)
+    await resyncAfterStartThrow(sessionId)
   }
+}
+
+/** 读库对账期间别人起跑了或切了会话：放弃这次。 */
+function stillIdle(sessionId: string): boolean {
+  const live = useChatStore.getState()
+  return !live.running && live.sessionId === sessionId
+}
+
+/** 视图尾巴与库对不上：刷新视图，提示「有新内容」，什么都不删。 */
+async function refreshAfterTailMismatch(sessionId: string): Promise<void> {
+  const live = useChatStore.getState()
+  if (live.sessionId !== sessionId) return
+  await loadSession(sessionId, live.sessionTitle ?? "")
+  useChatStore.getState().setError(translateTruncateNotice(TRUNCATE_TAIL_CHANGED))
+}
+
+/**
+ * leo soft 4：main 在截断已提交之后、挂 run 之前抛错（modelMessagesForStart 等）不回滚库。
+ * renderer 不留乐观气泡：按库刷新，用户看到的就是真状态（保留点那句还在，可以再点重新生成）。
+ */
+async function resyncAfterStartThrow(sessionId: string | null): Promise<void> {
+  const live = useChatStore.getState()
+  if (!sessionId || live.sessionId !== sessionId) return
+  const error = live.error
+  try {
+    await loadSession(sessionId, live.sessionTitle ?? "")
+  } catch {
+    return
+  }
+  if (error) useChatStore.getState().setError(error)
 }
 
 type ThreadMessages = ChatStore["messages"]

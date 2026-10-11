@@ -91,7 +91,7 @@ export async function patchSession(input: SessionPatchInput): Promise<SessionSum
 export async function listMessages(sessionId: string) {
   const rows = getDatabase()
     .prepare(
-      "SELECT id, session_id as sessionId, role, content, created_at as createdAt FROM messages WHERE session_id = ? ORDER BY created_at ASC"
+      "SELECT id, session_id as sessionId, role, content, created_at as createdAt FROM messages WHERE session_id = ? ORDER BY created_at ASC, id ASC"
     )
     .all(sessionId) as Array<{
     id: string
