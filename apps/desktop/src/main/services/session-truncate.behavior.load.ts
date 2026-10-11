@@ -15,3 +15,6 @@ export {
   snapshotConversationSessionAllow
 } from "./conversation-session-allow.ts"
 export { persistMessage, MESSAGE_ID_SESSION_MISMATCH } from "./persist-session.ts"
+export { holdRunThenPersistUser, outgoingUserIdConflict } from "./agent-run-hold.ts"
+export { getActiveRun } from "./agent-run-state.ts"
+export { sessionHasBlockingRun } from "./session-truncate.ts"

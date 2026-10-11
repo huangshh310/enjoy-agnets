@@ -7,6 +7,7 @@ import { resolveLocale, type LanguagePref } from "../i18n/locale.ts"
 import { translate } from "../i18n/lookup.ts"
 import { queryClient } from "../lib/query-client.ts"
 import {
+  MESSAGE_ID_SESSION_MISMATCH,
   TRUNCATE_RUN_ACTIVE,
   TRUNCATE_STALE_SNAPSHOT
 } from "@enjoy-agents/ipc-contract/session-truncate"
@@ -23,6 +24,7 @@ export function translateTruncateNotice(code: string): string {
   if (code === TRUNCATE_RUN_ACTIVE) return translate(messages, "chat.truncateRunActive")
   if (code === TRUNCATE_STALE_SNAPSHOT) return translate(messages, "chat.truncateStaleSnapshot")
   if (code === TRUNCATE_TAIL_CHANGED) return translate(messages, "chat.truncateTailChanged")
+  if (code === MESSAGE_ID_SESSION_MISMATCH) return translate(messages, "chat.messageIdSessionMismatch")
   return translate(messages, "chat.rewindFailed")
 }
 

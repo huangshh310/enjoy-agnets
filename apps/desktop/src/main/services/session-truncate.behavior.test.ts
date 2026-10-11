@@ -10,9 +10,13 @@ const {
   applyExplicitSessionTruncate,
   clearAllConversationSessionAllows,
   deleteActiveRun,
+  getActiveRun,
   getDatabase,
   grantConversationToolAllow,
   holdAgentRun,
+  holdRunThenPersistUser,
+  outgoingUserIdConflict,
+  sessionHasBlockingRun,
   insertRun,
   MESSAGE_ID_SESSION_MISMATCH,
   persistMessage,
@@ -351,4 +355,72 @@ test("soft 5：persistMessage 按 id 覆盖必须同会话，不能改写别的�
   persistMessage(mine, "assistant", "v2", undefined, ownId)
   const own = getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(ownId) as { content: string }
   assert.equal(own.content, "v2")
+})
+
+test("leo 小修 2：用户句 id 属别的会话 → 撤掉 run 回稳定码，本会话还能再开跑", () => {
+  const mine = "ses_hold_mine"
+  const other = "ses_hold_other"
+  seedSession(mine)
+  seedSession(other)
+  const otherId = persistMessage(other, "user", "theirs", undefined, `${other}_u1`)
+  const hold = (runId: string) => ({
+    runId,
+    window: fakeWindow(),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId: mine,
+      workspaceId: "ws_trunc",
+      modelId: "m",
+      mode: "agent" as const,
+      attachments: [],
+      messages: [{ role: "user" as const, content: "hi" }]
+    }
+  })
+  assert.equal(outgoingUserIdConflict(mine, otherId), true)
+  assert.equal(outgoingUserIdConflict(mine, `${mine}_fresh`), false)
+  assert.equal(outgoingUserIdConflict(mine, undefined), false)
+
+  const failed = holdRunThenPersistUser(hold("run_hold_bad"), () => {
+    persistMessage(mine, "user", "hijack", undefined, otherId)
+  })
+  assert.deepEqual(failed, { ok: false, code: MESSAGE_ID_SESSION_MISMATCH })
+  assert.equal(getActiveRun("run_hold_bad"), undefined)
+  assert.equal(sessionHasBlockingRun(mine), false)
+
+  // 不再报 RUN_ACTIVE：能截断、能开新 run。
+  const [u1, a1] = ids(mine, "u1", "a1")
+  insertMessage(mine, u1, "user", 10)
+  insertMessage(mine, a1, "assistant", 11)
+  assert.deepEqual(
+    applyExplicitSessionTruncate({ sessionId: mine, afterMessageId: u1, expectedTailIds: [a1], reason: "regenerate" }),
+    { ok: true, deleted: 1 }
+  )
+  try {
+    const ok = holdRunThenPersistUser(hold("run_hold_ok"), () => {
+      persistMessage(mine, "user", "hi again", undefined, `${mine}_u2`)
+    })
+    assert.deepEqual(ok, { ok: true })
+    assert.ok(getActiveRun("run_hold_ok"))
+    assert.equal(sessionHasBlockingRun(mine), true)
+  } finally {
+    deleteActiveRun("run_hold_ok")
+  }
+  const theirs = getDatabase().prepare("SELECT session_id, content FROM messages WHERE id = ?").get(otherId) as {
+    session_id: string
+    content: string
+  }
+  assert.deepEqual({ ...theirs }, { session_id: other, content: "theirs" })
+})
+
+test("leo 小修 2：agent-run-start 开跑前预检、挂 run 与落用户句绑在一起", () => {
+  const src = readFileSync(new URL("./agent-run-start.ts", import.meta.url), "utf8")
+  const precheck = src.indexOf("outgoingUserIdConflict(input.sessionId, lastUser?.id)")
+  const reset = src.indexOf("applyAgentRunSessionAllowReset({")
+  const truncate = src.indexOf("applyExplicitSessionTruncate({")
+  assert.ok(precheck > 0 && precheck < reset && precheck < truncate)
+  assert.match(src, /return \{ ok: false, code: MESSAGE_ID_SESSION_MISMATCH \}/)
+  assert.match(src, /const held = holdRunThenPersistUser\(/)
+  assert.match(src, /if \(!held\.ok\) return held/)
+  assert.doesNotMatch(src, /\bholdAgentRun\(/)
 })

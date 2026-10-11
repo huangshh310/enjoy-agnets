@@ -6,6 +6,8 @@ import { z } from "zod"
 export const TRUNCATE_STALE_SNAPSHOT = "TRUNCATE_STALE_SNAPSHOT"
 export const TRUNCATE_RUN_ACTIVE = "TRUNCATE_RUN_ACTIVE"
 export const TRUNCATE_MESSAGE_NOT_FOUND = "TRUNCATE_MESSAGE_NOT_FOUND"
+/** 外发用户句的 id 已落在别的会话：不开跑、不挂 run（leo 小修 2）。 */
+export const MESSAGE_ID_SESSION_MISMATCH = "MESSAGE_ID_SESSION_MISMATCH"
 
 export const SessionTruncateErrorCode = z.enum([
   TRUNCATE_STALE_SNAPSHOT,

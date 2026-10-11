@@ -16,7 +16,7 @@ test("runAgent / resume / heartbeat 都走 beginAgentRun，且 resolveRuntimeId"
   assert.match(src, /return beginAgentRun\(window, input, \{ persistUser: true, promptEcho: true \}\)/)
   assert.match(src, /return beginAgentRun\(\s*window,\s*RunAgentInput\.parse/)
   assert.match(src, /const runtimeId = resolveRuntimeId\(input, prefs\)/)
-  assert.match(src, /holdAgentRun\(/)
+  assert.match(src, /holdRunThenPersistUser\(/)
   assert.match(src, /void prepareAndPump\(runId\)/)
   assert.match(runtime, /readSessionRuntime\(input\.sessionId\)/)
   assert.match(runtime, /会话覆盖 > 入参/)

@@ -1,6 +1,7 @@
 /**
  * 会话落库：消息写入（checkpoint 同 id 覆盖）、首轮自动改名、流式文本/思考累积。
  */
+import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
 import {
   absorbTextDelta,
   foldToolEvent,
@@ -105,7 +106,13 @@ export function persistMessage(
   }
 }
 
-export const MESSAGE_ID_SESSION_MISMATCH = "MESSAGE_ID_SESSION_MISMATCH"
+export { MESSAGE_ID_SESSION_MISMATCH }
+
+/** 这个 id 已落在别的会话（开跑前预检用；不存在或同会话都返回 false）。 */
+export function messageIdBelongsToOtherSession(sessionId: string, messageId: string): boolean {
+  const owner = messageSessionId(messageId)
+  return owner !== undefined && owner !== sessionId
+}
 
 function messageSessionId(id: string): string | undefined {
   const row = getDatabase().prepare("SELECT session_id FROM messages WHERE id = ?").get(id) as

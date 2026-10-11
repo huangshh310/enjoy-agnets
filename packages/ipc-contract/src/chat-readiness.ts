@@ -4,7 +4,11 @@
  */
 import { z } from "zod"
 import { chatRouteAllowsSend, NO_CHAT_ROUTE } from "./chat-route-gate.ts"
-import { TRUNCATE_RUN_ACTIVE, TRUNCATE_STALE_SNAPSHOT } from "./session-truncate.ts"
+import {
+  MESSAGE_ID_SESSION_MISMATCH,
+  TRUNCATE_RUN_ACTIVE,
+  TRUNCATE_STALE_SNAPSHOT
+} from "./session-truncate.ts"
 
 export {
   chatRouteAllowsSend,
@@ -44,7 +48,8 @@ export type SendGateCode = z.infer<typeof SendGateCode>
 export const AgentRunErrorCode = z.enum([
   NO_CHAT_ROUTE,
   TRUNCATE_STALE_SNAPSHOT,
-  TRUNCATE_RUN_ACTIVE
+  TRUNCATE_RUN_ACTIVE,
+  MESSAGE_ID_SESSION_MISMATCH
 ])
 export type AgentRunErrorCode = z.infer<typeof AgentRunErrorCode>
 

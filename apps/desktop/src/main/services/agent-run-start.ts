@@ -12,7 +12,9 @@ import { createId } from "./ids"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { applyAgentRunSessionAllowReset } from "./conversation-session-allow"
 import { applyExplicitSessionTruncate } from "./session-truncate"
-import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { emitEvent, getActiveRun } from "./agent-run-state"
+import { holdRunThenPersistUser, outgoingUserIdConflict } from "./agent-run-hold"
+import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import {
@@ -177,12 +179,16 @@ async function beginAgentRun(
     if (existing) return { ok: true, runId: existing }
   }
   const runId = options.runId ?? createId("run")
+  const lastUser = lastOutgoingUser(input)
+  // leo 小修 2：用户句 id 已属别的会话就别开跑（不清允许、不截断、不挂 run）。
+  if (options.persistUser && outgoingUserIdConflict(input.sessionId, lastUser?.id)) {
+    return { ok: false, code: MESSAGE_ID_SESSION_MISMATCH }
+  }
   applyAgentRunSessionAllowReset({
     sessionId: input.sessionId,
     clearSessionAllow: input.clearSessionAllow,
     incomingMessageCount: input.messages.length
   })
-  const lastUser = lastOutgoingUser(input)
   if (!options.runId && input.truncateAfterMessageId && input.expectedTailIds) {
     const cut = applyExplicitSessionTruncate({
       sessionId: input.sessionId,
@@ -205,14 +211,23 @@ async function beginAgentRun(
     options.resumeMessages,
     secret?.contextWindow
   )
-  holdAgentRun({
-    runId,
-    window,
-    input,
-    workspaceRoot: workspace.rootPath,
-    secret,
-    messages: modelMessages
-  })
+  // 挂 run 后紧接着落用户句；失败就撤 run 回稳定码，不留下永远 RUN_ACTIVE 的会话。
+  const held = holdRunThenPersistUser(
+    {
+      runId,
+      window,
+      input,
+      workspaceRoot: workspace.rootPath,
+      secret,
+      messages: modelMessages
+    },
+    () => {
+      if (options.runId || !input.truncateAfterMessageId) {
+        persistOutgoingUser(input, options.persistUser)
+      }
+    }
+  )
+  if (!held.ok) return held
   if (options.runId) {
     hydrateActiveRunUsage(runId)
     const run = getActiveRun(runId)
@@ -221,9 +236,6 @@ async function beginAgentRun(
   if (input.commandId) rememberCommandReceipt(input.commandId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
-  }
-  if (options.runId || !input.truncateAfterMessageId) {
-    persistOutgoingUser(input, options.persistUser)
   }
   emitRunStart(window, input, runId, options.promptEcho)
   if (!options.resumeMessages && workspace.kind !== "ssh") {
