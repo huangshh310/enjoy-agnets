@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
 
@@ -28,6 +29,7 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   // 只信 turn：Stop=stopped、归档=neutral 不当出错。禁止把缺 turn 的 run.end 折成 complete。
   if (event.type === "run.error") {
     if (isQuietTurn(event.turn?.attention)) return null
+    if (isRestoreFamilyCode(event.message) || isRestoreFamilyCode(event.code)) return null
     if (isApprovalNotExecutedMessage(event.message)) return "complete"
     return "error"
   }

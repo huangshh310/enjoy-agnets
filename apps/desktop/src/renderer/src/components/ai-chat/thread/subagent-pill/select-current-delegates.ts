@@ -16,6 +16,7 @@ export type DelegatePillStatus =
   | "denied"
   | "skipped"
   | "stopped"
+  | "restart"
 
 export type DelegatePillItem = {
   id: string

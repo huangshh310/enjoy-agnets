@@ -17,6 +17,15 @@ export function focusComposerEnd() {
   focusFn?.()
 }
 
+/** setComposer 之后等一帧，再对焦并把光标放到末尾。 */
+export function focusComposerEndAfterPaint() {
+  if (typeof requestAnimationFrame === "undefined") {
+    focusComposerEnd()
+    return
+  }
+  requestAnimationFrame(() => focusComposerEnd())
+}
+
 /** 点「新对话」后从按钮挪走焦点，同步聚焦输入框。已在输入框打字则不抢。 */
 export function focusComposerAfterNewSession() {
   if (typeof document !== "undefined") {

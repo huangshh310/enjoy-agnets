@@ -3,6 +3,7 @@
  * 流式过程 checkpoint 同一行；complete / fail / abort / before-quit 再封口。
  */
 import { updateRun } from "@enjoy-agents/db"
+import { RESTORE_NO_MATCHING_CODE } from "@enjoy-agents/ipc-contract/restore-codes"
 import { persistFinishedAssistant } from "./persist-parts"
 import { flushPayloadFromRun } from "./agent-run-flush"
 import { getDatabase } from "./database"
@@ -10,10 +11,21 @@ import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { persistWaitingRun } from "./persist-waiting-run"
 import { persistRunUsageFromActive, markPumpMissingUsage, usageNeverRecorded } from "./run-usage"
 import { listActiveRuns, type ActiveRun } from "./agent-run-state"
+import { writeCancelledRestoreError } from "./restore-interrupted-running"
+import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+export { shouldFlushRunsOnWindowAllClosed } from "./flush-on-window-all-closed"
 
 const FINISHED = new Set(["completed", "failed", "cancelled"])
 
 export type RunFlushStatus = "completed" | "failed" | "cancelled" | "waiting_review" | "running"
+
+export type FlushActiveRunsOpts = {
+  /** 只有真退出（will-quit / 非 darwin 关最后一扇窗）才 fail-closed。 */
+  failClosed?: boolean
+  persistWaiting?: (run: ActiveRun, runId: string) => void
+  persistActive?: typeof persistActiveRun
+  persistRunning?: (run: ActiveRun, runId: string) => void
+}
 
 export function persistActiveRun(
   run: ActiveRun,
@@ -23,7 +35,11 @@ export function persistActiveRun(
 ): boolean {
   const wrote = writeAssistantRow(run)
   if (wrote) run.assistantPersisted = true
-  updateRun(getDatabase(), runId, { status, error: error ?? null })
+  updateRun(getDatabase(), runId, {
+    status,
+    error: error ?? null,
+    ...(FINISHED.has(status) ? { checkpoint: null } : {})
+  })
   if (FINISHED.has(status)) {
     run.endedAt = run.endedAt ?? Date.now()
     // 只给 completed 补 incomplete。failed/cancelled 且没泵过不得算 unknown；
@@ -39,11 +55,11 @@ export function persistActiveRun(
  * 进程被杀、electron-vite 重载没有 before-quit 时，hydrate 还能读到最后一次快照。
  */
 export function checkpointActiveRun(run: ActiveRun): boolean {
-  if (run.assistantPersisted) return false
   return writeAssistantRow(run)
 }
 
 function writeAssistantRow(run: ActiveRun): boolean {
+  const runId = listActiveRuns().find((item) => item.run === run)?.runId
   const payload = flushPayloadFromRun({
     assistantPersisted: run.assistantPersisted,
     sessionId: run.input.sessionId,
@@ -53,7 +69,8 @@ function writeAssistantRow(run: ActiveRun): boolean {
     extras: { sources: run.citedSources },
     runKind: "agent",
     modelId: run.input.modelId,
-    runtimeId: run.input.runtimeId
+    runtimeId: run.input.runtimeId,
+    runId
   })
   if (!payload) return false
   try {
@@ -69,18 +86,30 @@ function writeAssistantRow(run: ActiveRun): boolean {
 }
 
 /** 关窗口 / 退出时把还在跑或卡在审批的回复刷进库。 */
-export function flushActiveRuns(): void {
+export function flushActiveRuns(opts: FlushActiveRunsOpts = {}): void {
+  const persistWaiting = opts.persistWaiting ?? persistWaitingRun
+  const persistActive = opts.persistActive ?? persistActiveRun
+  const persistRunning = opts.persistRunning ?? persistRunningCheckpoint
   for (const { runId, run } of listActiveRuns()) {
     try {
       if (run.pendingApprovals.length > 0) {
-        persistActiveRun(run, runId, "waiting_review")
-        persistWaitingRun(run, runId)
+        persistWaiting(run, runId)
+        persistActive(run, runId, "waiting_review")
       } else {
-        persistRunningCheckpoint(run, runId)
-        persistActiveRun(run, runId, "running")
+        persistRunning(run, runId)
+        persistActive(run, runId, "running")
       }
-    } catch {
-      // 一条坏 JSON 不能挡住其它 run 落库。
+    } catch (error) {
+      console.error("[flush] will-quit persist failed", { runId, error })
+      if (opts.failClosed !== false && run.pendingApprovals.length > 0) {
+        failClosedWaitingOnQuit(runId)
+      }
     }
   }
+}
+
+/** will-quit 写检查点失败时不得留下 waiting_review + 未决 NULL。 */
+function failClosedWaitingOnQuit(runId: string): void {
+  settlePendingApprovalsForRun(runId, undefined, "restart")
+  writeCancelledRestoreError(runId, RESTORE_NO_MATCHING_CODE)
 }

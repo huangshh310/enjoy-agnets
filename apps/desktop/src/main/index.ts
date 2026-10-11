@@ -12,6 +12,7 @@ import {
   reapOrphanAcpChildren
 } from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
+import { shouldFlushRunsOnWindowAllClosed } from "./services/flush-on-window-all-closed";
 import { isQuitAllowed, markQuitAllowed } from "./services/window-quit";
 import { blockNativeHistoryNavigation } from "./services/block-native-history";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
@@ -288,7 +289,7 @@ app.on("will-quit", () => {
     void import("./services/conversation-session-allow").then(({ clearAllConversationSessionAllows }) => {
       clearAllConversationSessionAllows()
     })
-    flushActiveRuns();
+    flushActiveRuns({ failClosed: true });
     disposeAllAcpSessions();
     void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {
       void stopBridgeServer()
@@ -301,7 +302,10 @@ app.on("will-quit", () => {
 
 app.on("window-all-closed", () => {
   if (!isPrimaryInstance()) return
-  flushActiveRuns();
+  // macOS 关光窗口应用还在 Dock：不 flush、不 fail-closed，禁止碰库。
+  if (shouldFlushRunsOnWindowAllClosed(process.platform)) {
+    flushActiveRuns({ failClosed: true });
+  }
   disposeAllAcpSessions();
   unregisterIpc();
   if (process.platform !== "darwin") {

@@ -202,10 +202,17 @@ function ToolStatusPill({ kind }: { kind: ReturnType<typeof toolRunKind> }) {
       </span>
     )
   }
-  if (kind === "skipped") {
+  if (kind === "skipped" || kind === "catch_up" || kind === "restart") {
     return (
       <span className="inline-flex shrink-0 items-center gap-0.5 text-caption-2-medium text-text-tertiary">
         <span className="size-1.5 rounded-full bg-text-tertiary" />
+        <span>
+          {kind === "restart"
+            ? t("chat.restartAbandoned")
+            : kind === "catch_up"
+              ? t("studio.automations.catchUpTimeout")
+              : t("chat.toolStaleObservation")}
+        </span>
       </span>
     )
   }

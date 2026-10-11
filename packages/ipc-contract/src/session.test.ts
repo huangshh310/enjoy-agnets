@@ -3,6 +3,7 @@ import { test } from "node:test"
 import { selectForkTurns, visibleSessionTurns } from "./session-fork.ts"
 import { SessionHeartbeatPutInput } from "./session-heartbeat.ts"
 import {
+  SessionDeleteInput,
   SessionForkInput,
   SessionIdInput,
   SessionPatchInput,
@@ -24,6 +25,12 @@ test("session.rename 接受合法标题", () => {
 test("session.archive 入参只要 sessionId", () => {
   assert.equal(SessionIdInput.safeParse({ sessionId: "s1" }).success, true)
   assert.equal(SessionIdInput.safeParse({ sessionId: "s1", extra: 1 }).success, false)
+})
+
+test("session.delete 可带 onlyIfEmpty", () => {
+  assert.equal(SessionDeleteInput.safeParse({ sessionId: "s1" }).success, true)
+  assert.equal(SessionDeleteInput.safeParse({ sessionId: "s1", onlyIfEmpty: true }).success, true)
+  assert.equal(SessionDeleteInput.safeParse({ sessionId: "s1", extra: 1 }).success, false)
 })
 
 test("session.truncateFrom 只要 sessionId + messageId", () => {

@@ -58,6 +58,7 @@ function statusLabel(kind: ReturnType<typeof toolRunKind>, t: TranslateFn) {
   if (kind === "skipped") return t("chat.toolStaleObservation")
   if (kind === "stopped") return t("chat.toolStopped")
   if (kind === "catch_up") return t("studio.automations.catchUpTimeout")
+  if (kind === "restart") return t("chat.restartAbandoned")
   return t("chat.inspectorToolRunning")
 }
 
@@ -70,7 +71,7 @@ function ToolMark({ kind, label }: { kind: ReturnType<typeof toolRunKind>; label
       </span>
     )
   }
-  if (kind === "skipped" || kind === "catch_up") {
+  if (kind === "skipped" || kind === "catch_up" || kind === "restart") {
     return (
       <span className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
         <span className="size-1.5 rounded-full bg-text-tertiary" />

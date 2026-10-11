@@ -4,24 +4,17 @@
 import type { ModelMessage } from "ai"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract"
-import { readSessionModels, readSessionRuntimes } from "./agent-tools-vault"
+import { readSessionModels } from "./agent-tools-vault"
+import { resolveRuntimeId } from "./resolve-runtime-id"
+
+export { resolveRuntimeId } from "./resolve-runtime-id"
 import { listAgentTools } from "./agent-tools-service"
 import { harnessPublicStatus } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
+import { MISSING_RUN_SECRET } from "./missing-run-secret"
 
-/** 会话覆盖 > 入参 > 偏好 > Enjoy Local。 */
-export function resolveRuntimeId(
-  input: { runtimeId?: string; sessionId: string },
-  prefs: AppPreferences
-): string {
-  return (
-    input.runtimeId ||
-    readSessionRuntimes()[input.sessionId] ||
-    prefs.runtimeId ||
-    "enjoy-local"
-  )
-}
+export { foldMissingRunSecret, isMissingRunSecretError, MISSING_RUN_SECRET } from "./missing-run-secret"
 
 /** 分叉与心跳都认会话上已绑定的引擎和模型，不另传一份。 */
 export function resolveSessionBinding(
@@ -84,7 +77,7 @@ export async function resolveRunSecret(
   const ready = await hasSecret()
   const secret = await readSecret()
   if (!ready || !secret) {
-    throw new Error("Add an API key in Settings before running an agent.")
+    throw new Error(MISSING_RUN_SECRET)
   }
   return secret
 }

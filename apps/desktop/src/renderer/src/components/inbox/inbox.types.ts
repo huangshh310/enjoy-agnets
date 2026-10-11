@@ -34,6 +34,8 @@ export interface InboxNotification {
   errorMessage?: string
   toolName?: string
   isAborted?: boolean
+  /** 缺参 / 超 16KiB：Inbox 只留「打开会话」，不画可点允许卡。 */
+  canOpenApproval?: boolean
 }
 
 export interface InboxGroup {

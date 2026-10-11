@@ -151,11 +151,13 @@ test("用户停通知标题是已停止，不是已完成", () => {
   assert.deepEqual(copy, { title: "已停止", body: "你停止了这一轮。" })
 })
 
-test("toolAbortKind：user_aborted 已停止，run_failed 出错不是已拒绝", () => {
+test("toolAbortKind：user_aborted 已停止，run_failed 出错，补跑/重启中性", () => {
   assert.equal(toolAbortKind({ errorText: "user_aborted" }), "stopped")
   assert.equal(toolAbortKind({ result: { code: "user_aborted" } }), "stopped")
   assert.equal(toolAbortKind({ result: { code: "run_failed", decision: "cancelled" } }), "error")
   assert.equal(toolAbortKind({ errorText: "run_failed" }), "error")
+  assert.equal(toolAbortKind({ result: { code: "catch_up_approval_timeout" } }), "neutral")
+  assert.equal(toolAbortKind({ result: { code: "restart_abandoned", decision: "cancelled" } }), "neutral")
   assert.equal(toolAbortKind({ result: { code: "APPROVAL_REPLAY_DENIED" } }), undefined)
 })
 

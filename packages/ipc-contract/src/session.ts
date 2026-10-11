@@ -56,6 +56,15 @@ export const SessionIdInput = z
   .strict()
 export type SessionIdInput = z.infer<typeof SessionIdInput>
 
+/** 发送失败只删这次新建的空会话；onlyIfEmpty 时库里有消息就拒绝删。 */
+export const SessionDeleteInput = z
+  .object({
+    sessionId: z.string().min(1),
+    onlyIfEmpty: z.boolean().optional()
+  })
+  .strict()
+export type SessionDeleteInput = z.infer<typeof SessionDeleteInput>
+
 /** 归档前结清未决审批为 cancelled；deniedApprovals 是结清条数，缺省=旧客户端。 */
 export const SessionArchiveResult = z.object({
   id: z.string(),

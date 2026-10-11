@@ -9,6 +9,7 @@ import type {
   StreamEvent,
   ThreadToolCall
 } from "@enjoy-agents/ipc-contract"
+import type { RestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -74,6 +75,10 @@ export type ThreadMessage = {
   /** 本轮模型 stamp，换模后旧泡不改写 */
   modelId?: string
   runtimeId?: string
+  /** 本轮 run。新一轮禁止折进上一轮终态行。 */
+  runId?: string
+  /** 落库的真实回挂码，冷启动横幅用这个，不发明 interrupted。 */
+  restartNotice?: RestoreFamilyCode
   modelLabel?: string
   /** 轮末静态引导词；未点击不得自动发送 */
   actionChips?: ActionChip[]
@@ -205,6 +210,8 @@ export type ChatStore = {
   mode: AgentMode
   running: boolean
   runId: string | null
+  /** 本会话最近一次认领的 run；run.end 清 runId 后检查器仍按它拉指标。切会话必须清空。 */
+  lastRunId: string | null
   /** 本轮 setRunning(true) 的真实起点；停跑清空。禁止编造。 */
   runStartedAt: number | null
   /** composer 尚未拿到 runId 时暂存事件，避免旁路 Extract 写进乐观轮 */

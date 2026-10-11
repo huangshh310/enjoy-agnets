@@ -3,6 +3,8 @@
  */
 import { create } from "zustand"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
+import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-restart-notice"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
@@ -61,6 +63,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   mode: "agent",
   running: false,
   runId: null,
+  lastRunId: null,
   runStartedAt: null,
   pendingStreamEvents: [],
   thinkingLabel: "Thinking",
@@ -147,6 +150,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
     const patch = reduceStreamEvent(get().messages, event, get().runId)
     const sessionId = get().sessionId
+    const noticeSessionId = sessionId ?? event.sessionId
+    if (patch.notice !== undefined && noticeSessionId && isRestoreFamilyCode(patch.notice)) {
+      rememberRestartNotice(noticeSessionId, patch.notice)
+    }
     if (patch.heldResolved && sessionId) {
       holdApprovalResolved(sessionId, patch.heldResolved)
     }
@@ -158,6 +165,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       ...(patch.running === true ? { runStartedAt: get().runStartedAt ?? Date.now() } : {}),
       ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
+      ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
       ...(patch.error !== undefined ? { error: patch.error } : {}),
       ...(patch.notice !== undefined ? { notice: patch.notice } : {})
     })
@@ -180,6 +188,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({
       running,
       runId: runId ?? null,
+      ...(typeof runId === "string" ? { lastRunId: runId } : {}),
       runStartedAt: running ? (get().runStartedAt ?? Date.now()) : null,
       ...(running ? { sessionReviewDismissedKey: null } : {}),
       ...(!running ? { pendingStreamEvents: [] } : {})
@@ -193,7 +202,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
   setPreparingHint: (preparingHint) => set({ preparingHint }),
-  setNotice: (notice) => set({ notice }),
+  setNotice: (notice) => {
+    const sessionId = get().sessionId
+    if (sessionId && isRestoreFamilyCode(notice)) rememberRestartNotice(sessionId, notice)
+    if (sessionId && notice === null && isRestoreFamilyCode(get().notice)) consumeRestartNotice(sessionId)
+    set({ notice })
+  },
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
   setRemoteStatus: (remoteStatus, remoteLabel, remoteError) =>
     set((state) => ({
@@ -219,6 +233,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         remoteError: null,
         sessionId: null,
         sessionTitle: "新对话",
+        lastRunId: null,
         repositories: [],
         expandedIds: [],
         messages: [],
@@ -295,7 +310,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       sessionId,
       sessionTitle,
-      notice: null,
+      ...(state.sessionId === sessionId ? {} : { notice: null }),
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )

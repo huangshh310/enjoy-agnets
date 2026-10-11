@@ -1,6 +1,11 @@
 /**
  * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
+import {
+  isRestoreFamilyCode,
+  RESTORE_INTERRUPTED_RUNNING,
+  RESTORE_NO_MATCHING_CODE
+} from "@enjoy-agents/ipc-contract/restore-codes"
 import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 export { NO_CHAT_ROUTE }
@@ -23,6 +28,7 @@ export type ThreadErrorKind =
   | "send_restore"
   | "stopped"
   | "restore_no_matching"
+  | "restore_interrupted"
   | "run_failed"
   | "catch_up_timeout"
   | "generic"
@@ -42,7 +48,7 @@ export const SEND_FAILED_RESTORE = "SEND_FAILED_RESTORE"
 export const SESSION_CREATE_TIMEOUT = "SESSION_CREATE_TIMEOUT"
 export const SESSION_NOT_READY = "SESSION_NOT_READY"
 export const USER_STOPPED = "user_aborted"
-export const RESTORE_NO_MATCHING = "restore_no_matching_approval"
+export const RESTORE_NO_MATCHING = RESTORE_NO_MATCHING_CODE
 export const RUN_FAILED = "run_failed"
 export const CATCH_UP_APPROVAL_TIMEOUT = "catch_up_approval_timeout"
 
@@ -66,7 +72,8 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   ) {
     return "stopped"
   }
-  if (message === RESTORE_NO_MATCHING) return "restore_no_matching"
+  if (message === RESTORE_INTERRUPTED_RUNNING) return "restore_interrupted"
+  if (isRestoreFamilyCode(message)) return "restore_no_matching"
   if (message === RUN_FAILED) return "run_failed"
   if (message === CATCH_UP_APPROVAL_TIMEOUT) return "catch_up_timeout"
   if (
@@ -95,6 +102,7 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   ) {
     return "needs_key"
   }
+  if (lower.includes("add an api key in settings")) return "no_chat_route"
   if (message === NEED_REMOTE_CONNECTED || lower.includes("remote_disconnected") || message.includes("REMOTE_DISCONNECTED")) {
     return "remote_disconnected"
   }
@@ -128,6 +136,7 @@ type Translate = (path: string, vars?: Record<string, string | number>) => strin
 /** 机器码走人话键；禁止把 restore_no_matching_approval / run_failed 等原文摊进横幅。 */
 export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined {
   if (kind === "restore_no_matching") return "chat.restoreNoMatching"
+  if (kind === "restore_interrupted") return "chat.restoreInterrupted"
   if (kind === "run_failed") return "chat.runFailed"
   if (kind === "catch_up_timeout") return "studio.automations.catchUpTimeout"
   if (kind === "store") return "chat.errorGenericHint"

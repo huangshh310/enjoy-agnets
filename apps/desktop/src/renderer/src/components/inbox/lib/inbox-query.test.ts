@@ -110,7 +110,8 @@ test("拍板行来自 main 未决，不靠 Attention 槽", () => {
         sessionTitle: "活着",
         name: "write_file",
         toolCallId: "tool_1",
-        createdAt: 2
+        createdAt: 2,
+        args: { path: "note.txt" }
       }
     ],
     {
@@ -123,6 +124,7 @@ test("拍板行来自 main 未决，不靠 Attention 槽", () => {
       ]
     }
   )
+  assert.equal(rows.length, 1)
   const fromAttention = inboxFromAttention(
     [
       attention({
@@ -147,6 +149,66 @@ test("拍板行来自 main 未决，不靠 Attention 槽", () => {
   assert.equal(rows.length, 1)
   assert.equal(rows[0]?.id, "apr:apr_main")
   assert.equal(fromAttention.length, 0)
+})
+
+test("缺参未决仍进 Inbox；活 run 出立即前往审批", () => {
+  const rows = inboxFromPendingApprovals(
+    [
+      {
+        id: "apr_ghost",
+        runId: "run_1",
+        sessionId: "ses_live",
+        workspaceId: "ws",
+        sessionTitle: "活着",
+        name: "write_file",
+        toolCallId: "tool_1",
+        createdAt: 2
+      }
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.id, "apr:apr_ghost")
+  assert.equal(rows[0]?.canOpenApproval, true)
+  assert.equal(rows[0]?.actionKey, "openSession")
+  assert.equal(rows[0]?.actionLabel, "pages.inbox.openApprovalAction")
+})
+
+test("有短文件名时 Inbox 摘要带 basename", () => {
+  const rows = inboxFromPendingApprovals(
+    [
+      {
+        id: "apr_short",
+        runId: "run_1",
+        sessionId: "ses_live",
+        workspaceId: "ws",
+        sessionTitle: "活着",
+        name: "write_file",
+        toolCallId: "tool_1",
+        createdAt: 2,
+        args: { path: "src/note.txt" },
+        targetShortName: "note.txt"
+      }
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  assert.equal(rows[0]?.summary, "活着 · write_file · note.txt")
 })
 
 test("complete 不进安静 Inbox，不占拍板徽标", () => {

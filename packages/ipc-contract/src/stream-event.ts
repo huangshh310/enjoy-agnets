@@ -79,8 +79,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     toolCallId: z.string(),
     /** 用户 deny 与系统 cancelled（Stop / 归档 / 超时）分开，禁止把停当成拒绝。 */
     decision: z.enum(["allow", "deny", "allow_session", "allow_always", "cancelled"]),
-    /** Stop=`user_aborted`；泵出错=`run_failed`；补跑超时=`catch_up_approval_timeout`。 */
-    code: z.enum(APPROVAL_RESOLVED_CODES).optional(),
+    /** Stop=`user_aborted`；泵出错=`run_failed`；补跑超时=`catch_up_approval_timeout`；重启放弃=`restart_abandoned`。旧未知码丢掉，不拒整条。 */
+    code: z.enum(APPROVAL_RESOLVED_CODES).optional().catch(undefined),
     ...Envelope
   }),
   z.object({
@@ -93,6 +93,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("run.end"),
     runId: z.string(),
+    /** Composer / Agent 为 `agent`；标题补全等旁路带 generation kind。旧事件缺字段仍过闸。 */
+    kind: z.string().max(40).optional().catch(undefined),
     /** main 收工判定；缺省时 renderer 回落旧逻辑。 */
     turn: TurnOutcome.optional(),
     ...Envelope
@@ -101,6 +103,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("run.error"),
     runId: z.string(),
     message: z.string(),
+    /** Composer / Agent 为 `agent`；标题补全等旁路带 generation kind。旧事件缺字段仍过闸。 */
+    kind: z.string().max(40).optional().catch(undefined),
     /** 用户停 / 归档：`user_aborted`。renderer 只认这码走中性已停止。 */
     code: z.string().optional(),
     turn: TurnOutcome.optional(),

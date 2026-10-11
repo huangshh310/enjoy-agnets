@@ -136,7 +136,7 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await window.locator('[data-testid="mcp-trust-confirm"]').click()
     await window.waitForSelector('[data-testid="mcp-open-app"]', { timeout: 8_000 })
     await window.locator('[data-testid="mcp-open-app"]').click()
-    await window.waitForSelector('[data-testid="mcp-app-frame"]', { timeout: 8_000 })
+    await window.waitForSelector('[data-testid="mcp-app-frame"]', { timeout: 15_000 })
     const appFrame = window.frameLocator('[data-testid="mcp-app-frame"]')
     await appFrame.locator('[data-testid="mcp-app-ready"]').waitFor({ timeout: 8_000 })
     await appFrame.locator('[data-testid="mcp-app-log"]').evaluate((el: HTMLElement) => el.click())

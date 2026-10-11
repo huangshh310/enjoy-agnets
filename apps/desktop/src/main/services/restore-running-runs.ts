@@ -5,7 +5,7 @@ import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
-import { listRuns, updateRun, type RunRow } from "@enjoy-agents/db"
+import { getRun, listRuns, updateRun, type RunRow } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
@@ -24,15 +24,25 @@ import { getWorkspace } from "./workspace"
 import { isE2eStub } from "./e2e-stub"
 import { prepareAndPump } from "./agent-run-prepare"
 import { hydrateActiveRunUsage } from "./run-usage"
+import {
+  emitQueuedInterruptedRunning,
+  queueInterruptedRunningSettle
+} from "./restore-interrupted-running"
+import { readLatestAssistantSnapshot } from "./restore-assistant-snapshot"
 
 export async function restoreRunningRuns(window: BrowserWindow): Promise<void> {
-  if (isE2eStub()) return
   if (!claimRestoreRunningOnce()) return
   const db = getDatabase()
   const prefs = readPreferences()
-  for (const row of listRuns(db, {}).filter((item) => canResumeRunningOrphan(item))) {
-    await restoreOne(window, row, prefs)
+  const stub = isE2eStub()
+  for (const row of listRuns(db, {}).filter((item) => item.status === "running")) {
+    if (!stub && canResumeRunningOrphan(row) && !shouldCancelAcp(parseAgentCheckpointExtras(row.checkpoint).runtimeId)) {
+      await restoreOne(window, row, prefs)
+      continue
+    }
+    queueInterruptedRunningSettle(row)
   }
+  emitQueuedInterruptedRunning(window)
 }
 
 async function restoreOne(
@@ -70,7 +80,15 @@ async function restoreOne(
 }
 
 function cancelRestoredRun(runId: string, error: string, source: unknown): void {
-  updateRun(getDatabase(), runId, { status: "cancelled", error })
+  const db = getDatabase()
+  const row = getRun(db, runId)
+  if (row) {
+    if (!row.error) updateRun(db, runId, { error })
+    const next = getRun(db, runId)
+    if (next) queueInterruptedRunningSettle(next)
+  } else {
+    updateRun(db, runId, { status: "cancelled", error, checkpoint: null })
+  }
   stampUnrestoredCatchUp(runId, source)
 }
 
@@ -102,10 +120,7 @@ async function holdAndPump(
   })
   const runtimeId = resolveRuntimeId(input, prefs)
   if (isAcpHostRuntime(runtimeId)) {
-    updateRun(getDatabase(), row.id, {
-      status: "cancelled",
-      error: "ACP host cannot resume after restart."
-    })
+    cancelRestoredRun(row.id, "ACP host cannot resume after restart.", extras.automationSource)
     return false
   }
   const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
@@ -115,7 +130,8 @@ async function holdAndPump(
     input,
     workspaceRoot: workspace.rootPath,
     secret,
-    messages: extras.modelMessages as ModelMessage[]
+    messages: extras.modelMessages as ModelMessage[],
+    ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt, runId: row.id })
   })
   hydrateActiveRunUsage(row.id)
   emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId, kind: "agent" })

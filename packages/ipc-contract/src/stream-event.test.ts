@@ -51,7 +51,7 @@ test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
   }
 })
 
-test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_timeout", () => {
+test("approval.resolved.code 认 user_aborted / run_failed / catch_up / restart_abandoned；未知码丢掉", () => {
   const aborted = StreamEvent.safeParse({
     type: "approval.resolved",
     runId: "r1",
@@ -73,6 +73,13 @@ test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_t
     decision: "cancelled",
     code: "catch_up_approval_timeout"
   })
+  const restart = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "restart_abandoned"
+  })
   const other = StreamEvent.safeParse({
     type: "approval.resolved",
     runId: "r1",
@@ -83,7 +90,11 @@ test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_t
   assert.equal(aborted.success, true)
   assert.equal(failed.success, true)
   assert.equal(catchUp.success, true)
-  assert.equal(other.success, false)
+  assert.equal(restart.success, true)
+  assert.equal(other.success, true)
+  if (other.success && other.data.type === "approval.resolved") {
+    assert.equal(other.data.code, undefined)
+  }
 })
 
 test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
@@ -97,6 +108,17 @@ test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
   if (parsed.success && parsed.data.type === "approval.resolved") {
     assert.equal(parsed.data.decision, "cancelled")
   }
+})
+
+test("run.end / run.error 可选 kind；非法 kind .catch 不拒整条", () => {
+  const end = StreamEvent.safeParse({ type: "run.end", runId: "r1", kind: "completion" })
+  assert.equal(end.success, true)
+  if (end.success && end.data.type === "run.end") assert.equal(end.data.kind, "completion")
+  const oldEnd = StreamEvent.safeParse({ type: "run.end", runId: "r1" })
+  assert.equal(oldEnd.success, true)
+  const bad = StreamEvent.safeParse({ type: "run.error", runId: "r1", message: "boom", kind: 9 })
+  assert.equal(bad.success, true)
+  if (bad.success && bad.data.type === "run.error") assert.equal(bad.data.kind, undefined)
 })
 
 test("未知 attention / workflow 回落，不丢掉整条终态事件", () => {

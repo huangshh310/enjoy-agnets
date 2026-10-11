@@ -50,6 +50,20 @@ test("错过记录只要跳过或补跑，7 天帽是常量", () => {
   )
 })
 
+test("立即运行可以没有 scheduledAt，只写 startedAt", () => {
+  const parsed = AutomationRunSource.safeParse({
+    automationId: "auto_1",
+    automationName: "手动写入",
+    startedAt: 1_700_000_000_000,
+    isCatchUp: false
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success) {
+    assert.equal(parsed.data.scheduledAt, undefined)
+    assert.equal(parsed.data.startedAt, 1_700_000_000_000)
+  }
+})
+
 test("补跑来源字段固定，多余键即拒", () => {
   const parsed = AutomationRunSource.safeParse({
     automationId: "auto_1",

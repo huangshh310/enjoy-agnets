@@ -71,13 +71,13 @@ export function updateRun(
   )
 }
 
-/** 低层：把 running 一律标 cancelled。桌面层 abandonOrphanRuns 会先留下可续的工具边界快照。 */
+/** 低层：把 running 一律标 cancelled 并清 checkpoint。桌面层 abandonOrphanRuns 会先留下可续的工具边界快照。 */
 export function abandonRunningRuns(
   db: AppDatabase,
   error = "Abandoned after process restart."
 ): number {
   const result = db
-    .prepare("UPDATE runs SET status = ?, error = ?, updated_at = ? WHERE status = ?")
+    .prepare("UPDATE runs SET status = ?, error = ?, checkpoint = NULL, updated_at = ? WHERE status = ?")
     .run("cancelled", error, Date.now(), "running")
   return Number(result.changes)
 }

@@ -26,6 +26,11 @@ import { createId } from "./ids"
 
 let processSecret: string | undefined
 
+/** 测试：清掉进程内密钥，下次按磁盘（或缺文件时新生成）再读。 */
+export function resetApprovalSecretForTest(): void {
+  processSecret = undefined
+}
+
 function hmacFile(): string {
   return join(app.getPath("userData"), "approval-hmac.bin")
 }

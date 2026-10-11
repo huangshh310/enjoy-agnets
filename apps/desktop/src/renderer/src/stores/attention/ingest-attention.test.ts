@@ -471,6 +471,23 @@ test("用户 Stop 只信 turn.stopped：不当出错，不进需处理", () => {
   assert.equal(stripNeedsCount(stopped), 0)
 })
 
+test("回挂家族 run.error 中性：不当出错，不进需处理", () => {
+  const restored = ingestAttentionEvent([], {
+    event: {
+      type: "run.error",
+      runId: "run_restore",
+      message: "restore_no_matching_approval",
+      code: "restore_no_matching_approval",
+      turn: { workflow: "todo", attention: "neutral" }
+    },
+    sessionId: "ses_restore",
+    sessionTitle: "回挂",
+    now: 1
+  })
+  assert.equal(restored.some((item) => item.kind === "error" && item.status === "active"), false)
+  assert.equal(stripNeedsCount(restored), 0)
+})
+
 test("用户停 run.error 只信 turn.neutral：不当出错，不进需处理", () => {
   const stopped = ingestAttentionEvent([], {
     event: {

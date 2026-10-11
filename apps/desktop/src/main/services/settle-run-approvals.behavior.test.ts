@@ -270,3 +270,48 @@ test("failAgentPump 用户取消走 aborted，不是 run_failed", async () => {
   assert.ok(!events.some((event) => event.type === "approval.resolved" && event.code === "run_failed"))
   assert.ok(!events.some((event) => event.type === "run.error"))
 })
+
+test("重启结清：码是 restart_abandoned，不是 user_aborted", () => {
+  const runId = "run_restart_settle"
+  const sessionId = "ses_restart_settle"
+  const events: SentEvent[] = []
+  seedSession(sessionId, runId)
+  holdAgentRun({
+    runId,
+    window: recordWindow(events),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId,
+      workspaceId: "ws_stop",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "write" }]
+    }
+  })
+  const run = getActiveRun(runId)
+  if (!run) throw new Error("hold failed")
+  rememberApproval({
+    runId,
+    approvalId: "apr_restart_settle",
+    toolCallId: "tool_restart_settle",
+    name: "write_file",
+    args: { path: "restart-note.txt", content: "x" }
+  })
+  run.pendingApprovals.push({
+    approvalId: "apr_restart_settle",
+    toolCallId: "tool_restart_settle",
+    name: "write_file",
+    args: { path: "restart-note.txt", content: "x" }
+  })
+  const settled = settlePendingApprovalsForRun(runId, recordWindow(events), "restart")
+  assert.equal(settled, 1)
+  const stored = getApproval(getDatabase(), "apr_restart_settle")
+  assert.equal(stored?.decision, "cancelled")
+  assert.equal(stored?.sdkReason, "restart")
+  assert.equal((run.tools[0]?.result as { code?: string } | undefined)?.code, "restart_abandoned")
+  assert.ok(events.some((event) => event.type === "approval.resolved" && event.code === "restart_abandoned"))
+  assert.ok(!events.some((event) => event.type === "approval.resolved" && event.code === "user_aborted"))
+  deleteActiveRun(runId)
+})

@@ -10,6 +10,7 @@ import {
 } from "@enjoy-agents/agent-core/computer-use"
 import { applySessionAllowDecision } from "./conversation-session-allow"
 import { ASK_USER_QUESTIONS_TOOL, ApprovalDecision, foldToolEvent } from "@enjoy-agents/ipc-contract"
+import { APPROVAL_NOT_REATTACHED } from "@enjoy-agents/ipc-contract/approval-decide"
 import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
 import { approvalResponseMessage } from "./approval-response-message"
@@ -20,17 +21,14 @@ import { armCatchUpPark } from "./park-catch-up-approval"
 import { runWithActiveRunId } from "./active-run-id"
 import { emitEvent, getActiveRun, type ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
+import { getDatabase } from "./database"
+import { getRun } from "@enjoy-agents/db"
+import { isRestoreWaitingSettled } from "./restore-once"
 
 export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   const decision = ApprovalDecision.parse(rawInput)
-  const run = getActiveRun(decision.runId)
-  if (!run) {
-    throw new Error("This agent run is no longer active.")
-  }
-  const pending = run.pendingApprovals.find((item) => item.approvalId === decision.approvalId)
-  if (!pending) {
-    throw new Error("No matching tool approval is waiting.")
-  }
+  const run = requireActiveRun(decision.runId)
+  const pending = requirePendingApproval(run, decision.runId, decision.approvalId)
   // 提问工具没有 Always allow：必须在 HMAC 落库前拒，否则库内行写死、卡片还停着。
   if (
     pending.name === ASK_USER_QUESTIONS_TOOL &&
@@ -166,3 +164,24 @@ function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {
   rememberDesktopAlwaysAllowFromArgs(pending.args)
 }
 
+function requireActiveRun(runId: string): ActiveRun {
+  const run = getActiveRun(runId)
+  if (run) return run
+  if (isWaitingRestorePending(runId)) throw new Error(APPROVAL_NOT_REATTACHED)
+  throw new Error("This agent run is no longer active.")
+}
+
+function requirePendingApproval(run: ActiveRun, runId: string, approvalId: string): PendingApproval {
+  const pending = run.pendingApprovals.find((item) => item.approvalId === approvalId)
+  if (pending) return pending
+  if (isWaitingRestorePending(runId)) throw new Error(APPROVAL_NOT_REATTACHED)
+  throw new Error("No matching tool approval is waiting.")
+}
+
+function isWaitingRestorePending(runId: string): boolean {
+  if (isRestoreWaitingSettled()) return false
+  if (getRun(getDatabase(), runId)?.status !== "waiting_review") return false
+  const attached = getActiveRun(runId)
+  if (!attached) return true
+  return attached.pendingApprovals.length === 0
+}

@@ -4,9 +4,14 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import {
   isStaleObservationAfterAllow,
-  isToolNotExecuted
+  isToolNotExecuted,
+  readApprovalDecision
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
-import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RESTART_ABANDONED_CODE,
+  toolAbortKind,
+  toolHasResultCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import { asRecord } from "../../../../lib/record.ts"
 import { formatToolLabel, summarizeToolArgs, toolKind } from "../tool-summary"
 import type { TranslateFn } from "@renderer/i18n"
@@ -57,8 +62,14 @@ export function thinkingHeadline(
   if (tools.length > 0) {
     if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
     if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
+    if (tools.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE))) {
+      return t("chat.restartAbandoned")
+    }
     if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
       return t("studio.automations.catchUpTimeout")
+    }
+    if (tools.every((tool) => readApprovalDecision(tool.result) === "cancelled")) {
+      return t("chat.ranTools", { count: tools.length })
     }
     return t("chat.toolDenied")
   }
@@ -95,7 +106,11 @@ function toolRow(tool: ThreadToolCall, t: TranslateFn): TraceRow {
     del,
     done: tool.state === "output-available" && !isToolNotExecuted(tool),
     working: tool.state === "input-streaming" || tool.state === "input-available",
-    failed: tool.state === "output-error" && !isToolNotExecuted(tool)
+    failed:
+      tool.state === "output-error" &&
+      !isToolNotExecuted(tool) &&
+      toolAbortKind(tool) !== "neutral" &&
+      toolAbortKind(tool) !== "stopped"
   }
 }
 

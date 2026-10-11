@@ -88,6 +88,14 @@ function StepTitleRow({
           <span>{t("chat.toolStopped")}</span>
         </span>
       ) : null}
+      {node.status === "restart" ? (
+        <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+          <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
+            <span className="size-1.5 rounded-full bg-text-tertiary" />
+          </span>
+          <span>{t("chat.restartAbandoned")}</span>
+        </span>
+      ) : null}
       {node.status === "completed" ? (
         <span className="flex size-3.5 items-center justify-center rounded-full bg-state-success-text/15 text-state-success-text">
           <RiCheckLine className="size-2.5" />

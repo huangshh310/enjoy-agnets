@@ -12,4 +12,6 @@ test("审批续跑不得把 SSH root 回落成本机 host", () => {
   assert.match(src, /stale_observation/)
   assert.match(src, /ASK_USER_QUESTIONS_TOOL/)
   assert.equal(src.includes("回落本机 host"), false)
+  assert.match(src, /shouldDeferE2eSlowWrite/)
+  assert.match(src, /ENJOY_E2E_SLOW_TOOL/)
 })
