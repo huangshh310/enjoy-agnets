@@ -29,7 +29,13 @@ import {
   takeComposerText
 } from "./composer-draft"
 import { readComposerDomText } from "../composer-dom"
-import { setComposerWritebackHeld } from "../composer-sync-lock"
+import { runWhenComposerIdle } from "./composer-idle-turn"
+import { traceSend } from "../send-debug"
+import {
+  captureComposerSend,
+  preparedSendSnapshot,
+  type ComposerSendSnapshot
+} from "./composer-send-snapshot"
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
@@ -56,6 +62,8 @@ type SendPayload = {
   content: string
   /** 输入框里真正打出去的那段原文。content 可能垫了引用 / 技能 / 宿主模式前缀，不能拿它对输入框。 */
   typed: string
+  /** 失败还原用：原文、Chip 与附件。 */
+  snapshot: ComposerSendSnapshot
   assetIds: string[]
   messageAssets: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
   executePlan?: boolean
@@ -66,14 +74,38 @@ type SendPayload = {
 /** 先 setRunning 占位，避免双击连发两轮。创建窗内先入队，禁止清输入空转。 */
 export async function sendComposerMessage(prepared?: PreparedSend) {
   let store = useChatStore.getState()
+  traceSend("send", {
+    prepared: Boolean(prepared),
+    queuedFirst: Boolean(prepared?.sessionId),
+    running: store.running,
+    sessionId: store.sessionId,
+    createPending: composerNeedsSessionReady(),
+    dom: readComposerDomText().length
+  })
   if (store.running) {
-    // 排队首发撞上还没落下的 running：限时等，等不到就还文出提示。禁止静默 return 把锁和字卡在输入框。
-    if (!prepared || !(await waitComposerIdle(QUEUED_SEND_IDLE_WAIT_MS))) {
-      setComposerWritebackHeld(false)
-      if (prepared) {
-        restoreComposerDraft(prepared.content, prepared.assets)
-        useChatStore.getState().setError(SEND_FAILED_RESTORE)
-      }
+    // 只有创建窗里排队的首发（带 sessionId）限时等 running 落下；其余调用方保持原样直接不发。
+    if (!prepared?.sessionId) {
+      traceSend("send:running-drop")
+      return
+    }
+    const idle = await runWhenComposerIdle(
+      {
+        isRunning: () => useChatStore.getState().running,
+        subscribe: (listener) => useChatStore.subscribe(listener)
+      },
+      QUEUED_SEND_IDLE_WAIT_MS,
+      // 醒来同步占位，同一次通知叫醒的另一条排队发送会重查到 running 继续等。
+      () => useChatStore.getState().setRunning(true)
+    )
+    if (!idle) {
+      failComposerSend({
+        text: prepared.content,
+        reason: SEND_FAILED_RESTORE,
+        sessionId: useChatStore.getState().sessionId,
+        createdSessionId: prepared.sessionId,
+        assets: prepared.assets,
+        keepRunning: true
+      })
       return
     }
     store = useChatStore.getState()
@@ -90,6 +122,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
       return
     }
     const assets = takeComposerAssetDetails()
+    traceSend("send:queued", { text: text.length })
     await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next), assets)
     return
   }
@@ -98,6 +131,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   store.setRunning(true)
   if (!guardComposerSend(store)) {
     const blocked = useChatStore.getState().error
+    traceSend("send:gate", { blocked })
     if (prepared) {
       failComposerSend({
         text: prepared.content,
@@ -113,43 +147,40 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
-  const typedBeforeTake = prepared ? "" : readComposerDomText()
+  // 取稿前拍快照：失败时还原文 + 引用 / 技能 / 知识 Chip + 附件，不还拼好的 content。
+  const snapshot = prepared
+    ? preparedSendSnapshot(prepared.content, prepared.assets)
+    : captureComposerSend(readComposerDomText())
+  let optimisticContent: string | undefined
   try {
-    const payload = await resolveSendPayload(prepared)
+    const payload = await resolveSendPayload(prepared, snapshot)
+    traceSend("send:payload", { content: payload?.content.length ?? -1, typed: payload?.typed.length ?? -1 })
     if (!payload) {
       store.setRunning(false)
       store.setPreparingHint(false)
       return
     }
     const messages = beginOptimisticTurn(store, payload)
+    optimisticContent = payload.content
     clearSentComposerText(payload.typed)
     await launchComposerRun(store, payload, messages, prepared?.sessionId)
   } catch (error) {
-    store.setRunning(false)
+    traceSend("send:throw", { error: String(error) })
     store.setPreparingHint(false)
-    store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
-    const draft = prepared?.content || typedBeforeTake
-    if (draft) restoreComposerAfterFailedSend(draft, SEND_FAILED_RESTORE, prepared?.assets)
+    failComposerSend({
+      text: snapshot.text,
+      reason: SEND_FAILED_RESTORE,
+      sessionId: useChatStore.getState().sessionId,
+      createdSessionId: prepared?.sessionId,
+      assets: snapshot.assets,
+      chips: snapshot,
+      dropOptimisticUser: optimisticContent !== undefined,
+      optimisticContent
+    })
   }
 }
 
 const QUEUED_SEND_IDLE_WAIT_MS = 5_000
-
-function waitComposerIdle(timeoutMs: number): Promise<boolean> {
-  if (!useChatStore.getState().running) return Promise.resolve(true)
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      unsubscribe()
-      resolve(false)
-    }, timeoutMs)
-    const unsubscribe = useChatStore.subscribe((state) => {
-      if (state.running) return
-      clearTimeout(timer)
-      unsubscribe()
-      resolve(true)
-    })
-  })
-}
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
 function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): void {
@@ -163,9 +194,12 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)
 }
 
-async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
+async function resolveSendPayload(
+  prepared: PreparedSend | undefined,
+  snapshot: ComposerSendSnapshot
+): Promise<SendPayload | null> {
   const fromDraft = !prepared
-  const typed = prepared?.content ?? readComposerDomText()
+  const typed = snapshot.text
   const raw = prepared?.content ?? (await takeComposerText())
   if (!raw.trim()) return null
   const slash = takeComputerUseSlash(raw)
@@ -176,6 +210,7 @@ async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload 
   return {
     content,
     typed,
+    snapshot,
     assetIds: queuedAssets.map((item) => item.id),
     messageAssets: queuedAssets.map((item) => ({
       assetId: item.id,
@@ -235,7 +270,7 @@ async function launchComposerRun(
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
       failComposerSend({
-        text: payload.content,
+        ...restoreFromPayload(payload),
         reason: blocked,
         sessionId,
         createdSessionId,
@@ -247,7 +282,7 @@ async function launchComposerRun(
     if (!claimComposerRun(sessionId, runId)) {
       abortOrphanedRun(runId)
       failComposerSend({
-        text: payload.content,
+        ...restoreFromPayload(payload),
         reason: SEND_FAILED_RESTORE,
         sessionId,
         createdSessionId
@@ -258,7 +293,7 @@ async function launchComposerRun(
     void completeSessionTitle(payload.content)
   } catch (error) {
     failComposerSend({
-      text: payload.content,
+      ...restoreFromPayload(payload),
       reason: composerSendError(error),
       sessionId: store.sessionId,
       createdSessionId,
@@ -266,6 +301,16 @@ async function launchComposerRun(
     })
   } finally {
     useChatStore.getState().setPreparingHint(false)
+  }
+}
+
+/** main 回 {ok:false} 或抛错：还用户原文 + Chip + 附件；乐观气泡按拼好的 content 找。 */
+function restoreFromPayload(payload: SendPayload) {
+  return {
+    text: payload.snapshot.text,
+    assets: payload.snapshot.assets,
+    chips: payload.snapshot,
+    optimisticContent: payload.content
   }
 }
 

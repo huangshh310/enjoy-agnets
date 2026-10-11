@@ -35,6 +35,8 @@ type QueuedSend = {
 
 let queueSeq = 0
 let queuedSend: QueuedSend | null = null
+/** 最近一次被「新对话」取消掉的排队序号：只有它要还稿出提示，被它顶替过的旧序号已并进它。 */
+let cancelledSeq: number | null = null
 
 export function composerNeedsSessionReady(): boolean {
   const store = useChatStore.getState()
@@ -104,12 +106,14 @@ export function absorbAssetsIntoQueuedSend(assets: QueuedComposerAsset[]): void 
 
 export function resetQueuedComposerSendForTest(): void {
   queuedSend = null
+  cancelledSeq = null
   queueSeq = 0
   setComposerWritebackHeld(false)
 }
 
 /** 点「新对话」取消上一窗未发出的队列，禁止创建完成时误发正在打的字。 */
 export function cancelQueuedComposerSend(): void {
+  if (queuedSend) cancelledSeq = queuedSend.seq
   queuedSend = null
   queueSeq += 1
   setComposerWritebackHeld(false)
@@ -135,19 +139,33 @@ export async function waitThenSendAfterCreate(
   const seq = replaceQueuedSend(trimmed, captured)
   const fail = deps?.onFail ?? restoreComposerAfterFailedSend
   const readSessionId = deps?.readSessionId ?? (() => useChatStore.getState().sessionId)
+  // 被取消（又开了一次新对话 / 启动补建把这次创建顶掉）不能静默：原文还回去并出提示。
+  // 只有被更新的一次 Enter 顶替时才安静让位，那一次带着当下全文。
+  let consumed = false
+  const dropped = async (): Promise<boolean> => {
+    if (consumed) return true
+    if (queuedSend?.seq === seq) return false
+    if (cancelledSeq !== seq) return true
+    cancelledSeq = null
+    // 新的创建窗还开着：等它发布完再还稿，否则 publish 的 idle 补丁会把提示和还回去的字一起洗掉。
+    if (isNewSessionCreatePending()) await waitForNewSessionCreate().catch(() => undefined)
+    fail(trimmed, SEND_FAILED_RESTORE, captured)
+    return true
+  }
   try {
     const sessionId = await waitForNewSessionCreate()
-    if (!queuedSend || queuedSend.seq !== seq) return
-    const prepared = queuedSend
+    if (await dropped()) return
+    const prepared = queuedSend!
     queuedSend = null
+    consumed = true
     if (readSessionId() !== sessionId) {
       fail(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
       return
     }
     await sendReady({ content: prepared.content, assets: prepared.assets, sessionId })
   } catch (error) {
-    if (!queuedSend || queuedSend.seq !== seq) return
-    const prepared = queuedSend
+    if (await dropped()) return
+    const prepared = queuedSend!
     queuedSend = null
     fail(prepared.content, sendFailureCopy(error), prepared.assets)
   }

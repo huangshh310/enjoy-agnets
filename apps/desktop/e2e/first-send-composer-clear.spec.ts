@@ -265,3 +265,38 @@ test("(d) 新对话首发被拦：出提示、草稿留着、不入库", async (
     await shutdown(app)
   }
 })
+
+test("(e) 排队首发时创建被又一次「新对话」顶掉：出提示、原文留着、不入库；再 Enter 才发出", async () => {
+  test.setTimeout(240_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const boot = freshEnv({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "4000" })
+  const { app, window } = await launch(boot.env)
+  try {
+    await seedUsedSession(window, boot.userData)
+    const newSession = window.locator('[data-testid="sidebar-new-session"]')
+    await newSession.click({ noWaitAfter: true })
+    await expect(window.getByText("正在准备…")).toBeVisible({ timeout: 8_000 })
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.click()
+    const text = "superseded queued send"
+    await window.keyboard.type(text)
+    await composer.press("Enter")
+    // jojo：重启后启动补建 / 连点新对话把这次创建顶掉，旧代码在这里静默丢掉排队首发。
+    await newSession.click({ noWaitAfter: true })
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toBeVisible({ timeout: 20_000 })
+    await expect(composer).toHaveValue(text, { timeout: 10_000 })
+    expect(userMessages(boot.userData).filter((item) => item.endsWith(text))).toEqual([])
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, "e-superseded-queued-keeps-draft.png"), fullPage: true })
+    await waitSendReady(window)
+    await composer.click()
+    await composer.press("End")
+    await composer.press("Enter")
+    await expect.poll(() => userMessages(boot.userData).filter((item) => item.endsWith(text)).length, {
+      timeout: 30_000
+    }).toBe(1)
+    await expect(composer).toHaveValue("", { timeout: 10_000 })
+  } finally {
+    await shutdown(app)
+  }
+})

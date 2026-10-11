@@ -41,6 +41,24 @@ export function replaceMentionToken(text: string, mention: ActiveMention, insert
   return `${before}${glued}${after}`
 }
 
+/**
+ * 选中是异步的（读文件进引用要走 IPC）：等它回来时输入框里可能已经接着打了字。
+ * 只剥掉当初那段 @token，按输入框当下全文替换，禁止拿按键时的旧稿整段覆盖。
+ */
+export function replaceMentionTokenLive(
+  stale: string,
+  live: string,
+  mention: ActiveMention,
+  insert = ""
+): string {
+  const token = stale.slice(mention.start, mention.end)
+  if (!token) return live
+  if (live.slice(mention.start, mention.end) === token) return replaceMentionToken(live, mention, insert)
+  const start = live.lastIndexOf(token)
+  if (start < 0) return live
+  return replaceMentionToken(live, { ...mention, start, end: start + token.length }, insert)
+}
+
 function clampCursor(text: string, cursor: number): number {
   if (!Number.isFinite(cursor) || cursor < 0) return 0
   return Math.min(Math.floor(cursor), text.length)
