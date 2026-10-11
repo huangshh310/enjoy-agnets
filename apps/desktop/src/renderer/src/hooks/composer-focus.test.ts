@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   focusComposerAfterNewSession,
+  focusComposerEndAfterPaint,
   isChatThreadPath,
   pathFromLocation,
   queueComposerFocus,
@@ -33,6 +34,19 @@ test("新对话回焦同步调用，已在输入框则不抢", () => {
   })
   focusComposerAfterNewSession()
   queueComposerFocus()
+  assert.deepEqual(calls, ["focus"])
+  unregister()
+})
+
+test("放回输入框后等一帧再对焦末尾", async () => {
+  const calls: string[] = []
+  const unregister = registerComposerFocus(() => {
+    calls.push("focus")
+  })
+  focusComposerEndAfterPaint()
+  if (typeof requestAnimationFrame === "function") {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  }
   assert.deepEqual(calls, ["focus"])
   unregister()
 })

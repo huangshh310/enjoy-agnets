@@ -20,8 +20,10 @@ type AttentionStore = {
   items: AttentionItem[]
   parks: Record<string, ParkedRun>
   runSessions: Record<string, string>
-  rememberRun: (runId: string, sessionId: string) => void
+  runKinds: Record<string, string>
+  rememberRun: (runId: string, sessionId: string, kind?: string) => void
   sessionOfRun: (runId: string | undefined) => string | undefined
+  kindOfRun: (runId: string | undefined) => string | undefined
   ingest: (
     event: StreamEvent,
     sessionId: string,
@@ -46,15 +48,26 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
   items: [],
   parks: {},
   runSessions: {},
-  rememberRun: (runId, sessionId) =>
+  runKinds: {},
+  rememberRun: (runId, sessionId, kind) =>
     set((state) => {
       const keys = Object.keys(state.runSessions)
-      const next = keys.length > 500
+      const evict = keys.length > 500
+      const nextSessions = evict
         ? Object.fromEntries(Object.entries(state.runSessions).slice(100))
         : state.runSessions
-      return { runSessions: { ...next, [runId]: sessionId } }
+      const nextKinds = evict
+        ? Object.fromEntries(
+            Object.entries(state.runKinds).filter(([id]) => nextSessions[id] || id === runId)
+          )
+        : state.runKinds
+      return {
+        runSessions: { ...nextSessions, [runId]: sessionId },
+        runKinds: kind ? { ...nextKinds, [runId]: kind } : nextKinds
+      }
     }),
   sessionOfRun: (runId) => (runId ? get().runSessions[runId] : undefined),
+  kindOfRun: (runId) => (runId ? get().runKinds[runId] : undefined),
   ingest: (event, sessionId, sessionTitle, workspaceId, opts) =>
     set((state) => ({
       items: ingestAttentionEvent(state.items, {
@@ -87,7 +100,9 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
   },
   applyParkEvent: (sessionId, event) => {
     set((state) => {
-      const parks = nextParks(state.parks, sessionId, event)
+      const runId = "runId" in event ? event.runId : undefined
+      const rememberedKind = runId ? state.runKinds[runId] : undefined
+      const parks = nextParks(state.parks, sessionId, event, rememberedKind)
       return parks ? { parks } : state
     })
   },

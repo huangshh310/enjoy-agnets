@@ -28,6 +28,11 @@
     "./turn-outcome": "./src/turn-outcome.ts",
     "./mcp-curated": "./src/mcp-curated.ts",
     "./approvals-pending": "./src/approvals-pending.ts",
+    "./restore-codes": "./src/restore-codes.ts",
+    "./assistant-payload": "./src/assistant-payload.ts",
+    "./ui-message": "./src/ui-message.ts",
+    "./fold-tool-event": "./src/fold-tool-event.ts",
+    "./approval-decide": "./src/approval-decide.ts",
     "./sessions-needs-review": "./src/sessions-needs-review.ts",
     "./estimated-cost": "./src/estimated-cost.ts",
     "./session-config": "./src/session-config.ts",
@@ -37,7 +42,8 @@
     "./session-overlay": "./src/session-overlay.ts",
     "./workspace-io": "./src/workspace-io.ts",
     "./checkpoint-pick": "./src/checkpoint-pick.ts",
-    "./agent-tools": "./src/agent-tools.ts"
+    "./agent-tools": "./src/agent-tools.ts",
+    "./agent-run-origin": "./src/agent-run-origin.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

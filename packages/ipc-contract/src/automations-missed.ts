@@ -29,7 +29,10 @@ export const AutomationRunSource = z
   .object({
     automationId: z.string().min(1),
     automationName: z.string().min(1),
-    scheduledAt: z.number().int(),
+    /** 准点 / 补跑才有。立即运行禁止用 Date.now() 冒充。 */
+    scheduledAt: z.number().int().optional(),
+    /** 实际开跑时刻。立即运行只写这个。 */
+    startedAt: z.number().int().optional(),
     isCatchUp: z.boolean()
   })
   .strict()

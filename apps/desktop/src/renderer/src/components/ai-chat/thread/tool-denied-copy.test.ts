@@ -60,6 +60,17 @@ test("fail closed / 参数不一致也走未执行，不计入已运行", () => 
   assert.equal(executed.length, 0)
 })
 
+test("回挂 cancelled 不是已拒绝", () => {
+  const tool = {
+    id: "t1",
+    name: "write_file",
+    state: "output-error" as const,
+    result: { decision: "cancelled", code: "restart_abandoned" }
+  }
+  assert.equal(isDeniedTool(tool), false)
+  assert.equal(mapToolStatus(tool.state, tool), "restart")
+})
+
 test("允许一次后 stale_observation 不是已拒绝，中性未执行", () => {
   const stale = {
     id: "tool_stale",

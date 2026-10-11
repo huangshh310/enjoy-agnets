@@ -95,9 +95,12 @@ export function overlayReportedUsage(
 export function estimateTurnPerformance(
   latestMetric: TelemetryMetric | null,
   messages: ThreadMessage[],
-  isRunning: boolean
+  isRunning: boolean,
+  currentRunId?: string | null
 ): TurnPerformanceStats {
-  if (latestMetric) return fromMetric(latestMetric, isRunning)
+  if (latestMetric && currentRunId && latestMetric.runId === currentRunId) {
+    return fromMetric(latestMetric, isRunning)
+  }
   const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant")
   const outputTokens = estimateCharTokens(lastAssistant?.content.length ?? 0)
   const durationMs = lastAssistant?.thoughtSeconds ? lastAssistant.thoughtSeconds * 1000 : 0

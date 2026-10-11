@@ -18,6 +18,7 @@ test("running checkpoint 带上 denyAnyDesktop，恢复后仍丢掉 *", () => {
   const restored = trustedAutomationFlags(extras)
   assert.equal(restored.denyAnyDesktop, true)
   assert.deepEqual(restored.automationSource, source)
+  assert.equal(restored.origin, "catch_up")
   const tools = stripAnyDesktopSessionAllow(new Set([DESKTOP_ACT_ANY_SESSION_KEY, "desktop_act:notes"]))
   assert.equal(tools.has(DESKTOP_ACT_ANY_SESSION_KEY), false)
   assert.equal(tools.has("desktop_act:notes"), true)
@@ -26,4 +27,11 @@ test("running checkpoint 带上 denyAnyDesktop，恢复后仍丢掉 *", () => {
 test("手动续跑 extras 同样保留补跑闸", () => {
   const flags = trustedAutomationFlags({ denyAnyDesktop: true, automationSource: source }, undefined)
   assert.equal(flags.denyAnyDesktop, true)
+})
+
+test("running checkpoint 写下 origin，恢复后心跳仍不猜成 user", () => {
+  const flags = runningCheckpointFlags({ origin: "heartbeat" })
+  const extras = parseAgentCheckpointExtras(JSON.stringify(flags))
+  const restored = trustedAutomationFlags(extras)
+  assert.equal(restored.origin, "heartbeat")
 })

@@ -13,7 +13,50 @@ import {
 test("旁路 Extract 不得新开助手轮", () => {
   assert.equal(canOpenAssistantTurn("run_extract", null), false)
   assert.equal(shouldFinalizeComposerRun("run_extract", null), false)
+  assert.equal(shouldFinalizeComposerRun("run_extract", null, { type: "run.end" }), false)
   assert.equal(isForeignRunId("run_extract", "run_agent"), true)
+})
+
+test("空闲时只收回挂家族 run.error", () => {
+  assert.equal(
+    shouldFinalizeComposerRun("run_wait", null, {
+      type: "run.error",
+      code: "restore_no_matching_approval"
+    }),
+    true
+  )
+  assert.equal(
+    shouldFinalizeComposerRun("run_wait", null, {
+      type: "run.error",
+      message: "restore_restart_cancelled"
+    }),
+    true
+  )
+  assert.equal(
+    shouldFinalizeComposerRun("run_wait", null, {
+      type: "run.error",
+      code: "restore_interrupted_running"
+    }),
+    true
+  )
+})
+
+test("空闲时标题补全 run.error 不收轮", () => {
+  assert.equal(
+    shouldFinalizeComposerRun("run_title", null, {
+      type: "run.error",
+      message: "Request timed out"
+    }),
+    false
+  )
+  assert.equal(
+    shouldFinalizeComposerRun("run_title", null, {
+      type: "run.error",
+      message: "Request timed out",
+      kind: "completion"
+    }),
+    false
+  )
 })
 
 test("当前 composer run 可以挂流式助手并收尾", () => {

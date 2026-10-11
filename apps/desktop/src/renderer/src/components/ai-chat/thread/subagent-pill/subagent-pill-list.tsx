@@ -52,5 +52,6 @@ function statusLabel(item: DelegatePillItem, t: TranslateFn): string {
   if (item.status === "error") return t("chat.subagentFailed")
   if (item.status === "pending") return t("chat.subagentPillPending")
   if (item.status === "stopped") return t("chat.toolStopped")
+  if (item.status === "restart") return t("chat.restartAbandoned")
   return t("chat.subagentPillDone")
 }

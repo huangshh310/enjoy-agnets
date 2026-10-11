@@ -46,6 +46,8 @@ export type ParkedRun = {
   runStartedAt: number | null
   pendingApproval: AttentionApproval | null
   error: string | null
+  /** 回挂对不上等中性条；切回会话时要还，不能只停 error。 */
+  notice: string | null
   thinkingLabel: string
   pendingStreamEvents: StreamEvent[]
 }

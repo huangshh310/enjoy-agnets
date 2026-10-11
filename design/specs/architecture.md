@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（合入 main #125–#127；014/015 列守卫仍幂等；UNIQUE 建失败不卡启动）
+> 进程边界与安全基线。最后更新：2026-10-10（macOS 关窗不 flush；will-quit fail-closed 走 settle restart）
 
 ## 当前真相
 
@@ -65,7 +65,8 @@ Main Process（可信）
 
 - `check` job 是 `ubuntu-latest` / `macos-latest` / `windows-latest` 三端矩阵，`fail-fast: false`，步骤 `lint → typecheck → test → build`。
 - `build` 是 `electron-vite build`（不含打包签名）；必须有，因为 workspace 包别名与无后缀导入的 `ERR_MODULE_NOT_FOUND` 只在打包期暴露。
-- `contracts` job 只跑 `e2e/contracts.spec.ts`（纯 Node）。`electron-window.spec.ts` / `agent-stub.spec.ts` 要显示环境与 Electron 系统库，**CI 不假装跑通**，留本机。
+- `contracts` job 只跑 `e2e/contracts.spec.ts`（纯 Node）。
+- `e2e-window` job 在 `ubuntu-latest` + xvfb 跑完整 `agent-stub.spec.ts`（既有 stub 冒烟 + 本会话允许跨轮）。`electron-window.spec.ts` 与其余窗口 spec 仍留本机。不得用 `-g` / `test.only` 把该 job 收成单用例。
 
 ### 数据
 
@@ -132,7 +133,7 @@ Main Process（可信）
 - CLI 用量探测会读本机已登录会话（Cursor `state.vscdb`、Grok `auth.json` 的 `key`）。这些密钥只在 main 内存里用一次打官方 HTTPS，禁止写进 `InspectAgentToolResult` 或 vault。Dashboard / billing 失败就空条 + `—`，不要回落 CLI `about`/`status` 里的猜数字段。
 - Agent `bash` 的「沙箱」不是容器。字符串过滤 + cwd jail + macOS Seatbelt。设置文案必须写明，禁止假装 Docker / Vercel Sandbox。
 - `window.open` 只对 `http:` / `https:` 走 `shell.openExternal`，一律 `{ action: "deny" }`。
-- `flushActiveRuns` 与泵的 `parkForApproval` 都顶层静态 import `persistWaitingRun`。
+- `flushActiveRuns` 与泵的 `parkForApproval` 都顶层静态 import `persistWaitingRun`。will-quit fail-closed 走 `settlePendingApprovalsForRun(..., "restart")`，不得直接 `setApprovalDecision`。macOS `window-all-closed` 不调用 flush。
 - SQLite：`PRAGMA busy_timeout = 5000` + `core-indexes` 迁移（sessions/messages/message_parts/runs）。
 - **隐患**：旧库把 v14 记成 `cost-missing` 时，裸 `ALTER TABLE … ADD COLUMN` 会炸。正确做法：`addColumnIfMissing` / `ensureApprovalSdkColumns`；`schema_migrations` 已有 version=14（无论 name）时走 `repairClaimedV14` 补列，不要再插一条 014。`cost_missing` 走 015，列已在就跳过。`repairClaimedV14` 每次启动都会尝试建 UNIQUE；库里若已有重复三元组，`CREATE UNIQUE INDEX` 会抛并把启动卡死。正确做法：`ensureApprovalsSdkIdentityIndex` 包 try，打日志后继续启动，不要让重复行挡住 boot。
 - **隐患**：`turbo` 的 `typecheck.dependsOn: ["^typecheck"]` 会让 desktop 等 ipc-contract。上游一红，下游 `formatToolName` 未定义这种 renderer 错根本不跑；CI 的 `pnpm typecheck` 接着失败，`pnpm test` 也被跳过。渲染层源文件在 `tsconfig.web.json` 里（只排除 `*.test.ts`），tsc 能抓，但要等它跑到。正确做法：typecheck / test 不要 `^typecheck`；renderer 开 `no-undef`，让 lint（typecheck 之前）先拦未定义标识符。

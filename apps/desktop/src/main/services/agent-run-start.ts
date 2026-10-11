@@ -4,7 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import type { GenerationRequest } from "@enjoy-agents/agent-core"
-import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { inferAgentRunOrigin, isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
@@ -13,7 +13,12 @@ import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
-import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import {
+  resolveBoundRunModelId,
+  resolveRunSecret,
+  resolveRuntimeId
+} from "./agent-run-helpers"
+import { foldMissingRunSecret } from "./missing-run-secret"
 import { peekVerifiedLocalModel } from "./chat-readiness"
 import { hasSecret } from "./secrets"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
@@ -53,9 +58,10 @@ export async function runAgent(
   })
 }
 
-/** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。 */
+/** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。origin 强制 heartbeat。 */
 export async function runHeartbeatAgent(window: BrowserWindow, rawInput: unknown) {
-  const input = RunAgentInput.parse(rawInput)
+  const parsed = RunAgentInput.parse(rawInput)
+  const input = RunAgentInput.parse({ ...parsed, origin: "heartbeat" })
   return beginAgentRun(window, input, { persistUser: true, promptEcho: true })
 }
 
@@ -64,7 +70,7 @@ export async function resumeAgentRun(
   runId: string,
   request: GenerationRequest,
   resumeMessages?: unknown,
-  extras?: { denyAnyDesktop?: boolean; automationSource?: unknown }
+  extras?: { denyAnyDesktop?: boolean; automationSource?: unknown; origin?: unknown }
 ) {
   const messages = request.messages?.length
     ? request.messages
@@ -84,7 +90,8 @@ export async function resumeAgentRun(
       messages,
       attachments: request.attachments,
       denyAnyDesktop: flags.denyAnyDesktop,
-      automationSource: source
+      automationSource: source,
+      origin: flags.origin
     }),
     { runId, persistUser: false, resumeMessages }
   )
@@ -123,7 +130,14 @@ async function beginAgentRun(
   if (isAcpHostRuntime(runtimeId) && !input.modelId) {
     input.modelId = `cli:${runtimeId}`
   }
-  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  let secret: Awaited<ReturnType<typeof resolveRunSecret>>
+  try {
+    secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  } catch (error) {
+    const folded = foldMissingRunSecret(error)
+    if (folded) return folded
+    throw error
+  }
   if (isE2eCostSeed() && (!input.modelId || input.modelId === "stub-e2e")) {
     input.modelId = COST_LIVE_MODEL_ID
   } else if (isE2eStub() && !input.modelId) {
@@ -133,6 +147,7 @@ async function beginAgentRun(
     const source = e2eAutomationSourceFromPrompt(lastUserContent(input))
     if (source) input.automationSource = source
   }
+  input.origin = inferAgentRunOrigin(input.origin, input.automationSource)
   if (!isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }

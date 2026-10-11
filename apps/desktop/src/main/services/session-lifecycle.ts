@@ -2,6 +2,7 @@
  * 会话归档 / 恢复 / 永久删除。只动 SQLite，不删工作区磁盘文件。
  */
 import { clearConversationDesktopAllow } from "@enjoy-agents/agent-core"
+import { clearConversationSessionAllow } from "./conversation-session-allow"
 import { syncActiveRunsDesktopAllow } from "./conversation-desktop-allow-sync"
 import { getDatabase } from "./database"
 import type { BrowserWindow } from "electron"
@@ -41,10 +42,16 @@ export function unarchiveSession(sessionId: string) {
 }
 
 /** 永久删除会话及其消息，并收掉该会话的 ACP 子进程。 */
-export function deleteSession(sessionId: string) {
+export function deleteSession(sessionId: string, opts?: { onlyIfEmpty?: boolean }) {
   const db = getDatabase()
   const exists = db.prepare("SELECT id FROM sessions WHERE id = ?").get(sessionId)
   if (!exists) throw new Error("Unknown session.")
+  if (opts?.onlyIfEmpty) {
+    const count = db
+      .prepare("SELECT COUNT(*) as n FROM messages WHERE session_id = ?")
+      .get(sessionId) as { n: number }
+    if (count.n > 0) return { id: sessionId, deleted: false }
+  }
   void import("@enjoy-agents/agent-harness").then(({ deleteAcpRemoteIfLive, disposeAcpSession }) => {
     void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))
   })
@@ -61,11 +68,12 @@ export function deleteSession(sessionId: string) {
     throw error
   }
   forgetConversationDesktopAllow(sessionId)
-  return { id: sessionId }
+  return { id: sessionId, deleted: true }
 }
 
 function forgetConversationDesktopAllow(sessionId: string): void {
   clearConversationDesktopAllow(sessionId)
+  clearConversationSessionAllow(sessionId)
   syncActiveRunsDesktopAllow(sessionId)
 }
 

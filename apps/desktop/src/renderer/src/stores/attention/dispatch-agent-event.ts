@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../chat-store"
+import { generationKindOf, isNonAgentRunKind } from "../stream-run-scope"
 import { belongsToForeground } from "./foreground-event"
 import { eventRunId } from "./ingest-attention"
 import { useAttentionStore } from "./attention-store"
@@ -22,16 +23,19 @@ export { belongsToForeground } from "./foreground-event"
 export function dispatchAgentEvent(event: StreamEvent): void {
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
-  if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId)
+  const eventKind = generationKindOf(event)
+  if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId, eventKind)
+  const rememberedKind = runId ? useAttentionStore.getState().kindOfRun(runId) : undefined
   const storeEarly = useChatStore.getState()
   const foreground = belongsToForeground(
     event,
     storeEarly.sessionId,
     storeEarly.runId,
     storeEarly.running,
-    sessionId
+    sessionId,
+    rememberedKind
   )
-  if (sessionId) {
+  if (sessionId && !isNonAgentRunKind(event, rememberedKind)) {
     const meta = sessionMetaOf(sessionId)
     useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId, {
       omitComplete: omitCompleteFromTurn(

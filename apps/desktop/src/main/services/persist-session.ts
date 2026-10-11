@@ -98,6 +98,13 @@ function messageExists(id: string): boolean {
   return Boolean(getDatabase().prepare("SELECT 1 FROM messages WHERE id = ?").get(id))
 }
 
+export function readMessageContent(messageId: string): string | undefined {
+  const row = getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(messageId) as
+    | { content: string }
+    | undefined
+  return row?.content
+}
+
 export function maybeRenameSession(sessionId: string, userText: string) {
   const current = getDatabase()
     .prepare("SELECT title FROM sessions WHERE id = ?")

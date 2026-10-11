@@ -2,7 +2,7 @@
  * L0：唯一决策面。钉在 Conversation 与 Composer 之间，贴 Composer 上沿。
  * 禁止写进 ConversationContent，禁止第二套 Allow/Deny。
  */
-import { decidePendingApproval } from "@renderer/hooks/use-agent-session"
+import { decidePendingApproval } from "@renderer/hooks/decide-pending-approval"
 import { ApprovalCard } from "@renderer/components/ai-chat/thread/approval/approval-card"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"

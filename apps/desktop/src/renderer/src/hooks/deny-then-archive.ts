@@ -7,7 +7,7 @@ import { getIde } from "../lib/ide"
 import { showAppToast } from "../lib/app-toast"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
-import { decidePendingApprovalOrThrow } from "./use-agent-session"
+import { decidePendingApprovalOrThrow } from "./decide-pending-approval"
 import { archiveCurrentSession } from "./workspace-lifecycle"
 import {
   archiveFailedMessage,

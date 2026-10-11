@@ -18,6 +18,7 @@ export type WaitingCheckpoint = {
   runtimeId?: string
   denyAnyDesktop?: boolean
   automationSource?: unknown
+  origin?: unknown
 }
 
 export function persistWaitingRun(run: ActiveRun, runId: string): void {
@@ -29,7 +30,8 @@ export function persistWaitingRun(run: ActiveRun, runId: string): void {
     pendingApprovals: run.pendingApprovals,
     runtimeId: run.input.runtimeId,
     denyAnyDesktop: run.input.denyAnyDesktop,
-    automationSource: run.input.automationSource
+    automationSource: run.input.automationSource,
+    origin: run.input.origin
   }
   updateRun(getDatabase(), runId, {
     status: "waiting_review",
@@ -39,7 +41,8 @@ export function persistWaitingRun(run: ActiveRun, runId: string): void {
       pendingApprovals: body.pendingApprovals,
       runtimeId: body.runtimeId,
       denyAnyDesktop: body.denyAnyDesktop,
-      automationSource: body.automationSource
+      automationSource: body.automationSource,
+      origin: body.origin
     })
   })
   armCatchUpPark(run, runId)
@@ -52,6 +55,7 @@ export function parseWaitingExtras(raw: string | null): {
   resumeAt?: string
   denyAnyDesktop?: boolean
   automationSource?: unknown
+  origin?: unknown
 } {
   const extras = parseAgentCheckpointExtras(raw)
   return {
@@ -60,6 +64,7 @@ export function parseWaitingExtras(raw: string | null): {
     runtimeId: extras.runtimeId,
     resumeAt: extras.resumeAt,
     denyAnyDesktop: extras.denyAnyDesktop,
-    automationSource: extras.automationSource
+    automationSource: extras.automationSource,
+    origin: extras.origin
   }
 }

@@ -65,14 +65,62 @@ test("带 resumeCode 的 tool.result 也折成 output-denied", () => {
   assert.equal(tools[0]?.state, "output-denied")
 })
 
-test("收工封口：input-available 也封成 output-error，approval-requested 不动", () => {
+test("已结束 run 回灌：input-available 与 approval-requested 都中性封口", () => {
   const sealed = sealAbandonedTools([
     { id: "t1", name: "write_file", state: "input-available" },
     { id: "t2", name: "write_file", state: "approval-requested" }
   ])
   assert.equal(sealed?.[0]?.state, "output-error")
   assert.equal(sealed?.[0]?.errorText, "No result received.")
-  assert.equal(sealed?.[1]?.state, "approval-requested")
+  assert.equal(sealed?.[1]?.state, "output-error")
+  assert.deepEqual(sealed?.[1]?.result, { decision: "cancelled" })
+})
+
+test("已允许但没 result：重启封口改成 cancelled，不得留 allow 当失败", () => {
+  const sealed = sealAbandonedTools(
+    [
+      {
+        id: "t1",
+        name: "write_file",
+        state: "input-available",
+        args: { path: "e2e-stub.txt" },
+        result: { decision: "allow" }
+      }
+    ],
+    { code: "restart_abandoned" }
+  )
+  assert.deepEqual(sealed?.[0]?.result, { decision: "cancelled", code: "restart_abandoned" })
+})
+
+test("回挂码可盖掉冷启动红封（无 code 的 output-error）", () => {
+  const sealed = sealAbandonedTools(
+    [
+      {
+        id: "t1",
+        name: "write_file",
+        state: "output-error",
+        errorText: "No result received.",
+        result: { decision: "allow" }
+      }
+    ],
+    { code: "restart_abandoned" }
+  )
+  assert.equal(sealed?.[0]?.errorText, undefined)
+  assert.deepEqual(sealed?.[0]?.result, { decision: "cancelled", code: "restart_abandoned" })
+})
+
+test("重启放弃封口：用 restart_abandoned，不是 user_aborted", () => {
+  const sealed = sealAbandonedTools(
+    [
+      { id: "t1", name: "write_file", state: "input-available", args: { path: "e2e-stub.txt" } },
+      { id: "t2", name: "write_file", state: "approval-requested", args: { path: "later.txt" } }
+    ],
+    { code: "restart_abandoned" }
+  )
+  assert.equal(sealed?.[0]?.state, "output-error")
+  assert.deepEqual(sealed?.[0]?.result, { code: "restart_abandoned", decision: "cancelled" })
+  assert.equal(sealed?.[1]?.state, "output-error")
+  assert.deepEqual(sealed?.[1]?.result, { code: "restart_abandoned", decision: "cancelled" })
 })
 
 test("用户停封口：input-available 标 user_aborted，审批中标 cancelled 已停止", () => {
@@ -148,6 +196,13 @@ test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
   assert.equal(tools[0]?.name, "delegate")
   assert.equal(tools[1]?.name, "mcp_fs__move_file")
   assert.equal(tools[1]?.parentToolCallId, "parent")
+})
+
+test("冷启动封口：output-available 保持完成，不得改成 pending", () => {
+  const sealed = sealAbandonedTools([
+    { id: "t1", name: "write_file", state: "output-available", result: { ok: true } }
+  ])
+  assert.equal(sealed?.[0]?.state, "output-available")
 })
 
 test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {

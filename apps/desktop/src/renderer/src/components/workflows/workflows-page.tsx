@@ -142,6 +142,7 @@ export function WorkflowsPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              data-testid="workflow-create"
               className="flex items-center gap-1 rounded-lg px-2 py-1 text-caption-1-medium text-accent-600 hover:bg-accent-500/10 transition"
               onClick={() => {
                 const id = createProject(t("pages.workflows.canvasUntitled"))

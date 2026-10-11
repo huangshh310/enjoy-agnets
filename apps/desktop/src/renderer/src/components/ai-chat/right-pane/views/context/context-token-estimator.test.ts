@@ -168,12 +168,31 @@ test("estimateTurnPerformance respects TelemetryMetric when available", () => {
     createdAt: Date.now()
   }
 
-  const perf = estimateTurnPerformance(metric, [], true)
+  const perf = estimateTurnPerformance(metric, [], true, "r1")
   assert.equal(perf.durationMs, 1500)
   assert.equal(perf.ttfoMs, 280)
   assert.equal(perf.outputTokens, 120)
   assert.equal(perf.tokensPerSecond, 80.0)
   assert.equal(perf.isLive, true)
+})
+
+test("其它会话的 latest metric 不得污染本轮指标", () => {
+  const metric = {
+    id: "m1",
+    runId: "run_other",
+    kind: "agent",
+    status: "ok",
+    durationMs: 21920,
+    ttfoMs: 21916,
+    outputTokens: 12,
+    createdAt: Date.now()
+  }
+  const idle = estimateTurnPerformance(metric, [], false, null)
+  assert.equal(idle.durationMs, 0)
+  assert.equal(idle.ttfoMs, 0)
+  const otherRun = estimateTurnPerformance(metric, [], false, "run_this")
+  assert.equal(otherRun.durationMs, 0)
+  assert.equal(otherRun.ttfoMs, 0)
 })
 
 test("ACP 不计 Enjoy 规则，但计入宿主技能索引", () => {

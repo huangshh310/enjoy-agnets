@@ -3,10 +3,18 @@
  * 验证路径冗余去除、批量文件编辑聚合与单项结构化解析。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { TranslateFn } from "@renderer/i18n"
 import { parseAgentStepNodes } from "./agent-step-tree-parser.ts"
+
+const parserSrc = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), "agent-step-tree-parser.ts"),
+  "utf8"
+)
 
 const mockT: TranslateFn = (key: string, params?: Record<string, string | number>) => {
   if (key === "chat.batchFilesModified") return `编辑 ${String(params?.count ?? 0)} 个文件`
@@ -180,6 +188,24 @@ test("嵌套 args 里的真实路径要显示文件名", () => {
   )
   assert.equal(nodes[0]?.fileName, "layout.tsx")
   assert.match(nodes[0]?.title ?? "", /layout\.tsx/)
+})
+
+test("restart_abandoned 显示重启后已中断，标题走人话不是 write file", () => {
+  const tool = {
+    id: "t1",
+    name: "write_file",
+    state: "output-error" as const,
+    args: { path: "e2e-stub.txt" },
+    result: { code: "restart_abandoned", decision: "cancelled" }
+  }
+  assert.doesNotMatch(parserSrc, /title:\s*formatToolName\(/)
+  assert.doesNotThrow(() => parseAgentStepNodes("", [tool], mockT))
+  const nodes = parseAgentStepNodes("", [tool], mockT)
+  assert.equal(nodes[0]?.status, "restart")
+  assert.equal(nodes[0]?.title, "写入 e2e-stub.txt")
+  assert.doesNotMatch(nodes[0]?.title ?? "", /write file/i)
+  assert.equal(nodes[0]?.errorText, "chat.restartAbandoned")
+  assert.notEqual(nodes[0]?.errorText, "studio.automations.catchUpTimeout")
 })
 
 test("ACP 弱名 command 带 path 当成读取，不要显示 $ command", () => {

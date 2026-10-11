@@ -1,6 +1,7 @@
 /**
  * 按 runtimeId / 偏好打开 Enjoy Local、本机 ACP 或 SDK 沙箱流。
  */
+import { resolveToolApproval } from "@enjoy-agents/agent-core"
 import {
   acpSessionAlive,
   cancelAcpTurn,
@@ -31,7 +32,7 @@ export async function openCodingStream(
   input: OpenCodingStreamInput
 ): Promise<OpenedCodingStream> {
   const policy = approvalPolicyFromPrefs(input)
-  if (isE2eStub(app.isPackaged)) return rememberOpened(input, openedE2eStub(input))
+  if (isE2eStub(app.isPackaged)) return rememberOpened(input, openedE2eStub(input, policy))
   if (isAcpHostRuntime(input.runtimeId)) {
     return rememberOpened(input, await openedAcpStream(input))
   }
@@ -50,9 +51,16 @@ async function rememberOpened(
   return opened
 }
 
-function openedE2eStub(input: OpenCodingStreamInput): OpenedCodingStream {
+function openedE2eStub(
+  input: OpenCodingStreamInput,
+  policy: ReturnType<typeof approvalPolicyFromPrefs>
+): OpenedCodingStream {
   return {
-    stream: createE2eStubStream(input.messages, input.abortSignal, { packaged: app.isPackaged }),
+    stream: createE2eStubStream(input.messages, input.abortSignal, {
+      packaged: app.isPackaged,
+      isToolApproved: (toolName, toolInput) =>
+        resolveToolApproval(toolName, input.mode, policy, toolInput) === "approved"
+    }),
     result: {},
     dispose: async () => undefined,
     hostInject: assembleHostInject({

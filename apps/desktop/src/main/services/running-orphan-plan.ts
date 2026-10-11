@@ -1,6 +1,8 @@
 /**
  * running 孤儿能否在工具边界续跑。不碰 Electron / DB，方便 node:test。
  */
+import { coerceAgentRunOrigin, type AgentRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
+
 export const TOOL_BOUNDARY = "tool-boundary"
 
 export type AgentCheckpointExtras = {
@@ -10,15 +12,18 @@ export type AgentCheckpointExtras = {
   resumeAt?: string
   denyAnyDesktop?: boolean
   automationSource?: unknown
+  origin?: AgentRunOrigin
 }
 
 export function runningCheckpointFlags(input: {
   denyAnyDesktop?: boolean
   automationSource?: unknown
-}): { denyAnyDesktop?: boolean; automationSource?: unknown } {
+  origin?: unknown
+}): { denyAnyDesktop?: boolean; automationSource?: unknown; origin?: AgentRunOrigin } {
   return {
     denyAnyDesktop: input.denyAnyDesktop === true ? true : undefined,
-    automationSource: input.automationSource
+    automationSource: input.automationSource,
+    origin: coerceAgentRunOrigin(input.origin)
   }
 }
 
@@ -32,7 +37,8 @@ export function parseAgentCheckpointExtras(raw: string | null | undefined): Agen
       runtimeId: typeof parsed.runtimeId === "string" ? parsed.runtimeId : undefined,
       resumeAt: typeof parsed.resumeAt === "string" ? parsed.resumeAt : undefined,
       denyAnyDesktop: parsed.denyAnyDesktop === true,
-      automationSource: parsed.automationSource
+      automationSource: parsed.automationSource,
+      origin: coerceAgentRunOrigin(parsed.origin)
     }
   } catch {
     return {}

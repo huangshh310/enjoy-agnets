@@ -62,3 +62,15 @@ test("running extras 带 denyAnyDesktop", () => {
   )
   assert.equal(extras.denyAnyDesktop, true)
 })
+
+test("running extras 带 origin，hb_ 前缀不算心跳", () => {
+  const extras = parseAgentCheckpointExtras(
+    JSON.stringify({ ...JSON.parse(base.checkpoint), origin: "heartbeat" })
+  )
+  assert.equal(extras.origin, "heartbeat")
+  assert.equal(
+    parseAgentCheckpointExtras(JSON.stringify({ ...JSON.parse(base.checkpoint), origin: "hb_tick_1" }))
+      .origin,
+    undefined
+  )
+})

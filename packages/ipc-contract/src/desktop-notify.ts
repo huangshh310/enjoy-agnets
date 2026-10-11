@@ -19,11 +19,15 @@ export const USER_ABORTED_CODE = "user_aborted"
 /** 泵真实出错结清未决审批：不是用户 Stop，工具行走出错，禁止标已停止。 */
 export const RUN_FAILED_CODE = "run_failed"
 
-/** approval.resolved.code：Stop / 泵出错 / 补跑超时。 */
+/** 重启回挂对不上：未决 cancelled，工具行走中性「重启后已中断」，禁止冒充 user_aborted。 */
+export const RESTART_ABANDONED_CODE = "restart_abandoned"
+
+/** approval.resolved.code：Stop / 泵出错 / 补跑超时 / 重启放弃。 */
 export const APPROVAL_RESOLVED_CODES = [
   USER_ABORTED_CODE,
   RUN_FAILED_CODE,
-  CATCH_UP_APPROVAL_TIMEOUT
+  CATCH_UP_APPROVAL_TIMEOUT,
+  RESTART_ABANDONED_CODE
 ] as const
 export type ApprovalResolvedCode = (typeof APPROVAL_RESOLVED_CODES)[number]
 
@@ -37,13 +41,14 @@ export function toolHasResultCode(
   return Boolean(result && typeof result === "object" && (result as { code?: string }).code === code)
 }
 
-/** 用户停 → 已停止；泵出错结清 → 出错。禁止把 run_failed 当成已拒绝。 */
+/** 用户停 → 已停止；泵出错结清 → 出错；补跑超时 / 重启放弃 → 中性。禁止把 run_failed 当成已拒绝。 */
 export function toolAbortKind(
   tool?: { result?: unknown; errorText?: string }
 ): "stopped" | "error" | "neutral" | undefined {
   if (toolHasResultCode(tool, USER_ABORTED_CODE)) return "stopped"
   if (toolHasResultCode(tool, RUN_FAILED_CODE)) return "error"
   if (toolHasResultCode(tool, CATCH_UP_APPROVAL_TIMEOUT)) return "neutral"
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return "neutral"
   return undefined
 }
 

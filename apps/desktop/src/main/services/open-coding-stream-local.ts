@@ -27,6 +27,7 @@ import { createMcpAgentTools } from "./mcp-agent-tools"
 import { createBuiltinAgentTools } from "./builtin-tools/builtin-agent-tools"
 import type { OpenedCodingStream, OpenCodingStreamInput } from "./open-coding-stream-input"
 import { listDiscoveredRules } from "./rules-service"
+import { MISSING_RUN_SECRET } from "./agent-run-helpers"
 import type { StoredSecret } from "./secrets"
 import { getSessionCompaction } from "./session-compaction-service"
 import { snapshotFromReports } from "./host-extensions/collect-host-inject.ts"
@@ -240,7 +241,7 @@ async function readPlanFile(host: AgentWorkspaceHost): Promise<string | null> {
 }
 
 function requireLocalSecret(secret: StoredSecret | undefined): StoredSecret {
-  if (!secret) throw new Error("Add an API key in Settings before running an agent.")
+  if (!secret) throw new Error(MISSING_RUN_SECRET)
   return secret
 }
 
