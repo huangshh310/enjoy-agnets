@@ -269,3 +269,22 @@ test("leo soft：A 自己的「没发出去」让看门狗收手（真实 armCom
   // 最后一个用例：A 仍挂着等 running，不再放开。
   void sendingA
 })
+
+test("jojo 红卡：新对话「正在准备…」里再按 Enter（排队首发）就收掉上一发的红卡，不与思考中同屏", async () => {
+  const { SEND_FAILED_RESTORE_MERGED } = await import("../queue-composer-send-copy.ts")
+  useChatStore.setState({
+    sessionId: null,
+    running: false,
+    preparingHint: true,
+    composer: "后打的B\n先发的A",
+    error: SEND_FAILED_RESTORE_MERGED,
+    messages: []
+  } as never)
+  beginNewSessionCreate()
+  const sending = sendComposerMessage(undefined, "后打的B\n先发的A", attempt("后打的B\n先发的A") as never)
+  assert.equal(hasQueuedComposerSend(), true)
+  assert.equal(useChatStore.getState().error, null, "红卡已收")
+  cancelQueuedComposerSend()
+  resetNewSessionCreateForTest()
+  await sending
+})

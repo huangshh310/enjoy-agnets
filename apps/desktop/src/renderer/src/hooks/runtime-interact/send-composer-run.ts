@@ -1,6 +1,9 @@
 /**
  * 空闲发送：占 running 槽、乐观气泡、再开 agent.run / 媒体生成。
  */
+import { shouldDismissOnNextSend } from "./send-restore-dismiss"
+import { emptySessionToDiscardAfterWatchdog } from "./watchdog-empty-session"
+import { discardCreatedSession } from "../discard-created-session"
 import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
@@ -28,7 +31,7 @@ import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
 import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
-import { claimComposerRunning, releaseComposerRunningIfOwner } from "./composer-running-owner"
+import { claimComposerRunning, releaseComposerRunningIfOwner, runningHeldByOther } from "./composer-running-owner"
 import { armSendWatchdog, markSendLaunched, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { isNewSessionCreatePending } from "../new-session-create"
 import {
@@ -143,6 +146,8 @@ export async function sendComposerMessage(
     }
     const assets = takeComposerAssetDetails()
     traceSend("send:queued", { text: text.length })
+    // jojo：排队首发（「正在准备…」）也算这一发开始了：上一发的红卡收掉，不与思考中同屏。
+    if (shouldDismissOnNextSend(useChatStore.getState().error)) useChatStore.getState().setError(null)
     const queued = waitThenSendAfterCreate(text, (next) => sendComposerMessage(next, undefined, attempt), assets)
     // jojo P1：A 入队即清输入框（原文在队列里，失败路径会还回来），后面打的 B 不会和 A 并成一句。
     clearQueuedComposerText()
@@ -154,6 +159,10 @@ export async function sendComposerMessage(
   // running 归属：迟到作废时只放掉自己占的。
   const runningToken: object = attempt ?? {}
   claimComposerRunning(runningToken)
+  // jojo：上一发的「没发出去」红卡在这一发开始时收掉，不与「思考中」同屏。
+  if (!sendAttemptCancelled(attempt) && shouldDismissOnNextSend(useChatStore.getState().error)) {
+    useChatStore.getState().setError(null)
+  }
   if (!guardComposerSend(store)) {
     const blocked = useChatStore.getState().error
     traceSend("send:gate", { blocked })
@@ -240,7 +249,8 @@ const QUEUED_SEND_IDLE_WAIT_MS = 5_000
 
 function armComposerWatchdog(typed: string): SendAttempt {
   const before = useChatStore.getState()
-  return armSendWatchdog(typed, {
+  let self: SendAttempt | undefined
+  self = armSendWatchdog(typed, {
     // 只认这次 Enter 之后新冒出来的提示，Enter 前就挂着的旧条不算。
     noticeShown: () => {
       const state = useChatStore.getState()
@@ -253,10 +263,16 @@ function armComposerWatchdog(typed: string): SendAttempt {
     fail: (text) => {
       traceSend("send:watchdog")
       const state = useChatStore.getState()
+      // jojo P3：先在还稿前判（还稿会放掉 running）：running 被别的轮占着就不删。
+      const otherHolds = self ? runningHeldByOther(self) : true
       state.setPreparingHint(false)
       restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE)
+      // jojo P3：这次 Enter 新建的空会话不留在侧栏（有在跑的 run / 待回助手 / 任何内容都不删）。
+      const empty = emptySessionToDiscardAfterWatchdog(before.sessionId, useChatStore.getState(), otherHolds)
+      if (empty) void discardCreatedSession(empty, () => true, { keepComposer: true, onlyIfEmpty: true })
     }
   })
+  return self
 }
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */

@@ -89,15 +89,23 @@ test("强制看门狗：发出前超时 → 红卡「这次没发出去」、原
   try {
     await waitSendReady(window)
     const composer = window.locator('[data-testid="composer-input"]')
+    const rowsBefore = await window.locator('[data-testid="sidebar-session-row"]').count()
     await composer.click()
     const a = "看门狗A"
     await window.keyboard.type(a, { delay: 20 })
     await composer.press("Enter")
     const banner = window.locator('[data-testid="thread-error-banner"]')
     await expect(banner).toContainText("这次没发出去", { timeout: 10_000 })
+    // jojo：正文不复述标题。
+    await expect(banner).not.toContainText("这次没发出去这次没发出去")
+    await expect(banner).toContainText("文字已放回输入框")
     await expect(composer).toHaveValue(a)
     await window.waitForTimeout(2_000)
     expect(userMessages(boot.userData).filter((m) => m.includes(a))).toEqual([])
+    // jojo P3：失败后侧栏不多出空会话。
+    await expect
+      .poll(() => window.locator('[data-testid="sidebar-session-row"]').count(), { timeout: 10_000 })
+      .toBeLessThanOrEqual(rowsBefore)
     mkdirSync(shots, { recursive: true })
     await window.screenshot({ path: join(shots, "watchdog-red-card.png") })
   } finally {
@@ -105,7 +113,7 @@ test("强制看门狗：发出前超时 → 红卡「这次没发出去」、原
   }
 })
 
-test("强制看门狗：等待中改打了 B → 两条拼回（B 在前）并提示会合成一条", async () => {
+test("强制看门狗：等待中改打了 B → 两条拼回（B 在前）并提示接在后面；再发时红卡收掉", async () => {
   test.setTimeout(180_000)
   if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js").toBe(true)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
@@ -122,10 +130,14 @@ test("强制看门狗：等待中改打了 B → 两条拼回（B 在前）并�
     await composer.press("ControlOrMeta+a")
     await window.keyboard.type(b, { delay: 20 })
     const banner = window.locator('[data-testid="thread-error-banner"]')
-    await expect(banner).toContainText("合成一条", { timeout: 10_000 })
+    await expect(banner).toContainText("没发出去的这条已接在你新打的内容后面，改好再发。", { timeout: 10_000 })
     await expect(composer).toHaveValue(`${b}\n${a}`)
     mkdirSync(shots, { recursive: true })
     await window.screenshot({ path: join(shots, "watchdog-merged-hint.png") })
+    // jojo：下一发一开始红卡就收掉，不与「思考中」同屏。
+    await composer.press("Enter")
+    await expect(banner).toBeHidden({ timeout: 1_500 })
+    await window.screenshot({ path: join(shots, "watchdog-next-send-no-card.png") })
   } finally {
     await shutdown(app)
   }
