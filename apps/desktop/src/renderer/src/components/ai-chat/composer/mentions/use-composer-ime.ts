@@ -7,6 +7,7 @@ import {
   lastComposerSubmitted,
   setComposerComposing,
   shouldClearShownOnPreparing,
+  shouldClearShownOnQueuedSend,
   shownAfterCompositionOnPreparing
 } from "@renderer/hooks/composer-ime"
 import { shouldHoldComposerStoreSync } from "@renderer/hooks/composer-dom"
@@ -40,6 +41,11 @@ export function useComposerIme(value: string, onChange: (next: string) => void) 
 
   useEffect(() => {
     if (composingRef.current) return
+    // jojo P1：首发入队清稿（store 变空）时，输入框若还是刚交出去的那句就跟着清；写回锁期间也要清。
+    if (!value && shouldClearShownOnQueuedSend(shownRef.current, lastComposerSubmitted())) {
+      setShown("")
+      return
+    }
     if (shouldHoldComposerStoreSync()) return
     setShown(value)
   }, [value])

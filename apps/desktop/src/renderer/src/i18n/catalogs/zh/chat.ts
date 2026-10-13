@@ -645,6 +645,8 @@ export const zhChat = {
   runFailed: "这一轮没有执行完。",
   catchUpApprovalTimeout: "补跑等待确认超时，未运行",
   sendFailedRestore: "这次没发出去，文字已放回输入框。",
+  sendFailedRestoreTitle: "这次没发出去",
+  previousStillPreparingTitle: "上一条还在准备",
   previousStillPreparing: "上一条还在准备，这条已放回输入框，稍后再发。",
   toolDenied: "已拒绝，本次未执行",
   toolArgsMismatch: "审批参数已变化，本次未执行。",

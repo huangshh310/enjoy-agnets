@@ -652,6 +652,8 @@ export const enChat = {
   runFailed: "This run did not finish.",
   catchUpApprovalTimeout: "Catch-up waited for approval too long and did not run",
   sendFailedRestore: "That message didn't send. It's back in the input.",
+  sendFailedRestoreTitle: "This message wasn't sent",
+  previousStillPreparingTitle: "Still preparing the previous message",
   previousStillPreparing: "The previous message is still being prepared. This one is back in the input; send it again in a moment.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",

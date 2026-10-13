@@ -36,8 +36,10 @@ import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
 import {
+  clearQueuedComposerText,
   clearSentComposerText,
   composerNeedsSessionReady,
+  hasQueuedComposerSend,
   restoreComposerAfterFailedSend,
   restoreComposerDraft,
   PREVIOUS_STILL_PREPARING,
@@ -113,6 +115,16 @@ export async function sendComposerMessage(
     }
     store = useChatStore.getState()
   }
+  // jojo P1：建会话窗里已有一条排队（A 在「正在准备…」）又按 Enter（B）：B 不并进 A、不自动续发，
+  // 留在输入框并提示「上一条还在准备」；不挂看门狗。
+  if (!prepared && composerNeedsSessionReady() && hasQueuedComposerSend()) {
+    traceSend("send:queued-busy")
+    if (typed.trim()) {
+      if (useChatStore.getState().composer !== typed) useChatStore.getState().setComposer(typed)
+      useChatStore.getState().setError(PREVIOUS_STILL_PREPARING)
+    }
+    return
+  }
   // leo soft：running 直接丢弃的那一发不挂看门狗（否则 3s 后误报「发送失败」）。
   const attempt = queuedAttempt ?? (!prepared && typed.trim() ? armComposerWatchdog(typed) : undefined)
   if (!prepared && store.composer !== typed) store.setComposer(typed)
@@ -128,7 +140,10 @@ export async function sendComposerMessage(
     }
     const assets = takeComposerAssetDetails()
     traceSend("send:queued", { text: text.length })
-    await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next, undefined, attempt), assets)
+    const queued = waitThenSendAfterCreate(text, (next) => sendComposerMessage(next, undefined, attempt), assets)
+    // jojo P1：A 入队即清输入框（原文在队列里，失败路径会还回来），后面打的 B 不会和 A 并成一句。
+    clearQueuedComposerText()
+    await queued
     return
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")

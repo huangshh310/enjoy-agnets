@@ -68,6 +68,13 @@ export function shownAfterCompositionOnPreparing(input: {
   return null
 }
 
+/** 首发入队清稿：输入框里正是刚交出去的那句（且不在组字）才清，别人后来打的字不动。 */
+export function shouldClearShownOnQueuedSend(shown: string, submitted: string): boolean {
+  if (composing) return false
+  const s = shown.trim()
+  return Boolean(s) && s === submitted.trim()
+}
+
 export function shouldIgnoreComposerEnter(event: {
   key: string
   keyCode?: number

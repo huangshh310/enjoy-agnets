@@ -76,6 +76,16 @@ export function clearSentComposerText(sent: string): void {
   if (!next && store.sessionId) store.clearSessionDraft(store.sessionId)
 }
 
+/**
+ * jojo P1：建会话窗里首发入队即清输入框（store + DOM）。原文在队列里，失败路径照常还回。
+ * 写回锁保持（入队期间仍禁止 store 半成品写回），只强制把 DOM 清空。
+ */
+export function clearQueuedComposerText(): void {
+  const store = useChatStore.getState()
+  if (store.composer) store.setComposer("")
+  syncComposerDom("", true)
+}
+
 /** 还全文草稿，不改 error：发送闸中性条要留着。 */
 export function restoreComposerDraft(text: string, assets?: QueuedComposerAsset[]): void {
   const store = useChatStore.getState()
