@@ -61,6 +61,7 @@ async function startContinueRun(
       messages: history,
       attachments: [],
       persistUser: false,
+      todoContinue: true,
       commandId: crypto.randomUUID(),
       ...(desktopBias ? { desktopBias } : {})
     }))

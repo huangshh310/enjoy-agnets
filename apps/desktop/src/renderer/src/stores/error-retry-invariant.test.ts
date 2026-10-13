@@ -18,8 +18,11 @@ test("reconcileErrorRetry：error 清空或换文本 → 目标作废；同一�
 test("stream reducer 把 error 置空（run.start 等）时 errorRetry 跟着清，无需组件手动清", () => {
   useChatStore.getState().setError("boom", target)
   assert.equal(useChatStore.getState().errorRetry?.error, "boom")
-  useChatStore.getState().applyStreamEvent({ type: "run.start", runId: "run_inv_1" } as never)
-  if (useChatStore.getState().error === null) assert.equal(useChatStore.getState().errorRetry, null)
+  // run.end 的 reducer 补丁把 error 置空：errorRetry 必须跟着清（不靠组件手动清）。
+  useChatStore.setState({ running: true, runId: "run_inv_1" })
+  useChatStore.getState().applyStreamEvent({ type: "run.end", runId: "run_inv_1" } as never)
+  assert.equal(useChatStore.getState().error, null)
+  assert.equal(useChatStore.getState().errorRetry, null)
   useChatStore.getState().setError("boom", target)
   useChatStore.setState({ error: null })
   assert.equal(useChatStore.getState().errorRetry, null)

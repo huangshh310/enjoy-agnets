@@ -14,7 +14,6 @@ import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 import { agentRunBlockedCode } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { loadSession } from "./session-lifecycle"
 import type { RetryTarget } from "./regenerate-retry-target"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { translateTruncateNotice } from "./truncate-notice"
@@ -223,7 +222,7 @@ async function resyncAfterStartThrow(sessionId: string | null): Promise<void> {
   if (!sessionId || live.sessionId !== sessionId) return
   const error = live.error
   try {
-    await loadSession(sessionId, live.sessionTitle ?? "")
+    await reloadSession(sessionId, live.sessionTitle ?? "")
   } catch {
     return
   }
@@ -266,7 +265,7 @@ async function startTurnWithTruncateRetry(
         live.setRunning(false)
         if (live.sessionId !== sessionId || !sessionId) return
         live.setMessages(opts.before)
-        await loadSession(sessionId, live.sessionTitle ?? "")
+        await reloadSession(sessionId, live.sessionTitle ?? "")
       },
       readMessages: () =>
         useChatStore.getState().messages.map((message) => ({
@@ -326,4 +325,10 @@ async function startTurnIpc(
 async function claimStartedRun(sessionId: string | null, started: Promise<unknown>) {
   const runId = requireAgentRunId(await started)
   if (!claimComposerRun(sessionId, runId)) abortOrphanedRun(runId)
+}
+
+/** 会话生命周期模块很重（拖进整套 UI store）：只在需要回灌时再加载。 */
+async function reloadSession(sessionId: string, title: string): Promise<void> {
+  const { loadSession } = await import("./session-lifecycle")
+  await loadSession(sessionId, title)
 }

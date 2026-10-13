@@ -13,13 +13,15 @@ export function reconcileErrorRetry<S extends ErrorRetryState>(next: S): S {
   return { ...next, errorRetry: null }
 }
 
-/** zustand 中间件：每次写入（含外部 `useStore.setState`）后对整份 state 跑一遍 reconcileErrorRetry。 */
+/** zustand 中间件：每次写入（含外部 `useStore.setState`）合并后先 reconcile，再**一次**写进去。 */
 export function withErrorRetryInvariant<S extends ErrorRetryState>(init: StateCreator<S>): StateCreator<S> {
   return (set, get, api) => {
-    const guarded = ((partial: Parameters<typeof set>[0], replace?: boolean) => {
-      ;(set as (p: unknown, r?: boolean) => void)(partial, replace)
+    const write = set as (partial: S, replace: true) => void
+    const guarded = ((partial: S | Partial<S> | ((state: S) => S | Partial<S>), replace?: boolean) => {
       const current = get()
-      if (reconcileErrorRetry(current) !== current) set({ errorRetry: null } as Partial<S>)
+      const patch = typeof partial === "function" ? partial(current) : partial
+      const merged = (replace ? patch : { ...current, ...patch }) as S
+      write(reconcileErrorRetry(merged), true)
     }) as typeof set
     api.setState = guarded
     return init(guarded, get, api)

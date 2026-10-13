@@ -2,7 +2,7 @@
  * 改动条 / 独立预览条的可见性与可开目标。
  */
 import { useMemo } from "react"
-import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
+import { pathsFromLastTurn, unconfirmedPathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -35,7 +35,11 @@ export function useSessionReviewModel() {
       classifyThreadError(notice ?? "") === "stopped" ||
       classifyThreadError(error ?? "") === "stopped")
   const pick = useMemo(
-    () => describeReviewFiles(pathsFromLastTurn(messages), changes, running, gitRepo, interrupted),
+    () =>
+      describeReviewFiles(pathsFromLastTurn(messages), changes, running, gitRepo, {
+        interrupted,
+        unconfirmed: unconfirmedPathsFromLastTurn(messages)
+      }),
     [messages, changes, running, gitRepo, interrupted]
   )
   const files = pick.files

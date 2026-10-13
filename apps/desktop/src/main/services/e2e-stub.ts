@@ -32,6 +32,8 @@ import {
 import {
   stubApprovedWriteResult,
   stubPolicyAllowedWriteParts,
+  isWriteHtmlPrompt,
+  stubHtmlWriteParts,
   stubWriteApprovalPart,
   STUB_WRITE_INPUT,
   writeStubApprovedFile
@@ -224,6 +226,12 @@ export async function* createE2eStubStream(
   if (isVerySlowPrompt(prompt)) {
     yield* emitText(verySlowHead(), signal, verySlowDelayMs())
     yield* emitStubWriteTurn(signal, opts)
+    return
+  }
+  if (isWriteHtmlPrompt(prompt)) {
+    stubWriteSeq += 1
+    for (const part of await stubHtmlWriteParts(`tool_stub_html_${stubWriteSeq}`)) yield part
+    yield* emitText("stub-ok wrote html", signal)
     return
   }
   if (/\bwrite\b/i.test(prompt)) {

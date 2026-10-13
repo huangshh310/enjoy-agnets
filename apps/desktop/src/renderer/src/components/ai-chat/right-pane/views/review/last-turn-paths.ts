@@ -116,16 +116,26 @@ function pathFromTool(tool: ThreadToolCall): string | null {
   if (!isWriteTool(tool.name)) return null
   if (tool.state !== "output-available") return null
   if (isToolNotExecuted(tool) || isToolNeverSent(tool)) return null
-  if (isApprovalEnvelopeOnly(tool.result)) return null
   const path = readToolPath(tool.args) ?? readToolPath(tool.result)
   if (!path || isPlaceholderChangedDir(path)) return null
   return path
 }
 
 /**
- * jojo（#146 后续）：只有审批结论（`{ decision }` / 回挂码）没有工具真输出的写行 = 批了但没真写盘
- * （例如批准后执行中被强杀、重启回挂只回放了审批结论）。不算本轮改动，不出文件胶囊。
+ * jojo（#146 后续）：只有审批结论（`{ decision }` / 回挂码）没有工具真输出的写行 = **未证实**写盘
+ * （例如批准后执行中被强杀、重启回挂只回放了审批结论）。fail-closed：path 照样列出，
+ * 只有 git 确认没有改动时才藏胶囊（见 describeReviewFiles）；可能写了一半就被杀的不能藏。
  */
+export function unconfirmedPathsFromLastTurn(messages: ThreadMessage[]): string[] {
+  const out: string[] = []
+  for (const tool of toolsAfterLastUser(messages)) {
+    if (!isApprovalEnvelopeOnly(tool.result)) continue
+    const path = pathFromTool(tool)
+    if (path && !out.includes(path)) out.push(path)
+  }
+  return out
+}
+
 const APPROVAL_ENVELOPE_KEYS = new Set(["decision", "code", "reason", "approvalId", "resumeCode"])
 export function isApprovalEnvelopeOnly(result: unknown): boolean {
   if (!result || typeof result !== "object" || Array.isArray(result)) return false

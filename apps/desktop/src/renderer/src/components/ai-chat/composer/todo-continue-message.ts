@@ -1,6 +1,7 @@
 /**
  * 识别「继续未完成 Todo」用户句。前缀必须与 ipc-contract `todo-continue.ts` 对齐。
  */
+import { stripHostModeFenceForMatch } from "@enjoy-agents/ipc-contract"
 const TODO_CONTINUE_MARKERS = [
   "继续完成未完成的内容。Continue the in_progress Todo List item with write_file / edit_file; do not stop at a written plan.",
   "The Todo List still has unfinished items.",
@@ -11,7 +12,8 @@ const TODO_CONTINUE_MARKERS = [
 ]
 
 export function isTodoContinueUserMessage(content: string | undefined): boolean {
-  const text = content?.trim() ?? ""
+  // ACP 续跑句前面垫了宿主模式围栏：先剥再认。
+  const text = stripHostModeFenceForMatch(content ?? "")
   if (!text) return false
   return TODO_CONTINUE_MARKERS.some((marker) => text.startsWith(marker) || text === marker)
 }

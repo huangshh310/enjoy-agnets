@@ -13,8 +13,15 @@ const TODO_CONTINUE_MARKERS = [
   "继续完成剩余任务"
 ]
 
+/** ACP 发送口会垫宿主模式围栏（`[Enjoy host mode: …]…[/Enjoy host mode]`），认续跑句前先剥掉。 */
+const HOST_MODE_FENCE = /\[Enjoy host mode:\s*\w+\][\s\S]*?\[\/Enjoy host mode\]\s*/g
+
+export function stripHostModeFenceForMatch(content: string): string {
+  return content.replace(HOST_MODE_FENCE, "").trim()
+}
+
 export function isTodoContinueUserMessage(content: string | undefined): boolean {
-  const text = content?.trim() ?? ""
+  const text = stripHostModeFenceForMatch(content ?? "")
   if (!text) return false
   return TODO_CONTINUE_MARKERS.some((marker) => text.startsWith(marker) || text === marker)
 }
