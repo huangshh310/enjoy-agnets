@@ -47,7 +47,8 @@
     "./agent-run-origin": "./src/agent-run-origin.ts",
     "./session-allow": "./src/session-allow.ts",
     "./session-truncate": "./src/session-truncate.ts",
-    "./bash-prefix": "./src/bash-prefix.ts"
+    "./bash-prefix": "./src/bash-prefix.ts",
+    "./todo-continue": "./src/todo-continue.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

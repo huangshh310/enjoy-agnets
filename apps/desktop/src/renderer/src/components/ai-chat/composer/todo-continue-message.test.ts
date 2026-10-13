@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { TODO_CONTINUE_PROMPT } from "@enjoy-agents/ipc-contract"
 import {
   dropTrailingContinueTurns,
   isTodoContinueUserMessage
@@ -12,13 +13,17 @@ test("识别中英续跑提示，不当成新任务", () => {
     ),
     true
   )
-  assert.equal(isTodoContinueUserMessage("继续完成未完成的内容"), true)
+  assert.equal(isTodoContinueUserMessage("继续完成未完成的内容"), false)
+  assert.equal(isTodoContinueUserMessage("继续完成剩余任务"), false)
   assert.equal(
     isTodoContinueUserMessage(
       "The Todo List still has unfinished items. Continue the in_progress task now with tools."
     ),
-    true
+    false
   )
+  // 只认整句：完整提示后再加话就是用户句。
+  assert.equal(isTodoContinueUserMessage(TODO_CONTINUE_PROMPT), true)
+  assert.equal(isTodoContinueUserMessage(`${TODO_CONTINUE_PROMPT} 帮我看看`), false)
   assert.equal(isTodoContinueUserMessage("按 Stripe 做落地页"), false)
 })
 
@@ -26,7 +31,7 @@ test("丢掉末尾续跑用户句和空助手轮", () => {
   const kept = dropTrailingContinueTurns([
     { role: "user", content: "做落地页" },
     { role: "assistant", content: "计划", tools: [{ name: "todo_write" }] },
-    { role: "user", content: "继续完成未完成的内容" },
+    { role: "user", content: TODO_CONTINUE_PROMPT },
     { role: "assistant", content: "", tools: [] }
   ])
   assert.equal(kept.length, 2)

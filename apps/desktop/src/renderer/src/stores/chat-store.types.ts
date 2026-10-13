@@ -226,6 +226,8 @@ export type ChatStore = {
   changes: ChangedFileRow[]
   /** null=还没问过；false=这个文件夹不是 git 仓库。 */
   gitRepo: boolean | null
+  /** 最近一次 git 改动表读回的时间（ms）。待验收胶囊据此判断「git 确认」是否新鲜。 */
+  changesLoadedAt: number
   additions: number
   deletions: number
   /** 改动条 Keep/Undo 后隐藏；新 run 或文件集合变化再出现。 */

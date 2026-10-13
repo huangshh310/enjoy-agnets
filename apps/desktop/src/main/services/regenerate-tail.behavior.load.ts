@@ -12,3 +12,4 @@ export { holdAgentRun, getActiveRun, deleteActiveRun } from "./agent-run-state.t
 export { persistActiveRun, checkpointActiveRun } from "./flush-agent-run.ts"
 export { setPersistedMessageSinkForTest } from "./announce-persisted-message.ts"
 export { insertRun } from "@enjoy-agents/db"
+export { persistMediaAssistantAsset } from "./persist-media-chat.ts"

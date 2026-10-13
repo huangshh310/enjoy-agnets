@@ -2,10 +2,11 @@ import { parseAssistantPayload } from "@enjoy-agents/ipc-contract/assistant-payl
 /**
  * regenerate / edit / rewind：算出保留点之后 renderer 看见的尾巴（只用**权威**落库 id）。
  *
- * leo #147 MF-1：不读库猜。活视图助手气泡是占位 id（`msg_pending_*` / `msg_${runId}`），
- * main 落库后发 `message.persisted` 回报真 id，绑在 `persistedId` 上；回灌来的行本身就是库 id。
- * 仍是占位（没收到回报：出错 / 中断 / 空轮没落库，或切走漏了回报）的气泡当**不存在**于视图：
- * 不进名单。库里若真有对应行（或任何后台行），main 尾巴比对不上 → STALE → 刷新后原名单仍不同
+ * leo #147 MF-1：不按位置 / 内容猜。活视图助手气泡是占位 id（`msg_pending_*` / `msg_${runId}`），
+ * 权威 id 只有三种来源：① main 落库后发 `message.persisted` 回报真 id，绑在 `persistedId` 上
+ * （只绑占位气泡，见 bindPersistedMessage）；② 回灌来的行本身就是库 id；③ 开截前读库，按
+ * `bindPlaceholdersByRunId` **严格**按信封 runId 绑（同 runId 恰好一条助手行且未被占用才绑）。
+ * 三者都没有的占位（出错 / 中断 / 空轮没落库，或切走漏了回报）当**不存在**于视图：不进名单。库里若真有对应行（或任何后台行），main 尾巴比对不上 → STALE → 刷新后原名单仍不同
  * → 「有新内容」，什么都不删。用户句 id 是 renderer 生成并原样落库的，本来就权威。
  */
 export type TailMessage = { id: string; runId?: string; persistedId?: string }

@@ -10,6 +10,7 @@ import {
   takeActionChips,
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
+import { isPlaceholderMessage } from "../hooks/session-truncate-intent"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import {
@@ -183,9 +184,11 @@ function appendPromptTurn(
 }
 
 /**
- * leo #147 MF-1：main 回报的真实落库 id 绑到同 runId 的气泡（最后一条同角色）。
+ * leo #147 MF-1：main 回报的真实落库 id 绑到同 runId 的**占位**气泡（最后一条同角色）。
+ * 只绑占位（`msg_pending_*` / `msg_${runId}` / `msg_user_${runId}`，且还没 persistedId）：
+ * 已有真实 id（回灌的库 id、renderer 原样落库的用户句 id）或已绑过 persistedId 的气泡永不改绑。
  * 不改 `id`（React key / host-inject 认 `msg_${runId}`），记在 `persistedId`；截断名单只认它。
- * 找不到气泡（切走 / 已回灌成库 id）就不动——回灌的行本来就是库 id。
+ * 找不到占位气泡（切走 / 已回灌成库 id）就不动。
  */
 export function bindPersistedMessage(
   messages: ThreadMessage[],
@@ -197,6 +200,7 @@ export function bindPersistedMessage(
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index]!
     if (message.role !== event.role || message.runId !== event.runId) continue
+    if (!isPlaceholderMessage(message)) return messages
     const next = messages.slice()
     next[index] = { ...message, persistedId: event.messageId }
     return next

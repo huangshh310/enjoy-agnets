@@ -6,16 +6,9 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
+import { isTodoContinueUserMessage } from "@enjoy-agents/ipc-contract/todo-continue"
 import type { ThreadMessage } from "../../../../../stores/chat-store.types"
 
-const CONTINUE_MARKERS = [
-  "继续完成未完成的内容",
-  "继续完成 Todo List",
-  "继续完成剩余任务",
-  "Continue the unfinished Todo List",
-  "The Todo List still has unfinished items.",
-  "Continue the in_progress Todo List"
-]
 
 /** 带 path 入参的写类工具：Enjoy 名走契约，后 5 个是外部引擎的写 / 删别名。 */
 const PATH_WRITE_TOOLS = new Set<string>([
@@ -121,6 +114,28 @@ function pathFromTool(tool: ThreadToolCall): string | null {
   return path
 }
 
+/**
+ * jojo（#146 后续）：只有审批结论（`{ decision }` / 回挂码）没有工具真输出的写行 = **未证实**写盘
+ * （例如批准后执行中被强杀、重启回挂只回放了审批结论）。fail-closed：path 照样列出，
+ * 只有 git 确认没有改动时才藏胶囊（见 describeReviewFiles）；可能写了一半就被杀的不能藏。
+ */
+export function unconfirmedPathsFromLastTurn(messages: ThreadMessage[]): string[] {
+  const out: string[] = []
+  for (const tool of toolsAfterLastUser(messages)) {
+    if (!isApprovalEnvelopeOnly(tool.result)) continue
+    const path = pathFromTool(tool)
+    if (path && !out.includes(path)) out.push(path)
+  }
+  return out
+}
+
+const APPROVAL_ENVELOPE_KEYS = new Set(["decision", "code", "reason", "approvalId", "resumeCode"])
+export function isApprovalEnvelopeOnly(result: unknown): boolean {
+  if (!result || typeof result !== "object" || Array.isArray(result)) return false
+  const keys = Object.keys(result as Record<string, unknown>)
+  return keys.length > 0 && keys.every((key) => APPROVAL_ENVELOPE_KEYS.has(key))
+}
+
 /** 还在审批或没发出 result 的不算。 */
 function isToolNeverSent(tool: ThreadToolCall): boolean {
   return tool.state === "approval-requested" || tool.state === "input-streaming"
@@ -143,7 +158,5 @@ function readToolPath(value: unknown): string | null {
 }
 
 function isContinueUser(content: string | undefined): boolean {
-  const text = content?.trim() ?? ""
-  if (!text) return false
-  return CONTINUE_MARKERS.some((marker) => text.startsWith(marker) || text === marker)
+  return isTodoContinueUserMessage(content)
 }

@@ -1,6 +1,7 @@
 /**
  * 对话框工具表面选择：Todo 取最后一次；diff/bash 进卡片；read 不进。
  */
+import { TODO_CONTINUE_PROMPT } from "@enjoy-agents/ipc-contract"
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
@@ -181,7 +182,7 @@ test("续跑用户句不把上一轮 Todo List 藏掉", () => {
         })
       ]
     },
-    { role: "user", content: "继续完成未完成的内容" },
+    { role: "user", content: TODO_CONTINUE_PROMPT },
     { role: "assistant", tools: [] }
   ])
   assert.equal(list?.title, "Stripe landing page")

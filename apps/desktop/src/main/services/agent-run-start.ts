@@ -4,7 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import type { GenerationRequest } from "@enjoy-agents/agent-core"
-import { inferAgentRunOrigin, isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { inferAgentRunOrigin, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
@@ -29,6 +29,7 @@ import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-c
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
+import { isInternalTodoContinueTurn, runAgentPersistUser, shouldPersistOutgoingUser } from "./outgoing-user-persist"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
@@ -59,7 +60,7 @@ export async function runAgent(
   const stripped = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
   const input = stampForegroundUserOrigin(stripped, trust)
   return beginAgentRun(window, input, {
-    persistUser: input.persistUser !== false,
+    persistUser: runAgentPersistUser(input),
     rememberMru: trust.rememberMru
   })
 }
@@ -196,7 +197,7 @@ async function beginAgentRun(
       expectedTailIds: input.expectedTailIds,
       reason: "agent.run",
       persistUser:
-        options.persistUser && lastUser && !isTodoContinueUserMessage(lastUser.content)
+        shouldPersistOutgoingUser(input, options.persistUser) && lastUser
           ? {
               content: lastUser.content,
               messageId: lastUser.id,
@@ -255,7 +256,7 @@ function emitRunStart(
   runId: string,
   promptEcho?: boolean
 ): void {
-  const echoed = promptEcho ? lastUserContent(input) : ""
+  const echoed = promptEcho && !isInternalTodoContinueTurn(input) ? lastUserContent(input) : ""
   const echoedId = echoed ? lastOutgoingUser(input)?.id : undefined
   persistSessionWorkflow(input.sessionId, "in_progress")
   emitEvent(window, {
@@ -280,7 +281,7 @@ function lastUserContent(input: RunAgentInput): string {
 
 function persistOutgoingUser(input: RunAgentInput, persistUser: boolean) {
   const lastUser = lastOutgoingUser(input)
-  if (!lastUser || !persistUser || isTodoContinueUserMessage(lastUser.content)) return
+  if (!lastUser || !shouldPersistOutgoingUser(input, persistUser)) return
   persistUserTurn(
     input.sessionId,
     lastUser.content,

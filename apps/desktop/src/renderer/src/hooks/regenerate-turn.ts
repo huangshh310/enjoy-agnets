@@ -2,10 +2,7 @@
  * 助手消息重新生成 (Regenerate) 与用户消息编辑重发 (Edit & Resend) 核心调度模块。
  * 遵循 Vercel AI SDK 7 的消息上下文裁剪与多轮调度规范。
  */
-import {
-  isEmptyAssistantTurn,
-  isTodoContinueUserMessage
-} from "../components/ai-chat/composer/todo-continue-message"
+import { shouldRetryAsTodoContinue } from "../components/ai-chat/composer/todo-continue-message"
 import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
@@ -17,7 +14,6 @@ import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 import { agentRunBlockedCode } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { loadSession } from "./session-lifecycle"
 import type { RetryTarget } from "./regenerate-retry-target"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { translateTruncateNotice } from "./truncate-notice"
@@ -49,9 +45,9 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 
   const userMessage = messages[userIndex]
   if (!userMessage) return
-  const target = messages[targetIndex]
 
-  if (isTodoContinueUserMessage(userMessage.content) || (target && isEmptyAssistantTurn(target))) {
+  // luna：失败 / 空的助手轮若前面是用户真话，重发原话（下面的常规截断重跑），不走续跑合成提示。
+  if (shouldRetryAsTodoContinue(userMessage)) {
     await continueTodoTurn()
     return
   }
@@ -226,7 +222,7 @@ async function resyncAfterStartThrow(sessionId: string | null): Promise<void> {
   if (!sessionId || live.sessionId !== sessionId) return
   const error = live.error
   try {
-    await loadSession(sessionId, live.sessionTitle ?? "")
+    await reloadSession(sessionId, live.sessionTitle ?? "")
   } catch {
     return
   }
@@ -269,7 +265,7 @@ async function startTurnWithTruncateRetry(
         live.setRunning(false)
         if (live.sessionId !== sessionId || !sessionId) return
         live.setMessages(opts.before)
-        await loadSession(sessionId, live.sessionTitle ?? "")
+        await reloadSession(sessionId, live.sessionTitle ?? "")
       },
       readMessages: () =>
         useChatStore.getState().messages.map((message) => ({
@@ -329,4 +325,10 @@ async function startTurnIpc(
 async function claimStartedRun(sessionId: string | null, started: Promise<unknown>) {
   const runId = requireAgentRunId(await started)
   if (!claimComposerRun(sessionId, runId)) abortOrphanedRun(runId)
+}
+
+/** 会话生命周期模块很重（拖进整套 UI store）：只在需要回灌时再加载。 */
+async function reloadSession(sessionId: string, title: string): Promise<void> {
+  const { loadSession } = await import("./session-lifecycle")
+  await loadSession(sessionId, title)
 }

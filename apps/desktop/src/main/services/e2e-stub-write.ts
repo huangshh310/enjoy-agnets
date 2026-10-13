@@ -60,3 +60,38 @@ export async function stubPolicyAllowedWriteParts(
   await writeStubApprovedFile()
   return [stubWriteToolCallPart(toolCallId), stubApprovedWriteResult(toolCallId)]
 }
+
+/**
+ * luna 验收「在浏览器打开」：提示含 `write html`（如 "please write html page"）时 stub 直接写一张 .html，
+ * 真落盘 + tool-call / tool-result，待验收条出真的 .html 文件胶囊。
+ */
+export const STUB_HTML_PATH = "e2e-stub.html"
+export const STUB_HTML_CONTENT =
+  '<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><title>Enjoy e2e stub</title></head>\n<body><h1>stub-ok html</h1></body></html>\n'
+const STUB_HTML_INPUT = { path: STUB_HTML_PATH, content: STUB_HTML_CONTENT }
+
+export function isWriteHtmlPrompt(prompt: string): boolean {
+  return /\bwrite\s+html\b/i.test(prompt)
+}
+
+export async function stubHtmlWriteParts(
+  toolCallId: string,
+  root = process.env.ENJOY_E2E_WORKSPACE
+): Promise<Record<string, unknown>[]> {
+  const workspace = root?.trim()
+  if (isE2eStub() && workspace) {
+    const abs = resolveInsideWorkspace(workspace, STUB_HTML_PATH)
+    await mkdir(dirname(abs), { recursive: true })
+    await writeFile(abs, STUB_HTML_CONTENT, "utf8")
+  }
+  return [
+    { type: "tool-call", toolCallId, toolName: "write_file", input: STUB_HTML_INPUT },
+    {
+      type: "tool-result",
+      toolCallId,
+      toolName: "write_file",
+      input: STUB_HTML_INPUT,
+      output: { ok: true, path: STUB_HTML_PATH }
+    }
+  ]
+}

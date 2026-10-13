@@ -404,3 +404,64 @@ test("main：助手行首次落库回报 message.persisted（真 id、同 runId�
     L.deleteActiveRun(runId)
   }
 })
+
+test("#147 后续：message.persisted 只绑占位气泡，已有真实 id 的气泡永不改绑", () => {
+  type M = Parameters<typeof bindPersistedMessage>[0][number]
+  const base = { content: "", createdAt: 1 }
+  // 真实库 id（回灌行）同 runId：不改绑
+  const real: M[] = [{ ...base, id: "msg_db_real", role: "assistant", runId: "run_a" } as M]
+  assert.equal(bindPersistedMessage(real, { runId: "run_a", messageId: "msg_new", role: "assistant" }), real)
+  // 已绑过 persistedId 的占位：不改绑
+  const bound: M[] = [{ ...base, id: "msg_run_b", role: "assistant", runId: "run_b", persistedId: "msg_x" } as M]
+  assert.equal(bindPersistedMessage(bound, { runId: "run_b", messageId: "msg_y", role: "assistant" }), bound)
+  // 占位 msg_pending_*：绑上
+  const pending: M[] = [{ ...base, id: "msg_pending_1", role: "assistant", runId: "run_c" } as M]
+  assert.equal(bindPersistedMessage(pending, { runId: "run_c", messageId: "msg_z", role: "assistant" })[0]!.persistedId, "msg_z")
+  // 用户句 renderer 原样落库的真实 id：不改绑
+  const user: M[] = [{ ...base, id: "msg_user_real_123", role: "user", runId: "run_d" } as M]
+  assert.equal(bindPersistedMessage(user, { runId: "run_d", messageId: "msg_u", role: "user" }), user)
+})
+
+test("#147 后续：生图 / 生视频助手行落库后发 message.persisted（runId + 真 id）", () => {
+  const sessionId = "ses_media_persisted"
+  seed(sessionId)
+  const seen: Array<{ runId: string; messageId: string; role: string; sessionId: string }> = []
+  L.setPersistedMessageSinkForTest((event) => seen.push(event))
+  try {
+    const id = L.persistMediaAssistantAsset(
+      sessionId,
+      { id: "asset_media_1", mediaType: "image/png", name: "a.png" },
+      "image",
+      "run_media_1"
+    )
+    assert.ok(id)
+    assert.deepEqual(seen, [{ runId: "run_media_1", sessionId, messageId: id, role: "assistant" }])
+    assert.deepEqual(remainingIds(sessionId), [id])
+    assert.equal(runIdOfAssistantContent(
+      (getDatabase().prepare("SELECT content FROM messages WHERE id = ?").get(id) as { content: string }).content
+    ), "run_media_1")
+  } finally {
+    L.setPersistedMessageSinkForTest(null)
+  }
+})
+
+test("#147 后续（注释对齐）：bindPlaceholdersByRunId 严格按 runId——同 runId 多行 / 已占用 / 已有 persistedId 都不绑", () => {
+  const env = (runId: string) => JSON.stringify({ v: 1, content: "x", runId })
+  const view = [
+    { id: "msg_pending_1", runId: "run_dup" },
+    { id: "msg_run_used", runId: "run_used" },
+    { id: "msg_run_bound", runId: "run_bound", persistedId: "db_keep" },
+    { id: "db_taken", runId: "run_other" }
+  ]
+  const db = [
+    { id: "db_d1", role: "assistant", content: env("run_dup") },
+    { id: "db_d2", role: "assistant", content: env("run_dup") },
+    { id: "db_taken", role: "assistant", content: env("run_used") },
+    { id: "db_new", role: "assistant", content: env("run_bound") }
+  ]
+  const bound = bindPlaceholdersByRunId(view, db, (content) => JSON.parse(content).runId)
+  assert.equal(bound[0]!.persistedId, undefined)
+  assert.equal(bound[1]!.persistedId, undefined)
+  assert.equal(bound[2]!.persistedId, "db_keep")
+  assert.deepEqual(tailIdsFromInclusive(bound, "msg_pending_1"), ["db_keep", "db_taken"])
+})

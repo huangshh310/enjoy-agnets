@@ -60,7 +60,13 @@ export function describeReviewFiles(
   lastTurnPaths: string[],
   changes: ChangedFileRow[],
   running: boolean,
-  gitRepo?: boolean | null
+  gitRepo?: boolean | null,
+  opts: {
+    interrupted?: boolean
+    unconfirmed?: string[]
+    /** git 改动表是在这一轮结束**之后**读回的。false = 还没刷新，不能拿旧表当「git 确认没改」。 */
+    changesFresh?: boolean
+  } = {}
 ): ReviewFilePick {
   if (lastTurnPaths.length === 0) return { files: [], fromLastTurn: false }
   if (running || gitRepo === false) {
@@ -68,8 +74,18 @@ export function describeReviewFiles(
   }
   const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
   if (dirty.length > 0) return { files: dirty, fromLastTurn: true }
+  // jojo：强杀 / 停止 / 重启回挂的轮、或只有审批结论没有真输出的写行，只在 **git 确认**没有改动时藏胶囊
+  // （fail-closed：非 git / 读不到 git 时照列，可能写了一半的不能藏）。
+  const confirmedClean = gitRepo === true && opts.changesFresh !== false
+  const suspect = new Set(
+    (opts.interrupted ? lastTurnPaths : (opts.unconfirmed ?? [])).map((path) => normalizePath(path))
+  )
+  const kept = confirmedClean
+    ? lastTurnPaths.filter((path) => !suspect.has(normalizePath(path)))
+    : lastTurnPaths
+  if (kept.length === 0) return { files: [], fromLastTurn: true }
   return {
-    files: collectSessionFiles(lastTurnPaths, changes),
+    files: collectSessionFiles(kept, changes),
     fromLastTurn: true,
     wroteThisTurnOnly: true
   }
