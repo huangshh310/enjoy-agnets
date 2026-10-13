@@ -7,6 +7,7 @@ import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide"
 import { flushComposerDomToStore } from "./composer-dom"
 import { restoreComposerDraft } from "./queue-composer-send"
+import { setComposerWritebackHeld } from "./composer-sync-lock"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
@@ -364,7 +365,9 @@ export async function retryFailedUserTurn(lastUser: { id?: string; content: stri
   if (started) return true
   // luna P2：只 setComposer 不够——写回锁（建会话 / 首发入队留下）会拦住 store→输入框，DOM 也不跟。
   // 走失败还稿同一条路：先把 DOM 现状收进 store，再合并还稿、解锁并强制对齐 DOM。
-  flushComposerDomToStore()
-  restoreComposerDraft(lastUser.content)
+  // leo：只在输入框真为空时还稿；已有后打的字原样不动（不拼成两条），只解锁。
+  const current = flushComposerDomToStore()
+  if (!current.trim()) restoreComposerDraft(lastUser.content)
+  else setComposerWritebackHeld(false)
   return false
 }

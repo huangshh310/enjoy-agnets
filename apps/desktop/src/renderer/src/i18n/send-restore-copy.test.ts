@@ -18,4 +18,6 @@ test("拼回正文 / 标题定稿（luna 锁定）", () => {
   assert.equal(zhChat.sendFailedRestoreMerged, "这条没发出去，已接在输入框末尾，改好再发。")
   assert.equal(enChat.sendFailedRestoreMerged, "This one didn't send. It's added to the end of your draft. Edit it, then send.")
   assert.equal(enChat.sendFailedRestoreTitle, "This one didn't send")
+  // zh 红卡标题不随这轮改动。
+  assert.equal(zhChat.sendFailedRestoreTitle, "这次没发出去")
 })

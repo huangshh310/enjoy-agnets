@@ -160,3 +160,30 @@ test("luna P2：没起跑时写回锁还挂着（建会话 / 首发入队留下�
     delete (globalThis as { document?: unknown }).document
   }
 })
+
+test("leo：输入框已有后打的字 → 原样保留不拼原话（锁挂着 / 没挂都一样），只解锁", async () => {
+  const { setComposerWritebackHeld, isComposerWritebackHeld } = await import(
+    "../../renderer/src/hooks/composer-sync-lock.ts"
+  )
+  const sid = "ses_regen_dup_f"
+  seed(sid, "原话")
+  for (const held of [true, false]) {
+    const el = { value: "后打的 B", getAttribute: (k: string) => (k === "data-testid" ? "composer-input" : null) }
+    ;(globalThis as { document?: unknown }).document = { activeElement: el, querySelector: () => el }
+    try {
+      useChatStore.setState({ composer: "后打的 B" } as never)
+      useChatStore.getState().setError("boom")
+      setComposerWritebackHeld(held)
+      runs.length = 0
+      assert.equal(await retryFailedUserTurn({ id: "u_missing", content: "原话" }), false)
+      assert.equal(runs.length, 0)
+      assert.equal(useChatStore.getState().composer, "后打的 B", `held=${held}`)
+      assert.equal(el.value, "后打的 B", `held=${held}`)
+      assert.equal(useChatStore.getState().error, "boom")
+      assert.equal(isComposerWritebackHeld(), false)
+    } finally {
+      setComposerWritebackHeld(false)
+      delete (globalThis as { document?: unknown }).document
+    }
+  }
+})
