@@ -63,7 +63,10 @@ export const AgentRunErrorCode = z.enum([
 ])
 export type AgentRunErrorCode = z.infer<typeof AgentRunErrorCode>
 
-export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()
+/** userMessageId：main 已在返回前把这条用户句落库（同事务清了完全相同的草稿）。没有 = 不保证已落库。 */
+export const AgentRunOk = z
+  .object({ ok: z.literal(true), runId: z.string().min(1), userMessageId: z.string().min(1).optional() })
+  .strict()
 export type AgentRunOk = z.infer<typeof AgentRunOk>
 
 export const AgentRunBlocked = z.object({ ok: z.literal(false), code: AgentRunErrorCode }).strict()

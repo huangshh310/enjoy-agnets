@@ -27,6 +27,7 @@ import { rememberGenerationRun } from "./persist-run"
 import { parseAgentCheckpointExtras, TOOL_BOUNDARY } from "./running-orphan-plan"
 import { resumeWorkflow } from "./workflow-runner"
 import { executeKind } from "./ai-generation-kinds"
+import { generationFailedTurn } from "./generation-failed-turn"
 
 const controllers = new Map<string, AbortController>()
 
@@ -186,7 +187,7 @@ async function runKind(
         runId,
         kind: request.kind,
         message: classified.message,
-        turn: { workflow: "in_progress", attention: "error" }
+        turn: generationFailedTurn(request.sessionId)
       },
       request.sessionId
     )

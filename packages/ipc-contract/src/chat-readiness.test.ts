@@ -376,3 +376,8 @@ test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
     true
   )
 })
+
+test("leo：AgentRunOk 可带 userMessageId（main 已落库用户句）", () => {
+  assert.equal(AgentRunResult.safeParse({ ok: true, runId: "r", userMessageId: "m" }).success, true)
+  assert.equal(AgentRunResult.safeParse({ ok: true, runId: "r" }).success, true)
+})

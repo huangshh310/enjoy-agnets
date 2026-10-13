@@ -150,5 +150,44 @@ test("接线：send-composer-run 发送时 hold 空稿写、收尾 release", asy
   const { readFileSync } = await import("node:fs")
   const src = readFileSync(new URL("../hooks/runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
   assert.match(src, /holdEmptyDraftWrite\(draftSid\)/)
-  assert.match(src, /finally \{\s*if \(draftSid\) releaseEmptyDraftHold\(draftSid, draftLaunched\)/)
+  assert.match(src, /finally \{\s*if \(draftSid\) releaseEmptyDraftHold\(draftSid, draftPersisted\)/)
+})
+
+test("leo：交接返回但 main 没确认落库（无 userMessageId）→ 强杀后 main 里的稿还在；确认落库才补清", async () => {
+  const { userMessagePersisted } = await import("../hooks/runtime-interact/send-composer-run.ts")
+  const saved: Record<string, string> = {}
+  ;(globalThis as { window?: unknown }).window = {
+    ide: {
+      session: {
+        drafts: {
+          loadSync: () => ({ ...saved }),
+          save: (input: { sessionId: string; text: string }) => {
+            if (input.text) saved[input.sessionId] = input.text
+            else delete saved[input.sessionId]
+          }
+        }
+      }
+    }
+  }
+  try {
+    for (const [result, expected] of [
+      [{ ok: true, runId: "run_1" }, "要发的稿"],
+      [{ ok: true, runId: "run_1", userMessageId: "msg_u" }, undefined]
+    ] as const) {
+      resetPersistedDraftCacheForTest()
+      useChatStore.setState({ sessionId: "ses_a", composer: "" } as never)
+      useChatStore.getState().setComposer("要发的稿")
+      flushPersistedDrafts()
+      holdEmptyDraftWrite("ses_a")
+      useChatStore.getState().setComposer("")
+      releaseEmptyDraftHold("ses_a", userMessagePersisted(result))
+      flushPersistedDrafts()
+      // 模拟强杀重启：内存缓存没了，从 main 读。
+      resetPersistedDraftCacheForTest()
+      assert.equal(readPersistedDraft("ses_a"), expected, JSON.stringify(result))
+    }
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+    resetPersistedDraftCacheForTest()
+  }
 })

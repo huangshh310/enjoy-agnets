@@ -189,7 +189,7 @@ export async function sendComposerMessage(
   // leo：发送清空输入框产生的 "" 先不落 main（落库前强杀会丢稿），发出后再补。
   const draftSid = prepared?.sessionId ?? store.sessionId
   if (draftSid) holdEmptyDraftWrite(draftSid)
-  let draftLaunched = false
+  let draftPersisted = false
   try {
     // e2e：ENJOY_E2E_SEND_WATCHDOG=1 时在发出前卡过看门狗（打包态恒不生效）。
     if (attempt) await holdPastSendWatchdogForE2e()
@@ -226,7 +226,7 @@ export async function sendComposerMessage(
       }
       setComposerWritebackHeld(false)
     } else clearSentComposerText(payload.typed)
-    draftLaunched = await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
+    draftPersisted = await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
     // leo #145：A 已被看门狗作废后才抛——看门狗已还过稿，不再还 A 的字、不清 B 的 running。
@@ -243,7 +243,7 @@ export async function sendComposerMessage(
       optimisticContent
     })
   } finally {
-    if (draftSid) releaseEmptyDraftHold(draftSid, draftLaunched)
+    if (draftSid) releaseEmptyDraftHold(draftSid, draftPersisted)
   }
 }
 
@@ -354,6 +354,8 @@ async function launchComposerRun(
       return false
     }
     const runId = requireAgentRunId(result)
+    // leo：只有 main 回了 userMessageId（返回前已同事务落库用户句）才算「可以清 main 的稿」。
+    const userPersisted = userMessagePersisted(result)
     if (!claimComposerRun(sessionId, runId)) {
       abortOrphanedRun(runId)
       failComposerSend({
@@ -362,11 +364,11 @@ async function launchComposerRun(
         sessionId,
         createdSessionId
       })
-      return true
+      return userPersisted
     }
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
-    return true
+    return userPersisted
   } catch (error) {
     failComposerSend({
       ...restoreFromPayload(payload),
@@ -454,3 +456,9 @@ async function startComposerRun(
   })
 }
 
+
+/** agent.run 回执里带 userMessageId = 用户句已在 main 落库；媒体生成 / 回执去重等没有它 → 不清 main 的稿（靠 main 同事务完全相同清）。 */
+export function userMessagePersisted(result: unknown): boolean {
+  const id = (result as { userMessageId?: unknown } | null)?.userMessageId
+  return typeof id === "string" && id.length > 0
+}
