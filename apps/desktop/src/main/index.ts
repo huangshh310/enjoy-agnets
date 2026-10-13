@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { pruneEmptySessions } from "./services/session-lifecycle"
-import { app, BrowserWindow, dialog, nativeImage, shell, type WebContents } from "electron";
-import { openDatabaseOrExit } from "./services/migration-conflict-guard";
+import { app, BrowserWindow, clipboard, dialog, nativeImage, shell, type WebContents } from "electron";
+import { conflictLocale, openDatabaseOrExit } from "./services/migration-conflict-guard";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
@@ -233,8 +233,14 @@ function bootPrimaryInstance(): void {
     if (
       !openDatabaseOrExit({
         open: getDatabase,
-        showErrorBox: (title, content) => dialog.showErrorBox(title, content),
-        exit: (code) => app.exit(code)
+        showMessageBoxSync: (options) => dialog.showMessageBoxSync(options),
+        writeClipboard: (text) => clipboard.writeText(text),
+        openPath: (path) => void shell.openPath(path),
+        exit: (code) => app.exit(code),
+        userDataPath: app.getPath("userData"),
+        dbPath: join(app.getPath("userData"), "app.db"),
+        appVersion: app.getVersion(),
+        locale: conflictLocale(process.env.ENJOY_E2E_LANG, app.getLocale())
       })
     ) return;
     configureAcpChildLedger(join(app.getPath("userData"), "acp-children.json"))
