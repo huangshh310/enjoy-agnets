@@ -325,17 +325,3 @@ export function InboxReader(props: {
     </div>
   )
 }
-
-/** 工具名换成人话：「运行命令」「改了文件」…；不露 bash / write_file 之类（jojo 巡检）。 */
-export function plainToolSummary(names: string[]): string {
-  const phrases = new Set<string>()
-  for (const raw of names) {
-    const name = raw.toLowerCase()
-    if (/bash|shell|exec|command|terminal|run/.test(name)) phrases.add("运行命令")
-    else if (/write|edit|patch|create|delete|move|apply/.test(name)) phrases.add("改了文件")
-    else if (/read|list|ls|glob|grep|search|find|view/.test(name)) phrases.add("查看文件")
-    else if (/fetch|http|web|browser/.test(name)) phrases.add("上网查资料")
-    else phrases.add("用了工具")
-  }
-  return Array.from(phrases).join("、")
-}
