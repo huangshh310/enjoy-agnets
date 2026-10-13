@@ -33,7 +33,7 @@ const banned = ["chat.modeAgent", "chat.modePlan", "chat.modeAsk", "ACP", "ToolL
 test("页脚钉死本机诚实句", () => {
   assert.equal(zhStudio.automations.localOnly, "仅在本机运行，关闭应用则暂停")
   assert.equal(enStudio.automations.localOnly, "Runs on this machine only. Closing the app pauses it.")
-  assert.equal(zhStudio.automations.webhookLocalOnly, "本机推送只听本机端口，不上公网")
+  assert.equal(zhStudio.automations.webhookLocalOnly, "推送只在这台电脑上收发，不会发到网上")
   assert.equal(enStudio.automations.webhookLocalOnly, "Local push listens on this machine only")
   const footer = readFileSync(join(dir, "components/automation-footer.tsx"), "utf8")
   assert.ok(footer.includes("studio.automations.localOnly"))

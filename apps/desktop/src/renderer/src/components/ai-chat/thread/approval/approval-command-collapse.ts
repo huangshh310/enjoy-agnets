@@ -55,7 +55,8 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
   const showToggle = overflowing || expanded
   // 命令区永不被挤压：shrink-0；收起 4 行，小窗 2 行；展开 40cqh 区内滚。
   const preSize = collapsed
-    ? "max-h-[4lh] [@media(max-height:600px)]:max-h-[2lh] overflow-hidden"
+    ? // 极矮窗（≤440）收起「展开全部」入口，命令区改为区内可滚：长命令后半段（可能是危险部分）仍看得到（leo）。
+      "max-h-[4lh] [@media(max-height:600px)]:max-h-[2lh] overflow-hidden [@media(max-height:440px)]:overflow-y-auto [@media(max-height:440px)]:overscroll-contain"
     : // 小窗展开也只给 2 行高、区内滚：按钮与命令必须同时可见（luna #144 v2）。
       "max-h-[40cqh] overflow-y-auto [@media(max-height:600px)]:max-h-[2lh]"
   return h(
@@ -79,7 +80,9 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
           ref: view.preRef,
           "data-testid": "approval-command",
           "data-expanded": expanded ? "true" : "false",
-          className: `m-0 shrink-0 whitespace-pre-wrap break-all font-mono text-caption-1-regular leading-relaxed text-text-primary ${preSize}`
+          // 可滚时（溢出或展开）可键盘聚焦滚动、读屏可达：≤440 无「展开全部」入口，这是唯一入口（leo）。
+          ...(overflowing || expanded ? { tabIndex: 0, role: "region", "aria-label": t("chat.commandFullRegion") } : {}),
+          className: `m-0 shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring whitespace-pre-wrap break-all font-mono text-caption-1-regular leading-relaxed text-text-primary ${preSize}`
         },
         h("span", { className: "mr-1.5 select-none text-text-tertiary" }, "$"),
         command || "—"
@@ -89,7 +92,7 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
             "aria-hidden": true,
             "data-testid": "approval-command-fade",
             className:
-              "pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-background-secondary-default to-transparent"
+              "pointer-events-none absolute inset-x-0 bottom-0 h-6 [@media(max-height:440px)]:hidden bg-gradient-to-t from-background-secondary-default to-transparent"
           })
         : null
     ),
@@ -102,7 +105,7 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
             "aria-expanded": expanded,
             onClick: view.onToggle,
             className:
-              "shrink-0 self-start pt-0.5 text-caption-2-medium [@media(max-height:600px)]:pt-0 [@media(max-height:600px)]:leading-4 text-accent-500 underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+              "shrink-0 self-start pt-0.5 text-caption-2-medium [@media(max-height:440px)]:hidden [@media(max-height:600px)]:pt-0 [@media(max-height:600px)]:leading-4 text-accent-500 underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
           },
           commandToggleLabel(expanded, command, t)
         )

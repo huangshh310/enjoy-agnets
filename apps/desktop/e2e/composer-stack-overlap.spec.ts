@@ -67,6 +67,7 @@ test("重启后已中断小卡在消息流里，待验收条与 Composer 同宽�
         )
         await expect(window.locator('[data-testid="review-gate-card"]')).not.toContainText("在浏览器打开")
         await expectStackLayout(window, `${size.width} expanded ${theme}`)
+        await expectNoticeNotUnderHeader(window, `${size.width} expanded ${theme}`)
         await snap(window, `${size.width}x${size.height}-expanded-${theme}`)
       }
     }
@@ -97,11 +98,63 @@ test("写了 .txt 的待验收条：展开列出文件胶囊，不出「在浏�
     await expect(window.locator('[data-testid="review-gate-file"]')).toContainText("e2e-stub.txt")
     await expect(gate).not.toContainText("在浏览器打开")
     await expect(gate).not.toContainText("commit")
-    for (const size of SIZES) {
-      await window.setViewportSize(size)
-      await expectReviewAligned(window, `${size.width} txt expanded`)
-      await snap(window, `${size.width}x${size.height}-txt-expanded-light`)
+    for (const theme of ["light", "dark"] as const) {
+      await setTheme(window, theme)
+      for (const size of SIZES) {
+        await window.setViewportSize(size)
+        await window.waitForTimeout(400)
+        await expectReviewAligned(window, `${size.width} txt expanded ${theme}`)
+        const compact = window.locator('[data-testid="review-gate-compact"]')
+        if (size.height <= 640) {
+          // luna #146 P1：矮窗展开只留一行「1 个文件 · e2e-stub.txt」+ 提示，消息区 ≥ 120px。
+          // luna #149：展开不另起几行，「1 个文件 · e2e-stub.txt · 提示」接在标签同一行；消息区 ≥ 96px。
+          await expect(compact).toBeVisible()
+          await expect(compact).toHaveText("1 个文件 · e2e-stub.txt")
+          // luna #149 v3：提示单独一行在按钮下方，整句落在条内、不与按钮重叠。
+          const hintLoc = window.locator('[data-testid="review-gate-compact-hint"]')
+          await expect(hintLoc).toHaveText("点通过就算验收完成，不会自动提交或推送。")
+          const hint = await box(hintLoc)
+          const bar = await box(window.locator('[data-testid="composer-review-frame"]'))
+          const hintFull = await hintLoc.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)
+          expect(hintFull, `${size.width} ${theme}: hint truncated`).toBe(true)
+          expect(hint.x >= bar.x - 0.5 && hint.x + hint.width <= bar.x + bar.width + 0.5, `hint outside bar ${JSON.stringify({ hint, bar })}`).toBe(true)
+          expect(hint.y >= bar.y - 0.5 && hint.y + hint.height <= bar.y + bar.height + 0.5, `hint outside bar vertically ${JSON.stringify({ hint, bar })}`).toBe(true)
+          for (const id of ["review-gate-open", "review-gate-reject", "review-gate-approve"]) {
+            const btn = await box(window.locator(`[data-testid="${id}"]`))
+            expect(intersects(hint, btn), `hint ∩ ${id} ${JSON.stringify({ hint, btn })}`).toBe(false)
+          }
+          await expect(window.locator('[data-testid="review-gate-file"]')).toBeHidden()
+          const row = await box(compact)
+          const approve = await box(window.locator('[data-testid="review-gate-approve"]'))
+          expect(Math.abs(row.y + row.height / 2 - (approve.y + approve.height / 2)), "compact line not on bar row").toBeLessThanOrEqual(4)
+          const conv = await box(window.locator('[data-testid="chat-conversation"]'))
+          console.log(`[messages-height] ${size.width} txt expanded ${theme} ${conv.height.toFixed(1)}px`)
+          expect(conv.height, `${size.width} txt expanded ${theme}: messages squeezed`).toBeGreaterThanOrEqual(96)
+        } else {
+          await expect(compact).toBeHidden()
+          await expect(window.locator('[data-testid="review-gate-file"]')).toBeVisible()
+        }
+        await expect(window.locator('[data-testid="review-gate-expanded"]')).toContainText(
+          "点通过就算验收完成，不会自动提交或推送。"
+        )
+        await snap(window, `${size.width}x${size.height}-txt-expanded-${theme}`)
+      }
     }
+    // 用户气泡深色下有底（luna #146 P2）。
+    const bubbleBg = await window
+      .locator('[data-testid="user-bubble"]')
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bubbleBg, "dark user bubble has no background").not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/)
+    await setTheme(window, "light")
+    // luna #146 P2：打回后对焦 Composer、占位换成「说说哪里要改…」、提示「已打回」。
+    await window.setViewportSize(SIZES[0])
+    await window.locator('[data-testid="review-gate-reject"]').click()
+    const input = window.locator('[data-testid="composer-input"]')
+    await expect(input).toBeFocused({ timeout: 10_000 })
+    await expect(input).toHaveAttribute("placeholder", "说说哪里要改…")
+    await expect(window.getByText("已打回", { exact: true })).toBeVisible({ timeout: 5_000 })
+    await snap(window, "733x480-rejected-light")
   } finally {
     await closeForRelaunch(env.app)
   }
@@ -135,7 +188,17 @@ test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与�
           await window.waitForTimeout(500)
           await snap(window, `${size.width}x${size.height}-approval-${slug}-${theme}`)
           await expectApprovalLayout(window, `${size.width} approval ${slug} ${theme}`, size.height)
+          await expectApprovalButtonsOneRow(window, `${size.width} approval ${slug} ${theme}`, size.height, {
+            expectLongOverflow: false
+          })
         }
+        // leo：高不到 420 的窗里三钮仍可见、同一行。
+        await window.setViewportSize(SHORT)
+        await window.waitForTimeout(500)
+        await snap(window, `${SHORT.width}x${SHORT.height}-approval-${slug}-${theme}`)
+        await expectApprovalButtonsOneRow(window, `${SHORT.width}x${SHORT.height} approval ${slug} ${theme}`, SHORT.height, {
+          expectLongOverflow: slug === "long"
+        })
       }
       await setTheme(window, "light")
     }
@@ -143,6 +206,150 @@ test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与�
     await closeForRelaunch(env.app)
   }
 })
+
+const SHORT = { width: 733, height: 400 } as const
+
+/** 审批三钮：顺序锁死「本会话总是允许 · 拒绝 · 运行/批准」，同一行（顶边一致），都在视口内（luna #149）。 */
+async function expectApprovalButtonsOneRow(
+  window: Page,
+  label: string,
+  viewportHeight: number,
+  opts: { expectLongOverflow: boolean }
+): Promise<void> {
+  const ids = ["approval-session", "approval-deny", "approval-allow"]
+  const boxes: Box[] = []
+  const present: string[] = []
+  for (const id of ids) {
+    const locator = window.locator(`[data-testid="permission-dock"] [data-testid="${id}"]`)
+    // 没有「本会话总是允许」（如长命令只许一次）时只跳过这一个，其余照查（leo）。
+    if ((await locator.count()) === 0) {
+      expect(id, `${label}: ${id} missing`).toBe("approval-session")
+      continue
+    }
+    await expect(locator, `${label}: ${id} visible`).toBeVisible()
+    boxes.push(await box(locator))
+    present.push(id)
+  }
+  const debug = JSON.stringify(boxes)
+  for (let i = 1; i < boxes.length; i++) {
+    expect(boxes[i - 1].x + boxes[i - 1].width, `${label}: ${present[i - 1]} before ${present[i]} ${debug}`).toBeLessThanOrEqual(boxes[i].x + 1)
+  }
+  for (const b of boxes) {
+    expect(Math.abs(b.y - boxes[0].y), `${label}: buttons not on one row ${debug}`).toBeLessThanOrEqual(1)
+    expect(b.y, `${label}: button above viewport ${debug}`).toBeGreaterThanOrEqual(0)
+    expect(b.y + b.height, `${label}: button below viewport ${debug}`).toBeLessThanOrEqual(viewportHeight)
+  }
+  // 三钮落在审批区可视框里（区内 overflow 裁切时 toBeVisible 仍为真，按框比）。
+  const dockBox = await box(window.locator('[data-testid="permission-dock"]'))
+  for (const b of boxes) {
+    expect(b.y + b.height, `${label}: button clipped by dock ${JSON.stringify({ dockBox, boxes })}`).toBeLessThanOrEqual(dockBox.y + dockBox.height + 1)
+  }
+  // 每个按钮整框落在所有裁切祖先里（luna #149 v3：「运行」被父层在 y=195 裁掉一半）。
+  for (const id of present) {
+    const clipped = await window
+      .locator(`[data-testid="permission-dock"] [data-testid="${id}"]`)
+      .evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        const bad: string[] = []
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+          const cs = getComputedStyle(p)
+          if (cs.overflowX === "visible" && cs.overflowY === "visible") continue
+          const c = p.getBoundingClientRect()
+          if (r.top < c.top - 0.5 || r.bottom > c.bottom + 0.5 || r.left < c.left - 0.5 || r.right > c.right + 0.5) {
+            bad.push(`${p.tagName}.${p.className.toString().slice(0, 60)} [${c.top},${c.bottom}] vs [${r.top},${r.bottom}]`)
+          }
+        }
+        return bad
+      })
+    expect(clipped, `${label}: ${id} clipped by ancestor`).toEqual([])
+  }
+  // 标题（卡顶或底栏）不压正文：与正文可视区不相交（luna #149 v3：计划概览压「待办」）。
+  const bodyBox = await box(window.locator('[data-testid="permission-dock"] [data-testid="approval-card-body"]'))
+  const compact = window.locator('[data-testid="permission-dock"] [data-testid="approval-compact-title"]')
+  if (await compact.isVisible()) {
+    expect(intersects(await box(compact), bodyBox), `${label}: compact title ∩ body`).toBe(false)
+  }
+  const bodyTitle = window.locator('[data-testid="permission-dock"] [data-testid="approval-body-title"]')
+  if ((await bodyTitle.count()) > 0 && (await bodyTitle.isVisible())) {
+    // 前面的检查把正文滚到了底；回到顶再看标题。
+    await window
+      .locator('[data-testid="permission-dock"] [data-testid="approval-card-body"]')
+      .evaluate((el) => {
+        el.scrollTop = 0
+      })
+    const tb = await box(bodyTitle)
+    const hit = await bodyTitle.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const at = document.elementFromPoint(r.left + 4, r.top + r.height / 2)
+      return Boolean(at && el.contains(at))
+    })
+    expect(hit, `${label}: body title covered ${JSON.stringify(tb)}`).toBe(true)
+    if (viewportHeight >= 480) {
+      expect(bodyBox.height, `${label}: plan body squeezed to ${bodyBox.height}px`).toBeGreaterThanOrEqual(48)
+    }
+  }
+  // 极矮窗：长命令全文仍可达——命令区可滚到底（leo 安全项）。
+  if (viewportHeight <= 440) {
+    const cmd = window.locator('[data-testid="permission-dock"] [data-testid="approval-command"]')
+    if ((await cmd.count()) > 0) {
+      const reach = await cmd.evaluate((el) => {
+        const overflows = el.scrollHeight > el.clientHeight + 1
+        const oy = getComputedStyle(el).overflowY
+        if (overflows) el.scrollTop = el.scrollHeight
+        const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+        const scrolled = el.scrollTop > 0
+        el.scrollTop = 0
+        return { overflows, oy, atEnd, scrolled }
+      })
+      if (reach.overflows) {
+        expect(reach.oy, `${label}: long command not scrollable`).toBe("auto")
+        expect(reach.scrolled && reach.atEnd, `${label}: command end unreachable ${JSON.stringify(reach)}`).toBe(true)
+        // 键盘 / 读屏：可聚焦的 region「完整命令」（leo）。
+        await expect(cmd).toHaveAttribute("role", "region")
+        await expect(cmd).toHaveAttribute("aria-label", "完整命令")
+        await expect(cmd).toHaveAttribute("tabindex", "0")
+        await cmd.focus()
+        expect(await cmd.evaluate((el) => document.activeElement === el), `${label}: pre not focusable`).toBe(true)
+        // 滚到底后最后一个字符在 pre 可视区内，且不被渐隐遮挡（leo）。
+        const last = await cmd.evaluate((el) => {
+          el.scrollTop = el.scrollHeight
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+          let node: Text | null = null
+          for (let n = walker.nextNode(); n; n = walker.nextNode()) if ((n.textContent ?? "").trim()) node = n as Text
+          if (!node) return null
+          const text = node.textContent ?? ""
+          let i = text.length - 1
+          while (i > 0 && /\s/.test(text[i])) i--
+          const range = document.createRange()
+          range.setStart(node, i)
+          range.setEnd(node, i + 1)
+          const rects = Array.from(range.getClientRects())
+          const r = rects[rects.length - 1] ?? range.getBoundingClientRect()
+          const pre = el.getBoundingClientRect()
+          const cx = r.left + r.width / 2
+          const cy = r.top + r.height / 2
+          const inside = cx >= pre.left && cx <= pre.right && r.top >= pre.top - 1 && r.bottom <= pre.bottom + 1
+          const at = document.elementFromPoint(cx, cy)
+          const hitPre = Boolean(at && el.contains(at))
+          const fades = Array.from(document.querySelectorAll('[data-testid="approval-command-fade"]')).filter((f) => {
+            const fr = f.getBoundingClientRect()
+            if (fr.width === 0 || fr.height === 0 || getComputedStyle(f).display === "none") return false
+            return fr.left < r.right && fr.right > r.left && fr.top < r.bottom && fr.bottom > r.top
+          }).length
+          el.scrollTop = 0
+          return { inside, hitPre, fades, r: { x: r.left, y: r.top, w: r.width, h: r.height }, pre: { y: pre.top, b: pre.bottom } }
+        })
+        expect(last, `${label}: no command text`).not.toBeNull()
+        expect(last?.inside && last.hitPre && last.fades === 0, `${label}: last char hidden ${JSON.stringify(last)}`).toBe(true)
+      }
+      if (opts.expectLongOverflow) expect(reach.overflows, `${label}: long command should overflow 2 lines`).toBe(true)
+    }
+  }
+  // 卡顶不被裁：卡顶在会话区内（jojo：矮窗卡顶被裁、消息区为 0）。
+  const card = await box(window.locator('[data-testid="permission-dock"] article'))
+  const conv = await box(window.locator('[data-testid="chat-conversation"]'))
+  expect(card.y, `${label}: card top clipped ${JSON.stringify({ card, conv })}`).toBeGreaterThanOrEqual(conv.y - 1)
+}
 
 /** Composer 输入框最小高度（ai-chat-composer 自适应下限 52px）。 */
 const COMPOSER_INPUT_MIN = 52
@@ -236,6 +443,21 @@ async function expectReadableLabel(locator: Locator, label: string): Promise<voi
   expect(info.full || (info.width >= 32 && info.ellipsis === "ellipsis"), `${label} cut to ${info.width}px`).toBe(true)
 }
 
+/** 滚到底后中断小卡整张露在会话区里，顶边和 × 不被页头一侧裁掉（luna #146 P1）。 */
+async function expectNoticeNotUnderHeader(window: Page, label: string): Promise<void> {
+  await window.evaluate(() => {
+    for (const el of document.querySelectorAll<HTMLElement>('[data-testid="chat-conversation"] *')) {
+      if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflowY !== "visible") {
+        el.scrollTop = el.scrollHeight
+      }
+    }
+  })
+  await window.waitForTimeout(300)
+  const conv = await box(window.locator('[data-testid="chat-conversation"]'))
+  const notice = await box(window.locator('[data-testid="thread-notice-banner"]'))
+  expect(notice.y, `${label}: notice top under header ${JSON.stringify({ conv, notice })}`).toBeGreaterThanOrEqual(conv.y - 1)
+}
+
 async function setGateOpen(window: Page, open: boolean): Promise<void> {
   const expanded = window.locator('[data-testid="review-gate-expanded"]')
   if ((await expanded.count()) > 0 !== open) {
@@ -305,3 +527,32 @@ async function snap(window: Page, name: string): Promise<void> {
   mkdirSync(shotsDir, { recursive: true })
   await window.screenshot({ path: join(shotsDir, `${name}.png`) })
 }
+
+test("733×480 模型选择面板夹在视口内，「供应商」头不被裁（luna #149）", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  try {
+    const window = await firstWindow(env.app)
+    for (const theme of ["light", "dark"] as const) {
+      await setTheme(window, theme)
+      for (const size of SIZES) {
+        await window.setViewportSize(size)
+        await window.waitForTimeout(400)
+        await window.locator('[data-testid="composer-engine-chip"]').click()
+        const panel = window.locator('[data-testid="agent-picker-panel"]')
+        await expect(panel).toBeVisible()
+        await window.waitForTimeout(400)
+        const b = await box(panel)
+        expect(b.y, `${size.width} picker top ${JSON.stringify(b)}`).toBeGreaterThanOrEqual(0)
+        expect(b.y + b.height, `${size.width} picker bottom`).toBeLessThanOrEqual(size.height)
+        await snap(window, `${size.width}x${size.height}-model-picker-${theme}`)
+        await window.keyboard.press("Escape")
+        await expect(panel).toHaveCount(0)
+      }
+    }
+    await setTheme(window, "light")
+  } finally {
+    await closeForRelaunch(env.app)
+  }
+})

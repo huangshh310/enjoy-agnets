@@ -6,7 +6,10 @@ import { ExploreExecuteToggle } from "./explore-execute/explore-execute-toggle"
 
 export function ComposerTopChrome() {
   return (
-    <div className="flex items-center justify-between px-3 pt-1 pb-0.5">
+    <div
+      // 极矮窗（≤440）有审批卡时让出这一行，三钮与卡顶留在可视区（leo / luna #149）。
+      className="flex items-center justify-between px-3 pt-1 pb-0.5 [@media(max-height:440px)]:[body:has([data-testid=permission-dock])_&]:hidden"
+    >
       <ExploreExecuteToggle />
     </div>
   )

@@ -1,6 +1,6 @@
 /** M-CBD 会话作业：安静 Inbox / 验收闸 / 本轮账本。C 端短中文跟预览锁。 */
 export const zhSessionOps = {
-  quietHint: "藏噪音",
+  quietHint: "",
   quietHintDetail: "默认不列读文件 / 跑命令。徽标=拍板数，不是待验收条数。",
   approvalBadgeTitle: "只要人拍板",
   phaseRunning: "执行中",
@@ -10,6 +10,9 @@ export const zhSessionOps = {
   gateHint: "点通过就算验收完成，不会自动提交或推送。",
   goReview: "去审查",
   reject: "打回",
+  rejectPlaceholder: "说说哪里要改…",
+  rejectedToast: "已打回",
+  gateFilesLine: "{n} 个文件 · {names}",
   approve: "通过",
   ledgerTitle: "本轮账本",
   ledgerHint: "只读 · 点文件行开本轮来源",

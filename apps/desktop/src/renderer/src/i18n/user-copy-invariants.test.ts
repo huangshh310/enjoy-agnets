@@ -216,7 +216,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.doesNotMatch(z.chat.alwaysAllowHint, /只放行这一条的前缀/)
   assert.match(z.chat.alwaysAllowOnceHint, /含管道或重定向/)
   assert.match(z.chat.alwaysAllowInterpreterHint, /这是在运行一段代码/)
-  assert.match(z.chat.alwaysAllowWriteHint, /本会话放行所有写入类工具/)
+  assert.match(z.chat.alwaysAllowWriteHint, /本会话放行所有会改文件的操作/)
 })
 
 const MOD_COPY_ALLOWLIST = new Set([

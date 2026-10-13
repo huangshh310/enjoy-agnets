@@ -22,9 +22,9 @@ export function InboxLayout(props: {
   const { groups, selected, now } = props
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0 min-w-0 overflow-hidden">
       {/* 左侧列表栏 */}
-      <div className="flex h-full min-h-0 w-[24rem] xl:w-[26rem] shrink-0 flex-col border-r border-separator-border/70 bg-background-secondary-default/20">
+      <div className="@container/inbox-list flex h-full min-h-0 w-[45%] min-w-[13rem] max-w-[24rem] xl:max-w-[26rem] shrink-0 flex-col border-r border-separator-border/70 bg-background-secondary-default/20">
         <InboxToolbar
           approvalCount={props.approvalCount}
           unreadCount={props.unreadCount}

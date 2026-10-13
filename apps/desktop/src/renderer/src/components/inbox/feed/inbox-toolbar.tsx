@@ -18,7 +18,7 @@ export function InboxToolbar(props: {
   return (
     <header
       data-testid="page-inbox"
-      className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-separator-border/70 px-4 bg-background-primary-default/50"
+      className="flex h-12 min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-separator-border/70 px-3 bg-background-primary-default/50"
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-caption-1-semibold text-text-primary truncate">
@@ -32,7 +32,6 @@ export function InboxToolbar(props: {
             {approvalCount}
           </span>
         ) : null}
-        <span className="text-caption-2-regular text-text-tertiary">{t("pages.inbox.quietHint")}</span>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
@@ -45,7 +44,7 @@ export function InboxToolbar(props: {
             title={t("pages.inbox.markAllRead")}
           >
             <RiCheckDoubleLine className="size-3.5" />
-            <span className="hidden sm:inline">{t("pages.inbox.markAllRead")}</span>
+            <span className="hidden @[22rem]/inbox-list:inline">{t("pages.inbox.markAllRead")}</span>
           </Button>
         ) : null}
         <Button
@@ -57,7 +56,7 @@ export function InboxToolbar(props: {
           title={t("pages.inbox.clearRead")}
         >
           <RiDeleteBinLine className="size-3.5" />
-          <span className="hidden sm:inline">{t("pages.inbox.clearRead")}</span>
+          <span className="hidden @[22rem]/inbox-list:inline">{t("pages.inbox.clearRead")}</span>
         </Button>
       </div>
     </header>

@@ -74,7 +74,7 @@ export function GateExpanded({
   const fileNames = new Set(files.map((file) => file.name))
   const sources = chips.filter((chip) => !fileNames.has(chip.label))
   return (
-    <div data-testid="review-gate-expanded" className="flex flex-col gap-1.5 pb-0.5">
+    <div data-testid="review-gate-expanded" className="flex min-w-0 flex-col gap-1.5 pb-0.5">
       {files.length === 0 ? (
         <p className="text-caption-2-regular text-text-tertiary">{t(placeholderKey)}</p>
       ) : null}
@@ -106,7 +106,40 @@ export function GateExpanded({
           <SessionPreviewOpenButton enabled busy={previewBusy} onOpen={onOpenPreview} />
         ) : null}
       </div>
-      <p className="text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
+      <p className="truncate text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
     </div>
+  )
+}
+
+/** 矮窗（≤640 高）展开：文件一句接在标签同一行；提示另起一行在按钮行下方（luna #149 v3）。 */
+export function GateCompactPeek({
+  files,
+  placeholderKey
+}: {
+  files: SessionReviewFile[]
+  placeholderKey: string
+}) {
+  const t = useT()
+  const line =
+    files.length === 0
+      ? t(placeholderKey)
+      : t("sessionOps.gateFilesLine", { n: files.length, names: files.map((file) => file.name).join("、") })
+  return (
+    <span data-testid="review-gate-compact" title={line} className="min-w-0 flex-1 truncate whitespace-nowrap text-text-primary">
+      {line}
+    </span>
+  )
+}
+
+export function GateCompactHint() {
+  const t = useT()
+  return (
+    <p
+      data-testid="review-gate-compact-hint"
+      title={t("sessionOps.gateHint")}
+      className="truncate text-caption-2-regular leading-4 text-text-tertiary"
+    >
+      {t("sessionOps.gateHint")}
+    </p>
   )
 }

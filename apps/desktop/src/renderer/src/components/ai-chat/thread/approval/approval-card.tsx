@@ -112,6 +112,7 @@ function CommandApproval({
     <ApprovalChrome
       variant="command"
       title={t("chat.approvalCommand")}
+      shortTitle={t("chat.approvalCommand")}
       approveLabel={t("chat.approvalRun")}
       denyLabel={t("chat.deny")}
       showAlways={allow.showSession}
@@ -152,6 +153,7 @@ function PlanApproval({
     <ApprovalChrome
       variant="plan"
       title={t("chat.approvalPlan")}
+      shortTitle={t("chat.approvalPlanShort")}
       approveLabel={t("chat.approvalApprove")}
       denyLabel={t("chat.deny")}
       sessionHint={sessionHint}

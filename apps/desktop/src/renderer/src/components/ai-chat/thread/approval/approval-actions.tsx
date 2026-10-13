@@ -1,5 +1,5 @@
 /**
- * 审批底栏：command/plan 是 本会话 · 拒绝 / 主操作；拒绝与主操作同组不拆行，窄时本会话落第二行。
+ * 审批底栏：顺序锁死「本会话总是允许 · 拒绝 · 运行」，三钮永远同一行（luna #149），窄时用紧凑钮不换行。
  * 桌面首次允许改四选一，底栏只留「继续」。会话钮 testid 是 approval-session。禁止再用 approval-always。
  */
 import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
@@ -57,10 +57,10 @@ export function ApprovalActions({
   const denyTone =
     variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
-    // 换行时「本会话总是允许」落到第二行，「拒绝 / 运行」同一行不拆（luna #144 v2）：wrap-reverse 让 DOM 第一行沉底。
+    // 三钮同一行不换行（luna #149）：紧凑钮 h-7 / px-2，整组 shrink-0 靠右。
     <div
       data-testid="approval-actions"
-      className="ml-auto flex min-w-0 flex-wrap-reverse items-center justify-end gap-1.5"
+      className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-1 whitespace-nowrap"
     >
       {showAlways ? (
         <Button
@@ -69,19 +69,19 @@ export function ApprovalActions({
           data-testid="approval-session"
           onClick={decide.onAllowSession}
           title={alwaysHint ?? t("chat.alwaysAllowHint")}
-          className="h-8 text-caption-1-medium [@media(max-height:600px)]:h-7"
+          className="h-7 gap-1 px-2 text-caption-1-medium has-[>svg]:px-2"
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
           {alwaysLabel ?? t("chat.alwaysAllow")}
         </Button>
       ) : null}
-      <div data-testid="approval-primary-actions" className="flex shrink-0 flex-nowrap items-center gap-1.5">
+      <div data-testid="approval-primary-actions" className="flex shrink-0 flex-nowrap items-center gap-1">
         <Button
           size="sm"
           variant="ghost"
           data-testid={denyTestId}
           onClick={decide.onDeny}
-          className={cx("h-8 text-caption-1-medium [@media(max-height:600px)]:h-7", denyTone)}
+          className={cx("h-7 gap-1 px-2 text-caption-1-medium has-[>svg]:px-2", denyTone)}
         >
           <RiCloseLine className="size-3.5" />
           {denyLabel}
@@ -93,7 +93,7 @@ export function ApprovalActions({
           disabled={approveDisabled}
           title={approveTitle}
           onClick={decide.onApprove}
-          className="h-8 text-caption-1-semibold [@media(max-height:600px)]:h-7"
+          className="h-7 gap-1 px-2.5 text-caption-1-semibold has-[>svg]:px-2.5"
         >
           <RiCheckLine className="size-3.5" />
           {approveLabel}

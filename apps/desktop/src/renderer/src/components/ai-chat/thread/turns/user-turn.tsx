@@ -131,7 +131,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
         <>
           <UserSentQuotes chips={view.chips} />
           {view.text ? (
-            <MessageContent>
+            <MessageContent data-testid="user-bubble" className="dark:!bg-background-tertiary-default dark:ring-1 dark:ring-border-button-default">
               <p className="whitespace-pre-wrap break-words">{view.text}</p>
             </MessageContent>
           ) : null}

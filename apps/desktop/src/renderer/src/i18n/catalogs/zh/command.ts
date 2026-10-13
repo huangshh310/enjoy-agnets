@@ -18,7 +18,7 @@ export const zhCommand = {
   workflows: "持久化工作流与 DAG",
   extensions: "扩展（MCP 与技能）",
   mcp: "模型上下文协议（MCP）",
-  skills: "Skills 技能管理与目标投影",
+  skills: "技能管理与目标投影",
   media: "媒体工作室（图像 / 语音 / 视频）",
   automations: "自动化与触发器",
   kanban: "会话看板",

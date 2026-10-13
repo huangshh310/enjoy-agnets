@@ -4,6 +4,8 @@
 import { useMemo, useRef, type ClipboardEvent, type KeyboardEvent, type RefObject } from "react"
 import { useComposerPromptHistory } from "@renderer/hooks/use-composer-prompt-history"
 import { useT, type TranslateFn } from "@renderer/i18n"
+import { useComposerPlaceholderHint } from "@renderer/hooks/composer-placeholder-hint"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { ComposerDesktopBiasBar } from "./desktop/composer-desktop-bias-bar.tsx"
 import { ComposerMentionList } from "./composer-mention-list.tsx"
 import { ComposerMentionPopover } from "./composer-mention-popover.tsx"
@@ -40,6 +42,8 @@ export function ComposerInput({
   onBlur: () => void
 }) {
   const t = useT()
+  const placeholderSessionId = useChatStore((state) => state.sessionId)
+  const placeholderHint = useComposerPlaceholderHint(placeholderSessionId)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const modeCopy = useMemo(() => modeCopyFromT(t), [t])
   const builtinCopy = useMemo(() => builtinCopyFromT(t), [t])
@@ -113,7 +117,7 @@ export function ComposerInput({
         placeholder={
           running
             ? t("chat.placeholderRunning", { mod: isApplePlatform() ? "⌘" : "Ctrl" })
-            : t("chat.placeholder")
+            : (placeholderHint ?? t("chat.placeholder"))
         }
         className="max-h-48 min-h-[38px] w-full resize-none bg-transparent py-1 text-body-medium text-text-primary outline-none placeholder:text-text-secondary/70 leading-relaxed"
       />

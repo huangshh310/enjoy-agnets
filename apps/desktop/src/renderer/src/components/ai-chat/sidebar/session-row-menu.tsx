@@ -121,7 +121,7 @@ export function SessionRowMenu({
           onBlur={() => {
             delete triggerRef.current?.dataset.pointerReturn
           }}
-          aria-label="Session actions"
+          aria-label={t("chat.sessionActions")}
           className={cx(
             "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary outline-none",
             "hover:bg-background-primary-default hover:text-text-primary",

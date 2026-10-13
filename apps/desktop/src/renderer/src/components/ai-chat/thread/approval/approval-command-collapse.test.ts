@@ -100,17 +100,35 @@ test("小窗：路径行让位、命令区与链接 shrink-0", () => {
   assert.match(html, /data-testid="approval-command-toggle"[^>]*class="shrink-0 self-start/)
 })
 
-test("小窗卡片：标题挪到底栏一行，拒绝 / 运行同组，本会话落第二行（wrap-reverse）", () => {
+test("小窗卡片：标题独占底栏一行，三钮「本会话 · 拒绝 · 运行」同一行不换行", () => {
   const chrome = readFileSync(new URL("./approval-chrome.tsx", import.meta.url), "utf8")
   const actions = readFileSync(new URL("./approval-actions.tsx", import.meta.url), "utf8")
   assert.match(chrome, /data-testid="approval-compact-title"/)
-  assert.match(chrome, /hidden max-w-\[45%\] shrink-0 truncate[^"]*\[@media\(max-height:600px\)\]:block/)
-  assert.match(chrome, /leading-6 text-text-primary \[@media\(max-height:600px\)\]:hidden/)
-  assert.match(actions, /flex min-w-0 flex-wrap-reverse items-center justify-end/)
+  assert.match(chrome, /variant === "command" && "\[@media\(max-height:600px\)\]:block"/)
+  assert.match(chrome, /\? "basis-full \[@media\(max-height:440px\)\]:basis-0/)
+  assert.match(chrome, /variant === "command" \? "\[@media\(max-height:600px\)\]:hidden"/)
+  assert.match(actions, /flex shrink-0 flex-nowrap items-center justify-end/)
+  assert.doesNotMatch(actions, /flex-wrap-reverse/)
   const session = actions.indexOf('data-testid="approval-session"')
   const group = actions.indexOf('data-testid="approval-primary-actions"')
   const deny = actions.indexOf("data-testid={denyTestId}")
   const allow = actions.indexOf("data-testid={allowTestId}")
   assert.ok(session > 0 && session < group && group < deny && deny < allow)
   assert.match(actions, /approval-primary-actions" className="flex shrink-0 flex-nowrap/)
+})
+
+test("leo：≤440 命令区可键盘聚焦滚动、读屏 region「完整命令」，渐隐在 ≤440 隐藏", () => {
+  const html = renderToStaticMarkup(
+    renderCommandBlock({ cwd: "/ws", command: LONG, expanded: false, overflowing: true, t: tZh })
+  )
+  assert.match(html, /tabindex="0"/i)
+  assert.match(html, /role="region"/)
+  assert.match(html, /aria-label="完整命令"/)
+  assert.match(html, /focus-visible:ring-border-focus-ring/)
+  assert.match(html, /\[@media\(max-height:440px\)\]:overflow-y-auto/)
+  assert.match(html, /data-testid="approval-command-fade" class="[^"]*\[@media\(max-height:440px\)\]:hidden/)
+  const short = renderToStaticMarkup(
+    renderCommandBlock({ cwd: "/ws", command: "ls", expanded: false, overflowing: false, t: tEn })
+  )
+  assert.doesNotMatch(short, /tabindex|role="region"/i)
 })

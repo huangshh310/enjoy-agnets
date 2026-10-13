@@ -60,6 +60,7 @@ export function AutomationDrawer({
   const webhookReady = !draft.triggers.includes("webhook") || webhookPortReady(draft.webhookPort)
   const runNow = draft.triggers.length === 1 && draft.triggers[0] === "manual"
 
+  const saveDisabled = !canSave || !cronReady || !webhookReady || saving
   return (
     <SettingsSideDrawer
       open={open}
@@ -164,7 +165,14 @@ export function AutomationDrawer({
             {t("common.delete")}
           </Button>
         ) : null}
-        <Button type="button" size="sm" disabled={!canSave || !cronReady || !webhookReady || saving} onClick={onSave}>
+        <Button
+          type="button"
+          size="sm"
+          variant="solid"
+          data-testid="automation-save"
+          disabled={saveDisabled}
+          onClick={onSave}
+        >
           {t("studio.automations.save")}
         </Button>
       </footer>
