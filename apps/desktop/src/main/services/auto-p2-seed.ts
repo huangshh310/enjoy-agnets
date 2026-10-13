@@ -109,13 +109,18 @@ export function buildAutoP2Fixture(now = Date.now(), extras = false) {
     missed("auto_sleep", yest8, "skipped", { reason: "system_sleep", status: "skipped" }),
     missed("auto_sleep", ere8, "skipped", { reason: "system_sleep", status: "skipped" }),
     missed("auto_closed", yest21, "skipped", { reason: "app_not_running", status: "skipped" }),
-    missed("auto_catchup", today1030, "catch_up", { status: "ok", isCatchUp: true, recordedAt: now }),
+    missed("auto_catchup", today1030, "catch_up", {
+      status: "ok",
+      isCatchUp: true,
+      // luna P3：列表「上次成功」读的是这条 recordedAt；写 now 就成了「今天 22:16」（每次启动重种）。
+      recordedAt: catchUpAt(today1030, now)
+    }),
     missed("auto_catchup", yest8, "skipped", { reason: "system_sleep", status: "skipped" }),
-    missed("auto_timeout", today8, "catch_up", {
+    missed("auto_timeout", atHour(0, 9, now), "catch_up", {
       status: "failed",
       isCatchUp: true,
       code: "catch_up_approval_timeout",
-      recordedAt: now
+      recordedAt: catchUpAt(atHour(0, 9, now), now)
     })
   ]
   if (extras) {

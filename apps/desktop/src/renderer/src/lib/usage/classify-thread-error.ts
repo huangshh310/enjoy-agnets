@@ -8,6 +8,9 @@ import {
 } from "@enjoy-agents/ipc-contract/restore-codes"
 import { NO_CHAT_ROUTE } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
+import { MODEL_NEEDS_VISION } from "@enjoy-agents/ipc-contract/run-error-codes"
+
+export { MODEL_NEEDS_VISION }
 
 export { NO_CHAT_ROUTE }
 
@@ -33,6 +36,7 @@ export type ThreadErrorKind =
   | "run_failed"
   | "catch_up_timeout"
   | "message_id_mismatch"
+  | "needs_vision"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -82,6 +86,8 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   if (isRestoreFamilyCode(message)) return "restore_no_matching"
   if (message === RUN_FAILED) return "run_failed"
   if (message === CATCH_UP_APPROVAL_TIMEOUT) return "catch_up_timeout"
+  // luna P1：跑前发现模型不能看图——按码出锁定文案。
+  if (message === MODEL_NEEDS_VISION) return "needs_vision"
   // leo soft 2：普通 Composer 发送被 main 以 MESSAGE_ID_SESSION_MISMATCH 拒，横幅给人话，不摊机器码。
   if (message === MESSAGE_ID_SESSION_MISMATCH) return "message_id_mismatch"
   if (
@@ -153,6 +159,7 @@ export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined 
   if (kind === "send_restore") return "chat.sendFailedRestore"
   if (kind === "stopped") return "chat.runStopped"
   if (kind === "message_id_mismatch") return "chat.messageIdSessionMismatch"
+  if (kind === "needs_vision") return "chat.needsVisionDetail"
   return undefined
 }
 

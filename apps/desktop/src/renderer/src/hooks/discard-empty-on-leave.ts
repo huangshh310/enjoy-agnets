@@ -33,7 +33,14 @@ export function emptySessionToDiscardOnLeave(state: LeaveState, nextSessionId: s
 export function discardEmptySessionOnLeave(state: LeaveState, nextSessionId: string | null): void {
   const id = emptySessionToDiscardOnLeave(state, nextSessionId)
   if (!id || !hasIde()) return
-  void Promise.resolve(getIde().session.delete({ sessionId: id, onlyIfEmpty: true })).catch((error: unknown) => {
-    console.warn("[session] 离开时删除空会话失败", id, error)
-  })
+  void Promise.resolve(getIde().session.delete({ sessionId: id, onlyIfEmpty: true }))
+    .then(async (result) => {
+      // luna P2：库里删了但侧栏不刷，空行要等重启才消失。删成功就刷工作区会话列表。
+      if ((result as { deleted?: boolean } | undefined)?.deleted !== true) return
+      const { refreshAllWorkspaces } = await import("./refresh-workspaces")
+      await refreshAllWorkspaces()
+    })
+    .catch((error: unknown) => {
+      console.warn("[session] 离开时删除空会话失败", id, error)
+    })
 }

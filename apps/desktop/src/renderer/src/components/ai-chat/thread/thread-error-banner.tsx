@@ -171,6 +171,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
           ? t("chat.remoteCliMissingTitle")
           : kind === "needs_key"
             ? t("chat.needProviderKeyTitle")
+            : kind === "needs_vision"
+            ? t("chat.needsVisionTitle")
             : kind === "rate_limit"
               ? t("chat.usage.rateLimitTitle")
               : kind === "send_restore"
@@ -197,6 +199,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                     ? t("chat.restoreNoMatching")
                     : kind === "run_failed"
                       ? t("chat.runFailed")
+                      : kind === "needs_vision"
+                      ? t("chat.needsVisionHint")
                       : humanizeThreadError(error, t))
   const code = isDevCopyEnabled() ? error : null
 

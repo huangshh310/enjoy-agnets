@@ -60,7 +60,7 @@ test("开泵前抛错：runs 落 failed + error，活 run 撤掉；可截断重�
       messages: [{ role: "user", content: "第二张图" }]
     }
   })
-  await failRunBeforePump(runId, new Error("image.png needs a vision-capable model."))
+  await failRunBeforePump(runId, new Error("model_needs_vision"))
   const row = db.prepare("SELECT status, error FROM runs WHERE id = ?").get(runId) as { status: string; error: string | null }
   assert.equal(row.status, "failed")
   assert.ok(row.error && row.error.length > 0)
@@ -71,7 +71,7 @@ test("开泵前抛错：runs 落 failed + error，活 run 撤掉；可截断重�
   assert.equal(cut.ok, true)
   // 重启（只读库）：红卡还在。
   assert.equal(sessionLastError(sessionId)?.runId, runId)
-  assert.match(sessionLastError(sessionId)?.message ?? "", /vision-capable/)
+  assert.match(sessionLastError(sessionId)?.message ?? "", /^model_needs_vision$/)
 })
 
 test("接线：prepareAndPump 的 catch 走 failRunBeforePump（不再只发 run.error 不落库）", async () => {

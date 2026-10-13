@@ -57,3 +57,19 @@ test("catchUpAt 语义锁定：补跑记在「计划时刻 + 5 分钟」，但�
   assert.equal(catchUpAt(slot, slot + 2 * 60_000), slot + 2 * 60_000)
   assert.equal(catchUpAt(slot, slot + 5 * 60_000), slot + 5 * 60_000)
 })
+
+test("luna P3 真因：「午间改动复盘」补跑成功记录的 recordedAt 是 10:35，不是种夹具那一刻（22:16）", async () => {
+  const { buildAutoP2Fixture: build } = await import("./auto-p2-seed.ts")
+  const now = new Date(2026, 9, 13, 22, 16).getTime()
+  const fx = build(now, false) as unknown as {
+    automations: Array<{ id: string; lastRunAt: number }>
+    records: Array<{ automationId: string; kind: string; recordedAt: number; scheduledAt: number }>
+  }
+  const rec = fx.records.find((r) => r.automationId === "auto_catchup" && r.kind === "catch_up")!
+  assert.equal(new Date(rec.recordedAt).getHours(), 10)
+  assert.equal(new Date(rec.recordedAt).getMinutes(), 35)
+  assert.equal(fx.automations.find((a) => a.id === "auto_catchup")!.lastRunAt, rec.recordedAt)
+  const to = fx.records.find((r) => r.automationId === "auto_timeout")!
+  assert.equal(new Date(to.scheduledAt).getHours(), 9)
+  assert.ok(to.recordedAt < now - 60 * 60_000)
+})

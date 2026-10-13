@@ -50,10 +50,13 @@ test("开泵前失败：红卡、库里 failed、重新生成不被截断闸挡�
     await sendComposer(window, window.locator('[data-testid="composer-input"]'), "画一张猫")
     const banner = window.locator('[data-testid="thread-error-banner"]')
     await expect(banner).toBeVisible({ timeout: 20_000 })
-    await expect(banner).toContainText(/vision|视觉/)
+    // luna P1：锁定文案，按码出，不摊英文原文。
+    await expect(banner).toContainText("这个模型看不了图片")
+    await expect(banner).toContainText("换一个能看图的模型再试。")
+    await expect(banner).not.toContainText("vision")
     // 另有标题等后台 run 可能 completed；关键是用户这轮 failed+error，且没有卡在 running。
     await expect
-      .poll(() => runStatuses(userData).filter((r) => r.status === "failed" && /vision-capable/.test(r.error ?? "")).length, { timeout: 10_000 })
+      .poll(() => runStatuses(userData).filter((r) => r.status === "failed" && r.error === "model_needs_vision").length, { timeout: 10_000 })
       .toBe(1)
     expect(runStatuses(userData).filter((r) => r.status === "running" || r.status === "waiting_review")).toEqual([])
     await window.screenshot({ path: join(shots, "item1-red-card.png") })
@@ -73,7 +76,8 @@ test("开泵前失败：红卡、库里 failed、重新生成不被截断闸挡�
     const row = window.locator('[data-testid="sidebar-session-row"]').first()
     if ((await row.count()) > 0) await row.click()
     await expect(window.locator('[data-testid="thread-error-banner"]')).toBeVisible({ timeout: 20_000 })
-    await expect(window.locator('[data-testid="thread-error-banner"]')).toContainText(/vision|视觉/)
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toContainText("这个模型看不了图片")
+    await expect(window.locator('[data-testid="thread-error-banner"]')).not.toContainText("vision")
     await window.screenshot({ path: join(shots, "item1-after-restart.png") })
   } finally {
     await closeForRelaunch(app)

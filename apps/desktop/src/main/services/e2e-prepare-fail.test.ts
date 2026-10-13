@@ -7,7 +7,7 @@ test("ENJOY_E2E_PREPARE_FAIL：只在 stub 闸开时生效", () => {
   assert.equal(e2ePrepareFailForced({ ENJOY_E2E_PREPARE_FAIL: "1" }, () => true), true)
   assert.equal(e2ePrepareFailForced({ ENJOY_E2E_PREPARE_FAIL: "1" }, () => false), false)
   assert.equal(e2ePrepareFailForced({}, () => true), false)
-  assert.throws(() => throwIfE2ePrepareFail({ ENJOY_E2E_PREPARE_FAIL: "1" }, () => true), /vision-capable/)
+  assert.throws(() => throwIfE2ePrepareFail({ ENJOY_E2E_PREPARE_FAIL: "1" }, () => true), /model_needs_vision/)
   assert.doesNotThrow(() => throwIfE2ePrepareFail({ ENJOY_E2E_PREPARE_FAIL: "1" }, () => false))
 })
 

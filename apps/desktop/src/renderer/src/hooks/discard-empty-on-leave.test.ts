@@ -51,3 +51,8 @@ test("离开删除失败要留日志", () => {
   const src = readFileSync(new URL("./discard-empty-on-leave.ts", import.meta.url), "utf8")
   assert.match(src, /catch\(\(error: unknown\) => \{\s*console\.warn/)
 })
+
+test("luna P2：删成功后刷新侧栏会话列表（否则空行要等重启）", () => {
+  const src = readFileSync(new URL("./discard-empty-on-leave.ts", import.meta.url), "utf8")
+  assert.match(src, /deleted\?: boolean[\s\S]*?!== true\) return[\s\S]*?await refreshAllWorkspaces\(\)/)
+})

@@ -634,6 +634,9 @@ export const enChat = {
   limitsSystemDeferred: "System tools (deferred)",
   limitsFreeSpace: "Free space",
 
+  needsVisionTitle: "This model can't read images",
+  needsVisionHint: "Switch to a model that can, then try again.",
+  needsVisionDetail: "This model can't read images. Switch to a model that can, then try again.",
   errorTitle: "The model didn't finish this reply",
   errorRetryHint: "This turn didn't finish. You can retry.",
   errorGenericHint: "That didn't go through. Please try again.",

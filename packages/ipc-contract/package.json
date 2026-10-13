@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./tool-names": "./src/tool-names.ts",
+    "./run-error-codes": "./src/run-error-codes.ts",
     "./runtime-capabilities": "./src/runtime-capabilities.ts",
     "./custom-agent": "./src/custom-agent.ts",
     "./rules-always-on": "./src/rules-always-on.ts",
