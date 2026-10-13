@@ -3,7 +3,7 @@
  * 只存正文（附件 / 引用仍是内存草稿）。键是 sessionId；sessionId 为空（新对话创建窗）不存，与会话草稿互不串。
  */
 import { useChatStore } from "../stores/chat-store"
-import { setComposerAssetPersister } from "../hooks/composer-assets"
+import { listComposerAssets, setComposerAssetPersister } from "../hooks/composer-assets"
 import type { SessionDraftState } from "../stores/chat-store.types"
 
 const STORAGE_KEY = "enjoy-agents-session-drafts"
@@ -160,6 +160,24 @@ export function writePersistedDraftAssets(sessionId: string, assets: DraftAsset[
   } catch {
     // 只丢持久化
   }
+}
+
+/**
+ * leo：发送已被 main 接手（main 在用户消息落库事务里清了库里的草稿附件）——renderer 缓存也丢掉，
+ * 否则切走再切回，旧图会从缓存冒回输入框。只清缓存，不再往 main 写。
+ */
+export function forgetPersistedDraftAssets(sessionId: string | null | undefined): void {
+  if (!sessionId || !assetCache) return
+  delete assetCache[sessionId]
+}
+
+/**
+ * leo：建会话窗里（还没有 sessionId）粘的图只在内存；会话一建好就落到**这个**会话的草稿附件，
+ * 强杀 / 切走不丢，也不会被当空会话清掉。有排队首发时附件随发送走，不落草稿。
+ */
+export function persistCreateWindowAssets(sessionId: string): void {
+  const assets = listComposerAssets()
+  if (assets.length > 0) writePersistedDraftAssets(sessionId, assets)
 }
 
 export function resetPersistedDraftAssetsForTest(): void {

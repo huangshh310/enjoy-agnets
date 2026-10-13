@@ -44,3 +44,29 @@ test("删会话连带清草稿附件", () => {
   deleteSession(sid)
   assert.equal(loadSessionDraftAssets()[sid], undefined)
 })
+
+test("leo：草稿附件在 persistMessage 同一事务里清；外层回滚则草稿附件还在", async () => {
+  const { persistMessage } = await import("./persist-session.ts")
+  const db = getDatabase()
+  const sid = session("ses_da_tx")
+  const file = { type: "file", assetId: "ast_t", mediaType: "image/png", name: "t.png" } as never
+  saveSessionDraftAssets(sid, [{ id: "ast_t", name: "t.png" }])
+  db.exec("BEGIN IMMEDIATE;")
+  persistMessage(sid, "user", "图", [file], undefined, { inTransaction: true })
+  assert.equal(loadSessionDraftAssets()[sid], undefined, "事务内已清")
+  db.exec("ROLLBACK;")
+  assert.deepEqual(loadSessionDraftAssets()[sid]?.map((x) => x.id), ["ast_t"], "消息回滚，草稿附件也回来")
+  persistMessage(sid, "user", "图", [file])
+  assert.equal(loadSessionDraftAssets()[sid], undefined)
+})
+
+test("leo：去重跳过（同一句刚落过库）也清草稿附件", () => {
+  const sid = session("ses_da_dup")
+  const att = [{ assetId: "ast_u", mediaType: "image/png", name: "u.png" }]
+  persistUserTurn(sid, "再看", att)
+  saveSessionDraftAssets(sid, [{ id: "ast_u", name: "u.png" }])
+  persistUserTurn(sid, "再看", att)
+  const n = getDatabase().prepare("SELECT COUNT(*) as n FROM messages WHERE session_id = ?").get(sid) as { n: number }
+  assert.equal(n.n, 1, "第二次被去重跳过")
+  assert.equal(loadSessionDraftAssets()[sid], undefined)
+})

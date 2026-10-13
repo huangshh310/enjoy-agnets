@@ -30,7 +30,12 @@ import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { readComposerDomText } from "../composer-dom"
 import { holdPastSendWatchdogForE2e } from "../../lib/e2e-send-watchdog"
-import { holdEmptyDraftWrite, releaseEmptyDraftHold, writePersistedDraft } from "../../lib/session-draft-storage"
+import {
+  forgetPersistedDraftAssets,
+  holdEmptyDraftWrite,
+  releaseEmptyDraftHold,
+  writePersistedDraft
+} from "../../lib/session-draft-storage"
 import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
@@ -241,7 +246,8 @@ export async function sendComposerMessage(
     failComposerSend({
       text: snapshot.text,
       reason: SEND_FAILED_RESTORE,
-      sessionId: useChatStore.getState().sessionId,
+      // leo：用发送时的会话（发送途中切走，不能把失败还原到当前界面的会话上）。
+      sessionId: draftSid,
       createdSessionId: prepared?.sessionId,
       assets: snapshot.assets,
       chips: snapshot,
@@ -375,6 +381,7 @@ async function launchComposerRun(
       return userPersisted
     }
     commitComposerStartGate(sessionId)
+    forgetPersistedDraftAssets(sessionId)
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
     return userPersisted

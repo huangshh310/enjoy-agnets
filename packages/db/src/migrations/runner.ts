@@ -73,9 +73,39 @@ export function appliedVersions(sqlite: DatabaseSync): number[] {
   return rows.map((row) => row.version)
 }
 
+/** 历史上已知的同号异名（旧 #119 把 v14 记成 cost-missing，由 repairClaimedV14 补列）。 */
+const LEGACY_NAME_ALIASES: Record<number, string[]> = { 14: ["cost-missing"] }
+
+/**
+ * 迁移编号守卫：同一版本号对应不同名字 → 直接抛（并行 PR 撞号时宁可起不来，也不跳过别人的迁移）。
+ * 既查迁移表本身，也查库里已记账的版本。
+ */
+export function assertMigrationIdentity(sqlite: DatabaseSync, migrations: Migration[]): void {
+  const byVersion = new Map<number, string>()
+  for (const migration of migrations) {
+    const seen = byVersion.get(migration.version)
+    if (seen !== undefined && seen !== migration.name) {
+      throw new Error(`MIGRATION_VERSION_CONFLICT: v${migration.version} ${seen} vs ${migration.name}`)
+    }
+    byVersion.set(migration.version, migration.name)
+  }
+  if (!tableExists(sqlite, "schema_migrations")) return
+  const rows = sqlite.prepare("SELECT version, name FROM schema_migrations").all() as Array<{
+    version: number
+    name: string
+  }>
+  for (const row of rows) {
+    const expected = byVersion.get(row.version)
+    if (expected === undefined || expected === row.name) continue
+    if (LEGACY_NAME_ALIASES[row.version]?.includes(row.name)) continue
+    throw new Error(`MIGRATION_VERSION_CONFLICT: v${row.version} applied as ${row.name}, expected ${expected}`)
+  }
+}
+
 export function applyMigrations(sqlite: DatabaseSync, migrations = MIGRATIONS): number[] {
   ensureMigrationTable(sqlite)
   backfillBaselineIfNeeded(sqlite)
+  assertMigrationIdentity(sqlite, migrations)
   const done = new Set(appliedVersions(sqlite))
   const applied: number[] = []
   for (const migration of migrations) {

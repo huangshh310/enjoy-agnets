@@ -19,14 +19,32 @@ export function persistUserTurn(
 ) {
   const last = lastUserTurn(sessionId)
   if (shouldSkipDuplicateUserTurn(last, content, Date.now())) {
-    // 去重跳过也算这句已在库：照样清掉已发出的稿。
-    clearSentDraftInTx(getDatabase(), sessionId, content, opts?.draftText)
+    // 去重跳过也算这句已在库：照样清掉已发出的稿（正文 + 附件，同一事务）。
+    clearSentDraftOnDedupe(sessionId, content, attached.length > 0, opts)
     return
   }
   const parts = userTurnParts(content, attached) as UIMessagePart[]
+  // 草稿附件由 persistMessage 在同一事务里清（只清本会话）。
   persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId, opts)
-  // 附件已随这条消息落库：本会话的草稿附件清掉（只清本会话）。
-  if (attached.length > 0) clearDraftAssetsInTx(getDatabase(), sessionId)
+}
+
+function clearSentDraftOnDedupe(
+  sessionId: string,
+  content: string,
+  hadAssets: boolean,
+  opts?: { inTransaction?: boolean; draftText?: string }
+): void {
+  const db = getDatabase()
+  const nested = opts?.inTransaction === true
+  if (!nested) db.exec("BEGIN IMMEDIATE;")
+  try {
+    clearSentDraftInTx(db, sessionId, content, opts?.draftText)
+    if (hadAssets) clearDraftAssetsInTx(db, sessionId)
+    if (!nested) db.exec("COMMIT;")
+  } catch (err) {
+    if (!nested) db.exec("ROLLBACK;")
+    throw err
+  }
 }
 
 function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {
