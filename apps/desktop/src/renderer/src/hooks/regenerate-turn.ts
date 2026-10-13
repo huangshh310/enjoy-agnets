@@ -42,7 +42,25 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
     }
   }
   if (userIndex === -1) return
+  await regenerateFromUserIndex(store, userIndex)
+}
 
+/**
+ * jojo P2：失败轮没有助手回复时，红卡「重新生成」从这条用户句重跑——
+ * 走截断（保留该用户句、id 不变，main 按 id 原地更新），绝不另发一条新的用户句。
+ */
+export async function regenerateUserTurn(userMessageId: string): Promise<void> {
+  const store = useChatStore.getState()
+  if (store.running || !hasIde()) return
+  if (!store.workspaceId || !store.sessionId) return
+  const userIndex = store.messages.findIndex((m) => m.id === userMessageId && m.role === "user")
+  if (userIndex === -1) return
+  await regenerateFromUserIndex(store, userIndex)
+}
+
+async function regenerateFromUserIndex(store: ChatStore, userIndex: number): Promise<void> {
+  const messages = store.messages
+  if (!store.sessionId) return
   const userMessage = messages[userIndex]
   if (!userMessage) return
 

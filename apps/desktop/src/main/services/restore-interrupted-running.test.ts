@@ -217,3 +217,32 @@ test("旧 run 未收工、新开一轮：封口不得改邻轮助手行", () => 
   assert.equal(kept, oldContent)
   assert.equal(parseAssistantPayload(kept).tools?.[0]?.state, "approval-requested")
 })
+
+test("jojo P3：强杀时这轮没有任何助手输出 → 待办（不留蓝执行中）；有输出照旧", () => {
+  const db = getDatabase()
+  const make = (tag: string, withReply: boolean) => {
+    const sessionId = `ses_int_noreply_${tag}`
+    const runId = `run_int_noreply_${tag}`
+    seedSession({ workspaceId: `ws_int_noreply_${tag}`, sessionId })
+    db.prepare("UPDATE sessions SET workflow_status = 'in_progress' WHERE id = ?").run(sessionId)
+    persistMessage(sessionId, "user", "hi")
+    if (withReply) {
+      persistMessage(sessionId, "assistant", serializeAssistantPayload({ content: "一半的回复", runId, tools: [] }))
+    }
+    insertRun(db, {
+      id: runId,
+      sessionId,
+      workspaceId: `ws_int_noreply_${tag}`,
+      kind: "agent",
+      status: "running",
+      modelId: "m",
+      providerId: null,
+      checkpoint: null,
+      error: null
+    })
+    queueInterruptedRunningSettle(getRun(db, runId)!)
+    return (db.prepare("SELECT workflow_status as w FROM sessions WHERE id = ?").get(sessionId) as { w: string }).w
+  }
+  assert.equal(make("none", false), "todo")
+  assert.equal(make("reply", true), "in_progress")
+})

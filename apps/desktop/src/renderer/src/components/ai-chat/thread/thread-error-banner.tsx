@@ -14,14 +14,13 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
-import { editAndResendUserTurn, regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { editAndResendUserTurn, regenerateAssistantTurn, regenerateUserTurn } from "@renderer/hooks/regenerate-turn"
 import {
   laterTurnCount,
   resolveRetryTarget,
   retryTargetForError
 } from "@renderer/hooks/regenerate-retry-target"
 import { RegenerateConfirmDialog } from "./turns/regenerate-confirm-dialog"
-import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
@@ -102,8 +101,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
     if (lastAssistant) {
       void regenerateAssistantTurn(lastAssistant.id)
     } else if (lastUser) {
-      useChatStore.getState().setComposer(lastUser.content)
-      void sendComposerMessage()
+      // jojo P2：没有助手回复的失败轮——按原用户句 id 重跑，不经输入框另发（会多一条用户行）。
+      void regenerateUserTurn(lastUser.id)
     }
   }
 
