@@ -289,8 +289,39 @@ test("ENJOY_E2E_DISMISS_ERROR=fail：关红卡落库失败 → 重试一次后�
     await expect(window.locator('[data-testid="thread-error-banner"]')).toBeVisible({ timeout: 20_000 })
     await window.locator('[data-testid="thread-error-dismiss"]').click()
     await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
-    await expect(window.getByText("红卡已关，但没记下来，重启后可能还会出现")).toBeVisible({ timeout: 10_000 })
+    await expect(window.getByText("提示已关，但没记住，重启后可能还会出现。")).toBeVisible({ timeout: 10_000 })
     await snap(window, "1440x920-dismiss-error-fail-toast-light")
+  } finally {
+    await closeForRelaunch(env.app)
+  }
+})
+
+test("灰条与红卡：灰条在场时不画红卡、本会话出错项仍上「需处理」条；换回真失败又出红卡（leo / luna #151）", async () => {
+  test.setTimeout(120_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  try {
+    const window = await firstWindow(env.app)
+    await window.locator('[data-testid="approval-deny"]').click()
+    await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0, { timeout: 15_000 })
+    await sendComposer(window, window.locator('[data-testid="composer-input"]'), "stub store error")
+    const banner = window.locator('[data-testid="thread-error-banner"]')
+    await expect(banner).toBeVisible({ timeout: 20_000 })
+    const realError = await window.evaluate(() => window.__enjoyE2e?.getComposerGate().error ?? null)
+    // 用桩把 store.error 换成「上一条还在准备」：灰条出来，红卡让位。
+    await window.evaluate(() => window.__enjoyE2e?.setError("PREVIOUS_STILL_PREPARING"))
+    const rail = window.locator('[data-testid="composer-previous-preparing"]')
+    await expect(rail).toBeVisible({ timeout: 5_000 })
+    await expect(banner).toHaveCount(0)
+    // 灰条不算红卡：本会话出错项不被误藏（必修 1）。
+    await expect(window.locator('[data-testid="attention-needs-bar"]')).toBeVisible({ timeout: 5_000 })
+    await window.screenshot({ path: "/workspace/mike-patrol-3cf0-shots/1440x920-rail-with-needs-bar-light.png" })
+    // 换回真失败：红卡回来，同会话出错项让位。
+    await window.evaluate((msg) => window.__enjoyE2e?.setError(msg), realError)
+    await expect(banner).toBeVisible({ timeout: 5_000 })
+    await expect(rail).toHaveCount(0)
+    await expect(window.locator('[data-testid="attention-needs-bar"]')).toHaveCount(0)
+    await window.screenshot({ path: "/workspace/mike-patrol-3cf0-shots/1440x920-redcard-after-rail-light.png" })
   } finally {
     await closeForRelaunch(env.app)
   }
