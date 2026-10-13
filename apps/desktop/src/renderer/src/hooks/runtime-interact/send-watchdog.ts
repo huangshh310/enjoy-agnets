@@ -13,13 +13,22 @@ export type SendWatchdogProbe = {
   fail: (text: string) => void
 }
 
-export type SendAttempt = { text: string; launched: boolean; cancelled: boolean; done: boolean }
+/**
+ * 每次 Enter 一个句柄（不再是模块级单例）：发送链路把它一路传下去，
+ * 发出 / 作废 / 暂停计时都只作用于这一次。
+ */
+export type SendAttempt = {
+  text: string
+  launched: boolean
+  cancelled: boolean
+  done: boolean
+  /** 合法的长等待（如 /compact 压缩）期间不计时。 */
+  paused: boolean
+}
 
 export const SEND_WATCHDOG_MS = 3_000
 const OTHER_RUN_GRACE_MS = 8_000
 const TICK_MS = 250
-
-let current: SendAttempt | null = null
 
 export function armSendWatchdog(
   text: string,
@@ -32,9 +41,7 @@ export function armSendWatchdog(
     }
   }
 ): SendAttempt {
-  if (current) current.done = true
-  const attempt: SendAttempt = { text, launched: false, cancelled: false, done: false }
-  current = attempt
+  const attempt: SendAttempt = { text, launched: false, cancelled: false, done: false, paused: false }
   let waited = 0
   let last = timers.now()
   const stop = timers.every(() => {
@@ -47,7 +54,7 @@ export function armSendWatchdog(
       return stop()
     }
     // 创建窗内是合法排队，不计时。
-    if (probe.createPending()) return
+    if (probe.createPending() || attempt.paused) return
     waited += step
     const limit = probe.otherRunActive() ? OTHER_RUN_GRACE_MS : SEND_WATCHDOG_MS
     if (waited < limit) return
@@ -60,16 +67,22 @@ export function armSendWatchdog(
 }
 
 /** agent.run / 媒体生成已发出：看门狗收手。 */
-export function markSendLaunched(): void {
-  if (current) current.launched = true
+export function markSendLaunched(attempt: SendAttempt | undefined): void {
+  if (attempt) attempt.launched = true
 }
 
-/** 看门狗已判失败并还稿：迟到的发送不得再发出（否则提示和发送同时发生）。 */
-export function sendAttemptCancelled(): boolean {
-  return current?.cancelled === true
+/** 看门狗已判失败并还稿：迟到的发送不得再发出，也不得再动输入框 / 附件 / Chip。 */
+export function sendAttemptCancelled(attempt: SendAttempt | undefined): boolean {
+  return attempt?.cancelled === true
 }
 
-export function resetSendWatchdogForTest(): void {
-  if (current) current.done = true
-  current = null
+/** 合法长等待期间暂停计时（等完恢复）。 */
+export async function pauseSendWatchdog<T>(attempt: SendAttempt | undefined, wait: () => Promise<T>): Promise<T> {
+  if (!attempt) return wait()
+  attempt.paused = true
+  try {
+    return await wait()
+  } finally {
+    attempt.paused = false
+  }
 }

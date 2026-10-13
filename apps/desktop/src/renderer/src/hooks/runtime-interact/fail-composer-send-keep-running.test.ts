@@ -2,7 +2,7 @@
  * leo #145 S1：超时走 keepRunning（会话里别的轮还在跑，只有 pending 助手）时，不能删这次新建的会话。
  */
 import assert from "node:assert/strict"
-import { test } from "node:test"
+import { beforeEach, test } from "node:test"
 
 const deleted: string[] = []
 ;(globalThis as { window?: unknown }).window = {
@@ -10,6 +10,11 @@ const deleted: string[] = []
 }
 const { useChatStore } = await import("../../stores/chat-store.ts")
 const { failComposerSend } = await import("./fail-composer-send.ts")
+
+// 每条用例独立：共享的 deleted 先清空，前一条失败不连带后一条。
+beforeEach(() => {
+  deleted.length = 0
+})
 
 function seedPendingOnly(sessionId: string) {
   useChatStore.setState({

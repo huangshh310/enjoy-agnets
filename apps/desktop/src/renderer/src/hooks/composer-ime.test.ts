@@ -91,3 +91,13 @@ test("输入框与 flush 接线守门", () => {
   assert.match(ime, /shouldClearShownOnPreparing/)
   assert.match(ime, /isNewSessionCreatePending/)
 })
+
+test("jojo ②：中文冷启动——组字中 / 没交出去的整句，建会话一出「正在准备…」也不擦", () => {
+  const base = { preparing: true, wasPreparing: false, value: "", createPending: true }
+  // 组字中：store 为空是因为 IME 还没提交，不是用户没打字。
+  assert.equal(shouldClearShownOnPreparing({ ...base, composing: true, shown: "你好世界" }), false)
+  // 已上屏但还没按 Enter：整句不得擦。
+  assert.equal(shouldClearShownOnPreparing({ ...base, shown: "帮我写一个排序函数", submitted: "" }), false)
+  // 正是刚 Enter 交出去的那句：照旧可擦。
+  assert.equal(shouldClearShownOnPreparing({ ...base, shown: "你好", submitted: "你好" }), true)
+})

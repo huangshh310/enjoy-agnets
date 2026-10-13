@@ -2,7 +2,7 @@
  * 只读 Composer 输入框 DOM。供发送与建会话共用，避免 lifecycle ↔ draft 环依赖。
  */
 import { useChatStore } from "../stores/chat-store"
-import { isComposerComposing } from "./composer-ime"
+import { isComposerComposing, noteComposerSubmitted } from "./composer-ime"
 import { isComposerWritebackHeld } from "./composer-sync-lock"
 import { isNewSessionCreatePending } from "./new-session-create"
 
@@ -23,6 +23,7 @@ let enterText: string | null = null
  */
 export function captureComposerEnter(text: string): void {
   enterText = text
+  noteComposerSubmitted(text)
   const store = useChatStore.getState()
   if (store.composer !== text) store.setComposer(text)
 }

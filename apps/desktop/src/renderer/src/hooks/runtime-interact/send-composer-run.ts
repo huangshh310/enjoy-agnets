@@ -1,7 +1,6 @@
 /**
  * 空闲发送：占 running 槽、乐观气泡、再开 agent.run / 媒体生成。
  */
-import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
@@ -22,22 +21,16 @@ import {
 } from "../../lib/usage/classify-thread-error.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
-import {
-  clearComposerDraft,
-  prefixHostModeForSend,
-  takeComposerText
-} from "./composer-draft"
 import { readComposerDomText } from "../composer-dom"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
-import { armSendWatchdog, markSendLaunched, sendAttemptCancelled } from "./send-watchdog"
+import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
+import { armSendWatchdog, markSendLaunched, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { isNewSessionCreatePending } from "../new-session-create"
 import {
   captureComposerSend,
-  preparedSendSnapshot,
-  type ComposerSendSnapshot
+  preparedSendSnapshot
 } from "./composer-send-snapshot"
-import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
@@ -59,26 +52,18 @@ type PreparedSend = {
   sessionId?: string
 }
 
-type SendPayload = {
-  content: string
-  /** 输入框里真正打出去的那段原文。content 可能垫了引用 / 技能 / 宿主模式前缀，不能拿它对输入框。 */
-  typed: string
-  /** 失败还原用：原文、Chip 与附件。 */
-  snapshot: ComposerSendSnapshot
-  assetIds: string[]
-  messageAssets: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
-  executePlan?: boolean
-  /** 句首 /computer-use。只作用于这一发，不把总开关写成开。 */
-  computerUseOnce?: boolean
-}
 
 /** 先 setRunning 占位，避免双击连发两轮。创建窗内先入队，禁止清输入空转。 */
-export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?: string) {
+export async function sendComposerMessage(
+  prepared?: PreparedSend,
+  typedAtEnter?: string,
+  /** 排队首发：沿用 Enter 那一刻挂的看门狗句柄。 */
+  queuedAttempt?: SendAttempt
+) {
   let store = useChatStore.getState()
   // 这次发送的原文只取一次：Enter 那一刻的 DOM 全文（或按钮点下时现读 DOM），之后全链路只用它。
   // 只有程序化调用（重试先 setComposer 再发、DOM 还没渲染）且 DOM 为空时才看 store。
   const typed = prepared ? prepared.content : (typedAtEnter ?? (readComposerDomText() || store.composer))
-  if (!prepared && typed.trim()) armComposerWatchdog(typed)
   traceSend("send", {
     prepared: Boolean(prepared),
     queuedFirst: Boolean(prepared?.sessionId),
@@ -91,9 +76,17 @@ export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?
   if (store.running) {
     // 只有创建窗里排队的首发（带 sessionId）限时等 running 落下；其余调用方保持原样直接不发。
     if (!prepared?.sessionId) {
-      traceSend("send:running-drop")
+      // jojo ④：「正在准备…」时又一发（排队自动续发 / 程序化调用）撞上 running：禁止静默丢，
+      // 原文（+附件）还回输入框并出提示，用户看得见、可以再发。
+      traceSend("send:running-restore")
+      const text = prepared ? prepared.content : typed
+      if (text.trim() || prepared?.assets?.length) {
+        restoreComposerDraft(text, prepared?.assets)
+        useChatStore.getState().setError(SEND_FAILED_RESTORE)
+      }
       return
     }
+    if (sendAttemptCancelled(queuedAttempt)) return
     const idle = await runWhenComposerIdle(
       {
         isRunning: () => useChatStore.getState().running,
@@ -116,6 +109,8 @@ export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?
     }
     store = useChatStore.getState()
   }
+  // leo soft：running 直接丢弃的那一发不挂看门狗（否则 3s 后误报「发送失败」）。
+  const attempt = queuedAttempt ?? (!prepared && typed.trim() ? armComposerWatchdog(typed) : undefined)
   if (!prepared && store.composer !== typed) store.setComposer(typed)
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
@@ -129,7 +124,7 @@ export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?
     }
     const assets = takeComposerAssetDetails()
     traceSend("send:queued", { text: text.length })
-    await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next), assets)
+    await waitThenSendAfterCreate(text, (next) => sendComposerMessage(next, undefined, attempt), assets)
     return
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")
@@ -159,8 +154,8 @@ export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?
     : captureComposerSend(typed)
   let optimisticContent: string | undefined
   try {
-    const payload = await resolveSendPayload(prepared, snapshot)
-    if (sendAttemptCancelled()) {
+    const payload = await resolveSendPayload(prepared, snapshot, attempt)
+    if (payload === "cancelled" || sendAttemptCancelled(attempt)) {
       // 看门狗已出提示并还稿：迟到的这一发作废，不能提示和发送同时发生。
       traceSend("send:watchdog-late")
       store.setRunning(false)
@@ -176,7 +171,7 @@ export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?
     const messages = beginOptimisticTurn(store, payload)
     optimisticContent = payload.content
     clearSentComposerText(payload.typed)
-    await launchComposerRun(store, payload, messages, prepared?.sessionId)
+    await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
     store.setPreparingHint(false)
@@ -195,9 +190,9 @@ export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?
 
 const QUEUED_SEND_IDLE_WAIT_MS = 5_000
 
-function armComposerWatchdog(typed: string): void {
+function armComposerWatchdog(typed: string): SendAttempt {
   const before = useChatStore.getState()
-  armSendWatchdog(typed, {
+  return armSendWatchdog(typed, {
     // 只认这次 Enter 之后新冒出来的提示，Enter 前就挂着的旧条不算。
     noticeShown: () => {
       const state = useChatStore.getState()
@@ -226,34 +221,6 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)
 }
 
-async function resolveSendPayload(
-  prepared: PreparedSend | undefined,
-  snapshot: ComposerSendSnapshot
-): Promise<SendPayload | null> {
-  const fromDraft = !prepared
-  const typed = snapshot.text
-  const raw = prepared?.content ?? (await takeComposerText(snapshot.text))
-  if (!raw.trim()) return null
-  const slash = takeComputerUseSlash(raw)
-  const body = slash.once ? slash.text || raw.trim() : raw
-  const content = prefixHostModeForSend(body)
-  if (fromDraft) clearComposerDraft()
-  const queuedAssets = prepared?.assets ?? takeComposerAssetDetails()
-  return {
-    content,
-    typed,
-    snapshot,
-    assetIds: queuedAssets.map((item) => item.id),
-    messageAssets: queuedAssets.map((item) => ({
-      assetId: item.id,
-      mediaType: resolveMediaType(item.name, item.mediaType),
-      name: item.name,
-      url: item.url
-    })),
-    executePlan: prepared?.executePlan,
-    computerUseOnce: slash.once || undefined
-  }
-}
 
 function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
   const messages = store.appendUserMessage(
@@ -287,10 +254,11 @@ async function launchComposerRun(
   store: ChatState,
   payload: SendPayload,
   messages: ChatState["messages"],
-  createdSessionId?: string
+  createdSessionId?: string,
+  attempt?: SendAttempt
 ) {
   const sessionId = store.sessionId
-  markSendLaunched()
+  markSendLaunched(attempt)
   traceSend("send:launch")
   try {
     const result = await startComposerRun(

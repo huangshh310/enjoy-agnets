@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { armSendWatchdog, markSendLaunched, resetSendWatchdogForTest, sendAttemptCancelled } from "./send-watchdog.ts"
+import { armSendWatchdog, markSendLaunched, pauseSendWatchdog, sendAttemptCancelled } from "./send-watchdog.ts"
 
 function fakeTimers() {
   let now = 0
@@ -42,32 +42,29 @@ function probe(over: Partial<Parameters<typeof armSendWatchdog>[1]> = {}) {
 }
 
 test("Enter 后 3s 既没发出也没提示：还稿出提示，迟到的发送作废", () => {
-  resetSendWatchdogForTest()
   const clock = fakeTimers()
   const p = probe()
-  armSendWatchdog("hello fast 2", p.probe, clock.timers)
+  const attempt = armSendWatchdog("hello fast 2", p.probe, clock.timers)
   clock.advance(2_750)
   assert.deepEqual(p.failed, [])
   clock.advance(500)
   assert.deepEqual(p.failed, ["hello fast 2"])
-  assert.equal(sendAttemptCancelled(), true)
+  assert.equal(sendAttemptCancelled(attempt), true)
   assert.equal(clock.running, false)
 })
 
 test("agent.run 发出即收手", () => {
-  resetSendWatchdogForTest()
   const clock = fakeTimers()
   const p = probe()
-  armSendWatchdog("x", p.probe, clock.timers)
+  const attempt = armSendWatchdog("x", p.probe, clock.timers)
   clock.advance(1_000)
-  markSendLaunched()
+  markSendLaunched(attempt)
   clock.advance(10_000)
   assert.deepEqual(p.failed, [])
-  assert.equal(sendAttemptCancelled(), false)
+  assert.equal(sendAttemptCancelled(attempt), false)
 })
 
 test("已有提示挂着：不重复判", () => {
-  resetSendWatchdogForTest()
   const clock = fakeTimers()
   const p = probe({ noticeShown: () => true })
   armSendWatchdog("x", p.probe, clock.timers)
@@ -76,7 +73,6 @@ test("已有提示挂着：不重复判", () => {
 })
 
 test("创建窗内排队不计时，创建完成后再起算 3s", () => {
-  resetSendWatchdogForTest()
   const clock = fakeTimers()
   let pending = true
   const p = probe({ createPending: () => pending })
@@ -90,15 +86,32 @@ test("创建窗内排队不计时，创建完成后再起算 3s", () => {
   assert.deepEqual(p.failed, ["queued"])
 })
 
-test("新的一次 Enter 顶掉旧看门狗", () => {
-  resetSendWatchdogForTest()
+test("每次 Enter 一个句柄：标记一个发出不影响另一个", () => {
   const a = fakeTimers()
   const b = fakeTimers()
   const p = probe()
-  armSendWatchdog("old", p.probe, a.timers)
-  armSendWatchdog("new", p.probe, b.timers)
+  const first = armSendWatchdog("old", p.probe, a.timers)
+  const second = armSendWatchdog("new", p.probe, b.timers)
+  markSendLaunched(first)
   a.advance(5_000)
   assert.deepEqual(p.failed, [])
   b.advance(3_250)
   assert.deepEqual(p.failed, ["new"])
+  assert.equal(sendAttemptCancelled(first), false)
+  assert.equal(sendAttemptCancelled(second), true)
+})
+
+test("/compact 等合法长等待期间暂停计时", async () => {
+  const clock = fakeTimers()
+  const p = probe()
+  const attempt = armSendWatchdog("/compact 后续问题", p.probe, clock.timers)
+  let release!: () => void
+  const waiting = pauseSendWatchdog(attempt, () => new Promise<void>((resolve) => (release = resolve)))
+  clock.advance(10_000)
+  assert.deepEqual(p.failed, [])
+  release()
+  await waiting
+  markSendLaunched(attempt)
+  clock.advance(5_000)
+  assert.deepEqual(p.failed, [])
 })
