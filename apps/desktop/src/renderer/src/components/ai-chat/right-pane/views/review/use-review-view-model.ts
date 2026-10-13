@@ -3,6 +3,8 @@
  */
 import { useEffect, useMemo, useRef } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { sessionScopedPaths, useSessionChanges } from "@renderer/hooks/session-changes"
+import { reviewTurnPaths } from "./review-turn-paths"
 import { useRightPaneStore } from "@renderer/stores/right-pane-store"
 import { filterChangesByScope } from "./filter-review-changes"
 import type { ReviewScope } from "./types/review.types"
@@ -33,8 +35,14 @@ export function useReviewViewModel(props: ReviewViewProps) {
     enabled: active && inGit && scope === "checkpoints"
   })
   const commitDockRef = useRef<ReviewCommitDockHandle>(null)
-  const lastTurnPaths = useLastTurnPaths(active)
-  useFallbackEmptyLastTurn(scope, lastTurnPaths.length, props.changes.length, setScope)
+  const turnPaths = useLastTurnPaths(active)
+  // luna P2：本轮没写盘时「本轮」口径回落到会话口径（会话自基线改过的文件），不是整仓未提交。
+  const sessionPaths = sessionScopedPaths(useSessionChanges())
+  const lastTurnPaths = useMemo(
+    () => reviewTurnPaths(turnPaths, sessionPaths),
+    [turnPaths, sessionPaths]
+  )
+  useFallbackEmptyLastTurn(scope, lastTurnPaths.length, sessionPaths ? 0 : props.changes.length, setScope)
   const scoped = useMemo(
     () => filterChangesByScope(props.changes, scope, lastTurnPaths, git.branchFiles),
     [props.changes, scope, lastTurnPaths, git.branchFiles]

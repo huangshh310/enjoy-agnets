@@ -1,6 +1,7 @@
 /**
  * 把可恢复请求写入 runs.checkpoint。不含密钥。
  */
+import { recordRunStartDirty } from "./session-changes"
 import { snapshotGeneration, type GenerationRequest } from "@enjoy-agents/agent-core"
 import { getRun, insertRun, updateRun } from "@enjoy-agents/db"
 import type { RunAgentInput } from "@enjoy-agents/ipc-contract"
@@ -43,7 +44,11 @@ export function rememberGenerationRun(row: {
       checkpoint,
       error: null
     })
-    if (row.request.kind === "agent") recordRunStartHead(row.runId, row.request.sessionId)
+    if (row.request.kind === "agent") {
+      recordRunStartHead(row.runId, row.request.sessionId)
+      // luna P2：同时记下跑前已脏文件的内容哈希，会话级改动只算本会话改过的。
+      recordRunStartDirty(row.runId, row.request.sessionId)
+    }
     return
   }
   updateRun(db, row.runId, { status: row.status ?? "running", checkpoint, error: null })

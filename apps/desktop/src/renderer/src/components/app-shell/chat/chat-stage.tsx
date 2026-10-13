@@ -4,6 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
+import { sessionScopedCount, useSessionChanges } from "@renderer/hooks/session-changes"
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
@@ -57,6 +58,8 @@ export function ChatStage() {
   const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
   const setRightPanelCollapsed = useChatStore((state) => state.setRightPanelCollapsed)
   const gate = useChatModelGate()
+  // luna P2：「N 项」按会话口径（跑前已脏、没被本会话改的不算；没写盘 run = 0）。
+  const sessionChanges = useSessionChanges()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const surface = pathname === "/kanban" ? "kanban" : pathname === "/automations" ? "automations" : "thread"
   const workspaces = useQuery({
@@ -85,7 +88,7 @@ export function ChatStage() {
           workspaceName={workspaceName}
           sessionTitle={sessionTitle}
           workspaceRootLabel={workspaceRootLabel}
-          changesCount={changes.length}
+          changesCount={sessionScopedCount(sessionChanges, changes.length)}
           empty={messages.length === 0 && !running}
           surface={surface}
           rightPanelCollapsed={rightPanelCollapsed}

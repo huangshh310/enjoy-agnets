@@ -105,6 +105,7 @@ function isNoSuchTable(error: unknown): boolean {
 /** 删会话时一并清的会话键表（表可能还没建：只吞 no such table）。 */
 export const SESSION_KEYED_DELETES = [
   "DELETE FROM run_start_git_heads WHERE run_id IN (SELECT id FROM runs WHERE session_id = ?)",
+  "DELETE FROM run_start_dirty WHERE session_id = ?",
   "DELETE FROM session_heartbeats WHERE session_id = ?",
   "DELETE FROM session_drafts WHERE session_id = ?",
   "DELETE FROM session_error_dismissed WHERE session_id = ?"
