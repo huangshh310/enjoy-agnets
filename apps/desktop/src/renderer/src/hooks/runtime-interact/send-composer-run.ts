@@ -26,7 +26,7 @@ import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { readComposerDomText } from "../composer-dom"
 import { holdPastSendWatchdogForE2e } from "../../lib/e2e-send-watchdog"
-import { writePersistedDraft } from "../../lib/session-draft-storage"
+import { holdEmptyDraftWrite, releaseEmptyDraftHold, writePersistedDraft } from "../../lib/session-draft-storage"
 import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
@@ -186,6 +186,10 @@ export async function sendComposerMessage(
     ? preparedSendSnapshot(prepared.content, prepared.assets)
     : captureComposerSend(typed)
   let optimisticContent: string | undefined
+  // leo：发送清空输入框产生的 "" 先不落 main（落库前强杀会丢稿），发出后再补。
+  const draftSid = prepared?.sessionId ?? store.sessionId
+  if (draftSid) holdEmptyDraftWrite(draftSid)
+  let draftLaunched = false
   try {
     // e2e：ENJOY_E2E_SEND_WATCHDOG=1 时在发出前卡过看门狗（打包态恒不生效）。
     if (attempt) await holdPastSendWatchdogForE2e()
@@ -217,11 +221,12 @@ export async function sendComposerMessage(
       const sid = prepared?.sessionId
       if (!laterTyped && sid) {
         useChatStore.getState().clearSessionDraft(sid)
+        // 处于 hold 期：只清缓存，不往 main 写 ""（main 在用户消息落库事务里清）。
         writePersistedDraft(sid, "")
       }
       setComposerWritebackHeld(false)
     } else clearSentComposerText(payload.typed)
-    await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
+    draftLaunched = await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
     // leo #145：A 已被看门狗作废后才抛——看门狗已还过稿，不再还 A 的字、不清 B 的 running。
@@ -237,6 +242,8 @@ export async function sendComposerMessage(
       dropOptimisticUser: optimisticContent !== undefined,
       optimisticContent
     })
+  } finally {
+    if (draftSid) releaseEmptyDraftHold(draftSid, draftLaunched)
   }
 }
 
@@ -322,7 +329,7 @@ async function launchComposerRun(
   messages: ChatState["messages"],
   createdSessionId?: string,
   attempt?: SendAttempt
-) {
+): Promise<boolean> {
   const sessionId = store.sessionId
   markSendLaunched(attempt)
   traceSend("send:launch")
@@ -344,7 +351,7 @@ async function launchComposerRun(
         createdSessionId,
         dropOptimisticUser: true
       })
-      return
+      return false
     }
     const runId = requireAgentRunId(result)
     if (!claimComposerRun(sessionId, runId)) {
@@ -355,10 +362,11 @@ async function launchComposerRun(
         sessionId,
         createdSessionId
       })
-      return
+      return true
     }
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
+    return true
   } catch (error) {
     failComposerSend({
       ...restoreFromPayload(payload),
@@ -367,6 +375,7 @@ async function launchComposerRun(
       createdSessionId,
       dropOptimisticUser: true
     })
+    return false
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }

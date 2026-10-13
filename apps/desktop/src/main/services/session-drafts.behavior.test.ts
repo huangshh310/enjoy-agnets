@@ -34,11 +34,11 @@ test("P2：用户消息落库（Enter 后 1.5s 强杀前已落库）→ 同一�
   assert.equal(loadSessionDrafts()[sid], undefined)
 })
 
-test("P2：发出的内容带前缀（引用 / 模式）也算同一条", () => {
-  const sid = session("prefixed")
-  saveSessionDraft(sid, "修登录页")
-  persistMessage(sid, "user", "> 引用一段\n\n修登录页")
-  assert.equal(loadSessionDrafts()[sid], undefined)
+test("leo：只有完全相同才清——以短稿结尾的长消息不删短稿", () => {
+  const sid = session("suffix")
+  saveSessionDraft(sid, "好")
+  persistMessage(sid, "user", "这样就好")
+  assert.equal(loadSessionDrafts()[sid], "好")
 })
 
 test("P2：0.3s 强杀（消息还没落库）→ 稿还在；落的是别的内容 / 助手消息也不清", () => {
@@ -54,4 +54,5 @@ test("draftWasSent：空稿不算", () => {
   assert.equal(draftWasSent("", "x"), false)
   assert.equal(draftWasSent("  a ", "a"), true)
   assert.equal(draftWasSent("a", "b"), false)
+  assert.equal(draftWasSent("a", "xa"), false)
 })

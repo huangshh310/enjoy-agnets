@@ -8,6 +8,7 @@ import {
   RiRefreshLine,
   RiUserLine
 } from "@remixicon/react"
+import { dismissSessionErrorCard } from "../../../hooks/hydrate-session-error"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
@@ -220,7 +221,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             <span className="text-body-medium font-semibold text-text-primary">{title}</span>
             <button
               type="button"
-              onClick={() => setError(null)}
+              onClick={dismissSessionErrorCard}
               title={t("chat.dismissError")}
               className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
             >

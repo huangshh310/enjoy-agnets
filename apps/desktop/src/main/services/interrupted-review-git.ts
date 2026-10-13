@@ -4,6 +4,8 @@
  */
 import { spawnSync } from "node:child_process"
 import { isAbsolute, relative, resolve, sep } from "node:path"
+import { isReadOnlyBashTool } from "@enjoy-agents/ipc-contract/bash-read-only"
+import { isWriteTypeToolName } from "@enjoy-agents/ipc-contract/tool-names"
 import type { TurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import { getDatabase } from "./database"
 
@@ -82,15 +84,12 @@ const WRITE_TOOL_NAMES = new Set(["write_file", "edit_file", "write", "edit"])
 
 type ToolLike = { name?: string; args?: unknown }
 
-function writeTargets(tools: readonly ToolLike[]): string[] {
-  const out: string[] = []
-  for (const tool of tools) {
-    if (!tool?.name || !WRITE_TOOL_NAMES.has(tool.name)) continue
-    const args = (tool.args ?? {}) as Record<string, unknown>
-    const target = args.path ?? args.file_path ?? args.filePath
-    out.push(typeof target === "string" ? target : "")
-  }
-  return out
+/** 文件写工具的目标路径；不是这几种或缺路径 → null（未确认）。 */
+function fileWriteTarget(tool: ToolLike): string | null {
+  if (!tool.name || !WRITE_TOOL_NAMES.has(tool.name)) return null
+  const args = (tool.args ?? {}) as Record<string, unknown>
+  const target = args.path ?? args.file_path ?? args.filePath
+  return typeof target === "string" && target ? target : null
 }
 
 export type WriteTargetVerdict = "outside" | "ignored" | "visible" | "unknown"
@@ -111,9 +110,22 @@ export function writeTargetVerdict(root: string, target: string): WriteTargetVer
   }
 }
 
-/** 有任何 git 看不见（或无法确认）的写 → true。 */
+/**
+ * leo fail-closed：有任何 git 看不见（或无法确认）的写 → true。
+ * 只读白名单（只读类工具 / 只读 bash）跳过；文件写工具须解析出工作区内、未忽略的路径；
+ * 其余写型或未知工具（bash 写、code_mode、apply_patch、MCP…）解析不了目标 → 一律当看不见。
+ */
 export function hasInvisibleWrite(root: string, tools: readonly ToolLike[]): boolean {
-  return writeTargets(tools).some((target) => writeTargetVerdict(root, target) !== "visible")
+  for (const tool of tools) {
+    const name = typeof tool?.name === "string" ? tool.name : ""
+    if (!name) return true
+    if (!isWriteTypeToolName(name)) continue
+    if (isReadOnlyBashTool({ name, args: tool.args })) continue
+    const target = fileWriteTarget(tool)
+    if (target === null) return true
+    if (writeTargetVerdict(root, target) !== "visible") return true
+  }
+  return false
 }
 
 /**

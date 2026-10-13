@@ -46,7 +46,19 @@ import { forkSession } from "./services/session-fork"
 import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
 import { delaySessionCreateIfDev } from "./services/delay-session-create"
 import { loadSessionDrafts, saveSessionDraft } from "./services/session-drafts"
-import { sessionLastError } from "./services/session-last-error"
+import { z } from "zod"
+import { dismissSessionError, SESSION_ERROR_MESSAGE_MAX, sessionLastError } from "./services/session-last-error"
+
+const SessionLastErrorOutput = z
+  .object({
+    runId: z.string().min(1),
+    message: z.string().min(1).max(SESSION_ERROR_MESSAGE_MAX),
+    updatedAt: z.number()
+  })
+  .strict()
+  .nullable()
+
+const SessionErrorInput = z.object({ sessionId: z.string().min(1), runId: z.string().min(1).optional() })
 
 export const SESSION_CHANNELS = [
   "session.list",
@@ -69,7 +81,8 @@ export const SESSION_CHANNELS = [
   "session.heartbeat.put",
   "session.heartbeat.clear",
   "session.estimatedCost",
-  "session.lastError"
+  "session.lastError",
+  "session.dismissError"
 ] as const
 
 export function registerSessionIpc() {
@@ -86,7 +99,14 @@ function registerSessionCatalogIpc() {
       typeof (raw as { sessionId?: unknown })?.sessionId === "string"
         ? (raw as { sessionId: string }).sessionId
         : ""
-    return sessionLastError(sessionId)
+    const parsed = SessionLastErrorOutput.safeParse(sessionLastError(sessionId))
+    return parsed.success ? parsed.data : null
+  })
+  ipcMain.handle("session.dismissError", (_event, raw) => {
+    const input = SessionErrorInput.safeParse(raw)
+    if (!input.success) return false
+    dismissSessionError(input.data.sessionId, input.data.runId)
+    return true
   })
   ipcMain.handle("session.list", async (_event, raw) =>
     listSessions(WorkspaceIdInput.parse(raw).workspaceId)

@@ -32,7 +32,7 @@ function gitRepo(dirty: boolean): string {
 function killedWriteRun(
   tag: string,
   root: string,
-  opts: { target?: string; afterStart?: () => void } = {}
+  opts: { target?: string; afterStart?: () => void; tool?: { name: string; args: unknown } } = {}
 ): string {
   resetInterruptedRunningForTest()
   const sessionId = `ses_int_git_${tag}`
@@ -52,7 +52,7 @@ function killedWriteRun(
     serializeAssistantPayload({
       content: "",
       runId,
-      tools: [{ id: "t1", name: "write_file", state: "input-available", args: { path: opts.target ?? "note.txt" }, result: { decision: "allow" } }]
+      tools: [{ id: "t1", name: opts.tool?.name ?? "write_file", state: "input-available", args: opts.tool ? opts.tool.args : { path: opts.target ?? "note.txt" }, result: { decision: "allow" } }]
     })
   )
   insertRun(db, {
@@ -157,3 +157,28 @@ test("leo：强杀 + 干净但写到工作区外：照旧待验收", () => {
   assert.equal(killedWriteRun("outside_abs", gitRepo(false), { target: "/tmp/elsewhere.txt" }), "needs_review")
 })
 
+
+test("leo fail-closed：强杀 + 干净但 bash 写到外部：照旧待验收", () => {
+  const tool = { name: "bash", args: { command: "echo x > /tmp/leo-y.txt" } }
+  assert.equal(killedWriteRun("bash_write", gitRepo(false), { tool }), "needs_review")
+})
+
+test("leo fail-closed：强杀 + 干净但 code_mode：照旧待验收", () => {
+  const tool = { name: "code_mode", args: { code: "fs.writeFileSync('/tmp/z', 'x')" } }
+  assert.equal(killedWriteRun("code_mode", gitRepo(false), { tool }), "needs_review")
+})
+
+test("leo fail-closed：强杀 + 干净但 apply_patch：照旧待验收", () => {
+  const tool = { name: "apply_patch", args: { patch: "*** Begin Patch\n*** Add File: out/x.txt\n+x\n*** End Patch" } }
+  assert.equal(killedWriteRun("apply_patch", gitRepo(false), { tool }), "needs_review")
+})
+
+test("leo fail-closed：强杀 + 干净但未知 MCP 工具：照旧待验收", () => {
+  const tool = { name: "mcp_x__foo", args: { anything: 1 } }
+  assert.equal(killedWriteRun("mcp_unknown", gitRepo(false), { tool }), "needs_review")
+})
+
+test("leo fail-closed：写文件工具缺路径：照旧待验收", () => {
+  const tool = { name: "write_file", args: {} }
+  assert.equal(killedWriteRun("nopath", gitRepo(false), { tool }), "needs_review")
+})

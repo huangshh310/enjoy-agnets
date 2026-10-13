@@ -38,3 +38,16 @@ export async function restoreSessionErrorFromDb(
   store.setError(message, target ?? undefined)
   return true
 }
+
+/** leo：用户关红卡要落库（按 runId 水位），否则重启 loadSession 又还原出来。 */
+export function dismissSessionErrorCard(): void {
+  const store = useChatStore.getState()
+  const sessionId = store.sessionId
+  store.setError(null)
+  if (!sessionId) return
+  try {
+    void Promise.resolve(getIde().session.dismissError({ sessionId })).catch(() => undefined)
+  } catch {
+    /* 没桥（测试 / 早期启动）就只关内存卡 */
+  }
+}

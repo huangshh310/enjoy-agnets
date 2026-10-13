@@ -90,6 +90,7 @@ const ide = {
       save: (input: { sessionId: string; text: string }) => ipcRenderer.send("session.drafts.save", input)
     },
     lastError: (input: unknown) => ipcRenderer.invoke("session.lastError", input),
+    dismissError: (input: unknown) => ipcRenderer.invoke("session.dismissError", input),
     deleteArchived: () => ipcRenderer.invoke("session.deleteArchived"),
     compact: (input: unknown) => ipcRenderer.invoke("session.compact", input),
     getCompaction: (input: unknown) => ipcRenderer.invoke("session.getCompaction", input),

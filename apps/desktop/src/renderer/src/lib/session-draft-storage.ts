@@ -75,6 +75,7 @@ export function flushPersistedDrafts(): void {
 
 /** 测试用：丢掉内存缓存，下次从后端重读（模拟重启）。 */
 export function resetPersistedDraftCacheForTest(): void {
+  emptyHolds.clear()
   if (timer) clearTimeout(timer)
   timer = null
   pending.clear()
@@ -86,6 +87,26 @@ export function readPersistedDraft(sessionId: string): string | undefined {
   return typeof text === "string" && text ? text : undefined
 }
 
+/**
+ * leo：发送途中输入框清空产生的 "" 不落 main——消息落库前强杀会丢稿。
+ * 由 main 在用户消息落库同一事务里清（完全相同才清）；发出后再由 releaseEmptyDraftHold 补一次 ""。
+ */
+const emptyHolds = new Set<string>()
+
+export function holdEmptyDraftWrite(sessionId: string): void {
+  emptyHolds.add(sessionId)
+}
+
+/** 发送收尾：launched=消息已交给 main（已落库）→ 若此刻仍是空稿，补发 ""。 */
+export function releaseEmptyDraftHold(sessionId: string, launched: boolean): void {
+  if (!emptyHolds.delete(sessionId)) return
+  if (!launched) return
+  if (drafts()[sessionId]) return
+  pending.set(sessionId, "")
+  if (timer) clearTimeout(timer)
+  timer = setTimeout(flushPersistedDrafts, DRAFT_PERSIST_DEBOUNCE_MS)
+}
+
 export function writePersistedDraft(sessionId: string, text: string): void {
   const map = drafts()
   if (text.trim()) {
@@ -94,6 +115,10 @@ export function writePersistedDraft(sessionId: string, text: string): void {
   } else {
     if (!(sessionId in map)) return
     delete map[sessionId]
+    if (emptyHolds.has(sessionId)) {
+      pending.delete(sessionId)
+      return
+    }
   }
   pending.set(sessionId, text.trim() ? text : "")
   if (timer) clearTimeout(timer)

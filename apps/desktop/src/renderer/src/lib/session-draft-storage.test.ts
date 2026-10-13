@@ -16,8 +16,10 @@ const {
   composerDraftForSession,
   DRAFT_PERSIST_DEBOUNCE_MS,
   flushPersistedDrafts,
+  holdEmptyDraftWrite,
   installSessionDraftPersistence,
   readPersistedDraft,
+  releaseEmptyDraftHold,
   resetPersistedDraftCacheForTest
 } = await import(
   "./session-draft-storage.ts"
@@ -114,4 +116,39 @@ test("jojo P1：有 main 桥时草稿防抖后写到 main，不写 localStorage�
     delete (globalThis as { window?: unknown }).window
     resetPersistedDraftCacheForTest()
   }
+})
+
+test("leo：发送途中清空输入框不往 main 写 \"\"（落库前强杀不丢稿）；发出后才补清", () => {
+  const calls: Array<{ sessionId: string; text: string }> = []
+  ;(globalThis as { window?: unknown }).window = {
+    ide: { session: { drafts: { loadSync: () => ({}), save: (input: { sessionId: string; text: string }) => void calls.push(input) } } }
+  }
+  try {
+    resetPersistedDraftCacheForTest()
+    useChatStore.getState().setComposer("要发的稿")
+    flushPersistedDrafts()
+    calls.length = 0
+    holdEmptyDraftWrite("ses_a")
+    useChatStore.getState().setComposer("")
+    flushPersistedDrafts()
+    assert.deepEqual(calls, [], "消息落库前 main 里的稿不能被清")
+    assert.equal(readPersistedDraft("ses_a"), undefined, "缓存照清，界面不残留")
+    releaseEmptyDraftHold("ses_a", false)
+    flushPersistedDrafts()
+    assert.deepEqual(calls, [], "没发出去：不清 main")
+    holdEmptyDraftWrite("ses_a")
+    releaseEmptyDraftHold("ses_a", true)
+    flushPersistedDrafts()
+    assert.deepEqual(calls, [{ sessionId: "ses_a", text: "" }], "发出后补清")
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+    resetPersistedDraftCacheForTest()
+  }
+})
+
+test("接线：send-composer-run 发送时 hold 空稿写、收尾 release", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("../hooks/runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
+  assert.match(src, /holdEmptyDraftWrite\(draftSid\)/)
+  assert.match(src, /finally \{\s*if \(draftSid\) releaseEmptyDraftHold\(draftSid, draftLaunched\)/)
 })

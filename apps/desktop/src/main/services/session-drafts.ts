@@ -45,11 +45,10 @@ export function saveSessionDraft(sessionId: string, text: string): void {
   }
 }
 
-/** 这份稿就是刚发出的那条（正文相同，或发出的内容以它结尾——前面可能垫了引用 / 模式前缀）。 */
+/** leo：只有正文完全相同才算「这份稿已发出」；短稿不能被以它结尾的长消息误删。 */
 export function draftWasSent(draft: string, sentContent: string): boolean {
   const d = draft.trim()
-  const c = sentContent.trim()
-  return Boolean(d) && (c === d || c.endsWith(d))
+  return Boolean(d) && sentContent.trim() === d
 }
 
 /** 在 persistMessage 的事务里调用：用户消息落库的同一步清掉已发出的稿。 */

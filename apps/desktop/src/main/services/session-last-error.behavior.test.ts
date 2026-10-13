@@ -6,7 +6,7 @@ import { test } from "node:test"
 import { insertRun, updateRun } from "@enjoy-agents/db"
 
 const { getDatabase } = await import("./restore-interrupted-running.behavior.load.ts")
-const { sessionLastError } = await import("./session-last-error.ts")
+const { dismissSessionError, redactRunError, sessionLastError } = await import("./session-last-error.ts")
 
 function session(tag: string): string {
   const db = getDatabase()
@@ -51,8 +51,60 @@ test("最近失败 run 的 error 可读回；回挂码跳过", () => {
   // updateRun 会 bump updated_at，保证「新」排在前。
   updateRun(db, "run_err_new", { error: "boom now" })
   assert.equal(sessionLastError(sid)?.message, "boom now")
+  // 回挂码那条不算一轮：往回看到的上一轮就是失败的。
   updateRun(db, "run_err_new", { error: "restore_interrupted_running" })
   assert.equal(sessionLastError(sid)?.message, "old boom")
+})
+
+function run(sid: string, id: string, status: "failed" | "completed", error: string | null, at: number) {
+  insertRun(getDatabase(), {
+    id,
+    sessionId: sid,
+    workspaceId: `ws_err_${sid.slice(8)}`,
+    kind: "agent",
+    status,
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error,
+    createdAt: at
+  })
+  getDatabase().prepare("UPDATE runs SET updated_at = ? WHERE id = ?").run(at, id)
+}
+
+test("leo：失败 → 成功 → 重启 = 没卡（只看最近一轮）", () => {
+  const sid = session("ok_after")
+  run(sid, "run_oa_1", "failed", "boom", 10)
+  run(sid, "run_oa_2", "completed", null, 20)
+  assert.equal(sessionLastError(sid), null)
+})
+
+test("leo：关卡落水位 → 重启不再还原；更新的失败照出", () => {
+  const sid = session("dismiss")
+  run(sid, "run_ds_1", "failed", "boom", 10)
+  assert.equal(sessionLastError(sid)?.runId, "run_ds_1")
+  dismissSessionError(sid)
+  assert.equal(sessionLastError(sid), null)
+  run(sid, "run_ds_2", "failed", "boom2", 20)
+  assert.equal(sessionLastError(sid)?.runId, "run_ds_2")
+})
+
+test("leo：归档会话没卡", () => {
+  const sid = session("archived")
+  run(sid, "run_ar_1", "failed", "boom", 10)
+  getDatabase().prepare("UPDATE sessions SET archived_at = 5 WHERE id = ?").run(sid)
+  assert.equal(sessionLastError(sid), null)
+})
+
+test("leo：error 去栈 / 去路径 / 去 token 并截断", () => {
+  const sid = session("redact")
+  const raw = `Error: failed reading /Users/al/secret/proj/a.ts with key sk-abcdefghijklmnop1234\n    at foo (/x/y.js:1:2)\n    at bar`
+  run(sid, "run_rd_1", "failed", raw, 10)
+  const msg = sessionLastError(sid)?.message ?? ""
+  assert.match(msg, /^Error: failed reading/)
+  assert.doesNotMatch(msg, /Users|sk-abc|\bat foo|y\.js/)
+  assert.ok(redactRunError("x".repeat(1000)).length <= 300)
+  assert.ok(redactRunError("e ".repeat(400)).length <= 300)
 })
 
 test("没有失败 run / 空会话 → null", () => {
