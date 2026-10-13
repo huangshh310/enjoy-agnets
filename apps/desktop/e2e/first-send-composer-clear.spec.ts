@@ -300,3 +300,96 @@ test("(e) 排队首发时创建被又一次「新对话」顶掉：出提示、�
     await shutdown(app)
   }
 })
+
+const FAST_REPEAT = Number(process.env.ENJOY_E2E_FAST_REPEAT ?? "6")
+
+function userMessagesInOrder(userData: string): string[] {
+  const dbPath = join(userData, "app.db")
+  if (!existsSync(dbPath)) return []
+  const db = new DatabaseSync(dbPath)
+  try {
+    const rows = db.prepare("SELECT content FROM messages WHERE role = 'user' ORDER BY rowid").all() as Array<{
+      content?: string
+    }>
+    return rows.map((row) => row.content ?? "")
+  } finally {
+    db.close()
+  }
+}
+
+/** 这次 Enter 的结局：整句发出（恰好一条、以原文结尾）且框清空。半句入库 / 静默 / 只出提示都判失败并留截图。 */
+async function expectFastOutcome(window: Page, userData: string, before: number, text: string, label: string) {
+  const composer = window.locator('[data-testid="composer-input"]')
+  const notice = window.locator('[data-testid="thread-error-banner"]')
+  let outcome = "pending"
+  const deadline = Date.now() + 15_000
+  while (Date.now() < deadline) {
+    const rows = userMessagesInOrder(userData).slice(before)
+    if (rows.length > 0) {
+      outcome = rows.length === 1 && rows[0]!.endsWith(text) ? "sent" : `wrong:${JSON.stringify(rows)}`
+      break
+    }
+    if ((await notice.count()) > 0 && (await composer.inputValue()) === text) {
+      outcome = "notice"
+      break
+    }
+    await window.waitForTimeout(250)
+  }
+  if (outcome !== "sent" && outcome !== "notice") {
+    const left = await composer.inputValue().catch(() => "?")
+    const trace = await window
+      .evaluate(() => (window as unknown as { __enjoySendDebug?: unknown[] }).__enjoySendDebug?.slice(-25) ?? null)
+      .catch(() => null)
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, `f-${label}-fail.png`) })
+    outcome = `${outcome} composer=${JSON.stringify(left)} trace=${JSON.stringify(trace)}`
+  }
+  // 正常环境下必须整句发出；notice 只是兜底，出现了也算失败（说明首发又被拦了一次）。
+  // soft：一轮失败不提前结束，跑完整组才知道失败率；留下的残字清掉再进下一轮。
+  expect.soft(outcome, label).toBe("sent")
+  if (outcome === "sent") {
+    await expect.soft(composer, label).toHaveValue("", { timeout: 10_000 })
+  }
+  console.log(`[fast] ${label}: ${outcome.slice(0, 1500)}`)
+  if ((await composer.inputValue()) !== "") {
+    await composer.press("ControlOrMeta+a")
+    await composer.press("Delete")
+  }
+}
+
+for (const chip of [false, true]) {
+  test(`(f) jojo 手速：新对话等 3s、每键 10ms 打完立刻 Enter${chip ? "（带 @ 引用）" : ""}，冷启动起连发 ${FAST_REPEAT} 次`, async () => {
+    test.setTimeout(FAST_REPEAT * 40_000 + 120_000)
+    test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+    const boot = freshEnv()
+    const { app, window } = await launch(boot.env)
+    try {
+      await window.evaluate(() => {
+        ;(window as unknown as { __enjoySendDebugOn?: boolean }).__enjoySendDebugOn = true
+      })
+      // 本地复现用：CDP 把渲染进程 CPU 压慢 N 倍，近似 jojo 的 dev 构建 + 高负载（CI 不设）。
+      const throttle = Number(process.env.ENJOY_E2E_CPU_THROTTLE ?? "0")
+      if (throttle > 1) {
+        const cdp = await window.context().newCDPSession(window)
+        await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttle })
+      }
+      const composer = window.locator('[data-testid="composer-input"]')
+      for (let i = 0; i < FAST_REPEAT; i += 1) {
+        // i=0 即冷启动首发：启动自带的空会话被「新对话」复用。
+        await window.locator('[data-testid="sidebar-new-session"]').click({ noWaitAfter: true })
+        await window.waitForTimeout(3_000)
+        await composer.click({ noWaitAfter: true })
+        if (chip) await attachReadmeChip(window)
+        const text = `hello fast ${chip ? "chip " : ""}${i}`
+        const before = userMessagesInOrder(boot.userData).length
+        await window.keyboard.type(text, { delay: 10 })
+        await window.keyboard.press("Enter")
+        await expectFastOutcome(window, boot.userData, before, text, `${chip ? "chip" : "plain"}-${i}`)
+      }
+      mkdirSync(shots, { recursive: true })
+      await window.screenshot({ path: join(shots, `f-fast-${chip ? "chip" : "plain"}.png`), fullPage: true })
+    } finally {
+      await shutdown(app)
+    }
+  })
+}

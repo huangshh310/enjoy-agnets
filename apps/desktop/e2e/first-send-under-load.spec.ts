@@ -15,6 +15,9 @@ const mainEntry = join(process.cwd(), "out/main/index.js")
 const shots = process.env.ENJOY_E2E_SHOTS_DIR ?? join(process.cwd(), "test-results/first-send-under-load")
 const REPEAT = Number(process.env.ENJOY_E2E_REPEAT ?? "10")
 const LOAD = Number(process.env.ENJOY_E2E_CPU_LOAD ?? "2")
+/** jojo 手速：Playwright 每键 10ms、xdotool 每键 12ms。 */
+const TYPE_DELAY = Number(process.env.ENJOY_E2E_TYPE_DELAY ?? "10")
+const XDO_DELAY = Number(process.env.ENJOY_E2E_XDO_DELAY ?? "12")
 
 function startLoad(): ChildProcess[] {
   if (process.platform === "win32") return []
@@ -69,6 +72,12 @@ async function launch(): Promise<{ app: ElectronApplication; window: Page; userD
   await window.evaluate(() => {
     ;(window as unknown as { __enjoySendDebugOn?: boolean }).__enjoySendDebugOn = true
   })
+  // CDP 压慢渲染进程 N 倍，近似 jojo 的 dev 构建（React dev 慢）+ 高负载。
+  const throttle = Number(process.env.ENJOY_E2E_CPU_THROTTLE ?? "0")
+  if (throttle > 1) {
+    const cdp = await window.context().newCDPSession(window)
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttle })
+  }
   return { app, window, userData }
 }
 
@@ -146,11 +155,11 @@ async function xdoFocusComposer(window: Page): Promise<void> {
 
 async function burstAndEnter(window: Page, text: string, mode: Mode): Promise<void> {
   if (mode === "xdotool") {
-    execFileSync("xdotool", ["type", "--delay", "0", text])
+    execFileSync("xdotool", ["type", "--delay", String(XDO_DELAY), text])
     execFileSync("xdotool", ["key", "Return"])
     return
   }
-  if (mode === "type") await window.keyboard.type(text)
+  if (mode === "type") await window.keyboard.type(text, { delay: TYPE_DELAY })
   else await window.keyboard.insertText(text)
   await window.keyboard.press("Enter")
 }
@@ -197,9 +206,17 @@ async function expectSentOrNotice(
     mkdirSync(shots, { recursive: true })
     await window.screenshot({ path: join(shots, `${label}-${result.slice(0, 12)}.png`) })
   }
-  expect(result, label).toBe("sent")
-  expect(userMessages(userData).filter((item) => item.endsWith(text)).length, label).toBe(1)
-  await expect(composer, label).toHaveValue("", { timeout: 15_000 })
+  console.log(`[load] ${label}: ${result.slice(0, 1500)}`)
+  // soft：跑完整组再判，日志里数得出失败率；残字清掉再进下一轮。
+  expect.soft(result, label).toBe("sent")
+  if (result === "sent") {
+    expect.soft(userMessages(userData).filter((item) => item.endsWith(text)).length, label).toBe(1)
+    await expect.soft(composer, label).toHaveValue("", { timeout: 15_000 })
+  }
+  if ((await composer.inputValue()) !== "") {
+    await composer.press("ControlOrMeta+a")
+    await composer.press("Delete")
+  }
 }
 
 for (const mode of ["type", "insert", "xdotool"] as const) {
