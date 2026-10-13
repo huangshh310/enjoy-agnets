@@ -12,6 +12,7 @@ import { useComposerMentions } from "./use-composer-mentions.ts"
 import { useComposerIme } from "./use-composer-ime.ts"
 import { shouldIgnoreComposerEnter } from "@renderer/hooks/composer-ime"
 import { traceSend } from "@renderer/hooks/send-debug"
+import { captureComposerEnter } from "@renderer/hooks/composer-dom"
 import { clearComposerDraftChips, shouldClearComposerChipsOnDelete } from "@renderer/hooks/clear-composer-chips"
 import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 
@@ -55,7 +56,8 @@ export function ComposerInput({
         ime: shouldIgnoreComposerEnter(event),
         keyCode: event.keyCode,
         isComposing: event.nativeEvent.isComposing,
-        mentionOpen: mentions.open
+        mentionOpen: mentions.open,
+        inputs: document.querySelectorAll('[data-testid="composer-input"]').length
       })
     }
     if (shouldIgnoreComposerEnter(event)) return
@@ -69,6 +71,8 @@ export function ComposerInput({
     }
     if (event.key !== "Enter" || event.shiftKey) return
     event.preventDefault()
+    // 发送只认此刻 DOM 全文，不认可能落后的 shown / store。
+    captureComposerEnter(event.currentTarget.value)
     if (event.metaKey || event.ctrlKey) onSteer()
     else onSend()
   }

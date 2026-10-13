@@ -10,6 +10,8 @@ import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
 import { useChatStore } from "../stores/chat-store"
 import { traceSend } from "./send-debug"
 import { clearComposerDraft, snapshotComposerDraft, takeComposerText } from "./runtime-interact/composer-draft"
+import { takeComposerEnter } from "./composer-dom"
+import { SESSION_NOT_READY } from "./queue-composer-send-copy"
 import { sendComposerMessage } from "./runtime-interact/send-composer-run"
 import { steerPreparedText } from "./runtime-interact/steer-composer"
 
@@ -20,17 +22,20 @@ export { steerPreparedText } from "./runtime-interact/steer-composer"
 
 /** 按运行态把 Enter / ⌘Enter 收成发送、排队或纠偏。 */
 export async function submitComposer(requested: ComposerSubmitIntent = "send") {
+  const typed = takeComposerEnter() ?? undefined
   const store = useChatStore.getState()
   const intent = resolveComposerIntent(store.running, requested)
-  traceSend("submit", { intent, running: store.running, sessionId: store.sessionId })
-  if (intent === "send") return sendComposerMessage()
+  traceSend("submit", { intent, running: store.running, sessionId: store.sessionId, typed: typed?.length ?? -1 })
+  if (intent === "send") return sendComposerMessage(undefined, typed)
 
   const { quotes, skills, draft } = snapshotComposerDraft()
-  const content = await takeComposerText()
+  const content = await takeComposerText(typed)
   if (!content) return
   if (intent === "queue") {
     if (!store.sessionId) {
+      // 运行中又没有会话：不能静默，留稿出提示。
       traceSend("submit:queue-no-session")
+      store.setError(SESSION_NOT_READY)
       return
     }
     enqueueFollowup({
