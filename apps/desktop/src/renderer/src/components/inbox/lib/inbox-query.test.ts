@@ -208,7 +208,7 @@ test("有短文件名时 Inbox 摘要带 basename", () => {
       ]
     }
   )
-  assert.equal(rows[0]?.summary, "活着 · write_file · note.txt")
+  assert.equal(rows[0]?.summary, "活着 · pages.inbox.toolPhraseEditFiles · note.txt")
 })
 
 test("complete 不进安静 Inbox，不占拍板徽标", () => {

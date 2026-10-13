@@ -1,4 +1,5 @@
 import { RiFolderLine } from "@remixicon/react"
+import { inboxSessionTitle } from "../lib/inbox-tool-phrase"
 import { cx } from "@/utils/cx"
 import { useSessionEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { inboxIdentityTitle } from "@renderer/lib/agent-display-name"
@@ -18,7 +19,7 @@ export function InboxRow(props: {
   const ThemeIcon = theme.icon
   const time = inboxTimeLabel(item.occurredAt, now, t)
   const identity = useSessionEngineFace(item.sessionId)
-  const sessionTitle = item.sessionTitle || item.title || t("common.untitledSession")
+  const sessionTitle = inboxSessionTitle(item.sessionTitle || item.title, t)
   const displayTitle = inboxIdentityTitle(identity.face, sessionTitle)
   const snippet = item.errorMessage || item.summary
 
