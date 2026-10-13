@@ -1,6 +1,7 @@
 /**
  * 空会话开始面：问候。Composer 由 ChatThreadBody 单实例挂载，不在这里再造一份。
  */
+import { isComposerRailNotice } from "@renderer/components/ai-chat/composer/runtime-interact/composer-previous-preparing-rail"
 import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-chat-empty-state"
 import { ThreadErrorBanner } from "@renderer/components/ai-chat/thread/thread-error-banner"
 import { ThreadNoticeBanner } from "@renderer/components/ai-chat/thread/thread-notice-banner"
@@ -27,7 +28,7 @@ export function EmptySessionStart(props: {
         changesCount={props.changesCount}
       />
       <ThreadNoticeBanner />
-      {error ? <ThreadErrorBanner error={error} className="my-0 w-full max-w-none" /> : null}
+      {error && !isComposerRailNotice(error) ? <ThreadErrorBanner error={error} className="my-0 w-full max-w-none" /> : null}
     </div>
   )
 }

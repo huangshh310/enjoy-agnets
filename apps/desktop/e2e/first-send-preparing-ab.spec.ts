@@ -113,7 +113,7 @@ test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B �
   // leo soft：CI 里缺构建产物必须挂，不能静默跳过（e2e-window 先 build 再跑 playwright）。
   if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js：build 步骤没产出").toBe(true)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
-  const boot = freshEnv({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "4000" })
+  const boot = freshEnv({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "6000" })
   const { app, window } = await launch(boot.env)
   try {
     await seedUsedSession(window, boot.userData)
@@ -130,8 +130,44 @@ test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B �
     await window.waitForTimeout(500)
     await window.keyboard.type(b, { delay: 20 })
     await composer.press("Enter")
-    await expect(banner).toContainText("上一条还在准备", { timeout: 5_000 })
+    // luna：中性灰条贴 Composer 上沿，不是红卡。
+    const strip = window.locator('[data-testid="composer-previous-preparing"]')
+    await expect(strip).toHaveText("上一条还在准备，这条已放回输入框，稍后再发。", { timeout: 5_000 })
+    await expect(banner).toHaveCount(0)
     await expect(composer).toHaveValue(b)
+    const stripShots = process.env.ENJOY_E2E_NOTICE_SHOTS_DIR
+    if (stripShots) mkdirSync(stripShots, { recursive: true })
+    if (stripShots) await window.screenshot({ path: join(stripShots, "notice-1440x900.png") })
+    // 与 Composer 同宽对齐（左右边差 ≤ 2px）。
+    const shell = window.locator('[data-testid="composer-input"]').locator("xpath=ancestor::form[1]")
+    const frameBox = await strip.locator("xpath=..").boundingBox()
+    const shellBox = await shell.boundingBox()
+    expect(frameBox).not.toBeNull()
+    expect(shellBox).not.toBeNull()
+    expect(Math.abs(frameBox!.width - shellBox!.width)).toBeLessThanOrEqual(2)
+    expect(Math.abs(frameBox!.x - shellBox!.x)).toBeLessThanOrEqual(2)
+    // ✕ 关掉：灰条消失、焦点回输入框。
+    await window.locator('[data-testid="composer-previous-preparing-close"]').click()
+    await expect(strip).toHaveCount(0)
+    await expect(composer).toBeFocused()
+    // 733×480 窄矮窗里还在准备时再按 Enter：灰条再出，输入框与发送键仍在视口内。
+    await window.setViewportSize({ width: 733, height: 480 })
+    await composer.press("End")
+    await composer.press("Enter")
+    await expect(strip).toBeVisible({ timeout: 5_000 })
+    await window.waitForTimeout(300)
+    if (stripShots) await window.screenshot({ path: join(stripShots, "notice-733x480.png") })
+    for (const sel of ['[data-testid="composer-input"]', '[data-testid="composer-send"]']) {
+      const box = await window.locator(sel).boundingBox()
+      expect(box, sel).not.toBeNull()
+      expect(box!.x, sel).toBeGreaterThanOrEqual(0)
+      expect(box!.y, sel).toBeGreaterThanOrEqual(0)
+      expect(box!.x + box!.width, sel).toBeLessThanOrEqual(733)
+      expect(box!.y + box!.height, sel).toBeLessThanOrEqual(480)
+    }
+    await window.setViewportSize({ width: 1440, height: 900 })
+    // 会话准备好后自动消失。
+    await expect(strip).toHaveCount(0, { timeout: 30_000 })
 
     const rows = () => userMessages(boot.userData)
     await expect.poll(() => rows().filter((item) => item.endsWith(a)).length, { timeout: 30_000 }).toBe(1)

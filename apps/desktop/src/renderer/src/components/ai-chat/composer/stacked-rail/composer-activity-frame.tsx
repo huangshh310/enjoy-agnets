@@ -9,6 +9,7 @@ import { ComposerLiveChanges } from "./composer-live-changes"
 import { ComposerTaskStack } from "./composer-task-stack"
 import { ComposerContextRail } from "./composer-context-rail"
 import { ComposerFollowupRail } from "../runtime-interact/composer-followup-rail"
+import { ComposerPreviousPreparingRail } from "../runtime-interact/composer-previous-preparing-rail"
 
 export function ComposerActivityFrame() {
   const pendingApproval = useChatStore((state) => state.pendingApproval)
@@ -26,6 +27,7 @@ export function ComposerActivityFrame() {
         <ComposerTaskStack />
         <ComposerContextRail />
         <ComposerFollowupRail />
+        <ComposerPreviousPreparingRail />
       </div>
     </>
   )
