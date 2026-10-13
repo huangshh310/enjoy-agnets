@@ -315,13 +315,13 @@ test("灰条与红卡：灰条在场时不画红卡、本会话出错项仍上�
     await expect(banner).toHaveCount(0)
     // 灰条不算红卡：本会话出错项不被误藏（必修 1）。
     await expect(window.locator('[data-testid="attention-needs-bar"]')).toBeVisible({ timeout: 5_000 })
-    await window.screenshot({ path: "/workspace/mike-patrol-3cf0-shots/1440x920-rail-with-needs-bar-light.png" })
+    await snap(window, "1440x920-rail-with-needs-bar-light")
     // 换回真失败：红卡回来，同会话出错项让位。
     await window.evaluate((msg) => window.__enjoyE2e?.setError(msg), realError)
     await expect(banner).toBeVisible({ timeout: 5_000 })
     await expect(rail).toHaveCount(0)
     await expect(window.locator('[data-testid="attention-needs-bar"]')).toHaveCount(0)
-    await window.screenshot({ path: "/workspace/mike-patrol-3cf0-shots/1440x920-redcard-after-rail-light.png" })
+    await snap(window, "1440x920-redcard-after-rail-light")
   } finally {
     await closeForRelaunch(env.app)
   }
