@@ -28,7 +28,7 @@ export function AiChatStatusBar({
   return (
     <div
       data-toast-clearance=""
-      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-secondary max-[1000px]:gap-1.5 max-[1000px]:px-6"
+      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-secondary max-[1000px]:gap-1.5 max-[1000px]:px-6 [@media(max-height:440px)]:pb-1"
     >
       <StatusBranchPicker />
       <StatusProjectPicker workspaceRootLabel={workspaceRootLabel} />

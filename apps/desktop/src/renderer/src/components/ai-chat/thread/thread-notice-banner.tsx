@@ -51,7 +51,7 @@ export function ThreadNoticeBanner() {
   return (
     <div
       data-testid="thread-notice-banner"
-      className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5"
+      className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:py-1.5"
     >
       <span
         className={cx(
@@ -68,7 +68,7 @@ export function ThreadNoticeBanner() {
             type="button"
             data-testid="thread-resend"
             onClick={handleResend}
-            className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary hover:border-accent-500/40 hover:bg-background-secondary-hover"
+            className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg [@media(max-height:640px)]:mt-1 [@media(max-height:640px)]:py-0.5 border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary hover:border-accent-500/40 hover:bg-background-secondary-hover"
           >
             <RiRefreshLine className="size-3 text-accent-500" />
             <span>{t("chat.resendLastPrompt")}</span>

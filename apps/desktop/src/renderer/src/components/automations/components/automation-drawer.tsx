@@ -60,6 +60,7 @@ export function AutomationDrawer({
   const webhookReady = !draft.triggers.includes("webhook") || webhookPortReady(draft.webhookPort)
   const runNow = draft.triggers.length === 1 && draft.triggers[0] === "manual"
 
+  const saveDisabled = !canSave || !cronReady || !webhookReady || saving
   return (
     <SettingsSideDrawer
       open={open}
@@ -168,9 +169,14 @@ export function AutomationDrawer({
           type="button"
           size="sm"
           data-testid="automation-save"
-          disabled={!canSave || !cronReady || !webhookReady || saving}
+          disabled={saveDisabled}
           onClick={onSave}
-          className="!bg-none !bg-accent-500 font-semibold !text-white shadow-xs hover:!bg-accent-600 border border-transparent disabled:!opacity-100 disabled:!bg-background-tertiary-default disabled:!text-text-secondary disabled:shadow-none disabled:!border-border-button-hover"
+          // 主色实底 + 白字；禁用：灰底、次级字色、明显描边，浅深色都看得见（luna #146 / #149）。
+          className={
+            saveDisabled
+              ? "!bg-none !bg-background-tertiary-default border !border-border-button-hover font-semibold !text-text-secondary shadow-none !opacity-100"
+              : "!bg-none !bg-accent-500 border border-accent-600 font-semibold !text-white shadow-xs hover:!bg-accent-600"
+          }
         >
           {t("studio.automations.save")}
         </Button>

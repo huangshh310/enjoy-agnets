@@ -26,6 +26,7 @@ export function InboxRow(props: {
     <li className="px-2 py-0.5">
       <button
         type="button"
+        data-testid="inbox-row"
         onClick={() => onSelect(item)}
         aria-current={selected ? "true" : undefined}
         title={identity.trueNameTitle}

@@ -211,6 +211,11 @@ async function expectApprovalButtonsOneRow(window: Page, label: string, viewport
     expect(b.y, `${label}: button above viewport ${debug}`).toBeGreaterThanOrEqual(0)
     expect(b.y + b.height, `${label}: button below viewport ${debug}`).toBeLessThanOrEqual(viewportHeight)
   }
+  // 三钮落在审批区可视框里（区内 overflow 裁切时 toBeVisible 仍为真，按框比）。
+  const dockBox = await box(window.locator('[data-testid="permission-dock"]'))
+  for (const b of boxes) {
+    expect(b.y + b.height, `${label}: button clipped by dock ${JSON.stringify({ dockBox, boxes })}`).toBeLessThanOrEqual(dockBox.y + dockBox.height + 1)
+  }
   // 卡顶不被裁：卡顶在会话区内（jojo：矮窗卡顶被裁、消息区为 0）。
   const card = await box(window.locator('[data-testid="permission-dock"] article'))
   const conv = await box(window.locator('[data-testid="chat-conversation"]'))

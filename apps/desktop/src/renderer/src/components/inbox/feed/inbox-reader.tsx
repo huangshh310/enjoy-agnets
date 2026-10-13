@@ -228,14 +228,14 @@ export function InboxReader(props: {
           {(item.copyKey === "pending_approval" || item.copyKey === "ask_user") &&
           item.canOpenApproval !== false ? (
             <div className="flex flex-col gap-3 rounded-2xl border border-status-yellow-text/30 bg-status-yellow-background/10 p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-status-yellow-text dark:text-status-yellow-text font-semibold text-caption-1-medium">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-status-yellow-text dark:text-status-yellow-text font-semibold text-caption-1-medium">
                   <RiShieldCheckFill className="size-4 shrink-0" />
                   <span>{t("pages.inbox.approvalCardTitle")}</span>
                 </div>
                 {item.toolName ? (
-                  <span className="font-mono text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
-                    {item.toolName}
+                  <span className="text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
+                    {plainToolSummary([item.toolName])}
                   </span>
                 ) : null}
               </div>

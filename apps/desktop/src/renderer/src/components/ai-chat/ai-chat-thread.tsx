@@ -58,7 +58,7 @@ export function AiChatThread({
       <TranscriptSelectionAction />
       <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">
         {/* 矮窗收紧上下留白：滚到底时末尾的中断小卡整张露出、× 不被页头一侧裁掉（luna #146 P1）。 */}
-        <ConversationContent className="gap-8 px-8 py-6 pr-16 [@media(max-height:640px)]:gap-4 [@media(max-height:640px)]:py-2 [@media(max-height:640px)]:[&>#thread-turn-end]:-mt-2">
+        <ConversationContent className="gap-8 px-8 py-6 pr-16 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:py-1">
           {visible.map((message, index) => (
             <ThreadTurnBlock
               key={message.id}

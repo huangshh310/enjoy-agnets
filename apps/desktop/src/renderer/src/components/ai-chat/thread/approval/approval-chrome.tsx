@@ -101,7 +101,7 @@ export function ApprovalChrome({
           </h3>
           {children}
           {sessionHint ? (
-            <p className="text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:truncate">
+            <p className="text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:truncate [@media(max-height:440px)]:hidden">
               {sessionHint}
             </p>
           ) : null}
@@ -110,7 +110,12 @@ export function ApprovalChrome({
       <footer className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-0.5 [@media(max-height:600px)]:pt-0">
         <h3
           data-testid="approval-compact-title"
-          className="hidden min-w-0 basis-full truncate text-caption-1-semibold text-text-primary [@media(max-height:600px)]:block"
+          className={cx(
+            "hidden min-w-0 truncate text-caption-1-semibold text-text-primary [@media(max-height:600px)]:block",
+            // 有「本会话总是允许」时标题独占一行（luna #149：计划概览别跟三钮挤一行）；否则与两钮同行省高度。
+            // 极矮窗（≤440）三钮优先：独占行的标题让位，标题仍在按钮 title 与卡正文里。
+            showAlways && footer === "buttons" ? "basis-full [@media(max-height:440px)]:!hidden" : "max-w-[45%] shrink-0"
+          )}
         >
           {title}
         </h3>
