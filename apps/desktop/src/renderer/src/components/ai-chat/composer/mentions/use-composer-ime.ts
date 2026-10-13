@@ -68,6 +68,8 @@ export function useComposerIme(value: string, onChange: (next: string) => void) 
       composingRef.current = false
       setComposerComposing(false)
       // preparing 翻起时在组字没擦成：组字结束补查，已交出去的旧句不留。
+      // 已知窄窗：这里不看 wasPreparing——preparing 期间用户新起一句、恰以旧句开头，
+      // 组字结束时旧句那段前缀会被一并擦掉（只剩后半）。窗口仅限建会话 + 准备中，接受。
       const erased = shownAfterCompositionOnPreparing({
         preparing: useChatStore.getState().preparingHint,
         createPending: isNewSessionCreatePending(),

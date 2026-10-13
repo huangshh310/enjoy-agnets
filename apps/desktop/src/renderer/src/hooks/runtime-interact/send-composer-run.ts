@@ -164,12 +164,13 @@ export async function sendComposerMessage(
     if (payload === "cancelled" || sendAttemptCancelled(attempt)) {
       // 看门狗已出提示并还稿：迟到的这一发作废，不能提示和发送同时发生。
       traceSend("send:watchdog-late")
-      // leo soft：只放自己占的 running / 准备提示；后一发已接手就别动。
-      if (releaseComposerRunningIfOwner(runningToken)) store.setPreparingHint(false)
+      dropLateCancelledSend(store, runningToken)
       return
     }
     traceSend("send:payload", { content: payload?.content.length ?? -1, typed: payload?.typed.length ?? -1 })
     if (!payload) {
+      // leo #145：空稿也可能来自已作废的 A——别清 B 的 running。
+      if (sendAttemptCancelled(attempt)) return dropLateCancelledSend(store, runningToken)
       store.setRunning(false)
       store.setPreparingHint(false)
       return
@@ -180,6 +181,8 @@ export async function sendComposerMessage(
     await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
+    // leo #145：A 已被看门狗作废后才抛——看门狗已还过稿，不再还 A 的字、不清 B 的 running。
+    if (sendAttemptCancelled(attempt)) return dropLateCancelledSend(store, runningToken)
     store.setPreparingHint(false)
     failComposerSend({
       text: snapshot.text,
@@ -192,6 +195,11 @@ export async function sendComposerMessage(
       optimisticContent
     })
   }
+}
+
+/** 迟到作废：只放自己占的 running / 准备提示；后一发已接手就别动。 */
+function dropLateCancelledSend(store: ChatState, runningToken: object): void {
+  if (releaseComposerRunningIfOwner(runningToken)) store.setPreparingHint(false)
 }
 
 const QUEUED_SEND_IDLE_WAIT_MS = 5_000
