@@ -7,10 +7,10 @@
 export type ConflictLocale = "zh" | "en"
 
 export type MessageBoxOptions = {
-  type: "error"
+  type: "warning"
   title: string
   message: string
-  detail?: string
+  detail: string
   buttons: string[]
   defaultId: number
   cancelId: number
@@ -33,17 +33,21 @@ export const BUTTON_COPY = 0
 export const BUTTON_OPEN_FOLDER = 1
 export const BUTTON_QUIT = 2
 
-const COPY: Record<ConflictLocale, { title: string; message: string; buttons: string[] }> = {
+/**
+ * 各平台字段：title = 窗口标题（Windows / Linux；显式给，绝不落成 "Error"）；message = 粗体标题行（macOS 不显示 title，
+ * 靠它）；detail = 正文。type 用 warning（error 在部分平台会带默认 "Error" 标题 / 图标语气）。
+ */
+const COPY: Record<ConflictLocale, { title: string; body: string; buttons: string[] }> = {
   zh: {
     title: "Enjoy 打不开本地数据",
-    message:
-      "这份数据来自另一个测试版，和当前版本对不上。数据没有被改动。可以换回原来的版本打开，或把详情发给我们。",
+    body:
+      "这份数据来自另一个测试版，和当前版本对不上。为了保护你的对话，已停止打开。数据没有被改动。可以换回原来的版本打开，或把详情发给我们。",
     buttons: ["复制详情", "打开数据文件夹", "退出"]
   },
   en: {
     title: "Enjoy can't open your local data",
-    message:
-      "This data comes from a different test build and doesn't match this version. Your data has not been changed. You can reopen it with the original version, or send us the details.",
+    body:
+      "This data comes from a different test build and doesn't match this version. To protect your conversations, Enjoy stopped opening. Your data has not been changed. You can reopen it with the original version, or send us the details.",
     buttons: ["Copy details", "Open data folder", "Quit"]
   }
 }
@@ -60,9 +64,10 @@ export function conflictLocale(envLang: string | undefined, systemLocale: string
 export function conflictDialogOptions(locale: ConflictLocale): MessageBoxOptions {
   const copy = COPY[locale]
   return {
-    type: "error",
+    type: "warning",
     title: copy.title,
-    message: copy.message,
+    message: copy.title,
+    detail: copy.body,
     buttons: copy.buttons,
     defaultId: BUTTON_QUIT,
     cancelId: BUTTON_QUIT,

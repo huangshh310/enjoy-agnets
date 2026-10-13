@@ -42,19 +42,27 @@ function run(choices: number[], open: () => unknown = () => { throw new Error(RA
 test("luna：对话框文案 / 按钮 / 回车=退出；正文不含「迁移」和原始错误", () => {
   const zh = conflictDialogOptions("zh")
   assert.equal(zh.title, "Enjoy 打不开本地数据")
+  assert.equal(zh.message, "Enjoy 打不开本地数据")
   assert.equal(
-    zh.message,
-    "这份数据来自另一个测试版，和当前版本对不上。数据没有被改动。可以换回原来的版本打开，或把详情发给我们。"
+    zh.detail,
+    "这份数据来自另一个测试版，和当前版本对不上。为了保护你的对话，已停止打开。数据没有被改动。可以换回原来的版本打开，或把详情发给我们。"
   )
+  assert.equal(zh.type, "warning")
+  for (const b of zh.buttons) assert.match(b, /^[\u4e00-\u9fff]+$/, `中文按钮：${b}`)
   assert.deepEqual(zh.buttons, ["复制详情", "打开数据文件夹", "退出"])
   assert.equal(zh.buttons[zh.defaultId], "退出")
   assert.equal(zh.cancelId, BUTTON_QUIT)
-  assert.equal(zh.detail, undefined)
   for (const opts of [zh, conflictDialogOptions("en")]) {
     const text = `${opts.title}\n${opts.message}\n${opts.detail ?? ""}`
     assert.doesNotMatch(text, /迁移|migration|MIGRATION_VERSION_CONFLICT|v17/i)
   }
   const en = conflictDialogOptions("en")
+  assert.equal(en.title, "Enjoy can't open your local data")
+  assert.match(en.detail, /To protect your conversations, Enjoy stopped opening\./)
+  for (const opts of [zh, en]) {
+    assert.ok(opts.title && !/^error$/i.test(opts.title), "窗口标题显式给出，不是 Error")
+    assert.ok(!opts.buttons.some((b) => /^ok$/i.test(b)))
+  }
   assert.deepEqual(en.buttons, ["Copy details", "Open data folder", "Quit"])
   assert.equal(en.buttons[en.defaultId], "Quit")
   assert.equal(conflictLocale(undefined, "en-US"), "en")
