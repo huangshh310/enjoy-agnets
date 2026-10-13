@@ -33,8 +33,9 @@ export function useSessionReviewModel() {
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
   const sessionId = useChatStore((state) => state.sessionId)
   const repositories = useChatStore((state) => state.repositories)
-  const needsReview =
-    repositories.find((node) => node.id === sessionId)?.workflowStatus === "needs_review"
+  const workflowStatus = repositories.find((node) => node.id === sessionId)?.workflowStatus
+  const needsReview = workflowStatus === "needs_review"
+  const approved = workflowStatus === "done"
 
   // jojo：强杀 / 停止 / 重启回挂的轮只认真落盘的文件（见 describeReviewFiles）。
   const interrupted =
@@ -68,7 +69,8 @@ export function useSessionReviewModel() {
     dismissedKey,
     filesKey,
     messages.length,
-    needsReview
+    needsReview,
+    approved
   )
   return {
     pick,

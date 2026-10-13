@@ -30,3 +30,22 @@ test("复检 extras 含忙、混因、重启打断，不丢 e2e 行", () => {
   const interrupt = records.find((row) => row.automationId === "auto_interrupt")
   assert.equal(interrupt?.code, "interrupted_by_restart")
 })
+
+test("jojo P3：任何时刻种夹具，上次运行时间都不晚于现在（含早上 7 点 / 10:15 / 晚上）", async () => {
+  const { buildAutoP2Fixture: build } = await import("./auto-p2-seed.ts")
+  for (const hh of [0, 7, 9, 10.25, 12, 21.3, 23.9]) {
+    const d = new Date(2026, 9, 13, 0, 0, 0, 0)
+    const now = d.getTime() + hh * 3_600_000
+    const fixture = build(now, true) as unknown as Record<string, unknown>
+    const walk = (v: unknown): void => {
+      if (Array.isArray(v)) return v.forEach(walk)
+      if (!v || typeof v !== "object") return
+      for (const [k, x] of Object.entries(v)) {
+        if ((k === "lastRunAt" || k === "scheduledAt" || k === "recordedAt") && typeof x === "number") {
+          assert.ok(x <= now, `${k} ${new Date(x).toString()} > now ${new Date(now).toString()}`)
+        } else walk(x)
+      }
+    }
+    walk(fixture)
+  }
+})

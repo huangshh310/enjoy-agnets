@@ -246,3 +246,36 @@ test("jojo P3：强杀时这轮没有任何助手输出 → 待办（不留蓝�
   assert.equal(make("none", false), "todo")
   assert.equal(make("reply", true), "in_progress")
 })
+
+test("luna P2：强杀时写盘工具已完成、回复半截 → 助手行信封记上 restartNotice（renderer 据此出中断提示）", () => {
+  const db = getDatabase()
+  const sessionId = "ses_int_written_notice"
+  const runId = "run_int_written_notice"
+  seedSession({ workspaceId: "ws_int_written_notice", sessionId })
+  persistMessage(sessionId, "user", "please write slow note")
+  persistMessage(
+    sessionId,
+    "assistant",
+    serializeAssistantPayload({
+      content: "one two",
+      runId,
+      tools: [{ id: "t_w", name: "write_file", state: "output-available", args: { path: "e2e-stub.txt" }, result: { ok: true } }]
+    })
+  )
+  insertRun(db, {
+    id: runId,
+    sessionId,
+    workspaceId: "ws_int_written_notice",
+    kind: "agent",
+    status: "running",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+  queueInterruptedRunningSettle(getRun(db, runId)!)
+  const row = db
+    .prepare("SELECT content FROM messages WHERE session_id = ? AND role = 'assistant'")
+    .get(sessionId) as { content: string }
+  assert.equal(JSON.parse(row.content).restartNotice, "restore_interrupted_running")
+})

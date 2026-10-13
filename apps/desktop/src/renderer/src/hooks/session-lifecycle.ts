@@ -1,6 +1,7 @@
 /**
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
+import { discardEmptySessionOnLeave } from "./discard-empty-on-leave"
 import { composerDraftForSession } from "../lib/session-draft-storage"
 import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
@@ -109,6 +110,9 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   if (!sameSession) {
     useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
+      // luna P3：离开的是空「新对话」就删掉（判定在 park / 存稿之前取快照）。
+      const leaving = useChatStore.getState()
+      discardEmptySessionOnLeave(leaving, sessionId)
       parkForegroundRun()
       saveCurrentSessionDraft()
     }

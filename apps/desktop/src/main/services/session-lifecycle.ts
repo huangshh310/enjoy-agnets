@@ -56,10 +56,14 @@ export function deleteSession(sessionId: string, opts?: { onlyIfEmpty?: boolean 
       .prepare("SELECT COUNT(*) as n FROM runs WHERE session_id = ? AND status IN ('running', 'pending', 'queued')")
       .get(sessionId) as { n: number }
     if (active.n > 0) return { id: sessionId, deleted: false }
+    // luna P3：还留着没发的草稿也不算空（离开会话时清空会话不能吞稿）。
+    if (sessionHasDraft(db, sessionId)) return { id: sessionId, deleted: false }
   }
-  void import("@enjoy-agents/agent-harness").then(({ deleteAcpRemoteIfLive, disposeAcpSession }) => {
-    void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))
-  })
+  void import("@enjoy-agents/agent-harness")
+    .then(({ deleteAcpRemoteIfLive, disposeAcpSession }) => {
+      void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))
+    })
+    .catch(() => undefined)
   db.exec("BEGIN")
   try {
     db.prepare(
@@ -74,6 +78,43 @@ export function deleteSession(sessionId: string, opts?: { onlyIfEmpty?: boolean 
   }
   forgetConversationDesktopAllow(sessionId)
   return { id: sessionId, deleted: true }
+}
+
+function sessionHasDraft(db: ReturnType<typeof getDatabase>, sessionId: string): boolean {
+  try {
+    const row = db.prepare("SELECT text FROM session_drafts WHERE session_id = ?").get(sessionId) as
+      | { text: string }
+      | undefined
+    return Boolean(row?.text?.trim())
+  } catch {
+    return false // 表还没建 = 没有任何草稿
+  }
+}
+
+/**
+ * luna P3：启动时清掉空的「新对话」行——没有消息、没有任何 run、没有草稿、没归档。
+ * 点「新对话」或首发失败后留下的空壳不该一直挂在侧栏。
+ */
+export function pruneEmptySessions(): { deleted: number } {
+  const db = getDatabase()
+  const rows = db
+    .prepare(
+      `SELECT s.id FROM sessions s
+       WHERE s.archived_at IS NULL
+         AND NOT EXISTS (SELECT 1 FROM messages m WHERE m.session_id = s.id)
+         AND NOT EXISTS (SELECT 1 FROM runs r WHERE r.session_id = s.id)`
+    )
+    .all() as Array<{ id: string }>
+  let deleted = 0
+  for (const row of rows) {
+    if (sessionHasDraft(db, row.id)) continue
+    try {
+      if (deleteSession(row.id, { onlyIfEmpty: true }).deleted) deleted += 1
+    } catch {
+      // 并发删掉了：跳过
+    }
+  }
+  return { deleted }
 }
 
 function forgetConversationDesktopAllow(sessionId: string): void {
