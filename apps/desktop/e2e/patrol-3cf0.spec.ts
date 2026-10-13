@@ -241,6 +241,18 @@ test("失败会话：本会话有红卡与重试；切走再回来仍在；重�
     await expect(window.locator('[data-testid="thread-error-banner"]')).toBeVisible({ timeout: 20_000 })
     await expect(window.locator('[data-testid="thread-error-retry"]')).toBeVisible()
     await snap(window, "1440x920-session-error-after-restart-light")
+    // 733×480：本会话红卡在场时「需处理 · 出错」不再盖住红卡标题（luna g152）。
+    await window.setViewportSize({ width: 733, height: 480 })
+    await window.waitForTimeout(400)
+    const redCard = (await window.locator('[data-testid="thread-error-banner"]').boundingBox())!
+    const strips = window.locator('[data-testid="attention-strip"]')
+    for (let i = 0; i < (await strips.count()); i++) {
+      const box = await strips.nth(i).boundingBox()
+      if (box) expect(box.y + box.height <= redCard.y || box.y >= redCard.y + redCard.height, "需处理条不压红卡").toBe(true)
+    }
+    await expect(window.locator('[data-testid="attention-needs-bar"]')).toHaveCount(0)
+    await snap(window, "733x480-redcard-no-needs-bar-light")
+    await window.setViewportSize({ width: 1440, height: 920 })
     // 成功跑完一轮：红点 / 待处理条 / 收件箱失败 / 徽标当场清掉，不等重启（luna #151）。
     await sendComposer(window, window.locator('[data-testid="composer-input"]'), "hello")
     await expect(window.locator("body")).toContainText("stub-ok", { timeout: 20_000 })

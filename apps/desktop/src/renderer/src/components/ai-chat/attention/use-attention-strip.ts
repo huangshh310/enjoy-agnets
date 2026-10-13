@@ -88,6 +88,8 @@ export function useAttentionStrip() {
     dismissAll,
     dismissOne,
     openItem,
-    compactFor
+    compactFor,
+    isChat,
+    sessionId
   }
 }
