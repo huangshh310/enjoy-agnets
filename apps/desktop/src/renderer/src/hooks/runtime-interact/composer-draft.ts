@@ -24,9 +24,11 @@ import { flushComposerDomToStore, syncComposerDom } from "../composer-dom"
 export { flushComposerDomToStore, syncComposerDom }
 
 /** 取出引用、技能与知识 Chip，并消化句首 /plan、/compact 或 /技能。 */
-export async function takeComposerText(): Promise<string> {
+export async function takeComposerText(source?: string): Promise<string> {
   const store = useChatStore.getState()
-  const parsed = applyLeadingSlash(flushComposerDomToStore() || store.composer, listKnownSkills())
+  // source = Enter 那一刻的 DOM 全文；只有没给时才现读 DOM（禁止回落落后的 store）。
+  const text = source ?? flushComposerDomToStore()
+  const parsed = applyLeadingSlash(text, listKnownSkills())
   if (parsed.mode) store.setMode(parsed.mode)
   if (parsed.command === "compact") {
     const ok = await compactSessionOrReport(store.sessionId)

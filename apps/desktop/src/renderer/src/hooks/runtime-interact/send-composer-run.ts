@@ -24,13 +24,14 @@ import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import {
   clearComposerDraft,
-  flushComposerDomToStore,
   prefixHostModeForSend,
   takeComposerText
 } from "./composer-draft"
 import { readComposerDomText } from "../composer-dom"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
+import { armSendWatchdog, markSendLaunched, sendAttemptCancelled } from "./send-watchdog"
+import { isNewSessionCreatePending } from "../new-session-create"
 import {
   captureComposerSend,
   preparedSendSnapshot,
@@ -72,15 +73,20 @@ type SendPayload = {
 }
 
 /** 先 setRunning 占位，避免双击连发两轮。创建窗内先入队，禁止清输入空转。 */
-export async function sendComposerMessage(prepared?: PreparedSend) {
+export async function sendComposerMessage(prepared?: PreparedSend, typedAtEnter?: string) {
   let store = useChatStore.getState()
+  // 这次发送的原文只取一次：Enter 那一刻的 DOM 全文（或按钮点下时现读 DOM），之后全链路只用它。
+  // 只有程序化调用（重试先 setComposer 再发、DOM 还没渲染）且 DOM 为空时才看 store。
+  const typed = prepared ? prepared.content : (typedAtEnter ?? (readComposerDomText() || store.composer))
+  if (!prepared && typed.trim()) armComposerWatchdog(typed)
   traceSend("send", {
     prepared: Boolean(prepared),
     queuedFirst: Boolean(prepared?.sessionId),
     running: store.running,
     sessionId: store.sessionId,
     createPending: composerNeedsSessionReady(),
-    dom: readComposerDomText().length
+    dom: readComposerDomText().length,
+    typed: typed.length
   })
   if (store.running) {
     // 只有创建窗里排队的首发（带 sessionId）限时等 running 落下；其余调用方保持原样直接不发。
@@ -110,13 +116,13 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     }
     store = useChatStore.getState()
   }
-  if (!prepared) flushComposerDomToStore()
+  if (!prepared && store.composer !== typed) store.setComposer(typed)
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
-    const text = readComposerDomText()
+    const text = typed
     if (!text.trim()) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return
@@ -150,10 +156,17 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   // 取稿前拍快照：失败时还原文 + 引用 / 技能 / 知识 Chip + 附件，不还拼好的 content。
   const snapshot = prepared
     ? preparedSendSnapshot(prepared.content, prepared.assets)
-    : captureComposerSend(readComposerDomText())
+    : captureComposerSend(typed)
   let optimisticContent: string | undefined
   try {
     const payload = await resolveSendPayload(prepared, snapshot)
+    if (sendAttemptCancelled()) {
+      // 看门狗已出提示并还稿：迟到的这一发作废，不能提示和发送同时发生。
+      traceSend("send:watchdog-late")
+      store.setRunning(false)
+      store.setPreparingHint(false)
+      return
+    }
     traceSend("send:payload", { content: payload?.content.length ?? -1, typed: payload?.typed.length ?? -1 })
     if (!payload) {
       store.setRunning(false)
@@ -165,7 +178,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     clearSentComposerText(payload.typed)
     await launchComposerRun(store, payload, messages, prepared?.sessionId)
   } catch (error) {
-    traceSend("send:throw", { error: String(error) })
+    traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
     store.setPreparingHint(false)
     failComposerSend({
       text: snapshot.text,
@@ -181,6 +194,25 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
 }
 
 const QUEUED_SEND_IDLE_WAIT_MS = 5_000
+
+function armComposerWatchdog(typed: string): void {
+  const before = useChatStore.getState()
+  armSendWatchdog(typed, {
+    // 只认这次 Enter 之后新冒出来的提示，Enter 前就挂着的旧条不算。
+    noticeShown: () => {
+      const state = useChatStore.getState()
+      return Boolean((state.error && state.error !== before.error) || (state.notice && state.notice !== before.notice))
+    },
+    createPending: () => isNewSessionCreatePending(),
+    otherRunActive: () => Boolean(useChatStore.getState().runId),
+    fail: (text) => {
+      traceSend("send:watchdog")
+      const state = useChatStore.getState()
+      state.setPreparingHint(false)
+      restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE)
+    }
+  })
+}
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
 function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): void {
@@ -200,7 +232,7 @@ async function resolveSendPayload(
 ): Promise<SendPayload | null> {
   const fromDraft = !prepared
   const typed = snapshot.text
-  const raw = prepared?.content ?? (await takeComposerText())
+  const raw = prepared?.content ?? (await takeComposerText(snapshot.text))
   if (!raw.trim()) return null
   const slash = takeComputerUseSlash(raw)
   const body = slash.once ? slash.text || raw.trim() : raw
@@ -258,6 +290,8 @@ async function launchComposerRun(
   createdSessionId?: string
 ) {
   const sessionId = store.sessionId
+  markSendLaunched()
+  traceSend("send:launch")
   try {
     const result = await startComposerRun(
       store,

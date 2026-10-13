@@ -8,7 +8,30 @@ import { isNewSessionCreatePending } from "./new-session-create"
 
 export function composerInputEl(): HTMLTextAreaElement | null {
   if (typeof document === "undefined") return null
+  // 聚焦的那只优先：过渡期页面上可能短暂有两只输入框，querySelector 只拿第一只。
+  const active = document.activeElement as HTMLElement | null
+  if (active?.getAttribute?.("data-testid") === "composer-input") return active as HTMLTextAreaElement
   return document.querySelector('[data-testid="composer-input"]') as HTMLTextAreaElement | null
+}
+
+let enterText: string | null = null
+
+/**
+ * Enter keydown 那一刻输入框 DOM 的全文（event.currentTarget.value）。
+ * X / Chromium 按序投递按键，Enter 到时 DOM 已是整句；React shown / store 可能还落后几个字。
+ * 这次发送的正文与清稿用的 typed 只认它，并先把 store 对齐。
+ */
+export function captureComposerEnter(text: string): void {
+  enterText = text
+  const store = useChatStore.getState()
+  if (store.composer !== text) store.setComposer(text)
+}
+
+/** 取走 Enter 快照（一次性）。没有就回落读 DOM（点发送按钮等）。 */
+export function takeComposerEnter(): string | null {
+  const text = enterText
+  enterText = null
+  return text
 }
 
 export function shouldHoldComposerStoreSync(): boolean {

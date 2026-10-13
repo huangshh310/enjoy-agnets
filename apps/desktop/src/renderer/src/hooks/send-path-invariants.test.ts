@@ -15,8 +15,10 @@ const input = readFileSync(
 const create = readFileSync(new URL("./new-session-create.ts", import.meta.url), "utf8")
 const queue = readFileSync(new URL("./queue-composer-send.ts", import.meta.url), "utf8")
 
-test("无 prepared 的发送先 flush DOM，禁止只因 sessionId 空就发", () => {
-  assert.match(send, /flushComposerDomToStore\(\)/)
+test("无 prepared 的发送只认 Enter 那一刻的 DOM 全文并先对齐 store，禁止只因 sessionId 空就发", () => {
+  assert.match(send, /typedAtEnter \?\? \(readComposerDomText\(\) \|\| store\.composer\)/)
+  assert.match(send, /store\.setComposer\(typed\)/)
+  assert.match(input, /captureComposerEnter\(event\.currentTarget\.value\)/)
   assert.match(send, /composerNeedsSessionReady\(\) && !prepared/)
   assert.match(create, /return createPending/)
   assert.doesNotMatch(create, /return !sessionId/)
@@ -25,8 +27,9 @@ test("无 prepared 的发送先 flush DOM，禁止只因 sessionId 空就发", (
 test("Enter 与发送钮走 submitComposer；运行中 Enter 排队也 takeComposerText", () => {
   assert.match(input, /else onSend\(\)/)
   assert.match(submit, /resolveComposerIntent\(store\.running, requested\)/)
-  assert.match(submit, /if \(intent === "send"\) return sendComposerMessage\(\)/)
-  assert.match(submit, /const content = await takeComposerText\(\)/)
+  assert.match(submit, /const typed = takeComposerEnter\(\)/)
+  assert.match(submit, /if \(intent === "send"\) return sendComposerMessage\(undefined, typed\)/)
+  assert.match(submit, /const content = await takeComposerText\(typed\)/)
   assert.match(submit, /enqueueFollowup/)
   assert.match(submit, /steerPreparedText\(content\)/)
 })
