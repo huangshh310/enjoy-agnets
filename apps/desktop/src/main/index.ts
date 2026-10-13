@@ -33,6 +33,7 @@ import {
   hardwareAccelerationForcedOff,
   type GpuCompositingFlag
 } from "./services/gpu-compositing";
+import { e2eSendWatchdogArgs } from "./services/e2e-send-watchdog";
 import {
   gpuInfoLooksSoftware,
   softwareRendererSwitchOn
@@ -121,7 +122,7 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      additionalArguments: [gpuCompositingArg(gpuWatch.getFlag())],
+      additionalArguments: [gpuCompositingArg(gpuWatch.getFlag()), ...e2eSendWatchdogArgs()],
       // 右栏浏览器预览用 <webview>，guest 无 node，partition persist:enjoy-preview。
       webviewTag: true
     }

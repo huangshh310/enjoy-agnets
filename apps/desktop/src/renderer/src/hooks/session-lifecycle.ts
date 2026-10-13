@@ -1,6 +1,7 @@
 /**
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
+import { composerDraftForSession } from "../lib/session-draft-storage"
 import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
   modeForLoadedSession,
@@ -296,7 +297,7 @@ export function restoreComposerForSession(sessionId: string) {
     }
   }
 
-  const draft = useChatStore.getState().getSessionDraft(sessionId)
+  const draft = composerDraftForSession(sessionId)
   if (draft) {
     useChatStore.setState({ composer: draft.text })
     setComposerAssets(draft.assets ?? [])

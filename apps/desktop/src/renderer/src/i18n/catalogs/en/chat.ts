@@ -655,7 +655,6 @@ export const enChat = {
   sendFailedRestore: "That message didn't send. It's back in the input.",
   sendFailedRestoreMerged: "This message wasn't sent. The input now holds two messages: the one you typed later first, then this one. Pressing Enter sends them as one message, so edit first if needed.",
   sendFailedRestoreTitle: "This message wasn't sent",
-  previousStillPreparingTitle: "Still preparing the previous message",
   previousStillPreparing: "The previous message is still being prepared. This one is back in the input; send it again in a moment.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",

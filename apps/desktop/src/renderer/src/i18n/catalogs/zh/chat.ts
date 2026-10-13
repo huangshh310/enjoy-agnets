@@ -648,7 +648,6 @@ export const zhChat = {
   sendFailedRestore: "这次没发出去，文字已放回输入框。",
   sendFailedRestoreMerged: "这次没发出去。输入框里现在是两条：后打的那条在前、没发出去的这条在后；直接按 Enter 会合成一条发出，可先删改。",
   sendFailedRestoreTitle: "这次没发出去",
-  previousStillPreparingTitle: "上一条还在准备",
   previousStillPreparing: "上一条还在准备，这条已放回输入框，稍后再发。",
   toolDenied: "已拒绝，本次未执行",
   toolArgsMismatch: "审批参数已变化，本次未执行。",

@@ -21,6 +21,7 @@ import { emitEvent } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { persistMessage } from "./persist-session"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
+import { downgradeReviewWhenGitClean } from "./interrupted-review-git"
 import { assistantBelongsToRun } from "./restore-assistant-snapshot"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
@@ -34,7 +35,8 @@ export function queueInterruptedRunningSettle(row: RunRow): void {
     restartNotice: RESTORE_INTERRUPTED_RUNNING
   })
   writeCancelledRestoreError(row.id, RESTORE_INTERRUPTED_RUNNING)
-  const turn = decideTurnOutcome({ ended: "archive", tools: original })
+  // luna：强杀后 git 确认一处没改 → 不进待验收；非 git / 未确认照旧。
+  const turn = downgradeReviewWhenGitClean(row.sessionId, decideTurnOutcome({ ended: "archive", tools: original }))
   persistSessionWorkflow(row.sessionId, turn.workflow)
   pendingEmit.set(row.id, turn)
 }

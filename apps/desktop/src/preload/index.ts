@@ -1,8 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { applyGpuCompositingAttr } from "./apply-gpu-compositing-attr";
+import { readE2eSendWatchdogArg } from "../main/services/e2e-send-watchdog-arg";
 
 const enjoyGpuCompositing = applyGpuCompositingAttr();
 contextBridge.exposeInMainWorld("enjoyGpuCompositing", enjoyGpuCompositing);
+// 只有主进程判过 e2e stub 闸才会带这个参数（见 e2e-send-watchdog.ts）。
+contextBridge.exposeInMainWorld("enjoyE2eSendWatchdog", readE2eSendWatchdogArg());
 
 import type {
   BuiltinToolsState,

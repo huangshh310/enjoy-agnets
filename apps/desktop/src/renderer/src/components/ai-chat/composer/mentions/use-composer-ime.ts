@@ -8,6 +8,7 @@ import {
   setComposerComposing,
   shouldClearShownOnPreparing,
   shouldClearShownOnQueuedSend,
+  shouldResetShownOnSessionChange,
   shownAfterCompositionOnPreparing
 } from "@renderer/hooks/composer-ime"
 import { shouldHoldComposerStoreSync } from "@renderer/hooks/composer-dom"
@@ -49,6 +50,18 @@ export function useComposerIme(value: string, onChange: (next: string) => void) 
     if (shouldHoldComposerStoreSync()) return
     setShown(value)
   }, [value])
+
+  // jojo / luna：切会话 / 点新对话时输入框换成那个会话自己的稿。写回锁（建会话窗等）期间 store→框的同步被拦，
+  // 旧会话的字会留在框里，随后被 flush 进新会话——会话一变就强制对齐一次（组字中除外）。
+  const sessionId = useChatStore((state) => state.sessionId)
+  const lastSessionId = useRef(sessionId)
+  useEffect(() => {
+    if (lastSessionId.current === sessionId) return
+    lastSessionId.current = sessionId
+    if (composingRef.current) return
+    const next = useChatStore.getState().composer
+    if (shouldResetShownOnSessionChange(shownRef.current, next)) setShown(next)
+  }, [sessionId])
 
   /** 程序化改稿（@ 选中剥 token 等）：shown 一起改，建会话 / 写回锁期间也不让输入框留旧 token。 */
   const replace = useCallback(

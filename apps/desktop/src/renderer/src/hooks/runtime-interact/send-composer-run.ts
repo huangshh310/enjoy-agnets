@@ -22,6 +22,8 @@ import {
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { readComposerDomText } from "../composer-dom"
+import { holdPastSendWatchdogForE2e } from "../../lib/e2e-send-watchdog"
+import { writePersistedDraft } from "../../lib/session-draft-storage"
 import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
@@ -176,6 +178,8 @@ export async function sendComposerMessage(
     : captureComposerSend(typed)
   let optimisticContent: string | undefined
   try {
+    // e2e：ENJOY_E2E_SEND_WATCHDOG=1 时在发出前卡过看门狗（打包态恒不生效）。
+    if (attempt) await holdPastSendWatchdogForE2e()
     const payload = await resolveSendPayload(prepared, snapshot, attempt)
     if (payload === "cancelled" || sendAttemptCancelled(attempt)) {
       // 看门狗已出提示并还稿：迟到的这一发作废，不能提示和发送同时发生。
@@ -192,12 +196,19 @@ export async function sendComposerMessage(
       return
     }
     // leo M1：建会话窗排队首发在入队时已清过输入框——现在框里是后打的 B，不能按 A 去截 / 清
-    // （appendUserMessage 会清 store.composer，这里原样放回）。
-    const laterTyped = prepared?.sessionId ? useChatStore.getState().composer : null
+    // （appendUserMessage 会清 store.composer，这里原样放回）。B 以输入框 DOM 为准（写回锁期间 store 可能落后），
+    // 没有 DOM（测试 / 无窗）才回落 store。
+    const laterTyped = prepared?.sessionId ? readComposerDomText() : null
     const messages = beginOptimisticTurn(store, payload)
     optimisticContent = payload.content
     if (laterTyped !== null) {
       if (useChatStore.getState().composer !== laterTyped) useChatStore.getState().setComposer(laterTyped)
+      // 框里没有后打的字：这个会话的草稿（内存 + 落盘）不能还留着 A。
+      const sid = useChatStore.getState().sessionId
+      if (!laterTyped && sid) {
+        useChatStore.getState().clearSessionDraft(sid)
+        writePersistedDraft(sid, "")
+      }
       setComposerWritebackHeld(false)
     } else clearSentComposerText(payload.typed)
     await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)

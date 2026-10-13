@@ -15,6 +15,16 @@ const { beginNewSessionCreate, finishNewSessionCreate, resetNewSessionCreateForT
   "../new-session-create.ts"
 )
 const { resetComposerRunningOwnerForTest } = await import("./composer-running-owner.ts")
+const { isComposerWritebackHeld } = await import("../composer-sync-lock.ts")
+const { readPersistedDraft, writePersistedDraft } = await import("../../lib/session-draft-storage.ts")
+
+// 草稿落盘用：内存版 localStorage。
+const memory = new Map<string, string>()
+;(globalThis as { localStorage?: unknown }).localStorage = {
+  getItem: (k: string) => memory.get(k) ?? null,
+  setItem: (k: string, v: string) => void memory.set(k, v),
+  removeItem: (k: string) => void memory.delete(k)
+}
 
 afterEach(() => {
   cancelQueuedComposerSend()
@@ -93,6 +103,8 @@ for (const [label, a, b] of [
     await flush()
     assert.ok(useChatStore.getState().messages.some((m) => m.role === "user"), "A 已乐观上屏（走到发出）")
     assert.equal(useChatStore.getState().composer, b, "B 原样留在输入框")
+    // leo soft：入队时上的写回锁，A 发出后必须放掉（否则之后 store→输入框永远不同步）。
+    assert.equal(isComposerWritebackHeld(), false, "写回锁已放")
   })
 }
 
@@ -128,4 +140,93 @@ test("leo M2：B 被拒（上一条还在准备）后 A 卡住，3s 内看门狗
   // soft 2：两条拼在一起放回，提示说清。
   assert.equal(state.error, SEND_FAILED_RESTORE_MERGED)
   await sendingA
+})
+
+test("leo soft：A 发出时框里没有后打的字——这个会话的草稿（内存 + 落盘）不再留着 A", async () => {
+  ;(globalThis as { window?: unknown }).window = { ide: hangingIde() }
+  useChatStore.setState({
+    workspaceId: "ws_dr",
+    sessionId: null,
+    running: false,
+    preparingHint: true,
+    composer: "只发A",
+    error: null,
+    hasKey: true,
+    modelId: "stub-e2e",
+    messages: [],
+    sessionDrafts: {}
+  } as never)
+  const { token } = beginNewSessionCreate()
+  void sendComposerMessage(undefined, "只发A", attempt("只发A") as never)
+  useChatStore.setState({ sessionId: "ses_dr" } as never)
+  // 创建窗里切走又切回之类：A 被存成了这个会话的草稿。
+  useChatStore.getState().saveSessionDraft("ses_dr", { text: "只发A" })
+  writePersistedDraft("ses_dr", "只发A")
+  finishNewSessionCreate(token, "ses_dr")
+  await flush()
+  assert.equal(useChatStore.getState().composer, "")
+  assert.equal(useChatStore.getState().getSessionDraft("ses_dr"), undefined)
+  assert.equal(readPersistedDraft("ses_dr"), undefined)
+})
+
+test("leo soft：A 发出后留的 B 以输入框 DOM 为准（写回锁期间 store 可能落后）", async () => {
+  ;(globalThis as { window?: unknown }).window = { ide: hangingIde() }
+  const el = { value: "", getAttribute: () => "composer-input", focus() {} }
+  ;(globalThis as { document?: unknown }).document = {
+    activeElement: null,
+    querySelector: () => el
+  }
+  try {
+    useChatStore.setState({
+      workspaceId: "ws_dom",
+      sessionId: null,
+      running: false,
+      preparingHint: true,
+      composer: "A句",
+      error: null,
+      hasKey: true,
+      modelId: "stub-e2e",
+      messages: []
+    } as never)
+    el.value = "A句"
+    const { token } = beginNewSessionCreate()
+    void sendComposerMessage(undefined, "A句", attempt("A句") as never)
+    // 用户在框里打了 B，store 还落后几个字。
+    el.value = "B 句完整"
+    useChatStore.setState({ composer: "B 句", sessionId: "ses_dom" } as never)
+    finishNewSessionCreate(token, "ses_dom")
+    await flush()
+    assert.equal(useChatStore.getState().composer, "B 句完整")
+  } finally {
+    delete (globalThis as { document?: unknown }).document
+  }
+})
+
+test("leo soft：A 自己的「没发出去」让看门狗收手（真实 armComposerWatchdog，不注入 noticeShown）", async () => {
+  ;(globalThis as { window?: unknown }).window = { ide: hangingIde() }
+  const { SEND_FAILED_RESTORE } = await import("../queue-composer-send-copy.ts")
+  useChatStore.setState({
+    workspaceId: "ws_own",
+    sessionId: null,
+    running: false,
+    runId: null,
+    preparingHint: true,
+    composer: "自己失败的A",
+    error: null,
+    hasKey: true,
+    modelId: "stub-e2e",
+    messages: []
+  } as never)
+  const { token } = beginNewSessionCreate()
+  const sendingA = sendComposerMessage(undefined, "自己失败的A")
+  // A 卡在等 running；期间 A 自己的失败路径已出「没发出去」并把字还了回去（这里用户又删掉了）。
+  useChatStore.setState({ sessionId: "ses_own2", running: true, runId: null } as never)
+  finishNewSessionCreate(token, "ses_own2")
+  useChatStore.getState().setError(SEND_FAILED_RESTORE)
+  useChatStore.getState().setComposer("")
+  await new Promise((r) => setTimeout(r, 3_600))
+  // 看门狗若没收手，3s 时会再还一次 A。
+  assert.equal(useChatStore.getState().composer, "", "看门狗没有再还一次 A")
+  // 最后一个用例：A 仍挂着等 running，不再放开。
+  void sendingA
 })

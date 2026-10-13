@@ -26,7 +26,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
-import { PREVIOUS_STILL_PREPARING, classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -174,8 +174,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             : kind === "rate_limit"
               ? t("chat.usage.rateLimitTitle")
               : kind === "send_restore"
-                ? // jojo P1：发送还稿不是「模型没回完」——标题只说没发出去 / 在等上一条。
-                  t(error.includes(PREVIOUS_STILL_PREPARING) ? "chat.previousStillPreparingTitle" : "chat.sendFailedRestoreTitle")
+                ? // jojo P1：发送还稿不是「模型没回完」。「上一条还在准备」由 Composer 上沿灰条画，红卡不会收到。
+                  t("chat.sendFailedRestoreTitle")
                 : t("chat.errorTitle"))
   const detail =
     gate?.hint ??
