@@ -10,6 +10,7 @@ import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
 import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
+import { withErrorRetryInvariant } from "./error-retry-invariant"
 import type { ChatStore, ChangedFileRow, RepositoryNode, ThreadMessage } from "./chat-store.types"
 
 export type {
@@ -26,7 +27,7 @@ export type {
   ThreadSource
 } from "./chat-store.types"
 
-export const useChatStore = create<ChatStore>((set, get) => ({
+export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, get) => ({
   userName: "Enjoy Agents",
   workspaceId: null,
   workspaceName: "No workspace",
@@ -182,7 +183,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         ...(assets?.length ? { assets } : {})
       }
     ]
-    set({ messages, composer: "", error: null, errorRetry: null, notice: null })
+    set({ messages, composer: "", error: null, notice: null })
     return messages
   },
   setRunning: (running, runId = null) => {
@@ -312,13 +313,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       sessionId,
       sessionTitle,
-      ...(state.sessionId === sessionId ? {} : { notice: null, errorRetry: null }),
+      ...(state.sessionId === sessionId ? {} : { notice: null, errorRetry: null }), // 换会话：目标属于旧会话
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )
     })),
   setMessages: (messages) => set({ messages })
-}))
+})))
 
 export function formatNodeTime(
   timestamp: number,

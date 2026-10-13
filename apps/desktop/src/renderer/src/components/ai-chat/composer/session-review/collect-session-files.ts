@@ -60,7 +60,8 @@ export function describeReviewFiles(
   lastTurnPaths: string[],
   changes: ChangedFileRow[],
   running: boolean,
-  gitRepo?: boolean | null
+  gitRepo?: boolean | null,
+  interrupted = false
 ): ReviewFilePick {
   if (lastTurnPaths.length === 0) return { files: [], fromLastTurn: false }
   if (running || gitRepo === false) {
@@ -68,6 +69,8 @@ export function describeReviewFiles(
   }
   const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
   if (dirty.length > 0) return { files: dirty, fromLastTurn: true }
+  // jojo：强杀 / 停止 / 重启回挂的轮，git 里没落盘就不回落「本轮写过」——胶囊只反映真落盘的改动。
+  if (interrupted) return { files: [], fromLastTurn: true }
   return {
     files: collectSessionFiles(lastTurnPaths, changes),
     fromLastTurn: true,

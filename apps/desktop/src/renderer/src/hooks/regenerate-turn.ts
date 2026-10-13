@@ -2,10 +2,7 @@
  * 助手消息重新生成 (Regenerate) 与用户消息编辑重发 (Edit & Resend) 核心调度模块。
  * 遵循 Vercel AI SDK 7 的消息上下文裁剪与多轮调度规范。
  */
-import {
-  isEmptyAssistantTurn,
-  isTodoContinueUserMessage
-} from "../components/ai-chat/composer/todo-continue-message"
+import { shouldRetryAsTodoContinue } from "../components/ai-chat/composer/todo-continue-message"
 import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
@@ -49,9 +46,9 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 
   const userMessage = messages[userIndex]
   if (!userMessage) return
-  const target = messages[targetIndex]
 
-  if (isTodoContinueUserMessage(userMessage.content) || (target && isEmptyAssistantTurn(target))) {
+  // luna：失败 / 空的助手轮若前面是用户真话，重发原话（下面的常规截断重跑），不走续跑合成提示。
+  if (shouldRetryAsTodoContinue(userMessage)) {
     await continueTodoTurn()
     return
   }

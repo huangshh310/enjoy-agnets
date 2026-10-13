@@ -42,3 +42,12 @@ export function isEmptyAssistantTurn(message: { content?: string; tools?: unknow
   const hasTools = Array.isArray(message.tools) && message.tools.length > 0
   return !hasText && !hasTools
 }
+
+/**
+ * luna（#147 后续）：重试 / 重新生成哪一轮走「续跑 Todo」的合成提示，哪一轮重发用户原话。
+ * 只有这一轮的用户句本身就是续跑句才续跑；失败 / 空的助手轮前面是用户真话 → 重发原话，
+ * 否则内部英文续跑提示会被当成本轮输入（模型 / stub 回显进聊天）。
+ */
+export function shouldRetryAsTodoContinue(userMessage: { content?: string } | undefined): boolean {
+  return isTodoContinueUserMessage(userMessage?.content)
+}

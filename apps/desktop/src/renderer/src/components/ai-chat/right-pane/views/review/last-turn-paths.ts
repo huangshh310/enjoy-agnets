@@ -116,9 +116,21 @@ function pathFromTool(tool: ThreadToolCall): string | null {
   if (!isWriteTool(tool.name)) return null
   if (tool.state !== "output-available") return null
   if (isToolNotExecuted(tool) || isToolNeverSent(tool)) return null
+  if (isApprovalEnvelopeOnly(tool.result)) return null
   const path = readToolPath(tool.args) ?? readToolPath(tool.result)
   if (!path || isPlaceholderChangedDir(path)) return null
   return path
+}
+
+/**
+ * jojo（#146 后续）：只有审批结论（`{ decision }` / 回挂码）没有工具真输出的写行 = 批了但没真写盘
+ * （例如批准后执行中被强杀、重启回挂只回放了审批结论）。不算本轮改动，不出文件胶囊。
+ */
+const APPROVAL_ENVELOPE_KEYS = new Set(["decision", "code", "reason", "approvalId", "resumeCode"])
+export function isApprovalEnvelopeOnly(result: unknown): boolean {
+  if (!result || typeof result !== "object" || Array.isArray(result)) return false
+  const keys = Object.keys(result as Record<string, unknown>)
+  return keys.length > 0 && keys.every((key) => APPROVAL_ENVELOPE_KEYS.has(key))
 }
 
 /** 还在审批或没发出 result 的不算。 */

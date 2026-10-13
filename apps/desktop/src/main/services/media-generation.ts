@@ -77,7 +77,7 @@ export async function runMediaKind(options: {
     },
     sessionId
   )
-  if (persistChat) persistMediaAssistantAsset(sessionId, asset, mediaRunKind(kind))
+  if (persistChat) persistMediaAssistantAsset(sessionId, asset, mediaRunKind(kind), runId)
 }
 
 async function runAudioText(

@@ -127,3 +127,19 @@ test("相对路径后缀也能对上 Git 行", () => {
   assert.equal(files[0]?.additions, 3)
   assert.equal(files[0]?.path, "apps/desktop/src/b.ts")
 })
+
+test("jojo：强杀 / 停止后的轮，git 里没落盘 → 不回落「本轮写过」胶囊", () => {
+  const pick = describeReviewFiles(["notes/e2e-stub.txt"], [], false, true, true)
+  assert.deepEqual(pick.files, [])
+  // 真落盘（git dirty）仍列出
+  const real = describeReviewFiles(
+    ["notes/e2e-stub.txt"],
+    [{ path: "notes/e2e-stub.txt", status: "untracked", additions: 1, deletions: 0 }],
+    false,
+    true,
+    true
+  )
+  assert.deepEqual(real.files.map((file) => file.path), ["notes/e2e-stub.txt"])
+  // 正常完成的轮行为不变（回落 + wroteThisTurnOnly）
+  assert.equal(describeReviewFiles(["a.txt"], [], false, true).wroteThisTurnOnly, true)
+})
