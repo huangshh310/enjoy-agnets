@@ -39,7 +39,9 @@ export function failComposerSend(input: {
     restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
   }
   if (input.chips) restoreComposerSendChips(input.chips)
+  // leo S1：keepRunning = 会话里还有别的轮在跑（pending 助手 / 停车都保留），绝不能删会话。
   if (
+    !input.keepRunning &&
     input.createdSessionId &&
     input.createdSessionId === input.sessionId &&
     isEmptyFailedSession(input.createdSessionId)
