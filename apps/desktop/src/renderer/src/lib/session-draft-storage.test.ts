@@ -12,7 +12,14 @@ const memory = new Map<string, string>()
 }
 
 const { useChatStore } = await import("../stores/chat-store.ts")
-const { composerDraftForSession, installSessionDraftPersistence, readPersistedDraft } = await import(
+const {
+  composerDraftForSession,
+  DRAFT_PERSIST_DEBOUNCE_MS,
+  flushPersistedDrafts,
+  installSessionDraftPersistence,
+  readPersistedDraft,
+  resetPersistedDraftCacheForTest
+} = await import(
   "./session-draft-storage.ts"
 )
 const { shouldResetShownOnSessionChange } = await import("../hooks/composer-ime.ts")
@@ -20,6 +27,7 @@ const { shouldResetShownOnSessionChange } = await import("../hooks/composer-ime.
 installSessionDraftPersistence()
 
 beforeEach(() => {
+  resetPersistedDraftCacheForTest()
   memory.clear()
   useChatStore.setState({ sessionId: "ses_a", composer: "", sessionDrafts: {} } as never)
 })
@@ -68,4 +76,42 @@ test("接线：打开会话走 composerDraftForSession", async () => {
   const { readFileSync } = await import("node:fs")
   const src = readFileSync(new URL("../hooks/session-lifecycle.ts", import.meta.url), "utf8")
   assert.match(src, /const draft = composerDraftForSession\(sessionId\)/)
+})
+
+test("jojo P1：有 main 桥时草稿防抖后写到 main，不写 localStorage；重启从 main 读回（每个会话各自）", async () => {
+  const saved: Record<string, string> = {}
+  const calls: Array<{ sessionId: string; text: string }> = []
+  ;(globalThis as { window?: unknown }).window = {
+    ide: {
+      session: {
+        drafts: {
+          loadSync: () => ({ ...saved }),
+          save: (input: { sessionId: string; text: string }) => {
+            calls.push(input)
+            if (input.text) saved[input.sessionId] = input.text
+            else delete saved[input.sessionId]
+          }
+        }
+      }
+    }
+  }
+  try {
+    resetPersistedDraftCacheForTest()
+    useChatStore.getState().setComposer("A 的稿")
+    useChatStore.getState().setComposer("A 的稿！")
+    assert.equal(calls.length, 0, "防抖期内不写")
+    await new Promise((r) => setTimeout(r, DRAFT_PERSIST_DEBOUNCE_MS + 50))
+    assert.deepEqual(calls, [{ sessionId: "ses_a", text: "A 的稿！" }], "停手后只写最后一版")
+    useChatStore.setState({ sessionId: "ses_b", composer: "" } as never)
+    useChatStore.getState().setComposer("B 的稿")
+    flushPersistedDrafts()
+    assert.equal(memory.size, 0, "不再依赖 localStorage")
+    // 模拟强杀重启：内存缓存没了，从 main 读。
+    resetPersistedDraftCacheForTest()
+    assert.equal(readPersistedDraft("ses_a"), "A 的稿！")
+    assert.equal(readPersistedDraft("ses_b"), "B 的稿")
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+    resetPersistedDraftCacheForTest()
+  }
 })

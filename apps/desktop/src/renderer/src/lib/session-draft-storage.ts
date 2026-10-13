@@ -6,43 +6,88 @@ import { useChatStore } from "../stores/chat-store"
 import type { SessionDraftState } from "../stores/chat-store.types"
 
 const STORAGE_KEY = "enjoy-agents-session-drafts"
+/** 打字防抖：停手这么久后写到 main（DB）。 */
+export const DRAFT_PERSIST_DEBOUNCE_MS = 300
 
 type DraftMap = Record<string, string>
 
-function storage(): Storage | null {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
+type DraftBridge = {
+  loadSync: () => DraftMap
+  save: (input: { sessionId: string; text: string }) => void
+}
+
+/**
+ * jojo P1：落盘走 main（DB，已提交即强杀不丢）；renderer localStorage 在 SIGKILL 下不可靠，只作无桥（单测）回落。
+ */
+function bridge(): DraftBridge {
+  const ide = (globalThis as { window?: { ide?: { session?: { drafts?: DraftBridge } } } }).window?.ide
+  const drafts = ide?.session?.drafts
+  if (drafts) return drafts
+  return {
+    loadSync: () => {
+      try {
+        const raw = globalThis.localStorage?.getItem(STORAGE_KEY)
+        const parsed = raw ? (JSON.parse(raw) as unknown) : {}
+        return parsed && typeof parsed === "object" ? (parsed as DraftMap) : {}
+      } catch {
+        return {}
+      }
+    },
+    save: ({ sessionId, text }) => {
+      try {
+        const store = globalThis.localStorage
+        if (!store) return
+        const raw = store.getItem(STORAGE_KEY)
+        const map = (raw ? JSON.parse(raw) : {}) as DraftMap
+        if (text.trim()) map[sessionId] = text
+        else delete map[sessionId]
+        store.setItem(STORAGE_KEY, JSON.stringify(map))
+      } catch {
+        // 配额满等：只丢落盘
+      }
+    }
   }
 }
 
-function readAll(): DraftMap {
-  const raw = storage()?.getItem(STORAGE_KEY)
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    return parsed && typeof parsed === "object" ? (parsed as DraftMap) : {}
-  } catch {
-    return {}
+let cache: DraftMap | null = null
+const pending = new Map<string, string>()
+let timer: ReturnType<typeof setTimeout> | null = null
+
+function drafts(): DraftMap {
+  if (!cache) {
+    try {
+      cache = { ...bridge().loadSync() }
+    } catch {
+      cache = {}
+    }
   }
+  return cache
 }
 
-function writeAll(map: DraftMap): void {
-  try {
-    storage()?.setItem(STORAGE_KEY, JSON.stringify(map))
-  } catch {
-    // 配额满等：只丢落盘，不影响内存草稿。
-  }
+/** 把防抖中的写立刻送到 main（关窗 / 测试用）。 */
+export function flushPersistedDrafts(): void {
+  if (timer) clearTimeout(timer)
+  timer = null
+  const target = bridge()
+  for (const [sessionId, text] of pending) target.save({ sessionId, text })
+  pending.clear()
+}
+
+/** 测试用：丢掉内存缓存，下次从后端重读（模拟重启）。 */
+export function resetPersistedDraftCacheForTest(): void {
+  if (timer) clearTimeout(timer)
+  timer = null
+  pending.clear()
+  cache = null
 }
 
 export function readPersistedDraft(sessionId: string): string | undefined {
-  const text = readAll()[sessionId]
+  const text = drafts()[sessionId]
   return typeof text === "string" && text ? text : undefined
 }
 
 export function writePersistedDraft(sessionId: string, text: string): void {
-  const map = readAll()
+  const map = drafts()
   if (text.trim()) {
     if (map[sessionId] === text) return
     map[sessionId] = text
@@ -50,7 +95,9 @@ export function writePersistedDraft(sessionId: string, text: string): void {
     if (!(sessionId in map)) return
     delete map[sessionId]
   }
-  writeAll(map)
+  pending.set(sessionId, text.trim() ? text : "")
+  if (timer) clearTimeout(timer)
+  timer = setTimeout(flushPersistedDrafts, DRAFT_PERSIST_DEBOUNCE_MS)
 }
 
 /** 打开会话时的稿：内存草稿优先（带附件 / 引用）；没有就用落盘的正文（重启后）。 */
@@ -71,8 +118,13 @@ export function installSessionDraftPersistence(): () => void {
     if (!state.sessionId || state.sessionId !== prev.sessionId) return
     writePersistedDraft(state.sessionId, state.composer)
   })
+  const onHide = () => flushPersistedDrafts()
+  globalThis.addEventListener?.("pagehide", onHide)
+  globalThis.addEventListener?.("beforeunload", onHide)
   installed = () => {
     unsubscribe()
+    globalThis.removeEventListener?.("pagehide", onHide)
+    globalThis.removeEventListener?.("beforeunload", onHide)
     installed = null
   }
   return installed

@@ -85,6 +85,10 @@ const ide = {
     archive: (input: unknown) => ipcRenderer.invoke("session.archive", input),
     unarchive: (input: unknown) => ipcRenderer.invoke("session.unarchive", input),
     delete: (input: unknown) => ipcRenderer.invoke("session.delete", input),
+    drafts: {
+      loadSync: (): Record<string, string> => ipcRenderer.sendSync("session.drafts.loadSync") ?? {},
+      save: (input: { sessionId: string; text: string }) => ipcRenderer.send("session.drafts.save", input)
+    },
     deleteArchived: () => ipcRenderer.invoke("session.deleteArchived"),
     compact: (input: unknown) => ipcRenderer.invoke("session.compact", input),
     getCompaction: (input: unknown) => ipcRenderer.invoke("session.getCompaction", input),

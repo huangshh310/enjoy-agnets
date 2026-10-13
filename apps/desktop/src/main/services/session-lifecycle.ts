@@ -51,6 +51,11 @@ export function deleteSession(sessionId: string, opts?: { onlyIfEmpty?: boolean 
       .prepare("SELECT COUNT(*) as n FROM messages WHERE session_id = ?")
       .get(sessionId) as { n: number }
     if (count.n > 0) return { id: sessionId, deleted: false }
+    // jojo P3 / #145 S1：有在跑的 run 也不算空，绝不删。
+    const active = db
+      .prepare("SELECT COUNT(*) as n FROM runs WHERE session_id = ? AND status IN ('running', 'pending', 'queued')")
+      .get(sessionId) as { n: number }
+    if (active.n > 0) return { id: sessionId, deleted: false }
   }
   void import("@enjoy-agents/agent-harness").then(({ deleteAcpRemoteIfLive, disposeAcpSession }) => {
     void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))

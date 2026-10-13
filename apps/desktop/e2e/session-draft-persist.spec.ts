@@ -176,3 +176,47 @@ test("草稿按会话保存：新对话不带旧稿，切回还在，重启还�
     await shutdown(first.app)
   }
 })
+
+test("jojo P1：强杀（SIGKILL）后重启，每个会话的草稿都还在", async () => {
+  test.setTimeout(300_000)
+  if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js").toBe(true)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const boot = freshEnv()
+  let first = await launch(boot.env)
+  let s1 = ""
+  let s2 = ""
+  try {
+    const { window } = first
+    await seedUsedSession(window, boot.userData)
+    s1 = newestSessionId(boot.userData)
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.click()
+    await window.keyboard.type("强杀前会话一", { delay: 20 })
+    await window.locator('[data-testid="sidebar-new-session"]').click()
+    await expect(composer).toHaveValue("", { timeout: 10_000 })
+    await waitSendReady(window)
+    await expect.poll(() => newestSessionId(boot.userData) !== s1, { timeout: 20_000 }).toBe(true)
+    s2 = newestSessionId(boot.userData)
+    await composer.click()
+    await window.keyboard.type("强杀前会话二", { delay: 20 })
+    // 停手超过防抖（300ms）再强杀。
+    await window.waitForTimeout(1_000)
+  } finally {
+    first.app.process().kill("SIGKILL")
+    await new Promise((r) => setTimeout(r, 1_000))
+  }
+  first = await launch(boot.env)
+  try {
+    const { window } = first
+    const composer = window.locator('[data-testid="composer-input"]')
+    await row(window, s1).click()
+    await expect(composer).toHaveValue("强杀前会话一", { timeout: 15_000 })
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, "draft-after-sigkill-s1.png") })
+    await row(window, s2).click()
+    await expect(composer).toHaveValue("强杀前会话二", { timeout: 15_000 })
+    await window.screenshot({ path: join(shots, "draft-after-sigkill-s2.png") })
+  } finally {
+    await shutdown(first.app)
+  }
+})
