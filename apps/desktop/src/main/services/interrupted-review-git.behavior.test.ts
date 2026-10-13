@@ -9,8 +9,10 @@ import { join } from "node:path"
 import { test } from "node:test"
 import { insertRun, getRun } from "@enjoy-agents/db"
 import { serializeAssistantPayload } from "@enjoy-agents/ipc-contract"
+import { writeTargetVerdict } from "./interrupted-review-git.ts"
 
-const { getDatabase, persistMessage, queueInterruptedRunningSettle, resetInterruptedRunningForTest } = await import(
+const { getDatabase, persistMessage, queueInterruptedRunningSettle, recordRunStartHead, resetInterruptedRunningForTest } =
+  await import(
   "./restore-interrupted-running.behavior.load.ts"
 )
 
@@ -27,7 +29,11 @@ function gitRepo(dirty: boolean): string {
   return root
 }
 
-function killedWriteRun(tag: string, root: string): string {
+function killedWriteRun(
+  tag: string,
+  root: string,
+  opts: { target?: string; afterStart?: () => void } = {}
+): string {
   resetInterruptedRunningForTest()
   const sessionId = `ses_int_git_${tag}`
   const workspaceId = `ws_int_git_${tag}`
@@ -46,7 +52,7 @@ function killedWriteRun(tag: string, root: string): string {
     serializeAssistantPayload({
       content: "",
       runId,
-      tools: [{ id: "t1", name: "write_file", state: "input-available", args: { path: "note.txt" }, result: { decision: "allow" } }]
+      tools: [{ id: "t1", name: "write_file", state: "input-available", args: { path: opts.target ?? "note.txt" }, result: { decision: "allow" } }]
     })
   )
   insertRun(db, {
@@ -60,6 +66,8 @@ function killedWriteRun(tag: string, root: string): string {
     checkpoint: null,
     error: null
   })
+  recordRunStartHead(runId, sessionId)
+  opts.afterStart?.()
   queueInterruptedRunningSettle(getRun(db, runId)!)
   const row = db.prepare("SELECT workflow_status as w FROM sessions WHERE id = ?").get(sessionId) as { w: string | null }
   return row.w ?? ""
@@ -75,4 +83,32 @@ test("强杀 + git 有改动：照旧待验收", () => {
 
 test("强杀 + 非 git 目录：未确认，照旧待验收", () => {
   assert.equal(killedWriteRun("nogit", mkdtempSync(join(tmpdir(), "enjoy-int-nogit-"))), "needs_review")
+})
+
+test("leo：强杀 + 干净但这轮已 commit（HEAD 变了）：照旧待验收", () => {
+  const root = gitRepo(false)
+  const afterStart = () => {
+    writeFileSync(join(root, "b.txt"), "b\n")
+    execFileSync("git", ["-C", root, "add", "."], { stdio: "ignore" })
+    execFileSync("git", ["-C", root, "commit", "-qm", "agent"], { stdio: "ignore" })
+  }
+  assert.equal(killedWriteRun("headmoved", root, { afterStart }), "needs_review")
+})
+
+test("leo：强杀 + 干净但写的是 gitignore 文件：照旧待验收", () => {
+  const root = gitRepo(false)
+  writeFileSync(join(root, ".gitignore"), "out/\n")
+  execFileSync("git", ["-C", root, "add", "."], { stdio: "ignore" })
+  execFileSync("git", ["-C", root, "commit", "-qm", "ignore"], { stdio: "ignore" })
+  assert.equal(writeTargetVerdict(root, "out/x.txt"), "ignored")
+  assert.equal(killedWriteRun("ignored", root, { target: "out/x.txt" }), "needs_review")
+})
+
+test("leo：强杀 + 干净但写到工作区外：照旧待验收", () => {
+  assert.equal(killedWriteRun("outside", gitRepo(false), { target: "../elsewhere.txt" }), "needs_review")
+  const root = gitRepo(false)
+  assert.equal(writeTargetVerdict(root, "../elsewhere.txt"), "outside")
+  assert.equal(writeTargetVerdict(root, "/tmp/elsewhere.txt"), "outside")
+  assert.equal(writeTargetVerdict(root, "a.txt"), "visible")
+  assert.equal(killedWriteRun("outside_abs", gitRepo(false), { target: "/tmp/elsewhere.txt" }), "needs_review")
 })

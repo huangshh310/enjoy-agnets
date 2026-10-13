@@ -35,8 +35,11 @@ export function queueInterruptedRunningSettle(row: RunRow): void {
     restartNotice: RESTORE_INTERRUPTED_RUNNING
   })
   writeCancelledRestoreError(row.id, RESTORE_INTERRUPTED_RUNNING)
-  // luna：强杀后 git 确认一处没改 → 不进待验收；非 git / 未确认照旧。
-  const turn = downgradeReviewWhenGitClean(row.sessionId, decideTurnOutcome({ ended: "archive", tools: original }))
+  // luna/leo：强杀后 git 确认这轮没留下东西（干净 + HEAD 未变 + 无工作区外 / ignored 写）→ 不进待验收。
+  const turn = downgradeReviewWhenGitClean(row.sessionId, decideTurnOutcome({ ended: "archive", tools: original }), {
+    runId: row.id,
+    tools: original
+  })
   persistSessionWorkflow(row.sessionId, turn.workflow)
   pendingEmit.set(row.id, turn)
 }
