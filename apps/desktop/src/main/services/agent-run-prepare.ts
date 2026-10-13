@@ -7,6 +7,7 @@ import { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { appendRunAttachments, attachmentCapsFor } from "./attach-run-files"
 import { citeKnowledge } from "./cite-knowledge"
 import { failRunBeforePump } from "./agent-run-prepare-fail"
+import { throwIfE2ePrepareFail } from "./e2e-prepare-fail"
 
 export async function prepareAndPump(runId: string): Promise<void> {
   const run = getActiveRun(runId)
@@ -15,6 +16,7 @@ export async function prepareAndPump(runId: string): Promise<void> {
     return
   }
   try {
+    throwIfE2ePrepareFail()
     await appendRunAttachments(
       run.messages,
       run.input.attachments,
