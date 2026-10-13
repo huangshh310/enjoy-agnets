@@ -189,3 +189,39 @@ test("leo #151：lastError 回来时已切到别的会话，不把 A 的红卡�
     delete (globalThis as { window?: unknown }).window
   }
 })
+
+test("leo #151：重启还原 run_1 红卡、不关就重试、run_2 失败后关卡 → 带 run_2 不带 run_1", async () => {
+  const calls: unknown[] = []
+  ;(globalThis as { window?: unknown }).window = {
+    ide: {
+      session: {
+        lastError: () => Promise.resolve({ runId: "run_1", message: "boom1" }),
+        dismissError: (input: unknown) => (calls.push(input), Promise.resolve(true))
+      }
+    }
+  }
+  try {
+    const { useChatStore } = await import("../stores/chat-store.ts")
+    const { useAttentionStore } = await import("../stores/attention/attention-store.ts")
+    const { attentionSlotId } = await import("../stores/attention/ingest-attention.ts")
+    const { restoreSessionErrorFromDb, dismissSessionErrorCard, restoredErrorRunId } = await import("./hydrate-session-error.ts")
+    useChatStore.setState({ sessionId: "ses_s" } as never)
+    useChatStore.getState().setError(null)
+    assert.equal(await restoreSessionErrorFromDb("ses_s", { running: false, messages: [] }), true)
+    assert.equal(restoredErrorRunId(), "run_1")
+    // 重试：新一轮开跑清卡，run_2 失败写新卡；Attention 槽记 run_2。
+    useChatStore.getState().setError(null)
+    assert.equal(restoredErrorRunId(), null)
+    useChatStore.getState().setError("boom1")
+    useAttentionStore.setState({
+      items: [
+        { id: attentionSlotId("ses_s", "error"), sessionId: "ses_s", kind: "error", status: "active", runId: "run_2", occurredAt: 2 }
+      ]
+    } as never)
+    dismissSessionErrorCard()
+    await new Promise((r) => setTimeout(r, 0))
+    assert.deepEqual(calls, [{ sessionId: "ses_s", runId: "run_2" }])
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+  }
+})

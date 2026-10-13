@@ -40,14 +40,32 @@ export async function restoreSessionErrorFromDb(
   const store = useChatStore.getState()
   if (store.sessionId !== sessionId) return false
   if (store.error === message) return true
-  if (last?.runId) restoredRunIds.set(sessionId, last.runId)
   const target = retryTargetFromMessages(sessionId, opts.messages)
-  store.setError(message, target ?? undefined)
+  restoring = true
+  try {
+    store.setError(message, target ?? undefined)
+  } finally {
+    restoring = false
+  }
+  restoredCard = last?.runId ? { sessionId, runId: last.runId } : null
   return true
 }
 
-/** 本会话红卡来自哪个 run（还原时记下），关卡时带上做水位。 */
-const restoredRunIds = new Map<string, string>()
+/**
+ * 当前红卡来自哪个 run（还原时记下），关卡时带上做水位。
+ * leo #151：红卡一被替换 / 清空 / 换会话就作废，免得重试后新失败关卡时带着旧 runId。
+ */
+let restoredCard: { sessionId: string; runId: string } | null = null
+let restoring = false
+useChatStore.subscribe((state, prev) => {
+  if (restoring) return
+  if (state.error !== prev.error || state.sessionId !== prev.sessionId) restoredCard = null
+})
+
+/** 测试用：当前记着的还原 runId。 */
+export function restoredErrorRunId(): string | null {
+  return restoredCard?.runId ?? null
+}
 
 type DismissIde = { session: { dismissError: (input: { sessionId: string; runId?: string }) => unknown } }
 
@@ -73,13 +91,13 @@ export async function persistErrorDismiss(
 export function dismissSessionErrorCard(opts?: { onPersistFailed?: () => void }): void {
   const store = useChatStore.getState()
   const sessionId = store.sessionId
+  const restored = sessionId && restoredCard?.sessionId === sessionId ? restoredCard.runId : undefined
   store.setError(null)
   if (!sessionId) return
   const attention = useAttentionStore.getState()
   const slotId = attentionSlotId(sessionId, "error")
   const slotRunId = attention.items.find((item) => item.id === slotId)?.runId || undefined
-  const runId = restoredRunIds.get(sessionId) ?? slotRunId
-  restoredRunIds.delete(sessionId)
+  const runId = restored ?? slotRunId
   // #151：Attention 出错槽一起关掉，否则红点 / 待处理条 / 收件箱还挂着，下一次回灌又被它带出来。
   attention.dismiss(slotId)
   let ide: DismissIde

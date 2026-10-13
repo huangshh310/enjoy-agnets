@@ -111,8 +111,9 @@ function registerSessionCatalogIpc() {
   ipcMain.handle("session.dismissError", (_event, raw) => {
     const input = SessionErrorInput.safeParse(raw)
     if (!input.success) return false
-    dismissSessionError(input.data.sessionId, input.data.runId)
-    return true
+    // e2e：ENJOY_E2E_DISMISS_ERROR=fail 时关卡落库恒失败，用来验渲染层重试一次 + toast。
+    if (process.env.ENJOY_E2E_DISMISS_ERROR === "fail") return false
+    return dismissSessionError(input.data.sessionId, input.data.runId)
   })
   ipcMain.handle("session.list", async (_event, raw) =>
     listSessions(WorkspaceIdInput.parse(raw).workspaceId)

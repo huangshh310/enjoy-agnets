@@ -75,7 +75,7 @@ export function SubagentRow({
                 {node.status === "completed" ? (
                   <RiCheckLine className="size-3 text-state-success-text" />
                 ) : null}
-                <span>{t("chat.subagentStepCount", { count: childStepCount })}</span>
+                <span>{childStepCount === 1 ? t("chat.subagentStepCountOne") : t("chat.subagentStepCount", { count: childStepCount })}</span>
               </span>
             ) : null}
 

@@ -110,3 +110,22 @@ test("leo：error 去栈 / 去路径 / 去 token 并截断", () => {
 test("没有失败 run / 空会话 → null", () => {
   assert.equal(sessionLastError(session("empty")), null)
 })
+
+test("leo #151：dismissError 的 runId 必须是本会话最近一轮失败；过期 / 别的会话不落水位", () => {
+  const sid = session("stale")
+  const other = session("stale_other")
+  run(sid, "run_st_1", "failed", "boom1", 10)
+  run(sid, "run_st_2", "failed", "boom2", 20)
+  run(other, "run_so_1", "failed", "x", 30)
+  assert.equal(dismissSessionError(sid, "run_st_1"), false)
+  assert.equal(dismissSessionError(sid, "run_so_1"), false)
+  assert.equal(sessionLastError(sid)?.runId, "run_st_2")
+  assert.equal(dismissSessionError(sid, "run_st_2"), true)
+  assert.equal(sessionLastError(sid), null)
+})
+
+test("leo #151：ipc 有 ENJOY_E2E_DISMISS_ERROR=fail 桩，关卡恒失败", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("../ipc-session.ts", import.meta.url), "utf8")
+  assert.match(src, /ENJOY_E2E_DISMISS_ERROR === "fail"\) return false/)
+})

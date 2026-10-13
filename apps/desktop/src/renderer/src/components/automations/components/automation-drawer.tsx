@@ -1,6 +1,7 @@
 /**
  * 约 380px 右侧抽屉：名称、触发、cron、引擎、模型、探索/执行、提示词。
  */
+import { automationSaveReason } from "../lib/save-reason"
 import { footerHint } from "../lib/footer-hint"
 import { RiCloseLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
@@ -64,8 +65,8 @@ export function AutomationDrawer({
   const hint = runNow ? null : footerHint(draft.triggers, t)
 
   const saveDisabled = !canSave || !cronReady || !webhookReady || saving
-  // 说明空着保存不了：要说原因（luna #151）。名字空着另有占位提示，不重复。
-  const saveReason = draft.name.trim() && !draft.prompt.trim() ? t("studio.automations.promptRequired") : null
+  // 说明空着保存不了：要说原因（luna #151）；名字也空时一起说。
+  const saveReason = automationSaveReason(draft, t)
   // 编辑态把说明清空后，「立即运行」会跑旧说明，所以一起禁用（luna #151）。
   const runDisabled = !draft.id || running || !draft.name.trim() || !draft.prompt.trim()
   return (

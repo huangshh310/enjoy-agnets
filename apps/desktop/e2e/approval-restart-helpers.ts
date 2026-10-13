@@ -24,6 +24,8 @@ export async function bootPendingApproval(opts?: {
   files?: Record<string, string>
   /** 界面语言，默认 zh。 */
   lang?: "zh" | "en"
+  /** 额外环境变量（如 ENJOY_E2E_DISMISS_ERROR=fail）。 */
+  extraEnv?: Record<string, string>
 }): Promise<RestartEnv & { app: ElectronApplication }> {
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-apr-ws-"))
   const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-apr-ud-"))
@@ -36,7 +38,8 @@ export async function bootPendingApproval(opts?: {
     ENJOY_E2E_CHAT_READY: "key",
     ENJOY_E2E_WORKSPACE: workspace,
     ENJOY_E2E_USERDATA: userData,
-    ...(opts?.slowTool ? { ENJOY_E2E_SLOW_TOOL: "1" } : {})
+    ...(opts?.slowTool ? { ENJOY_E2E_SLOW_TOOL: "1" } : {}),
+    ...(opts?.extraEnv ?? {})
   }
   const app = await launchElectron(env)
   try {

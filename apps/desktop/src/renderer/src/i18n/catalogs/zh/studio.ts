@@ -220,6 +220,7 @@ export const zhStudio = {
     newAutomation: "新建",
     toggleFailed: "开关没改成：{message}",
     promptRequired: "填写提示词后才能保存",
+    namePromptRequired: "填写名称和提示词后才能保存",
     editTitle: "编辑自动化",
     createTitle: "新建自动化",
     workspaceHint: "在当前项目里运行",

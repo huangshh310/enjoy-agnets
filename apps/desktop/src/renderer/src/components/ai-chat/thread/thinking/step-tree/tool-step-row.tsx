@@ -49,7 +49,7 @@ export function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
       ) : null}
       {node.exploredPages && node.exploredPages.length > 0 ? (
         <ExploredPagesBranch
-          title={node.exploredTitle ?? t("chat.exploredPages", { count: node.exploredPages.length })}
+          title={node.exploredTitle ?? (node.exploredPages.length === 1 ? t("chat.exploredPagesOne") : t("chat.exploredPages", { count: node.exploredPages.length }))}
           pages={node.exploredPages}
         />
       ) : null}

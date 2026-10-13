@@ -25,3 +25,13 @@ test("needs_vision 分支：横幅用看图提示文案，不走通用 humanize"
   const banner = readFileSync(new URL("../../components/ai-chat/thread/thread-error-banner.tsx", import.meta.url), "utf8")
   assert.match(banner, /kind === "needs_vision"\s*\?\s*t\("chat\.needsVisionHint"\)/)
 })
+
+test("停止、补跑超时：各自不算红卡", async () => {
+  const { classifyThreadError } = await import("./classify-thread-error.ts")
+  const { CATCH_UP_APPROVAL_TIMEOUT } = await import("@enjoy-agents/ipc-contract/automations-missed")
+  const stopped = ["Aborted by user", "aborted by user."].find((m) => classifyThreadError(m) === "stopped")
+  assert.ok(stopped, "找到一条 stopped 文案")
+  assert.equal(threadErrorCardVisible(stopped), false)
+  assert.equal(classifyThreadError(CATCH_UP_APPROVAL_TIMEOUT), "catch_up_timeout")
+  assert.equal(threadErrorCardVisible(CATCH_UP_APPROVAL_TIMEOUT), false)
+})

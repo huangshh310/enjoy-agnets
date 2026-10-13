@@ -6,7 +6,7 @@ const drawer = readFileSync(new URL("./automation-drawer.tsx", import.meta.url),
 const page = readFileSync(new URL("../automations-page.tsx", import.meta.url), "utf8")
 
 test("说明空：保存禁用并说原因；立即运行同样禁用（不再跑旧说明，luna #151）", () => {
-  assert.match(drawer, /saveReason = draft\.name\.trim\(\) && !draft\.prompt\.trim\(\) \? t\("studio\.automations\.promptRequired"\)/)
+  assert.match(drawer, /saveReason = automationSaveReason\(draft, t\)/)
   assert.match(drawer, /runDisabled = !draft\.id \|\| running \|\| !draft\.name\.trim\(\) \|\| !draft\.prompt\.trim\(\)/)
   assert.match(drawer, /data-testid="automation-run-now"[\s\S]*?disabled=\{runDisabled\}/)
   assert.match(drawer, /data-testid="automation-save-reason"/)

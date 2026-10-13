@@ -277,6 +277,25 @@ test("失败会话：本会话有红卡与重试；切走再回来仍在；重�
   }
 })
 
+test("ENJOY_E2E_DISMISS_ERROR=fail：关红卡落库失败 → 重试一次后弹 toast（leo #151）", async () => {
+  test.setTimeout(120_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval({ extraEnv: { ENJOY_E2E_DISMISS_ERROR: "fail" } })
+  try {
+    const window = await firstWindow(env.app)
+    await window.locator('[data-testid="approval-deny"]').click()
+    await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0, { timeout: 15_000 })
+    await sendComposer(window, window.locator('[data-testid="composer-input"]'), "stub store error")
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toBeVisible({ timeout: 20_000 })
+    await window.locator('[data-testid="thread-error-dismiss"]').click()
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
+    await expect(window.getByText("红卡已关，但没记下来，重启后可能还会出现")).toBeVisible({ timeout: 10_000 })
+    await snap(window, "1440x920-dismiss-error-fail-toast-light")
+  } finally {
+    await closeForRelaunch(env.app)
+  }
+})
+
 test("关掉红卡：切走再切回、重启后都不复活；红点 / 收件箱失败一起消失（leo #151 + #150 水位）", async () => {
   test.setTimeout(240_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
