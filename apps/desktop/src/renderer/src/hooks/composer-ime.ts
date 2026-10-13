@@ -46,6 +46,28 @@ export function shouldClearShownOnPreparing(input: {
   return input.preparing && !input.wasPreparing && !input.value
 }
 
+/**
+ * leo #145 soft：preparing 翻起时正在组字 → 当时没擦；组字结束（compositionend）再查一次，
+ * 别让已交出去的旧句留在输入框。返回擦后的新稿；不该动返回 null。
+ * 输入框 = 旧句 → ""；旧句 + 新组的字 → 只留新组的字；其余（没交出去的字）不动。
+ */
+export function shownAfterCompositionOnPreparing(input: {
+  preparing: boolean
+  createPending: boolean
+  composing: boolean
+  shown: string
+  submitted: string
+}): string | null {
+  if (!input.preparing || !input.createPending || input.composing) return null
+  const submitted = input.submitted.trim()
+  if (!submitted) return null
+  const shown = input.shown
+  if (shown.trim() === submitted) return ""
+  const lead = shown.trimStart()
+  if (lead.startsWith(submitted)) return lead.slice(submitted.length).trimStart()
+  return null
+}
+
 export function shouldIgnoreComposerEnter(event: {
   key: string
   keyCode?: number

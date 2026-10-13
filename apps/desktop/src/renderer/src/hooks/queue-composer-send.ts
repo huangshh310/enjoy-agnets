@@ -18,7 +18,12 @@ import {
 } from "./new-session-create"
 import { SEND_FAILED_RESTORE, SESSION_CREATE_TIMEOUT, SESSION_NOT_READY } from "./queue-composer-send-copy"
 
-export { SEND_FAILED_RESTORE, SESSION_CREATE_TIMEOUT, SESSION_NOT_READY } from "./queue-composer-send-copy"
+export {
+  PREVIOUS_STILL_PREPARING,
+  SEND_FAILED_RESTORE,
+  SESSION_CREATE_TIMEOUT,
+  SESSION_NOT_READY
+} from "./queue-composer-send-copy"
 export type { QueuedComposerAsset }
 
 export type PreparedComposerSend = {

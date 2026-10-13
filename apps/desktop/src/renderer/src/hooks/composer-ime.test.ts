@@ -5,6 +5,7 @@ import {
   isComposerComposing,
   setComposerComposing,
   shouldClearShownOnPreparing,
+  shownAfterCompositionOnPreparing,
   shouldIgnoreComposerEnter
 } from "./composer-ime"
 import { flushComposerDomToStore, syncComposerDom } from "./composer-dom"
@@ -100,4 +101,51 @@ test("jojo ②：中文冷启动——组字中 / 没交出去的整句，建会
   assert.equal(shouldClearShownOnPreparing({ ...base, shown: "帮我写一个排序函数", submitted: "" }), false)
   // 正是刚 Enter 交出去的那句：照旧可擦。
   assert.equal(shouldClearShownOnPreparing({ ...base, shown: "你好", submitted: "你好" }), true)
+})
+
+test("leo soft：组字中带真实 submitted 也不擦（去掉 composing 守卫此例必挂）", () => {
+  assert.equal(
+    shouldClearShownOnPreparing({
+      preparing: true,
+      wasPreparing: false,
+      value: "",
+      createPending: true,
+      composing: true,
+      shown: "你好",
+      submitted: "你好"
+    }),
+    false
+  )
+  // 对照：同样输入不在组字就该擦。
+  assert.equal(
+    shouldClearShownOnPreparing({
+      preparing: true,
+      wasPreparing: false,
+      value: "",
+      createPending: true,
+      composing: false,
+      shown: "你好",
+      submitted: "你好"
+    }),
+    true
+  )
+})
+
+test("leo soft：组字结束补查——旧句擦掉、旧句+新字只留新字、没交出去的不动", () => {
+  const base = { preparing: true, createPending: true, composing: false, submitted: "你好" }
+  assert.equal(shownAfterCompositionOnPreparing({ ...base, shown: "你好" }), "")
+  assert.equal(shownAfterCompositionOnPreparing({ ...base, shown: "你好世界" }), "世界")
+  assert.equal(shownAfterCompositionOnPreparing({ ...base, shown: "别的话" }), null)
+  assert.equal(shownAfterCompositionOnPreparing({ ...base, preparing: false, shown: "你好" }), null)
+  assert.equal(shownAfterCompositionOnPreparing({ ...base, createPending: false, shown: "你好" }), null)
+  assert.equal(shownAfterCompositionOnPreparing({ ...base, composing: true, shown: "你好" }), null)
+})
+
+test("leo soft：onCompositionEnd 接了组字结束补查", () => {
+  const src = readFileSync(
+    new URL("../components/ai-chat/composer/mentions/use-composer-ime.ts", import.meta.url),
+    "utf8"
+  )
+  const end = src.slice(src.indexOf("onCompositionEnd("))
+  assert.match(end.slice(0, end.indexOf("onValueChange(")), /shownAfterCompositionOnPreparing\(/)
 })

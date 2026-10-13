@@ -25,6 +25,7 @@ import { readComposerDomText } from "../composer-dom"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
 import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
+import { claimComposerRunning, releaseComposerRunningIfOwner } from "./composer-running-owner"
 import { armSendWatchdog, markSendLaunched, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { isNewSessionCreatePending } from "../new-session-create"
 import {
@@ -39,6 +40,7 @@ import {
   composerNeedsSessionReady,
   restoreComposerAfterFailedSend,
   restoreComposerDraft,
+  PREVIOUS_STILL_PREPARING,
   SEND_FAILED_RESTORE,
   SESSION_NOT_READY,
   waitThenSendAfterCreate
@@ -82,7 +84,9 @@ export async function sendComposerMessage(
       const text = prepared ? prepared.content : typed
       if (text.trim() || prepared?.assets?.length) {
         restoreComposerDraft(text, prepared?.assets)
-        useChatStore.getState().setError(SEND_FAILED_RESTORE)
+        const busy = useChatStore.getState()
+        // leo soft：上一条还在「正在准备…」→ 说清是在等上一条，不是发送失败。
+        busy.setError(busy.preparingHint ? PREVIOUS_STILL_PREPARING : SEND_FAILED_RESTORE)
       }
       return
     }
@@ -129,7 +133,9 @@ export async function sendComposerMessage(
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")
   if (firstTurn) store.setPreparingHint(true)
-  store.setRunning(true)
+  // running 归属：迟到作废时只放掉自己占的。
+  const runningToken: object = attempt ?? {}
+  claimComposerRunning(runningToken)
   if (!guardComposerSend(store)) {
     const blocked = useChatStore.getState().error
     traceSend("send:gate", { blocked })
@@ -158,8 +164,8 @@ export async function sendComposerMessage(
     if (payload === "cancelled" || sendAttemptCancelled(attempt)) {
       // 看门狗已出提示并还稿：迟到的这一发作废，不能提示和发送同时发生。
       traceSend("send:watchdog-late")
-      store.setRunning(false)
-      store.setPreparingHint(false)
+      // leo soft：只放自己占的 running / 准备提示；后一发已接手就别动。
+      if (releaseComposerRunningIfOwner(runningToken)) store.setPreparingHint(false)
       return
     }
     traceSend("send:payload", { content: payload?.content.length ?? -1, typed: payload?.typed.length ?? -1 })

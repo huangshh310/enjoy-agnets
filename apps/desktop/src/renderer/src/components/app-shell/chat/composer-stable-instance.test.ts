@@ -20,6 +20,6 @@ test("ChatThreadBody 单实例 Composer，发送先对齐原文再 setRunning", 
   assert.match(draft, /flushComposerDomToStore/)
   assert.match(send, /store\.setComposer\(typed\)/)
   const alignAt = send.indexOf("store.setComposer(typed)")
-  const runningAt = send.indexOf("store.setRunning(true)")
+  const runningAt = send.indexOf("claimComposerRunning(runningToken)")
   assert.ok(alignAt >= 0 && runningAt > alignAt, "对齐原文必须在 setRunning 之前")
 })

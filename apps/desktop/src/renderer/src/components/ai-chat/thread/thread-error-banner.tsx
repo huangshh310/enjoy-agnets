@@ -189,7 +189,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               : kind === "store"
                 ? t("chat.errorGenericHint")
                 : kind === "send_restore"
-                  ? t("chat.sendFailedRestore")
+                  ? humanizeThreadError(error, t)
                   : kind === "restore_no_matching"
                     ? t("chat.restoreNoMatching")
                     : kind === "run_failed"
