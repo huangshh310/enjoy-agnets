@@ -159,6 +159,8 @@ test("本轮用户句之后的助手：复用同一行", () => {
       tools: [{ id: "t1", name: "write_file", state: "approval-requested", args: { path: "a.ts" } }]
     })
   )
+  // 快机上用户句与助手同一毫秒落库，「助手在用户句之后」判不出；测试里把助手挪后 1ms（macOS CI 偶发）。
+  getDatabase().prepare("UPDATE messages SET created_at = created_at + 1 WHERE id = ?").run(assistantId)
   const snap = readLatestAssistantSnapshot(sessionId, { runCreatedAt: 1 })
   assert.equal(snap.assistantPersisted, true)
   assert.equal(snap.assistantMessageId, assistantId)
