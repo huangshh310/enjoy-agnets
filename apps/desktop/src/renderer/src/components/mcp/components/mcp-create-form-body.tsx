@@ -15,6 +15,12 @@ import type { McpServer, McpTransport } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { getFeaturedMcpPresets } from "../constants/mcp-presets"
 
+const TRANSPORT_HINT_KEY = {
+  stdio: "pages.mcp.transportStdioHint",
+  sse: "pages.mcp.transportSseHint",
+  http: "pages.mcp.transportHttpHint"
+} as const
+
 export type McpEnvPair = { key: string; value: string }
 
 export function McpCreateFormBody(props: {
@@ -108,6 +114,7 @@ export function McpCreateFormBody(props: {
                 key={kind}
                 type="button"
                 onClick={() => onTransportChange(kind)}
+                title={t(TRANSPORT_HINT_KEY[kind])}
                 className={cx(
                   "rounded text-caption-2-regular font-mono uppercase transition-all flex items-center justify-center",
                   transport === kind

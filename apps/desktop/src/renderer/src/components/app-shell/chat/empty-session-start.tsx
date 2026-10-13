@@ -19,7 +19,11 @@ export function EmptySessionStart(props: {
   const error = useChatStore((state) => state.error)
 
   return (
-    <div className="flex w-full max-w-3xl flex-col items-center gap-4">
+    <div
+      data-testid="empty-session-start"
+      // 模型选择面板展开时让出标题区，不与「想在…里做什么？」叠成一团（luna #146 P2）。
+      className="flex w-full max-w-3xl flex-col items-center gap-4 [body:has([data-agent-picker-panel])_&]:invisible"
+    >
       <AiChatEmptyState
         workspaceName={props.workspaceName}
         sessionTitle={props.sessionTitle}

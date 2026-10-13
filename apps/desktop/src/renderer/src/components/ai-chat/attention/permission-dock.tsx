@@ -18,7 +18,8 @@ export function PermissionDock() {
       id={PERMISSION_DOCK_ID}
       data-testid="permission-dock"
       tabIndex={-1}
-      className="flex min-h-0 shrink flex-col scroll-mt-4 [@media(max-height:600px)]:py-0 border-t border-separator-border bg-background-primary-default/95 px-5 py-1 outline-none backdrop-blur-sm"
+      // 不再铺整列宽的底带：与 Composer 同宽（左右各 px-6），深色下不露一条更宽的底（luna #146 P2）。
+      className="flex min-h-0 shrink flex-col scroll-mt-4 [@media(max-height:600px)]:py-0 mx-6 px-0 py-1 outline-none"
     >
       <p className="mb-0.5 shrink-0 [@media(max-height:600px)]:hidden text-caption-2-medium text-text-secondary">{t("attention.dockLabel")}</p>
       <ApprovalCard

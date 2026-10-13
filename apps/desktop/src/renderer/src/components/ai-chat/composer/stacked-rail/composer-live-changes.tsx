@@ -98,7 +98,12 @@ export function ComposerLiveChanges() {
             <GateRowActions
               busy={busy}
               onReview={() => expandInspector("review")}
-              onReject={() => void rejectReviewGate(sessionId)}
+              onReject={() =>
+                void rejectReviewGate(sessionId, {
+                  placeholder: t("sessionOps.rejectPlaceholder"),
+                  toast: t("sessionOps.rejectedToast")
+                })
+              }
               onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
             />
           ) : (

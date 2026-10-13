@@ -74,11 +74,21 @@ export function GateExpanded({
   const fileNames = new Set(files.map((file) => file.name))
   const sources = chips.filter((chip) => !fileNames.has(chip.label))
   return (
-    <div data-testid="review-gate-expanded" className="flex flex-col gap-1.5 pb-0.5">
+    <div data-testid="review-gate-expanded" className="flex min-w-0 flex-col gap-1.5 pb-0.5 [@media(max-height:640px)]:gap-0.5">
+      {/* 矮窗（≤640 高）只留一行「n 个文件 · 名字」+ 一句提示，消息区不被挤没（luna #146 P1）。 */}
+      <p
+        data-testid="review-gate-compact"
+        title={files.map((file) => file.path).join("\n") || undefined}
+        className="hidden truncate text-caption-2-medium text-text-primary [@media(max-height:640px)]:block"
+      >
+        {files.length === 0
+          ? t(placeholderKey)
+          : t("sessionOps.gateFilesLine", { n: files.length, names: files.map((file) => file.name).join("、") })}
+      </p>
       {files.length === 0 ? (
-        <p className="text-caption-2-regular text-text-tertiary">{t(placeholderKey)}</p>
+        <p className="text-caption-2-regular text-text-tertiary [@media(max-height:640px)]:hidden">{t(placeholderKey)}</p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1 [@media(max-height:640px)]:hidden">
         {files.map((file) => (
           <button
             key={file.path}
@@ -106,7 +116,7 @@ export function GateExpanded({
           <SessionPreviewOpenButton enabled busy={previewBusy} onOpen={onOpenPreview} />
         ) : null}
       </div>
-      <p className="text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
+      <p className="truncate text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
     </div>
   )
 }

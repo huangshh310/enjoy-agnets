@@ -67,6 +67,7 @@ test("重启后已中断小卡在消息流里，待验收条与 Composer 同宽�
         )
         await expect(window.locator('[data-testid="review-gate-card"]')).not.toContainText("在浏览器打开")
         await expectStackLayout(window, `${size.width} expanded ${theme}`)
+        await expectNoticeNotUnderHeader(window, `${size.width} expanded ${theme}`)
         await snap(window, `${size.width}x${size.height}-expanded-${theme}`)
       }
     }
@@ -97,11 +98,45 @@ test("写了 .txt 的待验收条：展开列出文件胶囊，不出「在浏�
     await expect(window.locator('[data-testid="review-gate-file"]')).toContainText("e2e-stub.txt")
     await expect(gate).not.toContainText("在浏览器打开")
     await expect(gate).not.toContainText("commit")
-    for (const size of SIZES) {
-      await window.setViewportSize(size)
-      await expectReviewAligned(window, `${size.width} txt expanded`)
-      await snap(window, `${size.width}x${size.height}-txt-expanded-light`)
+    for (const theme of ["light", "dark"] as const) {
+      await setTheme(window, theme)
+      for (const size of SIZES) {
+        await window.setViewportSize(size)
+        await window.waitForTimeout(400)
+        await expectReviewAligned(window, `${size.width} txt expanded ${theme}`)
+        const compact = window.locator('[data-testid="review-gate-compact"]')
+        if (size.height <= 640) {
+          // luna #146 P1：矮窗展开只留一行「1 个文件 · e2e-stub.txt」+ 提示，消息区 ≥ 120px。
+          await expect(compact).toBeVisible()
+          await expect(compact).toHaveText("1 个文件 · e2e-stub.txt")
+          await expect(window.locator('[data-testid="review-gate-file"]')).toBeHidden()
+          const conv = await box(window.locator('[data-testid="chat-conversation"]'))
+          expect(conv.height, `${size.width} txt expanded ${theme}: messages squeezed`).toBeGreaterThanOrEqual(120)
+        } else {
+          await expect(compact).toBeHidden()
+          await expect(window.locator('[data-testid="review-gate-file"]')).toBeVisible()
+        }
+        await expect(window.locator('[data-testid="review-gate-expanded"]')).toContainText(
+          "点通过就算验收完成，不会自动提交或推送。"
+        )
+        await snap(window, `${size.width}x${size.height}-txt-expanded-${theme}`)
+      }
     }
+    // 用户气泡深色下有底（luna #146 P2）。
+    const bubbleBg = await window
+      .locator('[data-testid="user-bubble"]')
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bubbleBg, "dark user bubble has no background").not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/)
+    await setTheme(window, "light")
+    // luna #146 P2：打回后对焦 Composer、占位换成「说说哪里要改…」、提示「已打回」。
+    await window.setViewportSize(SIZES[0])
+    await window.locator('[data-testid="review-gate-reject"]').click()
+    const input = window.locator('[data-testid="composer-input"]')
+    await expect(input).toBeFocused({ timeout: 10_000 })
+    await expect(input).toHaveAttribute("placeholder", "说说哪里要改…")
+    await expect(window.getByText("已打回", { exact: true })).toBeVisible({ timeout: 5_000 })
+    await snap(window, "733x480-rejected-light")
   } finally {
     await closeForRelaunch(env.app)
   }
@@ -234,6 +269,21 @@ async function expectReadableLabel(locator: Locator, label: string): Promise<voi
     ellipsis: getComputedStyle(el).textOverflow
   }))
   expect(info.full || (info.width >= 32 && info.ellipsis === "ellipsis"), `${label} cut to ${info.width}px`).toBe(true)
+}
+
+/** 滚到底后中断小卡整张露在会话区里，顶边和 × 不被页头一侧裁掉（luna #146 P1）。 */
+async function expectNoticeNotUnderHeader(window: Page, label: string): Promise<void> {
+  await window.evaluate(() => {
+    for (const el of document.querySelectorAll<HTMLElement>('[data-testid="chat-conversation"] *')) {
+      if (el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflowY !== "visible") {
+        el.scrollTop = el.scrollHeight
+      }
+    }
+  })
+  await window.waitForTimeout(300)
+  const conv = await box(window.locator('[data-testid="chat-conversation"]'))
+  const notice = await box(window.locator('[data-testid="thread-notice-banner"]'))
+  expect(notice.y, `${label}: notice top under header ${JSON.stringify({ conv, notice })}`).toBeGreaterThanOrEqual(conv.y - 1)
 }
 
 async function setGateOpen(window: Page, open: boolean): Promise<void> {

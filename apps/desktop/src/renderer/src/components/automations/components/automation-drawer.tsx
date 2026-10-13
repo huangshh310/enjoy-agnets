@@ -164,7 +164,14 @@ export function AutomationDrawer({
             {t("common.delete")}
           </Button>
         ) : null}
-        <Button type="button" size="sm" disabled={!canSave || !cronReady || !webhookReady || saving} onClick={onSave}>
+        <Button
+          type="button"
+          size="sm"
+          data-testid="automation-save"
+          disabled={!canSave || !cronReady || !webhookReady || saving}
+          onClick={onSave}
+          className="!bg-none !bg-accent-500 font-semibold !text-white shadow-xs hover:!bg-accent-600 disabled:!bg-background-secondary-default disabled:!text-text-tertiary disabled:shadow-none disabled:ring-1 disabled:ring-separator-border"
+        >
           {t("studio.automations.save")}
         </Button>
       </footer>

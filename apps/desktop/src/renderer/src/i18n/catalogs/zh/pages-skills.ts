@@ -15,7 +15,7 @@ export const zhSkillsPages = {
   },
 
   uiCopy: {
-    moduleTitle: "Skills",
+    moduleTitle: "技能",
     moduleDesc: "Agent 技能中心：技能装进宿主目录，当前引擎消费这一份。",
     allSources: "全部来源组",
     exploreCurated: "精选发现",

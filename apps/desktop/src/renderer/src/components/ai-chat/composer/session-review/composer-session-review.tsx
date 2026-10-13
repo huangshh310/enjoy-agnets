@@ -78,7 +78,12 @@ export function ComposerSessionReview() {
           busy={busy}
           onOpenPreview={() => model.previewTarget && void preview.open(model.previewTarget)}
           onOpenFile={(path) => openSessionReview(path)}
-          onReject={() => void rejectReviewGate(sessionId)}
+          onReject={() =>
+            void rejectReviewGate(sessionId, {
+              placeholder: t("sessionOps.rejectPlaceholder"),
+              toast: t("sessionOps.rejectedToast")
+            })
+          }
           onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
           placeholderKey={placeholderKey}
         />

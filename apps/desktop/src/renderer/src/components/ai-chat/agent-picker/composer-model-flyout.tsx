@@ -71,7 +71,7 @@ function EngineIconRail({
   return (
     <nav
       aria-label={t("chat.selectAgent")}
-      className="no-scrollbar absolute inset-y-0 left-0 flex w-11 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto overscroll-contain border-r border-separator-border p-1.5"
+      className="no-scrollbar absolute inset-y-0 left-0 flex w-11 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto overscroll-contain border-r border-separator-border p-1.5 pb-3 [&>*]:shrink-0"
     >
       {engines.map((agent) => (
         <EngineIconTab

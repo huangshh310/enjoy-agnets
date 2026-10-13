@@ -6,9 +6,17 @@ import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 
+const TRANSPORT_HINT_KEY = {
+  stdio: "pages.mcp.transportStdioHint",
+  sse: "pages.mcp.transportSseHint",
+  http: "pages.mcp.transportHttpHint"
+} as const
+
 export function TransportBadge({ transport }: { transport: McpServer["transport"] }) {
+  const t = useT()
   return (
     <span
+      title={t(TRANSPORT_HINT_KEY[transport])}
       className={cx(
         "rounded px-1.5 py-0.5 font-mono text-caption-2-medium uppercase",
         transport === "stdio"

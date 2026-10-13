@@ -253,7 +253,7 @@ export const zhStudio = {
     onSaveHint: "项目里有文件保存时运行 · 只在这台电脑 · 关掉应用就停",
     onSaveNoRun: "保存文件后才跑 · 没有立即运行",
     webhookNoRun: "收到本机请求才跑 · 没有立即运行",
-    webhookLocalOnly: "本机推送只听本机端口，不上公网",
+    webhookLocalOnly: "推送只在这台电脑上收发，不会发到网上",
     engine: "引擎",
     modelLabel: "模型",
     modelOptional: "可选",
