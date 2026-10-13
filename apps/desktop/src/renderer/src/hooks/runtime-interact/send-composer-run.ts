@@ -204,7 +204,8 @@ export async function sendComposerMessage(
     if (laterTyped !== null) {
       if (useChatStore.getState().composer !== laterTyped) useChatStore.getState().setComposer(laterTyped)
       // 框里没有后打的字：这个会话的草稿（内存 + 落盘）不能还留着 A。
-      const sid = useChatStore.getState().sessionId
+      // leo：清的是发 A 的那个会话（prepared），不是此刻界面上的会话——发送途中切走不能误清别的会话的稿。
+      const sid = prepared?.sessionId
       if (!laterTyped && sid) {
         useChatStore.getState().clearSessionDraft(sid)
         writePersistedDraft(sid, "")

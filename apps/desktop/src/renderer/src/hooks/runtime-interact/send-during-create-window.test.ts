@@ -169,6 +169,45 @@ test("leo soft：A 发出时框里没有后打的字——这个会话的草稿�
   assert.equal(readPersistedDraft("ses_dr"), undefined)
 })
 
+test("leo 反向：A 发出途中切到别的会话——清的是 A 的会话草稿，别的会话的稿不动", async () => {
+  ;(globalThis as { window?: unknown }).window = { ide: hangingIde() }
+  useChatStore.setState({
+    workspaceId: "ws_sw",
+    sessionId: null,
+    running: false,
+    preparingHint: true,
+    composer: "只发A",
+    error: null,
+    hasKey: true,
+    modelId: "stub-e2e",
+    messages: [],
+    sessionDrafts: {}
+  } as never)
+  const { token } = beginNewSessionCreate()
+  void sendComposerMessage(undefined, "只发A", attempt("只发A") as never)
+  useChatStore.getState().saveSessionDraft("ses_sw_a", { text: "只发A" })
+  writePersistedDraft("ses_sw_a", "只发A")
+  useChatStore.getState().saveSessionDraft("ses_sw_other", { text: "别的会话没发的稿" })
+  writePersistedDraft("ses_sw_other", "别的会话没发的稿")
+  useChatStore.setState({ sessionId: "ses_sw_a" } as never)
+  // 发送已过会话校验、占上 running 之后（取稿那一拍），用户切到了另一个会话。
+  let switched = false
+  const unsubscribe = useChatStore.subscribe((state, prev) => {
+    if (switched || !state.running || prev.running) return
+    switched = true
+    queueMicrotask(() => useChatStore.setState({ sessionId: "ses_sw_other", composer: "" } as never))
+  })
+  finishNewSessionCreate(token, "ses_sw_a")
+  await flush()
+  unsubscribe()
+  assert.equal(switched, true)
+  assert.ok(useChatStore.getState().messages.some((m) => m.role === "user"), "A 已走到发出")
+  assert.equal(useChatStore.getState().getSessionDraft("ses_sw_other")?.text, "别的会话没发的稿")
+  assert.equal(readPersistedDraft("ses_sw_other"), "别的会话没发的稿")
+  assert.equal(useChatStore.getState().getSessionDraft("ses_sw_a"), undefined)
+  assert.equal(readPersistedDraft("ses_sw_a"), undefined)
+})
+
 test("leo soft：A 发出后留的 B 以输入框 DOM 为准（写回锁期间 store 可能落后）", async () => {
   ;(globalThis as { window?: unknown }).window = { ide: hangingIde() }
   const el = { value: "", getAttribute: () => "composer-input", focus() {} }
