@@ -64,7 +64,12 @@ export function ApprovalChrome({
       data-variant={variant}
       data-tone={tone}
       className={cx(
-        "flex min-h-0 flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card [@media(max-height:600px)]:gap-0.5 [@media(max-height:600px)]:p-1",
+        "flex flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card [@media(max-height:600px)]:gap-0.5 [@media(max-height:600px)]:p-1",
+        // 一套高度规则（#144 + #146）：命令区优先——command 卡整张不压（命令区自带 4 行 / 小窗 2 行 / 展开 40cqh 的上限）；
+        // 其余卡（计划概览、提问、桌面）限高 min(45vh,22rem)，正文在卡内滚、先让位，标题行与底栏常驻。
+        variant === "command"
+          ? "shrink-0"
+          : "max-h-[min(45vh,22rem)] min-h-20 [@media(max-height:600px)]:min-h-16",
         tone === "danger"
           ? "border-border-error-default/40"
           : tone === "warn"
@@ -74,7 +79,7 @@ export function ApprovalChrome({
     >
       {/* 正文区可压缩、区内滚；底栏 shrink-0，拒绝 / 运行永远可见（luna #144）。
           小窗（高 ≤ 600px）：图标 / 标题让位，标题挪到底栏一行；命令区不压缩。 */}
-      <div className="flex min-h-0 shrink items-start gap-2 overflow-hidden">
+      <div className="flex min-h-6 shrink items-start gap-2 overflow-hidden">
         <span
           className={cx(
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md [@media(max-height:600px)]:hidden",
@@ -87,7 +92,10 @@ export function ApprovalChrome({
         >
           <Icon className="size-3.5" aria-hidden />
         </span>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto">
+        <div
+          data-testid="approval-card-body"
+          className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto overscroll-contain [@media(max-height:600px)]:gap-0.5"
+        >
           <h3 className="shrink-0 truncate text-caption-1-semibold leading-6 text-text-primary [@media(max-height:600px)]:hidden">
             {title}
           </h3>

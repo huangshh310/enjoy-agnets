@@ -26,7 +26,9 @@ test("已完成进顶栏状态区，需处理占标题栏下一行，不盖标�
   assert.match(header, /run-ledger-toggle/)
   assert.doesNotMatch(header, /text-text-tertiary/)
   assert.doesNotMatch(header, /text-foreground-icon-secondary/)
-  assert.match(header, /min-w-0 flex-1 overflow-hidden/)
+  // 733×480：面包屑保底宽度、标题至少留几个字再省略，不缩成单字。
+  assert.match(header, /min-w-28 flex-1 overflow-hidden/)
+  assert.match(header, /BreadcrumbItem className="min-w-12 flex-1"/)
   assert.doesNotMatch(header, /min-w-\[12rem\]/)
   assert.match(header, /chat-breadcrumb-project/)
   assert.match(header, /chat-breadcrumb-title/)
@@ -42,5 +44,7 @@ test("待验收闸不缩，先裁会话题", () => {
   assert.match(header, /ml-auto flex shrink-0/)
   assert.match(header, /chat-breadcrumb-title/)
   assert.match(header, /block truncate/)
-  assert.match(header, /min-w-0 flex-1 overflow-hidden/)
+  assert.match(header, /min-w-28 flex-1 overflow-hidden/)
+  // 窄顶栏只留当前阶段，非当前段走容器查询隐藏。
+  assert.match(gate, /!active && "hidden @\[44rem\]\/header:inline"/)
 })

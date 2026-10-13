@@ -10,7 +10,11 @@ import { useAttentionStrip } from "./use-attention-strip"
 
 export function AttentionNeedsBar() {
   const t = useT()
-  const { needsItems, needs, now, dismissAll, dismissOne, openItem, compactFor } = useAttentionStrip()
+  const strip = useAttentionStrip()
+  const { now, dismissAll, dismissOne, openItem, compactFor } = strip
+  // 同一条审批的卡已在本会话 Dock 里摊开时，「需处理」不再重复占一行（luna #146）；别的会话的待办照常显示。
+  const needsItems = strip.needsItems.filter((item) => !compactFor(item))
+  const needs = Math.max(0, strip.needs - (strip.needsItems.length - needsItems.length))
   if (needsItems.length === 0) return null
 
   return (

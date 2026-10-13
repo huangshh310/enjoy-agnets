@@ -8,7 +8,8 @@ import { LoadingState } from "@/components/ai-elements/loading-state"
 import {
   Conversation,
   ConversationContent,
-  ConversationScrollButton
+  ConversationScrollButton,
+  ConversationViewportStick
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -19,6 +20,7 @@ import { HandoffLegacyDivider, isLegacyHandoffTurn } from "./thread/handoff-lega
 import { QueuedFollowups } from "./thread/queued-followups"
 import { ThreadErrorBanner } from "./thread/thread-error-banner"
 import { ThreadNoticeBanner } from "./thread/thread-notice-banner"
+import { noticeAnchorId } from "./thread/notice-anchor"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
 import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
@@ -47,9 +49,11 @@ export function AiChatThread({
   const assistant = lastAssistantTurn(messages)
   const hasLedger = Boolean(assistant && collectRunLedger(assistant).length > 0)
   const findOpen = useThreadFindOpen()
+  const notice = useChatStore((state) => state.notice)
+  const anchorId = noticeAnchorId(visible, notice)
 
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
+    <div className="relative flex min-h-6 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
       <ThreadFindBar open={findOpen} messages={visible} />
       <TranscriptSelectionAction />
       <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">
@@ -60,6 +64,7 @@ export function AiChatThread({
               message={message}
               previous={visible[index - 1]}
               cutAt={handoffCut}
+              withNotice={message.id === anchorId}
             />
           ))}
           {last && isLegacyHandoffTurn(last.createdAt, handoffCut) ? <HandoffLegacyDivider /> : null}
@@ -67,11 +72,12 @@ export function AiChatThread({
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
           <QueuedFollowups />
 
-          <ThreadNoticeBanner />
+          {anchorId ? null : <ThreadNoticeBanner />}
           {error ? <ThreadErrorBanner error={error} /> : null}
           <div id="thread-turn-end" />
         </ConversationContent>
         <ConversationScrollButton />
+        <ConversationViewportStick />
       </Conversation>
       <ThreadPreviewRail messages={visible} hasLedger={hasLedger} />
       <SubagentPill messages={visible} />
@@ -83,8 +89,9 @@ function ThreadTurnBlock(props: {
   message: ThreadMessage
   previous?: ThreadMessage
   cutAt: number | undefined
+  withNotice?: boolean
 }) {
-  const { message, previous, cutAt } = props
+  const { message, previous, cutAt, withNotice } = props
   const showCut =
     previous != null &&
     isLegacyHandoffTurn(previous.createdAt, cutAt) &&
@@ -100,6 +107,7 @@ function ThreadTurnBlock(props: {
     <div className={legacy ? "opacity-70" : undefined}>
       {showCut ? <HandoffLegacyDivider /> : null}
       {turn}
+      {withNotice ? <ThreadNoticeBanner /> : null}
     </div>
   )
 }

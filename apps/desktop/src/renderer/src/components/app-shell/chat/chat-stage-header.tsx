@@ -43,11 +43,11 @@ export function ChatStageHeader({
   const t = useT()
   const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 px-5">
+    <header className="@container/header flex h-12 shrink-0 items-center gap-2 px-5">
       <RiFolder6Line className="size-4 shrink-0 text-text-secondary" aria-hidden />
       <Breadcrumb
         data-testid="chat-breadcrumb"
-        className="min-w-0 flex-1 overflow-hidden"
+        className="min-w-28 flex-1 overflow-hidden"
       >
         <BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
           <BreadcrumbItem className="min-w-[4.5rem] max-w-[60%] shrink-0">
@@ -60,7 +60,7 @@ export function ChatStageHeader({
             </span>
           </BreadcrumbItem>
           <BreadcrumbSeparator className="shrink-0" />
-          <BreadcrumbItem className="min-w-0 flex-1">
+          <BreadcrumbItem className="min-w-12 flex-1">
             <BreadcrumbPage
               data-testid="chat-breadcrumb-title"
               title={title}
@@ -102,7 +102,7 @@ export function ChatStageHeader({
             )}
           >
             <RiFileList3Line className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
-            <span className="truncate">{t("sessionOps.ledgerTitle")}</span>
+            <span className="hidden truncate @[44rem]/header:inline">{t("sessionOps.ledgerTitle")}</span>
           </button>
         ) : null}
         {reviewPhase ? <ReviewGateHeader phase={reviewPhase} /> : null}

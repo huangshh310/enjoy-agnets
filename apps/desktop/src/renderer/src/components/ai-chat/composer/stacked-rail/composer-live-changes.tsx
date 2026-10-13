@@ -9,6 +9,7 @@ import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pa
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ComposerStackedRow } from "./composer-stacked-row"
+import { GateExpanded, GateRowActions } from "./composer-review-gate-parts"
 import { STACKED_PANEL_CLASS_NAME } from "./composer-stacked-styles"
 import { keepSessionReview, undoSessionReview } from "../session-review/composer-session-review"
 import { SessionFileTrigger } from "../session-review/session-review-files"
@@ -16,11 +17,9 @@ import { openSessionReview } from "../session-review/open-session-review"
 import { useSessionReviewModel } from "../session-review/use-session-review-model"
 import { useOpenSessionPreview } from "../session-review/preview-open/use-open-session-preview"
 import { usePreviewUrlReachable } from "../session-review/preview-open/use-preview-url-reachable"
-import { SessionPreviewOpenButton } from "../session-review/preview-open/session-preview-open-button"
 import { chipsFromLastAssistant } from "../../review-gate/review-gate-card"
 import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-gate-actions"
 import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
-import { openSourcesSheet } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import type { TurnSourceChip } from "../../thread/sources/source-chip"
 import { reviewBannerPeek } from "../session-review/review-banner-peek"
 import { reviewPlaceholderKey, reviewPlaceholderKind } from "../session-review/review-placeholder-kind"
@@ -47,7 +46,9 @@ export function ComposerLiveChanges() {
   const canOpenPreview =
     model.previewTarget != null && (model.previewTarget.kind === "html" || urlReachable)
   const showGate = model.needsReview && !running
-  if (!showGate && !model.showReview) return null
+  // 运行中还没改到文件：不画「改动 · 全部撤销/全部保留/审查」空条（luna P2）。
+  const idleRunning = running && model.files.length === 0
+  if (!showGate && (!model.showReview || idleRunning)) return null
 
   const files = model.files
   const additions = files.reduce((sum, file) => sum + file.additions, 0)
@@ -77,7 +78,7 @@ export function ComposerLiveChanges() {
   return (
     <div
       data-testid={showGate ? "review-gate-card" : "composer-live-changes"}
-      className={STACKED_PANEL_CLASS_NAME}
+      className={`${STACKED_PANEL_CLASS_NAME} flex min-h-0 flex-col`}
     >
       <LiveChangesRow
         showGate={showGate}
@@ -96,6 +97,7 @@ export function ComposerLiveChanges() {
           showGate ? (
             <GateRowActions
               busy={busy}
+              onReview={() => expandInspector("review")}
               onReject={() => void rejectReviewGate(sessionId)}
               onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
             />
@@ -157,34 +159,32 @@ function LiveChangesRow({
     <ComposerStackedRow
       icon={<RiFileEditLine className="size-3.5 text-accent-500" />}
       label={showGate ? t("sessionOps.gateSubtitle") : peek}
-      peek={showGate ? peek : undefined}
+      peek={showGate ? `· ${peek}` : undefined}
       peekTestId="session-review-peek"
       meta={<DiffStat additions={additions} deletions={deletions} />}
       open={filesOpen}
       onToggle={onToggle}
       actions={actions}
     >
-      <ul className="flex flex-col">
-        {files.length > 0 ? (
-          files.map((file) => (
-            <li key={file.path}>
-              <SessionFileTrigger file={file} title={file.name} onOpen={openSessionReview} />
-            </li>
-          ))
-        ) : showGate ? (
-          <li className="px-1 py-1 text-caption-2-regular text-text-tertiary">
-            {t(placeholderKey)}
-          </li>
-        ) : null}
-      </ul>
       {showGate ? (
         <GateExpanded
+          files={files}
+          placeholderKey={placeholderKey}
           chips={chips}
           canOpenPreview={canOpenPreview}
           previewBusy={previewBusy}
           onOpenPreview={onOpenPreview}
+          onOpenFile={openSessionReview}
         />
-      ) : null}
+      ) : (
+        <ul className="flex flex-col">
+          {files.map((file) => (
+            <li key={file.path}>
+              <SessionFileTrigger file={file} title={file.name} onOpen={openSessionReview} />
+            </li>
+          ))}
+        </ul>
+      )}
     </ComposerStackedRow>
   )
 }
@@ -197,40 +197,6 @@ function DiffStat({ additions, deletions }: { additions: number; deletions: numb
       {additions > 0 && deletions > 0 ? " " : null}
       {deletions > 0 ? <span className="text-text-error-primary">-{deletions}</span> : null}
     </span>
-  )
-}
-
-function GateRowActions({
-  busy,
-  onReject,
-  onApprove
-}: {
-  busy: boolean
-  onReject: () => void
-  onApprove: () => void
-}) {
-  const t = useT()
-  return (
-    <div className="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
-        data-testid="review-gate-reject"
-        disabled={busy}
-        onClick={onReject}
-        className="h-6 cursor-pointer rounded-md px-2 text-caption-2-medium text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary disabled:opacity-50"
-      >
-        {t("sessionOps.reject")}
-      </button>
-      <button
-        type="button"
-        data-testid="review-gate-approve"
-        disabled={busy}
-        onClick={onApprove}
-        className="ml-1 flex h-6 items-center rounded-md bg-accent-500 px-2.5 text-caption-2-medium text-text-white hover:bg-accent-600 disabled:opacity-50"
-      >
-        {t("sessionOps.approve")}
-      </button>
-    </div>
   )
 }
 
@@ -287,37 +253,5 @@ function RowTextButton({
     >
       {children}
     </button>
-  )
-}
-
-function GateExpanded({
-  chips,
-  canOpenPreview,
-  previewBusy,
-  onOpenPreview
-}: {
-  chips: TurnSourceChip[]
-  canOpenPreview: boolean
-  previewBusy?: boolean
-  onOpenPreview: () => void
-}) {
-  const t = useT()
-  return (
-    <div className="mt-1 flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1">
-        <SessionPreviewOpenButton enabled={canOpenPreview} busy={previewBusy} onOpen={onOpenPreview} />
-        {chips.map((chip) => (
-          <button
-            key={chip.id}
-            type="button"
-            onClick={() => openSourcesSheet({ chips, activeId: chip.id })}
-            className="cursor-pointer truncate rounded-md px-2 py-0.5 text-caption-2-medium text-text-primary ring-1 ring-border-button-default hover:bg-background-secondary-hover"
-          >
-            {chip.label}
-          </button>
-        ))}
-      </div>
-      <p className="text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
-    </div>
   )
 }

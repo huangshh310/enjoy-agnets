@@ -32,8 +32,8 @@ export function ComposerStackedRow({
   peekTestId?: string
 }) {
   return (
-    <div>
-      <div className={STACKED_ROW_CLASS_NAME}>
+    <div className="flex min-h-0 flex-col">
+      <div className={cx(STACKED_ROW_CLASS_NAME, "shrink-0")}>
         <span className={STACKED_ICON_CLASS_NAME}>{icon}</span>
         {onToggle ? (
           <button

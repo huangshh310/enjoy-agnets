@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowDownIcon } from "lucide-react";
 import type { ComponentProps } from "react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { uiT, useUiLocale } from "@/i18n/ui-locale";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
@@ -19,6 +19,29 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
     {...props}
   />
 );
+
+/**
+ * use-stick-to-bottom 只观察内容高度；视口被下方 Composer / 待验收条挤矮时不会跟着贴底，
+ * 最后一张卡会被裁在视口底边、看着像压在条上。放进 <Conversation> 里：原本贴底就继续贴底。
+ */
+export const ConversationViewportStick = () => {
+  const { scrollRef, isAtBottom, scrollToBottom } = useStickToBottomContext();
+  const atBottom = useRef(isAtBottom);
+  atBottom.current = isAtBottom;
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let last = el.clientHeight;
+    const observer = new ResizeObserver(() => {
+      const height = el.clientHeight;
+      if (height < last && atBottom.current) void scrollToBottom("instant");
+      last = height;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [scrollRef, scrollToBottom]);
+  return null;
+};
 
 export type ConversationContentProps = ComponentProps<
   typeof StickToBottom.Content

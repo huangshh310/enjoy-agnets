@@ -247,6 +247,25 @@ test("zh 默认词表不含 tok 缩写", () => {
   }
 })
 
+test("待验收条人话：不写只收工 / commit / push，钉死新文案", () => {
+  const banned = /只收工|不自动 commit|不自动 push|Accept only finishes the turn/i
+  for (const [locale, tree] of [
+    ["zh", zh],
+    ["en", en]
+  ] as const) {
+    for (const { key, value } of flattenEntries(tree)) {
+      assert.doesNotMatch(value, banned, `${locale} ${key} uses old gate copy: ${value}`)
+    }
+  }
+  const ops = (zh as { sessionOps: Record<string, string> }).sessionOps
+  for (const [key, value] of Object.entries(ops)) {
+    assert.doesNotMatch(value, /\b(?:commit|push)\b/i, `zh sessionOps.${key} leaks git jargon: ${value}`)
+  }
+  assert.equal(ops.gateHint, "点通过就算验收完成，不会自动提交或推送。")
+  assert.equal(ops.gateSubtitle, "未自动提交")
+  assert.equal(ops.goReview, "去审查")
+})
+
 test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
   const leak = /libsecret|DBus|keychain|isEncryptionAvailable|safeStorage|gnome-keyring/i
   const secretWrite = (zh as { settings: { secretWrite: Record<string, string> } }).settings.secretWrite

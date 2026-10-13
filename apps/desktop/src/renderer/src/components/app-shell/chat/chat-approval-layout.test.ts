@@ -14,17 +14,25 @@ function read(rel: string) {
   return readFileSync(join(renderer, rel), "utf8")
 }
 
-test("审批时对话列保底 200px（小窗让位到 25%），Composer 簇可压缩、Dock 区内滚（luna #144）", () => {
+test("审批时对话列保底 13rem / 25% 主体，消息区自身保 min-h-8，Composer 不压（#144 + #146）", () => {
   const stage = read("app-shell/chat/chat-stage.tsx")
   const dock = read("ai-chat/attention/permission-dock.tsx")
   const chrome = read("ai-chat/thread/approval/approval-chrome.tsx")
   assert.match(stage, /data-testid="chat-conversation"/)
-  assert.match(stage, /pendingApproval && "min-h-\[min\(13rem,25cqh\)\] \[@media\(max-height:600px\)\]:min-h-0"/)
+  const thread = read("ai-chat/ai-chat-thread.tsx")
+  assert.match(stage, /pendingApproval && "min-h-\[min\(13rem,25cqh\)\]"/)
   assert.match(stage, /overflow-hidden \[container-type:size\]/)
   assert.doesNotMatch(stage, /min\(240px,40%\)/)
-  assert.match(stage, /pendingApproval\s*\?\s*"min-h-0 shrink"\s*:\s*"shrink-0"/)
+  // Composer 簇非审批时可被压（待验收展开区内滚），审批时整簇与 Composer 都 shrink-0。
+  assert.match(stage, /pendingApproval\s*\?\s*"shrink-0"\s*:\s*"min-h-0 shrink"/)
+  assert.match(stage, /pendingApproval \? "shrink-0" : "min-h-0"/)
+  assert.match(stage, /flex min-h-14 min-w-0 flex-1 flex-col/)
+  assert.match(thread, /relative flex min-h-6 min-w-0 flex-1 flex-col/)
   assert.match(dock, /flex min-h-0 shrink flex-col/)
-  assert.match(chrome, /flex min-h-0 shrink items-start gap-2 overflow-hidden/)
+  // 一套高度规则：command 卡不压，其余卡限高、正文卡内滚、标题行与底栏常驻。
+  assert.match(chrome, /variant === "command"\s*\?\s*"shrink-0"\s*:\s*"max-h-\[min\(45vh,22rem\)\] min-h-20/)
+  assert.match(chrome, /flex min-h-6 shrink items-start gap-2 overflow-hidden/)
+  assert.match(chrome, /data-testid="approval-card-body"/)
   assert.match(chrome, /<footer className="flex shrink-0/)
 })
 
@@ -36,7 +44,7 @@ test("Dock 不再限高内滚，空截图不占位，改动条在审批时让位
   assert.match(dock, /data-testid="permission-dock"/)
   assert.doesNotMatch(dock, /max-h-\[min\(60%/)
   assert.match(thumb, /if \(!src \|\| !frame\.show\) return null/)
-  assert.match(frame, /pendingApproval \? null : <ComposerLiveChanges/)
+  assert.match(frame, /pendingApproval \? null : \(\s*<div[\s\S]*?<ComposerLiveChanges \/>/)
   assert.match(plan, /useState\(false\)/)
   assert.match(plan, /data-testid="approval-diff"/)
   assert.match(plan, /min-h-40/)

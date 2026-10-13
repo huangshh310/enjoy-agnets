@@ -1,5 +1,5 @@
 /**
- * 待验收底栏：打回 / 通过。通过只改 workflowStatus，不 commit、不 push。
+ * 待验收底栏：打回 / 通过。通过只改 workflowStatus，不提交、不推送。
  */
 import { useT } from "@renderer/i18n"
 
