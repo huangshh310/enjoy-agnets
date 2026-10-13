@@ -80,7 +80,9 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
           ref: view.preRef,
           "data-testid": "approval-command",
           "data-expanded": expanded ? "true" : "false",
-          className: `m-0 shrink-0 whitespace-pre-wrap break-all font-mono text-caption-1-regular leading-relaxed text-text-primary ${preSize}`
+          // 可滚时（溢出或展开）可键盘聚焦滚动、读屏可达：≤440 无「展开全部」入口，这是唯一入口（leo）。
+          ...(overflowing || expanded ? { tabIndex: 0, role: "region", "aria-label": t("chat.commandFullRegion") } : {}),
+          className: `m-0 shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring whitespace-pre-wrap break-all font-mono text-caption-1-regular leading-relaxed text-text-primary ${preSize}`
         },
         h("span", { className: "mr-1.5 select-none text-text-tertiary" }, "$"),
         command || "—"
@@ -90,7 +92,7 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
             "aria-hidden": true,
             "data-testid": "approval-command-fade",
             className:
-              "pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-background-secondary-default to-transparent"
+              "pointer-events-none absolute inset-x-0 bottom-0 h-6 [@media(max-height:440px)]:hidden bg-gradient-to-t from-background-secondary-default to-transparent"
           })
         : null
     ),

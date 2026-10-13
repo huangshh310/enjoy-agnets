@@ -116,3 +116,19 @@ test("小窗卡片：标题独占底栏一行，三钮「本会话 · 拒绝 · 
   assert.ok(session > 0 && session < group && group < deny && deny < allow)
   assert.match(actions, /approval-primary-actions" className="flex shrink-0 flex-nowrap/)
 })
+
+test("leo：≤440 命令区可键盘聚焦滚动、读屏 region「完整命令」，渐隐在 ≤440 隐藏", () => {
+  const html = renderToStaticMarkup(
+    renderCommandBlock({ cwd: "/ws", command: LONG, expanded: false, overflowing: true, t: tZh })
+  )
+  assert.match(html, /tabindex="0"/i)
+  assert.match(html, /role="region"/)
+  assert.match(html, /aria-label="完整命令"/)
+  assert.match(html, /focus-visible:ring-border-focus-ring/)
+  assert.match(html, /\[@media\(max-height:440px\)\]:overflow-y-auto/)
+  assert.match(html, /data-testid="approval-command-fade" class="[^"]*\[@media\(max-height:440px\)\]:hidden/)
+  const short = renderToStaticMarkup(
+    renderCommandBlock({ cwd: "/ws", command: "ls", expanded: false, overflowing: false, t: tEn })
+  )
+  assert.doesNotMatch(short, /tabindex|role="region"/i)
+})

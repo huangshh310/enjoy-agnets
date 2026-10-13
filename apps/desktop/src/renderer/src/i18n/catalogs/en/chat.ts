@@ -809,6 +809,7 @@ export const enChat = {
   alwaysAllowOnceHint: "This command has a pipe or redirect, so it is allowed once only and won’t be remembered.",
   alwaysAllowInterpreterHint: "This is running a snippet of code, so it is allowed once only and won’t be remembered.",
   alwaysAllowTooLongHint: "This command is too long, so it is allowed once only and won’t be remembered.",
+  commandFullRegion: "Full command",
   commandExpandAll: "Show all ({n} characters)",
   commandCollapse: "Collapse",
   alwaysAllowWriteHint: "Allow all write tools this session. Applies to later turns; cleared after restart.",

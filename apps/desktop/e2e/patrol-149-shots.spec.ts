@@ -99,6 +99,14 @@ test("巡检页：收件箱 / 技能 / MCP / 自动化抽屉 在 733 与 1440、
             const style = await saveStyle(save, `${tag} ${theme} disabled`)
             expect(parseFloat(style.border), `${tag} disabled save has no border`).toBeGreaterThan(0)
             await snap(window, `${tag}-automation-drawer-disabled-${theme}`)
+            // leo：禁用「保存」近景裁图（按钮四周留 24px）。
+            const b = shotsDir ? await save.boundingBox() : null
+            if (shotsDir && b) {
+              await window.screenshot({
+                path: join(shotsDir, `${tag}-automation-save-disabled-crop-${theme}.png`),
+                clip: { x: Math.max(0, b.x - 24), y: Math.max(0, b.y - 24), width: b.width + 48, height: b.height + 48 }
+              })
+            }
           }
         }
         await window.keyboard.press("Escape")

@@ -188,13 +188,17 @@ test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与�
           await window.waitForTimeout(500)
           await snap(window, `${size.width}x${size.height}-approval-${slug}-${theme}`)
           await expectApprovalLayout(window, `${size.width} approval ${slug} ${theme}`, size.height)
-          await expectApprovalButtonsOneRow(window, `${size.width} approval ${slug} ${theme}`, size.height)
+          await expectApprovalButtonsOneRow(window, `${size.width} approval ${slug} ${theme}`, size.height, {
+            expectLongOverflow: false
+          })
         }
         // leo：高不到 420 的窗里三钮仍可见、同一行。
         await window.setViewportSize(SHORT)
         await window.waitForTimeout(500)
         await snap(window, `${SHORT.width}x${SHORT.height}-approval-${slug}-${theme}`)
-        await expectApprovalButtonsOneRow(window, `${SHORT.width}x${SHORT.height} approval ${slug} ${theme}`, SHORT.height)
+        await expectApprovalButtonsOneRow(window, `${SHORT.width}x${SHORT.height} approval ${slug} ${theme}`, SHORT.height, {
+          expectLongOverflow: slug === "long"
+        })
       }
       await setTheme(window, "light")
     }
@@ -206,7 +210,12 @@ test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与�
 const SHORT = { width: 733, height: 400 } as const
 
 /** 审批三钮：顺序锁死「本会话总是允许 · 拒绝 · 运行/批准」，同一行（顶边一致），都在视口内（luna #149）。 */
-async function expectApprovalButtonsOneRow(window: Page, label: string, viewportHeight: number): Promise<void> {
+async function expectApprovalButtonsOneRow(
+  window: Page,
+  label: string,
+  viewportHeight: number,
+  opts: { expectLongOverflow: boolean }
+): Promise<void> {
   const ids = ["approval-session", "approval-deny", "approval-allow"]
   const boxes: Box[] = []
   const present: string[] = []
@@ -295,8 +304,45 @@ async function expectApprovalButtonsOneRow(window: Page, label: string, viewport
       if (reach.overflows) {
         expect(reach.oy, `${label}: long command not scrollable`).toBe("auto")
         expect(reach.scrolled && reach.atEnd, `${label}: command end unreachable ${JSON.stringify(reach)}`).toBe(true)
+        // 键盘 / 读屏：可聚焦的 region「完整命令」（leo）。
+        await expect(cmd).toHaveAttribute("role", "region")
+        await expect(cmd).toHaveAttribute("aria-label", "完整命令")
+        await expect(cmd).toHaveAttribute("tabindex", "0")
+        await cmd.focus()
+        expect(await cmd.evaluate((el) => document.activeElement === el), `${label}: pre not focusable`).toBe(true)
+        // 滚到底后最后一个字符在 pre 可视区内，且不被渐隐遮挡（leo）。
+        const last = await cmd.evaluate((el) => {
+          el.scrollTop = el.scrollHeight
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+          let node: Text | null = null
+          for (let n = walker.nextNode(); n; n = walker.nextNode()) if ((n.textContent ?? "").trim()) node = n as Text
+          if (!node) return null
+          const text = node.textContent ?? ""
+          let i = text.length - 1
+          while (i > 0 && /\s/.test(text[i])) i--
+          const range = document.createRange()
+          range.setStart(node, i)
+          range.setEnd(node, i + 1)
+          const rects = Array.from(range.getClientRects())
+          const r = rects[rects.length - 1] ?? range.getBoundingClientRect()
+          const pre = el.getBoundingClientRect()
+          const cx = r.left + r.width / 2
+          const cy = r.top + r.height / 2
+          const inside = cx >= pre.left && cx <= pre.right && r.top >= pre.top - 1 && r.bottom <= pre.bottom + 1
+          const at = document.elementFromPoint(cx, cy)
+          const hitPre = Boolean(at && el.contains(at))
+          const fades = Array.from(document.querySelectorAll('[data-testid="approval-command-fade"]')).filter((f) => {
+            const fr = f.getBoundingClientRect()
+            if (fr.width === 0 || fr.height === 0 || getComputedStyle(f).display === "none") return false
+            return fr.left < r.right && fr.right > r.left && fr.top < r.bottom && fr.bottom > r.top
+          }).length
+          el.scrollTop = 0
+          return { inside, hitPre, fades, r: { x: r.left, y: r.top, w: r.width, h: r.height }, pre: { y: pre.top, b: pre.bottom } }
+        })
+        expect(last, `${label}: no command text`).not.toBeNull()
+        expect(last?.inside && last.hitPre && last.fades === 0, `${label}: last char hidden ${JSON.stringify(last)}`).toBe(true)
       }
-      if (label.includes(" long ")) expect(reach.overflows, `${label}: long command should overflow 2 lines`).toBe(true)
+      if (opts.expectLongOverflow) expect(reach.overflows, `${label}: long command should overflow 2 lines`).toBe(true)
     }
   }
   // 卡顶不被裁：卡顶在会话区内（jojo：矮窗卡顶被裁、消息区为 0）。
