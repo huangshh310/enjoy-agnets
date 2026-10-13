@@ -8,8 +8,10 @@ import { dropEmptyPendingAssistant } from "../composer-run-control"
 import {
   mergeComposerText,
   restoreComposerAfterFailedSend,
+  restoreComposerDraft,
   type QueuedComposerAsset
 } from "../queue-composer-send"
+import { restoreComposerSendChips, type ComposerSendSnapshot } from "./composer-send-snapshot"
 
 export function failComposerSend(input: {
   text: string
@@ -19,13 +21,27 @@ export function failComposerSend(input: {
   createdSessionId?: string | null
   assets?: QueuedComposerAsset[]
   dropOptimisticUser?: boolean
+  /** 乐观气泡里的正文（拼了引用 / 前缀）；不给就按 text 找。 */
+  optimisticContent?: string
+  /** 发送前拍的引用 / 技能 / 知识 Chip，一并还回输入框。 */
+  chips?: ComposerSendSnapshot
+  /** running 属于别的在跑轮次（排队首发等不到空闲）：不动 running、不清 pending 助手与停车。 */
+  keepRunning?: boolean
 }): void {
-  dropEmptyPendingAssistant()
-  if (input.dropOptimisticUser) dropMatchingOptimisticUser(input.text)
-  if (input.sessionId) useAttentionStore.getState().takePark(input.sessionId)
-  // 先还文 + notice，再删空会话。禁止等 session.delete 才出提示（会空几秒）。
-  restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
+  if (input.keepRunning) {
+    restoreComposerDraft(input.text, input.assets)
+    useChatStore.getState().setError(input.reason)
+  } else {
+    dropEmptyPendingAssistant()
+    if (input.dropOptimisticUser) dropMatchingOptimisticUser(input.optimisticContent ?? input.text)
+    if (input.sessionId) useAttentionStore.getState().takePark(input.sessionId)
+    // 先还文 + notice，再删空会话。禁止等 session.delete 才出提示（会空几秒）。
+    restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
+  }
+  if (input.chips) restoreComposerSendChips(input.chips)
+  // leo S1：keepRunning = 会话里还有别的轮在跑（pending 助手 / 停车都保留），绝不能删会话。
   if (
+    !input.keepRunning &&
     input.createdSessionId &&
     input.createdSessionId === input.sessionId &&
     isEmptyFailedSession(input.createdSessionId)

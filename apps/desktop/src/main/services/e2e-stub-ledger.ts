@@ -4,7 +4,7 @@
  */
 import { serializeAssistantPayload } from "@enjoy-agents/ipc-contract"
 import { persistMessage } from "./persist-session"
-import { createSession } from "./session-queries"
+import { createSession, listSessions } from "./session-queries"
 import { E2E_LEDGER_SESSION_TITLE, ledgerFixtureTools } from "./e2e-stub-ledger-data"
 
 export {
@@ -13,7 +13,10 @@ export {
   shouldSeedE2eLedger
 } from "./e2e-stub-ledger-data"
 
+/** 同一 userData 重启不再多种一条（否则侧栏每次多一个「本轮账本」）。 */
 export async function seedE2eLedgerSession(workspaceId: string): Promise<void> {
+  const existing = await listSessions(workspaceId)
+  if (existing.some((row) => row.title === E2E_LEDGER_SESSION_TITLE)) return
   const session = await createSession(workspaceId, E2E_LEDGER_SESSION_TITLE)
   persistMessage(session.id, "user", "跑一遍类型检查和 lint，并把账本在窄顶栏的截断列出来。")
   persistMessage(

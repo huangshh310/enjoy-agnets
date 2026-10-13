@@ -47,6 +47,10 @@ export const NEED_REMOTE_CONNECTED = "NEED_REMOTE_CONNECTED"
 export const ACP_RESUME_FALLBACK = "ACP_RESUME_FALLBACK"
 export const INTERNAL_STORE_ERROR = "INTERNAL_STORE_ERROR"
 export const SEND_FAILED_RESTORE = "SEND_FAILED_RESTORE"
+/** 上一条还在「正在准备…」又发了一条：这条还回输入框，提示等一下再发（不是发送失败）。 */
+export const PREVIOUS_STILL_PREPARING = "PREVIOUS_STILL_PREPARING"
+/** 还稿时输入框里已有后打的字：两条拼在一起放回（后打的在前），再按 Enter 会合成一条发出。 */
+export const SEND_FAILED_RESTORE_MERGED = "SEND_FAILED_RESTORE_MERGED"
 export const SESSION_CREATE_TIMEOUT = "SESSION_CREATE_TIMEOUT"
 export const SESSION_NOT_READY = "SESSION_NOT_READY"
 export const USER_STOPPED = "user_aborted"
@@ -89,6 +93,8 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   }
   if (
     message === SEND_FAILED_RESTORE ||
+    message === PREVIOUS_STILL_PREPARING ||
+    message === SEND_FAILED_RESTORE_MERGED ||
     message === SESSION_CREATE_TIMEOUT ||
     message === SESSION_NOT_READY
   ) {
@@ -152,6 +158,8 @@ export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined 
 
 export function humanizeThreadError(text: string | undefined, t: Translate): string {
   if (!text) return ""
+  if (text === PREVIOUS_STILL_PREPARING) return t("chat.previousStillPreparing")
+  if (text === SEND_FAILED_RESTORE_MERGED) return t("chat.sendFailedRestoreMerged")
   const kind = classifyThreadError(text)
   const key = threadErrorDetailKey(kind)
   if (key) return t(key)

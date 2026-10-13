@@ -1,5 +1,6 @@
 "use client"
 
+import { isComposerRailNotice } from "@renderer/components/ai-chat/composer/runtime-interact/composer-previous-preparing-rail"
 import { useState } from "react"
 import { ThreadFindBar } from "./thread/thread-find/thread-find-bar"
 import { useThreadFindOpen } from "./thread/thread-find/use-thread-find-hotkey"
@@ -73,7 +74,7 @@ export function AiChatThread({
           <QueuedFollowups />
 
           {anchorId ? null : <ThreadNoticeBanner />}
-          {error ? <ThreadErrorBanner error={error} /> : null}
+          {error && !isComposerRailNotice(error) ? <ThreadErrorBanner error={error} /> : null}
           <div id="thread-turn-end" />
         </ConversationContent>
         <ConversationScrollButton />

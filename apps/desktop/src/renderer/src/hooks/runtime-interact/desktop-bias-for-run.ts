@@ -18,8 +18,19 @@ export function desktopBiasFromMentions(
   return readDesktopMentionBias(text, apps) ?? undefined
 }
 
+/** 列应用卡住不能拖住发送：超时按已知名单算，发送照走。 */
+const LIST_APPS_TIMEOUT_MS = 3_000
+
 export async function desktopBiasForRun(text: string): Promise<DesktopMentionBias | undefined> {
-  return desktopBiasFromMentions(text, await loadMentionApps())
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const fallback = new Promise<readonly DesktopMentionApp[]>((resolve) => {
+    timer = setTimeout(() => resolve(peekDesktopMentionApps()), LIST_APPS_TIMEOUT_MS)
+  })
+  try {
+    return desktopBiasFromMentions(text, await Promise.race([loadMentionApps(), fallback]))
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
 }
 
 async function loadMentionApps(): Promise<readonly DesktopMentionApp[]> {

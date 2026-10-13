@@ -11,6 +11,8 @@ import { isApplePlatform } from "@renderer/components/settings/keybindings/keybi
 import { useComposerMentions } from "./use-composer-mentions.ts"
 import { useComposerIme } from "./use-composer-ime.ts"
 import { shouldIgnoreComposerEnter } from "@renderer/hooks/composer-ime"
+import { traceSend } from "@renderer/hooks/send-debug"
+import { captureComposerEnter } from "@renderer/hooks/composer-dom"
 import { clearComposerDraftChips, shouldClearComposerChipsOnDelete } from "@renderer/hooks/clear-composer-chips"
 import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 
@@ -41,19 +43,36 @@ export function ComposerInput({
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const modeCopy = useMemo(() => modeCopyFromT(t), [t])
   const builtinCopy = useMemo(() => builtinCopyFromT(t), [t])
-  const mentions = useComposerMentions(value, onChange, textareaRef, modeCopy, builtinCopy)
-  const handleRecall = useComposerPromptHistory({ value, onChange, textareaRef })
   const ime = useComposerIme(value, onChange)
+  const mentions = useComposerMentions(value, ime.replace, textareaRef, modeCopy, builtinCopy)
+  const handleRecall = useComposerPromptHistory({ value, onChange, textareaRef })
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter") {
+      traceSend("keydown", {
+        dom: event.currentTarget.value.length,
+        shown: ime.value.length,
+        store: value.length,
+        ime: shouldIgnoreComposerEnter(event),
+        keyCode: event.keyCode,
+        isComposing: event.nativeEvent.isComposing,
+        mentionOpen: mentions.open,
+        inputs: document.querySelectorAll('[data-testid="composer-input"]').length
+      })
+    }
     if (shouldIgnoreComposerEnter(event)) return
-    if (mentions.handleKeyDown(event)) return
+    if (mentions.handleKeyDown(event)) {
+      if (event.key === "Enter") traceSend("keydown:mention")
+      return
+    }
     if (handleRecall(event)) return
     if (shouldClearComposerChipsOnDelete(event.key, event.currentTarget)) {
       clearComposerDraftChips()
     }
     if (event.key !== "Enter" || event.shiftKey) return
     event.preventDefault()
+    // 发送只认此刻 DOM 全文，不认可能落后的 shown / store。
+    captureComposerEnter(event.currentTarget.value)
     if (event.metaKey || event.ctrlKey) onSteer()
     else onSend()
   }

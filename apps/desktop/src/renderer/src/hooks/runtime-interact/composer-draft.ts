@@ -1,6 +1,7 @@
 /**
  * Composer 草稿快照：引用 Chip、技能 Chip、知识 Chip 与正文拼成发送文本。
  */
+import { pauseSendWatchdog, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { composeQuotedPrompt } from "@enjoy-agents/ipc-contract"
 import { coerceComposerMode } from "../../components/ai-chat/composer/composer-mode"
 import { applyLeadingSlash } from "../../components/ai-chat/composer/mentions/consume-slash.ts"
@@ -13,7 +14,6 @@ import {
 } from "../../components/ai-chat/composer/mentions/composer-skill-chips.ts"
 import { formatSkillMentions } from "../../components/ai-chat/composer/mentions/format-skill-mention.ts"
 import { applyHostModePrefix } from "../../components/ai-chat/composer/mentions/host-mode-prefix.ts"
-import { compactSessionOrReport } from "../../components/ai-chat/right-pane/views/context/compact-session/run-session-compact.ts"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
 import { listQuotedContexts, takeQuotedContexts } from "../quoted-context"
@@ -24,12 +24,21 @@ import { flushComposerDomToStore, syncComposerDom } from "../composer-dom"
 export { flushComposerDomToStore, syncComposerDom }
 
 /** 取出引用、技能与知识 Chip，并消化句首 /plan、/compact 或 /技能。 */
-export async function takeComposerText(): Promise<string> {
+export async function takeComposerText(source?: string, attempt?: SendAttempt): Promise<string> {
   const store = useChatStore.getState()
-  const parsed = applyLeadingSlash(flushComposerDomToStore() || store.composer, listKnownSkills())
+  // source = Enter 那一刻的 DOM 全文；只有没给时才现读 DOM（禁止回落落后的 store）。
+  const text = source ?? flushComposerDomToStore()
+  const parsed = applyLeadingSlash(text, listKnownSkills())
   if (parsed.mode) store.setMode(parsed.mode)
   if (parsed.command === "compact") {
-    const ok = await compactSessionOrReport(store.sessionId)
+    // /compact 压缩是合法长等待：看门狗暂停计时。看门狗若已判失败（压缩前就超时），不再清稿 / 取 Chip。
+    const ok = await pauseSendWatchdog(attempt, async () => {
+      const { compactSessionOrReport } = await import(
+        "../../components/ai-chat/right-pane/views/context/compact-session/run-session-compact.ts"
+      )
+      return compactSessionOrReport(store.sessionId)
+    })
+    if (sendAttemptCancelled(attempt)) return ""
     if (!ok || !parsed.text) {
       store.setComposer("")
       return ""

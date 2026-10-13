@@ -10,7 +10,8 @@ import { e2eChatReadyKind } from "./e2e-chat-readiness"
 import { e2eWorkspaceCount } from "./e2e-workspace-count"
 import { isE2eStub } from "./e2e-stub"
 import { createSession, listSessions } from "./session-queries"
-import { upsertProfile } from "./secrets"
+import { readVault, upsertProfile } from "./secrets"
+import { existingSeedProfileId } from "./e2e-seed-profile"
 import { openWorkspace } from "./workspace"
 import { seedE2eAutomations } from "./e2e-stub-automations"
 import { shouldSeedE2eLedger } from "./e2e-stub-ledger-data"
@@ -62,7 +63,9 @@ async function seedE2eWorkspace(root: string, heading: string) {
 async function seedE2eProfile(): Promise<void> {
   if (process.env.ENJOY_E2E_SKIP_PROFILE === "1" || e2eChatReadyKind() === "none") return
   try {
+    const vault = await readVault()
     await upsertProfile({
+      id: existingSeedProfileId(vault.profiles, { name: "E2E Stub", kind: "ollama" }),
       name: "E2E Stub",
       kind: "ollama",
       modelId: "stub-e2e",

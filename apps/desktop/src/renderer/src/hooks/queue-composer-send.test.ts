@@ -149,23 +149,57 @@ test("失败还文时把入队附件交给 onFail", async () => {
   assert.deepEqual(failedAssets, ["ast_note"])
 })
 
-test("取消队列后 create 完成不得再发", async () => {
+test("取消队列后 create 完成不得再发，但要还稿出提示（不静默）", async () => {
   resetQueue()
   const { token } = beginNewSessionCreate()
   const sent: string[] = []
+  const failed: Array<{ text: string; reason: string }> = []
   const pending = waitThenSendAfterCreate(
     "partial",
     async (prepared) => {
       sent.push(prepared.content)
     },
     undefined,
-    { readSessionId: () => "ses_1" }
+    { readSessionId: () => "ses_1", onFail: (text, reason) => failed.push({ text, reason }) }
   )
   cancelQueuedComposerSend()
   assert.equal(hasQueuedComposerSend(), false)
   finishNewSessionCreate(token, "ses_1")
   await pending
   assert.deepEqual(sent, [])
+  assert.deepEqual(failed, [{ text: "partial", reason: SEND_FAILED_RESTORE }])
+})
+
+test("又一次新对话把创建顶掉（SUPERSEDED）：排队首发还稿出提示，只提示一次", async () => {
+  resetQueue()
+  beginNewSessionCreate()
+  const failed: string[] = []
+  const onFail = (text: string) => failed.push(text)
+  const first = waitThenSendAfterCreate("hel", async () => assert.fail("不得发出"), undefined, { onFail })
+  const second = waitThenSendAfterCreate("hello again", async () => assert.fail("不得发出"), undefined, { onFail })
+  // createAndOpenSession 的顺序：先取消队列，再开新的创建窗（会 reject 上一个）。
+  cancelQueuedComposerSend()
+  const { token } = beginNewSessionCreate()
+  await new Promise((resolve) => setTimeout(resolve, 10))
+  // 新创建窗还没发布：先不还稿，免得被 publish 的 idle 补丁洗掉。
+  assert.deepEqual(failed, [])
+  finishNewSessionCreate(token, "ses_2")
+  await Promise.all([first, second])
+  assert.deepEqual(failed, ["hello again"])
+})
+
+test("被更新的一次 Enter 顶替：旧的安静让位，只发最新全文", async () => {
+  resetQueue()
+  const { token } = beginNewSessionCreate()
+  const sent: string[] = []
+  const failed: string[] = []
+  const deps = { readSessionId: () => "ses_3", onFail: (text: string) => failed.push(text) }
+  const first = waitThenSendAfterCreate("h", async (p) => void sent.push(p.content), undefined, deps)
+  const second = waitThenSendAfterCreate("hello", async (p) => void sent.push(p.content), undefined, deps)
+  finishNewSessionCreate(token, "ses_3")
+  await Promise.all([first, second])
+  assert.deepEqual(sent, ["hello"])
+  assert.deepEqual(failed, [])
 })
 
 test("成功只清已发出的正文", () => {

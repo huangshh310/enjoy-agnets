@@ -6,7 +6,7 @@ import { addQuotedContext } from "@renderer/hooks/quoted-context"
 import { addSessionContextChip } from "@renderer/hooks/session-context-chips"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { applySlashPick } from "./apply-slash-pick.ts"
-import { replaceMentionToken } from "./composer-token.ts"
+import { replaceMentionTokenLive } from "./composer-token.ts"
 import { attachWorkspaceMention } from "./attach-workspace-mention.ts"
 import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 import { addComposerSkillChip } from "./composer-skill-chips.ts"
@@ -110,7 +110,9 @@ export function useComposerMentions(
   }
 
   function applyReplace(token: NonNullable<typeof panel.mention>, insert: string) {
-    onChange(replaceMentionToken(value, token, insert))
+    // value 是按下 Enter 那一帧的稿；异步选中回来时以输入框当下全文为准，保住期间接着打的字。
+    const live = textareaRef.current?.value ?? value
+    onChange(replaceMentionTokenLive(value, live, token, insert))
     panel.setCursor(token.start + insert.length)
   }
 
