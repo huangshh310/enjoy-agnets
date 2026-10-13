@@ -10,10 +10,12 @@ for (const [lang, c] of [["zh", zhChat], ["en", enChat]] as const) {
   test(`${lang}：发送还稿红卡正文不以标题开头`, () => {
     const title = c.sendFailedRestoreTitle.replace(/[。.]$/, "")
     assert.ok(!c.sendFailedRestore.startsWith(title), c.sendFailedRestore)
-    assert.ok(!c.sendFailedRestoreMerged.startsWith(title), c.sendFailedRestoreMerged)
   })
 }
 
-test("zh 拼回正文定稿", () => {
-  assert.equal(zhChat.sendFailedRestoreMerged, "没发出去的这条已接在你新打的内容后面，改好再发。")
+// luna #150 C 端锁定文案：拼回正文按定稿原样（en 定稿本身以标题句开头，不套上面的规则）。
+test("拼回正文 / 标题定稿（luna 锁定）", () => {
+  assert.equal(zhChat.sendFailedRestoreMerged, "这条没发出去，已接在输入框末尾，改好再发。")
+  assert.equal(enChat.sendFailedRestoreMerged, "This one didn't send. It's added to the end of your draft. Edit it, then send.")
+  assert.equal(enChat.sendFailedRestoreTitle, "This one didn't send")
 })

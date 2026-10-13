@@ -130,3 +130,33 @@ test("leo：真起跑才收红卡", async () => {
   assert.equal(runs.length, 1)
   assert.equal(useChatStore.getState().error, null)
 })
+
+test("luna P2：没起跑时写回锁还挂着（建会话 / 首发入队留下）也要把原话放回输入框（store + DOM）", async () => {
+  const { setComposerWritebackHeld, isComposerWritebackHeld } = await import(
+    "../../renderer/src/hooks/composer-sync-lock.ts"
+  )
+  const { shouldHoldComposerStoreSync } = await import("../../renderer/src/hooks/composer-dom.ts")
+  const sid = "ses_regen_dup_e"
+  seed(sid, "要还回来的话")
+  const el = { value: "", getAttribute: (k: string) => (k === "data-testid" ? "composer-input" : null) }
+  ;(globalThis as { document?: unknown }).document = {
+    activeElement: el,
+    querySelector: () => el
+  }
+  try {
+    useChatStore.setState({ composer: "" } as never)
+    useChatStore.getState().setError("boom")
+    setComposerWritebackHeld(true)
+    assert.equal(shouldHoldComposerStoreSync(), true, "前提：store→输入框同步被拦")
+    runs.length = 0
+    assert.equal(await retryFailedUserTurn({ id: "u_missing", content: "要还回来的话" }), false)
+    assert.equal(runs.length, 0)
+    assert.equal(useChatStore.getState().error, "boom")
+    assert.equal(useChatStore.getState().composer, "要还回来的话")
+    assert.equal(el.value, "要还回来的话", "输入框 DOM 也得看见")
+    assert.equal(isComposerWritebackHeld(), false, "解锁，后续打字能同步")
+  } finally {
+    setComposerWritebackHeld(false)
+    delete (globalThis as { document?: unknown }).document
+  }
+})

@@ -130,7 +130,7 @@ test("强制看门狗：等待中改打了 B → 两条拼回（B 在前）并�
     await composer.press("ControlOrMeta+a")
     await window.keyboard.type(b, { delay: 20 })
     const banner = window.locator('[data-testid="thread-error-banner"]')
-    await expect(banner).toContainText("没发出去的这条已接在你新打的内容后面，改好再发。", { timeout: 10_000 })
+    await expect(banner).toContainText("这条没发出去，已接在输入框末尾，改好再发。", { timeout: 10_000 })
     await expect(composer).toHaveValue(`${b}\n${a}`)
     mkdirSync(shots, { recursive: true })
     await window.screenshot({ path: join(shots, "watchdog-merged-hint.png") })

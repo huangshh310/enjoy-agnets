@@ -5,6 +5,8 @@
 import { shouldRetryAsTodoContinue } from "../components/ai-chat/composer/todo-continue-message"
 import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide"
+import { flushComposerDomToStore } from "./composer-dom"
+import { restoreComposerDraft } from "./queue-composer-send"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
@@ -360,7 +362,9 @@ async function reloadSession(sessionId: string, title: string): Promise<void> {
 export async function retryFailedUserTurn(lastUser: { id?: string; content: string }): Promise<boolean> {
   const started = lastUser.id ? await regenerateUserTurn(lastUser.id) : false
   if (started) return true
-  const store = useChatStore.getState()
-  if (!store.composer.trim()) store.setComposer(lastUser.content)
+  // luna P2：只 setComposer 不够——写回锁（建会话 / 首发入队留下）会拦住 store→输入框，DOM 也不跟。
+  // 走失败还稿同一条路：先把 DOM 现状收进 store，再合并还稿、解锁并强制对齐 DOM。
+  flushComposerDomToStore()
+  restoreComposerDraft(lastUser.content)
   return false
 }
