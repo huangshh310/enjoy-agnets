@@ -105,7 +105,7 @@ export function ProfileEcosystemBento({
                   </span>
                 ))}
                 {readyTools.length === 0 ? (
-                  <span className="font-mono text-caption-2-regular text-text-secondary">Enjoy 本地</span>
+                  <span className="font-mono text-caption-2-regular text-text-secondary">{t("chat.usage.enjoyLocal")}</span>
                 ) : null}
               </div>
             </div>

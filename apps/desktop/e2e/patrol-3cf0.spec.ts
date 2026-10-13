@@ -226,6 +226,8 @@ test("失败会话：本会话有红卡与重试；切走再回来仍在；重�
   try {
     const window = await firstWindow(second)
     // 重启后点 Inbox「失败」打开会话：红卡从档案还原。
+    // 重启后侧栏失败点与红卡同源一致：档案回填进槽表，红点还在（luna #150 P2）。
+    await expect(window.locator('[data-testid="session-row-failed"]').first()).toBeVisible({ timeout: 15_000 })
     // 只有失败时：左栏收件箱有徽标；打开收件箱直接落在「失败」页签，不停在空的「等你决定」（luna #151）。
     await expect(window.locator('[data-testid="rail-inbox"]')).toHaveAttribute("aria-label", /\s1$/, { timeout: 15_000 })
     await go(window, "#/inbox")
@@ -299,6 +301,49 @@ test("关掉红卡：切走再切回、重启后都不复活；红点 / 收件�
     await snap(window, "1440x920-session-error-dismissed-after-restart-light")
   } finally {
     await closeForRelaunch(second)
+  }
+})
+
+test("733×480 空会话：还稿红卡在上方时 Composer 两行文字与发送钮整块可见（luna #150 P3，只改布局）", async () => {
+  test.setTimeout(120_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  try {
+    const window = await firstWindow(env.app)
+    await window.locator('[data-testid="approval-deny"]').click()
+    await expect(window.locator('[data-testid="permission-dock"]')).toHaveCount(0, { timeout: 15_000 })
+    await window.getByRole("button", { name: "新对话" }).first().click()
+    await window.waitForTimeout(600)
+    await window.setViewportSize({ width: 733, height: 480 })
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.fill("后打的B\n先发的A")
+    await window.evaluate(() =>
+      (globalThis as { __enjoyE2e?: { setError: (m: string) => void } }).__enjoyE2e?.setError("SEND_FAILED_RESTORE_MERGED")
+    )
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toBeVisible({ timeout: 5_000 })
+    await window.waitForTimeout(400)
+    const vp = window.viewportSize()!
+    const status = await window.locator("form[data-composer]").boundingBox()
+    const input = (await composer.boundingBox())!
+    const send = (await window.locator('[data-testid="composer-send"]').boundingBox())!
+    expect(status).not.toBeNull()
+    // 输入框（两行）与发送钮都在视口内，不被压到状态栏下。
+    expect(input.y + input.height, JSON.stringify({ input, vp })).toBeLessThanOrEqual(vp.height)
+    expect(send.y + send.height, JSON.stringify({ send, vp })).toBeLessThanOrEqual(vp.height - 20)
+    const hit = await window.locator('[data-testid="composer-send"]').evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+      return Boolean(at && (at === el || el.contains(at)))
+    })
+    expect(hit).toBe(true)
+    // 红卡贴着 Composer 上沿露出来（滚动原点在底），不被挤出视口、不压 Composer。
+    const card = (await window.locator('[data-testid="thread-error-banner"]').boundingBox())!
+    const form = (await window.locator("form[data-composer]").boundingBox())!
+    expect(card.y, JSON.stringify({ card, form })).toBeGreaterThanOrEqual(0)
+    expect(card.y + card.height, JSON.stringify({ card, form })).toBeLessThanOrEqual(form.y + 1)
+    await snap(window, "733x480-empty-merged-redcard-light")
+  } finally {
+    await closeForRelaunch(env.app)
   }
 })
 
