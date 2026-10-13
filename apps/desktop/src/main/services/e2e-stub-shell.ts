@@ -52,6 +52,8 @@ export function isStubShellFixtureInput(toolName: string, args: unknown): boolea
   return STUB_SHELL_FIXTURES.some(
     (fixture) =>
       fixture.toolName === toolName &&
+      // leo soft 3：键数也要相同，多带一个键（比如 cwd / env）就不是夹具，照常走真执行守卫。
+      Object.keys(rec).length === Object.keys(fixture.input).length &&
       Object.entries(fixture.input).every(([key, value]) => rec[key] === value)
   )
 }

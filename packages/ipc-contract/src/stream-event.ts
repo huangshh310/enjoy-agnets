@@ -40,6 +40,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     sessionId: z.string(),
     /** 主进程代发的用户句。前台线程还没有这条时才补进气泡。 */
     prompt: z.string().optional(),
+    /** 代发用户句落库用的 id（leo #147 MF-1：气泡直接用真 id，不靠猜）。 */
+    promptMessageId: z.string().min(1).max(128).optional(),
     /** Composer / Agent 为 `agent`；标题补全等旁路带自己的 generation kind。 */
     kind: z.string().max(40).optional(),
     sequence: z.number().int().optional(),
@@ -96,6 +98,17 @@ export const StreamEvent = z.discriminatedUnion("type", [
     decision: z.enum(["allow", "deny", "allow_session", "allow_always", "cancelled"]),
     /** Stop=`user_aborted`；泵出错=`run_failed`；补跑超时=`catch_up_approval_timeout`；重启放弃=`restart_abandoned`。旧未知码丢掉，不拒整条。 */
     code: z.enum(APPROVAL_RESOLVED_CODES).optional().catch(undefined),
+    ...Envelope
+  }),
+  /**
+   * leo #147 MF-1：main 把这一轮的消息落库后回报真实 id（首次插行 / 换新行时发一次）。
+   * renderer 把它绑到同 runId 的气泡上（`persistedId`），截断名单只用真 id，不再拿占位 id 或读库猜。
+   */
+  z.object({
+    type: z.literal("message.persisted"),
+    runId: z.string(),
+    messageId: z.string().min(1).max(128),
+    role: z.enum(["assistant", "user"]),
     ...Envelope
   }),
   z.object({

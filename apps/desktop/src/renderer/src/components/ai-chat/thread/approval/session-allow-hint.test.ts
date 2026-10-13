@@ -105,3 +105,15 @@ test("超过 4096 字符的 bash 卡片 onceOnly，文案说命令太长", async
   const src = readFileSync(new URL("./approval-card.tsx", import.meta.url), "utf8")
   assert.match(src, /allow\.onceKind === "too_long"/)
 })
+
+test("leo soft 1：卡片与 main 同用原始长度量 4096（前后空白也算），不会卡片给会话钮、main 却不记", async () => {
+  const { bashAllowCommand } = await import("@enjoy-agents/ipc-contract/bash-prefix")
+  const body = `ls ${"a".repeat(4090)}`
+  const padded = `${body}${" ".repeat(8)}`
+  assert.ok(body.length <= 4096 && padded.length > 4096)
+  // main 记录走 bashAllowCommand(原文)：超长 → 空串（不记）。
+  assert.equal(bashAllowCommand(padded), "")
+  assert.equal(sessionAllowCardState("bash", padded).onceKind, "too_long")
+  assert.equal(sessionAllowCardState("bash", padded).showSession, false)
+  assert.equal(sessionAllowCardState("bash", body).showSession, true)
+})

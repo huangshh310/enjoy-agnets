@@ -17,7 +17,9 @@ import { queryClient } from "../lib/query-client"
 import { visibleUserText } from "../lib/user-message-text"
 import { useChatStore } from "../stores/chat-store"
 import { loadSession } from "./session-lifecycle"
+import { refreshAllWorkspaces } from "./refresh-workspaces"
 import { isTruncateRetryable } from "./truncate-notice"
+import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { decideTruncateRetry } from "./truncate-retry"
 
 export type RewindResult =
@@ -47,7 +49,11 @@ export async function rewindFromUserTurn(input: {
 
   const sessionId = store.sessionId
   const sessionTitle = store.sessionTitle ?? ""
-  const expectedTailIds = messages.slice(index).map((message) => message.id)
+  // jojo P1 / leo #147 MF-1：名单只用权威 id（库 id / persistedId / 按 runId 严格绑上的库行）；库里多出来就 STALE →「有新内容」。
+  const expectedTailIds = await resolveTruncateTail({ sessionId, messages, anchorId: target.id, mode: "from" })
+  if (useChatStore.getState().running || useChatStore.getState().sessionId !== sessionId) {
+    return { ok: false, code: "REWIND_BUSY" }
+  }
   const guarded = (dryRun: boolean) =>
     truncateWithGuardedRetry({ sessionId, sessionTitle, messageId: target.id, expectedTailIds, dryRun })
 
@@ -61,6 +67,8 @@ export async function rewindFromUserTurn(input: {
 
   const cut = await guarded(false)
   if (cut) return { ok: false, code: cut }
+  // luna P2：main 截断后按剩下的轮次重算了待验收；刷新会话节点，审查条跟着库走。
+  void refreshAllWorkspaces().catch(() => undefined)
   const latest = useChatStore.getState()
   const keepIndex = latest.messages.findIndex((message) => message.id === input.userMessageId)
   const keep = keepIndex >= 0 ? latest.messages[keepIndex] : target

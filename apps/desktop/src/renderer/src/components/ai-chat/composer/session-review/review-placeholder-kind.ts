@@ -5,6 +5,7 @@
 import { RESTART_ABANDONED_CODE, toolHasResultCode } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { BASH_TOOLS, TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
+import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
 
 export type ReviewPlaceholderKind = "files" | "command" | "maybe" | "unknown"
 
@@ -34,8 +35,10 @@ export function reviewPlaceholderKind(
   interrupted = false
 ): ReviewPlaceholderKind {
   if (interrupted || tools.some(isInterruptedTool)) return "maybe"
-  if (tools.some((tool) => FILE_WRITE_NAMES.has(tool.name))) return "files"
-  if (tools.some((tool) => COMMAND_NAMES.has(tool.name))) return "command"
+  // 拒绝 / 未执行的工具不算「运行了命令」「改了文件」（luna P2 截图里全是「已拒绝」却说运行了命令）。
+  const acted = tools.filter((tool) => !isToolNotExecuted(tool))
+  if (acted.some((tool) => FILE_WRITE_NAMES.has(tool.name))) return "files"
+  if (acted.some((tool) => COMMAND_NAMES.has(tool.name))) return "command"
   return "unknown"
 }
 

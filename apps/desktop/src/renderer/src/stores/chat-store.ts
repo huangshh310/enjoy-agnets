@@ -77,6 +77,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sessionReviewDismissedKey: null,
   pendingApproval: null,
   error: null,
+  errorRetry: null,
   preparingHint: false,
   notice: null,
   agentPickerOpen: false,
@@ -181,7 +182,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         ...(assets?.length ? { assets } : {})
       }
     ]
-    set({ messages, composer: "", error: null, notice: null })
+    set({ messages, composer: "", error: null, errorRetry: null, notice: null })
     return messages
   },
   setRunning: (running, runId = null) => {
@@ -200,7 +201,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     for (const event of queued) get().applyStreamEvent(event)
   },
   setHasKey: (hasKey) => set({ hasKey }),
-  setError: (error) => set({ error }),
+  setError: (error, retryTarget) =>
+    set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null }),
   setPreparingHint: (preparingHint) => set({ preparingHint }),
   setNotice: (notice) => {
     const sessionId = get().sessionId
@@ -310,7 +312,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       sessionId,
       sessionTitle,
-      ...(state.sessionId === sessionId ? {} : { notice: null }),
+      ...(state.sessionId === sessionId ? {} : { notice: null, errorRetry: null }),
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )

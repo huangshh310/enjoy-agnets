@@ -115,3 +115,11 @@ test("重启无 waiter：executeStoredTool 对夹具入参只回 ok，不真跑"
   assert.ok(guard > 0 && guard < src.indexOf("await host.bash("))
   assert.ok(guard < src.indexOf("await resumeCodeMode("))
 })
+
+test("leo soft 3：多带一个键（cwd / env）就不算夹具，不会被短路成假成功", () => {
+  for (const fixture of STUB_SHELL_FIXTURES) {
+    assert.equal(isStubShellFixtureInput(fixture.toolName, { ...fixture.input, cwd: "/" }), false)
+    assert.equal(isStubShellFixtureInput(fixture.toolName, { ...fixture.input, env: { A: "1" } }), false)
+  }
+  assert.equal(isStubShellFixtureInput("bash", {}), false)
+})

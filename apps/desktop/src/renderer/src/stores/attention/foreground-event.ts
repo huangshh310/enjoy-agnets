@@ -17,6 +17,8 @@ export function belongsToForeground(
   rememberedKind?: string
 ): boolean {
   const runId = eventRunId(event)
+  // leo #147 MF-1：落库 id 回报可能晚于 run.end（收工才首次写行），只认会话，不看 running / runId。
+  if (event.type === "message.persisted") return Boolean(eventSessionId) && eventSessionId === currentSessionId
   if (isNonAgentRunKind(event, rememberedKind)) return false
   if (runId && currentRunId && runId === currentRunId) return true
   if (!eventSessionId || eventSessionId !== currentSessionId) return false

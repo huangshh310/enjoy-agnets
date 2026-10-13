@@ -10,6 +10,8 @@ import {
 } from "@remixicon/react"
 import { extractObjectFromMessage } from "@renderer/hooks/extract-object"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { laterTurnCount } from "@renderer/hooks/regenerate-retry-target"
+import { RegenerateConfirmDialog } from "./regenerate-confirm-dialog"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { MessageAction, MessageActions } from "@/components/ai-elements/message"
@@ -29,7 +31,13 @@ export function AssistantActions({
   const [extracting, setExtracting] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const running = useChatStore((s) => s.running)
+  const laterTurns = useChatStore((s) => laterTurnCount(s.messages, message.id))
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const vote = message.feedback
+  const regenerate = () => {
+    setRegenerating(true)
+    void regenerateAssistantTurn(message.id).finally(() => setRegenerating(false))
+  }
 
   return (
     <MessageActions className="-ml-1">
@@ -56,12 +64,19 @@ export function AssistantActions({
         label={t("chat.regenerate")}
         disabled={running || regenerating}
         onClick={() => {
-          setRegenerating(true)
-          void regenerateAssistantTurn(message.id).finally(() => setRegenerating(false))
+          // 不是最后一条：先确认后面几轮会删掉（jojo P1）。
+          if (laterTurns > 0) setConfirmOpen(true)
+          else regenerate()
         }}
       >
         <RiRefreshLine className="size-4" />
       </MessageAction>
+      <RegenerateConfirmDialog
+        open={confirmOpen}
+        laterTurns={laterTurns}
+        onConfirm={regenerate}
+        onOpenChange={setConfirmOpen}
+      />
       <CopyMessageButton message={message} prompt={prompt} label={t("chat.copyResponse")} />
       {canForkTurn(message) ? <ForkTurnButton messageId={message.id} /> : null}
       <MessageMoreMenu>

@@ -6,6 +6,7 @@ import { z } from "zod"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
 import { USER_ABORTED_CODE } from "./desktop-notify.ts"
 import { isWriteTypeToolName } from "./tool-names.ts"
+import { isReadOnlyBashTool } from "./bash-read-only.ts"
 
 export const TurnWorkflow = z.enum(["todo", "in_progress", "needs_review"])
 export type TurnWorkflow = z.infer<typeof TurnWorkflow>
@@ -25,6 +26,8 @@ export type TurnToolSnapshot = {
   state?: string
   result?: unknown
   errorText?: string
+  /** bash 用 args.command 判保守只读（luna P3）。 */
+  args?: unknown
 }
 
 export type DecideTurnInput = {
@@ -68,7 +71,8 @@ export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
     aborted: input.ended === "abort" || input.ended === "archive"
   })
   const acted = tools.filter((tool) => tool.state !== "approval-requested" && !isToolNotExecuted(tool))
-  const wrote = acted.some((tool) => isWriteTypeToolName(tool.name))
+  // luna P3：保守只读的 bash（ls / pwd / cat 文件 / git status|diff|log）不算写；认不出照旧算写。
+  const wrote = acted.some((tool) => isWriteTypeToolName(tool.name) && !isReadOnlyBashTool(tool))
   if (input.ended === "archive") {
     return { workflow: wrote ? "needs_review" : "in_progress", attention: "neutral" }
   }

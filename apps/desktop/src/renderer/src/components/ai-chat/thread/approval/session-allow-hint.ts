@@ -30,7 +30,8 @@ export function sessionAllowCardState(
     return { showSession: false, target: "", onceOnly: true, onceKind: "interpreter" }
   }
   if (tool === "bash") {
-    if (text && bashCommandTooLongForSession(text)) {
+    // leo soft 1：与 main（bashAllowCommand 量原始长度）一致，用未 trim 的原文量 4096。
+    if (text && bashCommandTooLongForSession(command)) {
       return { showSession: false, target: "", onceOnly: true, onceKind: "too_long" }
     }
     if (text && bashCommandIsInterpreterStyle(text)) {

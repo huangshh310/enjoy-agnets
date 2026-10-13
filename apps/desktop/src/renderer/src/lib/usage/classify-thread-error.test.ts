@@ -103,3 +103,14 @@ test("ACP 未登录不是可重试供应商错误", () => {
     "resume_fallback"
   )
 })
+
+test("leo soft 2：普通发送遇到 MESSAGE_ID_SESSION_MISMATCH，横幅走人话（中英），不摊机器码", async () => {
+  const { classifyThreadError, humanizeThreadError } = await import("./classify-thread-error.ts")
+  const { zh } = await import("../../i18n/catalogs/zh/index.ts")
+  const { en } = await import("../../i18n/catalogs/en/index.ts")
+  assert.equal(classifyThreadError("MESSAGE_ID_SESSION_MISMATCH"), "message_id_mismatch")
+  const tFor = (catalog: { chat: Record<string, unknown> }) => (path: string) =>
+    String(catalog.chat[path.replace(/^chat\./, "")] ?? path)
+  assert.equal(humanizeThreadError("MESSAGE_ID_SESSION_MISMATCH", tFor(zh)), zh.chat.messageIdSessionMismatch)
+  assert.equal(humanizeThreadError("MESSAGE_ID_SESSION_MISMATCH", tFor(en)), en.chat.messageIdSessionMismatch)
+})

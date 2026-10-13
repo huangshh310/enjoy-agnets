@@ -6,7 +6,7 @@ import { pickHydratedMessages, type AssetBearingMessage } from "./pick-hydrated-
 
 export { pickHydratedMessages }
 
-export type HydrateMessage = AssetBearingMessage & { id?: string }
+export type HydrateMessage = AssetBearingMessage & { id?: string; persistedId?: string }
 
 export function messagesAfterSessionSwitch<T>(input: {
   currentSessionId: string | null
@@ -27,7 +27,11 @@ export function mergeHistoryKeepingOptimistic<T extends HydrateMessage>(
   }
   const dbIds = new Set(dbMessages.map((message) => message.id).filter((id): id is string => Boolean(id)))
   const merged = dbMessages.map((message) => (message.id && liveById.get(message.id)) || message)
-  const extras = liveMessages.filter((message) => !message.id || !dbIds.has(message.id))
+  // leo #147 MF-1：活气泡已绑真 id（persistedId）且库里有这行：库行就是它，不再当乐观多出来一条。
+  const extras = liveMessages.filter(
+    (message) =>
+      (!message.id || !dbIds.has(message.id)) && !(message.persistedId && dbIds.has(message.persistedId))
+  )
   return [...merged, ...extras]
 }
 

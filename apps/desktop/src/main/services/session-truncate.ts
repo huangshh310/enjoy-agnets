@@ -15,6 +15,7 @@ import { advanceSessionAllowWatermark } from "./conversation-session-allow-histo
 import { getDatabase } from "./database.ts"
 import { clearInspectPromptSnapshot } from "./inspect-prompt-snapshot.ts"
 import { persistUserTurn } from "./persist-user-attachments.ts"
+import { recomputeReviewAfterTruncate } from "./review-after-truncate.ts"
 import { clearSessionCompaction } from "./session-compaction-store.ts"
 import type { UserFileAsset } from "./user-attachment-parts.ts"
 
@@ -142,6 +143,12 @@ export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): Sess
     clearConversationSessionAllow(input.sessionId)
     clearInspectPromptSnapshot(input.sessionId)
     void clearSessionCompaction(input.sessionId)
+    try {
+      // luna P2：待验收按剩下的轮次重算（删掉的轮不再挂审查条）。
+      recomputeReviewAfterTruncate(input.sessionId)
+    } catch (error) {
+      console.error("recomputeReviewAfterTruncate failed", input.sessionId, error)
+    }
     console.info("session truncate", {
       sessionId: input.sessionId,
       deleted,
