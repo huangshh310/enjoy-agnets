@@ -166,3 +166,23 @@ test("迁移编号守卫：同号异名抛错（迁移表内 / 库里已记账�
   legacy.prepare("INSERT INTO schema_migrations (version, name, applied_at) VALUES (14, 'cost-missing', 0)").run()
   assert.doesNotThrow(() => assertMigrationIdentity(legacy, MIGRATIONS))
 })
+
+test("leo M1a：图在消息之后才导入（窗口上界）→ 保留", () => {
+  const db = fresh()
+  asset(db, "ast_late", T + 15_000)
+  session(db, "A")
+  msg(db, "mA", "A", T + 15_000)
+  part(db, "pA0", "mA", 0, "file", T + 15_000, "ast_late")
+  session(db, "B")
+  msg(db, "mB", "B", T + 10_000)
+  part(db, "pB0", "mB", 0, "text", T + 10_000)
+  part(db, "pB1", "mB", 1, "file", T + 76_000, "ast_late")
+  assert.equal(quarantineMisbackfilledFileParts(db), 0)
+})
+
+test("leo M1b：v14 记成既非 cost-missing 也非当前名 → 抛错", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db, MIGRATIONS.filter((m) => m.version <= 13))
+  db.prepare("INSERT INTO schema_migrations (version, name, applied_at) VALUES (14, 'mystery-v14', 0)").run()
+  assert.throws(() => applyMigrations(db), /v14 applied as mystery-v14, expected approval-sdk-response/)
+})

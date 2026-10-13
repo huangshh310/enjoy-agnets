@@ -70,3 +70,28 @@ test("leo：去重跳过（同一句刚落过库）也清草稿附件", () => {
   assert.equal(n.n, 1, "第二次被去重跳过")
   assert.equal(loadSessionDraftAssets()[sid], undefined)
 })
+
+test("leo M2：重新生成 / 编辑重发旧图消息，不清草稿里另一张未发的图", async () => {
+  const { persistMessage } = await import("./persist-session.ts")
+  const sid = session("ses_da_regen")
+  const old = { type: "file", assetId: "ast_old", mediaType: "image/png", name: "old.png" } as never
+  const mid = persistMessage(sid, "user", "看旧图", [old])
+  saveSessionDraftAssets(sid, [{ id: "ast_draft", name: "draft.png" }])
+  // 编辑重发：覆盖同一条消息
+  persistMessage(sid, "user", "看旧图（改）", [old], mid)
+  // 重新生成：旧图消息再落一次
+  persistMessage(sid, "user", "看旧图", [old])
+  assert.deepEqual(loadSessionDraftAssets()[sid]?.map((x) => x.id), ["ast_draft"])
+})
+
+test("leo M2：输入框发送只清发出的那几张，草稿里没发的留着", () => {
+  const sid = session("ses_da_partial")
+  saveSessionDraftAssets(sid, [
+    { id: "ast_p1", name: "1.png" },
+    { id: "ast_p2", name: "2.png" }
+  ])
+  persistUserTurn(sid, "发一张", [{ assetId: "ast_p1", mediaType: "image/png", name: "1.png" }])
+  assert.deepEqual(loadSessionDraftAssets()[sid]?.map((x) => x.id), ["ast_p2"])
+  persistUserTurn(sid, "再发一张", [{ assetId: "ast_p2", mediaType: "image/png", name: "2.png" }])
+  assert.equal(loadSessionDraftAssets()[sid], undefined)
+})

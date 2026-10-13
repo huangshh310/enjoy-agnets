@@ -100,7 +100,8 @@ export function persistMessage(
     if (role === "user") {
       clearSentDraftInTx(db, sessionId, content, opts?.draftText)
       // leo：带附件的用户轮——草稿附件与消息同一事务清（强杀不会「消息带图、草稿也还有图」）。
-      if (stored.some((part) => part.type === "file")) clearDraftAssetsInTx(db, sessionId)
+      // 只去掉这条消息里真正发出的 asset（重新生成 / 编辑重发旧图不清草稿里别的图）。
+      clearDraftAssetsInTx(db, sessionId, sentFileAssetIds(stored))
     }
     if (!nested) {
       db.exec("COMMIT;")
@@ -153,4 +154,13 @@ export function renameSession(sessionId: string, title: string) {
     .prepare("UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?")
     .run(next, Date.now(), sessionId)
   return { id: sessionId, title: next }
+}
+
+function sentFileAssetIds(parts: UIMessagePart[]): string[] {
+  const ids: string[] = []
+  for (const part of parts) {
+    const record = part as unknown as Record<string, unknown>
+    if (record.type === "file" && typeof record.assetId === "string") ids.push(record.assetId)
+  }
+  return ids
 }

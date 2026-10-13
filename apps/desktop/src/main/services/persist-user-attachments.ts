@@ -20,7 +20,7 @@ export function persistUserTurn(
   const last = lastUserTurn(sessionId)
   if (shouldSkipDuplicateUserTurn(last, content, Date.now())) {
     // 去重跳过也算这句已在库：照样清掉已发出的稿（正文 + 附件，同一事务）。
-    clearSentDraftOnDedupe(sessionId, content, attached.length > 0, opts)
+    clearSentDraftOnDedupe(sessionId, content, attached.map((a) => a.assetId), opts)
     return
   }
   const parts = userTurnParts(content, attached) as UIMessagePart[]
@@ -31,7 +31,7 @@ export function persistUserTurn(
 function clearSentDraftOnDedupe(
   sessionId: string,
   content: string,
-  hadAssets: boolean,
+  sentAssetIds: string[],
   opts?: { inTransaction?: boolean; draftText?: string }
 ): void {
   const db = getDatabase()
@@ -39,7 +39,7 @@ function clearSentDraftOnDedupe(
   if (!nested) db.exec("BEGIN IMMEDIATE;")
   try {
     clearSentDraftInTx(db, sessionId, content, opts?.draftText)
-    if (hadAssets) clearDraftAssetsInTx(db, sessionId)
+    clearDraftAssetsInTx(db, sessionId, sentAssetIds)
     if (!nested) db.exec("COMMIT;")
   } catch (err) {
     if (!nested) db.exec("ROLLBACK;")

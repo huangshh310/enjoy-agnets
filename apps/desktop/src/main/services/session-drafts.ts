@@ -114,8 +114,34 @@ export function loadSessionDraftAssets(): Record<string, DraftAsset[]> {
   }
 }
 
-/** 发送带附件的用户轮时（同一事务）清掉本会话草稿附件。 */
-export function clearDraftAssetsInTx(db: Db, sessionId: string): void {
+/**
+ * 发送带附件的用户轮时（同一事务）从本会话草稿附件里去掉**这次发出的那几个** asset——
+ * 与 clearSentDraftInTx 一致：只清确实发出去的。重新生成 / 编辑重发旧图消息时，草稿里别的图不受影响。
+ */
+export function clearDraftAssetsInTx(db: Db, sessionId: string, sentAssetIds: string[]): void {
+  if (sentAssetIds.length === 0) return
   ensureAssetTable(db)
-  db.prepare("DELETE FROM session_draft_assets WHERE session_id = ?").run(sessionId)
+  const row = db.prepare("SELECT assets_json as json FROM session_draft_assets WHERE session_id = ?").get(sessionId) as
+    | { json: string }
+    | undefined
+  if (!row) return
+  let list: DraftAsset[] = []
+  try {
+    const parsed = JSON.parse(row.json) as unknown
+    if (Array.isArray(parsed)) list = parsed as DraftAsset[]
+  } catch {
+    list = []
+  }
+  const sent = new Set(sentAssetIds)
+  const rest = list.filter((a) => a && typeof a.id === "string" && !sent.has(a.id))
+  if (rest.length === list.length && list.length > 0) return
+  if (rest.length === 0) {
+    db.prepare("DELETE FROM session_draft_assets WHERE session_id = ?").run(sessionId)
+  } else {
+    db.prepare("UPDATE session_draft_assets SET assets_json = ?, updated_at = ? WHERE session_id = ?").run(
+      JSON.stringify(rest),
+      Date.now(),
+      sessionId
+    )
+  }
 }
