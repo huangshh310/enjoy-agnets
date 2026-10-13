@@ -62,3 +62,60 @@ export function clearSentDraftInTx(db: Db, sessionId: string, sentContent: strin
     db.prepare("DELETE FROM session_drafts WHERE session_id = ?").run(sessionId)
   }
 }
+
+/**
+ * jojo P1：草稿附件也落库（只粘了图、没打字的新会话不是空壳）。按会话键，绝不挂到别的会话。
+ * 只存元数据（id / name / mediaType / size），图本体在资产库。
+ */
+export type DraftAsset = { id: string; name: string; mediaType?: string; size?: number }
+
+function ensureAssetTable(db: Db): void {
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS session_draft_assets (session_id TEXT PRIMARY KEY, assets_json TEXT NOT NULL, updated_at INTEGER NOT NULL)"
+  )
+}
+
+export function saveSessionDraftAssets(sessionId: string, assets: DraftAsset[]): void {
+  if (!sessionId) return
+  const db = getDatabase()
+  ensureAssetTable(db)
+  const clean = assets
+    .filter((a) => a && typeof a.id === "string" && a.id)
+    .map((a) => ({ id: a.id, name: String(a.name ?? ""), mediaType: a.mediaType, size: a.size }))
+  if (clean.length > 0) {
+    db.prepare(
+      "INSERT INTO session_draft_assets (session_id, assets_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET assets_json = excluded.assets_json, updated_at = excluded.updated_at"
+    ).run(sessionId, JSON.stringify(clean), Date.now())
+  } else {
+    db.prepare("DELETE FROM session_draft_assets WHERE session_id = ?").run(sessionId)
+  }
+}
+
+export function loadSessionDraftAssets(): Record<string, DraftAsset[]> {
+  try {
+    const db = getDatabase()
+    ensureAssetTable(db)
+    const rows = db.prepare("SELECT session_id as sessionId, assets_json as json FROM session_draft_assets").all() as Array<{
+      sessionId: string
+      json: string
+    }>
+    const out: Record<string, DraftAsset[]> = {}
+    for (const row of rows) {
+      try {
+        const list = JSON.parse(row.json) as DraftAsset[]
+        if (Array.isArray(list) && list.length > 0) out[row.sessionId] = list
+      } catch {
+        // 坏行跳过
+      }
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/** 发送带附件的用户轮时（同一事务）清掉本会话草稿附件。 */
+export function clearDraftAssetsInTx(db: Db, sessionId: string): void {
+  ensureAssetTable(db)
+  db.prepare("DELETE FROM session_draft_assets WHERE session_id = ?").run(sessionId)
+}

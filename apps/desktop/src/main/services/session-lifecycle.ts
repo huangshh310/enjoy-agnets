@@ -90,11 +90,20 @@ function sessionHasDraft(db: ReturnType<typeof getDatabase>, sessionId: string):
     const row = db.prepare("SELECT text FROM session_drafts WHERE session_id = ?").get(sessionId) as
       | { text: string }
       | undefined
-    return Boolean(row?.text?.trim())
+    if (row?.text?.trim()) return true
   } catch (error) {
     // leo BLOCK ④：只有「表还没建」才算没草稿；其它错误一律当有稿，宁可不删。
-    if (isNoSuchTable(error)) return false
-    return true
+    if (!isNoSuchTable(error)) return true
+  }
+  return sessionHasDraftAssets(db, sessionId)
+}
+
+/** jojo P1：只粘了图（草稿附件）也不是空壳。 */
+function sessionHasDraftAssets(db: ReturnType<typeof getDatabase>, sessionId: string): boolean {
+  try {
+    return Boolean(db.prepare("SELECT 1 FROM session_draft_assets WHERE session_id = ?").get(sessionId))
+  } catch (error) {
+    return !isNoSuchTable(error)
   }
 }
 
@@ -108,6 +117,7 @@ export const SESSION_KEYED_DELETES = [
   "DELETE FROM run_start_dirty WHERE session_id = ?",
   "DELETE FROM session_heartbeats WHERE session_id = ?",
   "DELETE FROM session_drafts WHERE session_id = ?",
+  "DELETE FROM session_draft_assets WHERE session_id = ?",
   "DELETE FROM session_error_dismissed WHERE session_id = ?"
 ] as const
 

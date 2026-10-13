@@ -47,7 +47,13 @@ import { truncateSessionFrom } from "./services/session-truncate"
 import { forkSession } from "./services/session-fork"
 import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
 import { delaySessionCreateIfDev } from "./services/delay-session-create"
-import { loadSessionDrafts, saveSessionDraft } from "./services/session-drafts"
+import {
+  loadSessionDraftAssets,
+  loadSessionDrafts,
+  saveSessionDraft,
+  saveSessionDraftAssets,
+  type DraftAsset
+} from "./services/session-drafts"
 import { z } from "zod"
 import { handleDismissError } from "./services/session-dismiss-error-ipc"
 import { isE2eStub } from "./services/e2e-stub-gate"
@@ -204,6 +210,20 @@ function registerSessionForkIpc() {
 function registerSessionDraftIpc() {
   ipcMain.removeAllListeners("session.drafts.loadSync")
   ipcMain.removeAllListeners("session.drafts.save")
+  ipcMain.removeAllListeners("session.drafts.loadAssetsSync")
+  ipcMain.removeAllListeners("session.drafts.saveAssets")
+  ipcMain.on("session.drafts.loadAssetsSync", (event) => {
+    event.returnValue = loadSessionDraftAssets()
+  })
+  ipcMain.on("session.drafts.saveAssets", (_event, raw: unknown) => {
+    const input = (raw ?? {}) as { sessionId?: unknown; assets?: unknown }
+    if (typeof input.sessionId !== "string" || !Array.isArray(input.assets)) return
+    try {
+      saveSessionDraftAssets(input.sessionId, input.assets as DraftAsset[])
+    } catch {
+      // 落盘失败只丢持久化
+    }
+  })
   ipcMain.on("session.drafts.loadSync", (event) => {
     event.returnValue = loadSessionDrafts()
   })

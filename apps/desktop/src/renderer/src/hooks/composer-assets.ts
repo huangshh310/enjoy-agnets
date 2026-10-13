@@ -10,6 +10,13 @@ export type QueuedComposerAsset = {
 }
 
 let pending: QueuedComposerAsset[] = []
+/**
+ * jojo P1：用户亲手加 / 删附件时落库到**当前会话**草稿（切会话 / 新建时的整体替换不走这里，避免写错会话）。
+ */
+let persistUserEdit: ((items: QueuedComposerAsset[]) => void) | null = null
+export function setComposerAssetPersister(fn: ((items: QueuedComposerAsset[]) => void) | null): void {
+  persistUserEdit = fn
+}
 const listeners = new Set<(items: QueuedComposerAsset[]) => void>()
 
 function notify() {
@@ -36,6 +43,7 @@ export function queueComposerAsset(
     })
   }
   notify()
+  persistUserEdit?.([...pending])
 }
 
 export function removeComposerAsset(id: string) {
@@ -49,6 +57,7 @@ export function removeComposerAsset(id: string) {
   }
   pending = pending.filter((item) => item.id !== id)
   notify()
+  persistUserEdit?.([...pending])
 }
 export function clearComposerAssets() {
   for (const item of pending) {
