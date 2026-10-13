@@ -22,6 +22,7 @@ import {
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { readComposerDomText } from "../composer-dom"
+import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
 import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
@@ -184,15 +185,21 @@ export async function sendComposerMessage(
     }
     traceSend("send:payload", { content: payload?.content.length ?? -1, typed: payload?.typed.length ?? -1 })
     if (!payload) {
-      // leo #145：空稿也可能来自已作废的 A——别清 B 的 running。
-      if (sendAttemptCancelled(attempt)) return dropLateCancelledSend(store, runningToken)
+      // 已作废的空稿不会走到这里：resolveSendPayload 先判作废（返回 "cancelled"）再判空，
+      // 上面的 cancelled 分支已拦下（resolve-send-payload.test 锁住这个顺序）。
       store.setRunning(false)
       store.setPreparingHint(false)
       return
     }
+    // leo M1：建会话窗排队首发在入队时已清过输入框——现在框里是后打的 B，不能按 A 去截 / 清
+    // （appendUserMessage 会清 store.composer，这里原样放回）。
+    const laterTyped = prepared?.sessionId ? useChatStore.getState().composer : null
     const messages = beginOptimisticTurn(store, payload)
     optimisticContent = payload.content
-    clearSentComposerText(payload.typed)
+    if (laterTyped !== null) {
+      if (useChatStore.getState().composer !== laterTyped) useChatStore.getState().setComposer(laterTyped)
+      setComposerWritebackHeld(false)
+    } else clearSentComposerText(payload.typed)
     await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
@@ -225,7 +232,9 @@ function armComposerWatchdog(typed: string): SendAttempt {
     // 只认这次 Enter 之后新冒出来的提示，Enter 前就挂着的旧条不算。
     noticeShown: () => {
       const state = useChatStore.getState()
-      return Boolean((state.error && state.error !== before.error) || (state.notice && state.notice !== before.notice))
+      // leo M2：「上一条还在准备」是给后一发 B 的，不是这次 A 的结局；不能让 A 的看门狗收手。
+      const ownError = state.error && state.error !== before.error && state.error !== PREVIOUS_STILL_PREPARING
+      return Boolean(ownError || (state.notice && state.notice !== before.notice))
     },
     createPending: () => isNewSessionCreatePending(),
     otherRunActive: () => Boolean(useChatStore.getState().runId),

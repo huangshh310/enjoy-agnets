@@ -110,6 +110,8 @@ async function seedUsedSession(window: Page, userData: string, text = "seed used
 
 test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B 留稿提示，不合并不自动发不重复", async () => {
   test.setTimeout(240_000)
+  // leo soft：CI 里缺构建产物必须挂，不能静默跳过（e2e-window 先 build 再跑 playwright）。
+  if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js：build 步骤没产出").toBe(true)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const boot = freshEnv({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "4000" })
   const { app, window } = await launch(boot.env)

@@ -2,6 +2,7 @@
 export {
   PREVIOUS_STILL_PREPARING,
   SEND_FAILED_RESTORE,
+  SEND_FAILED_RESTORE_MERGED,
   SESSION_CREATE_TIMEOUT,
   SESSION_NOT_READY
 } from "../lib/usage/classify-thread-error"

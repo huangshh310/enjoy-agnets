@@ -16,7 +16,12 @@ import {
   shouldQueueComposerSend,
   waitForNewSessionCreate
 } from "./new-session-create"
-import { SEND_FAILED_RESTORE, SESSION_CREATE_TIMEOUT, SESSION_NOT_READY } from "./queue-composer-send-copy"
+import {
+  SEND_FAILED_RESTORE,
+  SEND_FAILED_RESTORE_MERGED,
+  SESSION_CREATE_TIMEOUT,
+  SESSION_NOT_READY
+} from "./queue-composer-send-copy"
 
 export {
   PREVIOUS_STILL_PREPARING,
@@ -103,8 +108,16 @@ export function restoreComposerAfterFailedSend(
 ): void {
   const store = useChatStore.getState()
   store.setRunning(false)
+  const before = store.composer
   restoreComposerDraft(text, assets)
-  store.setError(reason)
+  // leo soft：还回的字和输入框里后打的字拼成了两条——提示说清，Enter 会合成一条发出。
+  const merged = reason === SEND_FAILED_RESTORE && isTwoMessageMerge(text, before)
+  store.setError(merged ? SEND_FAILED_RESTORE_MERGED : reason)
+}
+
+function isTwoMessageMerge(restored: string, current: string): boolean {
+  if (!restored.trim() || !current.trim()) return false
+  return mergeComposerText(restored, current) === `${current}\n${restored}`
 }
 
 export function sendFailureCopy(error: unknown): string {
