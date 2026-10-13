@@ -51,9 +51,9 @@ test("最近失败 run 的 error 可读回；回挂码跳过", () => {
   // updateRun 会 bump updated_at，保证「新」排在前。
   updateRun(db, "run_err_new", { error: "boom now" })
   assert.equal(sessionLastError(sid)?.message, "boom now")
-  // 回挂码那条不算一轮：往回看到的上一轮就是失败的。
+  // host：最近一轮是回挂 / 续跑码 → 交给中断提示，不回退到更早的失败。
   updateRun(db, "run_err_new", { error: "restore_interrupted_running" })
-  assert.equal(sessionLastError(sid)?.message, "old boom")
+  assert.equal(sessionLastError(sid), null)
 })
 
 function run(sid: string, id: string, status: "failed" | "completed", error: string | null, at: number) {

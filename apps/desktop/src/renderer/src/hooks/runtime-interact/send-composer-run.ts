@@ -340,7 +340,8 @@ async function launchComposerRun(
       messages,
       payload.assetIds,
       payload.executePlan,
-      payload.computerUseOnce
+      payload.computerUseOnce,
+      payload.typed
     )
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
@@ -412,7 +413,8 @@ async function startComposerRun(
   messages: ChatState["messages"],
   assetIds: string[],
   executePlan?: boolean,
-  computerUseOnce?: boolean
+  computerUseOnce?: boolean,
+  draftText?: string
 ) {
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -438,7 +440,9 @@ async function startComposerRun(
       modelId: store.modelId,
       prompt: content,
       messages: outgoingMessages,
-      attachments: assetIds
+      attachments: assetIds,
+      // leo：生图没有 userMessageId；main 落 prompt 时按输入框原文同事务清稿。
+      ...(draftText?.trim() ? { draftText } : {})
     })
   }
   const desktopBias = await desktopBiasForRun(content)

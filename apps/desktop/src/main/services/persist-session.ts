@@ -61,7 +61,7 @@ export function persistMessage(
   content: string,
   parts?: UIMessagePart[],
   messageId?: string,
-  opts?: { inTransaction?: boolean }
+  opts?: { inTransaction?: boolean; draftText?: string }
 ): string {
   const now = Date.now()
   const db = getDatabase()
@@ -97,7 +97,7 @@ export function persistMessage(
     )
     db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
     // jojo P2：用户消息落库与清掉已发出的草稿同一事务，强杀后不会「消息在、稿也在」。
-    if (role === "user") clearSentDraftInTx(db, sessionId, content)
+    if (role === "user") clearSentDraftInTx(db, sessionId, content, opts?.draftText)
     if (!nested) {
       db.exec("COMMIT;")
       advanceSessionAllowWatermark(sessionId)

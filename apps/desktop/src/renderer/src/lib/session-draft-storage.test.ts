@@ -191,3 +191,10 @@ test("leo：交接返回但 main 没确认落库（无 userMessageId）→ 强�
     resetPersistedDraftCacheForTest()
   }
 })
+
+test("接线：生图发送把输入框原文交给 main（draftText），落 prompt 同事务清稿", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("../hooks/runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
+  assert.match(src, /payload\.computerUseOnce,\s*payload\.typed\s*\)/)
+  assert.match(src, /\.\.\.\(draftText\?\.trim\(\) \? \{ draftText \} : \{\}\)/)
+})

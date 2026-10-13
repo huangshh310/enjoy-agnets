@@ -1,6 +1,6 @@
 /**
  * jojo P1 / leo：会话「当前」的失败红卡。
- * 只看最近一条 agent run（回挂 / 补跑超时这类恢复码不算一轮）；它不是 failed 就没卡——
+ * 只看最近一条 agent run（补跑超时码不算一轮；回挂 / 续跑码那轮 → 无卡，交给中断提示）；它不是 failed 就没卡——
  * 「失败 → 成功 → 重启」不会翻出旧卡。用户关掉的卡按 runId 落水位，重启不再还原；归档会话不出卡。
  */
 import { listRuns } from "@enjoy-agents/db"
@@ -60,9 +60,11 @@ export function sessionLastError(sessionId: string): SessionLastError | null {
     const runs = listRuns(db, { sessionId, kind: "agent" })
     const latest = runs.find((run) => {
       const err = typeof run.error === "string" ? run.error.trim() : ""
-      return !(err && (isRestoreFamilyCode(err) || err === CATCH_UP_APPROVAL_TIMEOUT))
+      return err !== CATCH_UP_APPROVAL_TIMEOUT
     })
     if (!latest || latest.status !== "failed") return null
+    // host：最近一轮是强杀回挂 / 续跑码 → 中断提示负责，不往回翻旧的失败。
+    if (typeof latest.error === "string" && isRestoreFamilyCode(latest.error.trim())) return null
     const message = redactRunError(typeof latest.error === "string" ? latest.error : "")
     if (!message) return null
     ensureDismissTable(db)

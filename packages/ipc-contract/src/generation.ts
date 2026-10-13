@@ -50,7 +50,9 @@ export const GenerationRequest = z
     timeoutMs: z.number().int().positive().optional(),
     telemetryPolicy: TelemetryPolicy.optional(),
     runtimeContext: z.record(z.string(), z.unknown()).optional(),
-    experimental: z.boolean().optional()
+    experimental: z.boolean().optional(),
+    /** 输入框原文：main 落用户句时按完全相同清会话草稿（发出的 prompt 可能带前缀）。 */
+    draftText: z.string().max(200_000).optional()
   })
   .strict()
   .refine((request) => request.kind !== "agent" || Boolean(request.workspaceId?.trim()), {

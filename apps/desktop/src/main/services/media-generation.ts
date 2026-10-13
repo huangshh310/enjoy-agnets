@@ -38,11 +38,12 @@ export async function runMediaKind(options: {
   attachments: string[]
   config: ProviderConfig
   persistChat?: boolean
+  draftText?: string
   abortSignal?: AbortSignal
 }): Promise<void> {
   const { window, runId, sessionId, kind, prompt, config, persistChat } = options
   if (persistChat && prompt?.trim()) {
-    persistMediaUserPrompt(sessionId, prompt, options.attachments)
+    persistMediaUserPrompt(sessionId, prompt, options.attachments, options.draftText)
   }
   if (kind === "realtime-session") {
     stampAndSend(

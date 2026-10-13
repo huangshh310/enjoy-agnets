@@ -52,12 +52,13 @@ export function draftWasSent(draft: string, sentContent: string): boolean {
 }
 
 /** 在 persistMessage 的事务里调用：用户消息落库的同一步清掉已发出的稿。 */
-export function clearSentDraftInTx(db: Db, sessionId: string, sentContent: string): void {
+export function clearSentDraftInTx(db: Db, sessionId: string, sentContent: string, draftText?: string): void {
   ensureTable(db)
   const row = db.prepare("SELECT text FROM session_drafts WHERE session_id = ?").get(sessionId) as
     | { text: string }
     | undefined
-  if (row && draftWasSent(row.text, sentContent)) {
+  // draftText：renderer 交来的输入框原文（发出的 content 可能垫了前缀），同样只认完全相同。
+  if (row && (draftWasSent(row.text, sentContent) || (draftText !== undefined && draftWasSent(row.text, draftText)))) {
     db.prepare("DELETE FROM session_drafts WHERE session_id = ?").run(sessionId)
   }
 }

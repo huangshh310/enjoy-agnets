@@ -28,7 +28,7 @@ function bridge(path: string): unknown {
 ;(globalThis as { window?: unknown }).window = { ide: bridge("") }
 
 const { useChatStore } = await import("../../renderer/src/stores/chat-store.ts")
-const { regenerateUserTurn, editAndResendUserTurn } = await import("../../renderer/src/hooks/regenerate-turn.ts")
+const { regenerateUserTurn, editAndResendUserTurn, retryFailedUserTurn } = await import("../../renderer/src/hooks/regenerate-turn.ts")
 
 function seed(sid: string, content: string) {
   const db = getDatabase()
@@ -103,6 +103,30 @@ test("接线：红卡没有助手回复时走 regenerateUserTurn，不经输入�
     new URL("../../renderer/src/components/ai-chat/thread/thread-error-banner.tsx", import.meta.url),
     "utf8"
   )
-  assert.match(src, /else if \(lastUser\) \{[\s\S]*?void regenerateUserTurn\(lastUser\.id\)/)
+  // leo：这一支不先 setError(null)——真起跑时 regenerate 自己收卡。
+  assert.match(src, /\} else if \(lastUser\) \{\s*void retryFailedUserTurn\(lastUser\)\s*\}/)
   assert.doesNotMatch(src, /setComposer\(lastUser\.content\)/)
+})
+
+test("leo：重新生成静默没起跑 → 红卡留着、原话放回输入框，不自动发", async () => {
+  const sid = "ses_regen_dup_c"
+  seed(sid, "原来的话")
+  useChatStore.setState({ composer: "" } as never)
+  useChatStore.getState().setError("boom")
+  runs.length = 0
+  assert.equal(await retryFailedUserTurn({ id: "u_missing", content: "原来的话" }), false)
+  assert.equal(await retryFailedUserTurn({ content: "原来的话" }), false)
+  assert.equal(runs.length, 0)
+  assert.equal(useChatStore.getState().error, "boom")
+  assert.equal(useChatStore.getState().composer, "原来的话")
+})
+
+test("leo：真起跑才收红卡", async () => {
+  const sid = "ses_regen_dup_d"
+  seed(sid, "再试")
+  useChatStore.getState().setError("boom")
+  runs.length = 0
+  assert.equal(await retryFailedUserTurn({ id: `u_${sid}`, content: "再试" }), true)
+  assert.equal(runs.length, 1)
+  assert.equal(useChatStore.getState().error, null)
 })

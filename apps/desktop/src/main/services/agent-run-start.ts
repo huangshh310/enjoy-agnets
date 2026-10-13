@@ -194,7 +194,11 @@ async function beginAgentRun(
   }
   if (input.commandId && !options.runId) {
     const existing = peekCommandReceipt(input.commandId)
-    if (existing) return { ok: true, runId: existing }
+    if (existing) {
+      return existing.userMessageId
+        ? { ok: true, runId: existing.runId, userMessageId: existing.userMessageId }
+        : { ok: true, runId: existing.runId }
+    }
   }
   const runId = options.runId ?? createId("run")
   applyAgentRunSessionAllowReset({
@@ -251,7 +255,7 @@ async function beginAgentRun(
     const run = getActiveRun(runId)
     if (run) run.reaskReason = "restore"
   }
-  if (input.commandId) rememberCommandReceipt(input.commandId, runId)
+  if (input.commandId) rememberCommandReceipt(input.commandId, runId, userMessageId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }

@@ -27,6 +27,6 @@ test("leo：userMessageId 只在返回前同步落库用户句后才回（render
   const assign = src.indexOf("userMessageId = persistOutgoingUser(input, options.persistUser)")
   const ret = src.indexOf("return userMessageId ? { ok: true, runId, userMessageId } : { ok: true, runId }")
   assert.ok(hold > 0 && assign > hold && ret > assign)
-  // 回执去重的旧 runId 不带 userMessageId（不保证这次落库）。
-  assert.match(src, /if \(existing\) return \{ ok: true, runId: existing \}/)
+  // 回执去重：带回第一次落库的 userMessageId（leo），没落库就不带。
+  assert.match(src, /runId: existing\.runId, userMessageId: existing\.userMessageId/)
 })

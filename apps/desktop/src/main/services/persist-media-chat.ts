@@ -9,9 +9,11 @@ import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
 export function persistMediaUserPrompt(
   sessionId: string,
   prompt: string,
-  attachmentIds: string[]
+  attachmentIds: string[],
+  draftText?: string
 ) {
-  persistUserTurn(sessionId, prompt, metasFromAssetIds(attachmentIds))
+  // leo：生图没有 userMessageId 回执——落库同事务按完全相同清稿（content 或输入框原文）。
+  persistUserTurn(sessionId, prompt, metasFromAssetIds(attachmentIds), undefined, draftText === undefined ? undefined : { draftText })
 }
 
 export function persistMediaAssistantAsset(

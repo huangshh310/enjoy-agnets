@@ -56,3 +56,36 @@ test("draftWasSent：空稿不算", () => {
   assert.equal(draftWasSent("a", "b"), false)
   assert.equal(draftWasSent("a", "xa"), false)
 })
+
+test("leo：生图（ai.generate）落 prompt 时同事务清稿——prompt 带前缀也按输入框原文完全相同清；重启读 DB 不再冒出", async () => {
+  const { persistMediaUserPrompt } = await import("./persist-media-chat.ts")
+  const sid = session("media")
+  saveSessionDraft(sid, "画一只猫")
+  persistMediaUserPrompt(sid, "[style: watercolor]\n画一只猫", [], "画一只猫")
+  assert.equal(loadSessionDrafts()[sid], undefined)
+  // 输入框原文对不上：不误删。
+  const other = session("media_other")
+  saveSessionDraft(other, "画一只狗")
+  persistMediaUserPrompt(other, "画一只猫", [], "画一只猫")
+  assert.equal(loadSessionDrafts()[other], "画一只狗")
+})
+
+test("leo：重复用户句被时间窗去重跳过时，也照样清掉已发出的稿", async () => {
+  const { persistUserTurn } = await import("./persist-user-attachments.ts")
+  const sid = session("dedupe")
+  persistUserTurn(sid, "再来一次", [])
+  saveSessionDraft(sid, "再来一次")
+  persistUserTurn(sid, "再来一次", [])
+  assert.equal(loadSessionDrafts()[sid], undefined)
+})
+
+test("leo：重复 commandId 回执带回第一次落库的 userMessageId（renderer 据此补清 main 的稿）", async () => {
+  const { peekCommandReceipt, rememberCommandReceipt, resetCommandReceipts } = await import("./command-receipts.ts")
+  resetCommandReceipts()
+  rememberCommandReceipt("cmd_1", "run_1", "msg_u1")
+  assert.deepEqual(peekCommandReceipt("cmd_1"), { runId: "run_1", userMessageId: "msg_u1" })
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("./agent-run-start.ts", import.meta.url), "utf8")
+  assert.match(src, /runId: existing\.runId, userMessageId: existing\.userMessageId/)
+  assert.match(src, /rememberCommandReceipt\(input\.commandId, runId, userMessageId\)/)
+})
