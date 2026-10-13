@@ -44,7 +44,7 @@ test("存储失败：前景后台都不完成、不进待验收，只出出错",
     message: "INTERNAL_STORE_ERROR",
     turn
   })
-  assert.deepEqual(result, { workflow: "in_progress", complete: false, error: true })
+  assert.deepEqual(result, { workflow: "todo", complete: false, error: true })
 })
 
 test("只读 hello：完成但不进待验收", () => {

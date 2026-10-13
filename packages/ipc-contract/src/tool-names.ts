@@ -82,6 +82,7 @@ const READ_ONLY_TYPE_LEAVES = new Set([
   "read_file",
   "read",
   "list_dir",
+  "ls",
   "list",
   "desktop_list_apps",
   "glob",

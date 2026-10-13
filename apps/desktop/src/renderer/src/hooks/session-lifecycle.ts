@@ -21,6 +21,7 @@ import { useChatStore } from "../stores/chat-store"
 import { applyHydratedLivePending } from "./hydrate-live-pending-approval"
 import { keepRestoreFamilyNotice } from "./hydrate-restart-notice"
 import { applySessionHydrate } from "./session-hydrate"
+import { restoreSessionErrorFromDb } from "./hydrate-session-error"
 import { bumpSessionHydrateGeneration } from "./session-hydrate-generation"
 import { messagesAfterSessionSwitch } from "./session-hydrate-finish"
 import { composerModelPatch } from "../lib/session-model.ts"
@@ -131,6 +132,11 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     sessionRunning
   })
   await applyHydratedLivePending(sessionId)
+  // jojo P1：库里有失败 run → 红卡 + 重试；活泵在跑不盖。
+  await restoreSessionErrorFromDb(sessionId, {
+    running: sessionRunning,
+    messages: useChatStore.getState().messages
+  })
   useAttentionStore.getState().clearCompleteIfErrored(sessionId)
   queueComposerFocus()
 }
@@ -150,7 +156,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
   saveCurrentSessionDraft()
   bumpSessionHydrateGeneration()
   detachForegroundForCreate()
-  useChatStore.setState({ preparingHint: true })
+  useChatStore.getState().setPreparingHint(true, null)
   try {
     const session = (await getIde().session.create({
       workspaceId,
@@ -188,7 +194,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
     failNewSessionCreate(token, error)
     throw error
   } finally {
-    useChatStore.setState({ preparingHint: false })
+    useChatStore.getState().setPreparingHint(false)
     focusComposerAfterNewSession()
   }
 }

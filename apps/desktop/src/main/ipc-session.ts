@@ -46,6 +46,7 @@ import { forkSession } from "./services/session-fork"
 import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
 import { delaySessionCreateIfDev } from "./services/delay-session-create"
 import { loadSessionDrafts, saveSessionDraft } from "./services/session-drafts"
+import { sessionLastError } from "./services/session-last-error"
 
 export const SESSION_CHANNELS = [
   "session.list",
@@ -67,7 +68,8 @@ export const SESSION_CHANNELS = [
   "session.heartbeat.get",
   "session.heartbeat.put",
   "session.heartbeat.clear",
-  "session.estimatedCost"
+  "session.estimatedCost",
+  "session.lastError"
 ] as const
 
 export function registerSessionIpc() {
@@ -79,6 +81,13 @@ export function registerSessionIpc() {
 }
 
 function registerSessionCatalogIpc() {
+  ipcMain.handle("session.lastError", (_event, raw) => {
+    const sessionId =
+      typeof (raw as { sessionId?: unknown })?.sessionId === "string"
+        ? (raw as { sessionId: string }).sessionId
+        : ""
+    return sessionLastError(sessionId)
+  })
   ipcMain.handle("session.list", async (_event, raw) =>
     listSessions(WorkspaceIdInput.parse(raw).workspaceId)
   )

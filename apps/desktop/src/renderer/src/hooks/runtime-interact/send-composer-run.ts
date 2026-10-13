@@ -155,7 +155,7 @@ export async function sendComposerMessage(
     return
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")
-  if (firstTurn) store.setPreparingHint(true)
+  if (firstTurn) store.setPreparingHint(true, prepared?.sessionId ?? store.sessionId)
   // running 归属：迟到作废时只放掉自己占的。
   const runningToken: object = attempt ?? {}
   claimComposerRunning(runningToken)

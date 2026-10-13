@@ -85,6 +85,50 @@ test("强杀 + 非 git 目录：未确认，照旧待验收", () => {
   assert.equal(killedWriteRun("nogit", mkdtempSync(join(tmpdir(), "enjoy-int-nogit-"))), "needs_review")
 })
 
+test("luna：强杀只读 bash ls / list_dir → 不进待验收（与写盘强杀语义对齐）", () => {
+  const root = gitRepo(false)
+  // 覆盖默认 write_file：改成 bash ls
+  const sid = (() => {
+    resetInterruptedRunningForTest()
+    const sessionId = "ses_int_git_readonly_ls"
+    const workspaceId = "ws_int_git_readonly_ls"
+    const runId = "run_int_git_readonly_ls"
+    const db = getDatabase()
+    db.prepare(
+      "INSERT OR IGNORE INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run(workspaceId, "ws", root, 1, 1)
+    db.prepare(
+      "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run(sessionId, workspaceId, "killed", 1, 1)
+    persistMessage(sessionId, "user", "list files")
+    persistMessage(
+      sessionId,
+      "assistant",
+      serializeAssistantPayload({
+        content: "",
+        runId,
+        tools: [{ id: "t1", name: "bash", state: "input-available", args: { command: "ls" }, result: { decision: "allow" } }]
+      })
+    )
+    insertRun(db, {
+      id: runId,
+      sessionId,
+      workspaceId,
+      kind: "agent",
+      status: "running",
+      modelId: "m",
+      providerId: null,
+      checkpoint: null,
+      error: null
+    })
+    recordRunStartHead(runId, sessionId)
+    queueInterruptedRunningSettle(getRun(db, runId)!)
+    const row = db.prepare("SELECT workflow_status as w FROM sessions WHERE id = ?").get(sessionId) as { w: string | null }
+    return row.w ?? ""
+  })()
+  assert.equal(sid, "in_progress")
+})
+
 test("leo：强杀 + 干净但这轮已 commit（HEAD 变了）：照旧待验收", () => {
   const root = gitRepo(false)
   const afterStart = () => {
@@ -112,3 +156,4 @@ test("leo：强杀 + 干净但写到工作区外：照旧待验收", () => {
   assert.equal(writeTargetVerdict(root, "a.txt"), "visible")
   assert.equal(killedWriteRun("outside_abs", gitRepo(false), { target: "/tmp/elsewhere.txt" }), "needs_review")
 })
+
