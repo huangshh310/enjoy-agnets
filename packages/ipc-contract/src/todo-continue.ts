@@ -1,5 +1,5 @@
 /**
- * 续跑未完成 Todo 的提示句。主进程落库与渲染 Dock 必须认同一套前缀。
+ * 续跑未完成 Todo 的提示句。主进程落库与渲染 Dock 必须认同一套整句。
  */
 export const TODO_CONTINUE_PROMPT =
   "继续完成未完成的内容。Continue the in_progress Todo List item with write_file / edit_file; do not stop at a written plan."
@@ -9,8 +9,7 @@ export const TODO_CONTINUE_PROMPT =
  */
 const TODO_CONTINUE_MARKERS = [
   TODO_CONTINUE_PROMPT,
-  "继续完成 Todo List 里未完成的项。直接改文件，不要再只写计划。",
-  "The Todo List still has unfinished items."
+  "继续完成 Todo List 里未完成的项。直接改文件，不要再只写计划。"
 ]
 
 /** ACP 发送口会垫宿主模式围栏（`[Enjoy host mode: …]…[/Enjoy host mode]`），认续跑句前先剥掉。 */
@@ -23,5 +22,6 @@ export function stripHostModeFenceForMatch(content: string): string {
 export function isTodoContinueUserMessage(content: string | undefined): boolean {
   const text = stripHostModeFenceForMatch(content ?? "")
   if (!text) return false
-  return TODO_CONTINUE_MARKERS.some((marker) => text.startsWith(marker) || text === marker)
+  // leo #148 三轮：剥围栏后**整句等于**某条内部提示才算；不认前缀（用户贴提示再加话必须当普通句）。
+  return TODO_CONTINUE_MARKERS.some((marker) => text === marker)
 }

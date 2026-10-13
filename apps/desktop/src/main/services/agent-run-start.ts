@@ -29,7 +29,7 @@ import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-c
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
-import { isInternalTodoContinueTurn, shouldPersistOutgoingUser } from "./outgoing-user-persist"
+import { isInternalTodoContinueTurn, runAgentPersistUser, shouldPersistOutgoingUser } from "./outgoing-user-persist"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
@@ -60,7 +60,7 @@ export async function runAgent(
   const stripped = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
   const input = stampForegroundUserOrigin(stripped, trust)
   return beginAgentRun(window, input, {
-    persistUser: input.persistUser !== false,
+    persistUser: runAgentPersistUser(input),
     rememberMru: trust.rememberMru
   })
 }

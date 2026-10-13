@@ -20,5 +20,11 @@ export function shouldPersistOutgoingUser(input: RunAgentInput, persistUser: boo
   if (!persistUser) return false
   const text = lastUserText(input)
   if (text === undefined) return false
-  return !isInternalTodoContinueTurn(input) && !isTodoContinueUserMessage(text)
+  // leo #148 三轮：不做纯文本兜底——没标记就照常落库，与回显同一判定。
+  return !isInternalTodoContinueTurn(input)
+}
+
+/** runAgent → beginAgentRun 的落库开关：只看调用方 persistUser，标记不单独压掉。 */
+export function runAgentPersistUser(input: RunAgentInput): boolean {
+  return input.persistUser !== false
 }

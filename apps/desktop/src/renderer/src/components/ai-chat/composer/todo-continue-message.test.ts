@@ -19,8 +19,11 @@ test("识别中英续跑提示，不当成新任务", () => {
     isTodoContinueUserMessage(
       "The Todo List still has unfinished items. Continue the in_progress task now with tools."
     ),
-    true
+    false
   )
+  // 只认整句：完整提示后再加话就是用户句。
+  assert.equal(isTodoContinueUserMessage(TODO_CONTINUE_PROMPT), true)
+  assert.equal(isTodoContinueUserMessage(`${TODO_CONTINUE_PROMPT} 帮我看看`), false)
   assert.equal(isTodoContinueUserMessage("按 Stripe 做落地页"), false)
 })
 

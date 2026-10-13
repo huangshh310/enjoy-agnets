@@ -44,17 +44,48 @@ test("ACP + plan 模式续跑：提示带围栏，main 不落库", async () => {
   assert.equal(shouldPersistOutgoingUser({ ...input, persistUser: undefined }, true), false)
 })
 
-test("文本兜底：没有标记、但内容是带围栏的续跑句，也不落库", () => {
-  const fenced = `[Enjoy host mode: plan]\nbody\n[/Enjoy host mode]\n\n${TODO_CONTINUE_PROMPT}`
+test("leo #148 三轮 (a)：没有标记时，用户自己发的完整提示 / 带围栏 / 提示加话都照常落库", () => {
+  const base = { workspaceId: "ws", sessionId: "s", modelId: "m" }
+  const texts = [
+    TODO_CONTINUE_PROMPT,
+    `[Enjoy host mode: plan]\nbody\n[/Enjoy host mode]\n\n${TODO_CONTINUE_PROMPT}`,
+    "The Todo List still has unfinished items. 帮我看看为什么",
+    `${TODO_CONTINUE_PROMPT} 另外帮我看看为什么`
+  ]
+  for (const content of texts) {
+    const input = RunAgentInput.parse({ ...base, messages: [{ role: "user", content }] })
+    assert.equal(shouldPersistOutgoingUser(input, true), true, content)
+  }
+  // 标记在、但内容是「提示 + 用户加话」：整句不等，不算内部轮。
+  const flaggedExtra = RunAgentInput.parse({
+    ...base,
+    todoContinue: true,
+    messages: [{ role: "user", content: `${TODO_CONTINUE_PROMPT} 另外帮我看看为什么` }]
+  })
+  assert.equal(shouldPersistOutgoingUser(flaggedExtra, true), true)
+})
+
+test("leo #148 三轮 (b)：runAgent 落库开关 → beginAgentRun 判定，普通句带标记仍落库", async () => {
+  const { runAgentPersistUser } = await import("./outgoing-user-persist.ts")
   const input = RunAgentInput.parse({
     workspaceId: "ws",
     sessionId: "s",
     modelId: "m",
-    messages: [{ role: "user", content: fenced }]
+    todoContinue: true,
+    messages: [{ role: "user", content: "帮我把登录页改成深色" }]
   })
-  assert.equal(shouldPersistOutgoingUser(input, true), false)
-  const normal = RunAgentInput.parse({ ...input, messages: [{ role: "user", content: "正常问题" }] })
-  assert.equal(shouldPersistOutgoingUser(normal, true), true)
+  const persistUser = runAgentPersistUser(input)
+  assert.equal(persistUser, true)
+  assert.equal(shouldPersistOutgoingUser(input, persistUser), true)
+  // 真续跑轮（标记 + 整句提示）仍拦。
+  const internal = RunAgentInput.parse({ ...input, messages: [{ role: "user", content: TODO_CONTINUE_PROMPT }] })
+  assert.equal(shouldPersistOutgoingUser(internal, runAgentPersistUser(internal)), false)
+})
+
+test("runAgent 落库开关接线：agent-run-start 用 runAgentPersistUser", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("./agent-run-start.ts", import.meta.url), "utf8")
+  assert.match(src, /persistUser: runAgentPersistUser\(input\)/)
 })
 
 test("fail-closed：普通句带 todoContinue:true 仍照常落库 / 不算内部轮", async () => {
