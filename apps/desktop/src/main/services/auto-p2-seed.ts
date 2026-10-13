@@ -26,7 +26,7 @@ function atHour(daysAgo: number, hour: number, now: number, minute = 0): number 
 }
 
 /** 补跑成功 / 超时：记在排期之后一会儿（不晚于 now），不是「种夹具那一刻」。 */
-function catchUpAt(slot: number, now: number): number {
+export function catchUpAt(slot: number, now: number): number {
   return Math.min(now, slot + 5 * 60_000)
 }
 

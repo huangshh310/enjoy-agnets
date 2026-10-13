@@ -48,6 +48,7 @@ import {
 } from "./new-session-create"
 import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend, hasQueuedComposerSend } from "./queue-composer-send"
 import { flushComposerDomToStore } from "./composer-dom"
+import { leaveStateSnapshot } from "./leave-state-snapshot"
 import { setComposerWritebackHeld } from "./composer-sync-lock"
 
 export type { WorkspaceRow } from "./workspace-row"
@@ -111,8 +112,9 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
       // luna P3：离开的是空「新对话」就删掉（判定在 park / 存稿之前取快照）。
-      const leaving = useChatStore.getState()
-      discardEmptySessionOnLeave(leaving, sessionId)
+      // leo BLOCK ④(c)：先把输入框 DOM 刷进 store（写回锁期间 store 可能落后于 DOM）。
+      flushComposerDomToStore()
+      discardEmptySessionOnLeave(leaveStateSnapshot(), sessionId)
       parkForegroundRun()
       saveCurrentSessionDraft()
     }

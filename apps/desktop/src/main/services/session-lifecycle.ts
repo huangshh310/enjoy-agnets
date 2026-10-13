@@ -1,6 +1,7 @@
 /**
  * 会话归档 / 恢复 / 永久删除。只动 SQLite，不删工作区磁盘文件。
  */
+import { isSessionRunStarting } from "./session-run-starting"
 import { clearConversationDesktopAllow } from "@enjoy-agents/agent-core"
 import { clearConversationSessionAllow } from "./conversation-session-allow"
 import { syncActiveRunsDesktopAllow } from "./conversation-desktop-allow-sync"
@@ -58,6 +59,9 @@ export function deleteSession(sessionId: string, opts?: { onlyIfEmpty?: boolean 
     if (active.n > 0) return { id: sessionId, deleted: false }
     // luna P3：还留着没发的草稿也不算空（离开会话时清空会话不能吞稿）。
     if (sessionHasDraft(db, sessionId)) return { id: sessionId, deleted: false }
+    // leo BLOCK ④：心跳 / 标记 / 目标都算「有内容」；run 正在启动落库也不删。
+    if (sessionHasKeepers(db, sessionId)) return { id: sessionId, deleted: false }
+    if (isSessionRunStarting(sessionId)) return { id: sessionId, deleted: false }
   }
   void import("@enjoy-agents/agent-harness")
     .then(({ deleteAcpRemoteIfLive, disposeAcpSession }) => {
@@ -70,6 +74,7 @@ export function deleteSession(sessionId: string, opts?: { onlyIfEmpty?: boolean 
       "DELETE FROM message_parts WHERE message_id IN (SELECT id FROM messages WHERE session_id = ?)"
     ).run(sessionId)
     db.prepare("DELETE FROM messages WHERE session_id = ?").run(sessionId)
+    for (const sql of SESSION_KEYED_DELETES) deleteIfTable(db, sql, sessionId)
     db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId)
     db.exec("COMMIT")
   } catch (error) {
@@ -86,8 +91,47 @@ function sessionHasDraft(db: ReturnType<typeof getDatabase>, sessionId: string):
       | { text: string }
       | undefined
     return Boolean(row?.text?.trim())
+  } catch (error) {
+    // leo BLOCK ④：只有「表还没建」才算没草稿；其它错误一律当有稿，宁可不删。
+    if (isNoSuchTable(error)) return false
+    return true
+  }
+}
+
+function isNoSuchTable(error: unknown): boolean {
+  return /no such table/i.test(error instanceof Error ? error.message : String(error))
+}
+
+/** 删会话时一并清的会话键表（表可能还没建：只吞 no such table）。 */
+export const SESSION_KEYED_DELETES = [
+  "DELETE FROM run_start_git_heads WHERE run_id IN (SELECT id FROM runs WHERE session_id = ?)",
+  "DELETE FROM session_heartbeats WHERE session_id = ?",
+  "DELETE FROM session_drafts WHERE session_id = ?",
+  "DELETE FROM session_error_dismissed WHERE session_id = ?"
+] as const
+
+function deleteIfTable(db: ReturnType<typeof getDatabase>, sql: string, sessionId: string): void {
+  try {
+    db.prepare(sql).run(sessionId)
+  } catch (error) {
+    if (!isNoSuchTable(error)) throw error
+  }
+}
+
+/** 心跳（哪怕从没跑过）、flagged、设了目标：都不是空壳。查不了一律当有（fail-closed）。 */
+function sessionHasKeepers(db: ReturnType<typeof getDatabase>, sessionId: string): boolean {
+  try {
+    const row = db.prepare("SELECT flagged, goal FROM sessions WHERE id = ?").get(sessionId) as
+      | { flagged?: number | null; goal?: string | null }
+      | undefined
+    if (row && (Number(row.flagged) === 1 || Boolean(row.goal?.trim()))) return true
   } catch {
-    return false // 表还没建 = 没有任何草稿
+    return true
+  }
+  try {
+    return Boolean(db.prepare("SELECT 1 FROM session_heartbeats WHERE session_id = ?").get(sessionId))
+  } catch (error) {
+    return !isNoSuchTable(error)
   }
 }
 
@@ -102,12 +146,14 @@ export function pruneEmptySessions(): { deleted: number } {
       `SELECT s.id FROM sessions s
        WHERE s.archived_at IS NULL
          AND NOT EXISTS (SELECT 1 FROM messages m WHERE m.session_id = s.id)
-         AND NOT EXISTS (SELECT 1 FROM runs r WHERE r.session_id = s.id)`
+         AND NOT EXISTS (SELECT 1 FROM runs r WHERE r.session_id = s.id)
+         AND COALESCE(s.flagged, 0) = 0
+         AND (s.goal IS NULL OR TRIM(s.goal) = '')`
     )
     .all() as Array<{ id: string }>
   let deleted = 0
   for (const row of rows) {
-    if (sessionHasDraft(db, row.id)) continue
+    if (sessionHasDraft(db, row.id) || sessionHasKeepers(db, row.id)) continue
     try {
       if (deleteSession(row.id, { onlyIfEmpty: true }).deleted) deleted += 1
     } catch {

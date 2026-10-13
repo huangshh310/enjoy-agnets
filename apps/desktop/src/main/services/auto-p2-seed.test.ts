@@ -49,3 +49,11 @@ test("jojo P3：任何时刻种夹具，上次运行时间都不晚于现在（�
     walk(fixture)
   }
 })
+
+test("catchUpAt 语义锁定：补跑记在「计划时刻 + 5 分钟」，但不超过现在", async () => {
+  const { catchUpAt } = await import("./auto-p2-seed.ts")
+  const slot = Date.UTC(2026, 9, 13, 2, 30)
+  assert.equal(catchUpAt(slot, slot + 60 * 60_000), slot + 5 * 60_000)
+  assert.equal(catchUpAt(slot, slot + 2 * 60_000), slot + 2 * 60_000)
+  assert.equal(catchUpAt(slot, slot + 5 * 60_000), slot + 5 * 60_000)
+})
