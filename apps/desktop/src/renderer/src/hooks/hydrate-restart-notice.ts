@@ -125,7 +125,11 @@ export function noticeAfterRestartHydrate(input: {
     return input.notice
   }
   if (!sessionId || isRestartNoticeConsumed(sessionId, turnId)) return input.notice
-  if (!latestAssistantRestartAbandoned(input.messages)) return input.notice
+  // luna P2：强杀时工具已写完盘（没有被封的工具），但回复只写了一半——main 在信封上记了 restartNotice，
+  // 同样要出中断提示，否则看起来像正常收尾。
+  if (!latestAssistantRestartAbandoned(input.messages) && !latestAssistantRestartNotice(input.messages)) {
+    return input.notice
+  }
   const code = lastRestartNotice(sessionId) ?? latestAssistantRestartNotice(input.messages)
   if (!isRestoreFamilyCode(code)) return input.notice
   rememberRestartNotice(sessionId, code)

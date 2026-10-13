@@ -627,6 +627,9 @@ export const zhChat = {
   limitsSystemDeferred: "系统工具（延迟）",
   limitsFreeSpace: "剩余空间",
 
+  needsVisionTitle: "这个模型看不了图片",
+  needsVisionHint: "换一个能看图的模型再试。",
+  needsVisionDetail: "这个模型看不了图片。换一个能看图的模型再试。",
   errorTitle: "模型这次没回完",
   errorRetryHint: "这一轮没能完成，可以重试",
   errorGenericHint: "这次没执行成功，请再试一次。",

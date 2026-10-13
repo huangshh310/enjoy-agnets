@@ -1,3 +1,4 @@
+import { trackSessionRunStart } from "./services/session-run-starting"
 /**
  * AI 能力 IPC：generate / assets / knowledge / workflow / mcp / realtime / observability。
  */
@@ -137,7 +138,7 @@ function win(event: IpcMainInvokeEvent): BrowserWindow {
 
 export function registerAiIpc() {
   ipcMain.handle("ai.generate", (event, raw) =>
-    createDesktopRuntime(win(event)).start(AiGenerateInput.parse(raw))
+    trackSessionRunStart(raw, () => createDesktopRuntime(win(event)).start(AiGenerateInput.parse(raw)))
   )
   ipcMain.handle("ai.abort", (_event, raw) => abortGeneration(raw))
   ipcMain.handle("ai.resume", (event, raw) => resumeGeneration(win(event), raw))

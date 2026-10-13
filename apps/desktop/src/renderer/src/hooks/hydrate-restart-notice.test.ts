@@ -182,3 +182,22 @@ test("idle 只保住回挂家族 notice", () => {
   assert.equal(keepRestoreFamilyNotice("user_aborted"), null)
   assert.equal(keepRestoreFamilyNotice(null), null)
 })
+
+test("luna P2：强杀时写盘工具已完成、回复写了一半（信封有 restartNotice）→ 冷启动也补中断提示", () => {
+  const written = {
+    id: "a_written",
+    role: "assistant" as const,
+    restartNotice: RESTORE_INTERRUPTED_RUNNING,
+    tools: [{ id: "t1", name: "write_file", state: "output-available" as const, result: { ok: true } }]
+  }
+  assert.equal(latestAssistantRestartAbandoned([written]), false)
+  assert.equal(
+    noticeAfterRestartHydrate({ sessionId: "ses_written", sameSession: false, running: false, notice: null, messages: [written] }),
+    RESTORE_INTERRUPTED_RUNNING
+  )
+  // 展示过一次就不再弹。
+  assert.equal(
+    noticeAfterRestartHydrate({ sessionId: "ses_written", sameSession: false, running: false, notice: null, messages: [written] }),
+    null
+  )
+})

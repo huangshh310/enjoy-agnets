@@ -12,9 +12,12 @@ export function sessionReviewVisible(
   dismissedKey?: string | null,
   filesKey?: string,
   messageCount?: number,
-  needsReview?: boolean
+  needsReview?: boolean,
+  /** 库里 workflow=done（已「通过」）。通过的收起只记在内存，重启后靠它，不再冒「N 个文件已改」。 */
+  approved?: boolean
 ): boolean {
   if (messageCount === 0) return false
+  if (approved && !running) return false
   if (needsReview && !running) return true
   if (dismissedKey != null && filesKey != null && dismissedKey === filesKey) return false
   if (fileCount > 0) return true

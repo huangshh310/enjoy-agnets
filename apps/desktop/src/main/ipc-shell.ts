@@ -1,3 +1,4 @@
+import { trackSessionRunStart } from "./services/session-run-starting"
 /**
  * 工作区 / 会话 / Agent / 终端 / 窗口 IPC。
  */
@@ -120,7 +121,9 @@ function registerInboxIpc() {
 }
 
 function registerAgentIpc() {
-  ipcMain.handle("agent.run", (event, raw) => runAgent(windowFromEvent(event), raw))
+  ipcMain.handle("agent.run", (event, raw) =>
+    trackSessionRunStart(raw, () => runAgent(windowFromEvent(event), raw))
+  )
   ipcMain.handle("agent.abort", (_event, raw) => abortAgent(raw))
   ipcMain.handle("agent.steer", (event, raw) => steerAgent(windowFromEvent(event), raw))
   ipcMain.handle("agent.decide", (event, raw) => decideApproval(windowFromEvent(event), raw))

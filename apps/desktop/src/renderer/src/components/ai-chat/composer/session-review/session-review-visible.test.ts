@@ -51,3 +51,17 @@ test("工作区脏文件默认折叠；本轮 2–6 个文件才展开", () => {
   assert.equal(shouldExpandReviewFiles(true, 3), true)
   assert.equal(shouldExpandReviewFiles(true, 7), false)
 })
+
+test("jojo P2：Dock「通过」后（库里 done）重启——内存收起丢了也不再冒改动条；再跑起来照常显示", () => {
+  // 重启后 dismissedKey 为空，本轮写过的文件仍 dirty。
+  assert.equal(sessionReviewVisible(1, false, null, "a.txt", 4, false, true), false)
+  assert.equal(sessionReviewVisible(1, true, null, "a.txt", 4, false, true), true)
+  assert.equal(sessionReviewVisible(1, false, null, "a.txt", 4, false, false), true)
+})
+
+test("接线：改动条按库里 workflow=done 传 approved", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("./use-session-review-model.ts", import.meta.url), "utf8")
+  assert.match(src, /const approved = workflowStatus === "done"/)
+  assert.match(src, /needsReview,\s*approved\s*\)/)
+})

@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { pruneEmptySessions } from "./services/session-lifecycle"
 import { app, BrowserWindow, nativeImage, shell, type WebContents } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
@@ -232,6 +233,12 @@ function bootPrimaryInstance(): void {
     configureAcpChildLedger(join(app.getPath("userData"), "acp-children.json"))
     reapOrphanAcpChildren()
     abandonOrphanRuns();
+    // luna P3：空「新对话」壳（无消息 / run / 草稿）启动时清掉。
+    try {
+      pruneEmptySessions()
+    } catch (error) {
+      console.error("pruneEmptySessions failed", error)
+    }
     await bootstrapE2eStub();
     seedDevAutoP2IfRequested();
     await seedDevCostIfRequested();

@@ -1,6 +1,7 @@
 /**
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
+import { discardEmptySessionOnLeave } from "./discard-empty-on-leave"
 import { composerDraftForSession } from "../lib/session-draft-storage"
 import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
@@ -47,6 +48,7 @@ import {
 } from "./new-session-create"
 import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend, hasQueuedComposerSend } from "./queue-composer-send"
 import { flushComposerDomToStore } from "./composer-dom"
+import { leaveStateSnapshot } from "./leave-state-snapshot"
 import { setComposerWritebackHeld } from "./composer-sync-lock"
 
 export type { WorkspaceRow } from "./workspace-row"
@@ -109,6 +111,10 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   if (!sameSession) {
     useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
+      // luna P3：离开的是空「新对话」就删掉（判定在 park / 存稿之前取快照）。
+      // leo BLOCK ④(c)：先把输入框 DOM 刷进 store（写回锁期间 store 可能落后于 DOM）。
+      flushComposerDomToStore()
+      discardEmptySessionOnLeave(leaveStateSnapshot(), sessionId, () => useChatStore.getState().sessionId)
       parkForegroundRun()
       saveCurrentSessionDraft()
     }

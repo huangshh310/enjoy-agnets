@@ -13,11 +13,21 @@ export function isDevAutoP2SeedAllowed(input: {
   return input.flag && !input.packaged && input.isolatedUserData
 }
 
-function atHour(daysAgo: number, hour: number, now: number): number {
+/**
+ * jojo P3：夹具时间一律不晚于 now——「今天 08:00」在早上 7 点种出来就是未来，
+ * 列表会写「上次成功 · 今天 xx:xx」比现在还晚。落在未来的整体往前挪一天。
+ */
+function atHour(daysAgo: number, hour: number, now: number, minute = 0): number {
   const date = new Date(now)
   date.setDate(date.getDate() - daysAgo)
-  date.setHours(hour, 0, 0, 0)
+  date.setHours(hour, minute, 0, 0)
+  if (date.getTime() > now) date.setDate(date.getDate() - 1)
   return date.getTime()
+}
+
+/** 补跑成功 / 超时：记在排期之后一会儿（不晚于 now），不是「种夹具那一刻」。 */
+export function catchUpAt(slot: number, now: number): number {
+  return Math.min(now, slot + 5 * 60_000)
 }
 
 function row(input: Record<string, unknown>) {
@@ -52,7 +62,7 @@ export function buildAutoP2Fixture(now = Date.now(), extras = false) {
   const yest8 = atHour(1, 8, now)
   const ere8 = atHour(2, 8, now)
   const yest21 = atHour(1, 21, now)
-  const today1030 = atHour(0, 10, now) + 30 * 60_000
+  const today1030 = atHour(0, 10, now, 30)
   const today11 = atHour(0, 11, now)
   const today7 = atHour(0, 7, now)
   const yest7 = atHour(1, 7, now)
@@ -78,7 +88,7 @@ export function buildAutoP2Fixture(now = Date.now(), extras = false) {
       id: "auto_catchup",
       name: "午间改动复盘",
       cronExpr: "30 10 * * *",
-      lastRunAt: now,
+      lastRunAt: catchUpAt(today1030, now),
       lastRunStatus: "ok",
       lastRunCatchUp: true,
       catchUpMissed: true
@@ -87,7 +97,7 @@ export function buildAutoP2Fixture(now = Date.now(), extras = false) {
       id: "auto_timeout",
       name: "补跑超时示例",
       cronExpr: "0 9 * * *",
-      lastRunAt: now,
+      lastRunAt: catchUpAt(atHour(0, 9, now), now),
       lastRunStatus: "failed",
       lastRunErrorCode: "catch_up_approval_timeout",
       lastRunCatchUp: true,
@@ -99,13 +109,18 @@ export function buildAutoP2Fixture(now = Date.now(), extras = false) {
     missed("auto_sleep", yest8, "skipped", { reason: "system_sleep", status: "skipped" }),
     missed("auto_sleep", ere8, "skipped", { reason: "system_sleep", status: "skipped" }),
     missed("auto_closed", yest21, "skipped", { reason: "app_not_running", status: "skipped" }),
-    missed("auto_catchup", today1030, "catch_up", { status: "ok", isCatchUp: true, recordedAt: now }),
+    missed("auto_catchup", today1030, "catch_up", {
+      status: "ok",
+      isCatchUp: true,
+      // luna P3：列表「上次成功」读的是这条 recordedAt；写 now 就成了「今天 22:16」（每次启动重种）。
+      recordedAt: catchUpAt(today1030, now)
+    }),
     missed("auto_catchup", yest8, "skipped", { reason: "system_sleep", status: "skipped" }),
-    missed("auto_timeout", today8, "catch_up", {
+    missed("auto_timeout", atHour(0, 9, now), "catch_up", {
       status: "failed",
       isCatchUp: true,
       code: "catch_up_approval_timeout",
-      recordedAt: now
+      recordedAt: catchUpAt(atHour(0, 9, now), now)
     })
   ]
   if (extras) {

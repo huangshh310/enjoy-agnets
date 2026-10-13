@@ -1,3 +1,4 @@
+import { MODEL_NEEDS_VISION } from "@enjoy-agents/ipc-contract/run-error-codes"
 /**
  * 把资产编成用户消息 parts：文本内联，图片/PDF 才走多模态 file。
  */
@@ -39,7 +40,8 @@ function encodeOne(asset: AttachmentInput, caps: AttachmentCaps): EncodedUserPar
   }
   if (isImageMediaType(mediaType)) {
     if (!caps.vision) {
-      throw new Error(`${asset.name} needs a vision-capable model.`)
+      // luna P1：只抛机器码，文案由 renderer 按码给（不摊英文原文）。
+      throw new Error(MODEL_NEEDS_VISION)
     }
     return { kind: "file", mediaType, filename: asset.name, data: asset.bytes }
   }

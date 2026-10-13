@@ -20,6 +20,7 @@ import { getRun, updateRun, type RunRow } from "@enjoy-agents/db"
 import { emitEvent } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { persistMessage } from "./persist-session"
+import type { UIMessagePart } from "@enjoy-agents/ipc-contract/ui-message"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { downgradeReviewWhenGitClean } from "./interrupted-review-git"
 import { assistantBelongsToRun } from "./restore-assistant-snapshot"
@@ -146,7 +147,34 @@ export function persistSealedAssistantTools(
         : undefined
     const next = { ...payload, tools: sealed, restartNotice }
     if (JSON.stringify(next) === JSON.stringify(payload)) continue
-    persistMessage(sessionId, "assistant", serializeAssistantPayload(next), undefined, row.id)
+    // leo BLOCK：不带 parts 重写会删光 tool parts，重启后会话级改动（session.changes）就读不到写盘工具。
+    persistMessage(sessionId, "assistant", serializeAssistantPayload(next), partsToKeep(row.id, sealed), row.id)
   }
   return original
+}
+
+type ToolLike = { id?: string; toolCallId?: string; name: string; args?: unknown; state?: string }
+
+/** 原样保留已有 parts；没有 tool part 时按信封里的工具补写回。 */
+export function partsToKeep(messageId: string, tools: readonly ToolLike[]): UIMessagePart[] | undefined {
+  let kept: UIMessagePart[] = []
+  try {
+    const rows = getDatabase()
+      .prepare("SELECT payload FROM message_parts WHERE message_id = ? ORDER BY idx ASC")
+      .all(messageId) as Array<{ payload: string }>
+    kept = rows.map((row) => JSON.parse(row.payload) as UIMessagePart)
+  } catch {
+    kept = []
+  }
+  if (kept.some((part) => part.type === "tool") || tools.length === 0) return kept.length > 0 ? kept : undefined
+  const toolParts = tools.map(
+    (tool, idx) =>
+      ({
+        type: "tool",
+        toolCallId: tool.toolCallId ?? tool.id ?? `restored_${messageId}_${idx}`,
+        name: tool.name,
+        args: tool.args
+      }) as UIMessagePart
+  )
+  return [...kept, ...toolParts]
 }

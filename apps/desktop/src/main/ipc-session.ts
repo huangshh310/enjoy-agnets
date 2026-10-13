@@ -2,6 +2,8 @@
  * 会话 IPC：创建、列表、归档、压缩、重命名与字段补丁 (session.patch)。
  */
 import { app, BrowserWindow, ipcMain } from "electron"
+import { SessionChangesInput, SessionChangesResult } from "@enjoy-agents/ipc-contract/session-changes"
+import { sessionChanges } from "./services/session-changes"
 import {
   SessionCompactInput,
   SessionCreateInput,
@@ -82,6 +84,7 @@ export const SESSION_CHANNELS = [
   "session.heartbeat.clear",
   "session.estimatedCost",
   "session.lastError",
+  "session.changes",
   "session.dismissError"
 ] as const
 
@@ -94,6 +97,9 @@ export function registerSessionIpc() {
 }
 
 function registerSessionCatalogIpc() {
+  ipcMain.handle("session.changes", (_event, raw) =>
+    SessionChangesResult.parse(sessionChanges(SessionChangesInput.parse(raw).sessionId))
+  )
   ipcMain.handle("session.lastError", (_event, raw) => {
     const sessionId =
       typeof (raw as { sessionId?: unknown })?.sessionId === "string"

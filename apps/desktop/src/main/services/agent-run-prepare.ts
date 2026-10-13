@@ -2,12 +2,12 @@
  * hold 之后再编附件、检索知识、开泵。必须在 IPC 已返回 runId 之后跑，
  * 否则知识 embed 一卡住，renderer 没有 runId，Stop 点了没反应。
  */
-import { logAndClassifyError } from "@enjoy-agents/agent-core"
-import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 import { pumpStream } from "./agent-pump"
-import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { appendRunAttachments, attachmentCapsFor } from "./attach-run-files"
 import { citeKnowledge } from "./cite-knowledge"
+import { failRunBeforePump } from "./agent-run-prepare-fail"
+import { throwIfE2ePrepareFail } from "./e2e-prepare-fail"
 
 export async function prepareAndPump(runId: string): Promise<void> {
   const run = getActiveRun(runId)
@@ -16,6 +16,7 @@ export async function prepareAndPump(runId: string): Promise<void> {
     return
   }
   try {
+    throwIfE2ePrepareFail()
     await appendRunAttachments(
       run.messages,
       run.input.attachments,
@@ -37,17 +38,7 @@ export async function prepareAndPump(runId: string): Promise<void> {
     }
     await pumpStream(runId)
   } catch (error) {
-    const current = getActiveRun(runId)
-    if (!current) return
-    const turn = turnOutcomeForRun(current, "error")
-    persistTurnWorkflow(current.input.sessionId, turn)
-    emitEvent(current.window, {
-      type: "run.error",
-      runId,
-      message: logAndClassifyError("prepareAndPump", error).message,
-      turn
-    })
-    deleteActiveRun(runId)
+    await failRunBeforePump(runId, error)
   }
 }
 
