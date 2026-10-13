@@ -53,3 +53,37 @@ test("之后有更新的改动 / main 已接手：不还原", () => {
   failComposerSend({ text: "x", reason: "SEND_FAILED_RESTORE", sessionId: "ses_e" })
   assert.equal(wf(), "in_progress")
 })
+
+/** 乐观改 workflow 之后、main 接手之前的每个出口都要还原（或交给已还原 / 会还原的路径）。 */
+test("发送路径每个出口：乐观改 workflow 之后都还原或确认 main 接手", () => {
+  const src = readFileSync(new URL("./send-composer-run.ts", import.meta.url), "utf8")
+  const handled = /rollbackComposerStartGate|failComposerSend\(|dropLateCancelledSend\(|commitComposerStartGate/
+  const check = (body: string, label: string) => {
+    const lines = body.split("\n")
+    let exits = 0
+    let prev = -1
+    lines.forEach((line, i) => {
+      if (!/^\s*return\b/.test(line) || /return (Boolean|self|messages)\b/.test(line)) return
+      exits++
+      // 只看「上一个出口之后」到本出口，别把上一分支的还原算到这一分支头上。
+      const window = lines.slice(Math.max(prev + 1, i - 12), i + 1).join("\n")
+      prev = i
+      assert.match(window, handled, `${label} 第 ${i + 1} 行出口没还原：${line.trim()}`)
+    })
+    return exits
+  }
+  const start = src.indexOf("syncReviewGateOnComposerStart(store.sessionId)")
+  const end = src.indexOf("function dropLateCancelledSend")
+  assert.ok(start > 0 && end > start)
+  assert.ok(check(src.slice(start, end), "sendComposer") >= 2)
+  const launch = src.slice(src.indexOf("async function launchComposerRun"), src.indexOf("function restoreFromPayload"))
+  // NEED_MODEL / failRunBeforePump（main 回 ok:false）、claim 失败、ai.generate / agent.run 抛错、成功
+  assert.ok(check(launch, "launchComposerRun") >= 4)
+})
+
+test("NEED_MODEL 等被拦（main 回 ok:false）走 failComposerSend：workflow 回 done", () => {
+  seed("done")
+  gate.syncReviewGateOnComposerStart("ses_e")
+  failComposerSend({ text: "x", reason: "NEED_MODEL", sessionId: "ses_e", dropOptimisticUser: true })
+  assert.equal(wf(), "done")
+})

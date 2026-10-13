@@ -210,6 +210,8 @@ export async function sendComposerMessage(
       // 上面的 cancelled 分支已拦下（resolve-send-payload.test 锁住这个顺序）。
       store.setRunning(false)
       store.setPreparingHint(false)
+      // main 没接手：发送前乐观改的 workflow 还原。
+      rollbackComposerStartGate(store.sessionId)
       return
     }
     // leo M1：建会话窗排队首发在入队时已清过输入框——现在框里是后打的 B，不能按 A 去截 / 清
