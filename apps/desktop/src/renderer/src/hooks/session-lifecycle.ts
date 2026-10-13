@@ -114,7 +114,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
       // luna P3：离开的是空「新对话」就删掉（判定在 park / 存稿之前取快照）。
       // leo BLOCK ④(c)：先把输入框 DOM 刷进 store（写回锁期间 store 可能落后于 DOM）。
       flushComposerDomToStore()
-      discardEmptySessionOnLeave(leaveStateSnapshot(), sessionId)
+      discardEmptySessionOnLeave(leaveStateSnapshot(), sessionId, () => useChatStore.getState().sessionId)
       parkForegroundRun()
       saveCurrentSessionDraft()
     }

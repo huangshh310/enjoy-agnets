@@ -30,10 +30,21 @@ export function emptySessionToDiscardOnLeave(state: LeaveState, nextSessionId: s
   return id
 }
 
-export function discardEmptySessionOnLeave(state: LeaveState, nextSessionId: string | null): void {
+/** leo soft：真删之前再确认一次它已经不是当前会话（切换被撤回 / 又点回来时不删）。 */
+export function stillLeft(id: string, currentSessionId: () => string | null): boolean {
+  return currentSessionId() !== id
+}
+
+export function discardEmptySessionOnLeave(
+  state: LeaveState,
+  nextSessionId: string | null,
+  currentSessionId: () => string | null = () => null
+): void {
   const id = emptySessionToDiscardOnLeave(state, nextSessionId)
   if (!id || !hasIde()) return
-  void Promise.resolve(getIde().session.delete({ sessionId: id, onlyIfEmpty: true }))
+  // 放到微任务：loadSession 同步切完 setSession 后再复核。
+  void Promise.resolve()
+    .then(() => (stillLeft(id, currentSessionId) ? getIde().session.delete({ sessionId: id, onlyIfEmpty: true }) : undefined))
     .then(async (result) => {
       // luna P2：库里删了但侧栏不刷，空行要等重启才消失。删成功就刷工作区会话列表。
       if ((result as { deleted?: boolean } | undefined)?.deleted !== true) return

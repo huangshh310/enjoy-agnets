@@ -20,7 +20,7 @@ test("有消息 / 在跑 / 输入框有字 / 同会话 / 没会话：不删", ()
 
 test("接线：loadSession 切走前调 discardEmptySessionOnLeave；main 启动 pruneEmptySessions", () => {
   const life = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
-  assert.match(life, /discardEmptySessionOnLeave\(leaveStateSnapshot\(\), sessionId\)/)
+  assert.match(life, /discardEmptySessionOnLeave\(leaveStateSnapshot\(\), sessionId, \(\) => useChatStore\.getState\(\)\.sessionId\)/)
   const main = readFileSync(new URL("../../../main/index.ts", import.meta.url), "utf8")
   assert.match(main, /pruneEmptySessions\(\)/)
 })
@@ -40,7 +40,7 @@ test("leo BLOCK ④(b)：建会话 / 首发准备 / 排队中不删", () => {
 
 test("leo BLOCK ④(c)：loadSession 判空前先 flushComposerDomToStore（写回锁时 DOM 有字、store 还空）", () => {
   const src = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
-  assert.match(src, /flushComposerDomToStore\(\)\s*\n\s*discardEmptySessionOnLeave\(leaveStateSnapshot\(\), sessionId\)/)
+  assert.match(src, /flushComposerDomToStore\(\)\s*\n\s*discardEmptySessionOnLeave\(leaveStateSnapshot\(\), sessionId, \(\) => useChatStore\.getState\(\)\.sessionId\)/)
   const snap = readFileSync(new URL("./leave-state-snapshot.ts", import.meta.url), "utf8")
   for (const k of ["composerHasExtras()", "isNewSessionCreatePending()", "hasQueuedComposerSend()", "preparingSessionId", "s.composer"]) {
     assert.ok(snap.includes(k), k)
@@ -55,4 +55,12 @@ test("离开删除失败要留日志", () => {
 test("luna P2：删成功后刷新侧栏会话列表（否则空行要等重启）", () => {
   const src = readFileSync(new URL("./discard-empty-on-leave.ts", import.meta.url), "utf8")
   assert.match(src, /deleted\?: boolean[\s\S]*?!== true\) return[\s\S]*?await refreshAllWorkspaces\(\)/)
+})
+
+test("leo soft：真删前复核——又成了当前会话就不删", async () => {
+  const { stillLeft } = await import("./discard-empty-on-leave.ts")
+  assert.equal(stillLeft("ses_a", () => "ses_b"), true)
+  assert.equal(stillLeft("ses_a", () => "ses_a"), false)
+  const src = readFileSync(new URL("./discard-empty-on-leave.ts", import.meta.url), "utf8")
+  assert.match(src, /stillLeft\(id, currentSessionId\) \? getIde\(\)\.session\.delete/)
 })

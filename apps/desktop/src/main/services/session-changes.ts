@@ -1,12 +1,14 @@
 /**
  * luna P2：会话级改动 = 本会话写盘 run 自首个写盘 run 开始时基线以来改过的文件。
- * 基线 = run 开始时的 HEAD（run_start_git_heads）+ 当时已脏文件的内容哈希（run_start_dirty）。
+ * 基线 = 会话首个 run 开始时已脏文件的内容哈希（run_start_dirty）。只比内容，不看 HEAD：
+ * run_start_git_heads 里的 HEAD 只给收工降级判定用，这里不读（本会话提交过的文件不再算「已改」）。
  * 跑前就脏、内容没变的文件不算本会话的；没有写盘 run = 0。
  */
 import { spawnSync } from "node:child_process"
 import { isReadOnlyBashTool } from "@enjoy-agents/ipc-contract/bash-read-only"
 import { isWriteTypeToolName } from "@enjoy-agents/ipc-contract/tool-names"
 import type { SessionChangesResult } from "@enjoy-agents/ipc-contract/session-changes"
+import { parseAssistantPayload } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 
 /** path → 内容哈希（删除记 "<deleted>"）。null = 不是 git / git 失败。 */
@@ -80,25 +82,45 @@ export function recordRunStartDirty(runId: string, sessionId: string, probe: Dir
 
 type ToolPart = { type?: string; name?: string; args?: unknown }
 
-/** 本会话有没有写盘工具调用（写型且不是只读 bash）。 */
+function isWritingTool(part: ToolPart): boolean {
+  const name = typeof part?.name === "string" ? part.name : ""
+  if (!name) return true // 读不懂当写过（fail-closed：不归零）
+  if (!isWriteTypeToolName(name)) return false
+  return !isReadOnlyBashTool({ name, args: part.args })
+}
+
+/**
+ * 本会话有没有写盘工具调用（写型且不是只读 bash）。
+ * 两处都读：message_parts 的 tool 部件，以及助手消息正文信封里的 tools（强杀重启重写过的消息可能只剩信封）。
+ */
 export function sessionHasWritingRuns(sessionId: string): boolean {
-  const rows = getDatabase()
+  const db = getDatabase()
+  const parts = db
     .prepare(
       "SELECT p.payload FROM message_parts p JOIN messages m ON m.id = p.message_id WHERE m.session_id = ? AND p.type = 'tool'"
     )
     .all(sessionId) as Array<{ payload: string }>
-  for (const row of rows) {
+  for (const row of parts) {
     let part: ToolPart
     try {
       part = JSON.parse(row.payload) as ToolPart
     } catch {
-      return true // 读不懂当写过（fail-closed：不归零）
+      return true
     }
-    const name = typeof part.name === "string" ? part.name : ""
-    if (!name) return true
-    if (!isWriteTypeToolName(name)) continue
-    if (isReadOnlyBashTool({ name, args: part.args })) continue
-    return true
+    if (isWritingTool(part)) return true
+  }
+  const bodies = db
+    .prepare("SELECT content FROM messages WHERE session_id = ? AND role = 'assistant'")
+    .all(sessionId) as Array<{ content: string }>
+  for (const row of bodies) {
+    let tools: unknown
+    try {
+      tools = parseAssistantPayload(row.content).tools
+    } catch {
+      return true
+    }
+    if (tools !== undefined && !Array.isArray(tools)) return true
+    for (const tool of (tools ?? []) as ToolPart[]) if (isWritingTool(tool)) return true
   }
   return false
 }

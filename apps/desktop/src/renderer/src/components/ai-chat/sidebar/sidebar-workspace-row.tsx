@@ -1,3 +1,4 @@
+import { useSessionChangesSummary } from "@renderer/hooks/session-changes"
 /**
  * 侧栏单个项目行：点击切换展开/收缩，展开其他项目时才切换当前工作区。
  */
@@ -15,7 +16,7 @@ import {
   loadWorkspace
 } from "@renderer/hooks/use-agent-session"
 import { workspaceRowFromNode } from "@renderer/hooks/workspace-row"
-import { type RepositoryNode, useChatStore } from "@renderer/stores/chat-store"
+import { type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
 export function SidebarWorkspaceRow({
@@ -160,8 +161,8 @@ function SessionList({
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
+  // luna P2：当前会话行 +/- 走会话口径（只读会话不挂整仓改动）。
+  const { additions, deletions } = useSessionChangesSummary()
 
   return (
     <div className="relative my-0.5 ml-2 flex flex-col gap-0.5 border-l border-separator-border/60 pl-1.5">

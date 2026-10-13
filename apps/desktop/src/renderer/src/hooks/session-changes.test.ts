@@ -37,3 +37,22 @@ test("接线：空态「N 项」与审查栏都吃会话口径", () => {
   )
   assert.match(vm, /useFallbackEmptyLastTurn\(scope, lastTurnPaths\.length, sessionPaths \? 0 : props\.changes\.length/)
 })
+
+test("luna P2：侧栏当前行 +/- 走会话口径；只读会话不出 +N；不可信回落整仓", async () => {
+  const { sessionChangesSummary } = await import("./session-changes.ts")
+  const rows = [
+    { path: "e2e-stub.txt", additions: 1, deletions: 0 },
+    { path: "a.txt", additions: 3, deletions: 1 }
+  ]
+  const ws = { additions: 4, deletions: 1 }
+  assert.deepEqual(sessionChangesSummary(r("none", []), rows, ws), { additions: 0, deletions: 0 })
+  assert.deepEqual(sessionChangesSummary(r("known", ["a.txt"]), rows, ws), { additions: 3, deletions: 1 })
+  assert.deepEqual(sessionChangesSummary(r("unknown", []), rows, ws), ws)
+  assert.deepEqual(sessionChangesSummary(null, rows, ws), ws)
+  assert.deepEqual(sessionChangesSummary(r("known", ["bin.png"]), rows, ws), { additions: 1, deletions: 0 })
+  for (const f of ["sidebar-active-sessions.tsx", "sidebar-workspace-row.tsx", "sidebar-status-groups.tsx"]) {
+    const src = readFileSync(new URL(`../components/ai-chat/sidebar/${f}`, import.meta.url), "utf8")
+    assert.match(src, /const \{ additions, deletions \} = useSessionChangesSummary\(\)/, f)
+    assert.doesNotMatch(src, /state\.additions/, f)
+  }
+})

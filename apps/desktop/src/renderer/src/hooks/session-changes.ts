@@ -33,3 +33,37 @@ export function useSessionChanges(): SessionChangesResult | null {
   if (!sessionId) return null
   return query.data ?? null
 }
+
+type ChangeRow = { path: string; additions?: number; deletions?: number }
+
+/**
+ * 侧栏当前会话行的 +/-：会话口径可信时只加本会话 paths 的行（只读会话 = 0，不出徽标）；
+ * 不可信（unknown / 还没取到）保持整仓口径。
+ */
+export function sessionChangesSummary(
+  result: SessionChangesResult | null | undefined,
+  changes: readonly ChangeRow[],
+  workspace: { additions: number; deletions: number }
+): { additions: number; deletions: number } {
+  const paths = sessionScopedPaths(result)
+  if (!paths) return workspace
+  const mine = new Set(paths)
+  let additions = 0
+  let deletions = 0
+  for (const row of changes) {
+    if (!mine.has(row.path)) continue
+    additions += row.additions ?? 0
+    deletions += row.deletions ?? 0
+  }
+  // 会话改了但 git 行统计为 0（如新建空文件 / 二进制）：至少给 +N 文件数，不吞改动。
+  if (additions === 0 && deletions === 0 && paths.length > 0) additions = paths.length
+  return { additions, deletions }
+}
+
+export function useSessionChangesSummary(): { additions: number; deletions: number } {
+  const result = useSessionChanges()
+  const changes = useChatStore((state) => state.changes)
+  const additions = useChatStore((state) => state.additions)
+  const deletions = useChatStore((state) => state.deletions)
+  return sessionChangesSummary(result, changes, { additions, deletions })
+}

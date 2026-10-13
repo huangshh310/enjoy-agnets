@@ -1,3 +1,4 @@
+import { useSessionChangesSummary } from "@renderer/hooks/session-changes"
 /**
  * 情境栏顶「进行中」钉住：后台仍在跑或等你处理的会话。无则整组不渲染。
  * 运行中会话仍可同时出现在项目树；高亮只跟点中的那一行。
@@ -26,8 +27,8 @@ export function SidebarActiveSessions({
   const t = useT()
   const currentId = useChatStore((state) => state.sessionId)
   const running = useChatStore((state) => state.running)
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
+  // luna P2：当前会话行 +/- 走会话口径（只读会话不挂整仓改动）。
+  const { additions, deletions } = useSessionChangesSummary()
   const parks = useAttentionStore((state) => state.parks)
   const items = useAttentionStore((state) => state.items)
   const active = useMemo(

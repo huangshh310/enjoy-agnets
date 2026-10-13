@@ -1,3 +1,4 @@
+import { useSessionChangesSummary } from "@renderer/hooks/session-changes"
 /**
  * 侧栏按工作流状态分组视图 (Status Grouping View)。
  * 依次呈现：旗标置顶、进行中、待验收、待办、已完成、其它。
@@ -7,7 +8,6 @@ import { RiBookmarkFill, RiInboxLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
-import { useChatStore } from "@renderer/stores/chat-store"
 import { SidebarSessionRow } from "./sidebar-session-row"
 import { WORKFLOW_STATUSES } from "./session-workflow"
 import { WORKFLOW_STATUS_ICONS } from "./workflow-status-glyph"
@@ -24,8 +24,8 @@ export function SidebarStatusGroups({
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
+  // luna P2：当前会话行 +/- 走会话口径（只读会话不挂整仓改动）。
+  const { additions, deletions } = useSessionChangesSummary()
 
   const groups = useMemo(() => {
     const flagged = sessions.filter((s) => s.flagged)

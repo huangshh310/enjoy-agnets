@@ -124,6 +124,10 @@ test("luna P2：脏工作区 + 只跑 ls 的会话，会话口径改动 = 0（e2
     )) as { sessionChangeCount: number; baseline: string; hasWritingRuns: boolean }
     expect(result.sessionChangeCount).toBe(0)
     expect(result.hasWritingRuns).toBe(false)
+    // 侧栏当前行不挂整仓 +N
+    await window.waitForTimeout(1_500)
+    await expect(window.locator('[data-testid="sidebar-session-row"]', { hasText: /\+\d/ })).toHaveCount(0)
+    await window.screenshot({ path: join(shots, "sidebar-readonly-session-no-plus.png") })
     // 新对话空态不出「1 项」芯片
     await window.locator('[data-testid="sidebar-new-session"]').click()
     await window.waitForTimeout(1_500)
