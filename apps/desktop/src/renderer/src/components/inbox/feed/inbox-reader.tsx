@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { inboxSessionTitle, inboxToolPhrase, inboxToolsPhrase } from "../lib/inbox-tool-phrase"
 import {
   RiArrowRightUpLine,
   RiCheckLine,
@@ -89,10 +90,10 @@ export function InboxReader(props: {
 
     return {
       latestAssistantText: assistantText,
-      toolsSummary: toolNames.length > 0 ? plainToolSummary(toolNames) : null,
+      toolsSummary: inboxToolsPhrase(toolNames, t),
       thoughtSeconds: parsed.thoughtSeconds ?? null
     }
-  }, [sessionMessages])
+  }, [sessionMessages, t])
 
   if (!item) {
     return (
@@ -117,7 +118,7 @@ export function InboxReader(props: {
   const ThemeIcon = theme.icon
   const relativeTime = inboxTimeLabel(item.occurredAt, now, t)
   const fullTime = new Date(item.occurredAt).toLocaleString()
-  const displayTitle = item.sessionTitle || item.title || t("chat.untitledSession")
+  const displayTitle = inboxSessionTitle(item.sessionTitle || item.title, t)
   const displayWorkspace =
     item.workspaceName ||
     (item.workspaceId?.startsWith("ws_") ? t("pages.inbox.localWorkspace") : item.workspaceId) ||
@@ -240,7 +241,7 @@ export function InboxReader(props: {
                 </div>
                 {item.toolName ? (
                   <span className="text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
-                    {plainToolSummary([item.toolName])}
+                    {inboxToolPhrase(item.toolName, t)}
                   </span>
                 ) : null}
               </div>
@@ -323,18 +324,4 @@ export function InboxReader(props: {
       </ScrollArea>
     </div>
   )
-}
-
-/** 工具名换成人话：「运行命令」「改了文件」…；不露 bash / write_file 之类（jojo 巡检）。 */
-export function plainToolSummary(names: string[]): string {
-  const phrases = new Set<string>()
-  for (const raw of names) {
-    const name = raw.toLowerCase()
-    if (/bash|shell|exec|command|terminal|run/.test(name)) phrases.add("运行命令")
-    else if (/write|edit|patch|create|delete|move|apply/.test(name)) phrases.add("改了文件")
-    else if (/read|list|ls|glob|grep|search|find|view/.test(name)) phrases.add("查看文件")
-    else if (/fetch|http|web|browser/.test(name)) phrases.add("上网查资料")
-    else phrases.add("用了工具")
-  }
-  return Array.from(phrases).join("、")
 }

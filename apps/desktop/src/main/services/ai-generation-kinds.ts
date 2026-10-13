@@ -44,6 +44,7 @@ export async function executeKind(
       attachments: request.attachments,
       config: await requireProviderConfig(modelId, request.providerId),
       persistChat: Boolean(request.messages?.length),
+      draftText: request.draftText,
       abortSignal: signal
     })
     noteFirst()

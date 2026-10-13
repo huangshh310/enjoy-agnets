@@ -8,25 +8,25 @@ import {
   RiRefreshLine,
   RiUserLine
 } from "@remixicon/react"
+import { dismissSessionErrorCard } from "../../../hooks/hydrate-session-error"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
-import { editAndResendUserTurn, regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { editAndResendUserTurn, regenerateAssistantTurn, retryFailedUserTurn } from "@renderer/hooks/regenerate-turn"
 import {
   laterTurnCount,
   resolveRetryTarget,
   retryTargetForError
 } from "@renderer/hooks/regenerate-retry-target"
 import { RegenerateConfirmDialog } from "./turns/regenerate-confirm-dialog"
-import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
-import { PREVIOUS_STILL_PREPARING, classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -93,16 +93,16 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
       void regenerateAssistantTurn(target.assistantId)
       return
     }
-    setError(null)
     if (lastUser && isTodoContinueUserMessage(lastUser.content)) {
+      setError(null)
       void continueTodoTurn()
       return
     }
     if (lastAssistant) {
+      setError(null)
       void regenerateAssistantTurn(lastAssistant.id)
     } else if (lastUser) {
-      useChatStore.getState().setComposer(lastUser.content)
-      void sendComposerMessage()
+      void retryFailedUserTurn(lastUser)
     }
   }
 
@@ -174,8 +174,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             : kind === "rate_limit"
               ? t("chat.usage.rateLimitTitle")
               : kind === "send_restore"
-                ? // jojo P1：发送还稿不是「模型没回完」——标题只说没发出去 / 在等上一条。
-                  t(error.includes(PREVIOUS_STILL_PREPARING) ? "chat.previousStillPreparingTitle" : "chat.sendFailedRestoreTitle")
+                ? // jojo P1：发送还稿不是「模型没回完」。「上一条还在准备」由 Composer 上沿灰条画，红卡不会收到。
+                  t("chat.sendFailedRestoreTitle")
                 : t("chat.errorTitle"))
   const detail =
     gate?.hint ??
@@ -220,7 +220,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             <span className="text-body-medium font-semibold text-text-primary">{title}</span>
             <button
               type="button"
-              onClick={() => setError(null)}
+              onClick={dismissSessionErrorCard}
               title={t("chat.dismissError")}
               className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
             >

@@ -11,7 +11,7 @@ test("同一 commandId 记住第一次的 runId", () => {
   assert.equal(peekCommandReceipt("cmd_1"), undefined)
   rememberCommandReceipt("cmd_1", "run_a")
   rememberCommandReceipt("cmd_1", "run_b")
-  assert.equal(peekCommandReceipt("cmd_1"), "run_a")
+  assert.deepEqual(peekCommandReceipt("cmd_1"), { runId: "run_a" })
   resetCommandReceipts()
   assert.equal(peekCommandReceipt("cmd_1"), undefined)
 })

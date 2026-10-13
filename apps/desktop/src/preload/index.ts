@@ -1,8 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { applyGpuCompositingAttr } from "./apply-gpu-compositing-attr";
+import { readE2eSendWatchdogArg } from "../main/services/e2e-send-watchdog-arg";
 
 const enjoyGpuCompositing = applyGpuCompositingAttr();
 contextBridge.exposeInMainWorld("enjoyGpuCompositing", enjoyGpuCompositing);
+// 只有主进程判过 e2e stub 闸才会带这个参数（见 e2e-send-watchdog.ts）。
+contextBridge.exposeInMainWorld("enjoyE2eSendWatchdog", readE2eSendWatchdogArg());
 
 import type {
   BuiltinToolsState,
@@ -82,6 +85,12 @@ const ide = {
     archive: (input: unknown) => ipcRenderer.invoke("session.archive", input),
     unarchive: (input: unknown) => ipcRenderer.invoke("session.unarchive", input),
     delete: (input: unknown) => ipcRenderer.invoke("session.delete", input),
+    drafts: {
+      loadSync: (): Record<string, string> => ipcRenderer.sendSync("session.drafts.loadSync") ?? {},
+      save: (input: { sessionId: string; text: string }) => ipcRenderer.send("session.drafts.save", input)
+    },
+    lastError: (input: unknown) => ipcRenderer.invoke("session.lastError", input),
+    dismissError: (input: unknown) => ipcRenderer.invoke("session.dismissError", input),
     deleteArchived: () => ipcRenderer.invoke("session.deleteArchived"),
     compact: (input: unknown) => ipcRenderer.invoke("session.compact", input),
     getCompaction: (input: unknown) => ipcRenderer.invoke("session.getCompaction", input),

@@ -5,6 +5,7 @@ import { snapshotGeneration, type GenerationRequest } from "@enjoy-agents/agent-
 import { getRun, insertRun, updateRun } from "@enjoy-agents/db"
 import type { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
+import { recordRunStartHead } from "./interrupted-review-git"
 
 export function requestFromAgentInput(input: RunAgentInput): GenerationRequest {
   return {
@@ -42,6 +43,7 @@ export function rememberGenerationRun(row: {
       checkpoint,
       error: null
     })
+    if (row.request.kind === "agent") recordRunStartHead(row.runId, row.request.sessionId)
     return
   }
   updateRun(db, row.runId, { status: row.status ?? "running", checkpoint, error: null })

@@ -81,6 +81,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   error: null,
   errorRetry: null,
   preparingHint: false,
+  preparingSessionId: null,
   notice: null,
   agentPickerOpen: false,
   sidebarGrouping: "project",
@@ -205,7 +206,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error, retryTarget) =>
     set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null }),
-  setPreparingHint: (preparingHint) => set({ preparingHint }),
+  setPreparingHint: (preparingHint, sessionId) => set({ preparingHint, preparingSessionId: preparingHint ? (sessionId === undefined ? get().sessionId : sessionId) : null }),
   setNotice: (notice) => {
     const sessionId = get().sessionId
     if (sessionId && isRestoreFamilyCode(notice)) rememberRestartNotice(sessionId, notice)

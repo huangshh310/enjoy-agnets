@@ -123,6 +123,7 @@ export function idleComposerPatch(): Pick<
   | "error"
   | "notice"
   | "preparingHint"
+  | "preparingSessionId"
   | "pendingStreamEvents"
   | "thinkingLabel"
 > {
@@ -135,6 +136,7 @@ export function idleComposerPatch(): Pick<
     error: null,
     notice: null,
     preparingHint: false,
+    preparingSessionId: null,
     pendingStreamEvents: [],
     thinkingLabel: "Thinking"
   }
@@ -150,6 +152,7 @@ export function parkedComposerPatch(park: ParkedRun): ReturnType<typeof idleComp
     error: park.error,
     notice: park.notice,
     preparingHint: false,
+    preparingSessionId: null,
     pendingStreamEvents: park.pendingStreamEvents,
     thinkingLabel: park.thinkingLabel
   }

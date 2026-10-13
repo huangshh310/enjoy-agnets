@@ -80,7 +80,8 @@ export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
     return { workflow: wrote ? "needs_review" : "in_progress", attention: "stopped" }
   }
   if (input.ended === "error") {
-    return { workflow: wrote ? "needs_review" : "in_progress", attention: "error" }
+    // jojo P2a：真失败且没留下改盘 → 回待办，侧栏不要蓝「执行中」点。
+    return { workflow: wrote ? "needs_review" : "todo", attention: "error" }
   }
   if (tools.length === 0) return { workflow: "todo", attention: "complete" }
   if (acted.length === 0) return { workflow: "todo", attention: "neutral" }

@@ -27,9 +27,9 @@ test("归档：写类已执行则待验收，Attention 仍是中性", () => {
   })
 })
 
-test("出错：没有写类已执行则保持执行中", () => {
+test("出错：没有写类已执行则回待办（侧栏不画蓝执行中）", () => {
   assert.deepEqual(decideTurnOutcome({ ended: "error", tools: [] }), {
-    workflow: "in_progress",
+    workflow: "todo",
     attention: "error"
   })
 })

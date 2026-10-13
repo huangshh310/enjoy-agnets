@@ -45,6 +45,20 @@ import { truncateSessionFrom } from "./services/session-truncate"
 import { forkSession } from "./services/session-fork"
 import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
 import { delaySessionCreateIfDev } from "./services/delay-session-create"
+import { loadSessionDrafts, saveSessionDraft } from "./services/session-drafts"
+import { z } from "zod"
+import { dismissSessionError, SESSION_ERROR_MESSAGE_MAX, sessionLastError } from "./services/session-last-error"
+
+const SessionLastErrorOutput = z
+  .object({
+    runId: z.string().min(1),
+    message: z.string().min(1).max(SESSION_ERROR_MESSAGE_MAX),
+    updatedAt: z.number()
+  })
+  .strict()
+  .nullable()
+
+const SessionErrorInput = z.object({ sessionId: z.string().min(1), runId: z.string().min(1).optional() })
 
 export const SESSION_CHANNELS = [
   "session.list",
@@ -66,10 +80,13 @@ export const SESSION_CHANNELS = [
   "session.heartbeat.get",
   "session.heartbeat.put",
   "session.heartbeat.clear",
-  "session.estimatedCost"
+  "session.estimatedCost",
+  "session.lastError",
+  "session.dismissError"
 ] as const
 
 export function registerSessionIpc() {
+  registerSessionDraftIpc()
   registerSessionCatalogIpc()
   registerSessionEditIpc()
   registerSessionLifecycleIpc()
@@ -77,6 +94,20 @@ export function registerSessionIpc() {
 }
 
 function registerSessionCatalogIpc() {
+  ipcMain.handle("session.lastError", (_event, raw) => {
+    const sessionId =
+      typeof (raw as { sessionId?: unknown })?.sessionId === "string"
+        ? (raw as { sessionId: string }).sessionId
+        : ""
+    const parsed = SessionLastErrorOutput.safeParse(sessionLastError(sessionId))
+    return parsed.success ? parsed.data : null
+  })
+  ipcMain.handle("session.dismissError", (_event, raw) => {
+    const input = SessionErrorInput.safeParse(raw)
+    if (!input.success) return false
+    dismissSessionError(input.data.sessionId, input.data.runId)
+    return true
+  })
   ipcMain.handle("session.list", async (_event, raw) =>
     listSessions(WorkspaceIdInput.parse(raw).workspaceId)
   )
@@ -162,5 +193,23 @@ function registerSessionForkIpc() {
   ipcMain.handle("session.heartbeat.clear", async (_event, raw) => {
     const input = SessionHeartbeatClearInput.parse(raw)
     return clearHeartbeat(input.sessionId)
+  })
+}
+
+/** jojo P1：草稿落 DB。启动同步读一次（打开会话要同步取稿），写走 fire-and-forget。 */
+function registerSessionDraftIpc() {
+  ipcMain.removeAllListeners("session.drafts.loadSync")
+  ipcMain.removeAllListeners("session.drafts.save")
+  ipcMain.on("session.drafts.loadSync", (event) => {
+    event.returnValue = loadSessionDrafts()
+  })
+  ipcMain.on("session.drafts.save", (_event, raw: unknown) => {
+    const input = (raw ?? {}) as { sessionId?: unknown; text?: unknown }
+    if (typeof input.sessionId !== "string" || typeof input.text !== "string") return
+    try {
+      saveSessionDraft(input.sessionId, input.text)
+    } catch {
+      // 落盘失败只丢持久化，不影响内存草稿
+    }
   })
 }

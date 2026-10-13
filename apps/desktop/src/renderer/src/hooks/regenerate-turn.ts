@@ -5,6 +5,9 @@
 import { shouldRetryAsTodoContinue } from "../components/ai-chat/composer/todo-continue-message"
 import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { getIde, hasIde } from "../lib/ide"
+import { flushComposerDomToStore } from "./composer-dom"
+import { restoreComposerDraft } from "./queue-composer-send"
+import { setComposerWritebackHeld } from "./composer-sync-lock"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
@@ -42,14 +45,33 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
     }
   }
   if (userIndex === -1) return
+  await regenerateFromUserIndex(store, userIndex)
+}
 
+/**
+ * jojo P2：失败轮没有助手回复时，红卡「重新生成」从这条用户句重跑——
+ * 走截断（保留该用户句、id 不变，main 按 id 原地更新），绝不另发一条新的用户句。
+ */
+/** 返回是否真的起跑了（false = 静默没动，调用方要自己兜底）。 */
+export async function regenerateUserTurn(userMessageId: string): Promise<boolean> {
+  const store = useChatStore.getState()
+  if (store.running || !hasIde()) return false
+  if (!store.workspaceId || !store.sessionId) return false
+  const userIndex = store.messages.findIndex((m) => m.id === userMessageId && m.role === "user")
+  if (userIndex === -1) return false
+  return regenerateFromUserIndex(store, userIndex)
+}
+
+async function regenerateFromUserIndex(store: ChatStore, userIndex: number): Promise<boolean> {
+  const messages = store.messages
+  if (!store.sessionId) return false
   const userMessage = messages[userIndex]
-  if (!userMessage) return
+  if (!userMessage) return false
 
   // luna：失败 / 空的助手轮若前面是用户真话，重发原话（下面的常规截断重跑），不走续跑合成提示。
   if (shouldRetryAsTodoContinue(userMessage)) {
     await continueTodoTurn()
-    return
+    return true
   }
 
   // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）。
@@ -61,7 +83,7 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
     anchorId: userMessage.id,
     mode: "after"
   })
-  if (!stillIdle(sessionAtStart)) return
+  if (!stillIdle(sessionAtStart)) return false
   const retryTarget: RetryTarget = { kind: "regenerate", sessionId: sessionAtStart, userId: userMessage.id }
   const truncatedMessages = messages.slice(0, userIndex + 1)
   const runKind = isAcpComposerRuntime(store.runtimeId)
@@ -107,13 +129,14 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
       pending: nextMessages[nextMessages.length - 1]!,
       retryTarget
     })
-    if (agentRunBlockedCode(started) || isBlockedStart(started)) return
+    if (agentRunBlockedCode(started) || isBlockedStart(started)) return true
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
     store.setRunning(false)
     await resyncAfterStartThrow(sessionId)
   }
+  return true
 }
 
 /** 编辑指定用户消息并重新发送生成 */
@@ -331,4 +354,20 @@ async function claimStartedRun(sessionId: string | null, started: Promise<unknow
 async function reloadSession(sessionId: string, title: string): Promise<void> {
   const { loadSession } = await import("./session-lifecycle")
   await loadSession(sessionId, title)
+}
+
+/**
+ * jojo P2 / leo：没有助手回复的失败轮——按原用户句 id 重跑，不经输入框另发（会多一条用户行）。
+ * 真起跑才收红卡（regenerate 起跑时自己清）；没起跑：红卡留着，原话放回输入框，不自动发。
+ */
+export async function retryFailedUserTurn(lastUser: { id?: string; content: string }): Promise<boolean> {
+  const started = lastUser.id ? await regenerateUserTurn(lastUser.id) : false
+  if (started) return true
+  // luna P2：只 setComposer 不够——写回锁（建会话 / 首发入队留下）会拦住 store→输入框，DOM 也不跟。
+  // 走失败还稿同一条路：先把 DOM 现状收进 store，再合并还稿、解锁并强制对齐 DOM。
+  // leo：只在输入框真为空时还稿；已有后打的字原样不动（不拼成两条），只解锁。
+  const current = flushComposerDomToStore()
+  if (!current.trim()) restoreComposerDraft(lastUser.content)
+  else setComposerWritebackHeld(false)
+  return false
 }

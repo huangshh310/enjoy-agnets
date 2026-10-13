@@ -94,6 +94,21 @@ test("收工判定：只读 bash 轮不进待验收；写类 bash / 未知仍进
       ended: "error",
       tools: [{ name: "bash", state: "output-available", args: { command: "ls" } }]
     }).workflow,
+    "todo"
+  )
+  // 强杀 archive：只读 ls / list_dir 不进待验收。
+  assert.equal(
+    decideTurnOutcome({
+      ended: "archive",
+      tools: [{ name: "bash", state: "input-available", args: { command: "ls" } }]
+    }).workflow,
+    "in_progress"
+  )
+  assert.equal(
+    decideTurnOutcome({
+      ended: "archive",
+      tools: [{ name: "list_dir", state: "input-available", args: { path: "." } }]
+    }).workflow,
     "in_progress"
   )
 })

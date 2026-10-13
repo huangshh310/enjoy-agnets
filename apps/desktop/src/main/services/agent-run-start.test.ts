@@ -21,3 +21,12 @@ test("runAgent / resume / heartbeat 都走 beginAgentRun，且 resolveRuntimeId"
   assert.match(runtime, /readSessionRuntime\(input\.sessionId\)/)
   assert.match(runtime, /会话覆盖 > 入参/)
 })
+
+test("leo：userMessageId 只在返回前同步落库用户句后才回（renderer 据此清 main 的稿）", () => {
+  const hold = src.indexOf("const held = holdRunThenPersistUser(")
+  const assign = src.indexOf("userMessageId = persistOutgoingUser(input, options.persistUser)")
+  const ret = src.indexOf("return userMessageId ? { ok: true, runId, userMessageId } : { ok: true, runId }")
+  assert.ok(hold > 0 && assign > hold && ret > assign)
+  // 回执去重：带回第一次落库的 userMessageId（leo），没落库就不带。
+  assert.match(src, /runId: existing\.runId, userMessageId: existing\.userMessageId/)
+})

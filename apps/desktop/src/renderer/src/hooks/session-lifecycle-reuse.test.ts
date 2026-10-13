@@ -7,7 +7,7 @@ const src = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "ut
 test("新建会话复用当前空会话并回焦 Composer", () => {
   assert.match(src, /isReusableEmptySession/)
   assert.match(src, /focusComposerAfterNewSession/)
-  assert.match(src, /preparingHint: true/)
+  assert.match(src, /setPreparingHint\(true, null\)/)
   assert.match(src, /discardCreatedSession/)
   assert.doesNotMatch(src, /listEmpty|purgeEmpty|recycleEmpty/)
 })

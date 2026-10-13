@@ -9,3 +9,4 @@ export {
   queueInterruptedRunningSettle,
   resetInterruptedRunningForTest
 } from "./restore-interrupted-running.ts"
+export { recordRunStartHead } from "./interrupted-review-git.ts"

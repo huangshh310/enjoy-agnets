@@ -1,6 +1,9 @@
 /**
  * 空闲发送：占 running 槽、乐观气泡、再开 agent.run / 媒体生成。
  */
+import { shouldDismissOnNextSend } from "./send-restore-dismiss"
+import { emptySessionToDiscardAfterWatchdog } from "./watchdog-empty-session"
+import { discardCreatedSession } from "../discard-created-session"
 import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
@@ -22,11 +25,13 @@ import {
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { readComposerDomText } from "../composer-dom"
+import { holdPastSendWatchdogForE2e } from "../../lib/e2e-send-watchdog"
+import { holdEmptyDraftWrite, releaseEmptyDraftHold, writePersistedDraft } from "../../lib/session-draft-storage"
 import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
 import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
-import { claimComposerRunning, releaseComposerRunningIfOwner } from "./composer-running-owner"
+import { claimComposerRunning, releaseComposerRunningIfOwner, runningHeldByOther } from "./composer-running-owner"
 import { armSendWatchdog, markSendLaunched, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { isNewSessionCreatePending } from "../new-session-create"
 import {
@@ -141,6 +146,8 @@ export async function sendComposerMessage(
     }
     const assets = takeComposerAssetDetails()
     traceSend("send:queued", { text: text.length })
+    // jojo：排队首发（「正在准备…」）也算这一发开始了：上一发的红卡收掉，不与思考中同屏。
+    if (shouldDismissOnNextSend(useChatStore.getState().error)) useChatStore.getState().setError(null)
     const queued = waitThenSendAfterCreate(text, (next) => sendComposerMessage(next, undefined, attempt), assets)
     // jojo P1：A 入队即清输入框（原文在队列里，失败路径会还回来），后面打的 B 不会和 A 并成一句。
     clearQueuedComposerText()
@@ -148,10 +155,14 @@ export async function sendComposerMessage(
     return
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")
-  if (firstTurn) store.setPreparingHint(true)
+  if (firstTurn) store.setPreparingHint(true, prepared?.sessionId ?? store.sessionId)
   // running 归属：迟到作废时只放掉自己占的。
   const runningToken: object = attempt ?? {}
   claimComposerRunning(runningToken)
+  // jojo：上一发的「没发出去」红卡在这一发开始时收掉，不与「思考中」同屏。
+  if (!sendAttemptCancelled(attempt) && shouldDismissOnNextSend(useChatStore.getState().error)) {
+    useChatStore.getState().setError(null)
+  }
   if (!guardComposerSend(store)) {
     const blocked = useChatStore.getState().error
     traceSend("send:gate", { blocked })
@@ -175,7 +186,13 @@ export async function sendComposerMessage(
     ? preparedSendSnapshot(prepared.content, prepared.assets)
     : captureComposerSend(typed)
   let optimisticContent: string | undefined
+  // leo：发送清空输入框产生的 "" 先不落 main（落库前强杀会丢稿），发出后再补。
+  const draftSid = prepared?.sessionId ?? store.sessionId
+  if (draftSid) holdEmptyDraftWrite(draftSid)
+  let draftPersisted = false
   try {
+    // e2e：ENJOY_E2E_SEND_WATCHDOG=1 时在发出前卡过看门狗（打包态恒不生效）。
+    if (attempt) await holdPastSendWatchdogForE2e()
     const payload = await resolveSendPayload(prepared, snapshot, attempt)
     if (payload === "cancelled" || sendAttemptCancelled(attempt)) {
       // 看门狗已出提示并还稿：迟到的这一发作废，不能提示和发送同时发生。
@@ -192,15 +209,24 @@ export async function sendComposerMessage(
       return
     }
     // leo M1：建会话窗排队首发在入队时已清过输入框——现在框里是后打的 B，不能按 A 去截 / 清
-    // （appendUserMessage 会清 store.composer，这里原样放回）。
-    const laterTyped = prepared?.sessionId ? useChatStore.getState().composer : null
+    // （appendUserMessage 会清 store.composer，这里原样放回）。B 以输入框 DOM 为准（写回锁期间 store 可能落后），
+    // 没有 DOM（测试 / 无窗）才回落 store。
+    const laterTyped = prepared?.sessionId ? readComposerDomText() : null
     const messages = beginOptimisticTurn(store, payload)
     optimisticContent = payload.content
     if (laterTyped !== null) {
       if (useChatStore.getState().composer !== laterTyped) useChatStore.getState().setComposer(laterTyped)
+      // 框里没有后打的字：这个会话的草稿（内存 + 落盘）不能还留着 A。
+      // leo：清的是发 A 的那个会话（prepared），不是此刻界面上的会话——发送途中切走不能误清别的会话的稿。
+      const sid = prepared?.sessionId
+      if (!laterTyped && sid) {
+        useChatStore.getState().clearSessionDraft(sid)
+        // 处于 hold 期：只清缓存，不往 main 写 ""（main 在用户消息落库事务里清）。
+        writePersistedDraft(sid, "")
+      }
       setComposerWritebackHeld(false)
     } else clearSentComposerText(payload.typed)
-    await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
+    draftPersisted = await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
     // leo #145：A 已被看门狗作废后才抛——看门狗已还过稿，不再还 A 的字、不清 B 的 running。
@@ -216,6 +242,8 @@ export async function sendComposerMessage(
       dropOptimisticUser: optimisticContent !== undefined,
       optimisticContent
     })
+  } finally {
+    if (draftSid) releaseEmptyDraftHold(draftSid, draftPersisted)
   }
 }
 
@@ -228,7 +256,8 @@ const QUEUED_SEND_IDLE_WAIT_MS = 5_000
 
 function armComposerWatchdog(typed: string): SendAttempt {
   const before = useChatStore.getState()
-  return armSendWatchdog(typed, {
+  let self: SendAttempt | undefined
+  self = armSendWatchdog(typed, {
     // 只认这次 Enter 之后新冒出来的提示，Enter 前就挂着的旧条不算。
     noticeShown: () => {
       const state = useChatStore.getState()
@@ -241,10 +270,16 @@ function armComposerWatchdog(typed: string): SendAttempt {
     fail: (text) => {
       traceSend("send:watchdog")
       const state = useChatStore.getState()
+      // jojo P3：先在还稿前判（还稿会放掉 running）：running 被别的轮占着就不删。
+      const otherHolds = self ? runningHeldByOther(self) : true
       state.setPreparingHint(false)
       restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE)
+      // jojo P3：这次 Enter 新建的空会话不留在侧栏（有在跑的 run / 待回助手 / 任何内容都不删）。
+      const empty = emptySessionToDiscardAfterWatchdog(before.sessionId, useChatStore.getState(), otherHolds)
+      if (empty) void discardCreatedSession(empty, () => true, { keepComposer: true, onlyIfEmpty: true })
     }
   })
+  return self
 }
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
@@ -294,7 +329,7 @@ async function launchComposerRun(
   messages: ChatState["messages"],
   createdSessionId?: string,
   attempt?: SendAttempt
-) {
+): Promise<boolean> {
   const sessionId = store.sessionId
   markSendLaunched(attempt)
   traceSend("send:launch")
@@ -305,7 +340,8 @@ async function launchComposerRun(
       messages,
       payload.assetIds,
       payload.executePlan,
-      payload.computerUseOnce
+      payload.computerUseOnce,
+      payload.typed
     )
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
@@ -316,9 +352,11 @@ async function launchComposerRun(
         createdSessionId,
         dropOptimisticUser: true
       })
-      return
+      return false
     }
     const runId = requireAgentRunId(result)
+    // leo：只有 main 回了 userMessageId（返回前已同事务落库用户句）才算「可以清 main 的稿」。
+    const userPersisted = userMessagePersisted(result)
     if (!claimComposerRun(sessionId, runId)) {
       abortOrphanedRun(runId)
       failComposerSend({
@@ -327,10 +365,11 @@ async function launchComposerRun(
         sessionId,
         createdSessionId
       })
-      return
+      return userPersisted
     }
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
+    return userPersisted
   } catch (error) {
     failComposerSend({
       ...restoreFromPayload(payload),
@@ -339,6 +378,7 @@ async function launchComposerRun(
       createdSessionId,
       dropOptimisticUser: true
     })
+    return false
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }
@@ -373,7 +413,8 @@ async function startComposerRun(
   messages: ChatState["messages"],
   assetIds: string[],
   executePlan?: boolean,
-  computerUseOnce?: boolean
+  computerUseOnce?: boolean,
+  draftText?: string
 ) {
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -399,7 +440,9 @@ async function startComposerRun(
       modelId: store.modelId,
       prompt: content,
       messages: outgoingMessages,
-      attachments: assetIds
+      attachments: assetIds,
+      // leo：生图没有 userMessageId；main 落 prompt 时按输入框原文同事务清稿。
+      ...(draftText?.trim() ? { draftText } : {})
     })
   }
   const desktopBias = await desktopBiasForRun(content)
@@ -417,3 +460,9 @@ async function startComposerRun(
   })
 }
 
+
+/** agent.run 回执里带 userMessageId = 用户句已在 main 落库；媒体生成 / 回执去重等没有它 → 不清 main 的稿（靠 main 同事务完全相同清）。 */
+export function userMessagePersisted(result: unknown): boolean {
+  const id = (result as { userMessageId?: unknown } | null)?.userMessageId
+  return typeof id === "string" && id.length > 0
+}

@@ -54,3 +54,18 @@ test("真认不出种类：未知回退，绝不说运行了命令", () => {
   assert.equal(reviewPlaceholderKey("unknown"), "chat.sessionReviewUnknownPlaceholder")
   assert.notEqual(reviewPlaceholderKey("unknown"), "chat.sessionReviewCommandPlaceholder")
 })
+
+test("luna：中断只读 ls 不说可能改了文件", () => {
+  assert.equal(
+    reviewPlaceholderKind([{ name: "bash", state: "output-error", args: { command: "ls" } }], true),
+    "unknown"
+  )
+  assert.equal(
+    reviewPlaceholderKind([{ name: "list_dir", state: "input-available" }], true),
+    "unknown"
+  )
+  assert.equal(
+    reviewPlaceholderKind([{ name: "write_file", state: "input-available" }], true),
+    "maybe"
+  )
+})

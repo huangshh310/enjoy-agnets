@@ -241,6 +241,8 @@ export type ChatStore = {
   errorRetry: { error: string; target: RetryTarget } | null
   /** 建会话或首句排队：Composer 上沿「正在准备…」，不走 toast。 */
   preparingHint: boolean
+  /** 正在准备的会话；null=建会话窗（还没 id）。别的会话不画「正在准备…」。 */
+  preparingSessionId: string | null
   /** 非失败提示（如 ACP resume 回落），不走错误条。 */
   notice: string | null
   /** L4「切换引擎」打开 Composer AgentPicker，不跳设置。 */
@@ -290,7 +292,7 @@ export type ChatStore = {
   setRunning: (running: boolean, runId?: string | null) => void
   setHasKey: (hasKey: boolean) => void
   setError: (message: string | null, retryTarget?: RetryTarget) => void
-  setPreparingHint: (preparing: boolean) => void
+  setPreparingHint: (preparing: boolean, sessionId?: string | null) => void
   setNotice: (message: string | null) => void
   setAgentPickerOpen: (open: boolean) => void
   setWorkspace: (

@@ -75,6 +75,12 @@ export function shouldClearShownOnQueuedSend(shown: string, submitted: string): 
   return Boolean(s) && s === submitted.trim()
 }
 
+/** 换会话：框里不是新会话的稿就换掉（组字中不动）。 */
+export function shouldResetShownOnSessionChange(shown: string, sessionComposer: string): boolean {
+  if (composing) return false
+  return shown !== sessionComposer
+}
+
 export function shouldIgnoreComposerEnter(event: {
   key: string
   keyCode?: number

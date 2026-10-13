@@ -194,7 +194,11 @@ async function beginAgentRun(
   }
   if (input.commandId && !options.runId) {
     const existing = peekCommandReceipt(input.commandId)
-    if (existing) return { ok: true, runId: existing }
+    if (existing) {
+      return existing.userMessageId
+        ? { ok: true, runId: existing.runId, userMessageId: existing.userMessageId }
+        : { ok: true, runId: existing.runId }
+    }
   }
   const runId = options.runId ?? createId("run")
   applyAgentRunSessionAllowReset({
@@ -225,6 +229,11 @@ async function beginAgentRun(
     secret?.contextWindow
   )
   // 挂 run 后紧接着落用户句；失败就撤 run 回稳定码，不留下永远 RUN_ACTIVE 的会话。
+  let userMessageId: string | undefined =
+    !options.runId && input.truncateAfterMessageId && input.expectedTailIds &&
+    shouldPersistOutgoingUser(input, options.persistUser)
+      ? lastUser?.id
+      : undefined
   const held = holdRunThenPersistUser(
     {
       runId,
@@ -236,7 +245,7 @@ async function beginAgentRun(
     },
     () => {
       if (options.runId || !input.truncateAfterMessageId) {
-        persistOutgoingUser(input, options.persistUser)
+        userMessageId = persistOutgoingUser(input, options.persistUser)
       }
     }
   )
@@ -246,7 +255,7 @@ async function beginAgentRun(
     const run = getActiveRun(runId)
     if (run) run.reaskReason = "restore"
   }
-  if (input.commandId) rememberCommandReceipt(input.commandId, runId)
+  if (input.commandId) rememberCommandReceipt(input.commandId, runId, userMessageId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }
@@ -259,7 +268,7 @@ async function beginAgentRun(
     }).catch(() => undefined)
   }
   void prepareAndPump(runId)
-  return { ok: true, runId }
+  return userMessageId ? { ok: true, runId, userMessageId } : { ok: true, runId }
 }
 
 function emitRunStart(
@@ -291,9 +300,10 @@ function lastUserContent(input: RunAgentInput): string {
   return typeof content === "string" ? content.trim() : ""
 }
 
-function persistOutgoingUser(input: RunAgentInput, persistUser: boolean) {
+/** 落了就回这条用户句的 id（renderer 据此才清 main 里的稿）。 */
+function persistOutgoingUser(input: RunAgentInput, persistUser: boolean): string | undefined {
   const lastUser = lastOutgoingUser(input)
-  if (!lastUser || !shouldPersistOutgoingUser(input, persistUser)) return
+  if (!lastUser || !shouldPersistOutgoingUser(input, persistUser)) return undefined
   persistUserTurn(
     input.sessionId,
     lastUser.content,
@@ -301,6 +311,7 @@ function persistOutgoingUser(input: RunAgentInput, persistUser: boolean) {
     lastUser.id
   )
   maybeRenameSession(input.sessionId, lastUser.content)
+  return lastUser.id || undefined
 }
 
 async function modelMessagesForStart(

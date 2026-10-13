@@ -5,6 +5,9 @@ import "blobatar/motion.css"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import App from "./App"
+import { installSessionDraftPersistence } from "./lib/session-draft-storage"
+
+installSessionDraftPersistence()
 
 const gpuFlag = window.enjoyGpuCompositing
 if (gpuFlag === "off" || gpuFlag === "on") {

@@ -21,6 +21,7 @@ import { emitEvent } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { persistMessage } from "./persist-session"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
+import { downgradeReviewWhenGitClean } from "./interrupted-review-git"
 import { assistantBelongsToRun } from "./restore-assistant-snapshot"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
@@ -34,9 +35,45 @@ export function queueInterruptedRunningSettle(row: RunRow): void {
     restartNotice: RESTORE_INTERRUPTED_RUNNING
   })
   writeCancelledRestoreError(row.id, RESTORE_INTERRUPTED_RUNNING)
-  const turn = decideTurnOutcome({ ended: "archive", tools: original })
-  persistSessionWorkflow(row.sessionId, turn.workflow)
-  pendingEmit.set(row.id, turn)
+  // luna/leo：强杀后 git 确认这轮没留下东西（干净 + HEAD 未变 + 无工作区外 / ignored 写）→ 不进待验收。
+  const turn = downgradeReviewWhenGitClean(row.sessionId, decideTurnOutcome({ ended: "archive", tools: original }), {
+    runId: row.id,
+    tools: original
+  })
+  // jojo P3：强杀时这轮一个字 / 一个工具都没回 → 回待办，侧栏不留蓝「执行中」（与 P2a 失败同规则）。
+  const settled =
+    turn.workflow === "in_progress" && !runHasAssistantOutput(row.sessionId, row) ? { ...turn, workflow: "todo" as const } : turn
+  persistSessionWorkflow(row.sessionId, settled.workflow)
+  pendingEmit.set(row.id, settled)
+}
+
+/** 这轮有没有任何助手输出（正文 / 思考 / 工具）；按 persistSealedAssistantTools 同一归属规则找行。 */
+export function runHasAssistantOutput(sessionId: string, run: Pick<RunRow, "id" | "createdAt">): boolean {
+  const db = getDatabase()
+  const latestUser = db
+    .prepare(
+      "SELECT created_at as createdAt FROM messages WHERE session_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 1"
+    )
+    .get(sessionId) as { createdAt: number } | undefined
+  const rows = db
+    .prepare("SELECT content, created_at as createdAt FROM messages WHERE session_id = ? AND role = 'assistant'")
+    .all(sessionId) as Array<{ content: string; createdAt: number }>
+  return rows.some((row) => {
+    const payload = parseAssistantPayload(row.content)
+    if (
+      !assistantBelongsToRun(row.createdAt, latestUser?.createdAt, run.createdAt, {
+        runId: run.id,
+        envelopeRunId: payload.runId
+      })
+    ) {
+      return false
+    }
+    const text = typeof payload.content === "string" ? payload.content.trim() : ""
+    const reasoning = typeof (payload as { reasoning?: unknown }).reasoning === "string"
+      ? ((payload as { reasoning: string }).reasoning).trim()
+      : ""
+    return Boolean(text || reasoning || (payload.tools ?? []).length > 0)
+  })
 }
 
 export function emitQueuedInterruptedRunning(window: BrowserWindow): void {

@@ -14,6 +14,7 @@ import {
   type UserFileAsset
 } from "./user-attachment-parts"
 import { shouldSkipDuplicateUserTurn } from "./persist-user-turn-dedupe"
+import { clearSentDraftInTx } from "./session-drafts"
 
 export type MessageRowWithParts = {
   id: string
@@ -27,10 +28,14 @@ export function persistUserTurn(
   content: string,
   attached: UserFileAsset[],
   messageId?: string,
-  opts?: { inTransaction?: boolean }
+  opts?: { inTransaction?: boolean; draftText?: string }
 ) {
   const last = lastUserTurn(sessionId)
-  if (shouldSkipDuplicateUserTurn(last, content, Date.now())) return
+  if (shouldSkipDuplicateUserTurn(last, content, Date.now())) {
+    // 去重跳过也算这句已在库：照样清掉已发出的稿。
+    clearSentDraftInTx(getDatabase(), sessionId, content, opts?.draftText)
+    return
+  }
   const parts = userTurnParts(content, attached) as UIMessagePart[]
   persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId, opts)
 }

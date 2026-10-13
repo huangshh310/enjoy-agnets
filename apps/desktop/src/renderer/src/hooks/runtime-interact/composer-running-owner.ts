@@ -20,6 +20,11 @@ export function releaseComposerRunningIfOwner(token: object): boolean {
   return true
 }
 
+/** running 被别的发送 / 别的轮占着（不是这次）。 */
+export function runningHeldByOther(token: object): boolean {
+  return useChatStore.getState().running && owner !== token
+}
+
 export function resetComposerRunningOwnerForTest(): void {
   owner = null
 }

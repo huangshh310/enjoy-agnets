@@ -1,6 +1,7 @@
 /**
  * 收件箱纯函数：Attention → 档案行。安静筛只要拍板 / 待验收 / 失败。
  */
+import { inboxSessionTitle, inboxToolPhrase } from "./inbox-tool-phrase"
 import type { PendingApprovalItem } from "@enjoy-agents/ipc-contract"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
@@ -65,9 +66,10 @@ export function inboxFromPendingApprovals(
         id,
         copyKey,
         title: input.t(`attention.kind.${copyKey}`),
+        // luna P3：会话标题 · 给人看的短句，不露原始工具名 / ses_ id。
         summary: row.targetShortName
-          ? `${row.sessionTitle} · ${row.name} · ${row.targetShortName}`
-          : `${row.sessionTitle} · ${row.name}`,
+          ? `${inboxSessionTitle(row.sessionTitle, input.t)} · ${inboxToolPhrase(row.name, input.t)} · ${row.targetShortName}`
+          : `${inboxSessionTitle(row.sessionTitle, input.t)} · ${inboxToolPhrase(row.name, input.t)}`,
         sessionTitle: row.sessionTitle,
         toolName: row.name,
         category: "agent" as InboxKind,

@@ -40,7 +40,7 @@ export function persistSessionWorkflow(
   }
 }
 
-function readSessionWorkflow(sessionId: string): string | null {
+export function readSessionWorkflow(sessionId: string): string | null {
   try {
     const row = getDatabase()
       .prepare("SELECT workflow_status as workflowStatus FROM sessions WHERE id = ?")
