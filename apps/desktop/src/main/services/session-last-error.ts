@@ -40,8 +40,11 @@ export function redactRunError(raw: string): string {
 /** 关卡落水位：未给 runId 时取当前会出卡的那条。 */
 export function dismissSessionError(sessionId: string, runId?: string): boolean {
   if (!sessionId) return false
-  // leo #151：给了 runId 必须是本会话最近一轮且为失败（过期 / 别的会话的 runId 不落水位）。
-  if (runId && latestFailedRunId(sessionId) !== runId) return false
+  // leo #151：给了 runId 必须属于本会话；不是最近一轮失败（已过期）就不落水位，但算成功——旧卡本来就不会再还原，不弹误导 toast。
+  if (runId) {
+    if (!runBelongsToSession(sessionId, runId)) return false
+    if (latestFailedRunId(sessionId) !== runId) return true
+  }
   const target = runId || sessionLastError(sessionId)?.runId
   if (!target) return false
   const db = getDatabase()
@@ -50,6 +53,14 @@ export function dismissSessionError(sessionId: string, runId?: string): boolean 
     "INSERT INTO session_error_dismissed (session_id, run_id, updated_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET run_id = excluded.run_id, updated_at = excluded.updated_at"
   ).run(sessionId, target, Date.now())
   return true
+}
+
+function runBelongsToSession(sessionId: string, runId: string): boolean {
+  try {
+    return listRuns(getDatabase(), { sessionId, kind: "agent" }).some((run) => run.id === runId)
+  } catch {
+    return false
+  }
 }
 
 /** 本会话最近一轮 agent run（补跑超时码不算）是失败时返回其 id。 */

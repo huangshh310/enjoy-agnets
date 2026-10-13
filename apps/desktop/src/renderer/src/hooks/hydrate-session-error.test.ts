@@ -225,3 +225,33 @@ test("leo #151：重启还原 run_1 红卡、不关就重试、run_2 失败后�
     delete (globalThis as { window?: unknown }).window
   }
 })
+
+test("leo #151：切会话 restoredCard 作废；关卡只带本会话的 runId", async () => {
+  const calls: unknown[] = []
+  ;(globalThis as { window?: unknown }).window = {
+    ide: {
+      session: {
+        lastError: () => Promise.resolve({ runId: "run_a", message: "boomA" }),
+        dismissError: (input: unknown) => (calls.push(input), Promise.resolve(true))
+      }
+    }
+  }
+  try {
+    const { useChatStore } = await import("../stores/chat-store.ts")
+    const { useAttentionStore } = await import("../stores/attention/attention-store.ts")
+    const { restoreSessionErrorFromDb, dismissSessionErrorCard, restoredErrorRunId } = await import("./hydrate-session-error.ts")
+    useAttentionStore.setState({ items: [] } as never)
+    useChatStore.setState({ sessionId: "ses_A" } as never)
+    useChatStore.getState().setError(null)
+    assert.equal(await restoreSessionErrorFromDb("ses_A", { running: false, messages: [] }), true)
+    assert.equal(restoredErrorRunId(), "run_a")
+    // 切到 B（红卡文案没变也一样作废）。
+    useChatStore.setState({ sessionId: "ses_B" } as never)
+    assert.equal(restoredErrorRunId(), null)
+    dismissSessionErrorCard()
+    await new Promise((r) => setTimeout(r, 0))
+    assert.deepEqual(calls, [{ sessionId: "ses_B" }])
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+  }
+})

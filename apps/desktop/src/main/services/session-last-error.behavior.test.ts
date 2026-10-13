@@ -117,15 +117,21 @@ test("leo #151：dismissError 的 runId 必须是本会话最近一轮失败；�
   run(sid, "run_st_1", "failed", "boom1", 10)
   run(sid, "run_st_2", "failed", "boom2", 20)
   run(other, "run_so_1", "failed", "x", 30)
-  assert.equal(dismissSessionError(sid, "run_st_1"), false)
+  // 旧 run 已不是最新：不落水位，但返回 true（不弹误导 toast）。
+  assert.equal(dismissSessionError(sid, "run_st_1"), true)
+  // 别的会话的 runId：拒绝。
   assert.equal(dismissSessionError(sid, "run_so_1"), false)
   assert.equal(sessionLastError(sid)?.runId, "run_st_2")
   assert.equal(dismissSessionError(sid, "run_st_2"), true)
   assert.equal(sessionLastError(sid), null)
 })
 
-test("leo #151：ipc 有 ENJOY_E2E_DISMISS_ERROR=fail 桩，关卡恒失败", async () => {
-  const { readFileSync } = await import("node:fs")
-  const src = readFileSync(new URL("../ipc-session.ts", import.meta.url), "utf8")
-  assert.match(src, /ENJOY_E2E_DISMISS_ERROR === "fail"\) return false/)
+test("leo #151：最新一轮必须是失败——最新是成功时，旧失败 runId 不落水位（返回 true），不带 runId 无可关返回 false", () => {
+  const sid = session("latest_ok")
+  run(sid, "run_lo_1", "failed", "boom", 10)
+  run(sid, "run_lo_2", "completed", null, 20)
+  assert.equal(dismissSessionError(sid, "run_lo_1"), true)
+  assert.equal(dismissSessionError(sid), false)
+  const row = getDatabase().prepare("SELECT run_id FROM session_error_dismissed WHERE session_id = ?").get(sid)
+  assert.equal(row, undefined)
 })
