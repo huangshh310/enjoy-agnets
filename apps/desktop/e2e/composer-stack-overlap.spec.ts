@@ -209,15 +209,22 @@ const SHORT = { width: 733, height: 400 } as const
 async function expectApprovalButtonsOneRow(window: Page, label: string, viewportHeight: number): Promise<void> {
   const ids = ["approval-session", "approval-deny", "approval-allow"]
   const boxes: Box[] = []
+  const present: string[] = []
   for (const id of ids) {
     const locator = window.locator(`[data-testid="permission-dock"] [data-testid="${id}"]`)
-    if ((await locator.count()) === 0) return
+    // 没有「本会话总是允许」（如长命令只许一次）时只跳过这一个，其余照查（leo）。
+    if ((await locator.count()) === 0) {
+      expect(id, `${label}: ${id} missing`).toBe("approval-session")
+      continue
+    }
     await expect(locator, `${label}: ${id} visible`).toBeVisible()
     boxes.push(await box(locator))
+    present.push(id)
   }
   const debug = JSON.stringify(boxes)
-  expect(boxes[0].x + boxes[0].width, `${label}: session before deny ${debug}`).toBeLessThanOrEqual(boxes[1].x + 1)
-  expect(boxes[1].x + boxes[1].width, `${label}: deny before allow ${debug}`).toBeLessThanOrEqual(boxes[2].x + 1)
+  for (let i = 1; i < boxes.length; i++) {
+    expect(boxes[i - 1].x + boxes[i - 1].width, `${label}: ${present[i - 1]} before ${present[i]} ${debug}`).toBeLessThanOrEqual(boxes[i].x + 1)
+  }
   for (const b of boxes) {
     expect(Math.abs(b.y - boxes[0].y), `${label}: buttons not on one row ${debug}`).toBeLessThanOrEqual(1)
     expect(b.y, `${label}: button above viewport ${debug}`).toBeGreaterThanOrEqual(0)
@@ -229,7 +236,7 @@ async function expectApprovalButtonsOneRow(window: Page, label: string, viewport
     expect(b.y + b.height, `${label}: button clipped by dock ${JSON.stringify({ dockBox, boxes })}`).toBeLessThanOrEqual(dockBox.y + dockBox.height + 1)
   }
   // 每个按钮整框落在所有裁切祖先里（luna #149 v3：「运行」被父层在 y=195 裁掉一半）。
-  for (const id of ids) {
+  for (const id of present) {
     const clipped = await window
       .locator(`[data-testid="permission-dock"] [data-testid="${id}"]`)
       .evaluate((el) => {
@@ -270,6 +277,26 @@ async function expectApprovalButtonsOneRow(window: Page, label: string, viewport
     expect(hit, `${label}: body title covered ${JSON.stringify(tb)}`).toBe(true)
     if (viewportHeight >= 480) {
       expect(bodyBox.height, `${label}: plan body squeezed to ${bodyBox.height}px`).toBeGreaterThanOrEqual(48)
+    }
+  }
+  // 极矮窗：长命令全文仍可达——命令区可滚到底（leo 安全项）。
+  if (viewportHeight <= 440) {
+    const cmd = window.locator('[data-testid="permission-dock"] [data-testid="approval-command"]')
+    if ((await cmd.count()) > 0) {
+      const reach = await cmd.evaluate((el) => {
+        const overflows = el.scrollHeight > el.clientHeight + 1
+        const oy = getComputedStyle(el).overflowY
+        if (overflows) el.scrollTop = el.scrollHeight
+        const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+        const scrolled = el.scrollTop > 0
+        el.scrollTop = 0
+        return { overflows, oy, atEnd, scrolled }
+      })
+      if (reach.overflows) {
+        expect(reach.oy, `${label}: long command not scrollable`).toBe("auto")
+        expect(reach.scrolled && reach.atEnd, `${label}: command end unreachable ${JSON.stringify(reach)}`).toBe(true)
+      }
+      if (label.includes(" long ")) expect(reach.overflows, `${label}: long command should overflow 2 lines`).toBe(true)
     }
   }
   // 卡顶不被裁：卡顶在会话区内（jojo：矮窗卡顶被裁、消息区为 0）。

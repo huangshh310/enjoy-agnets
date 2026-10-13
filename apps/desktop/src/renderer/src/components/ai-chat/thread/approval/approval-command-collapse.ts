@@ -55,7 +55,8 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
   const showToggle = overflowing || expanded
   // 命令区永不被挤压：shrink-0；收起 4 行，小窗 2 行；展开 40cqh 区内滚。
   const preSize = collapsed
-    ? "max-h-[4lh] [@media(max-height:600px)]:max-h-[2lh] overflow-hidden"
+    ? // 极矮窗（≤440）收起「展开全部」入口，命令区改为区内可滚：长命令后半段（可能是危险部分）仍看得到（leo）。
+      "max-h-[4lh] [@media(max-height:600px)]:max-h-[2lh] overflow-hidden [@media(max-height:440px)]:overflow-y-auto [@media(max-height:440px)]:overscroll-contain"
     : // 小窗展开也只给 2 行高、区内滚：按钮与命令必须同时可见（luna #144 v2）。
       "max-h-[40cqh] overflow-y-auto [@media(max-height:600px)]:max-h-[2lh]"
   return h(

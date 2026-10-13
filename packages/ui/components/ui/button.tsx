@@ -20,6 +20,9 @@ const buttonVariants = cva(
         ghost:
           "text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-foreground-icon-primary",
         link: "text-accent-500 underline-offset-4 hover:underline",
+        // 实底主操作：启用主色实底白字；禁用灰底 + 明显描边（浅色描边偏深），浅深色都看得见。
+        solid:
+          "border border-accent-600 bg-accent-500 font-semibold text-text-white shadow-xs hover:bg-accent-600 disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
       },
       size: {
         default: "h-9 rounded-2lg p-2 has-[>svg]:px-3",
