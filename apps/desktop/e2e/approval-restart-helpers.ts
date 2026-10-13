@@ -39,7 +39,7 @@ export async function bootPendingApproval(opts?: {
     ENJOY_E2E_WORKSPACE: workspace,
     ENJOY_E2E_USERDATA: userData,
     ...(opts?.slowTool ? { ENJOY_E2E_SLOW_TOOL: "1" } : {}),
-    ...(opts?.extraEnv ?? {})
+    ...opts?.extraEnv
   }
   const app = await launchElectron(env)
   try {
