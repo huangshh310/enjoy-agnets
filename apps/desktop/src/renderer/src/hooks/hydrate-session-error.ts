@@ -40,22 +40,53 @@ export async function restoreSessionErrorFromDb(
   const store = useChatStore.getState()
   if (store.sessionId !== sessionId) return false
   if (store.error === message) return true
+  if (last?.runId) restoredRunIds.set(sessionId, last.runId)
   const target = retryTargetFromMessages(sessionId, opts.messages)
   store.setError(message, target ?? undefined)
   return true
 }
 
+/** 本会话红卡来自哪个 run（还原时记下），关卡时带上做水位。 */
+const restoredRunIds = new Map<string, string>()
+
+type DismissIde = { session: { dismissError: (input: { sessionId: string; runId?: string }) => unknown } }
+
+/** 落库关卡水位：失败重试一次，仍失败回调 onFailed（出 toast）。 */
+export async function persistErrorDismiss(
+  ide: DismissIde,
+  input: { sessionId: string; runId?: string },
+  onFailed?: () => void
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const ok = await ide.session.dismissError(input)
+      if (ok !== false) return true
+    } catch {
+      /* 再试一次 */
+    }
+  }
+  onFailed?.()
+  return false
+}
+
 /** leo：用户关红卡要落库（按 runId 水位），否则重启 loadSession 又还原出来。 */
-export function dismissSessionErrorCard(): void {
+export function dismissSessionErrorCard(opts?: { onPersistFailed?: () => void }): void {
   const store = useChatStore.getState()
   const sessionId = store.sessionId
   store.setError(null)
   if (!sessionId) return
+  const attention = useAttentionStore.getState()
+  const slotId = attentionSlotId(sessionId, "error")
+  const slotRunId = attention.items.find((item) => item.id === slotId)?.runId || undefined
+  const runId = restoredRunIds.get(sessionId) ?? slotRunId
+  restoredRunIds.delete(sessionId)
   // #151：Attention 出错槽一起关掉，否则红点 / 待处理条 / 收件箱还挂着，下一次回灌又被它带出来。
-  useAttentionStore.getState().dismiss(attentionSlotId(sessionId, "error"))
+  attention.dismiss(slotId)
+  let ide: DismissIde
   try {
-    void Promise.resolve(getIde().session.dismissError({ sessionId })).catch(() => undefined)
+    ide = getIde() as unknown as DismissIde
   } catch {
-    /* 没桥（测试 / 早期启动）就只关内存卡 */
+    return /* 没桥（测试 / 早期启动）就只关内存卡 */
   }
+  void persistErrorDismiss(ide, runId ? { sessionId, runId } : { sessionId }, opts?.onPersistFailed)
 }

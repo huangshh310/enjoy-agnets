@@ -9,6 +9,7 @@ import {
   RiRefreshLine,
   RiUserLine
 } from "@remixicon/react"
+import { showAppToast } from "@renderer/lib/app-toast"
 import { dismissSessionErrorCard } from "../../../hooks/hydrate-session-error"
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -28,6 +29,7 @@ import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { threadErrorCardVisible } from "@renderer/lib/usage/thread-error-card"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -70,6 +72,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   if (kind === "needs_model") {
     return <ThreadNeedModelNotice onDismiss={() => setError(null)} className={className} />
   }
+  // 与「需处理」条去重共用同一判断：这里不画红卡的，条也不让位（leo #151）。
+  if (!threadErrorCardVisible(error)) return null
   if (kind === "credit") {
     return <QuotaExhaustedCard error={error} id="thread-error-banner" />
   }
@@ -226,7 +230,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             <button
               type="button"
               data-testid="thread-error-dismiss"
-              onClick={dismissSessionErrorCard}
+              onClick={() =>
+                dismissSessionErrorCard({ onPersistFailed: () => showAppToast(t("chat.errorDismissPersistFailed")) })
+              }
               title={t("chat.dismissError")}
               className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
             >

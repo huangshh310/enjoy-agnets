@@ -1,6 +1,7 @@
 /** 对话舞台、侧栏、作曲器、审批与空状态。 */
 export const zhChat = {
   newAgent: "新对话",
+  errorDismissPersistFailed: "红卡已关，但没记下来，重启后可能还会出现",
   kanbanTitle: "看板",
   kanbanHint: "按待办 / 进行中 / 待验收 / 已完成排列会话。拖到另一列会改状态。",
   kanbanActiveHint: "{running} 个进行中 · {review} 个待验收",

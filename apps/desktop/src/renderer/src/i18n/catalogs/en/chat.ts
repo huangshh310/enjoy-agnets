@@ -1,5 +1,6 @@
 /** Chat stage, sidebar, composer, approvals, empty state. */
 export const enChat = {
+  errorDismissPersistFailed: "Closed, but couldn't save that — it may reappear after restart",
   newAgent: "New agent",
   kanbanTitle: "Kanban",
   kanbanHint: "Sessions by To do / In progress / Needs review / Done. Drop a card to change status.",

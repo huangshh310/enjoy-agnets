@@ -9,12 +9,13 @@ import { AttentionChip } from "./attention-chip"
 import { useAttentionStrip } from "./use-attention-strip"
 import { hiddenByErrorCard } from "./error-card-dedupe"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { threadErrorCardVisible } from "@renderer/lib/usage/thread-error-card"
 
 export function AttentionNeedsBar() {
   const t = useT()
   const strip = useAttentionStrip()
   const { now, dismissAll, dismissOne, openItem, compactFor } = strip
-  const errorCardVisible = useChatStore((state) => Boolean(state.error))
+  const errorCardVisible = useChatStore((state) => threadErrorCardVisible(state.error))
   const dedupe = { isChat: strip.isChat, sessionId: strip.sessionId, errorCardVisible }
   // 同一条审批的卡已在本会话 Dock 里摊开时，「需处理」不再重复占一行（luna #146）；别的会话的待办照常显示。
   const needsItems = strip.needsItems.filter((item) => !compactFor(item) && !hiddenByErrorCard(item, dedupe))

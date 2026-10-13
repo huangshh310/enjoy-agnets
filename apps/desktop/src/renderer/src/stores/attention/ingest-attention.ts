@@ -62,7 +62,7 @@ export function ingestAttentionEvent(
   const kind = attentionKindFromEvent(input.event)
   if (kind === "complete" && input.omitComplete) {
     // 前台会话成功跑完：不留「已完成」胶囊，但本会话旧的出错一并收掉（luna #151，对齐 #150 lastError 成功即清）。
-    return resolveErrorSlots(resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event)), input.sessionId)
+    return resolveErrorSlots(resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event)), input.sessionId, successMark(input.event, now))
   }
   if (isNeutralTurn(input)) {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
@@ -75,7 +75,8 @@ export function ingestAttentionEvent(
       : kind === "complete"
         ? resolveErrorSlots(
             resolveDecisionSlots(clearActiveCompletes(aged), input.sessionId, eventRunId(input.event)),
-            input.sessionId
+            input.sessionId,
+            successMark(input.event, now)
           )
         : kind === "pending_approval" || kind === "ask_user"
           ? resolveTerminalSlots(aged, input.sessionId)
@@ -139,11 +140,24 @@ export function clearCompleteIfSessionErrored(
   return resolveTerminalSlots(items, sessionId)
 }
 
-/** 成功跑完一轮：本会话还活着的出错收成 resolved（待处理条 / 侧栏红点 / 收件箱失败一起消失）。 */
-export function resolveErrorSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
+export type SuccessMark = { runId?: string; at: number }
+
+/** 成功事件的 runId 与发生时间（事件自带 timestamp 优先，迟到的旧事件不按到达时间算）。 */
+export function successMark(event: StreamEvent, now: number): SuccessMark {
+  const at = "timestamp" in event && typeof event.timestamp === "number" ? event.timestamp : now
+  return { runId: eventRunId(event), at }
+}
+
+/**
+ * 成功跑完一轮：本会话还活着的出错收成 resolved（待处理条 / 侧栏红点 / 收件箱失败一起消失）。
+ * 只收同一 run 的出错，或发生在这次成功之前（含同刻）的出错；旧 run 的成功迟到不清新出错（leo #151）。
+ */
+export function resolveErrorSlots(items: AttentionItem[], sessionId: string, mark: SuccessMark): AttentionItem[] {
   return items.map((item) => {
     if (item.sessionId !== sessionId || item.kind !== "error") return item
     if (item.status !== "active" && item.status !== "focused") return item
+    const sameRun = Boolean(mark.runId) && item.runId === mark.runId
+    if (!sameRun && item.occurredAt > mark.at) return item
     return { ...item, status: "resolved" }
   })
 }

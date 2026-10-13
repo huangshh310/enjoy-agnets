@@ -20,7 +20,7 @@ test("leo：关红卡落库（session.dismissError），重启不再还原；横
     new URL("../components/ai-chat/thread/thread-error-banner.tsx", import.meta.url),
     "utf8"
   )
-  assert.match(banner, /onClick=\{dismissSessionErrorCard\}/)
+  assert.match(banner, /dismissSessionErrorCard\(\{ onPersistFailed/)
   const calls: unknown[] = []
   ;(globalThis as { window?: unknown }).window = {
     ide: { session: { dismissError: (input: unknown) => (calls.push(input), Promise.resolve(true)) } }
@@ -77,7 +77,7 @@ test("#151：关红卡同时把本会话 Attention 出错槽标 dismissed（红�
     assert.equal(items.find((i) => i.id === "a:error")?.status, "dismissed")
     assert.equal(items.find((i) => i.id === "b:error")?.status, "active")
     assert.equal(sessionFailed("a", items), false)
-    assert.deepEqual(calls, [{ sessionId: "a" }])
+    assert.deepEqual(calls, [{ sessionId: "a", runId: "r" }])
   } finally {
     delete (globalThis as { window?: unknown }).window
   }
@@ -126,6 +126,64 @@ test("跨层：真 applySessionHydrate + restoreSessionErrorFromDb——A 有错
     useAttentionStore.setState({ items: [], parks: {} } as never)
     useChatStore.setState({ sessionId: null, error: null } as never)
     await open("a")
+    assert.equal(useChatStore.getState().error, null)
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+  }
+})
+
+test("leo #151：关卡落库失败重试一次，仍失败才出 toast；第二次成功不出", async () => {
+  const { persistErrorDismiss } = await import("./hydrate-session-error.ts")
+  let n = 0
+  let toasts = 0
+  const flaky = { session: { dismissError: () => (++n === 1 ? Promise.reject(new Error("x")) : Promise.resolve(true)) } }
+  assert.equal(await persistErrorDismiss(flaky, { sessionId: "s" }, () => toasts++), true)
+  assert.equal(n, 2)
+  assert.equal(toasts, 0)
+  n = 0
+  const dead = { session: { dismissError: () => (n++, Promise.resolve(false)) } }
+  assert.equal(await persistErrorDismiss(dead, { sessionId: "s" }, () => toasts++), false)
+  assert.equal(n, 2)
+  assert.equal(toasts, 1)
+})
+
+test("leo #151：关卡带上还原时的 runId（kai 的 session.dismissError 接受 runId）", async () => {
+  const calls: unknown[] = []
+  ;(globalThis as { window?: unknown }).window = {
+    ide: {
+      session: {
+        lastError: () => Promise.resolve({ runId: "run_9", message: "boom" }),
+        dismissError: (input: unknown) => (calls.push(input), Promise.resolve(true))
+      }
+    }
+  }
+  try {
+    const { useChatStore } = await import("../stores/chat-store.ts")
+    const { restoreSessionErrorFromDb, dismissSessionErrorCard } = await import("./hydrate-session-error.ts")
+    useChatStore.setState({ sessionId: "ses_r" } as never)
+    assert.equal(await restoreSessionErrorFromDb("ses_r", { running: false, messages: [] }), true)
+    dismissSessionErrorCard()
+    await new Promise((r) => setTimeout(r, 0))
+    assert.deepEqual(calls, [{ sessionId: "ses_r", runId: "run_9" }])
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+  }
+})
+
+test("leo #151：lastError 回来时已切到别的会话，不把 A 的红卡写到 B", async () => {
+  let release: (v: unknown) => void = () => undefined
+  ;(globalThis as { window?: unknown }).window = {
+    ide: { session: { lastError: () => new Promise((r) => (release = r)) } }
+  }
+  try {
+    const { useChatStore } = await import("../stores/chat-store.ts")
+    const { restoreSessionErrorFromDb } = await import("./hydrate-session-error.ts")
+    useChatStore.setState({ sessionId: "ses_a" } as never)
+    useChatStore.getState().setError(null)
+    const pending = restoreSessionErrorFromDb("ses_a", { running: false, messages: [] })
+    useChatStore.setState({ sessionId: "ses_b" } as never)
+    release({ runId: "r", message: "A 的错" })
+    assert.equal(await pending, false)
     assert.equal(useChatStore.getState().error, null)
   } finally {
     delete (globalThis as { window?: unknown }).window
