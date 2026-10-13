@@ -93,7 +93,7 @@ function StepTitleRow({
           <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
             <span className="size-1.5 rounded-full bg-text-tertiary" />
           </span>
-          <span>{t("chat.restartAbandoned")}</span>
+          <span>{t("chat.restartStepUnfinished")}</span>
         </span>
       ) : null}
       {node.status === "completed" ? (

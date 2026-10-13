@@ -72,7 +72,7 @@ test("重启放弃工具行走中性「重启后已中断」，不是拒绝或�
     null,
     (key) => key
   )
-  assert.equal(headline, "chat.restartAbandoned")
+  assert.equal(headline, "chat.restartStepUnfinished")
   assert.notEqual(headline, "chat.toolStopped")
   assert.notEqual(headline, "chat.toolDenied")
 })

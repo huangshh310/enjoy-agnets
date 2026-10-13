@@ -47,7 +47,7 @@ function readSettings(name: string): string {
 test("中英发现性文案与预览锁一致，且不含协议词", () => {
   assert.equal(lookup(zh, "settings.approvalDiscover.title"), "审批策略")
   assert.equal(lookup(zh, "settings.approvalDiscover.manage"), "管理审批策略 →")
-  assert.equal(lookup(zh, "settings.approvalDiscover.back"), "← 返回智能体设置")
+  assert.equal(lookup(zh, "settings.approvalDiscover.back"), "← 返回助手设置")
   assert.equal(lookup(zh, "settings.approvalDiscover.summaryDefault"), "每次写盘与命令都需确认")
   assert.equal(lookup(zh, "settings.approvalDiscover.summaryPartial"), "本会话已放行部分操作 · 其余仍确认")
   assert.equal(lookup(zh, "settings.approvalDiscover.summaryYolo"), "自动批准已开启 · 请谨慎")

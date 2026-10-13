@@ -21,9 +21,7 @@ export const STACKED_ICON_CLASS_NAME = "size-3.5 shrink-0 text-text-secondary"
 
 export const STACKED_LABEL_CLASS_NAME = "shrink-0 text-text-primary"
 
-export const STACKED_PEEK_CLASS_NAME = [
-  "min-w-0 flex-1 overflow-hidden whitespace-nowrap text-text-secondary",
-  "[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)]"
-].join(" ")
+/** 733 宽下文件名放不下时用省略号收尾，不再渐隐（luna j149-11）。 */
+export const STACKED_PEEK_CLASS_NAME = "min-w-0 flex-1 truncate whitespace-nowrap text-text-secondary"
 
 export const STACKED_DIVIDER_CLASS_NAME = "border-t border-separator-border/70"

@@ -92,11 +92,12 @@ function useAgentPickerFace(
 ) {
   const { t, runtimeId, sessionId, sessionModels, current, agents, pendingToId, handoffPhase } = base
   const pickerLocked = !canOpenAgentPicker(handoffPhase)
-  const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
+  // Enjoy 本地的 label 来自 harness 预设（中文），界面一律走 i18n（luna #151：英文不露「Enjoy 本地」）。
+  const currentAgentName = runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (current?.label ?? runtimeId)
   const currentFace = useEngineFace(runtimeId, currentAgentName)
   const pendingTo = agents.find((item) => item.id === pendingToId)
   const pendingToName =
-    pendingTo?.label ?? (pendingToId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (pendingToId ?? ""))
+    pendingToId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (pendingTo?.label ?? pendingToId ?? "")
   const quota = useQuotaHint(runtimeId)
   const modelFace = pickerModelFace({
     t, runtimeId, sessionId, sessionModels, current, modelId, modelLabel, models,

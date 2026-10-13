@@ -242,7 +242,7 @@ export const enSettings = {
     pasteInlineDesc: "Keep a large paste in the composer instead of attaching pasted-text.txt.",
     recall: "Recall last prompt",
     recallDesc: "With an empty composer, press ↑ to bring back sent text from this thread (no attachments).",
-    steer: "Steer now",
+    steer: "Send right away",
     steerDesc: "While a run is active, send the current draft at the next safe checkpoint.",
     cyclePermission: "Cycle Approval Permission Mode",
     cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Works when the input is empty or focus is outside other inputs; Shift+Tab moves focus backward when the input has text.",

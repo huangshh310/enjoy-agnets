@@ -78,6 +78,7 @@ export function SidebarSessionRow({
         <SessionRowMeta
           running={activity.running}
           waitingReview={activity.waitingReview}
+          failedLabel={activity.failed ? t("attention.kind.error") : null}
           updatedAt={updatedAt}
           formatTime={formatTime}
           hideOnHover={true}
@@ -112,12 +113,14 @@ function SessionRowIdentity({
 function SessionRowMeta({
   running,
   waitingReview,
+  failedLabel,
   updatedAt,
   formatTime,
   hideOnHover
 }: {
   running: boolean
   waitingReview: boolean
+  failedLabel: string | null
   updatedAt: number
   formatTime: (timestamp: number) => string
   hideOnHover: boolean
@@ -125,9 +128,21 @@ function SessionRowMeta({
   const hide = hideOnHover ? "group-hover/session:hidden" : undefined
   if (waitingReview) {
     return (
+      // 等你验收 / 拍板：中性强调色；红点只留给失败（luna #151）。
       <span
-        className={cx("size-2 shrink-0 rounded-full bg-text-error-primary", hide)}
+        data-testid="session-row-waiting"
+        className={cx("size-2 shrink-0 rounded-full bg-accent-500", hide)}
         aria-label="waiting review"
+      />
+    )
+  }
+  if (failedLabel) {
+    return (
+      <span
+        data-testid="session-row-failed"
+        title={failedLabel}
+        aria-label={failedLabel}
+        className={cx("size-2 shrink-0 rounded-full bg-text-error-primary", hide)}
       />
     )
   }

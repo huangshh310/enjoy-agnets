@@ -36,7 +36,8 @@ test("预览真源仍在仓内，三件套锁都在", () => {
 })
 
 test("中文词表与预览同文", () => {
-  assert.equal(zhInboxPages.navApproval, "拍板")
+  // host 3cf0：「拍板」改人话「等你决定」（预览真源仍写拍板，待设计稿跟进）。
+  assert.equal(zhInboxPages.navApproval, "等你决定")
   assert.equal(zhInboxPages.navNeedsReview, "待验收")
   assert.equal(zhInboxPages.navFailed, "失败")
   assert.equal(zhInboxPages.quietHint, "")

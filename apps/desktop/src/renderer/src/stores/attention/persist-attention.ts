@@ -1,6 +1,7 @@
 /**
  * Attention 耐久层：error/complete 条目写穿到 SQLite。
  * 实况槽位仍在内存；这里只保证重启后 Inbox 档案还能看到历史。
+ * 状态变化（如成功后出错 → resolved）也重写一次，重启后收件箱不再把已好的会话列成失败（luna #151）。
  */
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useAttentionStore } from "./attention-store"
@@ -30,12 +31,12 @@ export function startAttentionPersistence(): () => void {
     const fresh = items.filter(
       (item) =>
         (item.kind === "error" || item.kind === "complete") &&
-        !persistedKeys.has(`${item.id}:${item.occurredAt}`)
+        !persistedKeys.has(`${item.id}:${item.occurredAt}:${item.status}`)
     )
     if (fresh.length === 0) return
     for (const item of fresh) {
       if (persistedKeys.size > 1000) persistedKeys.clear()
-      persistedKeys.add(`${item.id}:${item.occurredAt}`)
+      persistedKeys.add(`${item.id}:${item.occurredAt}:${item.status}`)
     }
     void getIde()
       .inbox.putStates({ entries: fresh.map((item) => ({ id: item.id, item: toArchived(item) })) })

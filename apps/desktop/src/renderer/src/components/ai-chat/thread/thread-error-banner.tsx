@@ -1,3 +1,4 @@
+import { displayThreadErrorText } from "@renderer/lib/usage/redact-thread-error"
 import {
   RiAlertLine,
   RiCheckLine,
@@ -26,7 +27,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
-import { classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -194,14 +195,14 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               : kind === "store"
                 ? t("chat.errorGenericHint")
                 : kind === "send_restore"
-                  ? humanizeThreadError(error, t)
+                  ? displayThreadErrorText(error, t)
                   : kind === "restore_no_matching"
                     ? t("chat.restoreNoMatching")
                     : kind === "run_failed"
                       ? t("chat.runFailed")
                       : kind === "needs_vision"
                       ? t("chat.needsVisionHint")
-                      : humanizeThreadError(error, t))
+                      : displayThreadErrorText(error, t))
   const code = isDevCopyEnabled() ? error : null
 
   return (
@@ -224,6 +225,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             <span className="text-body-medium font-semibold text-text-primary">{title}</span>
             <button
               type="button"
+              data-testid="thread-error-dismiss"
               onClick={dismissSessionErrorCard}
               title={t("chat.dismissError")}
               className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"

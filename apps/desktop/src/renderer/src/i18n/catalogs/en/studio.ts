@@ -221,6 +221,8 @@ export const enStudio = {
     title: "Automations",
     desc: "Run one round on a schedule, a file save, or a local request. Closing the app pauses it.",
     newAutomation: "New",
+    toggleFailed: "Couldn't change the switch: {message}",
+    promptRequired: "Fill in the prompt to save",
     editTitle: "Edit automation",
     createTitle: "New automation",
     workspaceHint: "Runs in the current project",

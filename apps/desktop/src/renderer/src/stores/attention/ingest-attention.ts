@@ -60,7 +60,11 @@ export function ingestAttentionEvent(
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   const kind = attentionKindFromEvent(input.event)
-  if (isNeutralTurn(input) || (kind === "complete" && input.omitComplete)) {
+  if (kind === "complete" && input.omitComplete) {
+    // 前台会话成功跑完：不留「已完成」胶囊，但本会话旧的出错一并收掉（luna #151，对齐 #150 lastError 成功即清）。
+    return resolveErrorSlots(resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event)), input.sessionId)
+  }
+  if (isNeutralTurn(input)) {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   if (!kind) return aged
@@ -69,7 +73,10 @@ export function ingestAttentionEvent(
     kind === "error"
       ? resolveTerminalSlots(decided, input.sessionId)
       : kind === "complete"
-        ? resolveDecisionSlots(clearActiveCompletes(aged), input.sessionId, eventRunId(input.event))
+        ? resolveErrorSlots(
+            resolveDecisionSlots(clearActiveCompletes(aged), input.sessionId, eventRunId(input.event)),
+            input.sessionId
+          )
         : kind === "pending_approval" || kind === "ask_user"
           ? resolveTerminalSlots(aged, input.sessionId)
           : aged
@@ -130,6 +137,15 @@ export function clearCompleteIfSessionErrored(
   )
   if (!errored) return items
   return resolveTerminalSlots(items, sessionId)
+}
+
+/** 成功跑完一轮：本会话还活着的出错收成 resolved（待处理条 / 侧栏红点 / 收件箱失败一起消失）。 */
+export function resolveErrorSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
+  return items.map((item) => {
+    if (item.sessionId !== sessionId || item.kind !== "error") return item
+    if (item.status !== "active" && item.status !== "focused") return item
+    return { ...item, status: "resolved" }
+  })
 }
 
 export function resolveTerminalSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {

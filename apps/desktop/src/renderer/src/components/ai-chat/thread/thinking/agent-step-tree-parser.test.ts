@@ -204,7 +204,7 @@ test("restart_abandoned 显示重启后已中断，标题走人话不是 write f
   assert.equal(nodes[0]?.status, "restart")
   assert.equal(nodes[0]?.title, "写入 e2e-stub.txt")
   assert.doesNotMatch(nodes[0]?.title ?? "", /write file/i)
-  assert.equal(nodes[0]?.errorText, "chat.restartAbandoned")
+  assert.equal(nodes[0]?.errorText, "chat.restartStepUnfinished")
   assert.notEqual(nodes[0]?.errorText, "studio.automations.catchUpTimeout")
 })
 

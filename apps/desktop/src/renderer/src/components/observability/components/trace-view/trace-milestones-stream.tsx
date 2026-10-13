@@ -3,6 +3,8 @@
  * 呈现清晰的阶段时序演进流水，并对齐同模型平均基准与相邻链路快速跳转。
  */
 import { useMemo } from "react"
+import { useT } from "@renderer/i18n"
+import { inboxToolPhrase } from "@renderer/components/inbox/lib/inbox-tool-phrase"
 import {
   RiArrowRightLine,
   RiCheckDoubleLine,
@@ -25,6 +27,7 @@ export function TraceMilestonesStream(props: {
   onSelectMetric?: (metric: TelemetryMetric) => void
 }) {
   const { metric, events = [], allMetrics = [], onSelectMetric } = props
+  const t = useT()
 
   const duration = metric.durationMs ?? 0
   const ttfo = metric.ttfoMs ?? 0
@@ -59,7 +62,7 @@ export function TraceMilestonesStream(props: {
       if (ev.toolName) {
         list.push({
           timeOffset: ev.timestamp ? `${ev.timestamp}ms` : "阶段中",
-          title: `工具调用: ${ev.toolName}`,
+          title: inboxToolPhrase(ev.toolName, t),
           desc: ev.decision ? `审批决策: ${ev.decision}` : "执行本地或远程工具动作",
           icon: RiNodeTree,
           colorClass: "text-chart-5 bg-chart-5/10",
@@ -102,7 +105,7 @@ export function TraceMilestonesStream(props: {
     })
 
     return list
-  }, [duration, ttfo, inTok, outTok, isSuccess, events, metric.errorClass])
+  }, [duration, ttfo, inTok, outTok, isSuccess, events, metric.errorClass, t])
 
   // 2. 同模型基准与相邻调用链路
   const { siblingTraces, modelAvgDuration, modelCallsCount } = useMemo(() => {

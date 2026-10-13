@@ -100,14 +100,18 @@ test("小窗：路径行让位、命令区与链接 shrink-0", () => {
   assert.match(html, /data-testid="approval-command-toggle"[^>]*class="shrink-0 self-start/)
 })
 
-test("小窗卡片：标题独占底栏一行，三钮「本会话 · 拒绝 · 运行」同一行不换行", () => {
+test("小窗卡片：标题独占底栏一行，三钮顺序「本会话 · 拒绝 · 运行」，窄卡整颗换行不截断", () => {
   const chrome = readFileSync(new URL("./approval-chrome.tsx", import.meta.url), "utf8")
   const actions = readFileSync(new URL("./approval-actions.tsx", import.meta.url), "utf8")
   assert.match(chrome, /data-testid="approval-compact-title"/)
   assert.match(chrome, /variant === "command" && "\[@media\(max-height:600px\)\]:block"/)
   assert.match(chrome, /\? "basis-full \[@media\(max-height:440px\)\]:basis-0/)
   assert.match(chrome, /variant === "command" \? "\[@media\(max-height:600px\)\]:hidden"/)
-  assert.match(actions, /flex shrink-0 flex-nowrap items-center justify-end/)
+  // 窄卡整颗换行、不截断（luna #151）：全称完整露出，范围词不丢；全称同时在 aria-label / title。
+  assert.match(actions, /flex min-w-0 max-w-full flex-wrap items-center justify-end/)
+  assert.doesNotMatch(actions, /truncate/)
+  assert.match(actions, /aria-label=\{alwaysLabel \?\? t\("chat.alwaysAllow"\)\}/)
+  assert.match(actions, /title=\{`\$\{alwaysLabel \?\? t\("chat.alwaysAllow"\)\}/)
   assert.doesNotMatch(actions, /flex-wrap-reverse/)
   const session = actions.indexOf('data-testid="approval-session"')
   const group = actions.indexOf('data-testid="approval-primary-actions"')

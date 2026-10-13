@@ -39,8 +39,27 @@ export function isLiveInboxSession(sessionId: string, repositories?: RepositoryN
   return liveSessions.some((row) => row.id === sessionId)
 }
 
+/** 失败：出错 / 中断且还没好（成功跑完或归档后 resolved / expired 的不再算，luna #151）。 */
 export function isFailedItem(item: InboxNotification): boolean {
-  return item.copyKey === "error" || item.copyKey === "aborted"
+  if (item.copyKey !== "error" && item.copyKey !== "aborted") return false
+  // dismissed：用户关了红卡（#150 落水位）＝已知晓，不再算失败。
+  return item.status !== "resolved" && item.status !== "expired" && item.status !== "dismissed"
+}
+
+/** 档案里旧的出错：同会话之后有成功跑完（complete 更晚）就当已好（老档案 status 没回写的兜底）。 */
+export function settleSupersededErrors<T extends { sessionId: string; kind: string; status: string; occurredAt: number }>(
+  items: T[]
+): T[] {
+  const lastOk = new Map<string, number>()
+  for (const item of items) {
+    if (item.kind !== "complete") continue
+    lastOk.set(item.sessionId, Math.max(lastOk.get(item.sessionId) ?? -Infinity, item.occurredAt))
+  }
+  return items.map((item) => {
+    if (item.kind !== "error") return item
+    const ok = lastOk.get(item.sessionId)
+    return ok != null && ok > item.occurredAt ? { ...item, status: "resolved" } : item
+  })
 }
 
 export function isQuietInboxItem(item: InboxNotification): boolean {

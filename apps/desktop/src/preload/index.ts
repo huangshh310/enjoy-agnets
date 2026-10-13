@@ -183,6 +183,7 @@ const ide = {
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),
     upsert: (input: unknown) => ipcRenderer.invoke("automations.upsert", input),
+    setEnabled: (input: unknown) => ipcRenderer.invoke("automations.setEnabled", input),
     remove: (input: unknown) => ipcRenderer.invoke("automations.remove", input),
     run: (input: unknown) => ipcRenderer.invoke("automations.run", input),
     listMissed: (input: unknown) => ipcRenderer.invoke("automations.missed.list", input),

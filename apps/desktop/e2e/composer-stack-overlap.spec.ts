@@ -484,7 +484,7 @@ async function expectStackLayout(window: Page, label: string): Promise<void> {
   // 小卡在消息列表里：可视部分落在会话区内，且在中断行之下。
   expect(notice.y + notice.height, `${label}: notice below list`).toBeLessThanOrEqual(conv.y + conv.height + 1)
   const row = await box(
-    window.locator("[data-thread-message]").filter({ hasText: "重启后已中断" }).last()
+    window.locator("[data-thread-message]").filter({ hasText: "这一步没做完" }).last()
   )
   expect(notice.y, `${label}: notice above its run row`).toBeGreaterThanOrEqual(row.y + row.height - 1)
 }

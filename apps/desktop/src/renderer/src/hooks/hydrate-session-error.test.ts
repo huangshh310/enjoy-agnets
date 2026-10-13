@@ -37,3 +37,97 @@ test("leo：关红卡落库（session.dismissError），重启不再还原；横
     delete (globalThis as { window?: unknown }).window
   }
 })
+
+/** 桥桩：session.lastError 按「库」返回；dismissError 落水位后 lastError 返回 null（模拟 #150 runs 表 + 水位）。 */
+function stubIde(db: Record<string, string | null>, calls: unknown[] = []) {
+  ;(globalThis as { window?: unknown }).window = {
+    ide: {
+      session: {
+        lastError: async ({ sessionId }: { sessionId: string }) =>
+          db[sessionId] ? { runId: `run_${sessionId}`, message: db[sessionId] } : null,
+        dismissError: async (input: { sessionId: string }) => {
+          calls.push(input)
+          db[input.sessionId] = null
+          return true
+        }
+      },
+      inbox: { putStates: async () => ({ ok: true }) }
+    }
+  }
+}
+
+test("#151：关红卡同时把本会话 Attention 出错槽标 dismissed（红点 / 待处理条 / 收件箱一起消失）", async () => {
+  const calls: unknown[] = []
+  stubIde({ a: "boom-a" }, calls)
+  try {
+    const { useChatStore } = await import("../stores/chat-store.ts")
+    const { useAttentionStore } = await import("../stores/attention/attention-store.ts")
+    const { dismissSessionErrorCard } = await import("./hydrate-session-error.ts")
+    const { sessionFailed } = await import("../components/ai-chat/sidebar/session-activity.ts")
+    useAttentionStore.setState({
+      items: [
+        { id: "a:error", sessionId: "a", kind: "error", status: "active", runId: "r", occurredAt: 1, summary: "x", sessionTitle: "a" },
+        { id: "b:error", sessionId: "b", kind: "error", status: "active", runId: "r", occurredAt: 1, summary: "y", sessionTitle: "b" }
+      ]
+    } as never)
+    useChatStore.setState({ sessionId: "a" } as never)
+    useChatStore.getState().setError("boom-a")
+    dismissSessionErrorCard()
+    const items = useAttentionStore.getState().items
+    assert.equal(items.find((i) => i.id === "a:error")?.status, "dismissed")
+    assert.equal(items.find((i) => i.id === "b:error")?.status, "active")
+    assert.equal(sessionFailed("a", items), false)
+    assert.deepEqual(calls, [{ sessionId: "a" }])
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+  }
+})
+
+test("跨层：真 applySessionHydrate + restoreSessionErrorFromDb——A 有错 / B 无错不串；关掉后切回 / 重启都不复活", async () => {
+  const db: Record<string, string | null> = { a: "boom-a", b: null }
+  stubIde(db)
+  try {
+    const { useChatStore } = await import("../stores/chat-store.ts")
+    const { useAttentionStore } = await import("../stores/attention/attention-store.ts")
+    const { applySessionHydrate } = await import("./session-hydrate.ts")
+    const { bumpSessionHydrateGeneration } = await import("./session-hydrate-generation.ts")
+    const { restoreSessionErrorFromDb, dismissSessionErrorCard } = await import("./hydrate-session-error.ts")
+    useAttentionStore.setState({
+      items: [{ id: "a:error", sessionId: "a", kind: "error", status: "active", runId: "r", occurredAt: 1, summary: "x", sessionTitle: "a" }],
+      parks: {}
+    } as never)
+    // 模拟 loadSession：setSession → applySessionHydrate → restoreSessionErrorFromDb。
+    const open = async (sessionId: string, sameSession = false) => {
+      useChatStore.getState().setSession(sessionId, sessionId)
+      const ok = applySessionHydrate({
+        dbRows: [],
+        sameSession,
+        generation: bumpSessionHydrateGeneration(),
+        sessionId,
+        sessionRunning: false
+      })
+      assert.equal(ok, true)
+      await restoreSessionErrorFromDb(sessionId, { running: false, messages: useChatStore.getState().messages })
+    }
+    await open("a")
+    assert.equal(useChatStore.getState().error, "boom-a")
+    // Attention 还挂着 A 的出错，但 applySessionHydrate 不再用它写红卡：B 干净。
+    await open("b")
+    assert.equal(useChatStore.getState().error, null)
+    await open("a")
+    assert.equal(useChatStore.getState().error, "boom-a")
+    // 关掉：切走再切回不复活。
+    dismissSessionErrorCard()
+    await open("b")
+    await open("a")
+    assert.equal(useChatStore.getState().error, null)
+    assert.equal(useAttentionStore.getState().items[0]!.status, "dismissed")
+    // 「重启」：内存全清，Attention 空，只剩库（水位已落）。
+    useAttentionStore.setState({ items: [], parks: {} } as never)
+    useChatStore.setState({ sessionId: null, error: null } as never)
+    await open("a")
+    assert.equal(useChatStore.getState().error, null)
+  } finally {
+    delete (globalThis as { window?: unknown }).window
+  }
+})

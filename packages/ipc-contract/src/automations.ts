@@ -86,10 +86,18 @@ export const Automation = z.object({
 })
 export type Automation = z.infer<typeof Automation>
 
+/** 只改启用开关：不走 upsert 的说明校验，旧的空说明记录也能暂停 / 恢复（leo #151）。 */
+export const SetAutomationEnabledInput = z.object({
+  id: z.string().min(1),
+  enabled: z.boolean()
+})
+export type SetAutomationEnabledInput = z.infer<typeof SetAutomationEnabledInput>
+
 export const UpsertAutomationInput = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
-  prompt: z.string(),
+  /** 只校验写入：去掉首尾空白后不能为空（leo #151）。读 schema 不变，旧的空说明记录照常加载。 */
+  prompt: z.string().refine((value) => value.trim().length > 0, { message: "Automation prompt is required." }),
   trigger: AutomationTrigger,
   /** 可并存的额外触发；缺省只认 trigger。 */
   triggers: z.array(AutomationTrigger).optional(),

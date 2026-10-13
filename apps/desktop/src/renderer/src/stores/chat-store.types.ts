@@ -183,6 +183,7 @@ export type ChatStore = {
   repositories: RepositoryNode[]
   expandedIds: string[]
   sidebarCollapsed: boolean
+  sidebarCollapseState: import("@renderer/components/app-shell/chrome/sidebar-collapse-state").SidebarCollapseState
   /** Changes / Browser 右栏是否收起。默认 true。 */
   rightPanelCollapsed: boolean
   messages: ThreadMessage[]
@@ -284,7 +285,10 @@ export type ChatStore = {
   setFastMode: (isFast: boolean) => void
   toggleFastMode: () => void
   setMode: (mode: ChatStore["mode"]) => void
+  /** 手动开关（写偏好）。 */
   setSidebarCollapsed: (collapsed: boolean) => void
+  /** 窗宽是否窄（只影响本次运行）。 */
+  setSidebarNarrow: (narrow: boolean) => void
   setRightPanelCollapsed: (collapsed: boolean) => void
   toggleExpanded: (id: string) => void
   applyStreamEvent: (event: StreamEvent) => void

@@ -99,7 +99,7 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   }
   assert.equal(
     pages.pages.inbox.emptyHint,
-    "只列要拍板、待验收和失败的。进行中的在侧栏，已完成的不进这里。"
+    "只列等你决定、待验收和失败的。进行中的在侧栏，已完成的不进这里。"
   )
   assert.equal(pages.pages.inbox.decideHint, "在对话里点批准或拒绝。")
   assert.equal(pages.pages.inbox.openHint, "点左边一条打开对话。")

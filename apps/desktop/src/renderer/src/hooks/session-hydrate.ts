@@ -9,6 +9,7 @@ import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
 import { hydrateSessionRunning } from "./hydrate-session-running"
 import { applyFinishedHydrate } from "./session-hydrate-finish"
 import { noticeAfterRestartHydrate } from "./hydrate-restart-notice"
+import { shouldClearErrorOnSwitch } from "./session-switch-error"
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]
@@ -47,6 +48,9 @@ export function applySessionHydrate(input: {
     messages: store.messages
   })
   if (notice && notice !== store.notice) store.setNotice(notice)
+  // 红卡只由 #150 的 runs 表 lastError 决定（loadSession 紧接着 restoreSessionErrorFromDb）。
+  // 这里只做一件事：换到别的会话且不在跑时，清掉上一会话的红卡，不让 A 的错挂到 B 上（leo #151）。
+  if (shouldClearErrorOnSwitch({ sameSession: input.sameSession, running }) && store.error) store.setError(null)
   for (const event of takeHeldApprovalResolved(input.sessionId)) {
     store.applyStreamEvent(event)
   }

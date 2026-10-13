@@ -4,6 +4,7 @@
  */
 export const NAV_CARD_EXPANDED_PX = 280
 export const NAV_CARD_COLLAPSED_PX = 60
+export { NARROW_SIDEBAR_PX } from "./chrome/sidebar-collapse-state"
 export const ACTIVITY_BAR_PX = 48
 export const CANVAS_PAD_PX = 12
 export const SESSION_TIME_COL_CLASS = "w-[3.75rem]"

@@ -63,7 +63,7 @@ export function thinkingHeadline(
     if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
     if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
     if (tools.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE))) {
-      return t("chat.restartAbandoned")
+      return t("chat.restartStepUnfinished")
     }
     if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
       return t("studio.automations.catchUpTimeout")

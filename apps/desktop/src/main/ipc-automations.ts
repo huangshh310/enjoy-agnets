@@ -6,9 +6,9 @@ import {
   AutomationIdInput,
   ListAutomationMissedInput,
   ListAutomationMissedResult,
-  RunAutomationInput,
-  UpsertAutomationInput
+  RunAutomationInput
 } from "@enjoy-agents/ipc-contract"
+import { parseAutomationUpsert, parseSetAutomationEnabled } from "./services/automations-upsert-input"
 import { compileCadence } from "./services/automations-cron"
 import { emitAutomationsChanged } from "./services/automations-notify"
 import { runAutomation } from "./services/automations-run"
@@ -16,6 +16,7 @@ import { defaultSettingsIo, listMissedForAutomation } from "./services/automatio
 import {
   presentAutomations,
   readAutomations,
+  setStoredAutomationEnabled,
   upsertStoredAutomation,
   writeAutomations
 } from "./services/automations-store"
@@ -33,7 +34,7 @@ function compiledCron(needsCron: boolean, raw: string | undefined): string | und
 export function registerAutomationIpc() {
   ipcMain.handle("automations.list", async () => presentAutomations())
   ipcMain.handle("automations.upsert", async (_event, raw) => {
-    const input = UpsertAutomationInput.parse(raw)
+    const input = parseAutomationUpsert(raw)
     const kinds = new Set([input.trigger, ...(input.triggers ?? [])])
     const cronExpr = compiledCron(kinds.has("cron"), input.cronExpr)
     if (kinds.has("webhook") && input.webhookPort == null) {
@@ -44,6 +45,14 @@ export function registerAutomationIpc() {
     await syncWebhookListeners()
     emitAutomationsChanged("upsert", nextItem.id)
     return nextItem
+  })
+  ipcMain.handle("automations.setEnabled", async (_event, raw) => {
+    const input = parseSetAutomationEnabled(raw)
+    const item = setStoredAutomationEnabled(input)
+    if (!item) throw new Error("Automation not found.")
+    await syncWebhookListeners()
+    emitAutomationsChanged("upsert", item.id)
+    return item
   })
   ipcMain.handle("automations.remove", async (_event, raw) => {
     const id = AutomationIdInput.parse(raw).id

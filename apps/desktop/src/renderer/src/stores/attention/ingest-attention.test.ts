@@ -574,3 +574,21 @@ test("归档后清掉该会话需处理 / 出错 / 已完成", () => {
   assert.equal(cleared.find((item) => item.sessionId === "ses_keep" && item.kind === "error")?.status, "active")
   assert.equal(stripNeedsCount(cleared), 1)
 })
+
+test("成功跑完一轮：本会话出错收掉（后台 complete / 前台 omitComplete 都收），别的会话不动（luna #151）", () => {
+  const errA = slot({ id: "a:error", sessionId: "a", kind: "error" })
+  const errB = slot({ id: "b:error", sessionId: "b", kind: "error", status: "focused" })
+  const done = {
+    type: "run.end" as const,
+    runId: "run_ok",
+    turn: { workflow: "todo" as const, attention: "complete" as const }
+  } as StreamEvent
+  for (const omitComplete of [false, true]) {
+    const next = ingestAttentionEvent([errA, errB], { event: done, sessionId: "a", sessionTitle: "a", omitComplete, now: 10 })
+    assert.equal(next.find((i) => i.id === "a:error")?.status, "resolved", `omitComplete=${omitComplete}`)
+    assert.equal(next.find((i) => i.id === "b:error")?.status, "focused")
+  }
+  // 新一轮刚开始（run.start）还不算好：错保留到成功为止。
+  const started = ingestAttentionEvent([errA], { event: { type: "run.start", runId: "r" } as StreamEvent, sessionId: "a", sessionTitle: "a", now: 5 })
+  assert.equal(started.find((i) => i.id === "a:error")?.status, "active")
+})

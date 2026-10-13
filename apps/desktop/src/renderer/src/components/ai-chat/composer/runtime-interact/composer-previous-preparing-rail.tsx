@@ -36,8 +36,9 @@ export function ComposerPreviousPreparingRail() {
       role="status"
       className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}
     >
-      <RiInformationLine className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
-      <p className="min-w-0 flex-1 truncate text-caption-2-regular text-text-secondary">
+      <RiInformationLine className="size-3.5 shrink-0 text-text-secondary dark:text-text-primary" aria-hidden />
+      {/* 深色下 text-secondary 落在 neutral-800 上只有约 3.2:1，改用 text-primary（luna 3cf0，≥4.5:1）。 */}
+      <p className="min-w-0 flex-1 truncate text-caption-2-regular text-text-secondary dark:text-text-primary">
         {t("chat.previousStillPreparing")}
       </p>
       <button
@@ -45,7 +46,7 @@ export function ComposerPreviousPreparingRail() {
         aria-label={t("common.close")}
         data-testid="composer-previous-preparing-close"
         onClick={dismissComposerRailNotice}
-        className="inline-flex size-5 cursor-pointer items-center justify-center rounded-md text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+        className="inline-flex size-5 cursor-pointer items-center justify-center rounded-md text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary dark:text-text-primary"
       >
         <RiCloseLine className="size-3" aria-hidden />
       </button>

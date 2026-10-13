@@ -20,14 +20,19 @@ export type RestartEnv = {
 
 export async function bootPendingApproval(opts?: {
   slowTool?: boolean
+  /** 额外放进工作区的文件（相对路径 → 内容）。 */
+  files?: Record<string, string>
+  /** 界面语言，默认 zh。 */
+  lang?: "zh" | "en"
 }): Promise<RestartEnv & { app: ElectronApplication }> {
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-apr-ws-"))
   const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-apr-ud-"))
   writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  for (const [rel, body] of Object.entries(opts?.files ?? {})) writeFileSync(join(workspace, rel), body)
   const env = {
     ...process.env,
     ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_LANG: "zh",
+    ENJOY_E2E_LANG: opts?.lang ?? "zh",
     ENJOY_E2E_CHAT_READY: "key",
     ENJOY_E2E_WORKSPACE: workspace,
     ENJOY_E2E_USERDATA: userData,

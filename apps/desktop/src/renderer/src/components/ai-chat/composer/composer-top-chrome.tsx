@@ -7,8 +7,8 @@ import { ExploreExecuteToggle } from "./explore-execute/explore-execute-toggle"
 export function ComposerTopChrome() {
   return (
     <div
-      // 极矮窗（≤440）有审批卡时让出这一行，三钮与卡顶留在可视区（leo / luna #149）。
-      className="flex items-center justify-between px-3 pt-1 pb-0.5 [@media(max-height:440px)]:[body:has([data-testid=permission-dock])_&]:hidden"
+      // 极矮窗（≤440 高）或窄窗（≤520 宽，底栏会折两行）有审批卡时让出这一行，拒绝 / 运行留在可视区（leo / luna #149、5042 440×480）。
+      className="flex items-center justify-between px-3 pt-1 pb-0.5 [@media(max-height:440px)]:[body:has([data-testid=permission-dock])_&]:hidden [@media(max-width:520px)]:[body:has([data-testid=permission-dock])_&]:hidden"
     >
       <ExploreExecuteToggle />
     </div>

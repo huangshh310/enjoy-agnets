@@ -48,7 +48,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-state-success-text dark:text-state-success-text",
         badgeBorder: "border-state-success-text/25",
         badgeDot: "bg-state-success-base",
-        badgeLabel: t("pages.inbox.navComplete") || "已完成",
+        badgeLabel: t("pages.inbox.navComplete"),
         icon: RiCheckboxCircleLine
       }
     case "error":
@@ -57,7 +57,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-text-error-primary dark:text-text-error-primary",
         badgeBorder: "border-border-error-default/25",
         badgeDot: "bg-background-tertiary-error",
-        badgeLabel: t("pages.inbox.navFailed") || "失败",
+        badgeLabel: t("pages.inbox.navFailed"),
         icon: RiErrorWarningLine
       }
     case "pending_approval":
@@ -66,7 +66,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-accent-600 dark:text-accent-400",
         badgeBorder: "border-accent-500/25",
         badgeDot: "bg-accent-500",
-        badgeLabel: t("pages.inbox.navApproval") || "拍板",
+        badgeLabel: t("pages.inbox.navApproval"),
         icon: RiShieldKeyholeLine
       }
     case "needs_review":
@@ -75,7 +75,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-accent-600 dark:text-accent-400",
         badgeBorder: "border-accent-500/25",
         badgeDot: "bg-accent-500",
-        badgeLabel: t("pages.inbox.navNeedsReview") || "待验收",
+        badgeLabel: t("pages.inbox.navNeedsReview"),
         icon: RiCheckboxCircleLine
       }
     case "ask_user":
@@ -84,7 +84,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-status-yellow-text dark:text-status-yellow-text",
         badgeBorder: "border-status-yellow-text/25",
         badgeDot: "bg-status-yellow-background",
-        badgeLabel: t("attention.kind.ask_user") || "待回答",
+        badgeLabel: t("attention.kind.ask_user"),
         icon: RiQuestionLine
       }
     case "running":
@@ -93,7 +93,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-accent-600 dark:text-accent-400",
         badgeBorder: "border-accent-500/25",
         badgeDot: "bg-accent-500",
-        badgeLabel: t("pages.inbox.navRunning") || "运行中",
+        badgeLabel: t("pages.inbox.navRunning"),
         icon: RiPlayCircleLine
       }
     case "aborted":
@@ -102,7 +102,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-text-secondary",
         badgeBorder: "border-separator-border/25",
         badgeDot: "bg-background-secondary-default",
-        badgeLabel: t("pages.inbox.badgeAborted") || "已取消",
+        badgeLabel: t("pages.inbox.badgeAborted"),
         icon: RiStopCircleLine
       }
     default:
@@ -111,7 +111,7 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
         badgeText: "text-text-secondary",
         badgeBorder: "border-separator-border",
         badgeDot: "bg-text-tertiary",
-        badgeLabel: t("pages.inbox.navAll") || "消息",
+        badgeLabel: t("pages.inbox.navAll"),
         icon: RiCheckboxCircleLine
       }
   }

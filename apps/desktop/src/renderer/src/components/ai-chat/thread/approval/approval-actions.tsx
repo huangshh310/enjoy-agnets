@@ -1,5 +1,5 @@
 /**
- * 审批底栏：顺序锁死「本会话总是允许 · 拒绝 · 运行」，三钮永远同一行（luna #149），窄时用紧凑钮不换行。
+ * 审批底栏：顺序锁死「本会话总是允许 · 拒绝 · 运行」；宽时一行，窄卡整颗换行不截断（luna #151）。
  * 桌面首次允许改四选一，底栏只留「继续」。会话钮 testid 是 approval-session。禁止再用 approval-always。
  */
 import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
@@ -57,10 +57,11 @@ export function ApprovalActions({
   const denyTone =
     variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
-    // 三钮同一行不换行（luna #149）：紧凑钮 h-7 / px-2，整组 shrink-0 靠右。
+    // 顺序锁死「本会话总是允许 · 拒绝 · 运行」。卡宽放得下就一行；放不下（英文 440×480）整颗换行，
+    // 全称完整露出、不截断丢范围词；拒绝 / 运行整组 shrink-0 永远在卡内（luna / leo #151）。
     <div
       data-testid="approval-actions"
-      className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-1 whitespace-nowrap"
+      className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1 whitespace-nowrap"
     >
       {showAlways ? (
         <Button
@@ -68,11 +69,12 @@ export function ApprovalActions({
           variant="outline"
           data-testid="approval-session"
           onClick={decide.onAllowSession}
-          title={alwaysHint ?? t("chat.alwaysAllowHint")}
-          className="h-7 gap-1 px-2 text-caption-1-medium has-[>svg]:px-2"
+          title={`${alwaysLabel ?? t("chat.alwaysAllow")} · ${alwaysHint ?? t("chat.alwaysAllowHint")}`}
+          aria-label={alwaysLabel ?? t("chat.alwaysAllow")}
+          className="h-7 shrink-0 gap-1 px-2 text-caption-1-medium has-[>svg]:px-2"
         >
-          <RiShieldCheckLine className="size-3.5 text-accent-500" />
-          {alwaysLabel ?? t("chat.alwaysAllow")}
+          <RiShieldCheckLine className="size-3.5 shrink-0 text-accent-500" />
+          <span data-testid="approval-session-label">{alwaysLabel ?? t("chat.alwaysAllow")}</span>
         </Button>
       ) : null}
       <div data-testid="approval-primary-actions" className="flex shrink-0 flex-nowrap items-center gap-1">
