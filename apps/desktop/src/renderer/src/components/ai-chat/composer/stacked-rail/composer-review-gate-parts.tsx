@@ -6,7 +6,6 @@ import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
 import { useT } from "@renderer/i18n"
 import { openSourcesSheet } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import type { TurnSourceChip } from "../../thread/sources/source-chip"
-import { SessionPreviewOpenButton } from "../session-review/preview-open/session-preview-open-button"
 import type { SessionReviewFile } from "../session-review/session-review.types"
 
 const CHIP_CLASS_NAME =
@@ -57,17 +56,11 @@ export function GateExpanded({
   files,
   placeholderKey,
   chips,
-  canOpenPreview,
-  previewBusy,
-  onOpenPreview,
   onOpenFile
 }: {
   files: SessionReviewFile[]
   placeholderKey: string
   chips: TurnSourceChip[]
-  canOpenPreview: boolean
-  previewBusy?: boolean
-  onOpenPreview: () => void
   onOpenFile: (path: string) => void
 }) {
   const t = useT()
@@ -88,8 +81,10 @@ export function GateExpanded({
             onClick={() => onOpenFile(file.path)}
             className={`${CHIP_CLASS_NAME} font-mono`}
           >
-            <FileTypeIcon name={file.name} kind={file.kind} size={13} />
-            <span className="truncate">{file.name}</span>
+            <span className="shrink-0">
+              <FileTypeIcon name={file.name} kind={file.kind} size={13} />
+            </span>
+            <span className="min-w-0 truncate">{file.name}</span>
           </button>
         ))}
         {sources.map((chip) => (
@@ -102,9 +97,6 @@ export function GateExpanded({
             {chip.label}
           </button>
         ))}
-        {canOpenPreview ? (
-          <SessionPreviewOpenButton enabled busy={previewBusy} onOpen={onOpenPreview} />
-        ) : null}
       </div>
       <p className="truncate text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
     </div>

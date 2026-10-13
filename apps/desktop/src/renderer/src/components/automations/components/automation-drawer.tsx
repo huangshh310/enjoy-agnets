@@ -1,6 +1,8 @@
 /**
  * 约 380px 右侧抽屉：名称、触发、cron、引擎、模型、探索/执行、提示词。
  */
+import { automationSaveReason } from "../lib/save-reason"
+import { footerHint } from "../lib/footer-hint"
 import { RiCloseLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -55,12 +57,18 @@ export function AutomationDrawer({
 }) {
   const t = useT()
   if (!draft) return null
-  const canSave = Boolean(draft.name.trim())
+  const canSave = Boolean(draft.name.trim() && draft.prompt.trim())
   const cronReady = !draft.triggers.includes("cron") || Boolean(draft.cronExpr.trim())
   const webhookReady = !draft.triggers.includes("webhook") || webhookPortReady(draft.webhookPort)
-  const runNow = draft.triggers.length === 1 && draft.triggers[0] === "manual"
+  // 含「手动」就能立即运行；提示只跟着真实触发方式走，手动时不出「到点才跑」（luna 3cf0）。
+  const runNow = draft.triggers.includes("manual")
+  const hint = runNow ? null : footerHint(draft.triggers, t)
 
   const saveDisabled = !canSave || !cronReady || !webhookReady || saving
+  // 说明空着保存不了：要说原因（luna #151）；名字也空时一起说。
+  const saveReason = automationSaveReason(draft, t)
+  // 编辑态把说明清空后，「立即运行」会跑旧说明，所以一起禁用（luna #151）。
+  const runDisabled = !draft.id || running || !draft.name.trim() || !draft.prompt.trim()
   return (
     <SettingsSideDrawer
       open={open}
@@ -152,14 +160,35 @@ export function AutomationDrawer({
           />
         </label>
       </div>
-      <footer className="flex items-center justify-end gap-2 border-t border-separator-border px-4 py-3">
+      <footer className="flex flex-nowrap items-center justify-end gap-2 border-t border-separator-border px-4 py-3">
+        {saveReason ? (
+          <span
+            data-testid="automation-save-reason"
+            role="status"
+            title={saveReason}
+            className="mr-auto min-w-0 truncate text-caption-2-regular text-text-error-primary"
+          >
+            {saveReason}
+          </span>
+        ) : null}
         {runNow ? (
-          <Button type="button" size="sm" variant="outline" disabled={!draft.id || running} onClick={onRun}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            data-testid="automation-run-now"
+            disabled={runDisabled}
+            title={runDisabled && saveReason ? saveReason : undefined}
+            className="disabled:opacity-50"
+            onClick={onRun}
+          >
             {running ? t("studio.automations.running") : t("studio.automations.runNow")}
           </Button>
-        ) : (
-          <span className="mr-auto text-caption-2-regular text-text-secondary">{footerHint(draft.triggers, t)}</span>
-        )}
+        ) : hint && !saveReason ? (
+          <span data-testid="automation-footer-hint" title={hint} className="mr-auto min-w-0 truncate text-caption-2-regular text-text-secondary">
+            {hint}
+          </span>
+        ) : null}
         {draft.id ? (
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
             {t("common.delete")}
@@ -171,6 +200,8 @@ export function AutomationDrawer({
           variant="solid"
           data-testid="automation-save"
           disabled={saveDisabled}
+          title={saveReason ?? undefined}
+          className="disabled:opacity-50"
           onClick={onSave}
         >
           {t("studio.automations.save")}
@@ -178,10 +209,4 @@ export function AutomationDrawer({
       </footer>
     </SettingsSideDrawer>
   )
-}
-
-function footerHint(triggers: AutomationDraft["triggers"], t: (key: string) => string): string {
-  if (triggers.includes("webhook")) return t("studio.automations.webhookNoRun")
-  if (triggers.includes("on_save")) return t("studio.automations.onSaveNoRun")
-  return t("studio.automations.cronNoRun")
 }

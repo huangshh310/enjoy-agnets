@@ -49,7 +49,7 @@ export function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
       ) : null}
       {node.exploredPages && node.exploredPages.length > 0 ? (
         <ExploredPagesBranch
-          title={node.exploredTitle ?? t("chat.exploredPages", { count: node.exploredPages.length })}
+          title={node.exploredTitle ?? (node.exploredPages.length === 1 ? t("chat.exploredPagesOne") : t("chat.exploredPages", { count: node.exploredPages.length }))}
           pages={node.exploredPages}
         />
       ) : null}
@@ -93,7 +93,7 @@ function StepTitleRow({
           <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
             <span className="size-1.5 rounded-full bg-text-tertiary" />
           </span>
-          <span>{t("chat.restartAbandoned")}</span>
+          <span>{t("chat.restartStepUnfinished")}</span>
         </span>
       ) : null}
       {node.status === "completed" ? (

@@ -58,18 +58,18 @@ export function thinkingHeadline(
     return t("chat.thinking")
   }
   const executed = tools.filter((tool) => !isToolNotExecuted(tool))
-  if (executed.length > 0) return t("chat.ranTools", { count: executed.length })
+  if (executed.length > 0) return executed.length === 1 ? t("chat.ranToolsOne") : t("chat.ranTools", { count: executed.length })
   if (tools.length > 0) {
     if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
     if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
     if (tools.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE))) {
-      return t("chat.restartAbandoned")
+      return t("chat.restartStepUnfinished")
     }
     if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
       return t("studio.automations.catchUpTimeout")
     }
     if (tools.every((tool) => readApprovalDecision(tool.result) === "cancelled")) {
-      return t("chat.ranTools", { count: tools.length })
+      return tools.length === 1 ? t("chat.ranToolsOne") : t("chat.ranTools", { count: tools.length })
     }
     return t("chat.toolDenied")
   }

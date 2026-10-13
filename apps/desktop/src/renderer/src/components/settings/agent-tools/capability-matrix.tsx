@@ -73,7 +73,11 @@ function MatrixRow({
   const t = useT()
   const path = runtimePathKind(id)
   const label =
-    id === SANDBOX_HARNESS_ID ? t("settings.runtimeCaps.sandboxLabel") : matrixRuntimeLabel(id, customLabel)
+    id === SANDBOX_HARNESS_ID
+      ? t("settings.runtimeCaps.sandboxLabel")
+      : id === "enjoy-local"
+        ? t("chat.usage.enjoyLocal")
+        : matrixRuntimeLabel(id, customLabel)
   return (
     <tr
       className={

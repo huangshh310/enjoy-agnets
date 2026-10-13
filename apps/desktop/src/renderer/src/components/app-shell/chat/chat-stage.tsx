@@ -208,12 +208,18 @@ function ChatThreadBody(props: {
       <div
         className={
           props.empty
-            ? "relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+            ? // 空会话：问候 + 红卡在上段自己滚，Composer 永远整块露出（luna #150 733×480：还稿后第二行被压到底下）。
+              "relative flex min-h-0 flex-1 flex-col overflow-hidden"
             : "relative flex min-h-0 flex-1 flex-col overflow-hidden [container-type:size]"
         }
       >
         {props.empty ? (
-          <div className="flex flex-1 flex-col items-center justify-end px-6 pt-8">
+          // col-reverse：内容贴底（贴 Composer），放不下时滚动原点也在底部，红卡先露、问候往上滚。
+          <div
+            data-testid="empty-start-upper"
+            className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-6 pt-8 [@media(max-height:560px)]:pt-3"
+          >
+            <div className="flex w-full flex-col items-center">
             <EmptySessionStart
               workspaceName={props.workspaceName}
               sessionTitle={props.sessionTitle}
@@ -222,6 +228,7 @@ function ChatThreadBody(props: {
             />
             <ThreadFindBar open={findOpen} messages={messages} />
             <EnvironmentPanel open={environmentOpen} />
+            </div>
           </div>
         ) : (
           <div className="relative flex min-h-14 min-w-0 flex-1 overflow-hidden">
@@ -260,7 +267,7 @@ function ChatThreadBody(props: {
           onSend={props.onSend}
         />
         {props.empty ? (
-          <div className="flex flex-1 flex-col items-center justify-start px-6 pb-8">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-start overflow-hidden px-6 pb-8 [@media(max-height:560px)]:hidden">
             <EmptyStatePills
               onSelectPrompt={(promptText) => {
                 useChatStore.getState().setComposer(promptText)

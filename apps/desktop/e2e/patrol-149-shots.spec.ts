@@ -79,7 +79,8 @@ test("巡检页：收件箱 / 技能 / MCP / 自动化抽屉 在 733 与 1440、
 
         await go(window, "#/mcp")
         await window.locator('[data-testid="page-mcp"]').waitFor({ timeout: 15_000 })
-        await expect(body).toContainText("本机命令服务（STDIO）")
+        await expect(body).toContainText("管理本机命令服务和联网服务")
+        await expect(body).not.toContainText("Model Context Protocol")
         await snap(window, `${tag}-mcp-${theme}`)
 
         await go(window, "#/automations")

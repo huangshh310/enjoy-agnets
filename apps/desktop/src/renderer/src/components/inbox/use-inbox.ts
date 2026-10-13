@@ -13,13 +13,15 @@ import {
   inboxFromAttention,
   inboxFromPendingApprovals,
   inboxNavCounts,
-  resolveSelected
+  resolveSelected,
+  settleSupersededErrors
 } from "./lib/filter-inbox"
 import { useLivePendingApprovals } from "./use-live-pending-approvals"
 import { useLiveNeedsReview } from "./use-live-needs-review"
 import { inboxFromNeedsReviewSessions } from "./lib/synthesize-needs-review-inbox"
 import { groupInbox } from "./lib/inbox-time"
 import { takeInboxFilter } from "./lib/pending-inbox-filter"
+import { pickDefaultInboxTab } from "./lib/inbox-default-tab"
 
 export function useInbox() {
   const t = useT()
@@ -27,7 +29,14 @@ export function useInbox() {
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set())
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set())
   const [archivedItems, setArchivedItems] = useState<AttentionItem[]>(() => [])
-  const [filter, setFilter] = useState<InboxCategory>(() => takeInboxFilter() ?? "approval")
+  const [requestedFilter] = useState<InboxCategory | null>(() => takeInboxFilter() ?? null)
+  const [filter, setFilterState] = useState<InboxCategory>(() => requestedFilter ?? "approval")
+  // 用户点过页签 / 外面指定过页签，就不再自动跳（luna #151）。
+  const [filterPinned, setFilterPinned] = useState(() => requestedFilter != null)
+  const setFilter = (next: InboxCategory) => {
+    setFilterPinned(true)
+    setFilterState(next)
+  }
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const attentionItems = useAttentionStore((state) => state.items)
@@ -61,7 +70,10 @@ export function useInbox() {
   const items = useMemo(() => {
     // 实况优先；归档条目只在实况没有同 id 时补位（error/complete 重启后的历史）。
     const liveIds = new Set(attentionItems.map((item) => item.id))
-    const merged = [...attentionItems, ...archivedItems.filter((item) => !liveIds.has(item.id))]
+    const merged = settleSupersededErrors([
+      ...attentionItems,
+      ...archivedItems.filter((item) => !liveIds.has(item.id))
+    ])
     const attentionList = inboxFromAttention(merged, {
       t,
       readIds,
@@ -100,6 +112,12 @@ export function useInbox() {
   )
   const groups = useMemo(() => groupInbox(filteredItems, now), [filteredItems, now])
   const counts = useMemo(() => inboxNavCounts(items), [items])
+  // 没指定页签：当前页签空就落到第一个有条目的（只有失败 → 失败）。
+  useEffect(() => {
+    if (filterPinned) return
+    const next = pickDefaultInboxTab(counts, filter)
+    if (next !== filter) setFilterState(next)
+  }, [counts, filter, filterPinned])
   const selected = resolveSelected(filteredItems, selectedId)
 
   return {

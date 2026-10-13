@@ -193,7 +193,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.errorTitle, "模型这次没回完")
   assert.equal(z.chat.writing, "正在写")
   assert.equal(z.chat.placeholderRunning.includes("{mod}+Enter"), true)
-  assert.equal(z.chat.placeholderRunning.includes("立即插话"), true)
+  assert.equal(z.chat.placeholderRunning.includes("马上发给它"), true)
   assert.equal(z.chat.placeholderRunning.includes("{mod}Enter"), false)
   assert.equal(z.chat.runtimeSteer.includes("纠偏"), false)
   assert.equal(z.studio.automations.scheduleDaily, "每天")

@@ -1,7 +1,7 @@
 /** 设置侧栏与分组。 */
 export const zhNav = {
   groupApp: "应用",
-  groupAgent: "智能体",
+  groupAgent: "助手与模型",
   groupWorkspace: "项目与扩展",
   groupIntegrations: "集成",
   groupArchived: "已归档",
@@ -16,11 +16,11 @@ export const zhNav = {
   appearance: "外观",
   shortcuts: "键盘快捷键",
   providers: "模型供应商",
-  agent: "智能体",
+  agent: "助手",
   tools: "内置工具",
   computerUse: "电脑操控",
-  appsnap: "AppSnap",
-  beta: "Beta",
+  appsnap: "窗口截图",
+  beta: "试用",
   capabilities: "模型能力",
   workflow: "工作流恢复",
   sandbox: "沙箱",

@@ -8,7 +8,7 @@ import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { describeReviewFiles } from "./collect-session-files"
 import {
-  collectSessionPreviewUrl,
+  collectLastTurnPreviewUrl,
   pickPreviewTarget,
   pickStandalonePreviewTarget
 } from "./preview-open/pick-preview-target"
@@ -29,7 +29,6 @@ export function useSessionReviewModel() {
     wasRunning.current = running
   }, [running])
   const error = useChatStore((state) => state.error)
-  const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
   const sessionId = useChatStore((state) => state.sessionId)
   const repositories = useChatStore((state) => state.repositories)
@@ -54,15 +53,10 @@ export function useSessionReviewModel() {
   )
   const files = pick.files
   const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])
-  const sessionUrl = useMemo(() => collectSessionPreviewUrl(messages), [messages])
-  const previewTarget = useMemo(
-    () => pickPreviewTarget({ selectedPath: selectedFilePath, files, sessionUrl }),
-    [selectedFilePath, files, sessionUrl]
-  )
-  const slimTarget = useMemo(
-    () => pickStandalonePreviewTarget({ selectedPath: selectedFilePath, sessionUrl }),
-    [selectedFilePath, sessionUrl]
-  )
+  const sessionUrl = useMemo(() => collectLastTurnPreviewUrl(messages), [messages])
+  // 「在浏览器打开」只看这一轮改动条目自己的路径：「文件」里点过的 .html 不再串进 .txt 的待验收条（luna 3cf0）。
+  const previewTarget = useMemo(() => pickPreviewTarget({ files, sessionUrl }), [files, sessionUrl])
+  const slimTarget = useMemo(() => pickStandalonePreviewTarget({ sessionUrl }), [sessionUrl])
   const showReview = sessionReviewVisible(
     files.length,
     running,

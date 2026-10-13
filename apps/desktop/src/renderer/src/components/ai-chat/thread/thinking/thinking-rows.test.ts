@@ -72,7 +72,14 @@ test("重启放弃工具行走中性「重启后已中断」，不是拒绝或�
     null,
     (key) => key
   )
-  assert.equal(headline, "chat.restartAbandoned")
+  assert.equal(headline, "chat.restartStepUnfinished")
   assert.notEqual(headline, "chat.toolStopped")
   assert.notEqual(headline, "chat.toolDenied")
+})
+
+test("单数：执行了 1 个工具走 ranToolsOne，2 个走 ranTools（luna P3）", () => {
+  const tc = (path: string, params?: Record<string, unknown>) => (params ? `${path}:${String(params.count)}` : path)
+  const ok = (id: string) => ({ id, name: "read_file", state: "output-available", result: { ok: true } }) as never
+  assert.equal(thinkingHeadline(false, [ok("a")], null, tc as never), "chat.ranToolsOne")
+  assert.equal(thinkingHeadline(false, [ok("a"), ok("b")], null, tc as never), "chat.ranTools:2")
 })

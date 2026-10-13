@@ -74,7 +74,7 @@ function stampRestart(
   t: TranslateFn
 ): AgentStepNode {
   if (!toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return node
-  return { ...node, status: "restart", errorText: t("chat.restartAbandoned") }
+  return { ...node, status: "restart", errorText: t("chat.restartStepUnfinished") }
 }
 
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {

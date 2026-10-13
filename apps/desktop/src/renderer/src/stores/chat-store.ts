@@ -2,6 +2,14 @@
  * 聊天会话 Zustand store。类型在 chat-store.types.ts，树灌入在 chat-store-hydrate.ts。
  */
 import { create } from "zustand"
+import {
+  NARROW_SIDEBAR_PX,
+  initSidebarCollapse,
+  onSidebarManual,
+  onSidebarWidth,
+  sidebarCollapsed,
+  type SidebarCollapseState
+} from "../components/app-shell/chrome/sidebar-collapse-state.ts"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-restart-notice"
@@ -41,7 +49,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   sessionTitle: "新对话",
   repositories: [],
   expandedIds: [],
-  sidebarCollapsed: false,
+  sidebarCollapsed: sidebarCollapsed(initialSidebarCollapse()),
+  sidebarCollapseState: initialSidebarCollapse(),
   rightPanelCollapsed: true,
   messages: [],
   composer: "",
@@ -128,7 +137,19 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
         ? { ...state.sessionModes, [state.sessionId]: mode }
         : state.sessionModes
     })),
-  setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+  // 手动开关：只有这里写偏好（leo #151：窄窗自动收起不算用户偏好）。
+  setSidebarCollapsed: (collapsed) =>
+    set((state) => {
+      const next = onSidebarManual(state.sidebarCollapseState, collapsed)
+      writeSidebarCollapsed(next.preferred)
+      return { sidebarCollapseState: next, sidebarCollapsed: sidebarCollapsed(next) }
+    }),
+  setSidebarNarrow: (narrow) =>
+    set((state) => {
+      const next = onSidebarWidth(state.sidebarCollapseState, narrow)
+      if (next === state.sidebarCollapseState) return {}
+      return { sidebarCollapseState: next, sidebarCollapsed: sidebarCollapsed(next) }
+    }),
   setRightPanelCollapsed: (rightPanelCollapsed) => set({ rightPanelCollapsed }),
   toggleExpanded: (id) => {
     const expandedIds = get().expandedIds.includes(id)
@@ -352,4 +373,32 @@ function sameChangeRows(left: ChangedFileRow[], right: ChangedFileRow[]): boolea
       row.worktree === other.worktree
     )
   })
+}
+
+/** 启动：偏好从存储读，窄窗只影响本次运行。函数声明会提升；这里不放模块级 let，免 TDZ。 */
+function initialSidebarCollapse(): SidebarCollapseState {
+  const narrow = typeof window !== "undefined" && window.innerWidth < NARROW_SIDEBAR_PX
+  return initSidebarCollapse(readSidebarCollapsed(), narrow)
+}
+
+/** 侧栏折叠偏好（只存手动开关）。函数声明会提升，键名写在函数里免 TDZ。 */
+function sidebarCollapsedKey(): string {
+  return "enjoy.sidebarCollapsed"
+}
+
+function readSidebarCollapsed(): boolean {
+  try {
+    if (typeof localStorage === "undefined") return false
+    return localStorage.getItem(sidebarCollapsedKey()) === "1"
+  } catch {
+    return false
+  }
+}
+
+function writeSidebarCollapsed(collapsed: boolean): void {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(sidebarCollapsedKey(), collapsed ? "1" : "0")
+  } catch {
+    // 存不了就只在本次生效。
+  }
 }

@@ -10,6 +10,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ComposerStackedRow } from "./composer-stacked-row"
 import { GateCompactHint, GateCompactPeek, GateExpanded, GateRowActions } from "./composer-review-gate-parts"
+import { SessionPreviewOpenButton } from "../session-review/preview-open/session-preview-open-button"
 import { STACKED_PANEL_CLASS_NAME } from "./composer-stacked-styles"
 import { keepSessionReview, undoSessionReview } from "../session-review/composer-session-review"
 import { SessionFileTrigger } from "../session-review/session-review-files"
@@ -90,31 +91,38 @@ export function ComposerLiveChanges() {
         files={files}
         placeholderKey={placeholderKey}
         chips={chips}
-        canOpenPreview={canOpenPreview}
-        previewBusy={preview.busy}
-        onOpenPreview={() => model.previewTarget && void preview.open(model.previewTarget)}
         actions={
-          showGate ? (
-            <GateRowActions
-              busy={busy}
-              onReview={() => expandInspector("review")}
-              onReject={() =>
-                void rejectReviewGate(sessionId, {
-                  placeholder: t("sessionOps.rejectPlaceholder"),
-                  toast: t("sessionOps.rejectedToast")
-                })
-              }
-              onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
-            />
-          ) : (
-            <KeepRowActions
-              busy={busy}
-              empty={files.length === 0}
-              onUndo={() => setUndoOpen(true)}
-              onKeep={() => keepSessionReview(model.filesKey)}
-              onReview={() => expandInspector("review")}
-            />
-          )
+          <div className="flex shrink-0 items-center gap-1">
+            {/* 收起态也露出「在浏览器打开」，不要求先展开文件列表（jojo #151 P3）。 */}
+            {canOpenPreview ? (
+              <SessionPreviewOpenButton
+                enabled
+                busy={preview.busy}
+                onOpen={() => model.previewTarget && void preview.open(model.previewTarget)}
+              />
+            ) : null}
+            {showGate ? (
+              <GateRowActions
+                busy={busy}
+                onReview={() => expandInspector("review")}
+                onReject={() =>
+                  void rejectReviewGate(sessionId, {
+                    placeholder: t("sessionOps.rejectPlaceholder"),
+                    toast: t("sessionOps.rejectedToast")
+                  })
+                }
+                onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
+              />
+            ) : (
+              <KeepRowActions
+                busy={busy}
+                empty={files.length === 0}
+                onUndo={() => setUndoOpen(true)}
+                onKeep={() => keepSessionReview(model.filesKey)}
+                onReview={() => expandInspector("review")}
+              />
+            )}
+          </div>
         }
       />
       <ConfirmDialog
@@ -140,9 +148,6 @@ function LiveChangesRow({
   files,
   placeholderKey,
   chips,
-  canOpenPreview,
-  previewBusy,
-  onOpenPreview,
   actions
 }: {
   showGate: boolean
@@ -154,9 +159,6 @@ function LiveChangesRow({
   files: SessionReviewFile[]
   placeholderKey: string
   chips: TurnSourceChip[]
-  canOpenPreview: boolean
-  previewBusy?: boolean
-  onOpenPreview: () => void
   actions: ReactNode
 }) {
   const t = useT()
@@ -178,9 +180,6 @@ function LiveChangesRow({
           files={files}
           placeholderKey={placeholderKey}
           chips={chips}
-          canOpenPreview={canOpenPreview}
-          previewBusy={previewBusy}
-          onOpenPreview={onOpenPreview}
           onOpenFile={openSessionReview}
         />
       ) : (

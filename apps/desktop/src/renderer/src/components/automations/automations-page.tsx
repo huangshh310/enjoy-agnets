@@ -27,6 +27,7 @@ import {
   type AutomationDraft
 } from "./lib/draft"
 import { applyAutomationDrawerCloseFocus } from "./lib/automation-row-focus"
+import { toggleAutomationEnabled } from "./lib/toggle-enabled"
 
 export function AutomationsPage() {
   const t = useT()
@@ -96,6 +97,15 @@ export function AutomationsPage() {
       closeDraft()
       showAppToast(t("common.saved"))
       await automationsQuery.refetch()
+    } catch (error) {
+      // 主进程拒了（如说明为空）：说原因，不静默（luna #151）。
+      showAppToast(
+        next.prompt.trim()
+          ? error instanceof Error
+            ? error.message
+            : String(error)
+          : t("studio.automations.promptRequired")
+      )
     } finally {
       setSaving(false)
     }
@@ -103,7 +113,10 @@ export function AutomationsPage() {
 
   async function toggleEnabled(item: Automation, enabled: boolean) {
     if (!hasIde()) return
-    await getIde().automations.upsert(draftToUpsert({ ...draftFromAutomation(item, defaults), enabled }))
+    // 只改开关，不发整条 upsert：旧的空说明记录也能暂停；失败出 toast（leo #151）。
+    await toggleAutomationEnabled(getIde().automations, item.id, enabled, (message) =>
+      showAppToast(t("studio.automations.toggleFailed", { message }))
+    )
     await automationsQuery.refetch()
   }
 

@@ -56,7 +56,7 @@ export function useComposerModelSwitch(input: {
     sessionModelId: sessionId ? sessionModels[sessionId] : undefined,
     agent
   })
-  const engineLabel = agent?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
+  const engineLabel = runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (agent?.label ?? runtimeId)
   return {
     kind,
     runtimeId,

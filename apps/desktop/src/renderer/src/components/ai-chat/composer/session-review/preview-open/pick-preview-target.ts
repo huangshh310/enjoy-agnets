@@ -1,5 +1,5 @@
 /**
- * 可开目标：选中 html > 改动条 html > 本会话本机预览 URL。
+ * 可开目标：改动条 html > 本轮本机预览 URL。只看条目自己的路径，不读「文件」里选中的路径（luna 3cf0）。
  * 不编造入口，不启动本地服务。
  */
 import { readDesktopActBareCoordsDeniedCode } from "@enjoy-agents/ipc-contract/desktop-act-codes"
@@ -8,9 +8,6 @@ import type { ThreadMessage } from "@renderer/stores/chat-store.types"
 import type { PickPreviewTargetInput, PreviewTarget } from "./preview-open.types"
 
 export function pickPreviewTarget(input: PickPreviewTargetInput): PreviewTarget | null {
-  if (isWorkspaceHtmlPath(input.selectedPath)) {
-    return { kind: "html", path: input.selectedPath as string }
-  }
   const fromFiles = input.files?.find((file) => isWorkspaceHtmlPath(file.path))
   if (fromFiles) return { kind: "html", path: fromFiles.path }
   if (input.sessionUrl) return { kind: "url", url: input.sessionUrl }
@@ -19,10 +16,7 @@ export function pickPreviewTarget(input: PickPreviewTargetInput): PreviewTarget 
 
 /** 独立完成条不读改动条文件，避免 Keep 后条又冒出来。 */
 export function pickStandalonePreviewTarget(input: PickPreviewTargetInput): PreviewTarget | null {
-  return pickPreviewTarget({
-    selectedPath: input.selectedPath,
-    sessionUrl: input.sessionUrl
-  })
+  return pickPreviewTarget({ sessionUrl: input.sessionUrl })
 }
 
 export function previewTargetLabel(target: PreviewTarget): string {
@@ -35,6 +29,18 @@ export function collectSessionPreviewUrl(messages: ThreadMessage[]): string | nu
     if (href) return href
   }
   return null
+}
+
+/** 只看最后一条用户消息之后（本轮）的本机预览 URL：历史里起过的服务不让这轮改 .txt 也出「在浏览器打开」（leo #151）。 */
+export function collectLastTurnPreviewUrl(messages: ThreadMessage[]): string | null {
+  let start = 0
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    if (messages[i]?.role === "user") {
+      start = i + 1
+      break
+    }
+  }
+  return collectSessionPreviewUrl(messages.slice(start))
 }
 
 function textsFromMessage(message: ThreadMessage | undefined): string[] {

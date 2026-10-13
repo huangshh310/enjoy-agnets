@@ -14,6 +14,7 @@ import {
 import { useChatStore } from "@renderer/stores/chat-store"
 import { matchAppModule } from "@renderer/components/app-shell/routing/match-module"
 import { focusAttention } from "./focus-attention"
+import { scopeNeedsItems } from "./scope-needs-items"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 
 export function useAttentionStrip() {
@@ -32,10 +33,10 @@ export function useAttentionStrip() {
     )
     return stripVisibleForOpenSessions(items, openSessionIds)
   }, [items, repositories])
-  const needsItems = visible.filter((item) => item.kind !== "complete")
+  const needsItems = scopeNeedsItems(visible, { isChat, sessionId })
   const latestComplete = latestVisibleComplete(visible)
   const completeItems = latestComplete ? [latestComplete] : []
-  const needs = stripNeedsCount(items)
+  const needs = isChat ? needsItems.length : stripNeedsCount(items)
 
   useEffect(() => {
     if (visible.length === 0 && !hasLiveComplete(items)) return
@@ -87,6 +88,8 @@ export function useAttentionStrip() {
     dismissAll,
     dismissOne,
     openItem,
-    compactFor
+    compactFor,
+    isChat,
+    sessionId
   }
 }

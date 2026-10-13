@@ -1,5 +1,6 @@
 /**
  * 打开 Chat 并切到目标会话；槽位标 focused。再滚到 Dock / 错误 / 本轮 turn。
+ * 红卡由 loadSession 里 #150 的 lastError 还原；这里不写 store.error（leo #151）。
  */
 import { selectPersistedSession } from "@renderer/hooks/session-lifecycle"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"

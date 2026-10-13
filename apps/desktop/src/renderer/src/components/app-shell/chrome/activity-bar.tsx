@@ -7,6 +7,8 @@ import type { AppModuleId } from "../app-shell.types"
 import { ACTIVITY_BAR_PX, NAV_CARD_COLLAPSED_PX } from "../constants"
 import { useLivePendingApprovals } from "@renderer/components/inbox/use-live-pending-approvals"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useLiveAndArchivedAttention } from "@renderer/components/inbox/use-archived-attention"
+import { inboxRailCount } from "@renderer/components/inbox/lib/inbox-default-tab"
 import { ACTIVITY_ICONS, OVERLAY_RAIL_ITEMS, WORK_RAIL_ITEMS } from "./module-registry"
 import { RailButton } from "./rail-button"
 
@@ -27,10 +29,13 @@ export function ActivityBar({
   const liveSessionIds = new Set(
     repositories.filter((row) => row.kind === "session").map((row) => row.id)
   )
-  const attentionCount =
-    repositories.filter((row) => row.kind === "session").length === 0
-      ? 0
-      : pendingApprovals.filter((row) => liveSessionIds.has(row.sessionId)).length
+  const attentionItems = useLiveAndArchivedAttention()
+  // 待拍板 + 还没好的失败会话（luna #151：失败时收件箱也要有徽标）。
+  const attentionCount = inboxRailCount({
+    liveSessionIds,
+    pendingApprovalSessionIds: pendingApprovals.map((row) => row.sessionId),
+    attentionItems
+  })
   return (
     <nav
       aria-label={t("nav.modules")}

@@ -6,7 +6,6 @@ export type PreviewTarget =
   | { kind: "url"; url: string }
 
 export type PickPreviewTargetInput = {
-  selectedPath?: string | null
   files?: Array<{ path: string }>
   sessionUrl?: string | null
 }

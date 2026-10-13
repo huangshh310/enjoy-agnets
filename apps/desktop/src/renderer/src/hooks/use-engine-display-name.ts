@@ -22,6 +22,8 @@ export function useEngineFace(runtimeId: string, brandLabel: string): {
 } {
   const t = useT()
   const names = useEngineDisplayNames()
+  // Enjoy 本地的 harness 预设名是中文：界面一律走 i18n（luna #150/#151：英文不露「Enjoy 本地」）。
+  if (runtimeId === "enjoy-local") brandLabel = t("chat.usage.enjoyLocal")
   return {
     face: resolveEngineFace({ displayName: names[runtimeId], brandLabel }),
     trueNameTitle: engineTrueNameTitle(brandLabel, t("chat.engineRealName"))
@@ -42,8 +44,9 @@ export function useSessionEngineFace(sessionId: string | null): {
   const names = useEngineDisplayNames()
   const runtimeId = pickSessionRuntime(sessionId, sessionRuntimes, preferredRuntimeId)
   const brandLabel =
-    tools.find((tool) => tool.id === runtimeId)?.label ??
-    (runtimeId === "enjoy-local" ? t("chat.usage.enjoyLocal") : runtimeId)
+    runtimeId === "enjoy-local"
+      ? t("chat.usage.enjoyLocal")
+      : (tools.find((tool) => tool.id === runtimeId)?.label ?? runtimeId)
   return {
     runtimeId,
     brandLabel,

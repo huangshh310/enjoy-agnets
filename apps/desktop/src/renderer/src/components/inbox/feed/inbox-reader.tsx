@@ -207,7 +207,7 @@ export function InboxReader(props: {
             <h2 className="text-title-2-semibold text-text-primary tracking-tight leading-snug">
               {displayTitle}
             </h2>
-            {/* 不在界面上露 ses_ 会话 ID（jojo 巡检）；需要时用「复制会话 ID」。 */}
+            {/* 不在界面上露 ses_ 会话 ID（jojo 巡检）；需要时用「复制排障信息」（不显眼的次要入口）。 */}
             <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary">
               <button
                 type="button"

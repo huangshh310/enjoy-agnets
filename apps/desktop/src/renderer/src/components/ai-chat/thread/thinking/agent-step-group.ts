@@ -103,10 +103,10 @@ function batchRun(
 }
 
 function batchTitle(kind: AgentStepKind, count: number, t: TranslateFn): string {
-  if (kind === "editing") return t("chat.batchFilesModified", { count })
-  if (kind === "command") return t("chat.batchCommandsRun", { count })
-  if (kind === "search") return t("chat.batchSearches", { count })
-  return t("chat.batchFilesRead", { count })
+  if (kind === "editing") return count === 1 ? t("chat.batchFilesModifiedOne") : t("chat.batchFilesModified", { count: count })
+  if (kind === "command") return count === 1 ? t("chat.batchCommandsRunOne") : t("chat.batchCommandsRun", { count: count })
+  if (kind === "search") return count === 1 ? t("chat.batchSearchesOne") : t("chat.batchSearches", { count: count })
+  return count === 1 ? t("chat.batchFilesReadOne") : t("chat.batchFilesRead", { count: count })
 }
 
 function batchVerb(kind: AgentStepKind): "verbRun" | "verbEdit" | "verbRead" | "verbFind" {

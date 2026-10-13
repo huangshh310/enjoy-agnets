@@ -23,7 +23,7 @@ export function SessionFileTrigger({
       className="group flex min-w-0 flex-1 items-center gap-1.5 py-0.5 text-left text-text-secondary transition-colors hover:text-text-primary"
     >
       <FileTypeIcon name={file.name} kind={file.kind} size={15} />
-      <span className="truncate font-mono text-caption-1-medium tracking-tight text-text-primary/90 group-hover:text-accent-500">
+      <span className="min-w-0 truncate font-mono text-caption-1-medium tracking-tight text-text-primary/90 group-hover:text-accent-500">
         {file.name}
       </span>
       {file.dir ? (

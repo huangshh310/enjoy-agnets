@@ -67,6 +67,7 @@ export const SETTINGS_CHANNELS = [
   "settings.removeComposerPreset",
   "automations.list",
   "automations.upsert",
+  "automations.setEnabled",
   "automations.remove",
   "automations.run",
   "automations.missed.list",

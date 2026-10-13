@@ -1,8 +1,8 @@
 /** M-CBD session ops: quiet Inbox / review gate / run ledger. */
 export const enSessionOps = {
   quietHint: "Hide noise",
-  quietHintDetail: "Hide read-file / command spam. Badge = decide count, not review count.",
-  approvalBadgeTitle: "Human decide only",
+  quietHintDetail: "Hide read-file / command spam. The badge counts items waiting on you, not reviews.",
+  approvalBadgeTitle: "Only items waiting on you",
   phaseRunning: "Running",
   phaseReview: "Review",
   phaseDone: "Done",

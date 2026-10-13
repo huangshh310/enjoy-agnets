@@ -9,6 +9,8 @@ export const ACTIVE_SESSION_CAP = 8
 export type SessionActivity = {
   running: boolean
   waitingReview: boolean
+  /** 这条会话出错还没处理：会话页顶部「出错」条只列当前会话（luna 3cf0），别的会话靠侧栏这个点。 */
+  failed?: boolean
 }
 
 export type SessionActivityInput = {
@@ -31,6 +33,15 @@ export function sessionWaitingReview(
   )
 }
 
+export function sessionFailed(sessionId: string, items: SessionActivityInput["items"]): boolean {
+  return items.some(
+    (item) =>
+      item.sessionId === sessionId &&
+      item.kind === "error" &&
+      (item.status === "active" || item.status === "focused")
+  )
+}
+
 export function sessionIsRunning(input: SessionActivityInput): boolean {
   if (input.sessionId === input.currentId) return input.running
   return Boolean(input.parks[input.sessionId]?.running)
@@ -39,7 +50,8 @@ export function sessionIsRunning(input: SessionActivityInput): boolean {
 export function sessionActivity(input: SessionActivityInput): SessionActivity {
   return {
     waitingReview: sessionWaitingReview(input.sessionId, input.items),
-    running: sessionIsRunning(input)
+    running: sessionIsRunning(input),
+    failed: sessionFailed(input.sessionId, input.items)
   }
 }
 
@@ -51,7 +63,7 @@ export function pickActiveSessions<T extends { id: string; updatedAt: number }>(
   return sessions
     .filter((session) => {
       const activity = activityOf(session.id)
-      return activity.running || activity.waitingReview
+      return activity.running || activity.waitingReview || Boolean(activity.failed)
     })
     .sort((left, right) => {
       const leftWait = activityOf(left.id).waitingReview ? 1 : 0

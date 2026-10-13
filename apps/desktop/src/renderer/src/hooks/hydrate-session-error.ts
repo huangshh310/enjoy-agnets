@@ -1,9 +1,15 @@
 /**
  * jojo P1：回灌时把库里最近一次真失败还原成红卡 + 重试目标。
  * store.error 只活在内存；inbox「失败」有档、打开会话却没条。
+ *
+ * #151 合并约定（leo / host）：红卡（store.error）只由这里的 runs 表 lastError + 关闭水位决定；
+ * Attention（#151）只管待处理条 / 侧栏红点 / 收件箱，不再写 store.error。
+ * 关红卡同时落库水位 + 把本会话 Attention 出错槽标 dismissed，切回 / 重启都不复活。
  */
 import { getIde } from "../lib/ide"
 import { useChatStore } from "../stores/chat-store"
+import { useAttentionStore } from "../stores/attention/attention-store"
+import { attentionSlotId } from "../stores/attention/ingest-attention"
 import type { RetryTarget } from "./regenerate-retry-target"
 
 type LastError = { runId?: string; message?: string } | null
@@ -35,19 +41,70 @@ export async function restoreSessionErrorFromDb(
   if (store.sessionId !== sessionId) return false
   if (store.error === message) return true
   const target = retryTargetFromMessages(sessionId, opts.messages)
-  store.setError(message, target ?? undefined)
+  restoring = true
+  try {
+    store.setError(message, target ?? undefined)
+  } finally {
+    restoring = false
+  }
+  restoredCard = last?.runId ? { sessionId, runId: last.runId } : null
   return true
 }
 
+/**
+ * 当前红卡来自哪个 run（还原时记下），关卡时带上做水位。
+ * leo #151：红卡一被替换 / 清空 / 换会话就作废，免得重试后新失败关卡时带着旧 runId。
+ */
+let restoredCard: { sessionId: string; runId: string } | null = null
+let restoring = false
+useChatStore.subscribe((state, prev) => {
+  if (restoring) return
+  if (state.error !== prev.error || state.sessionId !== prev.sessionId) restoredCard = null
+})
+
+/** 测试用：当前记着的还原 runId。 */
+export function restoredErrorRunId(): string | null {
+  return restoredCard?.runId ?? null
+}
+
+type DismissIde = { session: { dismissError: (input: { sessionId: string; runId?: string }) => unknown } }
+
+/** 落库关卡水位：失败重试一次，仍失败回调 onFailed（出 toast）。 */
+export async function persistErrorDismiss(
+  ide: DismissIde,
+  input: { sessionId: string; runId?: string },
+  onFailed?: () => void
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const ok = await ide.session.dismissError(input)
+      if (ok !== false) return true
+    } catch {
+      /* 再试一次 */
+    }
+  }
+  onFailed?.()
+  return false
+}
+
 /** leo：用户关红卡要落库（按 runId 水位），否则重启 loadSession 又还原出来。 */
-export function dismissSessionErrorCard(): void {
+export function dismissSessionErrorCard(opts?: { onPersistFailed?: () => void }): void {
   const store = useChatStore.getState()
   const sessionId = store.sessionId
+  const restored = sessionId && restoredCard?.sessionId === sessionId ? restoredCard.runId : undefined
   store.setError(null)
   if (!sessionId) return
+  const attention = useAttentionStore.getState()
+  const slotId = attentionSlotId(sessionId, "error")
+  const slotRunId = attention.items.find((item) => item.id === slotId)?.runId || undefined
+  const runId = restored ?? slotRunId
+  // #151：Attention 出错槽一起关掉，否则红点 / 待处理条 / 收件箱还挂着，下一次回灌又被它带出来。
+  attention.dismiss(slotId)
+  let ide: DismissIde
   try {
-    void Promise.resolve(getIde().session.dismissError({ sessionId })).catch(() => undefined)
+    ide = getIde() as unknown as DismissIde
   } catch {
-    /* 没桥（测试 / 早期启动）就只关内存卡 */
+    return /* 没桥（测试 / 早期启动）就只关内存卡 */
   }
+  void persistErrorDismiss(ide, runId ? { sessionId, runId } : { sessionId }, opts?.onPersistFailed)
 }

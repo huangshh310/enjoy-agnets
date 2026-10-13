@@ -87,7 +87,7 @@ export const zhSkillsPages = {
     driftBadge: "{n} 处需同步",
     readyBadge: "{n} 项能力已就绪",
     readyAll: "状态就绪",
-    subtitle: "为你的 AI 助手装备专业代码审查、UI 设计、文案创作等即插即用的领域超能力。",
+    subtitle: "为你的 AI 助手装备专业代码审查、UI 设计、文案创作等即插即用的能力。",
     searchPlaceholder: "搜索技能名称或触发词…",
     createSkill: "新建技能",
     importSource: "导入来源",
@@ -125,8 +125,8 @@ export const zhSkillsPages = {
     titleNamed: "{agent} 助手尚未开启专属技能",
     titleGeneric: "尚未装配任何技能能力包",
     descNamed: "当前助手会消费宿主技能目录。去精选集市装备，或把本机已有技能导入宿主。",
-    descGeneric: "技能是赋予 AI 助手在代码重构、全栈测试、UI 审美与复杂工程自动化等领域的即插即用超能力。",
-    exploreStore: "探索精选技能集市",
+    descGeneric: "技能是赋予 AI 助手在代码重构、全栈测试、UI 审美与复杂工程自动化等领域的能力。",
+    exploreStore: "探索精选技能",
     viewAllInstalled: "查看全部已安装技能",
     pickFolder: "选择本地技能文件夹"
   },
@@ -141,7 +141,7 @@ export const zhSkillsPages = {
   },
 
   gridCard: {
-    countSkills: "含 {n} 项专业超能力",
+    countSkills: "含 {n} 项技能",
     getNow: "一键获取"
   },
 
