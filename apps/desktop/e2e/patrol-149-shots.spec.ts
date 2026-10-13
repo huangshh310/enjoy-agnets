@@ -45,6 +45,31 @@ test("巡检页：收件箱 / 技能 / MCP / 自动化抽屉 在 733 与 1440、
           const bb = await btn.boundingBox()
           if (bb && head) expect(bb.x + bb.width, `${tag} inbox toolbar spill`).toBeLessThanOrEqual(head.x + head.width + 0.5)
         }
+        // 详情顶栏：「拍板」标签文字整块可见，不与任何动作按钮相交（luna #149）。
+        const badgeText = window.locator('[data-testid="inbox-reader-badge-text"]')
+        const bt = await badgeText.boundingBox()
+        expect(bt, `${tag} badge missing`).toBeTruthy()
+        for (const btn of await window.locator('[data-testid="inbox-reader-actions"] button').all()) {
+          const bb = await btn.boundingBox()
+          if (!bb || !bt) continue
+          const hit = bt.x < bb.x + bb.width && bb.x < bt.x + bt.width && bt.y < bb.y + bb.height && bb.y < bt.y + bt.height
+          expect(hit, `${tag} badge ∩ header action ${JSON.stringify({ bt, bb })}`).toBe(false)
+        }
+        const badgeVisible = await badgeText.evaluate((el) => {
+          const r = el.getBoundingClientRect()
+          for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+            const cs = getComputedStyle(p)
+            if (cs.overflowX === "visible" && cs.overflowY === "visible") continue
+            const c = p.getBoundingClientRect()
+            if (r.left < c.left - 0.5 || r.right > c.right + 0.5 || r.top < c.top - 0.5 || r.bottom > c.bottom + 0.5) return false
+          }
+          for (const x of [r.left + 1, (r.left + r.right) / 2, r.right - 1]) {
+            const at = document.elementFromPoint(x, (r.top + r.bottom) / 2)
+            if (!at || !(el === at || el.contains(at) || at.contains(el))) return false
+          }
+          return el.scrollWidth <= el.clientWidth + 1
+        })
+        expect(badgeVisible, `${tag} badge text not fully visible`).toBe(true)
         await snap(window, `${tag}-inbox-${theme}`)
 
         await go(window, "#/skills")

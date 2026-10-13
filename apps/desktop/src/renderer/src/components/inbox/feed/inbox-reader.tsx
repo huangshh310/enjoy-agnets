@@ -126,18 +126,23 @@ export function InboxReader(props: {
   return (
     <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background-primary-default">
       {/* 顶部工具栏：状态徽标 + 工作区 + 发生时间 + 右侧操作 */}
-      <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 px-3 @[32rem]:px-6 bg-background-primary-default">
-        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+      {/* 窄时：左侧标签整块不缩，工作区名截断；放不下就让右侧动作换到下一行，绝不叠在标签上（luna #149）。 */}
+      <header
+        data-testid="inbox-reader-header"
+        className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b border-separator-border/70 px-3 py-2 @[32rem]:px-6 bg-background-primary-default"
+      >
+        <div className="flex min-w-[6rem] flex-1 basis-[6rem] items-center gap-2 overflow-hidden">
           <span
+            data-testid="inbox-reader-badge"
             className={cx(
-              "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-caption-2-medium font-medium border shrink-0",
+              "inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-caption-2-medium font-medium border shrink-0",
               theme.badgeBg,
               theme.badgeText,
               theme.badgeBorder
             )}
           >
             <ThemeIcon className="size-3.5 shrink-0" />
-            <span>{theme.badgeLabel}</span>
+            <span data-testid="inbox-reader-badge-text">{theme.badgeLabel}</span>
           </span>
           {displayWorkspace ? (
             <>
@@ -161,7 +166,7 @@ export function InboxReader(props: {
           </time>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div data-testid="inbox-reader-actions" className="ml-auto flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
