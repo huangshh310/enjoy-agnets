@@ -74,3 +74,21 @@ test("leo：建会话窗里粘的图，会话建好立刻落到该会话草稿",
   assert.match(src, /if \(!hasQueuedComposerSend\(\)\) \{[^}]*persistCreateWindowAssets\(session\.id\)/)
   assets.clearComposerAssets()
 })
+
+test("luna：内存草稿里已被 revoke 的 blob 预览不带回；按 id 从资产库重读", async () => {
+  const { readFileSync } = await import("node:fs")
+  useChatStore.getState().saveSessionDraft("ses_blob", {
+    text: "",
+    assets: [
+      { id: "ast_b", name: "F.png", mediaType: "image/png", url: "blob:file:///dead" },
+      { id: "ast_k", name: "K.png", mediaType: "image/png", url: "data:image/png;base64,AA" }
+    ]
+  })
+  const draft = lib.composerDraftForSession("ses_blob")
+  assert.deepEqual(
+    draft?.assets?.map((a: { id: string; url?: string }) => [a.id, a.url]),
+    [["ast_b", undefined], ["ast_k", "data:image/png;base64,AA"]]
+  )
+  const chip = readFileSync(new URL("../components/ai-chat/composer-queue-items.tsx", import.meta.url), "utf8")
+  assert.match(chip, /onError=\{\(\) => setSrc\(\(cur\) => \(cur\?\.startsWith\("blob:"\) \? null : cur\)\)\}/)
+})

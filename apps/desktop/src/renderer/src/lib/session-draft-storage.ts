@@ -184,10 +184,23 @@ export function resetPersistedDraftAssetsForTest(): void {
   assetCache = null
 }
 
+/**
+ * luna：内存草稿里的附件预览是 blob: URL，离开会话（新对话 / 清输入框）时会被 revoke，切回来缩略图就坏了。
+ * 恢复时丢掉 blob: 预览，让缩略图按 asset id 从资产库重读（和重启后的落盘恢复同一条路）。
+ */
+export function withoutBlobPreviews<T extends { url?: string }>(assets: T[]): T[] {
+  return assets.map((asset) => {
+    if (!asset.url?.startsWith("blob:")) return asset
+    const rest = { ...asset }
+    delete rest.url
+    return rest
+  })
+}
+
 /** 打开会话时的稿：内存草稿优先（带附件 / 引用）；没有就用落盘的正文 + 附件（重启后）。 */
 export function composerDraftForSession(sessionId: string): SessionDraftState | undefined {
   const memory = useChatStore.getState().getSessionDraft(sessionId)
-  if (memory) return memory
+  if (memory) return memory.assets?.length ? { ...memory, assets: withoutBlobPreviews(memory.assets) } : memory
   const persisted = readPersistedDraft(sessionId)
   const assets = readPersistedDraftAssets(sessionId)
   if (!persisted && !assets) return undefined
