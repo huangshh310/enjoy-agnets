@@ -1,6 +1,7 @@
 /**
  * 发送失败：还文、可读 notice、清转圈停车；空新会话不留在侧栏。
  */
+import { rollbackComposerStartGate } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { useAttentionStore } from "../../stores/attention/attention-store"
 import { useChatStore } from "../../stores/chat-store"
 import { discardCreatedSession } from "../discard-created-session"
@@ -28,6 +29,8 @@ export function failComposerSend(input: {
   /** running 属于别的在跑轮次（排队首发等不到空闲）：不动 running、不清 pending 助手与停车。 */
   keepRunning?: boolean
 }): void {
+  // jojo P2：main 没接手，发送前乐观标的「执行中」还原（已通过的会话不留蓝圈、不重现改动条）。
+  rollbackComposerStartGate(input.sessionId)
   if (input.keepRunning) {
     restoreComposerDraft(input.text, input.assets)
     useChatStore.getState().setError(input.reason)
