@@ -170,7 +170,7 @@ export function AutomationDrawer({
           data-testid="automation-save"
           disabled={!canSave || !cronReady || !webhookReady || saving}
           onClick={onSave}
-          className="!bg-none !bg-accent-500 font-semibold !text-white shadow-xs hover:!bg-accent-600 disabled:!bg-background-secondary-default disabled:!text-text-tertiary disabled:shadow-none disabled:ring-1 disabled:ring-separator-border"
+          className="!bg-none !bg-accent-500 font-semibold !text-white shadow-xs hover:!bg-accent-600 border border-transparent disabled:!opacity-100 disabled:!bg-background-tertiary-default disabled:!text-text-secondary disabled:shadow-none disabled:!border-border-button-hover"
         >
           {t("studio.automations.save")}
         </Button>

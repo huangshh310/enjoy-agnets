@@ -74,21 +74,11 @@ export function GateExpanded({
   const fileNames = new Set(files.map((file) => file.name))
   const sources = chips.filter((chip) => !fileNames.has(chip.label))
   return (
-    <div data-testid="review-gate-expanded" className="flex min-w-0 flex-col gap-1.5 pb-0.5 [@media(max-height:640px)]:gap-0.5">
-      {/* 矮窗（≤640 高）只留一行「n 个文件 · 名字」+ 一句提示，消息区不被挤没（luna #146 P1）。 */}
-      <p
-        data-testid="review-gate-compact"
-        title={files.map((file) => file.path).join("\n") || undefined}
-        className="hidden truncate text-caption-2-medium text-text-primary [@media(max-height:640px)]:block"
-      >
-        {files.length === 0
-          ? t(placeholderKey)
-          : t("sessionOps.gateFilesLine", { n: files.length, names: files.map((file) => file.name).join("、") })}
-      </p>
+    <div data-testid="review-gate-expanded" className="flex min-w-0 flex-col gap-1.5 pb-0.5">
       {files.length === 0 ? (
-        <p className="text-caption-2-regular text-text-tertiary [@media(max-height:640px)]:hidden">{t(placeholderKey)}</p>
+        <p className="text-caption-2-regular text-text-tertiary">{t(placeholderKey)}</p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-1 [@media(max-height:640px)]:hidden">
+      <div className="flex flex-wrap items-center gap-1">
         {files.map((file) => (
           <button
             key={file.path}
@@ -118,5 +108,34 @@ export function GateExpanded({
       </div>
       <p className="truncate text-caption-2-regular text-text-tertiary">{t("sessionOps.gateHint")}</p>
     </div>
+  )
+}
+
+/** 矮窗（≤640 高）展开时不另起几行：文件一句 + 提示弱化接在同一行末尾（luna #149：消息区 ≥ 96px）。 */
+export function GateCompactPeek({
+  files,
+  placeholderKey
+}: {
+  files: SessionReviewFile[]
+  placeholderKey: string
+}) {
+  const t = useT()
+  const line =
+    files.length === 0
+      ? t(placeholderKey)
+      : t("sessionOps.gateFilesLine", { n: files.length, names: files.map((file) => file.name).join("、") })
+  return (
+    <span
+      title={`${line}\n${t("sessionOps.gateHint")}`}
+      className="min-w-0 flex-1 truncate whitespace-nowrap"
+    >
+      <span data-testid="review-gate-compact" className="text-text-primary">
+        {line}
+      </span>
+      <span data-testid="review-gate-compact-hint" className="text-text-tertiary">
+        {" · "}
+        {t("sessionOps.gateHint")}
+      </span>
+    </span>
   )
 }

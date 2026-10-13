@@ -22,6 +22,8 @@ export function ComposerFollowupRail() {
     return subscribeFollowups(sync)
   }, [sessionId])
   if (!hint) return null
+  // 队列已空时不再挂「将在当前任务完成后执行」（jojo 巡检）。
+  if ((hint === "queued" || hint === "chipQueued") && listFollowups(sessionId).length === 0) return null
 
   return (
     <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>

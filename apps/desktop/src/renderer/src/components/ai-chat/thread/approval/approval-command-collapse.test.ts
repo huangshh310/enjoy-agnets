@@ -100,13 +100,14 @@ test("小窗：路径行让位、命令区与链接 shrink-0", () => {
   assert.match(html, /data-testid="approval-command-toggle"[^>]*class="shrink-0 self-start/)
 })
 
-test("小窗卡片：标题挪到底栏一行，拒绝 / 运行同组，本会话落第二行（wrap-reverse）", () => {
+test("小窗卡片：标题独占底栏一行，三钮「本会话 · 拒绝 · 运行」同一行不换行", () => {
   const chrome = readFileSync(new URL("./approval-chrome.tsx", import.meta.url), "utf8")
   const actions = readFileSync(new URL("./approval-actions.tsx", import.meta.url), "utf8")
   assert.match(chrome, /data-testid="approval-compact-title"/)
-  assert.match(chrome, /hidden max-w-\[45%\] shrink-0 truncate[^"]*\[@media\(max-height:600px\)\]:block/)
+  assert.match(chrome, /hidden min-w-0 basis-full truncate[^"]*\[@media\(max-height:600px\)\]:block/)
   assert.match(chrome, /leading-6 text-text-primary \[@media\(max-height:600px\)\]:hidden/)
-  assert.match(actions, /flex min-w-0 flex-wrap-reverse items-center justify-end/)
+  assert.match(actions, /flex shrink-0 flex-nowrap items-center justify-end/)
+  assert.doesNotMatch(actions, /flex-wrap-reverse/)
   const session = actions.indexOf('data-testid="approval-session"')
   const group = actions.indexOf('data-testid="approval-primary-actions"')
   const deny = actions.indexOf("data-testid={denyTestId}")

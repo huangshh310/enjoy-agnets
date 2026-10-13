@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
 import {
-  RiArrowRightLine,
   RiArrowRightUpLine,
   RiCheckLine,
   RiErrorWarningFill,
@@ -10,9 +9,7 @@ import {
   RiLoader4Line,
   RiMailUnreadLine,
   RiShieldCheckFill,
-  RiShieldCheckLine,
   RiStopCircleLine,
-  RiTerminalBoxLine,
   RiToolsLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
@@ -92,7 +89,7 @@ export function InboxReader(props: {
 
     return {
       latestAssistantText: assistantText,
-      toolsSummary: toolNames.length > 0 ? Array.from(new Set(toolNames)).join(", ") : null,
+      toolsSummary: toolNames.length > 0 ? plainToolSummary(toolNames) : null,
       thoughtSeconds: parsed.thoughtSeconds ?? null
     }
   }, [sessionMessages])
@@ -127,10 +124,10 @@ export function InboxReader(props: {
     t("pages.inbox.localWorkspace")
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background-primary-default">
+    <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background-primary-default">
       {/* 顶部工具栏：状态徽标 + 工作区 + 发生时间 + 右侧操作 */}
-      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-separator-border/70 px-6 bg-background-primary-default">
-        <div className="flex items-center gap-2 min-w-0">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 px-3 @[32rem]:px-6 bg-background-primary-default">
+        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
           <span
             className={cx(
               "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-caption-2-medium font-medium border shrink-0",
@@ -154,9 +151,10 @@ export function InboxReader(props: {
               </span>
             </>
           ) : null}
-          <span className="text-text-tertiary">·</span>
+          <span className="hidden @[40rem]:inline text-text-tertiary">·</span>
           <time
-            className="text-caption-1-regular text-text-tertiary font-mono truncate"
+            title={fullTime}
+            className="hidden @[40rem]:block text-caption-1-regular text-text-tertiary font-mono truncate"
             dateTime={new Date(item.occurredAt).toISOString()}
           >
             {fullTime} ({relativeTime})
@@ -168,17 +166,18 @@ export function InboxReader(props: {
             variant="outline"
             size="sm"
             onClick={() => onToggleRead(item.id)}
+            title={item.read ? t("pages.inbox.markUnread") : t("pages.inbox.markRead")}
             className="gap-1.5 h-8 text-caption-2-medium cursor-pointer"
           >
             {item.read ? (
               <>
                 <RiMailUnreadLine className="size-3.5" />
-                <span>{t("pages.inbox.markUnread")}</span>
+                <span className="hidden @[30rem]:inline">{t("pages.inbox.markUnread")}</span>
               </>
             ) : (
               <>
                 <RiCheckLine className="size-3.5" />
-                <span>{t("pages.inbox.markRead")}</span>
+                <span className="hidden @[30rem]:inline">{t("pages.inbox.markRead")}</span>
               </>
             )}
           </Button>
@@ -202,9 +201,8 @@ export function InboxReader(props: {
             <h2 className="text-title-2-semibold text-text-primary tracking-tight leading-snug">
               {displayTitle}
             </h2>
-            <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary font-mono">
-              <RiTerminalBoxLine className="size-3.5 text-text-tertiary" />
-              <span>{item.sessionId}</span>
+            {/* 不在界面上露 ses_ 会话 ID（jojo 巡检）；需要时用「复制会话 ID」。 */}
+            <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary">
               <button
                 type="button"
                 onClick={handleCopySessionId}
@@ -244,17 +242,6 @@ export function InboxReader(props: {
               <p className="text-body-regular text-text-primary leading-relaxed">
                 {item.summary}
               </p>
-              <div className="pt-1">
-                <Button
-                  size="sm"
-                  onClick={() => onOpenAction(item)}
-                  className="gap-2 h-9 px-4 bg-status-yellow-background hover:bg-status-yellow-background text-white shadow-sm text-caption-1-medium cursor-pointer"
-                >
-                  <RiShieldCheckLine className="size-4" />
-                  <span>{t("pages.inbox.openApprovalAction")}</span>
-                  <RiArrowRightLine className="size-3.5 opacity-80" />
-                </Button>
-              </div>
             </div>
           ) : null}
 
@@ -303,7 +290,7 @@ export function InboxReader(props: {
               {toolsSummary ? (
                 <span className="inline-flex items-center gap-1">
                   <RiToolsLine className="size-3.5 text-text-tertiary" />
-                  <span>工具调用：{toolsSummary}</span>
+                  <span>{toolsSummary}</span>
                 </span>
               ) : null}
               {thoughtSeconds ? (
@@ -331,4 +318,18 @@ export function InboxReader(props: {
       </ScrollArea>
     </div>
   )
+}
+
+/** 工具名换成人话：「运行命令」「改了文件」…；不露 bash / write_file 之类（jojo 巡检）。 */
+export function plainToolSummary(names: string[]): string {
+  const phrases = new Set<string>()
+  for (const raw of names) {
+    const name = raw.toLowerCase()
+    if (/bash|shell|exec|command|terminal|run/.test(name)) phrases.add("运行命令")
+    else if (/write|edit|patch|create|delete|move|apply/.test(name)) phrases.add("改了文件")
+    else if (/read|list|ls|glob|grep|search|find|view/.test(name)) phrases.add("查看文件")
+    else if (/fetch|http|web|browser/.test(name)) phrases.add("上网查资料")
+    else phrases.add("用了工具")
+  }
+  return Array.from(phrases).join("、")
 }

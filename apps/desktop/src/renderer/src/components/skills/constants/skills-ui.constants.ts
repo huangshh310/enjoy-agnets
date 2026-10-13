@@ -5,7 +5,7 @@ import type { SkillSourceHealth, SkillTargetId } from "@enjoy-agents/ipc-contrac
 import { useT } from "@renderer/i18n"
 
 export const SKILLS_UI_COPY = {
-  moduleTitle: "Skills",
+  moduleTitle: "技能",
   moduleDesc: "Agent 技能中心：技能装进宿主目录，当前引擎消费这一份。",
   allSources: "全部来源组",
   exploreCurated: "精选发现",
@@ -36,7 +36,7 @@ export const SKILLS_UI_COPY = {
   backToList: "返回来源组列表",
   targetDeployments: "宿主技能目录",
   targetDeploymentsDesc: "当前引擎只读宿主目录，不再复制到各家家目录。",
-  skillsListTitle: "包含的技能清单 (Skills)",
+  skillsListTitle: "包含的技能清单",
   skillsListDesc: "勾选开启或关闭特定技能的部署投影：",
   skillDocTitle: "SKILL.md 文档检视",
   selectSkillHint: "在左侧列表中点击任一技能查看其详细说明与参数指令",

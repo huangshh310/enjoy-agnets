@@ -107,11 +107,17 @@ test("写了 .txt 的待验收条：展开列出文件胶囊，不出「在浏�
         const compact = window.locator('[data-testid="review-gate-compact"]')
         if (size.height <= 640) {
           // luna #146 P1：矮窗展开只留一行「1 个文件 · e2e-stub.txt」+ 提示，消息区 ≥ 120px。
+          // luna #149：展开不另起几行，「1 个文件 · e2e-stub.txt · 提示」接在标签同一行；消息区 ≥ 96px。
           await expect(compact).toBeVisible()
           await expect(compact).toHaveText("1 个文件 · e2e-stub.txt")
+          await expect(window.locator('[data-testid="review-gate-compact-hint"]')).toContainText("点通过就算验收完成")
           await expect(window.locator('[data-testid="review-gate-file"]')).toBeHidden()
+          const row = await box(compact)
+          const approve = await box(window.locator('[data-testid="review-gate-approve"]'))
+          expect(Math.abs(row.y + row.height / 2 - (approve.y + approve.height / 2)), "compact line not on bar row").toBeLessThanOrEqual(4)
           const conv = await box(window.locator('[data-testid="chat-conversation"]'))
-          expect(conv.height, `${size.width} txt expanded ${theme}: messages squeezed`).toBeGreaterThanOrEqual(120)
+          console.log(`[messages-height] ${size.width} txt expanded ${theme} ${conv.height.toFixed(1)}px`)
+          expect(conv.height, `${size.width} txt expanded ${theme}: messages squeezed`).toBeGreaterThanOrEqual(96)
         } else {
           await expect(compact).toBeHidden()
           await expect(window.locator('[data-testid="review-gate-file"]')).toBeVisible()
@@ -170,7 +176,13 @@ test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与�
           await window.waitForTimeout(500)
           await snap(window, `${size.width}x${size.height}-approval-${slug}-${theme}`)
           await expectApprovalLayout(window, `${size.width} approval ${slug} ${theme}`, size.height)
+          await expectApprovalButtonsOneRow(window, `${size.width} approval ${slug} ${theme}`, size.height)
         }
+        // leo：高不到 420 的窗里三钮仍可见、同一行。
+        await window.setViewportSize(SHORT)
+        await window.waitForTimeout(500)
+        await snap(window, `${SHORT.width}x${SHORT.height}-approval-${slug}-${theme}`)
+        await expectApprovalButtonsOneRow(window, `${SHORT.width}x${SHORT.height} approval ${slug} ${theme}`, SHORT.height)
       }
       await setTheme(window, "light")
     }
@@ -178,6 +190,32 @@ test("733×480 待审批：卡限高卡内滚、命令区优先，Composer 与�
     await closeForRelaunch(env.app)
   }
 })
+
+const SHORT = { width: 733, height: 400 } as const
+
+/** 审批三钮：顺序锁死「本会话总是允许 · 拒绝 · 运行/批准」，同一行（顶边一致），都在视口内（luna #149）。 */
+async function expectApprovalButtonsOneRow(window: Page, label: string, viewportHeight: number): Promise<void> {
+  const ids = ["approval-session", "approval-deny", "approval-allow"]
+  const boxes: Box[] = []
+  for (const id of ids) {
+    const locator = window.locator(`[data-testid="permission-dock"] [data-testid="${id}"]`)
+    if ((await locator.count()) === 0) return
+    await expect(locator, `${label}: ${id} visible`).toBeVisible()
+    boxes.push(await box(locator))
+  }
+  const debug = JSON.stringify(boxes)
+  expect(boxes[0].x + boxes[0].width, `${label}: session before deny ${debug}`).toBeLessThanOrEqual(boxes[1].x + 1)
+  expect(boxes[1].x + boxes[1].width, `${label}: deny before allow ${debug}`).toBeLessThanOrEqual(boxes[2].x + 1)
+  for (const b of boxes) {
+    expect(Math.abs(b.y - boxes[0].y), `${label}: buttons not on one row ${debug}`).toBeLessThanOrEqual(1)
+    expect(b.y, `${label}: button above viewport ${debug}`).toBeGreaterThanOrEqual(0)
+    expect(b.y + b.height, `${label}: button below viewport ${debug}`).toBeLessThanOrEqual(viewportHeight)
+  }
+  // 卡顶不被裁：卡顶在会话区内（jojo：矮窗卡顶被裁、消息区为 0）。
+  const card = await box(window.locator('[data-testid="permission-dock"] article'))
+  const conv = await box(window.locator('[data-testid="chat-conversation"]'))
+  expect(card.y, `${label}: card top clipped ${JSON.stringify({ card, conv })}`).toBeGreaterThanOrEqual(conv.y - 1)
+}
 
 /** Composer 输入框最小高度（ai-chat-composer 自适应下限 52px）。 */
 const COMPOSER_INPUT_MIN = 52
@@ -355,3 +393,32 @@ async function snap(window: Page, name: string): Promise<void> {
   mkdirSync(shotsDir, { recursive: true })
   await window.screenshot({ path: join(shotsDir, `${name}.png`) })
 }
+
+test("733×480 模型选择面板夹在视口内，「供应商」头不被裁（luna #149）", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  try {
+    const window = await firstWindow(env.app)
+    for (const theme of ["light", "dark"] as const) {
+      await setTheme(window, theme)
+      for (const size of SIZES) {
+        await window.setViewportSize(size)
+        await window.waitForTimeout(400)
+        await window.locator('[data-testid="composer-engine-chip"]').click()
+        const panel = window.locator('[data-testid="agent-picker-panel"]')
+        await expect(panel).toBeVisible()
+        await window.waitForTimeout(400)
+        const b = await box(panel)
+        expect(b.y, `${size.width} picker top ${JSON.stringify(b)}`).toBeGreaterThanOrEqual(0)
+        expect(b.y + b.height, `${size.width} picker bottom`).toBeLessThanOrEqual(size.height)
+        await snap(window, `${size.width}x${size.height}-model-picker-${theme}`)
+        await window.keyboard.press("Escape")
+        await expect(panel).toHaveCount(0)
+      }
+    }
+    await setTheme(window, "light")
+  } finally {
+    await closeForRelaunch(env.app)
+  }
+})

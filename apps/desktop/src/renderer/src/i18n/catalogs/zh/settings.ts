@@ -322,9 +322,9 @@ export const zhSettings = {
     copyCommand: "复制安装命令",
     copied: "已复制",
     hostExtensionsTitle: "宿主扩展能力",
-    hostExtensionsEnabled: "已启用 {mcp} MCP · {skills} Skills",
+    hostExtensionsEnabled: "已启用 {mcp} MCP · {skills} 个技能",
     hostExtensionsEnabledMcp: "已启用 {mcp} MCP",
-    hostExtensionsEnabledSkills: "已启用 {skills} Skills",
+    hostExtensionsEnabledSkills: "已启用 {skills} 个技能",
     hostExtensionsGoToHubShort: "前往扩展中心",
     hostExtensionsManageMcp: "打开 MCP",
     hostExtensionsManageSkills: "打开技能",
@@ -635,7 +635,7 @@ export const zhSettings = {
       fast: "Fast",
       executionModes: "执行模式",
       hostMcp: "宿主 MCP",
-      hostSkills: "宿主 Skills"
+      hostSkills: "宿主技能"
     },
     path: {
       "enjoy-local": "Enjoy 本地",
@@ -646,7 +646,7 @@ export const zhSettings = {
 
   boundary: {
     title: "配置边界",
-    desc: "密钥、登录、MCP 与 Skills 各归谁。切引擎不会把 Enjoy 密钥带过去。",
+    desc: "密钥、登录、MCP 与技能各归谁。切引擎不会把 Enjoy 密钥带过去。",
     colItem: "配置项",
     colOwner: "归属",
     colGo: "打开",

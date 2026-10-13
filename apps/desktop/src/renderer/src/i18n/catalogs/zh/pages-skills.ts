@@ -46,7 +46,7 @@ export const zhSkillsPages = {
     backToList: "返回来源组列表",
     targetDeployments: "宿主技能目录",
     targetDeploymentsDesc: "当前引擎只读宿主目录，不再复制到各家家目录。",
-    skillsListTitle: "包含的技能清单 (Skills)",
+    skillsListTitle: "包含的技能清单",
     skillsListDesc: "勾选开启或关闭特定技能的部署投影：",
     skillDocTitle: "SKILL.md 文档检视",
     selectSkillHint: "在左侧列表中点击任一技能查看其详细说明与参数指令",
@@ -99,7 +99,7 @@ export const zhSkillsPages = {
 
   importDialog: {
     needWorkspace: "请先打开一个项目工作区后再安装到工作区",
-    title: "导入技能来源 (Import Skill Sources)",
+    title: "导入技能来源",
     gitTitle: "从开源 Git 仓库导入",
     gitPlaceholder: "例如: obra/superpowers 或 https://github.com/...",
     gitFetch: "拉取并挂载",
@@ -213,7 +213,7 @@ export const zhSkillsPages = {
     fallbackDescription: "技能简短描述",
     fallbackBody: "## 执行指引\n\n在此撰写你的 Agent 规则...",
     needWorkspace: "请先打开一个项目工作区后再创建工作区技能",
-    title: "新建 Agent 专属超能力 (Create Skill Studio)",
+    title: "新建助手专属技能",
     subtitle: "为你的 AI 助手定制领域规范、上下文指引与触发指令，即插即用自动挂载",
     footerHint: "创建后将自动完成规范校验并同步至对应 Agent 运行环境",
     cancel: "取消",
@@ -221,7 +221,7 @@ export const zhSkillsPages = {
   },
 
   recommendedPacks: {
-    title: "专为 {agent} 优化的超能力套件 (Recommended Skillsets)",
+    title: "专为 {agent} 优化的技能套件",
     plugHint: "即插即用 · 开箱即用无需配置",
     countSkills: "{n} 项领域能力",
     equippedTo: "已导入宿主目录",

@@ -23,7 +23,7 @@ export function ComposerModelFlyout({ model }: { model: AgentPickerModel }) {
   const [presets, setPresets] = useState(false)
   const engines = railEngines(model)
   return (
-    <div className="relative flex h-[min(22rem,calc(100vh-6rem))] w-[19.5rem] flex-col overflow-hidden pl-11">
+    <div className="relative flex h-[min(22rem,calc(100vh-6rem),var(--radix-popover-content-available-height,22rem))] min-h-40 w-[19.5rem] flex-col overflow-hidden pl-11">
       <EngineIconRail
         engines={engines}
         soon={model.soon}

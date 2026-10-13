@@ -1,6 +1,6 @@
 /** M-CBD 会话作业：安静 Inbox / 验收闸 / 本轮账本。C 端短中文跟预览锁。 */
 export const zhSessionOps = {
-  quietHint: "藏噪音",
+  quietHint: "",
   quietHintDetail: "默认不列读文件 / 跑命令。徽标=拍板数，不是待验收条数。",
   approvalBadgeTitle: "只要人拍板",
   phaseRunning: "执行中",

@@ -113,7 +113,7 @@ function AgentPickerPanel({ model }: { model: AgentPickerModel }) {
       align="start"
       sideOffset={8}
       collisionPadding={12}
-      data-agent-picker-panel=""
+      data-testid="agent-picker-panel"
       className="w-auto overflow-hidden rounded-xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
     >
       <ComposerModelFlyout model={model} />

@@ -19,7 +19,8 @@ export function ComposerStackedRow({
   onToggle,
   actions,
   children,
-  peekTestId
+  peekTestId,
+  shortOpenPeek
 }: {
   icon: ReactNode
   label: string
@@ -30,6 +31,8 @@ export function ComposerStackedRow({
   actions?: ReactNode
   children?: ReactNode
   peekTestId?: string
+  /** 矮窗（≤640 高）展开时：这段接在标签同一行，展开区不再另起几行。 */
+  shortOpenPeek?: ReactNode
 }) {
   return (
     <div className="flex min-h-0 flex-col">
@@ -45,6 +48,9 @@ export function ComposerStackedRow({
               {label}
             </span>
             {meta}
+            {open && shortOpenPeek ? (
+              <span className="hidden min-w-0 flex-1 overflow-hidden [@media(max-height:640px)]:flex">{shortOpenPeek}</span>
+            ) : null}
             {!open && peek ? (
               <span data-testid={peekTestId ? `${peekTestId}-sub` : undefined} className={STACKED_PEEK_CLASS_NAME}>
                 {peek}
@@ -67,7 +73,12 @@ export function ComposerStackedRow({
         {actions}
       </div>
       {open && children ? (
-        <div className="max-h-40 min-h-0 overflow-y-auto overscroll-contain px-3 pb-1.5 text-caption-2-regular text-text-secondary">
+        <div
+          className={cx(
+            "max-h-40 min-h-0 overflow-y-auto overscroll-contain px-3 pb-1.5 text-caption-2-regular text-text-secondary",
+            shortOpenPeek && "[@media(max-height:640px)]:hidden"
+          )}
+        >
           {children}
         </div>
       ) : null}

@@ -39,7 +39,7 @@ test("中文词表与预览同文", () => {
   assert.equal(zhInboxPages.navApproval, "拍板")
   assert.equal(zhInboxPages.navNeedsReview, "待验收")
   assert.equal(zhInboxPages.navFailed, "失败")
-  assert.equal(zhInboxPages.quietHint, "藏噪音")
+  assert.equal(zhInboxPages.quietHint, "")
   assert.equal(zhSessionOps.phaseRunning, "执行中")
   assert.equal(zhSessionOps.phaseReview, "待验收")
   assert.equal(zhSessionOps.phaseDone, "完成")

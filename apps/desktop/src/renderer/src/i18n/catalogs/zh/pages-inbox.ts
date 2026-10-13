@@ -10,7 +10,7 @@ export const zhInboxPages = {
   navNeedsReview: "待验收",
   navFailed: "失败",
   navComplete: "刚完成",
-  quietHint: "藏噪音",
+  quietHint: "",
   approvalBadgeTitle: "只要人拍板",
   navAgent: "智能体运行",
   navSystem: "系统与安全",

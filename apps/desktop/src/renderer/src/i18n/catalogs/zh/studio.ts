@@ -264,7 +264,7 @@ export const zhStudio = {
     save: "保存",
     runNow: "立即运行",
     running: "运行中",
-    cronNoRun: "到点才开 · 无立即运行",
+    cronNoRun: "到了设定时间才会运行，保存后不会马上跑",
     localOnly: "仅在本机运行，关闭应用则暂停",
     emptyTitle: "还没有自动化",
     emptyHint: "点「新建」加一条手动、定时、保存后或本机推送规则。",

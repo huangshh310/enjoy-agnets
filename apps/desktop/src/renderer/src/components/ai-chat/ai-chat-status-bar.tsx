@@ -1,6 +1,7 @@
 "use client"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentLimitsCard } from "./agent-limits/agent-limits-card"
 import { CompactSessionButton } from "./right-pane/views/context/compact-session"
@@ -27,7 +28,7 @@ export function AiChatStatusBar({
   return (
     <div
       data-toast-clearance=""
-      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-secondary"
+      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-hidden px-8 pb-4 text-caption-1-medium text-text-secondary max-[1000px]:gap-1.5 max-[1000px]:px-6"
     >
       <StatusBranchPicker />
       <StatusProjectPicker workspaceRootLabel={workspaceRootLabel} />
@@ -46,7 +47,8 @@ export function AiChatStatusBar({
               className="inline-flex min-w-0 items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
               <ContextRing value={capKnown ? usagePercent : 0} />
-              <span className="min-w-12 max-w-40 truncate font-medium font-mono">
+              {/* 窄窗（≤1000）上下文未知时只留圆环，文字进 title，让分支 / 项目名别被挤成「未检…」（jojo 巡检）。 */}
+              <span className={cx("min-w-12 max-w-40 truncate font-medium font-mono", !capKnown && "max-[1000px]:hidden")}>
                 {capKnown
                   ? `${usagePercent}%`
                   : inspector.modelLabel

@@ -209,7 +209,9 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   setNotice: (notice) => {
     const sessionId = get().sessionId
     if (sessionId && isRestoreFamilyCode(notice)) rememberRestartNotice(sessionId, notice)
-    if (sessionId && notice === null && isRestoreFamilyCode(get().notice)) consumeRestartNotice(sessionId)
+    if (sessionId && notice === null && isRestoreFamilyCode(get().notice)) {
+      consumeRestartNotice(sessionId, [...get().messages].reverse().find((row) => row.role === "assistant")?.id)
+    }
     set({ notice })
   },
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),

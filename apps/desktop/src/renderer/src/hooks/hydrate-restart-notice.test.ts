@@ -71,6 +71,22 @@ test("已展示过则下次冷启动不再补", () => {
   )
 })
 
+test("同会话第二次重启中断（新一轮助手行）照样补，不必刷新", () => {
+  rememberRestartNotice("ses_3", RESTORE_INTERRUPTED_RUNNING)
+  consumeRestartNotice("ses_3", "turn_1")
+  const hydrate = (id: string) =>
+    noticeAfterRestartHydrate({
+      sessionId: "ses_3",
+      sameSession: false,
+      running: false,
+      notice: null,
+      messages: [{ ...abandoned, id }]
+    })
+  assert.equal(hydrate("turn_1"), null)
+  assert.equal(hydrate("turn_2"), RESTORE_INTERRUPTED_RUNNING)
+  assert.equal(hydrate("turn_2"), null)
+})
+
 test("已有 notice / 同会话 / 仍在跑 不覆盖", () => {
   assert.equal(
     noticeAfterRestartHydrate({

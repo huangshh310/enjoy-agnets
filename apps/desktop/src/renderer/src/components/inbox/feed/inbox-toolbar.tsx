@@ -32,7 +32,6 @@ export function InboxToolbar(props: {
             {approvalCount}
           </span>
         ) : null}
-        <span className="text-caption-2-regular text-text-tertiary">{t("pages.inbox.quietHint")}</span>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">

@@ -107,14 +107,14 @@ export function ApprovalChrome({
           ) : null}
         </div>
       </div>
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-0.5 [@media(max-height:600px)]:flex-nowrap [@media(max-height:600px)]:pt-0">
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-0.5 [@media(max-height:600px)]:pt-0">
         <h3
           data-testid="approval-compact-title"
-          className="hidden max-w-[45%] shrink-0 truncate text-caption-1-semibold text-text-primary [@media(max-height:600px)]:block"
+          className="hidden min-w-0 basis-full truncate text-caption-1-semibold text-text-primary [@media(max-height:600px)]:block"
         >
           {title}
         </h3>
-        <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:hidden">
+        <p className="inline-flex min-w-0 flex-1 basis-40 items-center gap-1.5 text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:hidden">
           <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
           <span className="truncate">
             {t(isDevCopyEnabled() ? "chat.hmacBoundNotice" : "chat.approvalConfirmNotice")}
