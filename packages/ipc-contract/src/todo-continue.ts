@@ -4,13 +4,13 @@
 export const TODO_CONTINUE_PROMPT =
   "继续完成未完成的内容。Continue the in_progress Todo List item with write_file / edit_file; do not stop at a written plan."
 
+/**
+ * 只认**完整的内部提示**（含历史版本），不认短语：用户自己打「继续完成剩余任务」之类必须当普通句。
+ */
 const TODO_CONTINUE_MARKERS = [
   TODO_CONTINUE_PROMPT,
-  "The Todo List still has unfinished items.",
-  "Continue the unfinished Todo List",
-  "继续完成 Todo List",
-  "继续完成未完成的内容",
-  "继续完成剩余任务"
+  "继续完成 Todo List 里未完成的项。直接改文件，不要再只写计划。",
+  "The Todo List still has unfinished items."
 ]
 
 /** ACP 发送口会垫宿主模式围栏（`[Enjoy host mode: …]…[/Enjoy host mode]`），认续跑句前先剥掉。 */

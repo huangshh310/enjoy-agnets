@@ -1,7 +1,7 @@
 /**
  * 改动条 / 独立预览条的可见性与可开目标。
  */
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { pathsFromLastTurn, unconfirmedPathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
@@ -20,6 +20,14 @@ export function useSessionReviewModel() {
   const gitRepo = useChatStore((state) => state.gitRepo)
   const running = useChatStore((state) => state.running)
   const notice = useChatStore((state) => state.notice)
+  const changesLoadedAt = useChatStore((state) => state.changesLoadedAt)
+  // 本轮结束（或本视图挂上）的时刻：git 改动表要比它新，才算「git 确认」。
+  const turnEndedAt = useRef(Date.now())
+  const wasRunning = useRef(running)
+  useEffect(() => {
+    if (wasRunning.current && !running) turnEndedAt.current = Date.now()
+    wasRunning.current = running
+  }, [running])
   const error = useChatStore((state) => state.error)
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
@@ -38,9 +46,10 @@ export function useSessionReviewModel() {
     () =>
       describeReviewFiles(pathsFromLastTurn(messages), changes, running, gitRepo, {
         interrupted,
-        unconfirmed: unconfirmedPathsFromLastTurn(messages)
+        unconfirmed: unconfirmedPathsFromLastTurn(messages),
+        changesFresh: changesLoadedAt >= turnEndedAt.current
       }),
-    [messages, changes, running, gitRepo, interrupted]
+    [messages, changes, running, gitRepo, interrupted, changesLoadedAt]
   )
   const files = pick.files
   const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])

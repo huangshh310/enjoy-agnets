@@ -43,3 +43,12 @@ test("真写盘结果不受影响", () => {
   assert.equal(isApprovalEnvelopeOnly({ path: "e2e-stub.txt", bytes: 1 }), false)
   assert.deepEqual(capsules(turn({ ok: true, path: "e2e-stub.txt" }), true), ["e2e-stub.txt"])
 })
+
+test("git 改动表还没在本轮结束后刷新：不拿旧表当「git 确认」，胶囊保留", () => {
+  const messages = turn({ decision: "allow" })
+  const files = describeReviewFiles(pathsFromLastTurn(messages), [], false, true, {
+    unconfirmed: unconfirmedPathsFromLastTurn(messages),
+    changesFresh: false
+  }).files.map((file) => file.path)
+  assert.deepEqual(files, ["e2e-stub.txt"])
+})

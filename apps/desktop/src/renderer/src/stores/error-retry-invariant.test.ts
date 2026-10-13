@@ -33,3 +33,21 @@ test("stream reducer 把 error 置空（run.start 等）时 errorRetry 跟着清
   useChatStore.setState({ messages: [] })
   assert.equal(useChatStore.getState().errorRetry?.error, "boom")
 })
+
+test("一次写入：清 error 连带清 errorRetry 只通知一次；无变化的写不通知", () => {
+  useChatStore.getState().setError("boom", target)
+  let writes = 0
+  const unsubscribe = useChatStore.subscribe(() => {
+    writes += 1
+  })
+  try {
+    useChatStore.setState({ error: null })
+    assert.equal(useChatStore.getState().errorRetry, null)
+    assert.equal(writes, 1)
+    useChatStore.setState({ error: null })
+    useChatStore.setState((state) => ({ composer: state.composer }))
+    assert.equal(writes, 1)
+  } finally {
+    unsubscribe()
+  }
+})

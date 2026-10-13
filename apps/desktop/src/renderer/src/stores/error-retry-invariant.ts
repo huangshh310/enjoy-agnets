@@ -20,6 +20,15 @@ export function withErrorRetryInvariant<S extends ErrorRetryState>(init: StateCr
     const guarded = ((partial: S | Partial<S> | ((state: S) => S | Partial<S>), replace?: boolean) => {
       const current = get()
       const patch = typeof partial === "function" ? partial(current) : partial
+      if (!replace && patch === current) return
+      if (
+        !replace &&
+        Object.entries(patch as Record<string, unknown>).every(([key, value]) =>
+          Object.is((current as Record<string, unknown>)[key], value)
+        )
+      ) {
+        return // 无变化：不写、不通知订阅者
+      }
       const merged = (replace ? patch : { ...current, ...patch }) as S
       write(reconcileErrorRetry(merged), true)
     }) as typeof set

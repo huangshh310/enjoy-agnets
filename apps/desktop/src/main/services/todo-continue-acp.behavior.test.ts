@@ -56,3 +56,16 @@ test("文本兜底：没有标记、但内容是带围栏的续跑句，也不�
   const normal = RunAgentInput.parse({ ...input, messages: [{ role: "user", content: "正常问题" }] })
   assert.equal(shouldPersistOutgoingUser(normal, true), true)
 })
+
+test("fail-closed：普通句带 todoContinue:true 仍照常落库 / 不算内部轮", async () => {
+  const { isInternalTodoContinueTurn } = await import("./outgoing-user-persist.ts")
+  const input = RunAgentInput.parse({
+    workspaceId: "ws",
+    sessionId: "s",
+    modelId: "m",
+    todoContinue: true,
+    messages: [{ role: "user", content: "帮我把登录页改成深色" }]
+  })
+  assert.equal(isInternalTodoContinueTurn(input), false)
+  assert.equal(shouldPersistOutgoingUser(input, true), true)
+})

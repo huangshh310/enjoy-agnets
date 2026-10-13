@@ -73,6 +73,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   selectedFileContent: "",
   changes: [],
   gitRepo: null,
+  changesLoadedAt: 0,
   additions: 0,
   deletions: 0,
   sessionReviewDismissedKey: null,
@@ -265,14 +266,18 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   setChanges: (changes: ChangedFileRow[], gitRepo?: boolean | null) => {
     const current = get()
     const nextGit = gitRepo === undefined ? current.gitRepo : gitRepo
-    if (current.gitRepo === nextGit && sameChangeRows(current.changes, changes)) return
+    if (current.gitRepo === nextGit && sameChangeRows(current.changes, changes)) {
+      set({ changesLoadedAt: Date.now() })
+      return
+    }
     const additions = changes.reduce((sum, file) => sum + file.additions, 0)
     const deletions = changes.reduce((sum, file) => sum + file.deletions, 0)
     set({
       changes,
       additions,
       deletions,
-      gitRepo: nextGit
+      gitRepo: nextGit,
+      changesLoadedAt: Date.now()
     })
   },
   setSessionReviewDismissedKey: (sessionReviewDismissedKey) => set({ sessionReviewDismissedKey }),

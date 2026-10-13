@@ -6,16 +6,9 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
+import { isTodoContinueUserMessage } from "@enjoy-agents/ipc-contract/todo-continue"
 import type { ThreadMessage } from "../../../../../stores/chat-store.types"
 
-const CONTINUE_MARKERS = [
-  "继续完成未完成的内容",
-  "继续完成 Todo List",
-  "继续完成剩余任务",
-  "Continue the unfinished Todo List",
-  "The Todo List still has unfinished items.",
-  "Continue the in_progress Todo List"
-]
 
 /** 带 path 入参的写类工具：Enjoy 名走契约，后 5 个是外部引擎的写 / 删别名。 */
 const PATH_WRITE_TOOLS = new Set<string>([
@@ -165,7 +158,5 @@ function readToolPath(value: unknown): string | null {
 }
 
 function isContinueUser(content: string | undefined): boolean {
-  const text = content?.trim() ?? ""
-  if (!text) return false
-  return CONTINUE_MARKERS.some((marker) => text.startsWith(marker) || text === marker)
+  return isTodoContinueUserMessage(content)
 }

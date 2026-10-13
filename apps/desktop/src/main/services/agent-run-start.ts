@@ -29,7 +29,7 @@ import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-c
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
-import { shouldPersistOutgoingUser } from "./outgoing-user-persist"
+import { isInternalTodoContinueTurn, shouldPersistOutgoingUser } from "./outgoing-user-persist"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
@@ -60,7 +60,7 @@ export async function runAgent(
   const stripped = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
   const input = stampForegroundUserOrigin(stripped, trust)
   return beginAgentRun(window, input, {
-    persistUser: input.persistUser !== false && input.todoContinue !== true,
+    persistUser: input.persistUser !== false,
     rememberMru: trust.rememberMru
   })
 }
@@ -256,7 +256,7 @@ function emitRunStart(
   runId: string,
   promptEcho?: boolean
 ): void {
-  const echoed = promptEcho && input.todoContinue !== true ? lastUserContent(input) : ""
+  const echoed = promptEcho && !isInternalTodoContinueTurn(input) ? lastUserContent(input) : ""
   const echoedId = echoed ? lastOutgoingUser(input)?.id : undefined
   persistSessionWorkflow(input.sessionId, "in_progress")
   emitEvent(window, {

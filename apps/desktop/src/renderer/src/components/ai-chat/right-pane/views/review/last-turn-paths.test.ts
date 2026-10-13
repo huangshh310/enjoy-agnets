@@ -1,3 +1,4 @@
+import { TODO_CONTINUE_PROMPT } from "@enjoy-agents/ipc-contract"
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { groupChangedPaths, lastTurnDeniedOnly, pathsFromLastTurn, pathsFromTools } from "./last-turn-paths.ts"
@@ -40,7 +41,7 @@ test("续跑用户句不切断上一轮", () => {
       content: "",
       tools: [{ id: "1", name: "write_file", args: { path: "a.ts" }, state: "output-available" }]
     }),
-    msg({ role: "user", content: "继续完成未完成的内容" })
+    msg({ role: "user", content: TODO_CONTINUE_PROMPT })
   ]
   assert.deepEqual(pathsFromLastTurn(messages), ["a.ts"])
 })
