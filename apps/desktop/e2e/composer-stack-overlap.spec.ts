@@ -110,7 +110,19 @@ test("写了 .txt 的待验收条：展开列出文件胶囊，不出「在浏�
           // luna #149：展开不另起几行，「1 个文件 · e2e-stub.txt · 提示」接在标签同一行；消息区 ≥ 96px。
           await expect(compact).toBeVisible()
           await expect(compact).toHaveText("1 个文件 · e2e-stub.txt")
-          await expect(window.locator('[data-testid="review-gate-compact-hint"]')).toContainText("点通过就算验收完成")
+          // luna #149 v3：提示单独一行在按钮下方，整句落在条内、不与按钮重叠。
+          const hintLoc = window.locator('[data-testid="review-gate-compact-hint"]')
+          await expect(hintLoc).toHaveText("点通过就算验收完成，不会自动提交或推送。")
+          const hint = await box(hintLoc)
+          const bar = await box(window.locator('[data-testid="composer-review-frame"]'))
+          const hintFull = await hintLoc.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)
+          expect(hintFull, `${size.width} ${theme}: hint truncated`).toBe(true)
+          expect(hint.x >= bar.x - 0.5 && hint.x + hint.width <= bar.x + bar.width + 0.5, `hint outside bar ${JSON.stringify({ hint, bar })}`).toBe(true)
+          expect(hint.y >= bar.y - 0.5 && hint.y + hint.height <= bar.y + bar.height + 0.5, `hint outside bar vertically ${JSON.stringify({ hint, bar })}`).toBe(true)
+          for (const id of ["review-gate-open", "review-gate-reject", "review-gate-approve"]) {
+            const btn = await box(window.locator(`[data-testid="${id}"]`))
+            expect(intersects(hint, btn), `hint ∩ ${id} ${JSON.stringify({ hint, btn })}`).toBe(false)
+          }
           await expect(window.locator('[data-testid="review-gate-file"]')).toBeHidden()
           const row = await box(compact)
           const approve = await box(window.locator('[data-testid="review-gate-approve"]'))
@@ -215,6 +227,50 @@ async function expectApprovalButtonsOneRow(window: Page, label: string, viewport
   const dockBox = await box(window.locator('[data-testid="permission-dock"]'))
   for (const b of boxes) {
     expect(b.y + b.height, `${label}: button clipped by dock ${JSON.stringify({ dockBox, boxes })}`).toBeLessThanOrEqual(dockBox.y + dockBox.height + 1)
+  }
+  // 每个按钮整框落在所有裁切祖先里（luna #149 v3：「运行」被父层在 y=195 裁掉一半）。
+  for (const id of ids) {
+    const clipped = await window
+      .locator(`[data-testid="permission-dock"] [data-testid="${id}"]`)
+      .evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        const bad: string[] = []
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+          const cs = getComputedStyle(p)
+          if (cs.overflowX === "visible" && cs.overflowY === "visible") continue
+          const c = p.getBoundingClientRect()
+          if (r.top < c.top - 0.5 || r.bottom > c.bottom + 0.5 || r.left < c.left - 0.5 || r.right > c.right + 0.5) {
+            bad.push(`${p.tagName}.${p.className.toString().slice(0, 60)} [${c.top},${c.bottom}] vs [${r.top},${r.bottom}]`)
+          }
+        }
+        return bad
+      })
+    expect(clipped, `${label}: ${id} clipped by ancestor`).toEqual([])
+  }
+  // 标题（卡顶或底栏）不压正文：与正文可视区不相交（luna #149 v3：计划概览压「待办」）。
+  const bodyBox = await box(window.locator('[data-testid="permission-dock"] [data-testid="approval-card-body"]'))
+  const compact = window.locator('[data-testid="permission-dock"] [data-testid="approval-compact-title"]')
+  if (await compact.isVisible()) {
+    expect(intersects(await box(compact), bodyBox), `${label}: compact title ∩ body`).toBe(false)
+  }
+  const bodyTitle = window.locator('[data-testid="permission-dock"] [data-testid="approval-body-title"]')
+  if ((await bodyTitle.count()) > 0 && (await bodyTitle.isVisible())) {
+    // 前面的检查把正文滚到了底；回到顶再看标题。
+    await window
+      .locator('[data-testid="permission-dock"] [data-testid="approval-card-body"]')
+      .evaluate((el) => {
+        el.scrollTop = 0
+      })
+    const tb = await box(bodyTitle)
+    const hit = await bodyTitle.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const at = document.elementFromPoint(r.left + 4, r.top + r.height / 2)
+      return Boolean(at && el.contains(at))
+    })
+    expect(hit, `${label}: body title covered ${JSON.stringify(tb)}`).toBe(true)
+    if (viewportHeight >= 480) {
+      expect(bodyBox.height, `${label}: plan body squeezed to ${bodyBox.height}px`).toBeGreaterThanOrEqual(48)
+    }
   }
   // 卡顶不被裁：卡顶在会话区内（jojo：矮窗卡顶被裁、消息区为 0）。
   const card = await box(window.locator('[data-testid="permission-dock"] article'))

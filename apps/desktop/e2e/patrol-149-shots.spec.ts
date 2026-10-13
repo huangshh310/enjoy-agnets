@@ -39,6 +39,12 @@ test("巡检页：收件箱 / 技能 / MCP / 自动化抽屉 在 733 与 1440、
         const markRead = window.locator("header button").filter({ has: window.locator("svg") }).last()
         const mr = await markRead.boundingBox()
         expect(mr && mr.x + mr.width, `${tag} inbox action off screen`).toBeLessThanOrEqual(size.width)
+        // 列表顶栏按钮不溢进详情栏（luna #149 v3：「全部标为已读 / 清理已读」压住「拍板」）。
+        const head = await window.locator('[data-testid="page-inbox"]').boundingBox()
+        for (const btn of await window.locator('[data-testid="page-inbox"] button').all()) {
+          const bb = await btn.boundingBox()
+          if (bb && head) expect(bb.x + bb.width, `${tag} inbox toolbar spill`).toBeLessThanOrEqual(head.x + head.width + 0.5)
+        }
         await snap(window, `${tag}-inbox-${theme}`)
 
         await go(window, "#/skills")

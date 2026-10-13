@@ -102,7 +102,7 @@ export function renderCommandBlock(view: CommandBlockView): ReactElement {
             "aria-expanded": expanded,
             onClick: view.onToggle,
             className:
-              "shrink-0 self-start pt-0.5 text-caption-2-medium [@media(max-height:600px)]:pt-0 [@media(max-height:600px)]:leading-4 text-accent-500 underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+              "shrink-0 self-start pt-0.5 text-caption-2-medium [@media(max-height:440px)]:hidden [@media(max-height:600px)]:pt-0 [@media(max-height:600px)]:leading-4 text-accent-500 underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
           },
           commandToggleLabel(expanded, command, t)
         )

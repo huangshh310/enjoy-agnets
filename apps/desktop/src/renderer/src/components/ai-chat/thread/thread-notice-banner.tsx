@@ -51,7 +51,7 @@ export function ThreadNoticeBanner() {
   return (
     <div
       data-testid="thread-notice-banner"
-      className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:py-1.5"
+      className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:py-1"
     >
       <span
         className={cx(

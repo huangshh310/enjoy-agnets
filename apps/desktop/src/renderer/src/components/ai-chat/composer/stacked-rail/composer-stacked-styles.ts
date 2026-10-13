@@ -3,7 +3,7 @@
  * 不透明、裁切溢出，避免展开列表透到下一行。
  */
 export const STACKED_FRAME_CLASS_NAME = [
-  "mb-2 flex w-full min-w-0 flex-col overflow-hidden empty:hidden",
+  "mb-2 flex w-full min-w-0 flex-col overflow-hidden empty:hidden [@media(max-height:640px)]:mb-1",
   "rounded-[18px] border border-border-button-default bg-background-primary-default"
 ].join(" ")
 

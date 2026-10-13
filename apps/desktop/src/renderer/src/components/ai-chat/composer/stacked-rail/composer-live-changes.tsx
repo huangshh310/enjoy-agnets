@@ -9,7 +9,7 @@ import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pa
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ComposerStackedRow } from "./composer-stacked-row"
-import { GateCompactPeek, GateExpanded, GateRowActions } from "./composer-review-gate-parts"
+import { GateCompactHint, GateCompactPeek, GateExpanded, GateRowActions } from "./composer-review-gate-parts"
 import { STACKED_PANEL_CLASS_NAME } from "./composer-stacked-styles"
 import { keepSessionReview, undoSessionReview } from "../session-review/composer-session-review"
 import { SessionFileTrigger } from "../session-review/session-review-files"
@@ -167,6 +167,7 @@ function LiveChangesRow({
       peek={showGate ? `· ${peek}` : undefined}
       peekTestId="session-review-peek"
       shortOpenPeek={showGate ? <GateCompactPeek files={files} placeholderKey={placeholderKey} /> : undefined}
+      shortOpenBelow={showGate ? <GateCompactHint /> : undefined}
       meta={<DiffStat additions={additions} deletions={deletions} />}
       open={filesOpen}
       onToggle={onToggle}

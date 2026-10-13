@@ -111,7 +111,7 @@ export function GateExpanded({
   )
 }
 
-/** 矮窗（≤640 高）展开时不另起几行：文件一句 + 提示弱化接在同一行末尾（luna #149：消息区 ≥ 96px）。 */
+/** 矮窗（≤640 高）展开：文件一句接在标签同一行；提示另起一行在按钮行下方（luna #149 v3）。 */
 export function GateCompactPeek({
   files,
   placeholderKey
@@ -125,17 +125,21 @@ export function GateCompactPeek({
       ? t(placeholderKey)
       : t("sessionOps.gateFilesLine", { n: files.length, names: files.map((file) => file.name).join("、") })
   return (
-    <span
-      title={`${line}\n${t("sessionOps.gateHint")}`}
-      className="min-w-0 flex-1 truncate whitespace-nowrap"
-    >
-      <span data-testid="review-gate-compact" className="text-text-primary">
-        {line}
-      </span>
-      <span data-testid="review-gate-compact-hint" className="text-text-tertiary">
-        {" · "}
-        {t("sessionOps.gateHint")}
-      </span>
+    <span data-testid="review-gate-compact" title={line} className="min-w-0 flex-1 truncate whitespace-nowrap text-text-primary">
+      {line}
     </span>
+  )
+}
+
+export function GateCompactHint() {
+  const t = useT()
+  return (
+    <p
+      data-testid="review-gate-compact-hint"
+      title={t("sessionOps.gateHint")}
+      className="truncate text-caption-2-regular leading-4 text-text-tertiary"
+    >
+      {t("sessionOps.gateHint")}
+    </p>
   )
 }

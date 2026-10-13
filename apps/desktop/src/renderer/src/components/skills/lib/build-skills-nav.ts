@@ -31,7 +31,7 @@ export function buildSkillsNavGroups({
           id: "curated",
           label: "精选集市",
           icon: RiCompass3Line,
-          meta: "Store",
+          meta: "集市",
           keywords: ["curated", "market", "store", "精选", "集市", "发现"]
         },
         {

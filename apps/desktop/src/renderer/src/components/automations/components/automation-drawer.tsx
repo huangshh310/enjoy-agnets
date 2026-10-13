@@ -174,7 +174,7 @@ export function AutomationDrawer({
           // 主色实底 + 白字；禁用：灰底、次级字色、明显描边，浅深色都看得见（luna #146 / #149）。
           className={
             saveDisabled
-              ? "!bg-none !bg-background-tertiary-default border !border-border-button-hover font-semibold !text-text-secondary shadow-none !opacity-100"
+              ? "!bg-none !bg-background-tertiary-default border !border-neutral-400 dark:!border-border-button-hover font-semibold !text-text-secondary shadow-none !opacity-100"
               : "!bg-none !bg-accent-500 border border-accent-600 font-semibold !text-white shadow-xs hover:!bg-accent-600"
           }
         >

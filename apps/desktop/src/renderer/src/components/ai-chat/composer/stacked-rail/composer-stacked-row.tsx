@@ -20,7 +20,8 @@ export function ComposerStackedRow({
   actions,
   children,
   peekTestId,
-  shortOpenPeek
+  shortOpenPeek,
+  shortOpenBelow
 }: {
   icon: ReactNode
   label: string
@@ -33,6 +34,8 @@ export function ComposerStackedRow({
   peekTestId?: string
   /** 矮窗（≤640 高）展开时：这段接在标签同一行，展开区不再另起几行。 */
   shortOpenPeek?: ReactNode
+  /** 矮窗展开时：按钮行下方单独一行（提示），不与按钮抢横向空间（luna #149 v3）。 */
+  shortOpenBelow?: ReactNode
 }) {
   return (
     <div className="flex min-h-0 flex-col">
@@ -72,6 +75,9 @@ export function ComposerStackedRow({
         )}
         {actions}
       </div>
+      {open && shortOpenBelow ? (
+        <div className="hidden min-w-0 px-3 pb-1 [@media(max-height:640px)]:block">{shortOpenBelow}</div>
+      ) : null}
       {open && children ? (
         <div
           className={cx(

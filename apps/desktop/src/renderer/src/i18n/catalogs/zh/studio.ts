@@ -260,7 +260,7 @@ export const zhStudio = {
     modelPlaceholder: "留空则用该引擎当前模型",
     mode: "模式",
     promptLabel: "提示词模板",
-    promptPlaceholder: "到点或手动时交给 Agent 的一轮指令…",
+    promptPlaceholder: "到点或手动时交给助手的一轮指令…",
     save: "保存",
     runNow: "立即运行",
     running: "运行中",

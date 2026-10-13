@@ -36,6 +36,8 @@ type ApprovalChromeProps = ApprovalActionIds & {
   approveDisabled?: boolean
   approveTitle?: string
   sessionHint?: string
+  /** 极矮窗（≤440）留的一句短问句，如「运行这条命令？」「写入这个文件？」。 */
+  shortTitle?: string
   tone?: ApprovalTone
   decide: ApprovalDecide
 }
@@ -52,6 +54,7 @@ export function ApprovalChrome({
   approveDisabled,
   approveTitle,
   sessionHint,
+  shortTitle,
   tone,
   denyTestId,
   allowTestId,
@@ -96,8 +99,16 @@ export function ApprovalChrome({
           data-testid="approval-card-body"
           className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 self-stretch overflow-y-auto overscroll-contain [@media(max-height:600px)]:gap-0.5"
         >
-          <h3 className="shrink-0 truncate text-caption-1-semibold leading-6 text-text-primary [@media(max-height:600px)]:hidden">
-            {title}
+          {/* command 卡小窗把标题挪到底栏；其余卡（计划概览等）标题留在卡顶正常流里，不压正文（luna #149 v3）。 */}
+          <h3
+            data-testid={variant === "command" ? undefined : "approval-body-title"}
+            className={cx(
+              "shrink-0 truncate text-caption-1-semibold leading-6 text-text-primary",
+              variant === "command" ? "[@media(max-height:600px)]:hidden" : "[@media(max-height:600px)]:leading-5"
+            )}
+          >
+            <span className="[@media(max-height:440px)]:hidden">{title}</span>
+            <span className="hidden [@media(max-height:440px)]:inline">{shortTitle ?? title}</span>
           </h3>
           {children}
           {sessionHint ? (
@@ -111,13 +122,16 @@ export function ApprovalChrome({
         <h3
           data-testid="approval-compact-title"
           className={cx(
-            "hidden min-w-0 truncate text-caption-1-semibold text-text-primary [@media(max-height:600px)]:block",
-            // 有「本会话总是允许」时标题独占一行（luna #149：计划概览别跟三钮挤一行）；否则与两钮同行省高度。
-            // 极矮窗（≤440）三钮优先：独占行的标题让位，标题仍在按钮 title 与卡正文里。
-            showAlways && footer === "buttons" ? "basis-full [@media(max-height:440px)]:!hidden" : "max-w-[45%] shrink-0"
+            "hidden min-w-0 truncate text-caption-1-semibold text-text-primary",
+            variant === "command" && "[@media(max-height:600px)]:block",
+            // 有「本会话总是允许」时标题独占一行（luna #149）；极矮窗（≤440）换成短问句与三钮同行，按钮优先、问句截断。
+            showAlways && footer === "buttons"
+              ? "basis-full [@media(max-height:440px)]:basis-0 [@media(max-height:440px)]:flex-1"
+              : "max-w-[45%] shrink-0"
           )}
         >
-          {title}
+          <span className="[@media(max-height:440px)]:hidden">{title}</span>
+          <span className="hidden [@media(max-height:440px)]:inline">{shortTitle ?? title}</span>
         </h3>
         <p className="inline-flex min-w-0 flex-1 basis-40 items-center gap-1.5 text-caption-2-regular text-text-tertiary [@media(max-height:600px)]:hidden">
           <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
