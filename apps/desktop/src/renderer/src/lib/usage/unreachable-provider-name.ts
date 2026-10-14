@@ -1,9 +1,10 @@
 /**
- * 首字前「连不上供应商」红卡里的供应商名。
+ * 首字前「连不上供应商」红卡里的供应商名。显示名（OpenAI），不露预设 kind（openai）。
  * 注意：apiKeys[].providerId 存的是 vault 档案 id（= defaultRoute.profileId），不是预设 kind；
  * 预设 kind 在 presetId。路线指了档案却在 apiKeys 里找不到时不能拿别家档案顶名（leo soft）。
  */
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { presetDisplayName } from "../credential/key-status.ts"
 
 type Snap = Pick<ChatReadiness, "defaultRoute" | "engines" | "apiKeys">
 
@@ -17,5 +18,5 @@ export function unreachableProviderName(snap: Snap | undefined, fallback: string
   const key = profileId
     ? snap?.apiKeys.find((row) => row.providerId === profileId)
     : snap?.apiKeys[0]
-  return key?.presetId || fallback
+  return key?.presetId ? presetDisplayName(key.presetId, fallback) : fallback
 }

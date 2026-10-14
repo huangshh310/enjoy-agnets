@@ -22,6 +22,12 @@ function acceptReadiness(raw: unknown): ChatReadiness | undefined {
   return parsed.data
 }
 
+export function credentialCheckChanged(prev: ChatReadiness | undefined, next: ChatReadiness): boolean {
+  const a = prev?.credentialCheck
+  const b = next.credentialCheck
+  return a?.state !== b?.state || a?.code !== b?.code || a?.checkedAt !== b?.checkedAt
+}
+
 export function useChatReadiness() {
   const client = useQueryClient()
   const query = useQuery({
@@ -40,7 +46,11 @@ export function useChatReadiness() {
     if (!hasIde()) return undefined
     const stop = getIde().chat.onReadiness((payload) => {
       const snap = acceptReadiness(payload)
-      if (snap) client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+      if (!snap) return
+      const prev = client.getQueryData<ChatReadiness>(CHAT_READINESS_QUERY_KEY)
+      client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+      // 存密钥后的校验落盘会推 readiness；供应商行的三态读设置快照，一起刷新。
+      if (credentialCheckChanged(prev, snap)) void client.invalidateQueries({ queryKey: ["settings"] })
     })
     const onFocus = () => {
       void client.invalidateQueries({ queryKey: CHAT_READINESS_QUERY_KEY })

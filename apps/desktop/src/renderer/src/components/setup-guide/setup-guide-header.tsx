@@ -14,11 +14,13 @@ export function SetupGuideHeader({
   step,
   summary,
   titleKey,
+  titleVars,
   readyMark
 }: {
   step: SetupGuideStep
   summary?: ReactNode
   titleKey?: string
+  titleVars?: Record<string, string>
   readyMark?: boolean
 }) {
   const t = useT()
@@ -35,7 +37,7 @@ export function SetupGuideHeader({
         </p>
       )}
       <DialogTitle className="text-title-1-medium font-medium text-text-primary">
-        {t(titleKey ?? face.title)}
+        {t(titleKey ?? face.title, titleVars)}
       </DialogTitle>
       {summary ?? (body ? (
         <DialogDescription className="max-w-[560px] text-headline-regular leading-normal text-text-secondary">

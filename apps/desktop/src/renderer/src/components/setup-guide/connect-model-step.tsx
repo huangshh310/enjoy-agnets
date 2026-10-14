@@ -22,15 +22,18 @@ import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 export function ConnectModelStep({
   picked,
   onPick,
-  onAddKey
+  onAddKey,
+  onFixKey
 }: {
   picked: string | null
   onPick: (id: string) => void
   onAddKey: () => void
+  onFixKey: (profileId: string | undefined) => void
 }) {
   const t = useT()
   const readiness = useChatReadiness().data
-  const options = connectModelOptions(readiness)
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const options = connectModelOptions(readiness, providers)
   return (
     <div className="flex flex-col gap-2">
       {readiness?.secretStorageAvailable === false ? <SecretWritePreflight /> : null}
@@ -39,14 +42,18 @@ export function ConnectModelStep({
         <li key={option.id}>
           <ConnectModelRow
             option={option}
-            selected={picked === option.id || (option.kind === "api_key" && option.connected && picked == null)}
+            selected={
+              picked === option.id ||
+              (option.kind === "api_key" && option.connected && option.keyStatus !== "invalid" && picked == null)
+            }
             onChoose={() => {
-              if (connectModelRowAction(option) === "add-key") onAddKey()
+              const action = connectModelRowAction(option)
+              if (action === "add-key") onAddKey()
+              else if (action === "fix-key") onFixKey(option.kind === "api_key" ? option.profileId : undefined)
               else onPick(option.id)
             }}
             title={rowTitle(option, t)}
             hint={t(connectModelRowHintKey(option), hintVars(option))}
-            connectedLabel={t("settings.setupGuide.connectApiKeyConnected")}
             unverifiedLabel={t("settings.setupGuide.connectLocalUnverified")}
           />
         </li>
@@ -62,7 +69,6 @@ function ConnectModelRow({
   onChoose,
   title,
   hint,
-  connectedLabel,
   unverifiedLabel
 }: {
   option: ConnectModelOption
@@ -70,7 +76,6 @@ function ConnectModelRow({
   onChoose: () => void
   title: string
   hint: string
-  connectedLabel: string
   unverifiedLabel: string
 }) {
   return (
@@ -78,6 +83,7 @@ function ConnectModelRow({
       type="button"
       data-testid={`connect-model-${option.kind}`}
       data-verified={option.kind === "local_model" ? String(option.verified) : undefined}
+      data-key-status={option.kind === "api_key" && option.connected ? (option.keyStatus ?? "unverified") : undefined}
       data-recommended={option.kind !== "later" && option.recommended ? "true" : undefined}
       onClick={onChoose}
       className={cx(
@@ -99,13 +105,38 @@ function ConnectModelRow({
         <span className="text-body-2-regular text-text-secondary">{hint}</span>
         {option.kind === "local_model" && !option.verified ? <VerifyLocalAction service={option.service} /> : null}
       </span>
-      {option.kind === "api_key" && option.connected ? (
-        <span className="inline-flex items-center gap-1.5 text-caption-1-medium text-state-success-text">
-          <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
-          {connectedLabel}
-        </span>
-      ) : null}
+      {option.kind === "api_key" && option.connected ? <ApiKeyBadge option={option} /> : null}
     </button>
+  )
+}
+
+/** 三态徽标：绿=已验证；灰=暂时没法确认；红=被拒，带「改密钥」。 */
+function ApiKeyBadge({ option }: { option: Extract<ConnectModelOption, { kind: "api_key" }> }) {
+  const t = useT()
+  const status = option.keyStatus ?? "unverified"
+  if (status === "ok") {
+    return (
+      <span data-testid="connect-model-key-badge" className="inline-flex shrink-0 items-center gap-1.5 text-caption-1-medium text-state-success-text">
+        <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
+        {t("settings.setupGuide.connectApiKeyConnected")}
+      </span>
+    )
+  }
+  if (status === "invalid") {
+    return (
+      <span data-testid="connect-model-key-badge" className="inline-flex shrink-0 items-center gap-1.5 text-caption-1-medium text-text-error-primary">
+        <span aria-hidden className="size-1.5 rounded-full bg-text-error-primary" />
+        <span data-testid="connect-model-fix-key" className="underline-offset-2 hover:underline">
+          {t("settings.setupGuide.fixKey")}
+        </span>
+      </span>
+    )
+  }
+  return (
+    <span data-testid="connect-model-key-badge" className="inline-flex shrink-0 items-center gap-1.5 text-caption-1-medium text-text-tertiary">
+      <span aria-hidden className="size-1.5 rounded-full bg-text-tertiary" />
+      {t("settings.setupGuide.connectApiKeyUnverified")}
+    </span>
   )
 }
 
@@ -180,5 +211,7 @@ function rowTitle(option: ConnectModelOption, t: (path: string, vars?: Record<st
 }
 
 function hintVars(option: ConnectModelOption): Record<string, string> | undefined {
-  return option.kind === "engine" ? { name: option.name } : undefined
+  if (option.kind === "engine") return { name: option.name }
+  if (option.kind === "api_key") return { name: option.providerName ?? "" }
+  return undefined
 }

@@ -109,3 +109,29 @@ test("已验证本机模型才推荐，hint 不是未验证", () => {
   assert.equal(local?.kind === "local_model" && local.recommended, true)
   assert.equal(connectModelRowHintKey(local!), "settings.setupGuide.connectLocalHint")
 })
+
+test("已存密钥按三态露出：被拒点行改密钥，不再写已连上", () => {
+  const mk = (state: "ok" | "invalid" | "unverified") =>
+    connectModelOptions(
+      buildChatReadiness({
+        engines: [],
+        localModels: [],
+        apiKeys: [{ kind: "api_key", providerId: "p1", presetId: "openai" }],
+        engineCount: 1,
+        hasEnjoySecret: true,
+        activeKeyProfileId: "p1",
+        credentialCheck: { state }
+      })
+    ).find((item) => item.kind === "api_key")!
+  const bad = mk("invalid")
+  assert.equal(bad.kind === "api_key" && bad.keyStatus, "invalid")
+  assert.equal(bad.kind === "api_key" && bad.providerName, "OpenAI")
+  assert.equal(connectModelRowAction(bad), "fix-key")
+  assert.equal(connectModelRowHintKey(bad), "settings.setupGuide.connectApiKeyInvalidHint")
+  const maybe = mk("unverified")
+  assert.equal(connectModelRowAction(maybe), "select")
+  assert.equal(connectModelRowHintKey(maybe), "settings.setupGuide.connectApiKeyUnverifiedHint")
+  const good = mk("ok")
+  assert.equal(good.kind === "api_key" && good.keyStatus, "ok")
+  assert.equal(connectModelRowHintKey(good), "settings.setupGuide.connectApiKeyHint")
+})
