@@ -38,6 +38,8 @@ export function quotedBody(quote: QuotedContext): string {
 }
 
 export const STEER_ATTACHMENTS_MAX = 16
+/** ACP（外部 CLI）运行时纠偏只收文字：带图纠偏被 main 拒，renderer 改排到下一轮。 */
+export const STEER_IMAGES_UNSUPPORTED = "STEER_IMAGES_UNSUPPORTED"
 
 /** jojo #155：排队项「马上发给它」带图——图随纠偏句一起进当前 run（只图也行）。 */
 export const SteerAgentInput = z

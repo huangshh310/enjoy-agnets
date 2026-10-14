@@ -67,7 +67,23 @@ export function clearSentDraftInTx(db: Db, sessionId: string, sentContent: strin
  * jojo P1：草稿附件也落库（只粘了图、没打字的新会话不是空壳）。按会话键，绝不挂到别的会话。
  * 只存元数据（id / name / mediaType / size），图本体在资产库。
  */
-export type DraftAsset = { id: string; name: string; mediaType?: string; size?: number }
+export type DraftAsset = {
+  id: string
+  name: string
+  mediaType?: string
+  size?: number
+  /** leo #155：这张图已随排队项走（不回输入框）；发出后由落库事务清，用户删排队项时 renderer 清。 */
+  queued?: { itemId: string; text: string }
+}
+
+const QUEUED_TEXT_MAX = 20_000
+
+function cleanQueued(raw: unknown): DraftAsset["queued"] {
+  if (!raw || typeof raw !== "object") return undefined
+  const rec = raw as Record<string, unknown>
+  if (typeof rec.itemId !== "string" || !rec.itemId || rec.itemId.length > 80) return undefined
+  return { itemId: rec.itemId, text: typeof rec.text === "string" ? rec.text.slice(0, QUEUED_TEXT_MAX) : "" }
+}
 
 function ensureAssetTable(db: Db): void {
   db.exec(
@@ -81,7 +97,10 @@ export function saveSessionDraftAssets(sessionId: string, assets: DraftAsset[]):
   ensureAssetTable(db)
   const clean = assets
     .filter((a) => a && typeof a.id === "string" && a.id)
-    .map((a) => ({ id: a.id, name: String(a.name ?? ""), mediaType: a.mediaType, size: a.size }))
+    .map((a) => {
+      const queued = cleanQueued(a.queued)
+      return { id: a.id, name: String(a.name ?? ""), mediaType: a.mediaType, size: a.size, ...(queued ? { queued } : {}) }
+    })
   if (clean.length > 0) {
     db.prepare(
       "INSERT INTO session_draft_assets (session_id, assets_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET assets_json = excluded.assets_json, updated_at = excluded.updated_at"

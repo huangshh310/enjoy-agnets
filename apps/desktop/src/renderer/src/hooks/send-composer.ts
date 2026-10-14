@@ -4,10 +4,11 @@
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
-import { listComposerAssets, queueComposerAsset, takeComposerAssetsForQueue } from "./composer-assets"
+import { listComposerAssets, queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
 import { composerCanSend } from "./runtime-interact/composer-can-send"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
+import { markDraftAssetsQueued } from "../lib/session-draft-storage"
 import { useChatStore } from "../stores/chat-store"
 import { traceSend } from "./send-debug"
 import { queueComposerFocus } from "./composer-focus"
@@ -45,14 +46,17 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
       store.setError(SESSION_NOT_READY)
       return
     }
-    enqueueFollowup({
+    const queuedItem = enqueueFollowup({
       sessionId: store.sessionId,
       prompt: content,
       draft,
       quotedContexts: quotes,
       skillChips: skills,
-      assets: takeComposerAssetsForQueue()
+      assets: takeComposerAssetDetails()
     })
+    // leo MUST 1（#155）：图在草稿库里改打排队标记（不删）——马上发失败 / 崩溃都找得回；
+    // 输入框与切回恢复不认带标记的图（jojo P2）。
+    markDraftAssetsQueued(store.sessionId, queuedItem.id, draft || content, queuedItem.assets)
     clearComposerDraft()
     setRuntimeHint("queued", store.sessionId)
     return

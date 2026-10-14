@@ -5,6 +5,7 @@
 import { DrainableQueue } from "@enjoy-agents/agent-core/drainable-queue"
 import type { FollowupItem } from "./followup-queue.ts"
 import { takeNextFollowup } from "./followup-queue.ts"
+import { releaseQueuedDraftAssets } from "../lib/session-draft-storage.ts"
 
 type FollowupJob = {
   item: FollowupItem
@@ -14,6 +15,8 @@ type FollowupJob = {
 let queue = new DrainableQueue<FollowupJob>(runJob)
 
 async function runJob(job: FollowupJob) {
+  // 发送链接手这几张图（发出即由 main 清库；失败还回输入框当普通草稿），排队标记先摘掉。
+  if (job.item.assets.length) releaseQueuedDraftAssets(job.item.sessionId, job.item.id)
   await job.send(job.item)
 }
 

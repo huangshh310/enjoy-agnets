@@ -4,8 +4,8 @@
 import { RiArrowDownSLine, RiArrowUpSLine, RiCloseLine, RiSendPlaneLine } from "@remixicon/react"
 import { Message } from "@/components/ai-elements/message"
 import { cx } from "@/utils/cx"
-import { returnFollowupToComposer, sendFollowupNow } from "@renderer/hooks/runtime-interact/followup-actions"
-import { moveFollowup, takeFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
+import { discardFollowup, returnFollowupToComposer, sendFollowupNow } from "@renderer/hooks/runtime-interact/followup-actions"
+import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
@@ -62,7 +62,7 @@ export function QueuedUserTurn({
           <button
             type="button"
             aria-label={t("chat.runtimeRemoveFollowup")}
-            onClick={() => takeFollowup(item.id)}
+            onClick={() => discardFollowup(item)}
             className={iconClass}
           >
             <RiCloseLine className="size-3.5" aria-hidden />
