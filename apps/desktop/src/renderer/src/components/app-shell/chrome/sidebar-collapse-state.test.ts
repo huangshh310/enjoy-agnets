@@ -6,6 +6,7 @@ import {
   onSidebarOverlayDismiss,
   onSidebarWidth,
   sidebarCollapsed,
+  sidebarManualPersists,
   sidebarOverlay
 } from "./sidebar-collapse-state.ts"
 
@@ -75,4 +76,30 @@ test("宽窗展开不是浮层，dismiss 不动状态", () => {
   const s = initSidebarCollapse(false, false)
   assert.equal(sidebarOverlay(s), false)
   assert.equal(onSidebarOverlayDismiss(s), s)
+})
+
+test("偏好收起 → 窄窗用开关打开浮层 → 关闭 → 变宽：仍收起，偏好不变（leo #154 M1）", () => {
+  let s = initSidebarCollapse(true, false)
+  s = onSidebarWidth(s, true)
+  assert.equal(sidebarManualPersists(s), false)
+  s = onSidebarManual(s, false)
+  assert.equal(sidebarOverlay(s), true)
+  assert.equal(s.preferred, true)
+  s = onSidebarManual(s, true)
+  assert.equal(sidebarCollapsed(s), true)
+  s = onSidebarWidth(s, false)
+  assert.equal(sidebarCollapsed(s), true)
+  assert.equal(s.preferred, true)
+})
+
+test("偏好收起 → 窄窗打开浮层直接变宽：回到偏好收起，不留浮层", () => {
+  let s = onSidebarWidth(initSidebarCollapse(true, false), true)
+  s = onSidebarManual(s, false)
+  s = onSidebarWidth(s, false)
+  assert.equal(sidebarCollapsed(s), true)
+  assert.equal(sidebarOverlay(s), false)
+})
+
+test("宽窗手动开关写偏好", () => {
+  assert.equal(sidebarManualPersists(initSidebarCollapse(false, false)), true)
 })

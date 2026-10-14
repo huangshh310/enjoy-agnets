@@ -15,27 +15,39 @@ export type SidebarCollapseState = {
   auto: boolean
   /** 上一次看到的窗宽是否窄。 */
   narrow: boolean
+  /** 窄窗里临时打开的浮层（只管本次，不写偏好；leo #154 M1）。 */
+  peek: boolean
 }
 
 export function sidebarCollapsed(state: SidebarCollapseState): boolean {
+  if (state.narrow && state.peek) return false
   return state.preferred || state.auto
 }
 
 /** 启动：读回偏好，按当前窗宽决定是否自动收起。 */
 export function initSidebarCollapse(preferred: boolean, narrow: boolean): SidebarCollapseState {
-  return { preferred, auto: narrow && !preferred, narrow }
+  return { preferred, auto: narrow && !preferred, narrow, peek: false }
 }
 
 /** 窗宽变化：只在跨断点那一下动；窄窗里手动展开后不会被立刻收回。 */
 export function onSidebarWidth(state: SidebarCollapseState, narrow: boolean): SidebarCollapseState {
   if (narrow === state.narrow) return state
-  if (narrow) return { ...state, narrow, auto: !state.preferred }
-  return { ...state, narrow, auto: false }
+  if (narrow) return { ...state, narrow, auto: !state.preferred, peek: false }
+  return { ...state, narrow, auto: false, peek: false }
 }
 
-/** 手动开关：这才是用户偏好。 */
+/**
+ * 手动开关。宽窗：这才是用户偏好。
+ * 窄窗：只开 / 关本次浮层，不动偏好（leo #154 M1）；回宽窗回到偏好。
+ */
 export function onSidebarManual(state: SidebarCollapseState, collapsed: boolean): SidebarCollapseState {
-  return { ...state, preferred: collapsed, auto: false }
+  if (state.narrow) return { ...state, peek: !collapsed }
+  return { ...state, preferred: collapsed, auto: false, peek: false }
+}
+
+/** 这次手动开关要不要写持久化偏好：只有宽窗才写。 */
+export function sidebarManualPersists(state: SidebarCollapseState): boolean {
+  return !state.narrow
 }
 
 /** 窄窗里侧栏是浮层（不挤主区）：展开且窄窗时才算浮层（luna z151-1）。 */
@@ -49,5 +61,5 @@ export function sidebarOverlay(state: SidebarCollapseState): boolean {
  */
 export function onSidebarOverlayDismiss(state: SidebarCollapseState): SidebarCollapseState {
   if (!sidebarOverlay(state)) return state
-  return { ...state, auto: true }
+  return { ...state, peek: false, auto: !state.preferred }
 }

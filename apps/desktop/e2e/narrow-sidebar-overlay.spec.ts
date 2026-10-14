@@ -94,6 +94,56 @@ test("窄窗侧栏浮层、会话标题宽度、自动化抽屉提示", async ()
     await expect(nav).toHaveAttribute("data-overlay", "false")
     await snap(window, "733x480-sidebar")
 
+    // —— leo #154 S1：浮层内 Tab 循环不出浮层 ——
+    await window.setViewportSize({ width: 440, height: 600 })
+    await window.waitForTimeout(600)
+    const toggle = window.locator('[data-testid="sidebar-toggle"]').first()
+    await toggle.click()
+    await expect(nav).toHaveAttribute("data-overlay", "true")
+    for (let i = 0; i < 30; i++) {
+      await window.keyboard.press(i % 2 ? "Tab" : "Shift+Tab")
+      if (i % 5 === 0) expect(await nav.evaluate((el) => el.contains(document.activeElement)), `tab ${i}`).toBe(true)
+    }
+    for (let i = 0; i < 30; i++) await window.keyboard.press("Tab")
+    expect(await nav.evaluate((el) => el.contains(document.activeElement))).toBe(true)
+    // S1：焦点不在浮层里时 Esc 不关浮层（不抢别处的 Esc）。
+    await window.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    await window.keyboard.press("Escape")
+    await expect(nav).toHaveAttribute("data-overlay", "true")
+    // —— S3：点当前会话也关浮层 ——
+    await nav.locator('[data-testid="sidebar-session-row"] button').first().click()
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    // —— S3：轨道切模块关浮层 ——
+    await toggle.click()
+    await expect(nav).toHaveAttribute("data-overlay", "true")
+    await window.locator('[data-testid="rail-knowledge"]').click()
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    await window.evaluate(() => {
+      location.hash = "#/"
+    })
+    await window.waitForTimeout(400)
+
+    // —— leo #154 M1：偏好收起 → 窄窗开关开浮层 → 关 → 变宽：仍收起，偏好不变 ——
+    await window.setViewportSize({ width: 1440, height: 920 })
+    await window.waitForTimeout(600)
+    await toggle.click()
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    expect(await window.evaluate(() => localStorage.getItem("enjoy.sidebarCollapsed"))).toBe("1")
+    await window.setViewportSize({ width: 440, height: 600 })
+    await window.waitForTimeout(600)
+    await toggle.click()
+    await expect(nav).toHaveAttribute("data-overlay", "true")
+    expect(await window.evaluate(() => localStorage.getItem("enjoy.sidebarCollapsed"))).toBe("1")
+    await snap(window, "440x600-overlay-pref-collapsed")
+    await toggle.click({ force: true })
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    expect(await window.evaluate(() => localStorage.getItem("enjoy.sidebarCollapsed"))).toBe("1")
+    await window.setViewportSize({ width: 1440, height: 920 })
+    await window.waitForTimeout(600)
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    await toggle.click()
+    await expect(nav).toHaveAttribute("data-collapsed", "false")
+
     // —— jojo P2：自动化抽屉 ——
     await window.setViewportSize({ width: 1440, height: 920 })
     await window.evaluate(() => {
