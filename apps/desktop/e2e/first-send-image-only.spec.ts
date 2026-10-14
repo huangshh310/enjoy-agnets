@@ -16,7 +16,8 @@ const PNG = Buffer.from(
   "base64"
 )
 
-test("只图发送：新对话回车、已有会话点按钮，都直接发出，图随消息走，输入框清空", async ({}, testInfo) => {
+test("只图发送：新对话回车、已有会话点按钮，都直接发出，图随消息走，输入框清空", async () => {
+  const testInfo = test.info()
   test.setTimeout(150_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const playwright = await import("playwright")
