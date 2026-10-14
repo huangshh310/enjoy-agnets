@@ -72,7 +72,7 @@ const RANK: Record<KeyStatus, number> = { ok: 0, unverified: 1, invalid: 2 }
  * 向导里「API 密钥」这一行的状态（fail-closed）。
  * 1. 默认路线有 profileId 且在 apiKeys 里：以那份档案为准（读 readiness.credentialCheck），和 ready 口径一致。
  * 2. 默认路线有 profileId 但找不到档案（ghost）：不回落取最好的，只用 keyStatusOf(readiness.credentialCheck)，
- *    且不绑定任何档案 / 显示名（被拒时「改密钥」走新建，不打开错的档案）。
+ *    其中 ok 降为 unverified（对不上档案不显示绿）；且不绑定任何档案 / 显示名（被拒时「改密钥」走新建）。
  * 3. 默认路线没指档案：取最好的一把；只有一把时 readiness.credentialCheck 就是它的。
  */
 export function guideKeyStatus(
@@ -93,7 +93,9 @@ export function guideKeyStatus(
   if (routeProfile) {
     const routed = keys.find((key) => key.providerId === routeProfile)
     if (routed) return describe(routed, readiness?.credentialCheck)
-    return { status: keyStatusOf(readiness?.credentialCheck) }
+    // ghost：对不上档案的 ok 没法确认是哪把，降为中性；invalid 照样红。
+    const ghost = keyStatusOf(readiness?.credentialCheck)
+    return { status: ghost === "ok" ? "unverified" : ghost }
   }
   const only = keys.length === 1 ? readiness?.credentialCheck : undefined
   const rows = keys.map((key) => describe(key, only))
@@ -151,8 +153,9 @@ export function credentialCheckChanged(
   return a?.state !== b?.state || a?.code !== b?.code || a?.checkedAt !== b?.checkedAt
 }
 
-/** 设置页顶部「当前：X」圆点：按当前档案密钥三态（被拒红、没法确认灰）；ok / 无需密钥 / 没填密钥绿（沿用原样）。 */
+/** 设置页顶部「当前：X」圆点：按当前档案密钥三态（被拒红、没法确认灰）；缺密钥灰；ok / 无需密钥绿。 */
 export function activeProviderDotClass(active: Parameters<typeof profileKeyStatus>[0] | undefined): string {
+  if (active?.requiresKey && !active.hasKey) return KEY_TONE_CLASS.neutral.dot
   const status = active ? profileKeyStatus(active) : undefined
   return KEY_TONE_CLASS[status ? keyBadgeTone(status) : "success"].dot
 }

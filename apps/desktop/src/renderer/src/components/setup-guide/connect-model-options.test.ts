@@ -186,3 +186,18 @@ test("第 4 步徽标视图：data-key-status / 色调类 / 文案键 / 改密�
   assert.match(good.textClass, /success/)
   assert.equal(good.labelKey, "settings.setupGuide.connectApiKeyConnected")
 })
+
+test("apiKeyBadgeView 缺省分支：非密钥行 / 没存密钥不画；已存但没状态按 unverified 中性", () => {
+  assert.equal(apiKeyBadgeView({ id: "later", kind: "later" }), undefined)
+  assert.equal(
+    apiKeyBadgeView({ id: "engine:claude", kind: "engine", runtimeId: "claude", name: "Claude", recommended: true }),
+    undefined
+  )
+  assert.equal(apiKeyBadgeView({ id: "api_key", kind: "api_key", connected: false, recommended: false }), undefined)
+  const bare = apiKeyBadgeView({ id: "api_key", kind: "api_key", connected: true, recommended: false })!
+  assert.equal(bare.status, "unverified")
+  assert.equal(bare.tone, "neutral")
+  assert.doesNotMatch(bare.textClass, /success|error/)
+  assert.equal(bare.showFix, false)
+  assert.equal(bare.labelKey, "settings.setupGuide.connectApiKeyUnverified")
+})

@@ -160,3 +160,15 @@ test("顶部「当前」圆点：被拒红、没法确认灰、ok 绿", () => {
   assert.match(activeProviderDotClass({ ...base, credentialCheck: { state: "ok" } }), /success/)
   assert.match(activeProviderDotClass({ requiresKey: false, hasKey: false }), /success/)
 })
+
+test("ghost 路线 + 就绪判 ok：降为灰，不绿、不绑定档案", () => {
+  const snap = { ...ghostReadiness([key("p2", "anthropic")]), credentialCheck: { state: "ok" as const } }
+  assert.deepEqual(guideKeyStatus(snap, [{ id: "p2", kind: "anthropic", credentialCheck: { state: "ok" } }]), {
+    status: "unverified"
+  })
+})
+
+test("顶部「当前」圆点：当前档案缺密钥时灰", () => {
+  assert.doesNotMatch(activeProviderDotClass({ requiresKey: true, hasKey: false }), /success|error/)
+  assert.match(activeProviderDotClass({ requiresKey: true, hasKey: false }), /text-tertiary/)
+})
