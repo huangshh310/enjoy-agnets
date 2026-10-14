@@ -378,7 +378,7 @@ function persistOutgoingUser(
   return outcome
 }
 
-async function modelMessagesForStart(
+export async function modelMessagesForStart(
   input: RunAgentInput,
   resumeMessages?: unknown,
   contextWindow?: number

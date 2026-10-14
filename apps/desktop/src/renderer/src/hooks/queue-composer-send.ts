@@ -50,6 +50,10 @@ let queuedSend: QueuedSend | null = null
 let cancelledSeq: number | null = null
 /** 当前排队首发（A）的整条等待；B 排在它后面。 */
 let pendingFirstSend: Promise<void> | null = null
+/** leo BLOCK：A 的结局。A 期间任何还稿（失败 / 闸拦 / 看门狗）都算没发出；sentSessionId 是 A 真交给 sendReady 的会话。 */
+type FirstSendOutcome = { failed: boolean; sentSessionId: string | null }
+let activeFirstSend: FirstSendOutcome | null = null
+let firstSendOutcomes = new WeakMap<Promise<void>, FirstSendOutcome>()
 
 export function composerNeedsSessionReady(): boolean {
   const store = useChatStore.getState()
@@ -96,6 +100,7 @@ export function clearQueuedComposerText(): void {
 
 /** 还全文草稿，不改 error：发送闸中性条要留着。 */
 export function restoreComposerDraft(text: string, assets?: QueuedComposerAsset[]): void {
+  if (activeFirstSend) activeFirstSend.failed = true
   const store = useChatStore.getState()
   const next = mergeComposerText(text, store.composer)
   store.setComposer(next)
@@ -133,6 +138,8 @@ export function sendFailureCopy(error: unknown): string {
 export function resetQueuedComposerSendForTest(): void {
   queuedSend = null
   pendingFirstSend = null
+  activeFirstSend = null
+  firstSendOutcomes = new WeakMap()
   cancelledSeq = null
   queueSeq = 0
   setComposerWritebackHeld(false)
@@ -159,10 +166,24 @@ export function waitThenSendAfterCreate(
     onFail?: (text: string, reason: string, assets?: QueuedComposerAsset[]) => void
   }
 ): Promise<void> {
-  const run = waitThenSendAfterCreateInner(text, sendReady, assets, deps)
+  const outcome: FirstSendOutcome = { failed: false, sentSessionId: null }
+  activeFirstSend = outcome
+  const run = waitThenSendAfterCreateInner(
+    text,
+    (prepared) => {
+      outcome.sentSessionId = prepared.sessionId ?? null
+      return sendReady(prepared)
+    },
+    assets,
+    deps
+  ).catch(() => {
+    outcome.failed = true
+  })
+  firstSendOutcomes.set(run, outcome)
   pendingFirstSend = run
   void run.finally(() => {
     if (pendingFirstSend === run) pendingFirstSend = null
+    if (activeFirstSend === outcome) activeFirstSend = null
   })
   return run
 }
@@ -181,8 +202,17 @@ export async function queueBehindPreparingSend(
   }
 ): Promise<void> {
   const ahead = pendingFirstSend
-  if (ahead) await ahead.catch(() => undefined)
+  const outcome = ahead ? firstSendOutcomes.get(ahead) : undefined
+  if (ahead) await ahead
   const sessionId = useChatStore.getState().sessionId
+  // leo BLOCK：A 没发出去（已还回输入框）时绝不自动续发 B——B 未经确认、且会跑到 A 前面；
+  // A 失败后空会话可能已被删，B 也不能绑到它上面。B 的字和图接在 A 后面还回输入框，提示沿用 A 的。
+  const aheadFailed = outcome ? outcome.failed || !outcome.sentSessionId || outcome.sentSessionId !== sessionId : false
+  if (aheadFailed) {
+    if (deps.onFail) deps.onFail(text, SEND_FAILED_RESTORE, assets)
+    else restoreComposerDraft(text, assets)
+    return
+  }
   if (!sessionId) {
     ;(deps.onFail ?? restoreComposerAfterFailedSend)(text, SEND_FAILED_RESTORE, assets)
     return

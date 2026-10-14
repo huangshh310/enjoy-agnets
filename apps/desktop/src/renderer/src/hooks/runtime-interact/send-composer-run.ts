@@ -8,7 +8,8 @@ import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
-import { listComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { listComposerAssets, setComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { takeComposerText } from "./composer-draft"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
@@ -138,11 +139,16 @@ export async function sendComposerMessage(
   // 留在输入框并提示「上一条还在准备」；不挂看门狗。
   if (!prepared && composerNeedsSessionReady() && hasQueuedComposerSend()) {
     traceSend("send:queued-behind")
-    if (!composerCanSend({ text: typed, assetCount: listComposerAssets().length })) return
     // jojo P1（#155 gate2）：B 在按下那一刻快照正文 + 附件、清输入框，排在 A 后面（A 开跑后进运行中排队）。
+    // leo：正文走 takeComposerText，引用 / 技能 / 知识 Chip 随 B 一起取走（只有 Chip 也能发）。
     const behindAssets = takeComposerAssetDetails()
+    const behindText = (await takeComposerText(typed)).trim()
+    if (!composerCanSend({ text: behindText, assetCount: behindAssets.length })) {
+      if (behindAssets.length) setComposerAssets(behindAssets)
+      return
+    }
     clearQueuedComposerText()
-    await queueBehindPreparingSend(typed.trim(), behindAssets, {
+    await queueBehindPreparingSend(behindText, behindAssets, {
       enqueue: ({ sessionId, prompt, assets }) => {
         enqueueFollowup({ sessionId, prompt, assets })
         setRuntimeHint("queued", sessionId)

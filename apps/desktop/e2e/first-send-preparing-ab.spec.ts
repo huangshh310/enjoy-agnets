@@ -136,6 +136,19 @@ test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B �
     await expect(banner).toHaveCount(0)
     mkdirSync(shots, { recursive: true })
     await window.screenshot({ path: join(shots, "ab-b-queued.png"), fullPage: true })
+    // luna #145 回归护栏（保留）：733×480 窄矮窗里 B 排着队，输入框与发送键仍在视口内、不溢出。
+    await window.setViewportSize({ width: 733, height: 480 })
+    await window.waitForTimeout(300)
+    await window.screenshot({ path: join(shots, "ab-b-queued-733x480.png") })
+    for (const sel of ['[data-testid="composer-input"]', '[data-testid="composer-send"]']) {
+      const box = await window.locator(sel).first().boundingBox()
+      expect(box, sel).not.toBeNull()
+      expect(box!.x, sel).toBeGreaterThanOrEqual(0)
+      expect(box!.y, sel).toBeGreaterThanOrEqual(0)
+      expect(box!.x + box!.width, sel).toBeLessThanOrEqual(733)
+      expect(box!.y + box!.height, sel).toBeLessThanOrEqual(480)
+    }
+    await window.setViewportSize({ width: 1440, height: 900 })
 
     const rows = () => userMessages(boot.userData)
     await expect.poll(() => rows().filter((item) => item.endsWith(a)).length, { timeout: 30_000 }).toBe(1)
@@ -154,6 +167,57 @@ test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B �
     await expect(composer).toHaveValue("")
     await expect(window.getByText("这次没发出去")).toHaveCount(0)
     await window.screenshot({ path: join(shots, "ab-after-ready.png"), fullPage: true })
+  } finally {
+    await shutdown(app)
+  }
+})
+
+const PNG_1PX = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64"
+)
+
+test("leo BLOCK：A 没发出去（看门狗还回）——带图的 B 不被静默续发，字和图都回到输入框，A 在前", async () => {
+  test.setTimeout(240_000)
+  if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js：build 步骤没产出").toBe(true)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const boot = freshEnv({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "6000" })
+  // 先正常启动把自带空会话用掉，再带看门狗开关重启（同一 userData）：之后点新对话才真走创建、A 必卡过看门狗。
+  const seeded = await launch(boot.env)
+  try {
+    await seedUsedSession(seeded.window, boot.userData)
+  } finally {
+    await shutdown(seeded.app)
+  }
+  const { app, window } = await launch({ ...boot.env, ENJOY_E2E_SEND_WATCHDOG: "1" })
+  try {
+    const composer = window.locator('[data-testid="composer-input"]')
+    await window.locator('[data-testid="sidebar-new-session"]').click({ noWaitAfter: true })
+    await expect(window.getByText("正在准备…")).toBeVisible({ timeout: 8_000 })
+    const chip = window.locator('[data-testid="composer-asset-chip"]')
+    await composer.click()
+    const a = "失败首条A"
+    const b = "带图第二条B"
+    await window.keyboard.type(a, { delay: 20 })
+    await composer.press("Enter")
+    await expect(composer).toHaveValue("", { timeout: 2_000 })
+    await window.keyboard.type(b, { delay: 20 })
+    await window.locator('[data-testid="composer-attach"]').setInputFiles({ name: "b-img.png", mimeType: "image/png", buffer: PNG_1PX })
+    await expect(chip).toHaveCount(1, { timeout: 8_000 })
+    await composer.press("Enter")
+    await expect(composer).toHaveValue("", { timeout: 2_000 })
+    await expect(chip).toHaveCount(0)
+    // A 卡过看门狗被还回；B 必须跟着回来（接在 A 后面），图也在，不进运行中排队、不入库。
+    await expect(composer).toHaveValue(new RegExp(`${a}[\\s\\S]*${b}`), { timeout: 20_000 })
+    await expect(chip).toHaveCount(1)
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toContainText("没发出去")
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, "ab-first-fail-restored.png"), fullPage: true })
+    // 再等过 A 的迟到发送：B 仍不被自动发出。
+    await window.waitForTimeout(8_000)
+    expect(userMessages(boot.userData).filter((m) => m.includes(b))).toEqual([])
+    await expect(composer).toHaveValue(new RegExp(b))
+    await expect(chip).toHaveCount(1)
   } finally {
     await shutdown(app)
   }

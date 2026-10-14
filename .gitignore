@@ -20,3 +20,6 @@ apps/desktop/native/computer-use/pack/
 **/__pycache__/
 test-results
 playwright-report
+
+# tsc 增量缓存
+*.tsbuildinfo
