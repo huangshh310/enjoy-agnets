@@ -11,6 +11,7 @@ import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-sub
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
 import { useChatStore } from "../stores/chat-store"
 import { traceSend } from "./send-debug"
+import { queueComposerFocus } from "./composer-focus"
 import { clearComposerDraft, snapshotComposerDraft, takeComposerText } from "./runtime-interact/composer-draft"
 import { takeComposerEnter } from "./composer-dom"
 import { SESSION_NOT_READY } from "./queue-composer-send-copy"
@@ -78,10 +79,21 @@ export async function attachComposerFile(file: File) {
       size: file.size,
       url: previewUrl
     })
+    // jojo P2（#155）：新对话里粘图后附件托盘出现，焦点掉出输入框，Enter 发不出去。附件进托盘后把焦点放回输入框
+    // （queueComposerFocus 自带护栏：用户在别的输入框 / 对话框里时不抢）。
+    keepComposerFocusAfterAttach()
   } catch (error) {
     URL.revokeObjectURL(previewUrl)
     throw error
   }
+}
+
+function keepComposerFocusAfterAttach(): void {
+  if (typeof requestAnimationFrame === "undefined") {
+    queueComposerFocus()
+    return
+  }
+  requestAnimationFrame(() => queueComposerFocus())
 }
 
 export async function attachComposerFiles(files: File[] | FileList) {

@@ -667,6 +667,7 @@ export const enChat = {
   runFailed: "This run did not finish.",
   catchUpApprovalTimeout: "Catch-up waited for approval too long and did not run",
   sendFailedRestore: "It's back in the input. You can send it again.",
+  sendFailedRestoreWithImages: "Your text and images are back in the input. You can send them again.",
   sendFailedRestoreMerged: "This one didn't send. It's added to the end of your draft. Edit it, then send.",
   sendFailedRestoreTitle: "This one didn't send",
   previousStillPreparing: "The previous message is still being prepared. This one is back in the input; send it again in a moment.",
