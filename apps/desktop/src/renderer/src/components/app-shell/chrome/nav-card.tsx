@@ -2,7 +2,8 @@
  * 第一张卡：轨道 + 情境栏。宽度走 constants，折叠只留轨道。
  * 窄窗（< NARROW_SIDEBAR_PX）展开时改为浮层盖在主区上，不挤压主区；点外部 / Esc / 选中会话关掉（luna z151-1）。
  */
-import { useEffect, useRef, type KeyboardEvent, type MouseEvent } from "react"
+import { useEffect, useRef, type MouseEvent } from "react"
+import { useRouterState } from "@tanstack/react-router"
 import { useT } from "@renderer/i18n"
 import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -10,6 +11,7 @@ import type { AppModuleId } from "../app-shell.types"
 import { NAV_CARD_COLLAPSED_PX, NAV_CARD_EXPANDED_PX, NARROW_SIDEBAR_PX } from "../constants"
 import { ActivityBar } from "./activity-bar"
 import { ContextColumn } from "./context-column"
+import { overlayClickClosesAfterSelect, overlayClosesOnNavigation, overlayKeyAction } from "./nav-overlay-keys"
 import { sidebarOverlay } from "./sidebar-collapse-state"
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -31,6 +33,7 @@ export function NavCard({
   const running = useChatStore((state) => state.running)
   const sessionId = useChatStore((state) => state.sessionId)
   const narrow = useChatStore((state) => state.sidebarCollapseState.narrow)
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
   const asideRef = useRef<HTMLElement>(null)
 
   const setNarrow = useChatStore((state) => state.setSidebarNarrow)
@@ -57,59 +60,61 @@ export function NavCard({
     }
   }, [overlay])
 
-  // 浮层内：Tab 循环不出浮层；Esc 只在焦点在浮层 DOM 里时关（菜单等弹层走 portal，不抢它们的 Esc）（leo #154 S1）。
-  function handleOverlayKeyDown(event: KeyboardEvent<HTMLElement>) {
-    const aside = asideRef.current
-    if (!overlay || !aside || !(event.target instanceof Node) || !aside.contains(event.target)) return
-    if (event.key === "Escape") {
-      if (event.defaultPrevented) return
+  // 浮层内：Tab 循环不出浮层；Esc 只在焦点在浮层内或页面无聚焦时关，不抢菜单 / 弹窗的 Esc（leo #154 S1 / S-a）。
+  useEffect(() => {
+    if (!overlay) return
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      const aside = asideRef.current
+      if (!aside) return
+      const active = document.activeElement
+      const items = overlayFocusables(aside)
+      const action = overlayKeyAction({
+        key: event.key,
+        shiftKey: event.shiftKey,
+        defaultPrevented: event.defaultPrevented,
+        focusInside: Boolean(active && aside.contains(active)),
+        nothingFocused: !active || active === document.body,
+        atFirst: active === items[0],
+        atLast: active === items[items.length - 1]
+      })
+      if (action === "none") return
       event.preventDefault()
       event.stopPropagation()
-      dismissOverlay()
-      return
+      if (action === "dismiss") dismissOverlay()
+      else if (action === "wrap-first") items[0]?.focus()
+      else items[items.length - 1]?.focus()
     }
-    if (event.key !== "Tab") return
-    const items = overlayFocusables(aside)
-    if (items.length === 0) return
-    const first = items[0]
-    const last = items[items.length - 1]
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first.focus()
-    }
-  }
+    // 捕获阶段：先于全局 Shift+Tab 快捷键，焦点陷阱内的 Tab 不外泄。
+    document.addEventListener("keydown", onKey, true)
+    return () => document.removeEventListener("keydown", onKey, true)
+  }, [overlay, dismissOverlay])
 
-  // 浮层里点会话行（包括当前会话）：回到主区；行菜单不算（leo #154 S3）。
-  function handleOverlayClickCapture(event: MouseEvent<HTMLElement>) {
+  // 浮层里点会话行（包括当前会话）：冒泡阶段、等行自己的 onClick 发出切换后再关（luna #154-1：先关会卸载行吃掉导航）。
+  function handleOverlayClick(event: MouseEvent<HTMLElement>) {
     if (!overlay || !(event.target instanceof Element)) return
-    const row = event.target.closest('[data-testid="sidebar-session-row"]')
-    if (!row || event.target.closest('[data-testid="session-row-menu"]')) return
-    queueMicrotask(() => dismissOverlay())
+    if (!overlayClickClosesAfterSelect(event.target)) return
+    window.setTimeout(() => dismissOverlay(), 0)
   }
 
-  // 浮层里选中会话：直接回到主区。
-  const lastSession = useRef(sessionId)
+  // 路由或会话变化（看板、自动化、轨道、会话行……所有导航入口）：统一关浮层（luna #154-2）。
+  const navKey = `${pathname}|${sessionId ?? ""}`
+  const lastNavKey = useRef(navKey)
   useEffect(() => {
-    if (lastSession.current === sessionId) return
-    lastSession.current = sessionId
-    if (overlay) dismissOverlay()
-  }, [sessionId, overlay, dismissOverlay])
+    const prev = lastNavKey.current
+    lastNavKey.current = navKey
+    if (overlayClosesOnNavigation(prev, navKey, overlay)) dismissOverlay()
+  }, [navKey, overlay, dismissOverlay])
 
   function handleSelect(moduleId: AppModuleId, to: string) {
     // S2：窄窗判断统一走 store。宽窗收起时点轨道展开；窄窗浮层里切模块就关浮层（leo #154 S3）。
     if (collapsed && !narrow) setCollapsed(false)
     onSelect(moduleId, to)
-    if (overlay) dismissOverlay()
   }
 
   const card = (
     <aside
       ref={asideRef}
-      onKeyDown={overlay ? handleOverlayKeyDown : undefined}
-      onClickCapture={overlay ? handleOverlayClickCapture : undefined}
+      onClick={overlay ? handleOverlayClick : undefined}
       data-testid="nav-card"
       data-collapsed={collapsed ? "true" : "false"}
       data-overlay={overlay ? "true" : "false"}

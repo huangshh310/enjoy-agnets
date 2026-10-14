@@ -9,6 +9,7 @@ import { existsSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { bootPendingApproval, closeForRelaunch, firstWindow, mainEntry } from "./approval-restart-helpers"
+import { sendComposer } from "./send-composer"
 
 const shotsDir = process.env.ENJOY_E2E_SHOTS_DIR
 
@@ -106,9 +107,11 @@ test("窄窗侧栏浮层、会话标题宽度、自动化抽屉提示", async ()
     }
     for (let i = 0; i < 30; i++) await window.keyboard.press("Tab")
     expect(await nav.evaluate((el) => el.contains(document.activeElement))).toBe(true)
-    // S1：焦点不在浮层里时 Esc 不关浮层（不抢别处的 Esc）。
+    // S-a：页面无元素聚焦时 Esc 也能关。
     await window.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
     await window.keyboard.press("Escape")
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    await toggle.click()
     await expect(nav).toHaveAttribute("data-overlay", "true")
     // —— S3：点当前会话也关浮层 ——
     await nav.locator('[data-testid="sidebar-session-row"] button').first().click()
@@ -216,6 +219,110 @@ test("英文：抽屉只填提示词提示填名称；顺手项文案（Skills �
     await expect(window.locator("h1", { hasText: "Skills" }).first()).toBeVisible({ timeout: 15_000 })
     await expect(window.locator("h1", { hasText: "技能" })).toHaveCount(0)
     await snap(window, "1440x920-en-skills")
+  } finally {
+    await closeForRelaunch(env.app)
+  }
+})
+
+test("440 浮层：点击 / 回车切到另一个会话、看板 / 自动化入口关浮层、浮层内 Shift+Tab 不改权限、输入框内改权限有提示（luna #154）", async () => {
+  test.setTimeout(300_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = await bootPendingApproval()
+  try {
+    const window = await firstWindow(env.app)
+    await window.locator('[data-testid="approval-deny"]').click({ timeout: 15_000, force: true })
+    await window.waitForTimeout(500)
+    // 第二个会话。
+    await window.getByText("新对话", { exact: true }).first().click()
+    await window.waitForTimeout(500)
+    await sendComposer(window, window.locator('[data-testid="composer-input"]'), "second session")
+    await window.locator('[data-testid="approval-deny"]').click({ timeout: 8_000, force: true }).catch(() => {})
+    const rows = window.locator('[data-testid="sidebar-session-row"]')
+    await expect.poll(() => rows.count(), { timeout: 15_000 }).toBeGreaterThanOrEqual(2)
+
+    await window.setViewportSize({ width: 440, height: 600 })
+    await window.waitForTimeout(600)
+    const nav = window.locator('[data-testid="nav-card"]')
+    const toggle = window.locator('[data-testid="sidebar-toggle"]').first()
+    const activeId = () => window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first().getAttribute("data-session-id")
+    const openOverlay = async () => {
+      await toggle.click()
+      await expect(nav).toHaveAttribute("data-overlay", "true")
+    }
+
+    // —— 1. 点击切到另一个会话 ——
+    for (const how of ["click", "enter"] as const) {
+      await openOverlay()
+      const current = await activeId()
+      const target = nav.locator(`[data-testid="sidebar-session-row"][data-active="false"]`).first()
+      const targetId = await target.getAttribute("data-session-id")
+      expect(targetId).toBeTruthy()
+      expect(targetId).not.toBe(current)
+      await snap(window, `440x600-overlay-before-${how}-switch`)
+      if (how === "click") await target.locator("button").first().click()
+      else {
+        await target.locator("button").first().focus()
+        await window.keyboard.press("Enter")
+      }
+      await expect(nav).toHaveAttribute("data-collapsed", "true")
+      await openOverlay()
+      await expect.poll(activeId, { timeout: 10_000 }).toBe(targetId)
+      await snap(window, `440x600-overlay-after-${how}-switch`)
+      await window.keyboard.press("Escape")
+      await expect(nav).toHaveAttribute("data-collapsed", "true")
+    }
+
+    // —— 2. 看板 / 自动化入口关浮层 ——
+    for (const [label, testId] of [
+      ["自动化", "page-automations"],
+      ["看板", null]
+    ] as const) {
+      await window.evaluate(() => {
+        location.hash = "#/"
+      })
+      await window.waitForTimeout(400)
+      await openOverlay()
+      const before = await window.evaluate(() => location.hash)
+      await nav.getByText(label, { exact: true }).first().click()
+      await expect.poll(() => window.evaluate(() => location.hash)).not.toBe(before)
+      if (testId) await expect(window.locator(`[data-testid="${testId}"]`)).toBeVisible({ timeout: 10_000 })
+      await expect(nav).toHaveAttribute("data-collapsed", "true")
+      await expect(window.locator('[data-testid="nav-card-scrim"]')).toHaveCount(0)
+      await snap(window, `440x600-overlay-after-${label === "看板" ? "board" : "automations"}`)
+    }
+    await window.evaluate(() => {
+      location.hash = "#/"
+    })
+    await window.waitForTimeout(500)
+
+    // —— 3. 浮层内 Shift+Tab 不改权限 ——
+    await openOverlay()
+    for (let i = 0; i < 6; i++) await window.keyboard.press("Shift+Tab")
+    expect(await nav.evaluate((el) => el.contains(document.activeElement))).toBe(true)
+    await window.waitForTimeout(400)
+    await expect(window.locator('[data-testid="permission-cycled-toast"]')).toHaveCount(0)
+    await expect(window.locator("body")).not.toContainText("权限已切到")
+    await snap(window, "440x600-overlay-shift-tab-no-permission-change")
+    await window.keyboard.press("Escape")
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+    // 焦点在页面别处（非 Composer）也不改。
+    await window.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    await window.keyboard.press("Shift+Tab")
+    await window.waitForTimeout(300)
+    await expect(window.locator("body")).not.toContainText("权限已切到")
+
+    // —— 输入框内（空）Shift+Tab 改权限并提示 ——
+    await window.setViewportSize({ width: 1440, height: 920 })
+    await window.waitForTimeout(500)
+    const composer = window.locator('[data-testid="composer-input"]').first()
+    await composer.fill("")
+    await composer.focus()
+    await window.keyboard.press("Shift+Tab")
+    await expect(window.locator("body")).toContainText("权限已切到「编辑」", { timeout: 5_000 })
+    await snap(window, "1440x920-composer-shift-tab-toast")
+    await composer.focus()
+    await window.keyboard.press("Shift+Tab")
+    await expect(window.locator("body")).toContainText("权限已切到「读取」", { timeout: 5_000 })
   } finally {
     await closeForRelaunch(env.app)
   }

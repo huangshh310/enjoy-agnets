@@ -26,7 +26,7 @@ test("空输入 Shift+Tab 切档，有字则让出焦点", () => {
   )
 })
 
-test("焦点在其它输入框不切档，框外仍切", () => {
+test("焦点不在 Composer 一律不切档（浮层 / 弹窗 / 菜单 / 其它输入框 / 终端；luna #154）", () => {
   assert.equal(
     shouldCyclePermissionOnShiftTab({
       composerEmpty: true,
@@ -43,7 +43,7 @@ test("焦点在其它输入框不切档，框外仍切", () => {
       inputFocus: false,
       terminalFocus: false
     }),
-    true
+    false
   )
   assert.equal(
     shouldCyclePermissionOnShiftTab({
@@ -61,4 +61,11 @@ test("composerInputEmpty 认 textarea value，否则回落 store", () => {
   assert.equal(composerInputEmpty({ querySelector: () => ({ value: "   " }) }), true)
   assert.equal(composerInputEmpty({ querySelector: () => null }, "draft"), false)
   assert.equal(composerInputEmpty({ querySelector: () => null }, "  "), true)
+})
+
+test("切档后给可见提示：toast 文案带新档名", async () => {
+  const { permissionCycledMessage } = await import("./permission-cycle.ts")
+  const t = (k: string, v?: Record<string, string>) => (v ? `${k}:${v.mode}` : k)
+  assert.equal(permissionCycledMessage("allow-edits", t), "chat.permissionCycled:chat.approvalEdits")
+  assert.equal(permissionCycledMessage("allow-reads", t), "chat.permissionCycled:chat.approvalReads")
 })

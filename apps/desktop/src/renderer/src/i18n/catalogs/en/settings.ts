@@ -245,7 +245,7 @@ export const enSettings = {
     steer: "Send right away",
     steerDesc: "While a run is active, send the current draft at the next safe checkpoint.",
     cyclePermission: "Cycle Approval Permission Mode",
-    cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Works when the input is empty or focus is outside other inputs; Shift+Tab moves focus backward when the input has text.",
+    cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Works only when the input is focused and empty; otherwise Shift+Tab moves focus backward.",
     threadFind: "Find in this thread",
     threadFindDesc: "Open the in-thread find bar and jump to the previous or next match.",
     context: "Context",

@@ -1,32 +1,48 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
 import { test } from "node:test"
+import { overlayClickClosesAfterSelect, overlayClosesOnNavigation, overlayKeyAction } from "./nav-overlay-keys.ts"
+import {
+  initSidebarCollapse,
+  onSidebarManual,
+  onSidebarWidth,
+  sidebarManualPersists,
+  sidebarOverlay
+} from "./sidebar-collapse-state.ts"
 
-const src = readFileSync(new URL("./nav-card.tsx", import.meta.url), "utf8")
-const store = readFileSync(new URL("../../../stores/chat-store.ts", import.meta.url), "utf8")
+const base = { shiftKey: false, defaultPrevented: false, focusInside: true, nothingFocused: false, atFirst: false, atLast: false }
 
-test("M1：窄窗开关不写偏好（store 写偏好前看 sidebarManualPersists）", () => {
-  const fn = store.slice(store.indexOf("setSidebarCollapsed:"), store.indexOf("setSidebarNarrow:"))
-  assert.match(fn, /if \(sidebarManualPersists\(state\.sidebarCollapseState\)\) writeSidebarCollapsed/)
+test("Esc：焦点在浮层内关；无元素聚焦也关（leo S-a）；焦点在别处（菜单 / 弹窗）不抢", () => {
+  assert.equal(overlayKeyAction({ ...base, key: "Escape" }), "dismiss")
+  assert.equal(overlayKeyAction({ ...base, key: "Escape", focusInside: false, nothingFocused: true }), "dismiss")
+  assert.equal(overlayKeyAction({ ...base, key: "Escape", focusInside: false }), "none")
+  assert.equal(overlayKeyAction({ ...base, key: "Escape", defaultPrevented: true }), "none")
 })
 
-test("S2：轨道切换用 store 的 narrow，不再直接读 innerWidth", () => {
-  const fn = src.slice(src.indexOf("function handleSelect"), src.indexOf("const card ="))
-  assert.doesNotMatch(fn, /innerWidth/)
-  assert.match(fn, /!narrow/)
-  assert.equal(src.match(/innerWidth/g)?.length, 1)
+test("Tab 焦点陷阱：尾项 Tab 回首项，首项 Shift+Tab 到尾项，中间不拦", () => {
+  assert.equal(overlayKeyAction({ ...base, key: "Tab", atLast: true }), "wrap-first")
+  assert.equal(overlayKeyAction({ ...base, key: "Tab", shiftKey: true, atFirst: true }), "wrap-last")
+  assert.equal(overlayKeyAction({ ...base, key: "Tab" }), "none")
+  assert.equal(overlayKeyAction({ ...base, key: "Tab", focusInside: false, atLast: true }), "none")
 })
 
-test("S3：切模块、点会话行（含当前会话）都关浮层，行菜单不算", () => {
-  assert.match(src, /if \(overlay\) dismissOverlay\(\)/)
-  assert.match(src, /closest\('\[data-testid="sidebar-session-row"\]'\)/)
-  assert.match(src, /closest\('\[data-testid="session-row-menu"\]'\)/)
+const el = (matches: string[]) => ({ closest: (sel: string) => (matches.some((m) => sel.includes(m)) ? {} : null) })
+
+test("点会话行关浮层（含当前会话），点行菜单不关，点别处不关", () => {
+  assert.equal(overlayClickClosesAfterSelect(el(["sidebar-session-row"])), true)
+  assert.equal(overlayClickClosesAfterSelect(el(["sidebar-session-row", "session-row-menu"])), false)
+  assert.equal(overlayClickClosesAfterSelect(el([])), false)
+  assert.equal(overlayClickClosesAfterSelect(null), false)
 })
 
-test("S1：Esc 只在浮层 DOM 内处理、不挂 document；Tab 焦点陷阱", () => {
-  assert.doesNotMatch(src, /document\.addEventListener\("keydown"/)
-  assert.match(src, /aside\.contains\(event\.target\)/)
-  assert.match(src, /onKeyDown=\{overlay \? handleOverlayKeyDown/)
-  assert.match(src, /last\.focus\(\)/)
-  assert.match(src, /first\.focus\(\)/)
+test("路由 / 会话变化统一关浮层；浮层没开或没变化不动（luna #154-2）", () => {
+  assert.equal(overlayClosesOnNavigation("/", "/automations", true), true)
+  assert.equal(overlayClosesOnNavigation("/", "/", true), false)
+  assert.equal(overlayClosesOnNavigation("/", "/board", false), false)
+})
+
+test("M1：窄窗开关不写偏好，宽窗才写", () => {
+  const narrow = onSidebarWidth(initSidebarCollapse(true, false), true)
+  assert.equal(sidebarManualPersists(narrow), false)
+  assert.equal(sidebarOverlay(onSidebarManual(narrow, false)), true)
+  assert.equal(sidebarManualPersists(initSidebarCollapse(true, false)), true)
 })

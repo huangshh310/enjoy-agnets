@@ -40,6 +40,7 @@ export function SidebarSessionRow({
       data-session-id={sessionId}
       data-session-name={name}
       data-session-surface={surface}
+      data-active={active ? "true" : "false"}
       className={cx(
         "group/session relative flex h-7 w-full min-w-0 items-center rounded-md",
         active
