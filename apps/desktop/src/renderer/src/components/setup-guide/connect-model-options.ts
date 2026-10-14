@@ -9,8 +9,9 @@ import {
 } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
   guideKeyStatus,
-  keyBadgeTone,
+  keyStatusView,
   type KeyBadgeTone,
+  type KeyStatusView,
   type KeyProviderRow,
   type KeyStatus
 } from "../../lib/credential/key-status.ts"
@@ -119,6 +120,17 @@ function equalizeFreshInstall(options: ConnectModelOption[]): ConnectModelOption
 
 /** 第 4 步 API 密钥行徽标色调；没存密钥不画徽标。缺省状态按 unverified（中性），绿只给 ok。 */
 export function apiKeyBadgeTone(option: ConnectModelOption): KeyBadgeTone | undefined {
+  return apiKeyBadgeView(option)?.tone
+}
+
+const API_KEY_BADGE_LABELS = {
+  ok: "settings.setupGuide.connectApiKeyConnected",
+  unverified: "settings.setupGuide.connectApiKeyUnverified",
+  invalid: "settings.setupGuide.fixKey"
+} as const
+
+/** 第 4 步 API 密钥徽标的全部取值（组件直接用）。没存密钥不画；缺省状态按 unverified。 */
+export function apiKeyBadgeView(option: ConnectModelOption): KeyStatusView | undefined {
   if (option.kind !== "api_key" || !option.connected) return undefined
-  return keyBadgeTone(option.keyStatus ?? "unverified")
+  return keyStatusView(option.keyStatus ?? "unverified", API_KEY_BADGE_LABELS)
 }

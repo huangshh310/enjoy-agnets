@@ -14,3 +14,8 @@ export function editTargetAction(
   if (providers.some((row) => row.id === editId)) return "open"
   return loaded ? "fallback-create" : "wait"
 }
+
+/** 请求结束就算加载完（成功或出错）：快照拿不到时 ?edit= 也要回落，不能让引导一直暂停。 */
+export function settingsQueryLoaded(query: { isSuccess: boolean; isError: boolean }): boolean {
+  return query.isSuccess || query.isError
+}

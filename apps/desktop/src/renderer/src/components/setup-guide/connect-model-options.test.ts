@@ -6,6 +6,7 @@ import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
   apiKeyBadgeTone,
+  apiKeyBadgeView,
   connectModelOptions,
   connectModelRowAction,
   connectModelRowHintKey
@@ -156,4 +157,32 @@ test("第 4 步徽标：被拒红、没法确认灰、ok 才绿；没存密钥�
   assert.equal(apiKeyBadgeTone(row("ok")), "success")
   const fresh = connectModelOptions(buildChatReadiness({ engines: [], localModels: [], apiKeys: [], engineCount: 1 }))
   assert.equal(apiKeyBadgeTone(fresh.find((item) => item.kind === "api_key")!), undefined)
+})
+
+test("第 4 步徽标视图：data-key-status / 色调类 / 文案键 / 改密钥，组件直接用", () => {
+  const row = (state?: "ok" | "invalid" | "unverified") =>
+    connectModelOptions(
+      buildChatReadiness({
+        engines: [],
+        localModels: [],
+        apiKeys: [{ kind: "api_key", providerId: "p1", presetId: "openai" }],
+        engineCount: 1,
+        hasEnjoySecret: true,
+        activeKeyProfileId: "p1",
+        ...(state ? { credentialCheck: { state } } : {})
+      })
+    ).find((item) => item.kind === "api_key")!
+  const bad = apiKeyBadgeView(row("invalid"))!
+  assert.equal(bad.status, "invalid")
+  assert.match(bad.textClass, /error/)
+  assert.equal(bad.labelKey, "settings.setupGuide.fixKey")
+  assert.equal(bad.showFix, true)
+  const maybe = apiKeyBadgeView(row())!
+  assert.equal(maybe.status, "unverified")
+  assert.doesNotMatch(maybe.textClass, /success|error/)
+  assert.equal(maybe.labelKey, "settings.setupGuide.connectApiKeyUnverified")
+  const good = apiKeyBadgeView(row("ok"))!
+  assert.equal(good.status, "ok")
+  assert.match(good.textClass, /success/)
+  assert.equal(good.labelKey, "settings.setupGuide.connectApiKeyConnected")
 })

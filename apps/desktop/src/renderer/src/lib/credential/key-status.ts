@@ -57,19 +57,23 @@ export type KeyProviderRow = {
 
 export type GuideKeyStatus = {
   status: KeyStatus
-  /** 该状态对应的档案 id：改密钥直接打开这份。 */
-  profileId: string
-  /** 显示名：OpenAI，不是 openai。 */
-  providerName: string
+  /**
+   * 该状态对应的档案 id：改密钥直接打开这份。
+   * 缺省 = 对不上任何档案（默认路线指向已不存在的档案）：「改密钥」走新建表单，绝不打开别的档案。
+   */
+  profileId?: string
+  /** 显示名：OpenAI，不是 openai。缺省时调用方用通用名「供应商」。 */
+  providerName?: string
 }
 
 const RANK: Record<KeyStatus, number> = { ok: 0, unverified: 1, invalid: 2 }
 
 /**
- * 向导里「API 密钥」这一行的状态。
- * 有默认路线档案（defaultRoute.profileId 在 apiKeys 里）：以那份档案为准，和 ready 口径一致
- * （默认那把被拒、另一把 ok 时仍是红，不会绿着又被第 7 步拦回去）。
- * 没有路线档案才取最好的一把。默认那把读 readiness.credentialCheck（main 推送最新），其余读设置快照。
+ * 向导里「API 密钥」这一行的状态（fail-closed）。
+ * 1. 默认路线有 profileId 且在 apiKeys 里：以那份档案为准（读 readiness.credentialCheck），和 ready 口径一致。
+ * 2. 默认路线有 profileId 但找不到档案（ghost）：不回落取最好的，只用 keyStatusOf(readiness.credentialCheck)，
+ *    且不绑定任何档案 / 显示名（被拒时「改密钥」走新建，不打开错的档案）。
+ * 3. 默认路线没指档案：取最好的一把；只有一把时 readiness.credentialCheck 就是它的。
  */
 export function guideKeyStatus(
   readiness: Pick<ChatReadiness, "apiKeys" | "defaultRoute" | "credentialCheck"> | undefined,
@@ -78,21 +82,63 @@ export function guideKeyStatus(
   const keys = readiness?.apiKeys ?? []
   if (keys.length === 0) return undefined
   const routeProfile = readiness?.defaultRoute?.profileId
-  const rows = keys.map((key) => {
+  const describe = (key: (typeof keys)[number], check: Pick<CredentialCheck, "state"> | undefined) => {
     const profile = providers.find((row) => row.id === key.providerId)
-    const fromRoute =
-      readiness?.credentialCheck && (key.providerId === routeProfile || keys.length === 1)
-        ? readiness.credentialCheck
-        : undefined
     return {
-      status: keyStatusOf(fromRoute ?? profile?.credentialCheck),
+      status: keyStatusOf(check ?? profile?.credentialCheck),
       profileId: key.providerId,
       providerName: presetDisplayName(key.presetId, profile?.name ?? key.presetId)
     }
-  })
-  const routed = routeProfile ? rows.find((row) => row.profileId === routeProfile) : undefined
-  if (routed) return routed
+  }
+  if (routeProfile) {
+    const routed = keys.find((key) => key.providerId === routeProfile)
+    if (routed) return describe(routed, readiness?.credentialCheck)
+    return { status: keyStatusOf(readiness?.credentialCheck) }
+  }
+  const only = keys.length === 1 ? readiness?.credentialCheck : undefined
+  const rows = keys.map((key) => describe(key, only))
   return rows.reduce((best, row) => (RANK[row.status] < RANK[best.status] ? row : best))
+}
+
+/** 每种色调的文字 / 圆点类名。组件只读这里，不自己写颜色。 */
+export const KEY_TONE_CLASS: Record<KeyBadgeTone, { text: string; dot: string }> = {
+  success: { text: "text-state-success-text", dot: "bg-state-success-text" },
+  neutral: { text: "text-text-tertiary", dot: "bg-text-tertiary" },
+  error: { text: "text-text-error-primary", dot: "bg-text-error-primary" }
+}
+
+/** 徽标渲染所需的全部取值：组件直接用，data-key-status / 颜色 / 文案键 / 是否带改密钥都从这里来。 */
+export type KeyStatusView = {
+  status: KeyStatus
+  tone: KeyBadgeTone
+  textClass: string
+  dotClass: string
+  labelKey: string
+  showFix: boolean
+}
+
+export function keyStatusView(status: KeyStatus, labels: Record<KeyStatus, string>): KeyStatusView {
+  const tone = keyBadgeTone(status)
+  return {
+    status,
+    tone,
+    textClass: KEY_TONE_CLASS[tone].text,
+    dotClass: KEY_TONE_CLASS[tone].dot,
+    labelKey: labels[status],
+    showFix: status === "invalid"
+  }
+}
+
+const PROVIDER_ROW_LABELS: Record<KeyStatus, string> = {
+  ok: "settings.providers.keyVerified",
+  unverified: "settings.providers.keyUnverified",
+  invalid: "settings.providers.keyInvalid"
+}
+
+/** 设置页供应商行的三态视图；无需密钥 / 没填密钥返回 undefined（行里走原来的「无需密钥 / 还没填写密钥」）。 */
+export function providerKeyView(profile: Parameters<typeof profileKeyStatus>[0]): KeyStatusView | undefined {
+  const status = profileKeyStatus(profile)
+  return status ? keyStatusView(status, PROVIDER_ROW_LABELS) : undefined
 }
 
 /** readiness 推送前后默认路线的校验变没变（state / code / checkedAt 任一变化）。变了就刷新设置快照。 */

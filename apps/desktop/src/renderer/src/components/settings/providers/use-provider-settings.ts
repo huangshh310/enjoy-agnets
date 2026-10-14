@@ -13,6 +13,7 @@ import {
   runProviderProbe,
   saveEditor
 } from "./provider-editor-writes"
+import { settingsQueryLoaded } from "./provider-edit-target"
 import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
 import { CHAT_READINESS_QUERY_KEY, useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 
@@ -51,7 +52,7 @@ export function useProviderSettings() {
   return {
     providers,
     /** 设置快照已拿到（区分「还在加载」和「真的没有这份档案」）。 */
-    loaded: settingsQuery.isSuccess,
+    loaded: settingsQueryLoaded(settingsQuery),
     editor: session.editor,
     probe: session.probe,
     preset,
@@ -110,6 +111,11 @@ function useProviderWrites(
   const { editor, setProbe, closeEditor, updateEditor } = session
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<SecretWriteErrorCode | null>(null)
+  const refreshTimers = useRef<Array<ReturnType<typeof setTimeout>>>([])
+  useEffect(() => () => {
+    for (const timer of refreshTimers.current) clearTimeout(timer)
+    refreshTimers.current = []
+  }, [])
   useEffect(() => {
     if (!editor) setSaveError(null)
   }, [editor])
@@ -129,7 +135,9 @@ function useProviderWrites(
       closeEditor()
       // 改的可能不是当前档案：主动让就绪快照失效；校验在后台跑（最长 6s），稍后再刷一次设置快照拿三态。
       void queryClient.invalidateQueries({ queryKey: CHAT_READINESS_QUERY_KEY })
-      setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["settings"] }), CREDENTIAL_RECHECK_REFRESH_MS)
+      refreshTimers.current.push(
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["settings"] }), CREDENTIAL_RECHECK_REFRESH_MS)
+      )
       return true
     },
     activate: async (id: string) => {

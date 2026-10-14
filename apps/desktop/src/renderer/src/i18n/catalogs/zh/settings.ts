@@ -94,6 +94,7 @@ export const zhSettings = {
     connectApiKeyUnverifiedHint: "发第一句时会再试一次",
     connectApiKeyInvalidHint: "密钥被 {name} 拒绝了，换一个再试",
     fixKey: "改密钥",
+    providerFallback: "供应商",
     readyKeyInvalidTitle: "密钥被 {name} 拒绝了",
     readyKeyInvalidHint: "换一个 {name} 密钥再试，改好就能开始",
     connectLater: "以后再连",

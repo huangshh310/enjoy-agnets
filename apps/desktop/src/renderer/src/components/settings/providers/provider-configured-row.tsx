@@ -10,7 +10,8 @@ import { ProviderRowActions } from "./provider-row-actions"
 import { WIRE_LABEL, wireLinesOf } from "./provider-wire-lines"
 import type { PingStateMap } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
-import { keyBadgeTone, presetDisplayName, profileKeyStatus, type KeyStatus } from "@renderer/lib/credential/key-status"
+import { profileKeyStatus } from "@renderer/lib/credential/key-status"
+import { renderProviderKeyStatus } from "./provider-key-status-text"
 
 export function ProviderConfiguredRow({
   profile,
@@ -124,14 +125,12 @@ function WireHosts({ profile }: { profile: ProviderPublic }) {
 
 function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; hasKeyIssue: boolean; onEdit: () => void }) {
   const t = useT()
-  const status = profileKeyStatus(profile)
+  const keyStatus = renderProviderKeyStatus(profile, t, onEdit)
   return (
     <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-caption-2-medium text-text-tertiary">
       <span className="font-mono font-medium text-text-secondary">{profile.modelId || t("settings.providers.noModel")}</span>
       <span>·</span>
-      {status ? (
-        <KeyStatusText status={status} name={presetDisplayName(profile.kind, profile.name)} onEdit={onEdit} />
-      ) : (
+      {keyStatus ?? (
         <span className={hasKeyIssue ? "font-medium text-text-error-primary" : "text-text-tertiary"}>
           {profile.hasKey
             ? t("settings.providers.keyHint")
@@ -140,42 +139,6 @@ function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; ha
               : t("settings.providers.noKeyRequired")}
         </span>
       )}
-    </span>
-  )
-}
-
-/** 绿=已验证；灰=暂时没法确认；红=被拒 + 改密钥。红只给 invalid。 */
-function KeyStatusText({ status, name, onEdit }: { status: KeyStatus; name: string; onEdit: () => void }) {
-  const t = useT()
-  const tone = keyBadgeTone(status)
-  if (tone === "error") {
-    return (
-      <span data-testid="provider-key-status" data-key-status="invalid" className="inline-flex items-center gap-1.5 font-medium text-text-error-primary">
-        <span aria-hidden className="size-1.5 rounded-full bg-text-error-primary" />
-        {t("settings.providers.keyInvalid", { name })}
-        <button
-          type="button"
-          data-testid="provider-fix-key"
-          onClick={onEdit}
-          className="cursor-pointer text-accent-600 hover:underline"
-        >
-          {t("settings.providers.fixKey")}
-        </button>
-      </span>
-    )
-  }
-  if (tone === "success") {
-    return (
-      <span data-testid="provider-key-status" data-key-status="ok" className="inline-flex items-center gap-1.5 text-state-success-text">
-        <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
-        {t("settings.providers.keyVerified")}
-      </span>
-    )
-  }
-  return (
-    <span data-testid="provider-key-status" data-key-status="unverified" className="inline-flex items-center gap-1.5 text-text-tertiary">
-      <span aria-hidden className="size-1.5 rounded-full bg-text-tertiary" />
-      {t("settings.providers.keyUnverified")}
     </span>
   )
 }

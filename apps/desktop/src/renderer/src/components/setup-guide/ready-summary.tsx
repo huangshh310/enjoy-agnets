@@ -17,7 +17,7 @@ export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: stri
   if (!ready && keyStatus?.status === "invalid") {
     return (
       <p data-testid="ready-key-invalid-summary" className="text-center text-headline-regular leading-normal text-text-error-primary">
-        {t("settings.setupGuide.readyKeyInvalidHint", { name: keyStatus.providerName })}
+        {t("settings.setupGuide.readyKeyInvalidHint", { name: keyStatus.providerName ?? t("settings.setupGuide.providerFallback") })}
       </p>
     )
   }

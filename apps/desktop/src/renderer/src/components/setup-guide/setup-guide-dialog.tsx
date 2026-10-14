@@ -23,6 +23,7 @@ import { guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useT } from "@renderer/i18n"
 import { GUIDE_INSET_CLASS } from "./setup-guide-frame"
 import {
   isSetupGuideChoiceStep,
@@ -46,6 +47,7 @@ export function SetupGuideDialog() {
   const navigate = useNavigate()
   const finishing = useRef(false)
   const queryClient = useQueryClient()
+  const t = useT()
   const readiness = useChatReadiness().data
   const chatReady = readiness?.ready === true
   const providers = useSettingsSnapshot().data?.providers
@@ -128,7 +130,7 @@ export function SetupGuideDialog() {
         <SetupGuideHeader
           step={step}
           titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus?.status) : undefined}
-          titleVars={step === "ready" && keyStatus ? { name: keyStatus.providerName } : undefined}
+          titleVars={step === "ready" && keyStatus ? { name: keyStatus.providerName ?? t("settings.setupGuide.providerFallback") } : undefined}
           readyMark={step === "ready" ? chatReady : undefined}
           summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} keyStatus={keyStatus} /> : undefined}
         />

@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { credentialCheckChanged, guideKeyStatus, keyBadgeTone, keyStatusOf, presetDisplayName, profileKeyStatus } from "./key-status.ts"
+import { credentialCheckChanged, guideKeyStatus, providerKeyView, keyBadgeTone, keyStatusOf, presetDisplayName, profileKeyStatus } from "./key-status.ts"
 
 const key = (providerId: string, presetId = "openai") => ({ kind: "api_key" as const, providerId, presetId })
 
@@ -103,4 +103,52 @@ test("credentialCheckChanged：state / code / checkedAt 变了才算变", () => 
   assert.equal(credentialCheckChanged(at("unverified", "t1"), at("unverified", "t1", "network")), true)
   assert.equal(credentialCheckChanged(at("ok", "t1"), at("ok", "t2")), true)
   assert.equal(credentialCheckChanged({ credentialCheck: undefined }, { credentialCheck: undefined }), false)
+})
+
+const ghostReadiness = (keys: ReturnType<typeof key>[]) => ({
+  apiKeys: keys,
+  defaultRoute: { runtimeId: "enjoy-local", profileId: "ghost" },
+  credentialCheck: { state: "invalid" as const, code: "auth_rejected" as const }
+})
+
+test("ghost 路线 + 只有一把 p2 ok：invalid，但不记在 p2 名下（改密钥走新建）", () => {
+  const providers = [{ id: "p2", kind: "anthropic", credentialCheck: { state: "ok" as const } }]
+  assert.deepEqual(guideKeyStatus(ghostReadiness([key("p2", "anthropic")]), providers), { status: "invalid" })
+})
+
+test("ghost 路线 + 两把（p1 被拒、p2 ok）：不回落取最好，仍 invalid 且不绑定档案", () => {
+  const providers = [
+    { id: "p1", kind: "openai", credentialCheck: { state: "invalid" as const } },
+    { id: "p2", kind: "anthropic", credentialCheck: { state: "ok" as const } }
+  ]
+  assert.deepEqual(guideKeyStatus(ghostReadiness([key("p1"), key("p2", "anthropic")]), providers), { status: "invalid" })
+})
+
+test("ghost 路线、校验缺省：中性 unverified，不绿", () => {
+  const snap = { ...ghostReadiness([key("p2", "anthropic")]), credentialCheck: undefined }
+  assert.deepEqual(guideKeyStatus(snap, [{ id: "p2", kind: "anthropic", credentialCheck: { state: "ok" } }]), {
+    status: "unverified"
+  })
+})
+
+test("providerKeyView：设置行 data-key-status / 色调 / 文案 / 改密钥都从这里来", () => {
+  const base = { requiresKey: true, hasKey: true }
+  const bad = providerKeyView({ ...base, credentialCheck: { state: "invalid" } })!
+  assert.equal(bad.status, "invalid")
+  assert.equal(bad.tone, "error")
+  assert.match(bad.textClass, /error/)
+  assert.match(bad.dotClass, /error/)
+  assert.equal(bad.labelKey, "settings.providers.keyInvalid")
+  assert.equal(bad.showFix, true)
+  const maybe = providerKeyView(base)!
+  assert.equal(maybe.status, "unverified")
+  assert.equal(maybe.tone, "neutral")
+  assert.doesNotMatch(maybe.textClass, /success|error/)
+  assert.equal(maybe.labelKey, "settings.providers.keyUnverified")
+  assert.equal(maybe.showFix, false)
+  const good = providerKeyView({ ...base, credentialCheck: { state: "ok" } })!
+  assert.equal(good.tone, "success")
+  assert.match(good.textClass, /success/)
+  assert.equal(good.labelKey, "settings.providers.keyVerified")
+  assert.equal(providerKeyView({ requiresKey: true, hasKey: false }), undefined)
 })
