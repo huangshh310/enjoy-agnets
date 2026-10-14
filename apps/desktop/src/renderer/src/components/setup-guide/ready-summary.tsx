@@ -5,14 +5,22 @@ import { useThemeMode } from "@/components/application/theme/theme-toggle"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import type { GuideKeyStatus } from "@renderer/lib/credential/key-status"
 
-export function ReadySummary({ workspaceName }: { workspaceName: string }) {
+export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: string; keyStatus?: GuideKeyStatus }) {
   const t = useT()
   const theme = useThemeMode()
   const readiness = useChatReadiness().data
   const ready = readiness?.ready === true
   const engineCount = readiness?.engineCount ?? 0
   const unverified = ready && readiness?.credentialCheck?.state === "unverified"
+  if (!ready && keyStatus?.status === "invalid") {
+    return (
+      <p data-testid="ready-key-invalid-summary" className="text-center text-headline-regular leading-normal text-text-error-primary">
+        {t("settings.setupGuide.readyKeyInvalidHint", { name: keyStatus.providerName ?? t("settings.setupGuide.providerFallback") })}
+      </p>
+    )
+  }
   if (!ready) {
     return (
       <p data-testid="ready-need-summary" className="text-center text-headline-regular leading-normal text-text-secondary">

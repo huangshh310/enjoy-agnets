@@ -10,6 +10,8 @@ import { ProviderRowActions } from "./provider-row-actions"
 import { WIRE_LABEL, wireLinesOf } from "./provider-wire-lines"
 import type { PingStateMap } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
+import { profileKeyStatus } from "@renderer/lib/credential/key-status"
+import { renderProviderKeyStatus } from "./provider-key-status-text"
 
 export function ProviderConfiguredRow({
   profile,
@@ -49,7 +51,7 @@ export function ProviderConfiguredRow({
           <RowTitle profile={profile} pingState={pingState} />
           <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <WireHosts profile={profile} />
-            <RowMeta profile={profile} hasKeyIssue={hasKeyIssue} />
+            <RowMeta profile={profile} hasKeyIssue={hasKeyIssue} onEdit={onEdit} />
           </div>
           <RowRefs refs={refs} onOpenAgent={onOpenAgent} />
         </div>
@@ -91,7 +93,9 @@ function RowTitle({ profile, pingState }: { profile: ProviderPublic; pingState?:
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="truncate text-body-2-semibold text-text-primary">{profile.name}</span>
-      {profile.active && profile.enabled ? <StatusPill tone="success">{t("settings.providers.active")}</StatusPill> : null}
+      {profile.active && profile.enabled ? (
+        <StatusPill tone={profileKeyStatus(profile) === "invalid" ? undefined : "success"}>{t("settings.providers.active")}</StatusPill>
+      ) : null}
       {!profile.enabled ? <StatusPill>{t("settings.providers.disabled")}</StatusPill> : null}
       {profile.enabled ? <StatusPill>{t("settings.providers.inUseModels", { count: modelCount })}</StatusPill> : null}
       <LatencyBadge pingState={pingState} label={latencyLabel} />
@@ -119,18 +123,22 @@ function WireHosts({ profile }: { profile: ProviderPublic }) {
   )
 }
 
-function RowMeta({ profile, hasKeyIssue }: { profile: ProviderPublic; hasKeyIssue: boolean }) {
+function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; hasKeyIssue: boolean; onEdit: () => void }) {
   const t = useT()
-  const key = profile.hasKey
-    ? t("settings.providers.keyHint")
-    : profile.requiresKey
-      ? t("settings.providers.missingKey")
-      : t("settings.providers.noKeyRequired")
+  const keyStatus = renderProviderKeyStatus(profile, t, onEdit)
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-medium text-text-tertiary">
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-caption-2-medium text-text-tertiary">
       <span className="font-mono font-medium text-text-secondary">{profile.modelId || t("settings.providers.noModel")}</span>
       <span>·</span>
-      <span className={hasKeyIssue ? "font-medium text-text-error-primary" : "text-text-tertiary"}>{key}</span>
+      {keyStatus ?? (
+        <span className={hasKeyIssue ? "font-medium text-text-error-primary" : "text-text-tertiary"}>
+          {profile.hasKey
+            ? t("settings.providers.keyHint")
+            : profile.requiresKey
+              ? t("settings.providers.missingKey")
+              : t("settings.providers.noKeyRequired")}
+        </span>
+      )}
     </span>
   )
 }
@@ -155,7 +163,7 @@ function RowRefs({ refs, onOpenAgent }: { refs: AgentBindRef[]; onOpenAgent?: (r
   )
 }
 
-function StatusPill({ children, tone }: { children: string; tone?: "success" }) {
+function StatusPill({ children, tone }: { children: string; tone?: "success" | undefined }) {
   if (tone === "success") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-state-success-text/10 px-2.5 py-0.5 text-caption-1-semibold text-state-success-text">

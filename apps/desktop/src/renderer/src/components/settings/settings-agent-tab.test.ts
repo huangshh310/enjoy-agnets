@@ -19,13 +19,15 @@ test("供应商反链 ?tool= 会进 search，空串丢掉", () => {
     tab: "registry",
     tool: "claude",
     from: undefined,
-    create: undefined
+    create: undefined,
+    edit: undefined
   })
   assert.deepEqual(parseSettingsSectionSearch({ tool: "  " }), {
     tab: undefined,
     tool: undefined,
     from: undefined,
-    create: undefined
+    create: undefined,
+    edit: undefined
   })
 })
 
@@ -34,13 +36,15 @@ test("审批发现性 from 进 search，空串丢掉", () => {
     tab: undefined,
     tool: undefined,
     from: "agent",
-    create: undefined
+    create: undefined,
+    edit: undefined
   })
   assert.deepEqual(parseSettingsSectionSearch({ from: "  " }), {
     tab: undefined,
     tool: undefined,
     from: undefined,
-    create: undefined
+    create: undefined,
+    edit: undefined
   })
 })
 
@@ -49,6 +53,17 @@ test("向导添加密钥 create=official 进 search", () => {
     tab: undefined,
     tool: undefined,
     from: "setup-guide",
-    create: "official"
+    create: "official",
+    edit: undefined
+  })
+})
+
+test("密钥被拒改密钥 edit=<档案 id> 进 search", () => {
+  assert.deepEqual(parseSettingsSectionSearch({ edit: "prv_1", from: "setup-guide" }), {
+    tab: undefined,
+    tool: undefined,
+    from: "setup-guide",
+    create: undefined,
+    edit: "prv_1"
   })
 })

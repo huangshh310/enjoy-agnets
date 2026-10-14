@@ -113,6 +113,7 @@ export function EditorDrawerFooter({
             <Button
               type="submit"
               size="sm"
+              variant="solid"
               disabled={!canSave}
               data-testid="provider-editor-save"
               data-saving={saving ? "true" : undefined}

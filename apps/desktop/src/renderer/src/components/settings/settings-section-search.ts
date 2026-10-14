@@ -1,11 +1,13 @@
 /**
- * 设置分段 Hash search：tab 切智能体子页，tool 闪本机 CLI 卡，from 记审批返回。
+ * 设置分段 Hash search：tab 切智能体子页，tool 闪本机 CLI 卡，from 记审批返回，
+ * edit 直接打开某份供应商档案（密钥被拒时改密钥）。
  */
 export type SettingsSectionSearch = {
   tab?: string
   tool?: string
   from?: string
   create?: string
+  edit?: string
 }
 
 export function parseSettingsSectionSearch(search: Record<string, unknown>): SettingsSectionSearch {
@@ -13,7 +15,8 @@ export function parseSettingsSectionSearch(search: Record<string, unknown>): Set
     tab: asSearchToken(search.tab),
     tool: asSearchToken(search.tool),
     from: asSearchToken(search.from),
-    create: asSearchToken(search.create)
+    create: asSearchToken(search.create),
+    edit: asSearchToken(search.edit)
   }
 }
 

@@ -46,3 +46,20 @@ test("未验证本机模型不把末屏写成可以开始了，只认 ready", ()
   assert.equal(readyGuideTitleKey(snap.ready), "settings.setupGuide.readyNeedTitle")
   assert.equal(readyGuideFinishes(snap.ready), false)
 })
+
+test("没 ready 且密钥被拒：标题说被拒、主钮改密钥，不回第 4 步绕圈", async () => {
+  const { readyGuidePrimaryAction } = await import("./ready-face.ts")
+  assert.equal(readyGuideTitleKey(false, "invalid", "invalid"), "settings.setupGuide.readyKeyInvalidTitle")
+  assert.equal(readyGuidePrimaryKey(false, "invalid"), "settings.setupGuide.fixKey")
+  assert.equal(readyGuidePrimaryAction(false, "invalid"), "fix-key")
+  assert.equal(readyGuidePrimaryAction(false, "unverified"), "connect")
+  assert.equal(readyGuidePrimaryAction(true, "ok"), "finish")
+})
+
+test("末屏图标：ready+unverified 用中性图标，不配绿✓", async () => {
+  const { readyMarkKind } = await import("./ready-face.ts")
+  assert.equal(readyMarkKind(true, "ok"), "ok")
+  assert.equal(readyMarkKind(true, undefined), "ok")
+  assert.equal(readyMarkKind(true, "unverified"), "unverified")
+  assert.equal(readyMarkKind(false, "invalid"), "pending")
+})

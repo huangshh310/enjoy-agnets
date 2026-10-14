@@ -12,25 +12,30 @@ import { SecretWritePreflight } from "@renderer/components/settings/secret-write
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import {
+  apiKeyBadgeView,
   connectModelOptions,
   connectModelRowAction,
   connectModelRowHintKey,
   type ConnectModelOption
 } from "./connect-model-options"
 import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
+import { renderApiKeyBadge } from "./api-key-badge"
 
 export function ConnectModelStep({
   picked,
   onPick,
-  onAddKey
+  onAddKey,
+  onFixKey
 }: {
   picked: string | null
   onPick: (id: string) => void
   onAddKey: () => void
+  onFixKey: (profileId: string | undefined) => void
 }) {
   const t = useT()
   const readiness = useChatReadiness().data
-  const options = connectModelOptions(readiness)
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const options = connectModelOptions(readiness, providers)
   return (
     <div className="flex flex-col gap-2">
       {readiness?.secretStorageAvailable === false ? <SecretWritePreflight /> : null}
@@ -39,14 +44,18 @@ export function ConnectModelStep({
         <li key={option.id}>
           <ConnectModelRow
             option={option}
-            selected={picked === option.id || (option.kind === "api_key" && option.connected && picked == null)}
+            selected={
+              picked === option.id ||
+              (option.kind === "api_key" && option.connected && option.keyStatus !== "invalid" && picked == null)
+            }
             onChoose={() => {
-              if (connectModelRowAction(option) === "add-key") onAddKey()
+              const action = connectModelRowAction(option)
+              if (action === "add-key") onAddKey()
+              else if (action === "fix-key") onFixKey(option.kind === "api_key" ? option.profileId : undefined)
               else onPick(option.id)
             }}
             title={rowTitle(option, t)}
-            hint={t(connectModelRowHintKey(option), hintVars(option))}
-            connectedLabel={t("settings.setupGuide.connectApiKeyConnected")}
+            hint={t(connectModelRowHintKey(option), hintVars(option, t("settings.setupGuide.providerFallback")))}
             unverifiedLabel={t("settings.setupGuide.connectLocalUnverified")}
           />
         </li>
@@ -62,7 +71,6 @@ function ConnectModelRow({
   onChoose,
   title,
   hint,
-  connectedLabel,
   unverifiedLabel
 }: {
   option: ConnectModelOption
@@ -70,14 +78,15 @@ function ConnectModelRow({
   onChoose: () => void
   title: string
   hint: string
-  connectedLabel: string
   unverifiedLabel: string
 }) {
+  const t = useT()
   return (
     <button
       type="button"
       data-testid={`connect-model-${option.kind}`}
       data-verified={option.kind === "local_model" ? String(option.verified) : undefined}
+      data-key-status={apiKeyBadgeView(option)?.status}
       data-recommended={option.kind !== "later" && option.recommended ? "true" : undefined}
       onClick={onChoose}
       className={cx(
@@ -99,12 +108,7 @@ function ConnectModelRow({
         <span className="text-body-2-regular text-text-secondary">{hint}</span>
         {option.kind === "local_model" && !option.verified ? <VerifyLocalAction service={option.service} /> : null}
       </span>
-      {option.kind === "api_key" && option.connected ? (
-        <span className="inline-flex items-center gap-1.5 text-caption-1-medium text-state-success-text">
-          <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
-          {connectedLabel}
-        </span>
-      ) : null}
+      {renderApiKeyBadge(option, t)}
     </button>
   )
 }
@@ -179,6 +183,8 @@ function rowTitle(option: ConnectModelOption, t: (path: string, vars?: Record<st
   return t("settings.setupGuide.connectLater")
 }
 
-function hintVars(option: ConnectModelOption): Record<string, string> | undefined {
-  return option.kind === "engine" ? { name: option.name } : undefined
+function hintVars(option: ConnectModelOption, fallbackName: string): Record<string, string> | undefined {
+  if (option.kind === "engine") return { name: option.name }
+  if (option.kind === "api_key") return { name: option.providerName ?? fallbackName }
+  return undefined
 }

@@ -9,6 +9,7 @@ import { getIde, hasIde } from "../lib/ide.ts"
 import { consumeAdoptedHint, notifyAdoptedDefaultRoute } from "./adopted-default-route-toast.ts"
 import { applyDefaultChatRoute } from "./apply-default-chat-route.ts"
 import { rememberChatReadiness } from "./chat-readiness-cache.ts"
+import { applyReadinessPush } from "./readiness-push.ts"
 
 export const CHAT_READINESS_QUERY_KEY = ["chat-readiness"] as const
 
@@ -40,7 +41,9 @@ export function useChatReadiness() {
     if (!hasIde()) return undefined
     const stop = getIde().chat.onReadiness((payload) => {
       const snap = acceptReadiness(payload)
-      if (snap) client.setQueryData(CHAT_READINESS_QUERY_KEY, snap)
+      if (!snap) return
+      // 存密钥后的校验落盘会推 readiness；供应商行的三态读设置快照，一起刷新。
+      applyReadinessPush(client, CHAT_READINESS_QUERY_KEY, snap)
     })
     const onFocus = () => {
       void client.invalidateQueries({ queryKey: CHAT_READINESS_QUERY_KEY })

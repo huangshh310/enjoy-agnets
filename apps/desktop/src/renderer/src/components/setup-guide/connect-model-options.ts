@@ -7,6 +7,14 @@ import {
   type ChatLocalModelRoute,
   type ChatReadiness
 } from "@enjoy-agents/ipc-contract/chat-readiness"
+import {
+  guideKeyStatus,
+  keyStatusView,
+  type KeyBadgeTone,
+  type KeyStatusView,
+  type KeyProviderRow,
+  type KeyStatus
+} from "../../lib/credential/key-status.ts"
 
 export type ConnectModelOption =
   | { id: string; kind: "engine"; runtimeId: string; name: string; recommended: boolean }
@@ -17,14 +25,26 @@ export type ConnectModelOption =
       verified: boolean
       recommended: boolean
     }
-  | { id: string; kind: "api_key"; connected: boolean; recommended: boolean }
+  | {
+      id: string
+      kind: "api_key"
+      connected: boolean
+      recommended: boolean
+      /** 已存密钥的校验三态；没存密钥时缺省。 */
+      keyStatus?: KeyStatus
+      profileId?: string
+      providerName?: string
+    }
   | { id: string; kind: "later" }
 
 /**
  * 已登录引擎 > 已验证本机模型 > 添加密钥。未验证本机模型仍露出，但不推荐。
  * 全新安装只留密钥与「以后再连」，两行等权。
  */
-export function connectModelOptions(readiness: ChatReadiness | undefined): ConnectModelOption[] {
+export function connectModelOptions(
+  readiness: ChatReadiness | undefined,
+  providers: readonly KeyProviderRow[] = []
+): ConnectModelOption[] {
   const engines = readiness?.engines ?? []
   const locals = readiness?.localModels ?? []
   const hasKey = (readiness?.apiKeys.length ?? 0) > 0
@@ -52,19 +72,26 @@ export function connectModelOptions(readiness: ChatReadiness | undefined): Conne
     })
     if (verified) recommendNext = false
   }
+  const key = guideKeyStatus(readiness, providers)
   options.push({
     id: "api_key",
     kind: "api_key",
     connected: hasKey,
-    recommended: !hasKey && recommendNext
+    recommended: !hasKey && recommendNext,
+    ...(key ? { keyStatus: key.status, profileId: key.profileId, providerName: key.providerName } : {})
   })
   options.push({ id: "later", kind: "later" })
   return equalizeFreshInstall(options)
 }
 
-/** 未连上的「添加 API 密钥」是动作：点行就进选厂商。其余行点选再继续。 */
-export function connectModelRowAction(option: ConnectModelOption): "add-key" | "select" {
-  return option.kind === "api_key" && !option.connected ? "add-key" : "select"
+/**
+ * 未连上的「添加 API 密钥」是动作：点行就进选厂商。密钥被拒：点行直接改这份密钥。
+ * 其余行点选再继续。
+ */
+export function connectModelRowAction(option: ConnectModelOption): "add-key" | "fix-key" | "select" {
+  if (option.kind !== "api_key") return "select"
+  if (!option.connected) return "add-key"
+  return option.keyStatus === "invalid" ? "fix-key" : "select"
 }
 
 export function connectModelRowHintKey(option: ConnectModelOption): string {
@@ -74,7 +101,11 @@ export function connectModelRowHintKey(option: ConnectModelOption): string {
       ? "settings.setupGuide.connectLocalHint"
       : "settings.setupGuide.connectLocalUnverifiedWhy"
   }
-  if (option.kind === "api_key") return "settings.setupGuide.connectApiKeyHint"
+  if (option.kind === "api_key") {
+    if (option.connected && option.keyStatus === "invalid") return "settings.setupGuide.connectApiKeyInvalidHint"
+    if (option.connected && option.keyStatus === "unverified") return "settings.setupGuide.connectApiKeyUnverifiedHint"
+    return "settings.setupGuide.connectApiKeyHint"
+  }
   return "settings.setupGuide.connectLaterHint"
 }
 
@@ -85,4 +116,21 @@ function equalizeFreshInstall(options: ConnectModelOption[]): ConnectModelOption
     return options.map((item) => (item.kind === "api_key" ? { ...item, recommended: false } : item))
   }
   return options
+}
+
+/** 第 4 步 API 密钥行徽标色调；没存密钥不画徽标。缺省状态按 unverified（中性），绿只给 ok。 */
+export function apiKeyBadgeTone(option: ConnectModelOption): KeyBadgeTone | undefined {
+  return apiKeyBadgeView(option)?.tone
+}
+
+const API_KEY_BADGE_LABELS = {
+  ok: "settings.setupGuide.connectApiKeyConnected",
+  unverified: "settings.setupGuide.connectApiKeyUnverified",
+  invalid: "settings.setupGuide.fixKey"
+} as const
+
+/** 第 4 步 API 密钥徽标的全部取值（组件直接用）。没存密钥不画；缺省状态按 unverified。 */
+export function apiKeyBadgeView(option: ConnectModelOption): KeyStatusView | undefined {
+  if (option.kind !== "api_key" || !option.connected) return undefined
+  return keyStatusView(option.keyStatus ?? "unverified", API_KEY_BADGE_LABELS)
 }

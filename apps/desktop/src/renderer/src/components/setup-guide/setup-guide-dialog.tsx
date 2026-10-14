@@ -8,14 +8,22 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { AppearanceChoice } from "./appearance-choice"
 import { CapabilityCards } from "./capability-cards"
 import { ConnectModelStep } from "./connect-model-step"
-import { officialProviderSearch, pauseGuideForProviderForm, SETUP_GUIDE_FROM } from "./open-provider-form"
+import {
+  editProviderSearch,
+  officialProviderSearch,
+  pauseGuideForProviderForm,
+  SETUP_GUIDE_FROM
+} from "./open-provider-form"
 import { useNavigate } from "@tanstack/react-router"
 import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
-import { readyGuideFinishes, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
+import { readyGuidePrimaryAction, readyMarkKind, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
+import { guideKeyStatus } from "@renderer/lib/credential/key-status"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useT } from "@renderer/i18n"
 import { GUIDE_INSET_CLASS } from "./setup-guide-frame"
 import {
   isSetupGuideChoiceStep,
@@ -39,8 +47,11 @@ export function SetupGuideDialog() {
   const navigate = useNavigate()
   const finishing = useRef(false)
   const queryClient = useQueryClient()
+  const t = useT()
   const readiness = useChatReadiness().data
   const chatReady = readiness?.ready === true
+  const providers = useSettingsSnapshot().data?.providers
+  const keyStatus = guideKeyStatus(readiness, providers ?? [])
 
   useEffect(() => {
     if (!open) return
@@ -66,6 +77,19 @@ export function SetupGuideDialog() {
       search: officialProviderSearch(SETUP_GUIDE_FROM)
     })
   }
+  /** 被拒的密钥：直接打开那份档案改密钥，存完回第 4 步看校验结果。 */
+  const openFixKey = (profileId: string | undefined) => {
+    if (!profileId) {
+      openAddKey()
+      return
+    }
+    pauseGuideForProviderForm("connect-model")
+    void navigate({
+      to: "/settings/$section",
+      params: { section: "providers" },
+      search: editProviderSearch(profileId, SETUP_GUIDE_FROM)
+    })
+  }
   const onNext = () => {
     if (step === "connect-model") {
       if (connectPick === "api_key" && (readiness?.apiKeys.length ?? 0) === 0) {
@@ -75,9 +99,16 @@ export function SetupGuideDialog() {
       setStep(nextSetupGuideStep(step))
       return
     }
-    if (step === "ready" && !readyGuideFinishes(chatReady)) {
-      setStep("connect-model")
-      return
+    if (step === "ready") {
+      const action = readyGuidePrimaryAction(chatReady, keyStatus?.status)
+      if (action === "fix-key") {
+        openFixKey(keyStatus?.profileId)
+        return
+      }
+      if (action === "connect") {
+        setStep("connect-model")
+        return
+      }
     }
     if (SETUP_GUIDE_FACE[step].finishes) finish()
     else setStep(nextSetupGuideStep(step))
@@ -98,9 +129,10 @@ export function SetupGuideDialog() {
       >
         <SetupGuideHeader
           step={step}
-          titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state) : undefined}
-          readyMark={step === "ready" ? chatReady : undefined}
-          summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} /> : undefined}
+          titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus?.status) : undefined}
+          titleVars={step === "ready" && keyStatus ? { name: keyStatus.providerName ?? t("settings.setupGuide.providerFallback") } : undefined}
+          readyMark={step === "ready" ? readyMarkKind(chatReady, readiness?.credentialCheck?.state) : undefined}
+          summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} keyStatus={keyStatus} /> : undefined}
         />
         <div className={cx("flex min-h-0 flex-col overflow-hidden pt-6", GUIDE_INSET_CLASS, SETUP_GUIDE_FACE[step].mark === "ready" && "justify-center overflow-y-auto pb-6")}>
           <SetupGuideBody
@@ -110,12 +142,13 @@ export function SetupGuideDialog() {
             connectPick={connectPick}
             onConnectPick={setConnectPick}
             onAddKey={openAddKey}
+            onFixKey={openFixKey}
           />
         </div>
         <SetupGuideFooter
           step={step}
           hasWorkspace={Boolean(workspaceName)}
-          primaryKey={step === "ready" ? readyGuidePrimaryKey(chatReady) : undefined}
+          primaryKey={step === "ready" ? readyGuidePrimaryKey(chatReady, keyStatus?.status) : undefined}
           secondaryKey={step === "ready" && !chatReady ? "settings.setupGuide.browseFirst" : undefined}
           autoFocusPrimary={step === "intro"}
           onBack={() => setStep(previousSetupGuideStep(step))}
@@ -134,7 +167,8 @@ function SetupGuideBody({
   onOpened,
   connectPick,
   onConnectPick,
-  onAddKey
+  onAddKey,
+  onFixKey
 }: {
   step: SetupGuideStep
   workspaceName: string
@@ -142,8 +176,9 @@ function SetupGuideBody({
   connectPick: string | null
   onConnectPick: (id: string) => void
   onAddKey: () => void
+  onFixKey: (profileId: string | undefined) => void
 }) {
-  return STEP_BODY[step]({ workspaceName, onOpened, connectPick, onConnectPick, onAddKey })
+  return STEP_BODY[step]({ workspaceName, onOpened, connectPick, onConnectPick, onAddKey, onFixKey })
 }
 
 const STEP_BODY: Record<
@@ -154,13 +189,14 @@ const STEP_BODY: Record<
     connectPick: string | null
     onConnectPick: (id: string) => void
     onAddKey: () => void
+    onFixKey: (profileId: string | undefined) => void
   }) => ReactNode
 > = {
   intro: () => <IntroPoints />,
   capabilities: () => <CapabilityCards />,
   engines: () => <EngineInstallList />,
-  "connect-model": ({ connectPick, onConnectPick, onAddKey }) => (
-    <ConnectModelStep picked={connectPick} onPick={onConnectPick} onAddKey={onAddKey} />
+  "connect-model": ({ connectPick, onConnectPick, onAddKey, onFixKey }) => (
+    <ConnectModelStep picked={connectPick} onPick={onConnectPick} onAddKey={onAddKey} onFixKey={onFixKey} />
   ),
   appearance: () => <AppearanceChoice />,
   workspace: ({ workspaceName, onOpened }) => <WorkspaceChoice name={workspaceName} onOpened={onOpened} />,
