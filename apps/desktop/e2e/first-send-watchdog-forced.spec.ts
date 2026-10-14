@@ -98,7 +98,7 @@ test("强制看门狗：发出前超时 → 红卡「这次没发出去」、原
     await expect(banner).toContainText("这次没发出去", { timeout: 10_000 })
     // jojo：正文不复述标题。
     await expect(banner).not.toContainText("这次没发出去这次没发出去")
-    await expect(banner).toContainText("文字已放回输入框")
+    await expect(banner).toContainText("内容已放回输入框")
     await expect(composer).toHaveValue(a)
     await window.waitForTimeout(2_000)
     expect(userMessages(boot.userData).filter((m) => m.includes(a))).toEqual([])

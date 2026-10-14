@@ -1,7 +1,9 @@
 /**
  * 约 380px 右侧抽屉：名称、触发、cron、引擎、模型、探索/执行、提示词。
  */
-import { automationSaveReason } from "../lib/save-reason"
+import { useEffect, useState } from "react"
+import { cx } from "@/utils/cx"
+import { automationSaveReason, automationSaveReasonTone, runDisabledTitle } from "../lib/save-reason"
 import { footerHint } from "../lib/footer-hint"
 import { RiCloseLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
@@ -56,7 +58,17 @@ export function AutomationDrawer({
   onRemove: () => void
 }) {
   const t = useT()
+  // 抽屉刚打开、用户还没动过：原因用中性灰；动过之后才红（luna：一打开就红像报错）。
+  const [touched, setTouched] = useState(false)
+  const draftKey = draft?.id ?? "new"
+  useEffect(() => {
+    if (open) setTouched(false)
+  }, [open, draftKey])
   if (!draft) return null
+  const change = (patch: Partial<AutomationDraft>) => {
+    setTouched(true)
+    onChange(patch)
+  }
   const canSave = Boolean(draft.name.trim() && draft.prompt.trim())
   const cronReady = !draft.triggers.includes("cron") || Boolean(draft.cronExpr.trim())
   const webhookReady = !draft.triggers.includes("webhook") || webhookPortReady(draft.webhookPort)
@@ -69,6 +81,7 @@ export function AutomationDrawer({
   const saveReason = automationSaveReason(draft, t)
   // 编辑态把说明清空后，「立即运行」会跑旧说明，所以一起禁用（luna #151）。
   const runDisabled = !draft.id || running || !draft.name.trim() || !draft.prompt.trim()
+  const runTitle = runDisabledTitle({ saved: Boolean(draft.id), running, saveReason }, t)
   return (
     <SettingsSideDrawer
       open={open}
@@ -102,7 +115,7 @@ export function AutomationDrawer({
           <span className="text-caption-1-medium text-text-primary">{t("studio.automations.nameLabel")}</span>
           <Input
             value={draft.name}
-            onChange={(event) => onChange({ name: event.target.value })}
+            onChange={(event) => change({ name: event.target.value })}
             placeholder={t("studio.automations.namePlaceholder")}
             className="mt-1"
           />
@@ -110,13 +123,13 @@ export function AutomationDrawer({
         <AutomationProjectField />
         <TriggerPills
           value={draft.triggers}
-          onChange={(triggers) => onChange({ triggers, trigger: triggers[0] ?? draft.trigger })}
+          onChange={(triggers) => change({ triggers, trigger: triggers[0] ?? draft.trigger })}
         />
         {draft.triggers.includes("cron") ? (
           <ScheduleFields
             cronExpr={draft.cronExpr}
             timeZone={draft.timeZone}
-            onChange={onChange}
+            onChange={change}
           />
         ) : null}
         {draft.triggers.includes("on_save") ? (
@@ -124,8 +137,8 @@ export function AutomationDrawer({
             {t("studio.automations.onSaveHint")}
           </p>
         ) : null}
-        {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
-        <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
+        {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={change} /> : null}
+        <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => change({ runtimeId })} />
         <label className="mt-2 block">
           <span className="flex items-baseline gap-1.5 text-caption-1-medium text-text-secondary">
             <span>{t("studio.automations.modelLabel")}</span>
@@ -135,16 +148,16 @@ export function AutomationDrawer({
           </span>
           <Input
             value={draft.modelId}
-            onChange={(event) => onChange({ modelId: event.target.value })}
+            onChange={(event) => change({ modelId: event.target.value })}
             placeholder={t("studio.automations.modelPlaceholder")}
             className="mt-1"
           />
         </label>
-        <ModePills mode={draft.mode} onChange={(mode) => onChange({ mode })} />
+        <ModePills mode={draft.mode} onChange={(mode) => change({ mode })} />
         {draft.triggers.includes("cron") ? (
           <CatchUpToggle
             checked={draft.catchUpMissed}
-            onChange={(catchUpMissed) => onChange({ catchUpMissed })}
+            onChange={(catchUpMissed) => change({ catchUpMissed })}
           />
         ) : null}
         {draft.id ? (
@@ -154,45 +167,64 @@ export function AutomationDrawer({
           <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.promptLabel")}</span>
           <Textarea
             value={draft.prompt}
-            onChange={(event) => onChange({ prompt: event.target.value })}
+            onChange={(event) => change({ prompt: event.target.value })}
             placeholder={t("studio.automations.promptPlaceholder")}
             className="mt-1 h-20 resize-none"
           />
         </label>
       </div>
-      <footer className="flex flex-nowrap items-center justify-end gap-2 border-t border-separator-border px-4 py-3">
-        {saveReason ? (
-          <span
-            data-testid="automation-save-reason"
-            role="status"
-            title={saveReason}
-            className="mr-auto min-w-0 truncate text-caption-2-regular text-text-error-primary"
-          >
-            {saveReason}
-          </span>
-        ) : null}
-        {runNow ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            data-testid="automation-run-now"
-            disabled={runDisabled}
-            title={runDisabled && saveReason ? saveReason : undefined}
-            className="disabled:opacity-50"
-            onClick={onRun}
-          >
-            {running ? t("studio.automations.running") : t("studio.automations.runNow")}
-          </Button>
-        ) : hint && !saveReason ? (
-          <span data-testid="automation-footer-hint" title={hint} className="mr-auto min-w-0 truncate text-caption-2-regular text-text-secondary">
-            {hint}
-          </span>
-        ) : null}
+      <footer className="flex flex-nowrap items-center gap-2 border-t border-separator-border px-4 py-3">
         {draft.id ? (
-          <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
-            {t("common.delete")}
-          </Button>
+          // 删除单独放左侧、和运行 / 保存隔开，避免误点（jojo #154 P3）。
+          <div className="flex shrink-0 items-center border-r border-separator-border pr-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              data-testid="automation-delete"
+              className="text-text-error-primary"
+              onClick={onRemove}
+            >
+              {t("common.delete")}
+            </Button>
+          </div>
+        ) : null}
+        <div className="flex min-w-0 flex-1 items-center">
+          {saveReason ? (
+            <span
+              data-testid="automation-save-reason"
+              role="status"
+              title={saveReason}
+              data-tone={automationSaveReasonTone(touched)}
+              className={cx(
+                "min-w-0 truncate text-caption-2-regular",
+                automationSaveReasonTone(touched) === "error" ? "text-text-error-primary" : "text-text-secondary"
+              )}
+            >
+              {saveReason}
+            </span>
+          ) : !runNow && hint ? (
+            <span data-testid="automation-footer-hint" title={hint} className="min-w-0 truncate text-caption-2-regular text-text-secondary">
+              {hint}
+            </span>
+          ) : null}
+        </div>
+        {runNow ? (
+          // 禁用按钮收不到指针事件，tooltip 挂在外层（jojo #154 P3：未保存时写「先保存再运行」）。
+          <span data-testid="automation-run-now-wrap" title={runTitle} className="inline-flex shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="automation-run-now"
+              disabled={runDisabled}
+              aria-label={runTitle ? `${t("studio.automations.runNow")} · ${runTitle}` : undefined}
+              className="disabled:border-border-button-default disabled:bg-transparent disabled:text-text-tertiary disabled:opacity-50"
+              onClick={onRun}
+            >
+              {running ? t("studio.automations.running") : t("studio.automations.runNow")}
+            </Button>
+          </span>
         ) : null}
         <Button
           type="button"
@@ -201,8 +233,11 @@ export function AutomationDrawer({
           data-testid="automation-save"
           disabled={saveDisabled}
           title={saveReason ?? undefined}
-          className="disabled:opacity-50"
-          onClick={onSave}
+          className="shrink-0 disabled:opacity-50"
+          onClick={() => {
+            setTouched(true)
+            onSave()
+          }}
         >
           {t("studio.automations.save")}
         </Button>

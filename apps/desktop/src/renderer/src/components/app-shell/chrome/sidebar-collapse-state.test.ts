@@ -3,8 +3,11 @@ import { test } from "node:test"
 import {
   initSidebarCollapse,
   onSidebarManual,
+  onSidebarOverlayDismiss,
   onSidebarWidth,
-  sidebarCollapsed
+  sidebarCollapsed,
+  sidebarManualPersists,
+  sidebarOverlay
 } from "./sidebar-collapse-state.ts"
 
 test("宽窗启动：沿用偏好，不自动收起", () => {
@@ -54,4 +57,49 @@ test("重启：只有手动偏好跨重启，自动收起不跨（窄窗时自�
   assert.equal(sidebarCollapsed(before), true)
   const after = initSidebarCollapse(before.preferred, false)
   assert.equal(sidebarCollapsed(after), false)
+})
+
+test("窄窗展开是浮层；点外部/Esc 关浮层只收本次、不写偏好，回宽窗恢复展开（luna z151-1）", () => {
+  let s = initSidebarCollapse(false, true)
+  assert.equal(sidebarOverlay(s), false)
+  s = onSidebarManual(s, false)
+  assert.equal(sidebarOverlay(s), true)
+  s = onSidebarOverlayDismiss(s)
+  assert.equal(sidebarCollapsed(s), true)
+  assert.equal(s.preferred, false)
+  s = onSidebarWidth(s, false)
+  assert.equal(sidebarCollapsed(s), false)
+  assert.equal(sidebarOverlay(s), false)
+})
+
+test("宽窗展开不是浮层，dismiss 不动状态", () => {
+  const s = initSidebarCollapse(false, false)
+  assert.equal(sidebarOverlay(s), false)
+  assert.equal(onSidebarOverlayDismiss(s), s)
+})
+
+test("偏好收起 → 窄窗用开关打开浮层 → 关闭 → 变宽：仍收起，偏好不变（leo #154 M1）", () => {
+  let s = initSidebarCollapse(true, false)
+  s = onSidebarWidth(s, true)
+  assert.equal(sidebarManualPersists(s), false)
+  s = onSidebarManual(s, false)
+  assert.equal(sidebarOverlay(s), true)
+  assert.equal(s.preferred, true)
+  s = onSidebarManual(s, true)
+  assert.equal(sidebarCollapsed(s), true)
+  s = onSidebarWidth(s, false)
+  assert.equal(sidebarCollapsed(s), true)
+  assert.equal(s.preferred, true)
+})
+
+test("偏好收起 → 窄窗打开浮层直接变宽：回到偏好收起，不留浮层", () => {
+  let s = onSidebarWidth(initSidebarCollapse(true, false), true)
+  s = onSidebarManual(s, false)
+  s = onSidebarWidth(s, false)
+  assert.equal(sidebarCollapsed(s), true)
+  assert.equal(sidebarOverlay(s), false)
+})
+
+test("宽窗手动开关写偏好", () => {
+  assert.equal(sidebarManualPersists(initSidebarCollapse(false, false)), true)
 })

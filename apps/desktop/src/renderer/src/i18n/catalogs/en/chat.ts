@@ -319,6 +319,8 @@ export const enChat = {
   approvalReads: "Reads",
   approvalReadsDesc: "Pause before edits, commits, and shell",
   approvalEdits: "Edits",
+  permissionCycled: "Permission switched to {mode}.",
+  permissionCycleFailed: "Couldn't switch permission. Try again.",
   approvalEditsDesc: "Auto-apply file edits; pause before shell & git",
   approvalAll: "All",
   approvalAllDesc: "Auto-apply files, shell commands, and commits",

@@ -1,6 +1,7 @@
 /** Inbox: Attention archive, not seeded chrome. */
 export const enInboxPages = {
-  searchPlaceholder: "Search needs-you, review, and failed…",
+  searchPlaceholder: "Search inbox",
+  thoughtSeconds: "Thought for {n}s",
   navGroup: "Inbox",
   navAll: "All messages",
   navUnread: "Unread",

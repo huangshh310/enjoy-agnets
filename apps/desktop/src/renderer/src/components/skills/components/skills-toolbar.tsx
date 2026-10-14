@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
-import { SKILLS_UI_COPY } from "../constants/skills-ui.constants"
+import { useSkillsUiCopy } from "../constants/skills-ui.constants"
 
 export function SkillsToolbar({
   sourceCount,
@@ -57,6 +57,7 @@ export function SkillsToolbar({
   onCreateSkill: () => void
 }) {
   const t = useT()
+  const copy = useSkillsUiCopy()
   const hasIssues = driftCount > 0 || warningCount > 0
 
   return (
@@ -66,7 +67,7 @@ export function SkillsToolbar({
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2.5">
             <h1 className="text-title-3-semibold text-text-primary tracking-tight">
-              {SKILLS_UI_COPY.moduleTitle}
+              {copy.moduleTitle}
             </h1>
             <span
               className={cx(
@@ -134,7 +135,7 @@ export function SkillsToolbar({
               className="gap-1.5 h-8 px-3 text-caption-2-medium"
             >
               <RiRefreshLine className={cx("size-3.5", updating && "animate-spin")} />
-              <span>{updating ? SKILLS_UI_COPY.updating : SKILLS_UI_COPY.updateAll}</span>
+              <span>{updating ? copy.updating : copy.updateAll}</span>
             </Button>
           ) : null}
 

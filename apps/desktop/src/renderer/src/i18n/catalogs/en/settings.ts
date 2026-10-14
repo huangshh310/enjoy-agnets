@@ -20,10 +20,10 @@ export const enSettings = {
   general: {
     title: "General details",
     hubTitle: "Application defaults",
-    hubDesc: "Tool approval presets, auto-run flags, and the language used by the application chrome.",
+    hubDesc: "Tool approval presets, what runs without asking, and the language used by the application chrome.",
     permissionMode: "Permission mode",
-    autoRunFlags: "Auto-run flags",
-    autoRunValue: "{count} / 3"
+    autoRunFlags: "Runs without asking",
+    autoRunValue: "{count} of 3 on"
   },
 
   setupGuide: {
@@ -245,7 +245,7 @@ export const enSettings = {
     steer: "Send right away",
     steerDesc: "While a run is active, send the current draft at the next safe checkpoint.",
     cyclePermission: "Cycle Approval Permission Mode",
-    cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Works when the input is empty or focus is outside other inputs; Shift+Tab moves focus backward when the input has text.",
+    cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Works only when the input is focused and empty; otherwise Shift+Tab moves focus backward.",
     threadFind: "Find in this thread",
     threadFindDesc: "Open the in-thread find bar and jump to the previous or next match.",
     context: "Context",

@@ -6,7 +6,9 @@ import {
   NARROW_SIDEBAR_PX,
   initSidebarCollapse,
   onSidebarManual,
+  onSidebarOverlayDismiss,
   onSidebarWidth,
+  sidebarManualPersists,
   sidebarCollapsed,
   type SidebarCollapseState
 } from "../components/app-shell/chrome/sidebar-collapse-state.ts"
@@ -141,12 +143,20 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   setSidebarCollapsed: (collapsed) =>
     set((state) => {
       const next = onSidebarManual(state.sidebarCollapseState, collapsed)
-      writeSidebarCollapsed(next.preferred)
+      // 窄窗里开关只管本次浮层，不写偏好（leo #154 M1）。
+      if (sidebarManualPersists(state.sidebarCollapseState)) writeSidebarCollapsed(next.preferred)
       return { sidebarCollapseState: next, sidebarCollapsed: sidebarCollapsed(next) }
     }),
   setSidebarNarrow: (narrow) =>
     set((state) => {
       const next = onSidebarWidth(state.sidebarCollapseState, narrow)
+      if (next === state.sidebarCollapseState) return {}
+      return { sidebarCollapseState: next, sidebarCollapsed: sidebarCollapsed(next) }
+    }),
+  // 窄窗浮层点外部 / Esc 关掉：只收本次，不写偏好（luna z151-1）。
+  dismissSidebarOverlay: () =>
+    set((state) => {
+      const next = onSidebarOverlayDismiss(state.sidebarCollapseState)
       if (next === state.sidebarCollapseState) return {}
       return { sidebarCollapseState: next, sidebarCollapsed: sidebarCollapsed(next) }
     }),

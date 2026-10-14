@@ -13,7 +13,7 @@ test("⌘L 叫快速搜索，⌘K 叫命令面板", () => {
   assert.equal(settings.shortcuts.quickSearch, "快速搜索")
   assert.equal(settings.shortcuts.quickSearchAlt, "命令面板")
   assert.equal(settings.shortcuts.reviewDiff, "审查")
-  assert.match(settings.shortcuts.cyclePermissionDesc, /输入框为空/)
+  assert.match(settings.shortcuts.cyclePermissionDesc, /输入框获得焦点且为空/)
   assert.doesNotMatch(settings.shortcuts.cyclePermissionDesc, /Composer/)
   assert.equal(search.actionKey, "settings.shortcuts.quickSearch")
   assert.equal(palette.actionKey, "settings.shortcuts.quickSearchAlt")

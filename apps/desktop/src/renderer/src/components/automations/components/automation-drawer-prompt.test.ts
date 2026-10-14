@@ -13,8 +13,10 @@ test("说明空：保存禁用并说原因；立即运行同样禁用（不再�
 })
 
 test("禁用要看得出（浅色也是）：保存 / 立即运行带 disabled:opacity-50", () => {
-  const n = drawer.match(/className="disabled:opacity-50"/g)?.length ?? 0
+  const n = drawer.match(/className="[^"]*disabled:opacity-50"/g)?.length ?? 0
   assert.ok(n >= 2, String(n))
+  // 立即运行（outline）不可用时要灰字，不能只是半透明（jojo P2）。
+  assert.match(drawer, /data-testid="automation-run-now"[\s\S]*?disabled:text-text-tertiary/)
 })
 
 test("保存被主进程拒：出 toast，不静默", () => {
