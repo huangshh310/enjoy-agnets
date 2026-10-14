@@ -1,4 +1,5 @@
 /**
+ * leo #155 BLOCK：气泡带图不够，必须断言模型（stub）真收到了图（attached:<名>）。
  * luna 巡检（main b91d42d）：只贴图片不打字，蓝色发送键点了 / 回车都没反应、图留在输入框、无提示。
  * 只图发送：新对话（建会话窗内排队首发）回车、已有会话点按钮，都要直接发出、带图入库、输入框清空；
  * 空输入框时发送键置灰（与发送同一判定 composerCanSend）。
@@ -41,7 +42,9 @@ test("只图发送：新对话回车、已有会话点按钮，都直接发出�
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData,
       // 建会话窗拉长：回车落在排队首发路径上。
-      ENJOY_DEV_DELAY_SESSION_CREATE_MS: "1500"
+      ENJOY_DEV_DELAY_SESSION_CREATE_MS: "1500",
+      // stub 模型按能看图处理，图才会作为 file part 进模型。
+      ENJOY_E2E_STUB_VISION: "1"
     }
   })
   try {
@@ -73,7 +76,8 @@ test("只图发送：新对话回车、已有会话点按钮，都直接发出�
     await expect(stage.locator("[data-thread-message]").first()).toBeVisible({ timeout: 20_000 })
     // 用户气泡带这张图（落库后回显），且这一轮真跑完（stub 回了 stub-ok）。
     await expect(stage.locator('[data-thread-message] img[alt="only-a.png"]').first()).toBeVisible({ timeout: 20_000 })
-    await expect(stage.getByText("stub-ok")).toHaveCount(1, { timeout: 20_000 })
+    // leo MUST 3：模型（stub）真收到了这张图——stub 按收到的 file part 回 attached:<文件名>。
+    await expect(stage).toContainText("attached:only-a.png", { timeout: 20_000 })
     await expect(chip).toHaveCount(0)
     await window.screenshot({ path: join(shots, "image-only-2-new-session-sent.png") })
 
@@ -88,7 +92,7 @@ test("只图发送：新对话回车、已有会话点按钮，都直接发出�
     await send.click()
     // 用户气泡带这张图（落库后回显），且这一轮真跑完（stub 回了 stub-ok）。
     await expect(stage.locator('[data-thread-message] img[alt="only-b.png"]').first()).toBeVisible({ timeout: 20_000 })
-    await expect(stage.getByText("stub-ok")).toHaveCount(2, { timeout: 20_000 })
+    await expect(stage).toContainText("attached:only-b.png", { timeout: 20_000 })
     await expect(chip).toHaveCount(0)
     await expect(send).toBeDisabled({ timeout: 20_000 })
     await window.screenshot({ path: join(shots, "image-only-3-existing-session-sent.png") })

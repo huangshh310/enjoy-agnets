@@ -4,6 +4,13 @@
  */
 import { pruneMessages, type ModelMessage } from "ai"
 
+/**
+ * 只带附件、没打字的用户轮（#155 leo MUST 1）：正文为空会被 pruneMessages({emptyMessages:"remove"}) 整条删掉，
+ * 本轮的附件随后找不到最后一条用户句、静默丢失；历史里的只图轮也会消失、助手轮连在一起。
+ * 用固定占位把这条用户句留住；appendRunAttachments 编附件时把占位换掉（不发空 text part）。
+ */
+export const ATTACHMENT_ONLY_USER_TEXT = "[attachment]"
+
 export type HistoryMessage = {
   role: string
   content: string
@@ -20,6 +27,9 @@ export function toModelMessages(messages: HistoryMessage[]): ModelMessage[] {
           { type: "text", text: message.content }
         ]
       } as ModelMessage
+    }
+    if (message.role === "user" && !message.content.trim()) {
+      return { role: "user", content: ATTACHMENT_ONLY_USER_TEXT } as ModelMessage
     }
     return {
       role: message.role,

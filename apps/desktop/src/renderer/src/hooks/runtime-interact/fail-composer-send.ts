@@ -4,6 +4,7 @@
 import { rollbackComposerStartGate } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { useAttentionStore } from "../../stores/attention/attention-store"
 import { useChatStore } from "../../stores/chat-store"
+import { messageHasBody } from "./composer-can-send"
 import { discardCreatedSession } from "../discard-created-session"
 import { dropEmptyPendingAssistant } from "../composer-run-control"
 import {
@@ -69,8 +70,7 @@ function isEmptyFailedSession(sessionId: string | null): boolean {
   if (store.sessionId !== sessionId) return false
   return !store.messages.some(
     (message) =>
-      (message.role === "user" && message.content.trim()) ||
-      (message.role === "assistant" && message.content.trim())
+      (message.role === "user" || message.role === "assistant") && messageHasBody(message)
   )
 }
 

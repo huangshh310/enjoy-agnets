@@ -17,3 +17,9 @@ test("8 秒内相同用户句不重复落库", () => {
   )
   assert.equal(shouldSkipDuplicateUserTurn(undefined, "hi", 2000), false)
 })
+
+test("去重键带附件：正文相同、附件不同不算重复", () => {
+  assert.equal(shouldSkipDuplicateUserTurn({ content: "", createdAt: 1000, assetIds: ["a"] }, "", 2000, undefined, ["b"]), false)
+  assert.equal(shouldSkipDuplicateUserTurn({ content: "", createdAt: 1000, assetIds: ["a", "b"] }, "", 2000, undefined, ["b", "a"]), true)
+  assert.equal(shouldSkipDuplicateUserTurn({ content: "hi", createdAt: 1000 }, "hi", 2000, undefined, ["a"]), false)
+})

@@ -8,6 +8,11 @@ export type ComposerSendable = {
   hasChips?: boolean
 }
 
+/** 线程里一条消息算不算「有内容」：有字或带附件（只图轮也算，空会话判定用）。 */
+export function messageHasBody(message: { content: string; assets?: readonly unknown[] }): boolean {
+  return message.content.trim().length > 0 || (message.assets?.length ?? 0) > 0
+}
+
 export function composerCanSend({ text, assetCount = 0, hasChips = false }: ComposerSendable): boolean {
   return text.trim().length > 0 || assetCount > 0 || hasChips
 }

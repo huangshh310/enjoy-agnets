@@ -6,6 +6,7 @@ import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
 import { listComposerAssets, queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
 import { composerCanSend } from "./runtime-interact/composer-can-send"
+import { composerHasExtras } from "./composer-draft-extras"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
 import { useChatStore } from "../stores/chat-store"
@@ -30,9 +31,14 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
   if (intent === "send") return sendComposerMessage(undefined, typed)
 
   const { quotes, skills, draft } = snapshotComposerDraft()
+  // 取稿会吃掉 Chip：先记下有没有（leo soft：排队判定要算 Chip）。
+  const hasChips = composerHasExtras()
   const content = await takeComposerText(typed)
-  if (intent === "queue") {
-    if (!composerCanSend({ text: content, assetCount: listComposerAssets().length })) return
+  const assetCount = listComposerAssets().length
+  // leo soft：纠偏只能塞文字；只带图的「纠偏」改走排队，不能静默丢。
+  const effective = intent === "steer" && !content.trim() && assetCount > 0 ? "queue" : intent
+  if (effective === "queue") {
+    if (!composerCanSend({ text: content, assetCount, hasChips })) return
     if (!store.sessionId) {
       // 运行中又没有会话：不能静默，留稿出提示。
       traceSend("submit:queue-no-session")

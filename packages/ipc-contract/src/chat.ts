@@ -73,6 +73,14 @@ export const RunAgentInput = z.object({
   (value) =>
     (value.truncateAfterMessageId == null) === (value.expectedTailIds == null),
   { message: "truncateAfterMessageId and expectedTailIds must be sent together" }
+).refine(
+  // #155 leo soft：最后一条用户句正文和附件不能同时为空（只图可以，什么都没有不行）。
+  (value) => {
+    const last = value.messages.at(-1)
+    if (!last || last.role !== "user") return true
+    return last.content.trim().length > 0 || value.attachments.length > 0
+  },
+  { message: "last user message needs text or attachments" }
 )
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 
