@@ -21,6 +21,7 @@ import type { RetryTarget } from "./regenerate-retry-target"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { translateTruncateNotice } from "./truncate-notice"
 import { isBlockedStart, startWithTruncateRetry, type RetryHistoryEntry } from "./truncate-retry"
+import { composerCanSend } from "./runtime-interact/composer-can-send"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -147,14 +148,14 @@ export async function editAndResendUserTurn(
   const store = useChatStore.getState()
   if (store.running || !hasIde()) return
   if (!store.workspaceId || !store.sessionId) return
-  if (!newContent.trim()) return
-
   const messages = store.messages
   const userIndex = messages.findIndex((m) => m.id === userMessageId)
   if (userIndex === -1) return
 
   const oldUserMsg = messages[userIndex]
   if (!oldUserMsg) return
+  // 与输入框同一判定：只带图的那一轮，正文清空也能按原图重发。
+  if (!composerCanSend({ text: newContent, assetCount: oldUserMsg.assets?.length })) return
 
   const updatedUserMsg = {
     ...oldUserMsg,

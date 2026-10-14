@@ -21,6 +21,7 @@ import { CopyMessageButton } from "../copy-message-button"
 import { canRewindConversation } from "@renderer/hooks/rewind-from-here"
 import { RewindFromHereAction } from "./rewind-from-here-dialog"
 import { UserSentQuotes } from "./user-sent-quotes"
+import { composerCanSend } from "@renderer/hooks/runtime-interact/composer-can-send"
 
 export function UserTurn({ message }: { message: ThreadMessage }) {
   const t = useT()
@@ -45,8 +46,10 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
     }
   }, [isEditing])
 
+  const canResend = composerCanSend({ text: draftContent, assetCount: message.assets?.length })
+
   async function handleSaveAndResend() {
-    if (!draftContent.trim() || isSubmitting || running) return
+    if (!canResend || isSubmitting || running) return
     setIsSubmitting(true)
     try {
       await editAndResendUserTurn(message.id, replaceVisibleUserDraft(message.content, draftContent))
@@ -113,7 +116,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
 
               <Button
                 size="sm"
-                disabled={!draftContent.trim() || isSubmitting || running}
+                disabled={!canResend || isSubmitting || running}
                 onClick={() => void handleSaveAndResend()}
                 className="gap-1 h-6.5 px-2.5 text-caption-2-medium shadow-xs"
               >

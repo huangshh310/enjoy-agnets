@@ -11,6 +11,7 @@ import {
   takeComposerAssetDetails,
   type QueuedComposerAsset
 } from "./composer-assets"
+import { composerCanSend } from "./runtime-interact/composer-can-send"
 import {
   isNewSessionCreatePending,
   shouldQueueComposerSend,
@@ -161,7 +162,8 @@ export async function waitThenSendAfterCreate(
   }
 ): Promise<void> {
   const trimmed = text.trim()
-  if (!trimmed) return
+  // 只贴图不打字也排队首发：正文空但有附件照样走。
+  if (!composerCanSend({ text: trimmed, assetCount: assets?.length ?? listComposerAssets().length })) return
   setComposerWritebackHeld(true)
   const captured = assets ?? takeComposerAssetDetails()
   const seq = replaceQueuedSend(trimmed, captured)

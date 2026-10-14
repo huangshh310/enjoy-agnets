@@ -4,7 +4,8 @@
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
-import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import { listComposerAssets, queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import { composerCanSend } from "./runtime-interact/composer-can-send"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
 import { useChatStore } from "../stores/chat-store"
@@ -30,8 +31,8 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
 
   const { quotes, skills, draft } = snapshotComposerDraft()
   const content = await takeComposerText(typed)
-  if (!content) return
   if (intent === "queue") {
+    if (!composerCanSend({ text: content, assetCount: listComposerAssets().length })) return
     if (!store.sessionId) {
       // 运行中又没有会话：不能静默，留稿出提示。
       traceSend("submit:queue-no-session")
@@ -50,6 +51,7 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
     setRuntimeHint("queued", store.sessionId)
     return
   }
+  if (!content) return
   await steerPreparedText(content)
 }
 

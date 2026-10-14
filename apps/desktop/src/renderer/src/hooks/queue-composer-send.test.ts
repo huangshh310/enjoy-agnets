@@ -232,3 +232,31 @@ test("未 take 的附件也能入队", async () => {
   assert.deepEqual(sent, ["ast_late"])
   assert.deepEqual(listComposerAssets(), [])
 })
+
+test("luna 只图发送：正文空、只带图片也排队首发，create 回来连图一起发", async () => {
+  resetQueue()
+  const { token } = beginNewSessionCreate()
+  const sent: Array<{ content: string; assetIds: string[] }> = []
+  const pending = waitThenSendAfterCreate(
+    "",
+    async (prepared) => {
+      sent.push({ content: prepared.content, assetIds: prepared.assets?.map((item) => item.id) ?? [] })
+    },
+    [{ id: "ast_png", name: "shot.png", mediaType: "image/png" }],
+    { readSessionId: () => "ses_img" }
+  )
+  finishNewSessionCreate(token, "ses_img")
+  await pending
+  assert.deepEqual(sent, [{ content: "", assetIds: ["ast_png"] }])
+})
+
+test("正文空又没附件：仍不入队", async () => {
+  resetQueue()
+  beginNewSessionCreate()
+  let called = false
+  await waitThenSendAfterCreate("  ", async () => {
+    called = true
+  }, [])
+  assert.equal(called, false)
+  assert.equal(hasQueuedComposerSend(), false)
+})

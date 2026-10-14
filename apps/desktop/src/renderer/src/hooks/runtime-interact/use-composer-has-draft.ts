@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from "react"
 import { subscribeComposerAssets } from "../composer-assets"
 import { composerHasExtras } from "../composer-draft-extras"
+import { composerCanSend } from "./composer-can-send"
 import { subscribeQuotedContexts } from "../quoted-context"
 import { subscribeSessionContextChips } from "../session-context-chips"
 import { subscribeComposerSkillChips } from "../../components/ai-chat/composer/mentions/composer-skill-chips.ts"
@@ -17,7 +18,7 @@ export function useComposerHasDraft(composer: string): boolean {
     extrasSnapshot,
     extrasSnapshot
   )
-  return Boolean(composer.trim()) || composerHasExtras()
+  return composerCanSend({ text: composer, hasChips: composerHasExtras() })
 }
 
 function extrasSnapshot() {

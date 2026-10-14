@@ -8,7 +8,8 @@ import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
-import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { listComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
   commitComposerStartGate,
@@ -100,7 +101,7 @@ export async function sendComposerMessage(
       // 原文（+附件）还回输入框并出提示，用户看得见、可以再发。
       traceSend("send:running-restore")
       const text = prepared ? prepared.content : typed
-      if (text.trim() || prepared?.assets?.length) {
+      if (composerCanSend({ text, assetCount: prepared?.assets?.length })) {
         restoreComposerDraft(text, prepared?.assets)
         const busy = useChatStore.getState()
         // leo soft：上一条还在「正在准备…」→ 说清是在等上一条，不是发送失败。
@@ -135,14 +136,16 @@ export async function sendComposerMessage(
   // 留在输入框并提示「上一条还在准备」；不挂看门狗。
   if (!prepared && composerNeedsSessionReady() && hasQueuedComposerSend()) {
     traceSend("send:queued-busy")
-    if (typed.trim()) {
+    if (composerCanSend({ text: typed, assetCount: listComposerAssets().length })) {
       if (useChatStore.getState().composer !== typed) useChatStore.getState().setComposer(typed)
       useChatStore.getState().setError(PREVIOUS_STILL_PREPARING)
     }
     return
   }
   // leo soft：running 直接丢弃的那一发不挂看门狗（否则 3s 后误报「发送失败」）。
-  const attempt = queuedAttempt ?? (!prepared && typed.trim() ? armComposerWatchdog(typed) : undefined)
+  const attempt = queuedAttempt ?? (!prepared && composerCanSend({ text: typed, assetCount: listComposerAssets().length })
+    ? armComposerWatchdog(typed)
+    : undefined)
   if (!prepared && store.composer !== typed) store.setComposer(typed)
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
@@ -150,7 +153,7 @@ export async function sendComposerMessage(
   }
   if (composerNeedsSessionReady() && !prepared) {
     const text = typed
-    if (!text.trim()) {
+    if (!composerCanSend({ text, assetCount: listComposerAssets().length })) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return
     }
