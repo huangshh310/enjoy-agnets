@@ -94,3 +94,9 @@ test("气泡拆出文件 Chip，正文不含协议头", () => {
   assert.equal(view.text, "你能看到我发的文件吗")
   assert.equal(replaceQuotedDraft(prompt, "换成这个"), prompt.replace("你能看到我发的文件吗", "换成这个"))
 })
+
+test("jojo #155：SteerAgentInput 可带图，只图也行；无字无图仍拒", () => {
+  const parsed = SteerAgentInput.parse({ sessionId: "s", text: "", attachments: ["ast_1"] })
+  assert.deepEqual(parsed.attachments, ["ast_1"])
+  assert.throws(() => SteerAgentInput.parse({ sessionId: "s", text: "", attachments: [] }))
+})

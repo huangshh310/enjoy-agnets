@@ -93,6 +93,18 @@ export function takeComposerAssetDetails(): QueuedComposerAsset[] {
   return details
 }
 
+/**
+ * jojo #155 P1/P2：图跟排队项走——从输入框取走，同时清掉这个会话库里的草稿附件，
+ * 否则 × 掉 / 马上发 / 切走再切回，图会从 session_draft_assets 冒回来。
+ */
+export function takeComposerAssetsForQueue(): QueuedComposerAsset[] {
+  const details = [...pending]
+  pending = []
+  notify()
+  if (details.length > 0) persistUserEdit?.([])
+  return details
+}
+
 export function listComposerAssets(): QueuedComposerAsset[] {
   return [...pending]
 }

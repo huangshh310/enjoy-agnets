@@ -14,7 +14,8 @@ export async function sendFollowupNow(item: FollowupItem) {
   const taken = elevateToSteer(item.id)
   if (!taken) return
   if (useChatStore.getState().running) {
-    await steerPreparedText(taken.prompt)
+    // jojo #155 P1：图跟着这条进当前 run，不留在输入框 / 草稿里。
+    await steerPreparedText(taken.prompt, { assets: taken.assets, fromQueue: true })
     return
   }
   await sendComposerMessage({ content: taken.prompt, assets: taken.assets })

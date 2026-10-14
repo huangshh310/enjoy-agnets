@@ -4,7 +4,7 @@
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
-import { listComposerAssets, queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import { listComposerAssets, queueComposerAsset, takeComposerAssetsForQueue } from "./composer-assets"
 import { composerCanSend } from "./runtime-interact/composer-can-send"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
@@ -51,7 +51,7 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
       draft,
       quotedContexts: quotes,
       skillChips: skills,
-      assets: takeComposerAssetDetails()
+      assets: takeComposerAssetsForQueue()
     })
     clearComposerDraft()
     setRuntimeHint("queued", store.sessionId)

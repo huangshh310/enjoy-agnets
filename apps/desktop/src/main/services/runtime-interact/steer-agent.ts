@@ -7,6 +7,8 @@ import { persistUserTurn } from "../persist-user-attachments"
 import { createId } from "../ids"
 import { getActiveRun, listActiveRuns } from "../agent-run-state"
 import { enqueueSteer } from "./steering-queue"
+import { appendRunAttachments, attachmentCapsFor } from "../attach-run-files"
+import { encodeSteerTurn } from "./steer-attachments"
 
 export function getActiveRunBySession(sessionId: string) {
   return listActiveRuns().find((item) => item.run.input.sessionId === sessionId)
@@ -21,8 +23,12 @@ export async function steerAgent(_window: BrowserWindow, rawInput: unknown) {
       })()
     : getActiveRunBySession(input.sessionId)
   if (!found) throw new Error("STEER_NO_ACTIVE_RUN")
-  persistUserTurn(input.sessionId, input.text, [])
-  enqueueSteer(input.sessionId, { id: createId("steer"), text: input.text })
+  const caps = attachmentCapsFor(found.run.input.modelId, found.run.secret?.provider)
+  const { content, attached } = await encodeSteerTurn(input.text, input.attachments, (messages, ids) =>
+    appendRunAttachments(messages, ids, caps)
+  )
+  persistUserTurn(input.sessionId, input.text, attached)
+  enqueueSteer(input.sessionId, { id: createId("steer"), text: input.text, ...(content ? { content } : {}) })
   return {
     ok: true as const,
     runId: found.runId,

@@ -37,11 +37,19 @@ export function quotedBody(quote: QuotedContext): string {
   return (quote.content ?? quote.snippet ?? "").trim()
 }
 
-export const SteerAgentInput = z.object({
-  sessionId: z.string(),
-  runId: z.string().optional(),
-  text: z.string().min(1)
-})
+export const STEER_ATTACHMENTS_MAX = 16
+
+/** jojo #155：排队项「马上发给它」带图——图随纠偏句一起进当前 run（只图也行）。 */
+export const SteerAgentInput = z
+  .object({
+    sessionId: z.string(),
+    runId: z.string().optional(),
+    text: z.string(),
+    attachments: z.array(z.string().min(1)).max(STEER_ATTACHMENTS_MAX).optional()
+  })
+  .refine((input) => input.text.length > 0 || (input.attachments?.length ?? 0) > 0, {
+    message: "STEER_EMPTY"
+  })
 export type SteerAgentInput = z.infer<typeof SteerAgentInput>
 
 /** 引用块：> [引用自文件|终端|步骤: title] + 逐行引用。协议头给模型看，不跟界面语言走。 */
