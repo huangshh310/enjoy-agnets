@@ -300,7 +300,7 @@ export function InboxReader(props: {
                 </span>
               ) : null}
               {thoughtSeconds ? (
-                <span>思考耗时 {thoughtSeconds} 秒</span>
+                <span>{t("pages.inbox.thoughtSeconds", { n: thoughtSeconds })}</span>
               ) : null}
             </div>
           ) : null}

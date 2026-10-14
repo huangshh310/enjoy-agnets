@@ -3,8 +3,10 @@ import { test } from "node:test"
 import {
   initSidebarCollapse,
   onSidebarManual,
+  onSidebarOverlayDismiss,
   onSidebarWidth,
-  sidebarCollapsed
+  sidebarCollapsed,
+  sidebarOverlay
 } from "./sidebar-collapse-state.ts"
 
 test("宽窗启动：沿用偏好，不自动收起", () => {
@@ -54,4 +56,23 @@ test("重启：只有手动偏好跨重启，自动收起不跨（窄窗时自�
   assert.equal(sidebarCollapsed(before), true)
   const after = initSidebarCollapse(before.preferred, false)
   assert.equal(sidebarCollapsed(after), false)
+})
+
+test("窄窗展开是浮层；点外部/Esc 关浮层只收本次、不写偏好，回宽窗恢复展开（luna z151-1）", () => {
+  let s = initSidebarCollapse(false, true)
+  assert.equal(sidebarOverlay(s), false)
+  s = onSidebarManual(s, false)
+  assert.equal(sidebarOverlay(s), true)
+  s = onSidebarOverlayDismiss(s)
+  assert.equal(sidebarCollapsed(s), true)
+  assert.equal(s.preferred, false)
+  s = onSidebarWidth(s, false)
+  assert.equal(sidebarCollapsed(s), false)
+  assert.equal(sidebarOverlay(s), false)
+})
+
+test("宽窗展开不是浮层，dismiss 不动状态", () => {
+  const s = initSidebarCollapse(false, false)
+  assert.equal(sidebarOverlay(s), false)
+  assert.equal(onSidebarOverlayDismiss(s), s)
 })

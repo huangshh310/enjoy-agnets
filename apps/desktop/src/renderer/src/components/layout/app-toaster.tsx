@@ -9,7 +9,9 @@ import { toastContentOffsetLeft } from "../../lib/toast-content-offset"
 
 export function AppToaster() {
   const collapsed = useChatStore((state) => state.sidebarCollapsed)
-  const navWidth = collapsed ? NAV_CARD_COLLAPSED_PX : NAV_CARD_EXPANDED_PX
+  // 窄窗浮层不挤主区，内容区左缘仍是收起宽度（luna z151-1）。
+  const narrow = useChatStore((state) => state.sidebarCollapseState.narrow)
+  const navWidth = collapsed || narrow ? NAV_CARD_COLLAPSED_PX : NAV_CARD_EXPANDED_PX
   const offsetBottom = useToastBottomOffset()
   return (
     <Toaster

@@ -20,10 +20,10 @@ export const enSettings = {
   general: {
     title: "General details",
     hubTitle: "Application defaults",
-    hubDesc: "Tool approval presets, auto-run flags, and the language used by the application chrome.",
+    hubDesc: "Tool approval presets, what runs without asking, and the language used by the application chrome.",
     permissionMode: "Permission mode",
-    autoRunFlags: "Auto-run flags",
-    autoRunValue: "{count} / 3"
+    autoRunFlags: "Runs without asking",
+    autoRunValue: "{count} of 3 on"
   },
 
   setupGuide: {

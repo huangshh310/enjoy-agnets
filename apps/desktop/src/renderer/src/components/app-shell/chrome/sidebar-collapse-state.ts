@@ -37,3 +37,17 @@ export function onSidebarWidth(state: SidebarCollapseState, narrow: boolean): Si
 export function onSidebarManual(state: SidebarCollapseState, collapsed: boolean): SidebarCollapseState {
   return { ...state, preferred: collapsed, auto: false }
 }
+
+/** 窄窗里侧栏是浮层（不挤主区）：展开且窄窗时才算浮层（luna z151-1）。 */
+export function sidebarOverlay(state: SidebarCollapseState): boolean {
+  return state.narrow && !sidebarCollapsed(state)
+}
+
+/**
+ * 窄窗浮层被点外部 / Esc / 选中会话关掉：只是本次收起，不改偏好（luna z151-1）。
+ * 回到宽窗时 onSidebarWidth 清掉 auto，回到偏好。
+ */
+export function onSidebarOverlayDismiss(state: SidebarCollapseState): SidebarCollapseState {
+  if (!sidebarOverlay(state)) return state
+  return { ...state, auto: true }
+}

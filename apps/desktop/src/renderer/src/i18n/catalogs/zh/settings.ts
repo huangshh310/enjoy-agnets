@@ -23,7 +23,7 @@ export const zhSettings = {
     hubDesc: "工具审批预设、自动放行开关，以及应用界面使用的语言。",
     permissionMode: "权限模式",
     autoRunFlags: "自动放行",
-    autoRunValue: "{count} / 3"
+    autoRunValue: "已开 {count} 项（共 3 项）"
   },
 
   setupGuide: {

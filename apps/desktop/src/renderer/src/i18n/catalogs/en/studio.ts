@@ -224,6 +224,7 @@ export const enStudio = {
     toggleFailed: "Couldn't change the switch: {message}",
     promptRequired: "Fill in the prompt to save",
     namePromptRequired: "Fill in the name and prompt to save",
+    nameRequired: "Fill in the name to save",
     editTitle: "Edit automation",
     createTitle: "New automation",
     workspaceHint: "Runs in the current project",

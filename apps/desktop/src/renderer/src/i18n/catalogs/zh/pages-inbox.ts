@@ -1,6 +1,7 @@
 /** 收件箱：Attention 档案，不是假种子。 */
 export const zhInboxPages = {
-  searchPlaceholder: "搜索等你决定、待验收与失败的…",
+  searchPlaceholder: "搜索收件箱",
+  thoughtSeconds: "思考耗时 {n} 秒",
   navGroup: "收件箱",
   navAll: "全部消息",
   navUnread: "未读",

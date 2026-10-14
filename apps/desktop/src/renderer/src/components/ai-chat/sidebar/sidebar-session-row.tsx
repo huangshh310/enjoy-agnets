@@ -41,7 +41,7 @@ export function SidebarSessionRow({
       data-session-name={name}
       data-session-surface={surface}
       className={cx(
-        "group/session flex h-7 w-full min-w-0 items-center gap-1 rounded-md",
+        "group/session relative flex h-7 w-full min-w-0 items-center rounded-md",
         active
           ? "bg-background-secondary-hover text-text-primary"
           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",
@@ -52,7 +52,11 @@ export function SidebarSessionRow({
         type="button"
         onClick={onSelect}
         title={label}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left"
+        className={cx(
+          "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left",
+          // 菜单钮叠在时间位置上，不占位；悬停/聚焦时右侧让出菜单钮的宽度（luna z151-2）。
+          "group-hover/session:pr-7 group-focus-within/session:pr-7 group-has-[[data-state=open]]/session:pr-7"
+        )}
       >
         <SessionAgentMark sessionId={sessionId} />
         {flagged ? (
@@ -89,7 +93,7 @@ export function SidebarSessionRow({
         flagged={flagged}
         workflowStatus={workflowStatus}
         onArchive={onArchive}
-        className="mr-1"
+        className="absolute right-1 top-1/2 -translate-y-1/2"
       />
     </div>
   )
@@ -125,7 +129,7 @@ function SessionRowMeta({
   formatTime: (timestamp: number) => string
   hideOnHover: boolean
 }) {
-  const hide = hideOnHover ? "group-hover/session:hidden" : undefined
+  const hide = hideOnHover ? "group-hover/session:hidden group-focus-within/session:hidden group-has-[[data-state=open]]/session:hidden" : undefined
   if (waitingReview) {
     return (
       // 等你验收 / 拍板：中性强调色；红点只留给失败（luna #151）。
@@ -152,7 +156,7 @@ function SessionRowMeta({
     <span
       className={cx(
         SESSION_TIME_COL_CLASS,
-        "shrink-0 overflow-visible text-right text-caption-2-regular text-text-secondary tabular-nums",
+        "shrink-0 text-right text-caption-2-regular text-text-secondary tabular-nums",
         hide
       )}
     >
