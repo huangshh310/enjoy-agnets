@@ -11,8 +11,7 @@ import { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-
 import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./default-chat-route"
 import { e2eChatReadiness } from "./e2e-chat-readiness"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
-import { isE2eStub } from "./e2e-stub"
-import { hasSecret, listPublicProviders } from "./secrets"
+import { activateProfile, hasSecret, listPublicProviders } from "./secrets"
 
 export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
 
@@ -21,6 +20,7 @@ const PUSH_DEBOUNCE_MS = 120
 let cached: ChatReadiness | undefined
 let lastLoggedIn = new Set<string>()
 let pushTimer: ReturnType<typeof setTimeout> | undefined
+let restamping = false
 
 export function peekCachedChatReadiness(): ChatReadiness | undefined {
   return cached
@@ -45,12 +45,12 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
   const enjoySecret = await hasSecret().catch(() => undefined)
   const fixture = e2eChatReadiness(process.env, packaged)
   if (fixture) {
-    return rememberSnapshot(withSecretAndAdopt(fixture, enjoySecret))
+    return rememberSnapshot(await withSecretAndAdopt(fixture, enjoySecret))
   }
   const [tools, providers, live] = await Promise.all([
     listAgentTools(),
     listPublicProviders(),
-    isE2eStub() ? Promise.resolve(["ollama"] as Array<"ollama" | "lmstudio">) : pingLocalModelServices()
+    pingLocalModelServices()
   ])
   const listed = tools.map((tool) => ({
     id: tool.id,
@@ -66,13 +66,24 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
     loggedInToolIds(listed),
     { ...defaultChatRouteAssembleInput(), hasEnjoySecret: enjoySecret }
   )
-  return rememberSnapshot(withSecretAndAdopt(snapshot, enjoySecret))
+  return rememberSnapshot(await withSecretAndAdopt(snapshot, enjoySecret))
 }
 
-function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): ChatReadiness {
+async function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): Promise<ChatReadiness> {
   const withSecret =
     enjoySecret === undefined ? snapshot : { ...snapshot, hasEnjoySecret: enjoySecret }
   const adopted = persistAdoptedDefaultRoute(withSecret)
+  if (adopted.restamp && !restamping) {
+    restamping = true
+    try {
+      return await computeChatReadiness()
+    } finally {
+      restamping = false
+    }
+  }
+  if (adopted.adopted && adopted.profileId) {
+    await activateProfile(adopted.profileId).catch(() => undefined)
+  }
   return adopted.hint ? { ...withSecret, adoptedHint: adopted.hint } : withSecret
 }
 
@@ -85,6 +96,17 @@ export function emitChatReadiness(snapshot: ChatReadiness): void {
   for (const window of BrowserWindow.getAllWindows()) {
     if (window.isDestroyed()) continue
     window.webContents.send("chat.readiness", snapshot)
+  }
+}
+
+/** 立刻重算并推快照。recheck 等需要等新状态的入口用这个。 */
+export async function pushChatReadinessNow(): Promise<ChatReadiness | undefined> {
+  try {
+    const snapshot = await computeChatReadiness()
+    emitChatReadiness(snapshot)
+    return snapshot
+  } catch {
+    return undefined
   }
 }
 

@@ -68,6 +68,22 @@ export async function skipGuideIfOpen(window: Page): Promise<void> {
   if ((await skip.count()) > 0) await skip.click()
 }
 
+/** 向导「添加 API 密钥」→ DeepSeek 简易表单。不要 hideGuide，以免首启闸把向导再打开。 */
+export async function openAddKeyForm(window: Page): Promise<void> {
+  await window.getByTestId("connect-model-api_key").click()
+  await window.waitForFunction(() => location.hash.includes("settings/providers"), undefined, {
+    timeout: 8_000
+  })
+  await window.evaluate(() => {
+    window.__enjoyE2e?.hideCreateProject()
+  })
+  await expect(window.getByTestId("provider-pick-panel")).toBeVisible()
+  await window.evaluate(() => {
+    document.querySelector<HTMLButtonElement>('[data-testid="provider-pick-deepseek"]')?.click()
+  })
+  await expect(window.getByTestId("provider-simple-fields")).toBeVisible({ timeout: 8_000 })
+}
+
 export async function hideOverlays(window: Page): Promise<void> {
   await window.evaluate(() => {
     window.__enjoyE2e?.hideGuide()

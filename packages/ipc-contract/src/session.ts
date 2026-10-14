@@ -66,6 +66,14 @@ export const SessionDeleteInput = z
   .strict()
 export type SessionDeleteInput = z.infer<typeof SessionDeleteInput>
 
+/** 渲染层上报当前聚焦会话。null = 没有前台会话。 */
+export const SessionSetFocusedInput = z
+  .object({
+    sessionId: z.string().min(1).nullable()
+  })
+  .strict()
+export type SessionSetFocusedInput = z.infer<typeof SessionSetFocusedInput>
+
 /** 归档前结清未决审批为 cancelled；deniedApprovals 是结清条数，缺省=旧客户端。 */
 export const SessionArchiveResult = z.object({
   id: z.string(),

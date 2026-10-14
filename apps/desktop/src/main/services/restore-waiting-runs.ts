@@ -144,7 +144,7 @@ async function restoreOneWaiting(input: {
     { sessionId: row.sessionId, runtimeId: extras.runtimeId ?? parsed.runtimeId },
     prefs
   )
-  const secret = await resolveRestoreSecret(runtimeId, prefs)
+  const resolved = await resolveRestoreSecret(runtimeId, prefs)
   const messages = Array.isArray(extras.modelMessages)
     ? (extras.modelMessages as ModelMessage[])
     : toModelMessages(parsed.messages)
@@ -153,7 +153,9 @@ async function restoreOneWaiting(input: {
     window,
     input: parsed,
     workspaceRoot: workspace.rootPath,
-    secret,
+    secret: resolved?.secret,
+    profileId: resolved?.profileId,
+    credentialFingerprint: resolved?.fingerprint,
     messages,
     ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt, runId: row.id })
   })

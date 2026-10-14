@@ -6,7 +6,9 @@ import type { TurnOutcome } from "@enjoy-agents/ipc-contract"
 import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import type { ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
+import { persistSessionReview, reviewTurnWrote } from "./session-review-persist.ts"
 import { shouldWriteSessionWorkflow, stickyTurnOutcome } from "./session-workflow-sticky"
+import { reviewFilesFromTools } from "./turn-changed-files.ts"
 
 export { shouldWriteSessionWorkflow, stickyTurnOutcome }
 
@@ -14,14 +16,37 @@ export function turnOutcomeForRun(
   run: Pick<ActiveRun, "tools" | "input">,
   ended: "end" | "error" | "abort" | "archive"
 ): TurnOutcome {
-  return stickyTurnOutcome(
+  const base = stickyTurnOutcome(
     decideTurnOutcome({ ended, tools: run.tools }),
     readSessionWorkflow(run.input.sessionId)
   )
+  if (base.workflow !== "needs_review") return base
+  const changedFiles = reviewFilesFromTools(run.tools)
+  // completedAt 与 persistSessionReview 落库的值对齐：本轮真写过文件才刷新，否则就是库里现有的那个（persistSessionReview 此时不写）。
+  const completedAt = reviewTurnWrote(changedFiles)
+    ? new Date().toISOString()
+    : readCarriedReviewCompletedAt(run.input.sessionId)
+  return {
+    ...base,
+    ...(changedFiles ? { changedFiles } : {}),
+    ...(completedAt ? { completedAt } : {})
+  }
 }
 
-/** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。 */
+function readCarriedReviewCompletedAt(sessionId: string): string | undefined {
+  try {
+    const row = getDatabase()
+      .prepare("SELECT review_completed_at as completedAt FROM sessions WHERE id = ?")
+      .get(sessionId) as { completedAt?: string | null } | undefined
+    return row?.completedAt ?? undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。先写改动文件，再改工单态。 */
 export function persistTurnWorkflow(sessionId: string | undefined, turn: TurnOutcome): void {
+  persistSessionReview(sessionId, turn)
   persistSessionWorkflow(sessionId, turn.workflow)
 }
 

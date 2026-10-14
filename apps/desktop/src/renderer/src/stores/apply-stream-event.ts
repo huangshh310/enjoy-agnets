@@ -13,6 +13,7 @@ import {
 import { isPlaceholderMessage } from "../hooks/session-truncate-intent"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
+import { ChatSendErrorCode } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
   isUserAbortEvent,
   RESTART_ABANDONED_CODE,
@@ -29,6 +30,7 @@ import {
   isForeignRunId,
   shouldFinalizeComposerRun
 } from "./stream-run-scope"
+import { dropPreOutputOptimisticTurn, lastUserText } from "./drop-pre-output-turn"
 
 export type StreamPatch = {
   messages: ThreadMessage[]
@@ -38,6 +40,7 @@ export type StreamPatch = {
   runId?: string | null
   error?: string | null
   notice?: string | null
+  composer?: string
   /** 消息还没回灌：先挂住，applySessionHydrate 后再折。 */
   heldResolved?: StreamEvent & { type: "approval.resolved" }
 }
@@ -125,12 +128,34 @@ function applyTerminalEvent(
         notice: restoreFamilyCodeOf(event) ?? RESTORE_NO_MATCHING
       }
     }
+    const code = chatSendErrorCodeOf(event)
+    const lastUser = lastUserText(messages)
+    if (event.preOutput === true && event.keptUserMessage === true) {
+      return {
+        messages: dropPreOutputOptimisticTurn(messages, { keepUser: true }),
+        pendingApproval: null,
+        running: false,
+        runId: null,
+        error: code ?? event.message
+      }
+    }
+    if (event.preOutput === true) {
+      return {
+        messages: dropPreOutputOptimisticTurn(messages),
+        pendingApproval: null,
+        running: false,
+        runId: null,
+        error: code ?? event.message,
+        ...(lastUser ? { composer: lastUser } : {})
+      }
+    }
     return {
       messages: finalizeRun(messages),
       pendingApproval: null,
       running: false,
       runId: null,
-      error: event.message
+      error: code ?? event.message,
+      ...(code && lastUser ? { composer: lastUser } : {})
     }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
@@ -336,6 +361,13 @@ function attachAssistant(
   }
   messages.push(created)
   return created
+}
+
+function chatSendErrorCodeOf(event: { code?: string; message: string }): string | null {
+  const fromCode = ChatSendErrorCode.safeParse(event.code)
+  if (fromCode.success) return fromCode.data
+  const fromMessage = ChatSendErrorCode.safeParse(event.message)
+  return fromMessage.success ? fromMessage.data : null
 }
 
 function finalizeRun(messages: ThreadMessage[], opts?: { aborted?: boolean; code?: string }): ThreadMessage[] {

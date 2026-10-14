@@ -105,7 +105,8 @@ const ide = {
     heartbeatGet: (input: unknown) => ipcRenderer.invoke("session.heartbeat.get", input),
     heartbeatPut: (input: unknown) => ipcRenderer.invoke("session.heartbeat.put", input),
     heartbeatClear: (input: unknown) => ipcRenderer.invoke("session.heartbeat.clear", input),
-    estimatedCost: (input: unknown) => ipcRenderer.invoke("session.estimatedCost", input)
+    estimatedCost: (input: unknown) => ipcRenderer.invoke("session.estimatedCost", input),
+    setFocused: (input: unknown) => ipcRenderer.invoke("session.setFocused", input)
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),
@@ -182,7 +183,8 @@ const ide = {
     pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input),
     detectProvider: (input: unknown) => ipcRenderer.invoke("settings.detectProvider", input),
     duplicateProvider: (input: unknown) => ipcRenderer.invoke("settings.duplicateProvider", input),
-    setProviderEnabled: (input: unknown) => ipcRenderer.invoke("settings.setProviderEnabled", input)
+    setProviderEnabled: (input: unknown) => ipcRenderer.invoke("settings.setProviderEnabled", input),
+    recheckProvider: (input: unknown) => ipcRenderer.invoke("settings.recheckProvider", input)
   },
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),

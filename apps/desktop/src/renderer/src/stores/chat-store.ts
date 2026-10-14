@@ -202,7 +202,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
       ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
       ...(patch.error !== undefined ? { error: patch.error } : {}),
-      ...(patch.notice !== undefined ? { notice: patch.notice } : {})
+      ...(patch.notice !== undefined ? { notice: patch.notice } : {}),
+      ...(patch.composer !== undefined ? { composer: patch.composer } : {})
     })
   },
   appendUserMessage: (content, assets) => {

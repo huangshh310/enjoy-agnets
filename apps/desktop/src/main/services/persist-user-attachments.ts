@@ -5,7 +5,7 @@ import { getAsset } from "@enjoy-agents/db"
 import { resolveMediaType } from "@enjoy-agents/assets"
 import type { UIMessagePart } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
-import { persistMessage } from "./persist-session"
+import { persistMessageOutcome, type PersistedMessage } from "./persist-session"
 import { userTurnParts, type UserFileAsset } from "./user-attachment-parts"
 import { shouldSkipDuplicateUserTurn } from "./persist-user-turn-dedupe"
 import { clearDraftAssetsInTx, clearSentDraftInTx } from "./session-drafts"
@@ -16,16 +16,27 @@ export function persistUserTurn(
   attached: UserFileAsset[],
   messageId?: string,
   opts?: { inTransaction?: boolean; draftText?: string }
-) {
+): string | undefined {
+  return persistUserTurnOutcome(sessionId, content, attached, messageId, opts)?.id
+}
+
+/** inserted=false：同 id 已在本会话，只 UPDATE（重新生成 / 编辑重发）；首字前回滚只删 inserted=true 的行。 */
+export function persistUserTurnOutcome(
+  sessionId: string,
+  content: string,
+  attached: UserFileAsset[],
+  messageId?: string,
+  opts?: { inTransaction?: boolean; draftText?: string }
+): PersistedMessage | undefined {
   const last = lastUserTurn(sessionId)
   if (shouldSkipDuplicateUserTurn(last, content, Date.now())) {
     // 去重跳过也算这句已在库：照样清掉已发出的稿（正文 + 附件，同一事务）。
     clearSentDraftOnDedupe(sessionId, content, attached.map((a) => a.assetId), opts)
-    return
+    return undefined
   }
   const parts = userTurnParts(content, attached) as UIMessagePart[]
   // 草稿附件由 persistMessage 在同一事务里清（只清本会话）。
-  persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId, opts)
+  return persistMessageOutcome(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId, opts)
 }
 
 function clearSentDraftOnDedupe(

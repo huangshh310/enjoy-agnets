@@ -10,12 +10,15 @@ import {
   signedInEngineRoutes,
   type AvailableEngineTool,
   type ChatReadiness,
+  type CredentialCheck,
   type PublicKeyProvider
 } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { pickActiveProfile } from "./active-profile-pick"
 
 export type AssembleChatReadinessRoute = {
   preferredRuntimeId?: string
   explicit?: boolean
+  adopted?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
 }
@@ -48,22 +51,28 @@ export function assembleChatReadiness(
     engineCount: countAvailableEngines(tools),
     preferredRuntimeId: route.preferredRuntimeId,
     explicit: route.explicit,
+    adopted: route.adopted,
     modelId: route.modelId,
     hasEnjoySecret,
-    activeKeyProfileId
+    activeKeyProfileId,
+    credentialCheck: active?.credentialCheck,
+    keyChecks: keyChecksOf(providers)
   })
+}
+
+function keyChecksOf(providers: readonly PublicKeyProvider[]): Record<string, CredentialCheck> {
+  const out: Record<string, CredentialCheck> = {}
+  for (const row of providers) {
+    if (row.enabled === false || !row.credentialCheck) continue
+    out[row.id] = row.credentialCheck
+  }
+  return out
 }
 
 function activePublicProvider(
   providers: readonly PublicKeyProvider[]
 ): PublicKeyProvider | undefined {
-  const enabled = providers.filter((row) => row.enabled !== false)
-  const marked = enabled.find((row) => row.active)
-  if (marked) return marked
-  if (enabled.some((row) => row.active === false)) {
-    return enabled.find((row) => row.active !== false)
-  }
-  return enabled[0]
+  return pickActiveProfile(providers, (row) => row.active === true)
 }
 
 export const LOCAL_MODEL_PING_MS = 400

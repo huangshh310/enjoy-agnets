@@ -29,6 +29,7 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_CU_READY: "1",
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,
