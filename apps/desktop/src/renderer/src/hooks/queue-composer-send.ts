@@ -48,6 +48,8 @@ let queueSeq = 0
 let queuedSend: QueuedSend | null = null
 /** 最近一次被「新对话」取消掉的排队序号：只有它要还稿出提示，被它顶替过的旧序号已并进它。 */
 let cancelledSeq: number | null = null
+/** 当前排队首发（A）的整条等待；B 排在它后面。 */
+let pendingFirstSend: Promise<void> | null = null
 
 export function composerNeedsSessionReady(): boolean {
   const store = useChatStore.getState()
@@ -128,13 +130,9 @@ export function sendFailureCopy(error: unknown): string {
   return SEND_FAILED_RESTORE
 }
 
-export function absorbAssetsIntoQueuedSend(assets: QueuedComposerAsset[]): void {
-  if (!queuedSend || assets.length === 0) return
-  queuedSend = { ...queuedSend, assets: mergeQueuedAssets(queuedSend.assets, assets) }
-}
-
 export function resetQueuedComposerSendForTest(): void {
   queuedSend = null
+  pendingFirstSend = null
   cancelledSeq = null
   queueSeq = 0
   setComposerWritebackHeld(false)
@@ -152,7 +150,47 @@ export function hasQueuedComposerSend(): boolean {
   return queuedSend !== null
 }
 
-export async function waitThenSendAfterCreate(
+export function waitThenSendAfterCreate(
+  text: string,
+  sendReady: (prepared: PreparedComposerSend) => Promise<void>,
+  assets?: QueuedComposerAsset[],
+  deps?: {
+    readSessionId?: () => string | null
+    onFail?: (text: string, reason: string, assets?: QueuedComposerAsset[]) => void
+  }
+): Promise<void> {
+  const run = waitThenSendAfterCreateInner(text, sendReady, assets, deps)
+  pendingFirstSend = run
+  void run.finally(() => {
+    if (pendingFirstSend === run) pendingFirstSend = null
+  })
+  return run
+}
+
+/**
+ * jojo P1（#155 gate2）：「正在准备…」期间又按 Enter（B）。B 的正文和附件在按下那一刻取走（快照），
+ * 输入框清空；等 A 真发出去（会话已建、A 已开跑）再把 B 放进运行中排队，A 跑完自动发 B。
+ * 绝不把 B 的图并进 A，也不把 B 留在输入框。会话没建成 → B 原样还回输入框。
+ */
+export async function queueBehindPreparingSend(
+  text: string,
+  assets: QueuedComposerAsset[],
+  deps: {
+    enqueue: (input: { sessionId: string; prompt: string; assets: QueuedComposerAsset[] }) => void
+    onFail?: (text: string, reason: string, assets?: QueuedComposerAsset[]) => void
+  }
+): Promise<void> {
+  const ahead = pendingFirstSend
+  if (ahead) await ahead.catch(() => undefined)
+  const sessionId = useChatStore.getState().sessionId
+  if (!sessionId) {
+    ;(deps.onFail ?? restoreComposerAfterFailedSend)(text, SEND_FAILED_RESTORE, assets)
+    return
+  }
+  deps.enqueue({ sessionId, prompt: text, assets })
+}
+
+async function waitThenSendAfterCreateInner(
   text: string,
   sendReady: (prepared: PreparedComposerSend) => Promise<void>,
   assets?: QueuedComposerAsset[],

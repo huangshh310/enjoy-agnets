@@ -9,6 +9,7 @@ import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
 import { listComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
@@ -62,7 +63,8 @@ import {
   PREVIOUS_STILL_PREPARING,
   SEND_FAILED_RESTORE,
   SESSION_NOT_READY,
-  waitThenSendAfterCreate
+  waitThenSendAfterCreate,
+  queueBehindPreparingSend
 } from "../queue-composer-send"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
@@ -135,11 +137,17 @@ export async function sendComposerMessage(
   // jojo P1：建会话窗里已有一条排队（A 在「正在准备…」）又按 Enter（B）：B 不并进 A、不自动续发，
   // 留在输入框并提示「上一条还在准备」；不挂看门狗。
   if (!prepared && composerNeedsSessionReady() && hasQueuedComposerSend()) {
-    traceSend("send:queued-busy")
-    if (composerCanSend({ text: typed, assetCount: listComposerAssets().length })) {
-      if (useChatStore.getState().composer !== typed) useChatStore.getState().setComposer(typed)
-      useChatStore.getState().setError(PREVIOUS_STILL_PREPARING)
-    }
+    traceSend("send:queued-behind")
+    if (!composerCanSend({ text: typed, assetCount: listComposerAssets().length })) return
+    // jojo P1（#155 gate2）：B 在按下那一刻快照正文 + 附件、清输入框，排在 A 后面（A 开跑后进运行中排队）。
+    const behindAssets = takeComposerAssetDetails()
+    clearQueuedComposerText()
+    await queueBehindPreparingSend(typed.trim(), behindAssets, {
+      enqueue: ({ sessionId, prompt, assets }) => {
+        enqueueFollowup({ sessionId, prompt, assets })
+        setRuntimeHint("queued", sessionId)
+      }
+    })
     return
   }
   // leo soft：running 直接丢弃的那一发不挂看门狗（否则 3s 后误报「发送失败」）。

@@ -8,6 +8,7 @@ import { mkdtempSync, writeFileSync, existsSync, mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
+import { DatabaseSync } from "node:sqlite"
 import { closeForRelaunch } from "./approval-restart-helpers"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
@@ -129,7 +130,7 @@ async function launchStub(extra: Record<string, string>) {
   const skip = window.getByRole("button", { name: "跳过设置" })
   if ((await skip.count()) > 0) await skip.click()
   await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
-  return { app, window }
+  return { app, window, userData }
 }
 
 /** 真粘贴：往输入框派一个带图片文件的 paste 事件（走 onPaste → planComposerPaste → 附件）。 */
@@ -189,6 +190,75 @@ test("jojo P3：带图发送失败（看门狗）→ 红卡写「文字和图片
     await expect(banner).toContainText("文字和图片已放回输入框")
     await expect(window.locator('[data-testid="composer-asset-chip"]')).toHaveCount(1)
     await window.screenshot({ path: join(shots, "image-only-p3-failed-copy.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+/** 每条用户句在库里挂的附件名（message_parts 的 file part）。 */
+function userTurnFiles(userData: string): Array<{ content: string; files: string[] }> {
+  const db = new DatabaseSync(join(userData, "app.db"))
+  try {
+    const users = db
+      .prepare("SELECT id, content FROM messages WHERE role = 'user' ORDER BY created_at, rowid")
+      .all() as Array<{ id: string; content: string }>
+    return users.map((u) => ({
+      content: u.content,
+      files: (db.prepare("SELECT payload FROM message_parts WHERE message_id = ? AND type = 'file' ORDER BY idx").all(u.id) as Array<{ payload: string }>)
+        .map((p) => /"(?:name|filename)"\s*:\s*"([^"]+)"/.exec(p.payload)?.[1] ?? p.payload)
+    }))
+  } finally {
+    db.close()
+  }
+}
+
+test("jojo P1（gate2）：「正在准备…」里发 A，再粘图打 B 回车 → B 带自己的图排队、A 后发出；A 不沾 B 的图", async () => {
+  test.setTimeout(150_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const shots = process.env.ENJOY_E2E_SHOTS_DIR || test.info().outputPath("shots")
+  mkdirSync(shots, { recursive: true })
+  const { app, window, userData } = await launchStub({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "8000" })
+  try {
+    const stage = window.locator('[data-chat-stage="true"]')
+    const input = window.locator('[data-testid="composer-input"]')
+    const chip = window.locator('[data-testid="composer-asset-chip"]')
+    // 启动自带的空会话会被「新对话」复用：先发一句用掉，后面的新对话才真走（被拉长的）创建。
+    await input.click()
+    await window.keyboard.type("seed")
+    await window.keyboard.press("Enter")
+    await expect(stage).toContainText("stub-ok seed", { timeout: 30_000 })
+    await window.locator('[data-testid="sidebar-new-session"]').click({ noWaitAfter: true })
+    await expect(window.getByText("正在准备…")).toBeVisible({ timeout: 8_000 })
+    await input.click()
+    await window.keyboard.type("第一条")
+    await window.keyboard.press("Enter")
+    await expect(input).toHaveValue("", { timeout: 3_000 })
+    await pasteImage(window, "queued.png")
+    await expect(chip).toHaveCount(1, { timeout: 5_000 })
+    await input.click()
+    await window.keyboard.type("排队带图")
+    await window.screenshot({ path: join(shots, "p1-preparing-b-typed.png") })
+    await window.keyboard.press("Enter")
+    // B 按下即取走：输入框和附件托盘都空，不留在框里。
+    await expect(input).toHaveValue("", { timeout: 3_000 })
+    await expect(chip).toHaveCount(0, { timeout: 3_000 })
+    await window.screenshot({ path: join(shots, "p1-b-queued.png") })
+    // 两条都发出：A 不带图（stub 回 stub-ok，不含 attached），B 带 queued.png。
+    await expect(stage).toContainText("attached:queued.png", { timeout: 40_000 })
+    await expect(stage).toContainText("排队带图", { timeout: 5_000 })
+    await expect(stage).toContainText("stub-ok 第一条", { timeout: 5_000 })
+    // B 气泡里的图真能显示（不是破图）。
+    const bubbleImg = window.locator('[data-chat-stage="true"] img[alt*="queued"], [data-chat-stage="true"] img[src^="enjoy-asset"], [data-chat-stage="true"] img').last()
+    await expect.poll(() => bubbleImg.evaluate((el) => (el as HTMLImageElement).naturalWidth), { timeout: 10_000 }).toBeGreaterThan(0)
+    await window.screenshot({ path: join(shots, "p1-both-sent.png") })
+    // 库里逐条断言：A 没有附件，B 只挂自己的图；顺序 A 在前。
+    await expect.poll(() => userTurnFiles(userData).filter((t) => t.content === "排队带图").length, { timeout: 10_000 }).toBe(1)
+    const turns = userTurnFiles(userData)
+    // seed 那条在另一个会话；只看这两条。
+    const mine = turns.filter((t) => t.content === "第一条" || t.content === "排队带图")
+    expect(mine.map((t) => t.content)).toEqual(["第一条", "排队带图"])
+    expect(mine[0]!.files).toEqual([])
+    expect(mine[1]!.files).toEqual(["queued.png"])
   } finally {
     await closeForRelaunch(app)
   }

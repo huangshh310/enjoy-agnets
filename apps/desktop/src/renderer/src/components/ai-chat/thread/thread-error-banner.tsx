@@ -74,6 +74,7 @@ function useRestoredImageCount(): number {
 export function ThreadErrorBanner({ error, className }: { error: string; className?: string }) {
   const t = useT()
   const restoredImageCount = useRestoredImageCount()
+  const composerHasText = useChatStore((state) => state.composer.trim().length > 0)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const runtimeId = useChatStore((state) => state.runtimeId)
@@ -289,7 +290,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               : kind === "store"
                 ? t("chat.errorGenericHint")
                 : kind === "send_restore"
-                  ? (sendRestoreDetail(error, t, restoredImageCount) ?? displayThreadErrorText(error, t))
+                  ? (sendRestoreDetail(error, t, restoredImageCount, composerHasText) ?? displayThreadErrorText(error, t))
                   : kind === "restore_no_matching"
                     ? t("chat.restoreNoMatching")
                     : kind === "run_failed"

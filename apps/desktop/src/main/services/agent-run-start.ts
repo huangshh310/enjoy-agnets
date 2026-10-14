@@ -35,6 +35,7 @@ import { isInternalTodoContinueTurn, runAgentPersistUser, shouldPersistOutgoingU
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
+import { userIdsWithFiles, withAttachmentFlags } from "./history-attachment-flags"
 import { getWorkspace } from "./workspace"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { peekCommandReceipt, rememberCommandReceipt } from "./command-receipts"
@@ -390,5 +391,7 @@ async function modelMessagesForStart(
   const peeked = peekSessionHandoff(input.sessionId)
   const handoffText = peeked ? formatHandoffContext(peeked).trim() : null
   const history = prependHandoffHistory(effectiveMessages, handoffText)
-  return toModelMessages(history)
+  return toModelMessages(
+    withAttachmentFlags(history, userIdsWithFiles(input.sessionId), input.attachments.length)
+  )
 }

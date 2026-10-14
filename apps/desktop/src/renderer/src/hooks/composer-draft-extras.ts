@@ -14,3 +14,12 @@ export function composerHasExtras(): boolean {
     listComposerSkillChips().length > 0
   )
 }
+
+/** 只算 Chip（引用 / 知识 / 技能），不含附件——附件另按 assetCount 计（leo soft：hasChips 不得把附件算进去）。 */
+export function composerHasChips(): boolean {
+  return (
+    listQuotedContexts().length > 0 ||
+    listSessionContextChips().length > 0 ||
+    listComposerSkillChips().length > 0
+  )
+}

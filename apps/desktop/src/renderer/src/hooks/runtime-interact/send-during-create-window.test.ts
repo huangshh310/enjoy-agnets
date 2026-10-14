@@ -1,6 +1,7 @@
 /**
  * jojo P1：新对话「正在准备…」时发 A，0.5s 后再发 B。
- * A 入队即清输入框；B 不并进 A、不自动续发，留在输入框并提示「上一条还在准备」。
+ * A 入队即清输入框；B（#155 gate2 jojo P1）按下即快照正文 + 附件、清输入框，排在 A 后面：
+ * A 开跑后 B 进运行中排队，A 跑完自动发 B。B 的图绝不并进 A。
  */
 import assert from "node:assert/strict"
 import { afterEach, test } from "node:test"
@@ -17,6 +18,12 @@ const { beginNewSessionCreate, finishNewSessionCreate, resetNewSessionCreateForT
 const { resetComposerRunningOwnerForTest } = await import("./composer-running-owner.ts")
 const { isComposerWritebackHeld } = await import("../composer-sync-lock.ts")
 const { readPersistedDraft, writePersistedDraft } = await import("../../lib/session-draft-storage.ts")
+const { listFollowups, takeNextFollowup } = await import("../followup-queue.ts")
+const { setComposerAssets, clearComposerAssets, listComposerAssets } = await import("../composer-assets.ts")
+
+function drainFollowups(sessionId: string) {
+  while (takeNextFollowup(sessionId)) {}
+}
 
 // 草稿落盘用：内存版 localStorage。
 const memory = new Map<string, string>()
@@ -37,7 +44,8 @@ function attempt(text: string) {
   return { text, launched: false, cancelled: false, done: false, paused: false }
 }
 
-test("建会话窗：A 入队清输入框；B 再按 Enter 不并进 A，留稿并提示上一条还在准备", async () => {
+test("建会话窗：A 入队清输入框；B 再按 Enter 快照正文 + 图、清输入框，不并进 A", async () => {
+  clearComposerAssets()
   useChatStore.setState({
     sessionId: null,
     running: false,
@@ -52,10 +60,13 @@ test("建会话窗：A 入队清输入框；B 再按 Enter 不并进 A，留稿�
   assert.equal(useChatStore.getState().composer, "", "A 入队即清输入框")
 
   useChatStore.getState().setComposer("第二句B")
-  await sendComposerMessage(undefined, "第二句B")
+  setComposerAssets([{ id: "ast_b", name: "b.png", mediaType: "image/png", url: "blob:b" }] as never)
+  void sendComposerMessage(undefined, "第二句B")
+  await Promise.resolve()
   const state = useChatStore.getState()
-  assert.equal(state.composer, "第二句B", "只有 B 留在输入框，不与 A 合并")
-  assert.equal(state.error, PREVIOUS_STILL_PREPARING)
+  assert.equal(state.composer, "", "B 已取走，不留在输入框")
+  assert.equal(listComposerAssets().length, 0, "B 的图随 B 取走")
+  assert.notEqual(state.error, PREVIOUS_STILL_PREPARING)
   assert.equal(hasQueuedComposerSend(), true, "队列仍是 A，B 没顶替进去")
 
   cancelQueuedComposerSend()
@@ -92,23 +103,26 @@ for (const [label, a, b] of [
       modelId: "stub-e2e",
       messages: []
     } as never)
+    drainFollowups("ses_m1")
     const { token } = beginNewSessionCreate()
-    void sendComposerMessage(undefined, a, attempt(a) as never)
+    const sendingA = sendComposerMessage(undefined, a, attempt(a) as never)
     assert.equal(useChatStore.getState().composer, "")
     useChatStore.getState().setComposer(b)
-    await sendComposerMessage(undefined, b)
-    assert.equal(useChatStore.getState().error, PREVIOUS_STILL_PREPARING)
+    void sendComposerMessage(undefined, b)
     useChatStore.setState({ sessionId: "ses_m1" } as never)
     finishNewSessionCreate(token, "ses_m1")
     await flush()
     assert.ok(useChatStore.getState().messages.some((m) => m.role === "user"), "A 已乐观上屏（走到发出）")
-    assert.equal(useChatStore.getState().composer, b, "B 原样留在输入框")
+    // A 的发送（真 IPC 挂住）还没结束：B 还在排 A 后面，没提前进运行中队列、也没回输入框。
+    assert.equal(useChatStore.getState().composer, "", "B 不回输入框")
+    assert.equal(listFollowups("ses_m1").length, 0, "A 没发出去前 B 不抢跑")
+    void sendingA
     // leo soft：入队时上的写回锁，A 发出后必须放掉（否则之后 store→输入框永远不同步）。
     assert.equal(isComposerWritebackHeld(), false, "写回锁已放")
   })
 }
 
-test("leo M2：B 被拒（上一条还在准备）后 A 卡住，3s 内看门狗还回 A 并放掉 running", async () => {
+test("leo M2：B 排在 A 后面、A 卡住，3s 内看门狗还回 A 并放掉 running；B 不丢，进运行中排队", async () => {
   ;(globalThis as { window?: unknown }).window = { ide: hangingIde() }
   const { SEND_FAILED_RESTORE_MERGED } = await import("../queue-composer-send-copy.ts")
   useChatStore.setState({
@@ -125,21 +139,22 @@ test("leo M2：B 被拒（上一条还在准备）后 A 卡住，3s 内看门狗
   } as never)
   const { token } = beginNewSessionCreate()
   // 真实看门狗：不传 queuedAttempt。
+  drainFollowups("ses_m2")
   const sendingA = sendComposerMessage(undefined, "第一句A")
   useChatStore.getState().setComposer("第二句B")
-  await sendComposerMessage(undefined, "第二句B")
-  assert.equal(useChatStore.getState().error, PREVIOUS_STILL_PREPARING)
+  const sendingB = sendComposerMessage(undefined, "第二句B")
   // A 建会话完成后卡在等 running 落下（running 被占、没有 runId），迟迟发不出去。
   useChatStore.setState({ sessionId: "ses_m2", running: true, runId: null } as never)
   finishNewSessionCreate(token, "ses_m2")
   await new Promise((r) => setTimeout(r, 3_600))
   const state = useChatStore.getState()
   assert.match(state.composer, /第一句A/, "A 的原文还回输入框")
-  assert.match(state.composer, /第二句B/, "B 也还在")
+  assert.doesNotMatch(state.composer, /第二句B/, "B 不和 A 拼在一起")
   assert.equal(state.running, false, "running 已放掉")
-  // soft 2：两条拼在一起放回，提示说清。
-  assert.equal(state.error, SEND_FAILED_RESTORE_MERGED)
+  assert.notEqual(state.error, SEND_FAILED_RESTORE_MERGED)
   await sendingA
+  await sendingB
+  assert.deepEqual(listFollowups("ses_m2").map((f) => f.prompt), ["第二句B"], "B 进了运行中排队")
 })
 
 test("leo soft：A 发出时框里没有后打的字——这个会话的草稿（内存 + 落盘）不再留着 A", async () => {

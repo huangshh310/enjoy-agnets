@@ -6,7 +6,7 @@ import { resolveMediaType } from "@enjoy-agents/assets"
 import { effectiveCapabilities } from "@enjoy-agents/providers"
 import { encodeAttachmentParts, type AttachmentCaps } from "./attach-parts"
 import { readAssetBytes } from "./asset-service"
-import { ATTACHMENT_ONLY_USER_TEXT } from "./to-model-messages"
+import { isAttachmentOnlyPlaceholder, stripAttachmentOnlyMark } from "./to-model-messages"
 import { isE2eStub } from "./e2e-stub-gate"
 
 export type AttachedAssetMeta = {
@@ -37,8 +37,8 @@ export async function appendRunAttachments(
   )
   const encoded = encodeAttachmentParts(assets, caps)
   const raw = typeof last.content === "string" ? last.content : ""
-  // 只图轮：占位 / 空正文不发空 text part（leo MUST 1）。
-  const prompt = raw === ATTACHMENT_ONLY_USER_TEXT ? "" : raw
+  // 只图轮：占位 / 空正文不发空 text part（leo MUST 1）。认标记不认字符串：用户真打 "[attachment]" 照发。
+  const prompt = isAttachmentOnlyPlaceholder(last) ? "" : raw
   const content: UserContent = [
     ...(prompt.trim() ? [{ type: "text" as const, text: prompt }] : []),
     ...encoded.map((part) =>
@@ -53,7 +53,7 @@ export async function appendRunAttachments(
     )
   ]
   // 编不出任何 part（极端：附件全被能力过滤）时保留原句，不发空 content。
-  messages[messages.length - 1] = content.length > 0 ? { role: "user", content } : last
+  messages[messages.length - 1] = content.length > 0 ? { role: "user", content } : stripAttachmentOnlyMark(last)
   return assets.map((asset) => ({
     assetId: asset.assetId,
     mediaType: resolveMediaType(asset.name, asset.mediaType),

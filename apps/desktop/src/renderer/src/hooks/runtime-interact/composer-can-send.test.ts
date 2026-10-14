@@ -11,19 +11,21 @@ test("composerCanSend：正文 / 附件 / Chip 任一即可发；全空才不能
   assert.equal(composerCanSend({ text: "", assetCount: 0, hasChips: false }), false)
 })
 
-test("接线：按钮（hasDraft）、取稿、排队首发、运行中排队、编辑重发都走同一判定", async () => {
-  const { readFileSync } = await import("node:fs")
-  const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8")
-  for (const rel of [
-    "./use-composer-has-draft.ts",
-    "./resolve-send-payload.ts",
-    "./send-composer-run.ts",
-    "../queue-composer-send.ts",
-    "../send-composer.ts",
-    "../regenerate-turn.ts",
-    "../../components/ai-chat/thread/turns/user-turn.tsx"
-  ]) {
-    assert.match(read(rel), /composerCanSend\(/, rel)
-  }
-  assert.doesNotMatch(read("./resolve-send-payload.ts"), /if \(!raw\.trim\(\)\) return null/)
+test("行为：取稿组 payload——只图（正文空）照发，图带上；全空返回 null（不发）", async () => {
+  ;(globalThis as { window?: unknown }).window ??= {}
+  const { resolveSendPayload } = await import("./resolve-send-payload.ts")
+  const snap = { text: "" } as never
+  const img = { id: "asset_1", name: "a.png", mediaType: "image/png", size: 1, url: "blob:a" }
+  const sent = await resolveSendPayload({ content: "", assets: [img] as never }, snap, undefined, async () => "")
+  assert.ok(sent && sent !== "cancelled")
+  assert.deepEqual(sent.assetIds, ["asset_1"])
+  assert.equal(sent.content, "")
+  assert.equal(await resolveSendPayload({ content: "  ", assets: [] }, snap, undefined, async () => ""), null)
+})
+
+test("messageHasBody：有字或带附件都算内容，空字无附件不算", async () => {
+  const { messageHasBody } = await import("./composer-can-send.ts")
+  assert.equal(messageHasBody({ content: "", assets: [{}] }), true)
+  assert.equal(messageHasBody({ content: "hi" }), true)
+  assert.equal(messageHasBody({ content: "  ", assets: [] }), false)
 })

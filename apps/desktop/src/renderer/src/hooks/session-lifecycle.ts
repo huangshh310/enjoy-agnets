@@ -46,7 +46,7 @@ import {
   isCurrentCreateToken,
   shouldPublishCreatedSession
 } from "./new-session-create"
-import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend, hasQueuedComposerSend } from "./queue-composer-send"
+import { cancelQueuedComposerSend, hasQueuedComposerSend } from "./queue-composer-send"
 import { flushComposerDomToStore } from "./composer-dom"
 import { leaveStateSnapshot } from "./leave-state-snapshot"
 import { setComposerWritebackHeld } from "./composer-sync-lock"
@@ -191,13 +191,12 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
     }
     flushComposerDomToStore()
     const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
-    absorbAssetsIntoQueuedSend(listComposerAssets())
+    // jojo P1（#155 gate2）：排队首发（A）的附件在按 Enter 时已快照；建好会话时不再把输入框里后贴的图并进 A。
+    // 输入框里留着的图（还没发的下一条）绑到新会话的草稿上。
     publishCreatedSession(store, session, runtimeId)
     finishNewSessionCreate(token, session.id)
-    if (!hasQueuedComposerSend()) {
-      setComposerWritebackHeld(false)
-      persistCreateWindowAssets(session.id)
-    }
+    if (!hasQueuedComposerSend()) setComposerWritebackHeld(false)
+    persistCreateWindowAssets(session.id)
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
     await refreshAllWorkspaces()
