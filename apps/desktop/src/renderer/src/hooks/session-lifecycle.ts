@@ -2,7 +2,7 @@
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
 import { discardEmptySessionOnLeave } from "./discard-empty-on-leave"
-import { composerDraftForSession, persistCreateWindowAssets } from "../lib/session-draft-storage"
+import { composerDraftForSession } from "../lib/session-draft-storage"
 import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
   modeForLoadedSession,
@@ -29,6 +29,7 @@ import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
+import { detachComposerForCreate, publishCreatedComposer } from "./create-window-composer"
 import { clearComposerAssets, listComposerAssets, setComposerAssets } from "./composer-assets"
 import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
 import { workspaceRowFromNode } from "./workspace-row"
@@ -196,7 +197,6 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
     publishCreatedSession(store, session, runtimeId)
     finishNewSessionCreate(token, session.id)
     if (!hasQueuedComposerSend()) setComposerWritebackHeld(false)
-    persistCreateWindowAssets(session.id)
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
     await refreshAllWorkspaces()
@@ -211,15 +211,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
 
 /** 立刻露出欢迎页，但 sessionId 要等 create 回来。发送走排队，不占 running。 */
 function detachForegroundForCreate() {
-  useAttentionStore.getState().clearCompletes()
-  useChatStore.setState({
-    ...idleComposerPatch(),
-    sessionId: null,
-    messages: [],
-    sessionTitle: "新对话",
-    composer: "",
-    running: false
-  })
+  detachComposerForCreate()
   reportSessionFocus(null)
   queueComposerFocus()
 }
@@ -263,9 +255,7 @@ function publishCreatedSession(
   session: SessionRow,
   runtimeId: ReturnType<typeof resolveCreateRuntime>
 ) {
-  useChatStore.setState({ ...idleComposerPatch() })
-  clearComposerAssets()
-  setQuotedContexts([])
+  publishCreatedComposer(session.id)
   useEngineHandoffStore.getState().resetPending()
   store.setSession(session.id, session.title)
   store.setRuntimeId(runtimeId)
