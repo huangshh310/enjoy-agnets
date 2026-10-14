@@ -21,6 +21,7 @@ import {
 } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isRestoreFamilyCode, restoreFamilyCodeOf } from "@enjoy-agents/ipc-contract/restore-codes"
 import { RESTORE_NO_MATCHING } from "../lib/usage/classify-thread-error"
+import { lastTurnHasNoOutput, rollbackPreOutputTurn, shouldRollbackPreOutput } from "./pre-output-rollback"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
 import { canFoldIntoAssistant, findAssistantForToolEvent, foldAssistantIndex } from "./assistant-fold-target"
@@ -48,7 +49,9 @@ export type StreamPatch = {
 export function reduceStreamEvent(
   messages: ThreadMessage[],
   event: StreamEvent,
-  activeRunId: string | null = null
+  activeRunId: string | null = null,
+  /** store 的 running：没在跑（这轮已结束）时，晚到的出字前失败不得回滚。 */
+  running = true
 ): StreamPatch {
   if (event.type === "message.persisted") return { messages: bindPersistedMessage(messages, event) }
   if (event.type === "run.start") {
@@ -64,7 +67,7 @@ export function reduceStreamEvent(
     }
   }
   if (isForeignRunId(eventRunId(event), activeRunId)) return { messages }
-  const terminal = applyTerminalEvent(messages, event, activeRunId)
+  const terminal = applyTerminalEvent(messages, event, activeRunId, running)
   if (terminal) return terminal
   const approval = applyApprovalEvent(messages, event, activeRunId)
   if (approval) return approval
@@ -90,9 +93,14 @@ export function reduceStreamEvent(
 function applyTerminalEvent(
   messages: ThreadMessage[],
   event: StreamEvent,
-  activeRunId: string | null
+  activeRunId: string | null,
+  running: boolean
 ): StreamPatch | null {
   if (event.type !== "run.end" && event.type !== "run.error") return null
+  if (event.type === "run.error") {
+    const preOutput = applyUnclaimedPreOutputError(messages, event, activeRunId, running)
+    if (preOutput) return preOutput
+  }
   if (!shouldFinalizeComposerRun(event.runId, activeRunId, event)) return { messages }
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) {
@@ -129,26 +137,10 @@ function applyTerminalEvent(
       }
     }
     const code = chatSendErrorCodeOf(event)
+    if (shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) {
+      return rolledPreOutputPatch(messages, code ?? event.message, event.keptUserMessage === true)
+    }
     const lastUser = lastUserText(messages)
-    if (event.preOutput === true && event.keptUserMessage === true) {
-      return {
-        messages: dropPreOutputOptimisticTurn(messages, { keepUser: true }),
-        pendingApproval: null,
-        running: false,
-        runId: null,
-        error: code ?? event.message
-      }
-    }
-    if (event.preOutput === true) {
-      return {
-        messages: dropPreOutputOptimisticTurn(messages),
-        pendingApproval: null,
-        running: false,
-        runId: null,
-        error: code ?? event.message,
-        ...(lastUser ? { composer: lastUser } : {})
-      }
-    }
     return {
       messages: finalizeRun(messages),
       pendingApproval: null,
@@ -159,6 +151,48 @@ function applyTerminalEvent(
     }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
+}
+
+/** agent.run 返回前 runId 还空：出字前失败仍要撕泡还草稿。 */
+function applyUnclaimedPreOutputError(
+  messages: ThreadMessage[],
+  event: StreamEvent & { type: "run.error" },
+  activeRunId: string | null,
+  running: boolean
+): StreamPatch | null {
+  if (activeRunId && activeRunId !== event.runId) return null
+  // leo MUST 1（#136）：runId 还空只说明没认领；必须仍在跑、且这一轮确实还没出字，才回滚。
+  // 已结束的一轮（running=false）或最后一条助手已有正文：晚到的 run.error 不得撕掉已出的回复和它的用户句。
+  if (!running || !lastTurnHasNoOutput(messages)) return null
+  const code = chatSendErrorCodeOf(event)
+  if (!shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) return null
+  return rolledPreOutputPatch(messages, code ?? event.message, event.keptUserMessage === true)
+}
+
+/**
+ * keepUser（#135 MF-1）：重新生成 / 编辑时用户句是原有的（main 只 UPDATE 未新插），只撕助手泡、
+ * 用户句留在线程里，不还回输入框。
+ */
+function rolledPreOutputPatch(messages: ThreadMessage[], error: string, keepUser = false): StreamPatch {
+  if (keepUser) {
+    return {
+      messages: dropPreOutputOptimisticTurn(messages, { keepUser: true }),
+      pendingApproval: null,
+      running: false,
+      runId: null,
+      error
+    }
+  }
+  const draft = lastUserText(messages)
+  const rolled = rollbackPreOutputTurn(messages, { dropAssistant: true })
+  return {
+    messages: rolled.messages,
+    pendingApproval: null,
+    running: false,
+    runId: null,
+    error,
+    composer: rolled.composer || draft
+  }
 }
 
 function applyApprovalEvent(

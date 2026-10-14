@@ -16,6 +16,7 @@ import { ExperimentalMediaDialog } from "@renderer/components/ai-chat/experiment
 import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
 import type { WorkspaceRow } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { holdEmptyForResend } from "@renderer/stores/resend-notice"
 import { reviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate-phase"
 import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledger-rail"
 import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
@@ -57,6 +58,7 @@ export function ChatStage() {
   useTaskbarTitle(sessionTitle)
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
+  const error = useChatStore((state) => state.error)
   const changes = useChatStore((state) => state.changes)
   const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
   const setRightPanelCollapsed = useChatStore((state) => state.setRightPanelCollapsed)
@@ -94,7 +96,7 @@ export function ChatStage() {
           workspaceRootLabel={workspaceRootLabel}
           changesCount={sessionScopedCount(sessionChanges, changes.length)}
           // 历史还在回灌时不判空：不先闪「在 xx 里做什么？」再跳成历史（luna main-155 重启）。
-          empty={messages.length === 0 && !running && !historyPending}
+          empty={(messages.length === 0 && !running && !historyPending) || holdEmptyForResend(messages, running, error)}
           historyPending={historyPending}
           surface={surface}
           rightPanelCollapsed={rightPanelCollapsed}

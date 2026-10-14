@@ -37,6 +37,7 @@ export function abortActiveRunMemory(
       runId,
       message: USER_ABORT_MESSAGE,
       code: USER_ABORTED_CODE,
+      preOutput: false,
       turn,
       sessionId: run.input.sessionId
     })

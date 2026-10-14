@@ -28,3 +28,11 @@ test("打包态：即便设了 stub 环境变量也关（真实 isE2eStub 闸）
     process.env = saved
   }
 })
+
+test("leo soft（#136）：e2e stub 标记只在 isE2eStub 时带给 renderer", async () => {
+  const { e2eStubArgs } = await import("./e2e-send-watchdog.ts")
+  const { readE2eStubArg } = await import("./e2e-send-watchdog-arg.ts")
+  assert.equal(readE2eStubArg(e2eStubArgs(() => true)), true)
+  assert.equal(readE2eStubArg(e2eStubArgs(() => false)), false)
+  assert.equal(readE2eStubArg([]), false)
+})

@@ -1,6 +1,7 @@
 /**
  * 空闲发送：占 running 槽、乐观气泡、再开 agent.run / 媒体生成。
  */
+import { settleLaunchedRun } from "./settle-launched-run.ts"
 import { shouldDismissOnNextSend } from "./send-restore-dismiss"
 import { emptySessionToDiscardAfterWatchdog } from "./watchdog-empty-session"
 import { discardCreatedSession } from "../discard-created-session"
@@ -20,6 +21,7 @@ import {
 } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
 import { failComposerSend } from "./fail-composer-send"
+import { releaseClientRequestId, takeClientRequestId } from "./client-request-id"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
@@ -74,6 +76,8 @@ type PreparedSend = {
   assets?: QueuedComposerAsset[]
   executePlan?: boolean
   sessionId?: string
+  /** 同一手势续发（创建窗排队）复用，禁止另开 clientRequestId。 */
+  clientRequestId?: string
 }
 
 
@@ -83,6 +87,21 @@ export async function sendComposerMessage(
   typedAtEnter?: string,
   /** 排队首发：沿用 Enter 那一刻挂的看门狗句柄。 */
   queuedAttempt?: SendAttempt
+) {
+  // #136：同一手势的 agent.run 带同一 clientRequestId（误触连点 60s 内 main 不重开）；排队首发交给队列续用。
+  const request = { clientRequestId: takeClientRequestId(prepared?.clientRequestId), handoff: false }
+  try {
+    await sendComposerOnce(prepared, typedAtEnter, queuedAttempt, request)
+  } finally {
+    if (!request.handoff) releaseClientRequestId(request.clientRequestId)
+  }
+}
+
+async function sendComposerOnce(
+  prepared: PreparedSend | undefined,
+  typedAtEnter: string | undefined,
+  queuedAttempt: SendAttempt | undefined,
+  request: { clientRequestId: string; handoff: boolean }
 ) {
   let store = useChatStore.getState()
   // 这次发送的原文只取一次：Enter 那一刻的 DOM 全文（或按钮点下时现读 DOM），之后全链路只用它。
@@ -175,10 +194,21 @@ export async function sendComposerMessage(
     traceSend("send:queued", { text: text.length })
     // jojo：排队首发（「正在准备…」）也算这一发开始了：上一发的红卡收掉，不与思考中同屏。
     if (shouldDismissOnNextSend(useChatStore.getState().error)) useChatStore.getState().setError(null)
-    const queued = waitThenSendAfterCreate(text, (next) => sendComposerMessage(next, undefined, attempt), assets)
+    request.handoff = true
+    const { clientRequestId } = request
+    const queued = waitThenSendAfterCreate(
+      text,
+      (next) => sendComposerMessage({ ...next, clientRequestId }, undefined, attempt),
+      assets
+    )
     // jojo P1：A 入队即清输入框（原文在队列里，失败路径会还回来），后面打的 B 不会和 A 并成一句。
     clearQueuedComposerText()
-    await queued
+    try {
+      await queued
+    } finally {
+      // leo soft（#136）：建会话失败 / 被取消时 sendReady 根本没跑，id 还挂着——下一发会被 main 当重复吞掉。
+      releaseClientRequestId(clientRequestId)
+    }
     return
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")
@@ -255,7 +285,14 @@ export async function sendComposerMessage(
       }
       setComposerWritebackHeld(false)
     } else clearSentComposerText(payload.typed)
-    draftPersisted = await launchComposerRun(store, payload, messages, prepared?.sessionId, attempt)
+    draftPersisted = await launchComposerRun(
+      store,
+      payload,
+      messages,
+      prepared?.sessionId,
+      attempt,
+      request.clientRequestId
+    )
   } catch (error) {
     traceSend("send:throw", { error: error instanceof Error ? error.name : typeof error })
     // leo #145：A 已被看门狗作废后才抛——看门狗已还过稿，不再还 A 的字、不清 B 的 running。
@@ -359,7 +396,8 @@ async function launchComposerRun(
   payload: SendPayload,
   messages: ChatState["messages"],
   createdSessionId?: string,
-  attempt?: SendAttempt
+  attempt?: SendAttempt,
+  clientRequestId?: string
 ): Promise<boolean> {
   const sessionId = store.sessionId
   markSendLaunched(attempt)
@@ -372,7 +410,8 @@ async function launchComposerRun(
       payload.assetIds,
       payload.executePlan,
       payload.computerUseOnce,
-      payload.typed
+      payload.typed,
+      clientRequestId
     )
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
@@ -388,7 +427,10 @@ async function launchComposerRun(
     const runId = requireAgentRunId(result)
     // leo：只有 main 回了 userMessageId（返回前已同事务落库用户句）才算「可以清 main 的稿」。
     const userPersisted = userMessagePersisted(result)
-    if (!claimComposerRun(sessionId, runId)) {
+    const settled = settleLaunchedRun(sessionId, runId, claimComposerRun)
+    // 出字前失败已先到并回滚（红卡 / 稿已还原）：不中止、不改写红卡、不删建会话窗的会话。
+    if (settled === "discarded") return false
+    if (settled === "orphan") {
       abortOrphanedRun(runId)
       failComposerSend({
         ...restoreFromPayload(payload),
@@ -447,7 +489,8 @@ async function startComposerRun(
   assetIds: string[],
   executePlan?: boolean,
   computerUseOnce?: boolean,
-  draftText?: string
+  draftText?: string,
+  clientRequestId?: string
 ) {
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -488,7 +531,7 @@ async function startComposerRun(
     attachments: assetIds,
     executePlan: executePlan || undefined,
     commandId: crypto.randomUUID(),
-    clientRequestId: crypto.randomUUID(),
+    ...(clientRequestId ? { clientRequestId } : {}),
     ...(desktopBias ? { desktopBias } : {}),
     ...(once ? { computerUseOnce: true } : {})
   })

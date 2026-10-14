@@ -119,6 +119,7 @@ export async function launchAutomationAgent(
           type: "run.error",
           runId: createId("run"),
           message,
+          preOutput: false,
           turn: { workflow: "in_progress", attention: "error" }
         },
         openedSessionId

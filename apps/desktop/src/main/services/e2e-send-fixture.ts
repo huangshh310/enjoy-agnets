@@ -1,10 +1,17 @@
 /**
  * 首发失败夹具：stub 路线抛出能走真实 classify / persist 的错误。
  * 闸：ENJOY_E2E_STUB=1 + 未打包 + 隔离 userData。打包态不生效。
+ * `ENJOY_E2E_SEND_ONCE=1` 时只炸第一次，同进程后续发送走正常 stub。
  */
 import { e2eChatReadySeedAllowed } from "./e2e-chat-readiness.ts"
 
 export type E2eSendFixture = "unreachable" | "rejected" | "forbidden" | "billing"
+
+let consumedOnce = false
+
+export function resetE2eSendFixtureForTest(): void {
+  consumedOnce = false
+}
 
 export function e2eSendFixture(
   env: NodeJS.ProcessEnv = process.env,
@@ -16,6 +23,10 @@ export function e2eSendFixture(
     return undefined
   }
   if (!e2eChatReadySeedAllowed({ env, packaged, userData })) return undefined
+  if (env.ENJOY_E2E_SEND_ONCE === "1") {
+    if (consumedOnce) return undefined
+    consumedOnce = true
+  }
   return flag
 }
 

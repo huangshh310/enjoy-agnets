@@ -18,7 +18,13 @@ import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-re
 import { noteSessionOpened } from "../hooks/session-history-pending"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
+import {
+  isDiscardedPreOutputRun,
+  rememberDiscardedPreOutputRun
+} from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
+import { isImmediatePreOutputError } from "./pre-output-rollback"
+import { errorAfterOptimisticSend, errorAfterStreamEvent } from "./resend-notice"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
 import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
 import { withErrorRetryInvariant } from "./error-retry-invariant"
@@ -178,13 +184,19 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       })
       return
     }
-    if (shouldBufferComposerEvent(get().running, get().runId)) {
+    const eventRunId = "runId" in event ? event.runId : undefined
+    if (isDiscardedPreOutputRun(eventRunId)) return
+    if (shouldBufferComposerEvent(get().running, get().runId) && !isImmediatePreOutputError(event)) {
       const queued = get().pendingStreamEvents
       if (queued.length >= 80) return
       set({ pendingStreamEvents: [...queued, event] })
       return
     }
-    const patch = reduceStreamEvent(get().messages, event, get().runId)
+    const beforeCount = get().messages.length
+    const patch = reduceStreamEvent(get().messages, event, get().runId, get().running)
+    if (event.type === "run.error" && patch.messages.length < beforeCount) {
+      rememberDiscardedPreOutputRun(event.runId)
+    }
     const sessionId = get().sessionId
     const noticeSessionId = sessionId ?? event.sessionId
     if (patch.notice !== undefined && noticeSessionId && isRestoreFamilyCode(patch.notice)) {
@@ -193,6 +205,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     if (patch.heldResolved && sessionId) {
       holdApprovalResolved(sessionId, patch.heldResolved)
     }
+    const error = errorAfterStreamEvent(get().error, event, patch.error)
     set({
       messages: patch.messages,
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
@@ -202,7 +215,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
       ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
-      ...(patch.error !== undefined ? { error: patch.error } : {}),
+      ...(error !== undefined ? { error } : {}),
       ...(patch.notice !== undefined ? { notice: patch.notice } : {}),
       ...(patch.composer !== undefined ? { composer: patch.composer } : {})
     })
@@ -218,7 +231,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
         ...(assets?.length ? { assets } : {})
       }
     ]
-    set({ messages, composer: "", error: null, notice: null })
+    set({ messages, composer: "", error: errorAfterOptimisticSend(get().error), notice: null })
     return messages
   },
   setRunning: (running, runId = null) => {

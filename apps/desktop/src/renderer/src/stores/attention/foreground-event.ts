@@ -3,6 +3,8 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isComposerRunStart, isNonAgentRunKind, isRestoreFamilyEvent } from "../stream-run-scope"
+import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
+
 
 function eventRunId(event: StreamEvent): string | undefined {
   return "runId" in event ? event.runId : undefined
@@ -22,6 +24,7 @@ export function belongsToForeground(
   if (isNonAgentRunKind(event, rememberedKind)) return false
   if (runId && currentRunId && runId === currentRunId) return true
   if (!eventSessionId || eventSessionId !== currentSessionId) return false
+  if (isCurrentSessionPreOutputError(event)) return true
   if (event.type === "run.start") {
     if (!isComposerRunStart(event)) return false
     if (!running) return true
@@ -45,4 +48,11 @@ function isIdleSessionRestoreEvent(type: StreamEvent["type"]): boolean {
     type === "run.error" ||
     type === "run.end"
   )
+}
+
+/** 用户正看着这题：出字前失败必须进前台撕泡，不能停进停车档。 */
+function isCurrentSessionPreOutputError(event: StreamEvent): boolean {
+  if (event.type !== "run.error") return false
+  if (event.preOutput === true) return true
+  return isPreOutputFailureCode(event.code)
 }

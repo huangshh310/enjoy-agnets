@@ -41,7 +41,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
       omitComplete: omitCompleteFromTurn(
         event,
         foreground && event.type === "run.end" && lastTurnDeniedOnly(storeEarly.messages)
-      )
+      ),
+      foreground
     })
   }
 

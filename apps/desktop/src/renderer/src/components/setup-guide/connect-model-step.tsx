@@ -20,6 +20,10 @@ import {
 } from "./connect-model-options"
 import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 import { renderApiKeyBadge } from "./api-key-badge"
+import { guideKeyHint } from "@renderer/lib/credential/key-hint"
+import { renderKeyHint } from "@renderer/lib/credential/key-hint-view"
+import { guideKeyStatus } from "@renderer/lib/credential/key-status"
+import { requestOpenExternalQuiet } from "@renderer/components/ai-chat/right-pane/views/terminal/attach-xterm-addons"
 
 export function ConnectModelStep({
   picked,
@@ -36,6 +40,7 @@ export function ConnectModelStep({
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
   const options = connectModelOptions(readiness, providers)
+  const keyHint = guideKeyHint(readiness, providers, guideKeyStatus(readiness, providers))
   return (
     <div className="flex flex-col gap-2">
       {readiness?.secretStorageAvailable === false ? <SecretWritePreflight /> : null}
@@ -58,6 +63,15 @@ export function ConnectModelStep({
             hint={t(connectModelRowHintKey(option), hintVars(option, t("settings.setupGuide.providerFallback")))}
             unverifiedLabel={t("settings.setupGuide.connectLocalUnverified")}
           />
+          {option.kind === "api_key" && option.connected && keyHint
+            ? renderKeyHint(
+                keyHint.hint,
+                keyHint.providerName ?? t("settings.setupGuide.providerFallback"),
+                t,
+                { onEdit: () => onFixKey(option.profileId), onOpenUrl: requestOpenExternalQuiet },
+                "connect-model-key-hint"
+              )
+            : null}
         </li>
       ))}
     </ul>

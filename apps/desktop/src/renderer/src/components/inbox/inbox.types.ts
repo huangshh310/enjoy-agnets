@@ -33,6 +33,7 @@ export interface InboxNotification {
   sessionTitle?: string
   errorMessage?: string
   toolName?: string
+  toolArgs?: unknown
   isAborted?: boolean
   /** 缺参 / 超 16KiB：Inbox 只留「打开会话」，不画可点允许卡。 */
   canOpenApproval?: boolean

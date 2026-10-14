@@ -187,6 +187,7 @@ async function runKind(
         runId,
         kind: request.kind,
         message: classified.message,
+        preOutput: false,
         turn: generationFailedTurn(request.sessionId)
       },
       request.sessionId

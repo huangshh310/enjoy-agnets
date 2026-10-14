@@ -46,6 +46,8 @@ export type PresetDraft = {
   requiresKey: boolean
   docsURL?: string
   keysURL?: string
+  /** 充值 / 账单页。余额不足提示的「去充值」优先用它，缺省回落 keysURL。 */
+  billingURL?: string
   headerHints?: string[]
   models: CatalogModel[]
   noModelsList?: boolean

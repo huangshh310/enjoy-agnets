@@ -16,7 +16,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
-import { useT } from "@renderer/i18n"
+import { useI18n, useT } from "@renderer/i18n"
+import { formatInboxOccurredAt } from "../lib/format-inbox-occurred-at"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { MarkdownResponse } from "@renderer/components/ai-chat/thread/markdown-response"
 import { parseAssistantPayload } from "@enjoy-agents/ipc-contract"
@@ -37,6 +38,7 @@ export function InboxReader(props: {
   onOpenAction: (item: InboxNotification) => void
 }) {
   const t = useT()
+  const { locale } = useI18n()
   const { item, now, onToggleRead, onOpenAction } = props
   const [copiedId, setCopiedId] = useState(false)
   const [sessionMessages, setSessionMessages] = useState<SessionMessageRow[] | null>(null)
@@ -117,7 +119,7 @@ export function InboxReader(props: {
   const theme = getInboxTheme(item.copyKey, t)
   const ThemeIcon = theme.icon
   const relativeTime = inboxTimeLabel(item.occurredAt, now, t)
-  const fullTime = new Date(item.occurredAt).toLocaleString()
+  const fullTime = formatInboxOccurredAt(item.occurredAt, locale)
   const displayTitle = inboxSessionTitle(item.sessionTitle || item.title, t)
   const displayWorkspace =
     item.workspaceName ||
@@ -300,7 +302,7 @@ export function InboxReader(props: {
                 </span>
               ) : null}
               {thoughtSeconds ? (
-                <span>{t("pages.inbox.thoughtSeconds", { n: thoughtSeconds })}</span>
+                <span>{t("pages.inbox.thoughtSecondsWithApproval", { n: thoughtSeconds })}</span>
               ) : null}
             </div>
           ) : null}
@@ -315,7 +317,9 @@ export function InboxReader(props: {
           ) : item.summary &&
             item.summary !== displayTitle &&
             !item.isAborted &&
-            item.copyKey !== "error" ? (
+            item.copyKey !== "error" &&
+            item.copyKey !== "pending_approval" &&
+            item.copyKey !== "ask_user" ? (
             <div className="text-body-regular text-text-secondary leading-relaxed">
               {item.summary}
             </div>

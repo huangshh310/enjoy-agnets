@@ -41,6 +41,14 @@ test("夹具要隔离 userData；STUB 单独不默认 ok", () => {
     e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "unverified:timeout" }, false),
     { state: "unverified", code: "timeout" }
   )
+  assert.deepEqual(
+    e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "unverified:forbidden" }, false),
+    { state: "unverified", code: "forbidden" }
+  )
+  assert.deepEqual(
+    e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "unverified:billing" }, false),
+    { state: "unverified", code: "billing" }
+  )
   assert.equal(e2eCredentialFixture({ ...isolated }, false), undefined)
   assert.equal(e2eCredentialFixture({ ...isolated, ENJOY_E2E_CREDENTIAL: "invalid" }, true), undefined)
   assert.equal(

@@ -29,7 +29,7 @@ type AttentionStore = {
     sessionId: string,
     sessionTitle: string,
     workspaceId?: string,
-    opts?: { omitComplete?: boolean }
+    opts?: { omitComplete?: boolean; foreground?: boolean }
   ) => void
   focusSlot: (sessionId: string, kind?: AttentionKind) => void
   dismiss: (id: string) => void
@@ -75,7 +75,8 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
         sessionId,
         sessionTitle,
         workspaceId,
-        omitComplete: opts?.omitComplete
+        omitComplete: opts?.omitComplete,
+        foreground: opts?.foreground
       })
     })),
   focusSlot: (sessionId, kind) =>

@@ -23,7 +23,8 @@ export function ProviderSimpleFields({
   modelChoices,
   detecting,
   onChange,
-  onDetect
+  onDetect,
+  focusKey = false
 }: {
   editor: EditorState
   preset: ProviderPreset
@@ -32,6 +33,7 @@ export function ProviderSimpleFields({
   detecting: boolean
   onChange: (patch: Partial<EditorState>) => void
   onDetect: () => void
+  focusKey?: boolean
 }) {
   const t = useT()
   const key = editor.keys[0]
@@ -46,6 +48,8 @@ export function ProviderSimpleFields({
               onChange({ keys: editor.keys.map((item) => (item.id === key.id ? { ...item, apiKey: value } : item)) })
             }
             placeholder={key.keyHint || "sk-..."}
+            autoFocus={focusKey}
+            id="provider-key-input"
           />
         ) : null}
       </div>

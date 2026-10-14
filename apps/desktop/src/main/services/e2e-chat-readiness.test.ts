@@ -93,6 +93,20 @@ test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
   assert.equal(timed?.ready, true)
   assert.equal(timed?.credentialCheck?.state, "unverified")
   assert.equal(timed?.credentialCheck?.code, "timeout")
+  const forbidden = e2eChatReadiness({
+    ...isolated,
+    ENJOY_E2E_CREDENTIAL: "unverified:forbidden"
+  })
+  assert.equal(forbidden?.ready, true)
+  assert.equal(forbidden?.credentialCheck?.state, "unverified")
+  assert.equal(forbidden?.credentialCheck?.code, "forbidden")
+  const billing = e2eChatReadiness({
+    ...isolated,
+    ENJOY_E2E_CREDENTIAL: "unverified:billing"
+  })
+  assert.equal(billing?.ready, true)
+  assert.equal(billing?.credentialCheck?.state, "unverified")
+  assert.equal(billing?.credentialCheck?.code, "billing")
 })
 
 test("stub + none 不冻结空快照，后续从 vault 组装", () => {

@@ -5,6 +5,8 @@
  */
 import { createElement, type ReactElement } from "react"
 import { presetDisplayName, providerKeyView } from "../../../lib/credential/key-status.ts"
+import { keyHintOf } from "../../../lib/credential/key-hint.ts"
+import { renderKeyHint } from "../../../lib/credential/key-hint-view.ts"
 
 export type ProviderKeyStatusProfile = Parameters<typeof providerKeyView>[0] & { kind: string; name: string }
 
@@ -38,5 +40,21 @@ export function renderProviderKeyStatus(
           t("settings.providers.fixKey")
         )
       : null
+  )
+}
+
+/** 设置页供应商行：密钥「暂时没法确认」且原始码是 forbidden / billing 时的提示条；其余返回 null。 */
+export function renderProviderKeyHint(
+  profile: ProviderKeyStatusProfile & { credentialCheck?: Parameters<typeof keyHintOf>[0] },
+  t: (key: string, vars?: Record<string, string>) => string,
+  actions: { onEdit: () => void; onOpenUrl: (url: string) => void }
+): ReactElement | null {
+  if (!providerKeyView(profile)) return null
+  return renderKeyHint(
+    keyHintOf(profile.credentialCheck, profile.kind),
+    presetDisplayName(profile.kind, profile.name),
+    t,
+    actions,
+    "provider-key-hint"
   )
 }

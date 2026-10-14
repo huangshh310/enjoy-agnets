@@ -4,6 +4,7 @@
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
+import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
 
@@ -64,7 +65,7 @@ export function ingestAttentionEvent(
     // 前台会话成功跑完：不留「已完成」胶囊，但本会话旧的出错一并收掉（luna #151，对齐 #150 lastError 成功即清）。
     return resolveErrorSlots(resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event)), input.sessionId, successMark(input.event, now))
   }
-  if (isNeutralTurn(input)) {
+  if (isForegroundPreOutput(input) || isNeutralTurn(input)) {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
   if (!kind) return aged
@@ -302,6 +303,13 @@ function isQuietTurn(attention: string | undefined): boolean {
 function isNeutralTurn(input: IngestAttentionInput): boolean {
   const event = input.event
   return (event.type === "run.end" || event.type === "run.error") && isQuietTurn(event.turn?.attention)
+}
+
+/** 用户正看着这轮：出字前失败只留 Composer 白卡，不点红「出错」。 */
+function isForegroundPreOutput(input: IngestAttentionInput): boolean {
+  if (!input.foreground || input.event.type !== "run.error") return false
+  if (input.event.preOutput === true) return true
+  return isPreOutputFailureCode(input.event.code)
 }
 
 function summaryFor(kind: AttentionKind, input: IngestAttentionInput): string {
