@@ -13,6 +13,7 @@ import {
   type CredentialCheck,
   type PublicKeyProvider
 } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { pickActiveProfile } from "./active-profile-pick"
 
 export type AssembleChatReadinessRoute = {
   preferredRuntimeId?: string
@@ -71,13 +72,7 @@ function keyChecksOf(providers: readonly PublicKeyProvider[]): Record<string, Cr
 function activePublicProvider(
   providers: readonly PublicKeyProvider[]
 ): PublicKeyProvider | undefined {
-  const enabled = providers.filter((row) => row.enabled !== false)
-  const marked = enabled.find((row) => row.active)
-  if (marked) return marked
-  if (enabled.some((row) => row.active === false)) {
-    return enabled.find((row) => row.active !== false)
-  }
-  return enabled[0]
+  return pickActiveProfile(providers, (row) => row.active === true)
 }
 
 export const LOCAL_MODEL_PING_MS = 400

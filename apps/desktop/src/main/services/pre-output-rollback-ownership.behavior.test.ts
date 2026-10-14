@@ -206,3 +206,22 @@ test("等待期间用户改名：回滚不覆盖新标题；没改名则复原",
   L.rollbackPreOutputMessages({ sessionId: sid, messageIds: [], snapshot, titleAfterStart: "auto title" })
   assert.equal((db.prepare("SELECT title FROM sessions WHERE id = ?").get(sid) as { title: string }).title, "新对话")
 })
+
+test("leo soft：首字前回滚抛错 → 退回普通 failed，活 run 撤掉（会话不卡 RUN_ACTIVE）", async () => {
+  const sid = "ses_own_rb_throw"
+  seed(sid)
+  insertRunRow(sid, "run_own_rb_throw", "running")
+  const run = hold(sid, "run_own_rb_throw", { rollbackEligible: true })
+  sent.length = 0
+  L.setPreOutputRollbackThrowForTest(true)
+  try {
+    await L.failAgentPump("run_own_rb_throw", run, unreachable())
+  } finally {
+    L.setPreOutputRollbackThrowForTest(false)
+  }
+  assert.equal(L.getActiveRun("run_own_rb_throw"), undefined)
+  assert.equal((L.getRun(L.getDatabase(), "run_own_rb_throw") as { status: string }).status, "failed")
+  const err = sent.find((e) => (e as { type?: string }).type === "run.error") as Record<string, unknown>
+  assert.ok(err)
+  assert.notEqual(err.preOutput, true)
+})

@@ -81,10 +81,7 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     code,
     eligible: run.rollbackEligible === true
   }
-  if (shouldRollbackPreOutput(rollback)) {
-    emitPreOutputFail(runId, run, rollback.code)
-    return
-  }
+  if (shouldRollbackPreOutput(rollback) && emitPreOutputFail(runId, run, rollback.code)) return
   persistActiveRun(run, runId, "failed", message)
   recordMetric({
     runId,
@@ -113,14 +110,20 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
   })
 }
 
-function emitPreOutputFail(runId: string, run: ActiveRun, code: string): void {
-  rollbackPreOutputMessages({
-    sessionId: run.input.sessionId,
-    messageIds: preOutputRollbackIds(run),
-    snapshot: run.sessionSnapshot,
-    titleAfterStart: run.titleAfterStart
-  })
-  markRunDiscardedPreOutput(runId, code)
+/** 回滚失败返回 false：调用方退回普通 failed 收口（runs 落 failed、撤活 run），会话不卡 RUN_ACTIVE。 */
+function emitPreOutputFail(runId: string, run: ActiveRun, code: string): boolean {
+  try {
+    rollbackPreOutputMessages({
+      sessionId: run.input.sessionId,
+      messageIds: preOutputRollbackIds(run),
+      snapshot: run.sessionSnapshot,
+      titleAfterStart: run.titleAfterStart
+    })
+    markRunDiscardedPreOutput(runId, code)
+  } catch (error) {
+    console.error("pre-output rollback failed; falling back to failed run", error)
+    return false
+  }
   recordMetric({
     runId,
     kind: "agent",
@@ -145,6 +148,7 @@ function emitPreOutputFail(runId: string, run: ActiveRun, code: string): void {
     ...(run.userMessageId || !run.keptUserMessage ? {} : { keptUserMessage: true }),
     turn
   })
+  return true
 }
 
 function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {

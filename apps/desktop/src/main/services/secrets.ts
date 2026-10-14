@@ -18,6 +18,7 @@ import { clearCredentialCheck, publicCredentialCheck, readCredentialChecks } fro
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
+import { pickActiveProfile } from "./active-profile-pick"
 import {
   readVault,
   resolvedStyle,
@@ -53,9 +54,10 @@ export async function findProfileById(id: string): Promise<ProviderProfile | und
 
 export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
   const vault = await readVault()
-  const active = vault.profiles.find((profile) => profile.id === vault.activeId && profile.enabled)
-  if (active) return active
-  return vault.profiles.find((profile) => profile.enabled)
+  return pickActiveProfile(
+    vault.profiles.filter((profile) => profile.enabled),
+    (profile) => profile.id === vault.activeId
+  )
 }
 
 export async function findProfileByKinds(kinds: readonly string[]): Promise<ProviderProfile | undefined> {

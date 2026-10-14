@@ -15,7 +15,7 @@ import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
+import { retryKeptDraft } from "@renderer/hooks/retry-kept-draft"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
 import { editAndResendUserTurn, regenerateAssistantTurn, retryFailedUserTurn } from "@renderer/hooks/regenerate-turn"
 import {
@@ -28,6 +28,7 @@ import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer
 import { cx } from "@/utils/cx"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { peekChatReadiness } from "@renderer/hooks/chat-readiness-cache"
+import { unreachableProviderName as pickUnreachableProviderName } from "@renderer/lib/usage/unreachable-provider-name"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
@@ -438,25 +439,5 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
 }
 
 function unreachableProviderName(t: TranslateFn): string {
-  const snap = peekChatReadiness()
-  const route = snap?.defaultRoute
-  if (route?.runtimeId && route.runtimeId !== "enjoy-local") {
-    const name = snap?.engines.find((row) => row.runtimeId === route.runtimeId)?.name
-    if (name) return name
-  }
-  const key = snap?.apiKeys.find((row) => row.providerId === route?.profileId) ?? snap?.apiKeys[0]
-  if (key?.presetId) return key.presetId
-  return String(t("chat.providerFallbackName"))
-}
-
-function retryKeptDraft(): void {
-  const state = useChatStore.getState()
-  if (state.composer.trim()) {
-    void sendComposerMessage()
-    return
-  }
-  // 首字前失败已回滚的轮次草稿在输入框；输入框空但用户句还在库里时，原地重跑那一句，不经输入框另发（防重复）。
-  const lastUser = [...state.messages].reverse().find((item) => item.role === "user")
-  if (!lastUser?.content) return
-  void retryFailedUserTurn(lastUser)
+  return pickUnreachableProviderName(peekChatReadiness(), String(t("chat.providerFallbackName")))
 }

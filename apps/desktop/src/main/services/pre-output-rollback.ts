@@ -36,6 +36,12 @@ export function readSessionTitle(sessionId: string): string | undefined {
  * messageIds 必须只含本轮新插入的行（见 preOutputRollbackIds）。兜底：带快照时只删
  * created_at ≥ 快照时刻的行。parts 也带会话条件，别的会话的 parts 不受牵连。titleAfterStart 给了时，只有库里标题仍是它才复原。
  */
+let throwForTest = false
+/** 行为测试：让回滚事务抛错，验证泵失败收口仍撤 run（会话不卡 RUN_ACTIVE）。 */
+export function setPreOutputRollbackThrowForTest(value: boolean): void {
+  throwForTest = value
+}
+
 export function rollbackPreOutputMessages(input: {
   sessionId: string
   messageIds: readonly (string | undefined)[]
@@ -47,6 +53,7 @@ export function rollbackPreOutputMessages(input: {
   const since = input.snapshot?.capturedAt ?? Number.NEGATIVE_INFINITY
   db.exec("BEGIN IMMEDIATE;")
   try {
+    if (throwForTest) throw new Error("PRE_OUTPUT_ROLLBACK_TEST_INJECTED")
     for (const id of ids) {
       db.prepare(
         "DELETE FROM message_parts WHERE message_id IN (SELECT id FROM messages WHERE id = ? AND session_id = ? AND created_at >= ?)"
