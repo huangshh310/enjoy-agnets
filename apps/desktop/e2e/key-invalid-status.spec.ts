@@ -102,6 +102,14 @@ test("invalid：存密钥后第 4 步红、第 7 步说被拒并直达改密钥�
     await expect(window.getByTestId("provider-fix-key").first()).toBeVisible()
     await expect(window.getByText("密钥已保存", { exact: true })).toHaveCount(0)
     await shot(window, "k4-settings-invalid")
+
+    // ?edit= 指向不存在的档案：回落到新建表单，不卡在空页面
+    await window.evaluate(() => {
+      location.hash = "#/settings/providers?edit=gone-profile&from=setup-guide"
+    })
+    await expect(window.getByTestId("provider-pick-panel")).toBeVisible({ timeout: 8_000 })
+    await expect.poll(async () => window.evaluate(() => location.hash.includes("edit="))).toBe(false)
+    await shot(window, "k7-edit-missing-fallback")
   } finally {
     await app.close()
   }

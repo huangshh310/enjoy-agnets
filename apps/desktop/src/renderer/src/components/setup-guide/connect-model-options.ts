@@ -7,7 +7,13 @@ import {
   type ChatLocalModelRoute,
   type ChatReadiness
 } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { guideKeyStatus, type KeyProviderRow, type KeyStatus } from "../../lib/credential/key-status.ts"
+import {
+  guideKeyStatus,
+  keyBadgeTone,
+  type KeyBadgeTone,
+  type KeyProviderRow,
+  type KeyStatus
+} from "../../lib/credential/key-status.ts"
 
 export type ConnectModelOption =
   | { id: string; kind: "engine"; runtimeId: string; name: string; recommended: boolean }
@@ -109,4 +115,10 @@ function equalizeFreshInstall(options: ConnectModelOption[]): ConnectModelOption
     return options.map((item) => (item.kind === "api_key" ? { ...item, recommended: false } : item))
   }
   return options
+}
+
+/** 第 4 步 API 密钥行徽标色调；没存密钥不画徽标。缺省状态按 unverified（中性），绿只给 ok。 */
+export function apiKeyBadgeTone(option: ConnectModelOption): KeyBadgeTone | undefined {
+  if (option.kind !== "api_key" || !option.connected) return undefined
+  return keyBadgeTone(option.keyStatus ?? "unverified")
 }

@@ -14,7 +14,10 @@ import {
   saveEditor
 } from "./provider-editor-writes"
 import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
-import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { CHAT_READINESS_QUERY_KEY, useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+
+/** main 校验超时 6s，再留 1s 落盘余量。 */
+const CREDENTIAL_RECHECK_REFRESH_MS = 7_000
 import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 
@@ -47,6 +50,8 @@ export function useProviderSettings() {
 
   return {
     providers,
+    /** 设置快照已拿到（区分「还在加载」和「真的没有这份档案」）。 */
+    loaded: settingsQuery.isSuccess,
     editor: session.editor,
     probe: session.probe,
     preset,
@@ -122,6 +127,9 @@ function useProviderWrites(
         return false
       }
       closeEditor()
+      // 改的可能不是当前档案：主动让就绪快照失效；校验在后台跑（最长 6s），稍后再刷一次设置快照拿三态。
+      void queryClient.invalidateQueries({ queryKey: CHAT_READINESS_QUERY_KEY })
+      setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["settings"] }), CREDENTIAL_RECHECK_REFRESH_MS)
       return true
     },
     activate: async (id: string) => {

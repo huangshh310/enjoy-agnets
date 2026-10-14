@@ -19,11 +19,12 @@ import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { parseSettingsSectionSearch } from "../settings-section-search"
-import { OFFICIAL_CREATE, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
+import { OFFICIAL_CREATE, officialProviderSearch, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
 import { resumeSetupGuide } from "@renderer/components/setup-guide/setup-guide-store"
 import { isTransientProviderOrigin } from "@renderer/lib/provider-form-origin"
 import { ProviderPickPanel } from "./provider-pick-panel"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { editTargetAction } from "./provider-edit-target"
 import { SettingsSideDrawer } from "../settings-side-drawer"
 
 export function ProviderSettings() {
@@ -46,13 +47,24 @@ export function ProviderSettings() {
   }, [search.create])
   const openedEdit = useRef<string | null>(null)
   useEffect(() => {
-    if (!search.edit || openedEdit.current === search.edit) return
-    const profile = settings.providers.find((row) => row.id === search.edit)
-    if (!profile) return
-    openedEdit.current = search.edit
-    setActiveTab("configured")
-    settings.openEdit(profile)
-  }, [search.edit, settings.providers, settings.openEdit])
+    const action = editTargetAction(search.edit, settings.providers, settings.loaded)
+    if (action === "none" || action === "wait" || openedEdit.current === search.edit) return
+    openedEdit.current = search.edit ?? null
+    if (action === "open") {
+      const profile = settings.providers.find((row) => row.id === search.edit)
+      if (!profile) return
+      setActiveTab("configured")
+      settings.openEdit(profile)
+      return
+    }
+    // 档案找不到：清掉 edit，改开新建表单（向导仍在暂停，保存 / 取消照常回向导）。
+    void navigate({
+      to: "/settings/$section",
+      params: { section: "providers" },
+      search: officialProviderSearch(search.from),
+      replace: true
+    })
+  }, [search.edit, search.from, settings.providers, settings.loaded, settings.openEdit, navigate])
   const fromLink = Boolean(search.create || search.edit)
 
   function leaveOrigin() {

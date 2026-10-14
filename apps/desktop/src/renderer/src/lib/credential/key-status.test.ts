@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { guideKeyStatus, keyStatusOf, presetDisplayName } from "./key-status.ts"
+import { credentialCheckChanged, guideKeyStatus, keyBadgeTone, keyStatusOf, presetDisplayName, profileKeyStatus } from "./key-status.ts"
 
 const key = (providerId: string, presetId = "openai") => ({ kind: "api_key" as const, providerId, presetId })
 
@@ -47,7 +47,7 @@ test("unverified:network 中性，不当 invalid", () => {
   assert.equal(guideKeyStatus(readiness)?.status, "unverified")
 })
 
-test("多把里有一把能用就不红；全被拒才红", () => {
+test("没有默认路线档案：多把里有一把能用就不红；全被拒才红", () => {
   const providers = [
     { id: "p1", kind: "openai", credentialCheck: { state: "invalid" as const } },
     { id: "p2", kind: "anthropic", credentialCheck: { state: "ok" as const } }
@@ -58,6 +58,49 @@ test("多把里有一把能用就不红；全被拒才红", () => {
   assert.equal(guideKeyStatus(snap, allBad)?.status, "invalid")
 })
 
+test("有默认路线档案：以那份为准；默认那把被拒、另一把 ok 仍是红（和 ready 一致，不绕圈）", () => {
+  const providers = [
+    { id: "p1", kind: "openai", credentialCheck: { state: "invalid" as const } },
+    { id: "p2", kind: "anthropic", credentialCheck: { state: "ok" as const } }
+  ]
+  const snap = {
+    apiKeys: [key("p1"), key("p2", "anthropic")],
+    defaultRoute: { runtimeId: "enjoy-local", profileId: "p1" },
+    credentialCheck: { state: "invalid" as const, code: "auth_rejected" as const }
+  }
+  assert.deepEqual(guideKeyStatus(snap, providers), { status: "invalid", profileId: "p1", providerName: "OpenAI" })
+  const okRoute = { ...snap, defaultRoute: { runtimeId: "enjoy-local", profileId: "p2" }, credentialCheck: { state: "ok" as const } }
+  assert.deepEqual(guideKeyStatus(okRoute, providers), { status: "ok", profileId: "p2", providerName: "Anthropic" })
+})
+
+test("keyBadgeTone：只有 invalid 是红，ok 绿，其余中性", () => {
+  assert.equal(keyBadgeTone("ok"), "success")
+  assert.equal(keyBadgeTone("invalid"), "error")
+  assert.equal(keyBadgeTone("unverified"), "neutral")
+})
+
+test("profileKeyStatus：设置行按存下的校验结果三态，不把有密钥当已验证", () => {
+  const base = { requiresKey: true, hasKey: true }
+  assert.equal(profileKeyStatus({ ...base, credentialCheck: { state: "invalid" } }), "invalid")
+  assert.equal(profileKeyStatus({ ...base, credentialCheck: { state: "unverified" } }), "unverified")
+  assert.equal(profileKeyStatus(base), "unverified")
+  assert.equal(profileKeyStatus({ ...base, credentialCheck: { state: "ok" } }), "ok")
+  assert.equal(profileKeyStatus({ requiresKey: true, hasKey: false }), undefined)
+  assert.equal(profileKeyStatus({ requiresKey: false, hasKey: true }), undefined)
+})
+
 test("没有密钥：没有三态", () => {
   assert.equal(guideKeyStatus(undefined), undefined)
+})
+
+test("credentialCheckChanged：state / code / checkedAt 变了才算变", () => {
+  const at = (state: "ok" | "invalid" | "unverified", checkedAt?: string, code?: "network") => ({
+    credentialCheck: { state, ...(checkedAt ? { checkedAt } : {}), ...(code ? { code } : {}) }
+  })
+  assert.equal(credentialCheckChanged(undefined, at("ok")), true)
+  assert.equal(credentialCheckChanged(at("ok", "t1"), at("ok", "t1")), false)
+  assert.equal(credentialCheckChanged(at("unverified", "t1"), at("invalid", "t1")), true)
+  assert.equal(credentialCheckChanged(at("unverified", "t1"), at("unverified", "t1", "network")), true)
+  assert.equal(credentialCheckChanged(at("ok", "t1"), at("ok", "t2")), true)
+  assert.equal(credentialCheckChanged({ credentialCheck: undefined }, { credentialCheck: undefined }), false)
 })

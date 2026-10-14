@@ -5,6 +5,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
+  apiKeyBadgeTone,
   connectModelOptions,
   connectModelRowAction,
   connectModelRowHintKey
@@ -134,4 +135,25 @@ test("已存密钥按三态露出：被拒点行改密钥，不再写已连上",
   const good = mk("ok")
   assert.equal(good.kind === "api_key" && good.keyStatus, "ok")
   assert.equal(connectModelRowHintKey(good), "settings.setupGuide.connectApiKeyHint")
+})
+
+test("第 4 步徽标：被拒红、没法确认灰、ok 才绿；没存密钥不画", () => {
+  const row = (state?: "ok" | "invalid" | "unverified") =>
+    connectModelOptions(
+      buildChatReadiness({
+        engines: [],
+        localModels: [],
+        apiKeys: [{ kind: "api_key", providerId: "p1", presetId: "openai" }],
+        engineCount: 1,
+        hasEnjoySecret: true,
+        activeKeyProfileId: "p1",
+        ...(state ? { credentialCheck: { state } } : {})
+      })
+    ).find((item) => item.kind === "api_key")!
+  assert.equal(apiKeyBadgeTone(row("invalid")), "error")
+  assert.equal(apiKeyBadgeTone(row("unverified")), "neutral")
+  assert.equal(apiKeyBadgeTone(row()), "neutral")
+  assert.equal(apiKeyBadgeTone(row("ok")), "success")
+  const fresh = connectModelOptions(buildChatReadiness({ engines: [], localModels: [], apiKeys: [], engineCount: 1 }))
+  assert.equal(apiKeyBadgeTone(fresh.find((item) => item.kind === "api_key")!), undefined)
 })

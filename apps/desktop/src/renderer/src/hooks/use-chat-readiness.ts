@@ -9,6 +9,7 @@ import { getIde, hasIde } from "../lib/ide.ts"
 import { consumeAdoptedHint, notifyAdoptedDefaultRoute } from "./adopted-default-route-toast.ts"
 import { applyDefaultChatRoute } from "./apply-default-chat-route.ts"
 import { rememberChatReadiness } from "./chat-readiness-cache.ts"
+import { credentialCheckChanged } from "../lib/credential/key-status.ts"
 
 export const CHAT_READINESS_QUERY_KEY = ["chat-readiness"] as const
 
@@ -20,12 +21,6 @@ function acceptReadiness(raw: unknown): ChatReadiness | undefined {
   const name = consumeAdoptedHint(parsed.data.adoptedHint?.name)
   if (name) notifyAdoptedDefaultRoute(name)
   return parsed.data
-}
-
-export function credentialCheckChanged(prev: ChatReadiness | undefined, next: ChatReadiness): boolean {
-  const a = prev?.credentialCheck
-  const b = next.credentialCheck
-  return a?.state !== b?.state || a?.code !== b?.code || a?.checkedAt !== b?.checkedAt
 }
 
 export function useChatReadiness() {

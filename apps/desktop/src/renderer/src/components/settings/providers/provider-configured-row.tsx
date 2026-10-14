@@ -10,13 +10,7 @@ import { ProviderRowActions } from "./provider-row-actions"
 import { WIRE_LABEL, wireLinesOf } from "./provider-wire-lines"
 import type { PingStateMap } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
-import { keyStatusOf, presetDisplayName, type KeyStatus } from "@renderer/lib/credential/key-status"
-
-/** 有密钥的档案才有三态；无需密钥 / 没填密钥不画。 */
-export function providerKeyStatus(profile: Pick<ProviderPublic, "hasKey" | "requiresKey" | "credentialCheck">): KeyStatus | undefined {
-  if (!profile.requiresKey || !profile.hasKey) return undefined
-  return keyStatusOf(profile.credentialCheck)
-}
+import { keyBadgeTone, presetDisplayName, profileKeyStatus, type KeyStatus } from "@renderer/lib/credential/key-status"
 
 export function ProviderConfiguredRow({
   profile,
@@ -99,7 +93,7 @@ function RowTitle({ profile, pingState }: { profile: ProviderPublic; pingState?:
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="truncate text-body-2-semibold text-text-primary">{profile.name}</span>
       {profile.active && profile.enabled ? (
-        <StatusPill tone={providerKeyStatus(profile) === "invalid" ? undefined : "success"}>{t("settings.providers.active")}</StatusPill>
+        <StatusPill tone={profileKeyStatus(profile) === "invalid" ? undefined : "success"}>{t("settings.providers.active")}</StatusPill>
       ) : null}
       {!profile.enabled ? <StatusPill>{t("settings.providers.disabled")}</StatusPill> : null}
       {profile.enabled ? <StatusPill>{t("settings.providers.inUseModels", { count: modelCount })}</StatusPill> : null}
@@ -130,7 +124,7 @@ function WireHosts({ profile }: { profile: ProviderPublic }) {
 
 function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; hasKeyIssue: boolean; onEdit: () => void }) {
   const t = useT()
-  const status = providerKeyStatus(profile)
+  const status = profileKeyStatus(profile)
   return (
     <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-caption-2-medium text-text-tertiary">
       <span className="font-mono font-medium text-text-secondary">{profile.modelId || t("settings.providers.noModel")}</span>
@@ -153,7 +147,8 @@ function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; ha
 /** 绿=已验证；灰=暂时没法确认；红=被拒 + 改密钥。红只给 invalid。 */
 function KeyStatusText({ status, name, onEdit }: { status: KeyStatus; name: string; onEdit: () => void }) {
   const t = useT()
-  if (status === "invalid") {
+  const tone = keyBadgeTone(status)
+  if (tone === "error") {
     return (
       <span data-testid="provider-key-status" data-key-status="invalid" className="inline-flex items-center gap-1.5 font-medium text-text-error-primary">
         <span aria-hidden className="size-1.5 rounded-full bg-text-error-primary" />
@@ -169,7 +164,7 @@ function KeyStatusText({ status, name, onEdit }: { status: KeyStatus; name: stri
       </span>
     )
   }
-  if (status === "ok") {
+  if (tone === "success") {
     return (
       <span data-testid="provider-key-status" data-key-status="ok" className="inline-flex items-center gap-1.5 text-state-success-text">
         <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />

@@ -12,6 +12,7 @@ import { SecretWritePreflight } from "@renderer/components/settings/secret-write
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import {
+  apiKeyBadgeTone,
   connectModelOptions,
   connectModelRowAction,
   connectModelRowHintKey,
@@ -113,8 +114,8 @@ function ConnectModelRow({
 /** 三态徽标：绿=已验证；灰=暂时没法确认；红=被拒，带「改密钥」。 */
 function ApiKeyBadge({ option }: { option: Extract<ConnectModelOption, { kind: "api_key" }> }) {
   const t = useT()
-  const status = option.keyStatus ?? "unverified"
-  if (status === "ok") {
+  const tone = apiKeyBadgeTone(option)
+  if (tone === "success") {
     return (
       <span data-testid="connect-model-key-badge" className="inline-flex shrink-0 items-center gap-1.5 text-caption-1-medium text-state-success-text">
         <span aria-hidden className="size-1.5 rounded-full bg-state-success-text" />
@@ -122,7 +123,7 @@ function ApiKeyBadge({ option }: { option: Extract<ConnectModelOption, { kind: "
       </span>
     )
   }
-  if (status === "invalid") {
+  if (tone === "error") {
     return (
       <span data-testid="connect-model-key-badge" className="inline-flex shrink-0 items-center gap-1.5 text-caption-1-medium text-text-error-primary">
         <span aria-hidden className="size-1.5 rounded-full bg-text-error-primary" />
