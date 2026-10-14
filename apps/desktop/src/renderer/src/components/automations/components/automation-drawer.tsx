@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from "react"
 import { cx } from "@/utils/cx"
-import { automationSaveReason, automationSaveReasonTone } from "../lib/save-reason"
+import { automationSaveReason, automationSaveReasonTone, runDisabledTitle } from "../lib/save-reason"
 import { footerHint } from "../lib/footer-hint"
 import { RiCloseLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
@@ -81,6 +81,7 @@ export function AutomationDrawer({
   const saveReason = automationSaveReason(draft, t)
   // 编辑态把说明清空后，「立即运行」会跑旧说明，所以一起禁用（luna #151）。
   const runDisabled = !draft.id || running || !draft.name.trim() || !draft.prompt.trim()
+  const runTitle = runDisabledTitle({ saved: Boolean(draft.id), running, saveReason }, t)
   return (
     <SettingsSideDrawer
       open={open}
@@ -172,43 +173,58 @@ export function AutomationDrawer({
           />
         </label>
       </div>
-      <footer className="flex flex-nowrap items-center justify-end gap-2 border-t border-separator-border px-4 py-3">
-        {saveReason ? (
-          <span
-            data-testid="automation-save-reason"
-            role="status"
-            title={saveReason}
-            data-tone={automationSaveReasonTone(touched)}
-            className={cx(
-              "mr-auto min-w-0 truncate text-caption-2-regular",
-              automationSaveReasonTone(touched) === "error" ? "text-text-error-primary" : "text-text-secondary"
-            )}
-          >
-            {saveReason}
-          </span>
-        ) : null}
-        {runNow ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            data-testid="automation-run-now"
-            disabled={runDisabled}
-            title={runDisabled && saveReason ? saveReason : undefined}
-            className="disabled:border-border-button-default disabled:bg-transparent disabled:text-text-tertiary disabled:opacity-50"
-            onClick={onRun}
-          >
-            {running ? t("studio.automations.running") : t("studio.automations.runNow")}
-          </Button>
-        ) : hint && !saveReason ? (
-          <span data-testid="automation-footer-hint" title={hint} className="mr-auto min-w-0 truncate text-caption-2-regular text-text-secondary">
-            {hint}
-          </span>
-        ) : null}
+      <footer className="flex flex-nowrap items-center gap-2 border-t border-separator-border px-4 py-3">
         {draft.id ? (
-          <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
-            {t("common.delete")}
-          </Button>
+          // 删除单独放左侧、和运行 / 保存隔开，避免误点（jojo #154 P3）。
+          <div className="flex shrink-0 items-center border-r border-separator-border pr-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              data-testid="automation-delete"
+              className="text-text-error-primary"
+              onClick={onRemove}
+            >
+              {t("common.delete")}
+            </Button>
+          </div>
+        ) : null}
+        <div className="flex min-w-0 flex-1 items-center">
+          {saveReason ? (
+            <span
+              data-testid="automation-save-reason"
+              role="status"
+              title={saveReason}
+              data-tone={automationSaveReasonTone(touched)}
+              className={cx(
+                "min-w-0 truncate text-caption-2-regular",
+                automationSaveReasonTone(touched) === "error" ? "text-text-error-primary" : "text-text-secondary"
+              )}
+            >
+              {saveReason}
+            </span>
+          ) : !runNow && hint ? (
+            <span data-testid="automation-footer-hint" title={hint} className="min-w-0 truncate text-caption-2-regular text-text-secondary">
+              {hint}
+            </span>
+          ) : null}
+        </div>
+        {runNow ? (
+          // 禁用按钮收不到指针事件，tooltip 挂在外层（jojo #154 P3：未保存时写「先保存再运行」）。
+          <span data-testid="automation-run-now-wrap" title={runTitle} className="inline-flex shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="automation-run-now"
+              disabled={runDisabled}
+              aria-label={runTitle ? `${t("studio.automations.runNow")} · ${runTitle}` : undefined}
+              className="disabled:border-border-button-default disabled:bg-transparent disabled:text-text-tertiary disabled:opacity-50"
+              onClick={onRun}
+            >
+              {running ? t("studio.automations.running") : t("studio.automations.runNow")}
+            </Button>
+          </span>
         ) : null}
         <Button
           type="button"
@@ -217,7 +233,7 @@ export function AutomationDrawer({
           data-testid="automation-save"
           disabled={saveDisabled}
           title={saveReason ?? undefined}
-          className="disabled:opacity-50"
+          className="shrink-0 disabled:opacity-50"
           onClick={() => {
             setTouched(true)
             onSave()

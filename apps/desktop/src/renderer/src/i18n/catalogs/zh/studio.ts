@@ -222,6 +222,8 @@ export const zhStudio = {
     promptRequired: "填写提示词后才能保存",
     namePromptRequired: "填写名称和提示词后才能保存",
     nameRequired: "填写名称后才能保存",
+    cronRequired: "设好运行时间后才能保存",
+    saveFirstToRun: "先保存再运行",
     editTitle: "编辑自动化",
     createTitle: "新建自动化",
     workspaceHint: "在当前项目里运行",

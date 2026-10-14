@@ -430,8 +430,8 @@ test("440×480：窄窗只在本次运行收起侧栏、回宽窗恢复偏好；
       for (const size of SIZES) {
         await window.setViewportSize(size)
         await window.waitForTimeout(500)
-        // 回到宽窗（≥600）：自动收起只管窄窗那一段，侧栏回到用户偏好（展开）。
-        await expect(nav(window)).toHaveAttribute("data-collapsed", "false")
+        // 回到宽窗（≥768）：自动收起只管窄窗那一段，侧栏回到用户偏好（展开）；733 仍算窄窗（jojo #154）。
+        await expect(nav(window)).toHaveAttribute("data-collapsed", size.width < 768 ? "true" : "false")
         await expectButtonsReachable(window, `${size.width}x${size.height} long ${theme}`)
         await snap(window, `${size.width}x${size.height}-approval-long-${theme}`)
       }
