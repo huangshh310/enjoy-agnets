@@ -123,13 +123,15 @@ async function holdAndPump(
     cancelRestoredRun(row.id, "ACP host cannot resume after restart.", extras.automationSource)
     return false
   }
-  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  const resolved = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
   holdAgentRun({
     runId: row.id,
     window,
     input,
     workspaceRoot: workspace.rootPath,
-    secret,
+    secret: resolved?.secret,
+    profileId: resolved?.profileId,
+    credentialFingerprint: resolved?.fingerprint,
     messages: extras.modelMessages as ModelMessage[],
     ...readLatestAssistantSnapshot(row.sessionId, { runCreatedAt: row.createdAt, runId: row.id })
   })

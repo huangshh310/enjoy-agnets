@@ -80,6 +80,7 @@ export async function pingProviderEndpoint(config: {
     const response = await fetch(testUrl, {
       method: "GET",
       headers,
+      redirect: "manual",
       signal: AbortSignal.timeout(8_000)
     })
 
@@ -213,7 +214,14 @@ function withCatalogWindow(
 }
 
 async function getJson<T>(url: string, headers: Record<string, string>, apiStyle: ApiStyle): Promise<T> {
-  const response = await fetch(url, { headers, signal: AbortSignal.timeout(12_000) })
+  const response = await fetch(url, {
+    headers,
+    redirect: "manual",
+    signal: AbortSignal.timeout(12_000)
+  })
+  if (response.status >= 300 && response.status < 400) {
+    throw new Error(`Provider redirected (${response.status}).`)
+  }
   if (!response.ok) throw await httpCatalogError(response, apiStyle)
   return readJson<T>(response, apiStyle)
 }

@@ -13,6 +13,8 @@ import {
   type ProviderKind
 } from "@enjoy-agents/providers"
 import { unbindProviderFromAgentTools } from "./agent-tools-vault"
+import { credentialFingerprint } from "./credential-fingerprint.ts"
+import { clearCredentialCheck, publicCredentialCheck, readCredentialChecks } from "./credential-check-store.ts"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
@@ -32,7 +34,21 @@ export { listedModelsFromProfiles } from "./listed-models"
 
 export async function listPublicProviders(): Promise<ProviderPublic[]> {
   const vault = await readVault()
-  return vault.profiles.map((profile) => toPublic(profile, vault.activeId))
+  const checks = readCredentialChecks()
+  return vault.profiles.map((profile) => {
+    const pub = toPublic(profile, vault.activeId)
+    const stored = checks[profile.id]
+    if (!stored) return pub
+    return {
+      ...pub,
+      credentialCheck: publicCredentialCheck(stored, credentialFingerprint(profile))
+    }
+  })
+}
+
+export async function findProfileById(id: string): Promise<ProviderProfile | undefined> {
+  const vault = await readVault()
+  return vault.profiles.find((profile) => profile.id === id)
 }
 
 export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
@@ -110,6 +126,7 @@ export async function setProfileEnabled(id: string, enabled: boolean): Promise<P
 
 export async function removeProfile(id: string): Promise<void> {
   unbindProviderFromAgentTools(id)
+  clearCredentialCheck(id)
   const vault = await readVault()
   vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
   if (vault.activeId === id) {
@@ -158,7 +175,11 @@ export async function saveSecret(secret: StoredSecret): Promise<void> {
 
 export async function readSecret(): Promise<StoredSecret | undefined> {
   const profile = await getActiveProfile()
-  if (!profile) return undefined
+  return profile ? secretFromProfile(profile) : undefined
+}
+
+/** 从已读出的档案取运行凭证；与 readSecret 同形，调用方只读一次 vault。 */
+export function secretFromProfile(profile: ProviderProfile): StoredSecret {
   return {
     provider: profile.kind,
     apiKey: profile.apiKey,
@@ -184,7 +205,10 @@ export async function readSecret(): Promise<StoredSecret | undefined> {
 }
 
 export async function hasSecret(): Promise<boolean> {
-  const profile = await getActiveProfile()
+  return profileHasSecret(await getActiveProfile())
+}
+
+export function profileHasSecret(profile: ProviderProfile | undefined): boolean {
   if (!profile) return false
   return presetFor(profile.kind).requiresKey ? Boolean(profile.apiKey) : true
 }

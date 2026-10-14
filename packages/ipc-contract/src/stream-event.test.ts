@@ -121,6 +121,30 @@ test("run.end / run.error 可选 kind；非法 kind .catch 不拒整条", () => 
   if (bad.success && bad.data.type === "run.error") assert.equal(bad.data.kind, undefined)
 })
 
+test("run.error.preOutput 缺省不算回滚，坏字段当 false 不拒整条", () => {
+  const missing = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "provider_unreachable"
+  })
+  assert.equal(missing.success, true)
+  if (missing.success && missing.data.type === "run.error") {
+    assert.notEqual(missing.data.preOutput, true)
+  }
+  const bad = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "provider_unreachable",
+    preOutput: "yes",
+    code: "provider_unreachable"
+  })
+  assert.equal(bad.success, true)
+  if (bad.success && bad.data.type === "run.error") {
+    assert.equal(bad.data.preOutput, false)
+    assert.equal(bad.data.code, "provider_unreachable")
+  }
+})
+
 test("未知 attention / workflow 回落，不丢掉整条终态事件", () => {
   const parsed = StreamEvent.safeParse({
     type: "run.error",

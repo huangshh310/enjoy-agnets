@@ -30,6 +30,7 @@ test("审批卡让位对话且菜单锚在会话行", async () => {
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_CU_READY: "1",
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,

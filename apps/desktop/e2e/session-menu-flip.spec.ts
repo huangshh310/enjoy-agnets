@@ -28,6 +28,7 @@ test("底部会话菜单完整落在视口内，归档可点，Esc 焦点环跟 
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData,

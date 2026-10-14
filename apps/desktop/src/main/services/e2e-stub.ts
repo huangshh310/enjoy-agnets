@@ -17,9 +17,12 @@
  * 终端可点链接夹具（给 luna 验悬停）：
  * - stub 打开审查栏 Terminal 后会自动 echo `STUB_TERMINAL_LINK_URL`
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
+ *
+ * 首发失败夹具（luna 录屏）：`ENJOY_E2E_SEND=unreachable|rejected|forbidden|billing`
+ * 走真实 classify / persist，闸同 seed（stub + 未打包 + 隔离 userData）。
  */
 import type { ModelMessage } from "ai"
-import { isE2eStub } from "./e2e-stub-gate.ts"
+import { e2eStubPackaged, isE2eStub } from "./e2e-stub-gate.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 import {
   isVerySlowPrompt,
@@ -61,6 +64,7 @@ export {
   STUB_WRITE_PATH,
   writeStubApprovedFile
 } from "./e2e-stub-write.ts"
+import { e2eSendFixture, e2eSendFixtureError } from "./e2e-send-fixture.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
 export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
@@ -71,6 +75,10 @@ export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
 export type E2eStubStreamOpts = {
   /** 会话策略已放行写盘时为真，stub 直接执行、不弹卡。 */
   isToolApproved?: (toolName: string, input: unknown) => boolean
+  /** 测试注入：首发失败夹具读这份 env，不改 process.env。 */
+  env?: NodeJS.ProcessEnv
+  /** 测试注入：隔离 userData 路径。 */
+  userData?: string
 }
 
 export { isE2eStub, setE2eStubPackagedForTest } from "./e2e-stub-gate.ts"
@@ -186,6 +194,8 @@ export async function* createE2eStubStream(
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  const sendFail = e2eSendFixture(opts?.env ?? process.env, e2eStubPackaged(), opts?.userData)
+  if (sendFail) throw e2eSendFixtureError(sendFail)
   if (shouldFailStubStore(prompt)) {
     throw new Error("INTERNAL_STORE_ERROR")
   }

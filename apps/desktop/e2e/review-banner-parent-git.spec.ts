@@ -32,6 +32,7 @@ test("父仓子目录 + 未跟踪文件：横幅列出 e2e-stub.txt", async () =
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData
     }

@@ -14,8 +14,9 @@ import { clearConversationSessionAllow } from "./conversation-session-allow.ts"
 import { advanceSessionAllowWatermark } from "./conversation-session-allow-history.ts"
 import { getDatabase } from "./database.ts"
 import { clearInspectPromptSnapshot } from "./inspect-prompt-snapshot.ts"
-import { persistUserTurn } from "./persist-user-attachments.ts"
 import { recomputeReviewAfterTruncate } from "./review-after-truncate.ts"
+import { persistUserTurnOutcome } from "./persist-user-attachments.ts"
+import type { PersistedMessage } from "./persist-session.ts"
 import { clearSessionCompaction } from "./session-compaction-store.ts"
 import type { UserFileAsset } from "./user-attachment-parts.ts"
 
@@ -32,6 +33,8 @@ export type ExplicitTruncateInput = {
   afterMessageId?: string
   fromMessageId?: string
   persistUser?: { content: string; messageId?: string; attached: UserFileAsset[] }
+  /** 提交后回报用户句：新插入还是 UPDATE 已有行（首字前回滚只删新插入的）。 */
+  onUserPersisted?: (outcome: PersistedMessage | undefined) => void
   /** 只做活 run / 尾巴预检，通过也不删（rewind 还原文件前先问）。 */
   dryRun?: boolean
 }
@@ -84,6 +87,7 @@ export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): Sess
   db.exec("BEGIN IMMEDIATE;")
   let deleted = 0
   let wroteUser = false
+  let userOutcome: PersistedMessage | undefined
   try {
     if (sessionHasBlockingRun(input.sessionId)) {
       db.exec("ROLLBACK;")
@@ -120,7 +124,7 @@ export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): Sess
       if (throwAfterFirstDeleteForTest) throw new Error("TRUNCATE_TEST_INJECTED")
     }
     if (input.persistUser) {
-      persistUserTurn(
+      userOutcome = persistUserTurnOutcome(
         input.sessionId,
         input.persistUser.content,
         input.persistUser.attached,
@@ -136,6 +140,7 @@ export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): Sess
     throw error
   }
 
+  if (wroteUser) input.onUserPersisted?.(userOutcome)
   if (deleted === 0 && wroteUser) {
     advanceSessionAllowWatermark(input.sessionId)
   }

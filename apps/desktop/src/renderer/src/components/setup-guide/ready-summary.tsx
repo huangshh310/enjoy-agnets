@@ -12,10 +12,18 @@ export function ReadySummary({ workspaceName }: { workspaceName: string }) {
   const readiness = useChatReadiness().data
   const ready = readiness?.ready === true
   const engineCount = readiness?.engineCount ?? 0
+  const unverified = ready && readiness?.credentialCheck?.state === "unverified"
   if (!ready) {
     return (
       <p data-testid="ready-need-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
         {t("settings.setupGuide.readyNeedSummary", { count: engineCount })}
+      </p>
+    )
+  }
+  if (unverified) {
+    return (
+      <p data-testid="ready-unverified-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
+        {t("settings.setupGuide.readyUnverifiedHint")}
       </p>
     )
   }

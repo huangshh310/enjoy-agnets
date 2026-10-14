@@ -508,6 +508,8 @@ async function launchStubApp(
     env: {
       ...process.env,
       ENJOY_E2E_STUB: "1",
+      // 未设 CHAT_READY 不再注入 ollama；本文件都要能发，显式种 key。
+      ENJOY_E2E_CHAT_READY: "key",
       ENJOY_E2E_WORKSPACE: workspace,
       ENJOY_E2E_USERDATA: userData,
       ...(opts?.lang ? { ENJOY_E2E_LANG: opts.lang } : {})

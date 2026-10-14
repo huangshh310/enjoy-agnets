@@ -22,6 +22,8 @@
     "./quoted-context": "./src/quoted-context.ts",
     "./chat-readiness": "./src/chat-readiness.ts",
     "./automations": "./src/automations.ts",
+    "./pre-output-failure": "./src/pre-output-failure.ts",
+    "./credential-check": "./src/credential-check.ts",
     "./host-inject": "./src/host-inject.ts",
     "./stream-event": "./src/stream-event.ts",
     "./desktop-notify": "./src/desktop-notify.ts",

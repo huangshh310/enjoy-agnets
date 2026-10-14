@@ -11,7 +11,16 @@ export { resolveRuntimeId } from "./resolve-runtime-id"
 import { listAgentTools } from "./agent-tools-service"
 import { harnessPublicStatus } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
-import { hasSecret, readSecret, type StoredSecret } from "./secrets"
+import type { CredentialCheckState } from "@enjoy-agents/ipc-contract/credential-check"
+import { readCredentialCheck } from "./credential-check-store.ts"
+import { credentialFingerprint } from "./credential-fingerprint.ts"
+import {
+  getActiveProfile,
+  profileHasSecret,
+  secretFromProfile,
+  type ProviderProfile,
+  type StoredSecret
+} from "./secrets"
 import { MISSING_RUN_SECRET } from "./missing-run-secret"
 
 export { foldMissingRunSecret, isMissingRunSecretError, MISSING_RUN_SECRET } from "./missing-run-secret"
@@ -60,26 +69,68 @@ async function modelIdsForRuntime(runtimeId: string): Promise<readonly string[]>
   return listed.find((item) => item.id === runtimeId)?.models.map((item) => item.id) ?? []
 }
 
+export type ResolvedRunSecret = {
+  secret: StoredSecret
+  profileId?: string
+  fingerprint?: string
+}
+
+/**
+ * 这次发送用的档案：只读一次 vault。闸（hasSecret / credentialState）与 resolveRunSecret
+ * 都从这一份取，401 回写不会落到别的档案上。与 contract 的 runKeyProfileIdOf 同义（当前档案）。
+ */
+export type RunProfile = {
+  profile?: ProviderProfile
+  hasSecret: boolean
+  fingerprint?: string
+  credentialState?: CredentialCheckState
+}
+
+export async function readRunProfile(): Promise<RunProfile> {
+  const profile = await getActiveProfile()
+  if (!profile) return { hasSecret: false }
+  const fingerprint = credentialFingerprint(profile)
+  return {
+    profile,
+    hasSecret: profileHasSecret(profile),
+    fingerprint,
+    credentialState: readCredentialCheck(profile.id, fingerprint)?.state
+  }
+}
+
 /** ACP 不读 Providers Key；Harness 查沙箱就绪；本机 ToolLoop 必须有 API key。 */
 export async function resolveRunSecret(
   runtimeId: string,
   codingRuntime: "local" | "harness",
-  harnessId?: string
-): Promise<StoredSecret | undefined> {
+  harnessId?: string,
+  known?: RunProfile
+): Promise<ResolvedRunSecret | undefined> {
   if (isAcpHostRuntime(runtimeId)) return undefined
   if (codingRuntime === "harness") {
     const status = await harnessPublicStatus(harnessId)
     if (!status.ready) {
       throw new Error(status.blockedReason ?? "Harness is not ready for this provider.")
     }
-    return readSecret()
+    return resolvedFrom(known ?? (await readRunProfile()))
   }
-  const ready = await hasSecret()
-  const secret = await readSecret()
-  if (!ready || !secret) {
+  const run = known ?? (await readRunProfile())
+  if (!run.hasSecret || !run.profile) {
     throw new Error(MISSING_RUN_SECRET)
   }
-  return secret
+  return resolvedFrom(run)
+}
+
+export async function activeProfileCredentialState(): Promise<CredentialCheckState | undefined> {
+  return (await readRunProfile()).credentialState
+}
+
+function resolvedFrom(run: RunProfile): ResolvedRunSecret | undefined {
+  if (!run.profile) return undefined
+  return {
+    secret: secretFromProfile(run.profile),
+    profileId: run.profile.id,
+    fingerprint: run.fingerprint
+  }
 }
 
 export async function readResponseMessages(result: unknown): Promise<ModelMessage[]> {

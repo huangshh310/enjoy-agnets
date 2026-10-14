@@ -136,6 +136,16 @@ function createWindow(): BrowserWindow {
   mainWindow.webContents.on("dom-ready", () => {
     void mainWindow.webContents.executeJavaScript(pushGpuCompositingScript(gpuWatch.getFlag()))
   })
+  mainWindow.on("blur", () => {
+    void import("./services/session-focus").then(({ clearFocusedSessionId }) => {
+      clearFocusedSessionId()
+    })
+  })
+  mainWindow.on("closed", () => {
+    void import("./services/session-focus").then(({ clearFocusedSessionId }) => {
+      clearFocusedSessionId()
+    })
+  })
 
   blockNativeHistoryNavigation(mainWindow);
   lockPreviewWebview(mainWindow.webContents);

@@ -1,8 +1,9 @@
 /**
- * CHAT_READY=key / engine：写入真能发的 stub 路线。打包态 / 非隔离目录不写。
- * 只种一次，避免每次 ready 重算都 activate:true。
+ * CHAT_READY 写盘：key / engine 种可发路线；none 只盖「曾经没有可用路线」。
+ * 打包态 / 非隔离目录不写。只种一次，避免每次 ready 重算都 activate:true。
  */
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
+import { SEEN_NO_USABLE_CHAT_ROUTE_KEY } from "./default-chat-route"
 import { setSetting } from "./database"
 import {
   E2E_CHAT_READY_ENGINE_ID,
@@ -15,6 +16,8 @@ import {
   e2eStubEngineInspectValue
 } from "./e2e-chat-readiness"
 import { writeInspectCache } from "./agent-tools-account/inspect-store"
+import { e2eCredentialFixture } from "./credential-check-run.ts"
+import { writeCredentialCheck } from "./credential-check-store.ts"
 import { isE2eStub } from "./e2e-stub"
 import { readVault, upsertProfile } from "./secrets"
 import { existingSeedProfileId } from "./e2e-seed-profile"
@@ -34,6 +37,11 @@ export async function seedE2eChatReadyRoute(input: {
   if (seededKind) return false
   if (!isE2eStub() || !e2eChatReadySeedAllowed(input)) return false
   const kind = e2eChatReadyKind()
+  if (kind === "none") {
+    setSetting(SEEN_NO_USABLE_CHAT_ROUTE_KEY, "1")
+    seededKind = "none"
+    return true
+  }
   if (kind === "key") {
     const vault = await readVault()
     await upsertProfile({
@@ -48,6 +56,10 @@ export async function seedE2eChatReadyRoute(input: {
       activate: true
     })
     setSetting("defaultModelId", E2E_CHAT_READY_MODEL_ID)
+    writeCredentialCheck(
+      E2E_CHAT_READY_KEY_PROFILE_ID,
+      e2eCredentialFixture() ?? { state: "ok" }
+    )
     seededKind = "key"
     return true
   }

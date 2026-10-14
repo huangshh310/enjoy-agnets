@@ -1,6 +1,7 @@
 /**
  * 按 runtimeId / 偏好打开 Enjoy Local、本机 ACP 或 SDK 沙箱流。
  */
+import { app } from "electron"
 import { resolveToolApproval } from "@enjoy-agents/agent-core"
 import {
   acpSessionAlive,
@@ -57,7 +58,8 @@ function openedE2eStub(
   return {
     stream: createE2eStubStream(input.messages, input.abortSignal, {
       isToolApproved: (toolName, toolInput) =>
-        resolveToolApproval(toolName, input.mode, policy, toolInput) === "approved"
+        resolveToolApproval(toolName, input.mode, policy, toolInput) === "approved",
+      userData: app.getPath("userData")
     }),
     result: {},
     dispose: async () => undefined,

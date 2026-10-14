@@ -135,6 +135,10 @@ export const StreamEvent = z.discriminatedUnion("type", [
     kind: z.string().max(40).optional().catch(undefined),
     /** 用户停 / 归档：`user_aborted`。renderer 只认这码走中性已停止。 */
     code: z.string().optional(),
+    /** 首字前失败已回滚本轮气泡；只认 `true`，缺省 / 坏字段都不算（发射方不必都带这一位）。 */
+    preOutput: z.boolean().optional().catch(false),
+    /** 首字前回滚保留了本轮之前就有的用户句（重新生成 / 编辑重发只 UPDATE）。renderer 只撤空助手。 */
+    keptUserMessage: z.boolean().optional().catch(undefined),
     turn: TurnOutcome.optional(),
     ...Envelope
   }),

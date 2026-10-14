@@ -19,6 +19,7 @@ import {
   SessionRecapInput,
   SessionRecapResult,
   SessionRenameInput,
+  SessionSetFocusedInput,
   SessionTruncateFromInput,
   WorkspaceIdInput
 } from "@enjoy-agents/ipc-contract"
@@ -92,7 +93,8 @@ export const SESSION_CHANNELS = [
   "session.estimatedCost",
   "session.lastError",
   "session.changes",
-  "session.dismissError"
+  "session.dismissError",
+  "session.setFocused"
 ] as const
 
 export function registerSessionIpc() {
@@ -131,6 +133,11 @@ function registerSessionCatalogIpc() {
     listMessages(SessionIdInput.parse(raw).sessionId)
   )
   ipcMain.handle("session.estimatedCost", async (_event, raw) => loadSessionEstimatedCost(raw))
+  ipcMain.handle("session.setFocused", async (_event, raw) => {
+    const { setFocusedSessionId } = await import("./services/session-focus")
+    setFocusedSessionId(SessionSetFocusedInput.parse(raw).sessionId)
+    return { ok: true as const }
+  })
 }
 
 function registerSessionEditIpc() {

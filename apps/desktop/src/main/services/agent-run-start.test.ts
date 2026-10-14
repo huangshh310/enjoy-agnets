@@ -24,7 +24,9 @@ test("runAgent / resume / heartbeat 都走 beginAgentRun，且 resolveRuntimeId"
 
 test("leo：userMessageId 只在返回前同步落库用户句后才回（renderer 据此清 main 的稿）", () => {
   const hold = src.indexOf("const held = holdRunThenPersistUser(")
-  const assign = src.indexOf("userMessageId = persistOutgoingUser(input, options.persistUser)")
+  // #135 MF-1：先拿 {id, inserted}，返回 / 回执用库里的 id，回滚只认新插入的 id。
+  const assign = src.indexOf("userMessageId = outcome?.id ?? persistedOutgoingUserId(input, options.persistUser)")
+  assert.ok(src.indexOf("const outcome = persistOutgoingUser(input, options.persistUser)") > hold)
   const ret = src.indexOf("return userMessageId ? { ok: true, runId, userMessageId } : { ok: true, runId }")
   assert.ok(hold > 0 && assign > hold && ret > assign)
   // 回执去重：带回第一次落库的 userMessageId（leo），没落库就不带。

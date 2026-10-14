@@ -22,6 +22,7 @@ import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
   classifyThreadError,
+  CREDENTIAL_INVALID,
   NEED_MODEL,
   NEED_PROVIDER_KEY,
   NO_CHAT_ROUTE
@@ -302,7 +303,7 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   const blocked = useChatStore.getState().error
   const draft = prepared?.content || readComposerDomText() || store.composer
   if (draft) restoreComposerDraft(draft, prepared?.assets)
-  if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
+  if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL || blocked === CREDENTIAL_INVALID) return
   if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)
 }
@@ -470,6 +471,7 @@ async function startComposerRun(
     attachments: assetIds,
     executePlan: executePlan || undefined,
     commandId: crypto.randomUUID(),
+    clientRequestId: crypto.randomUUID(),
     ...(desktopBias ? { desktopBias } : {}),
     ...(once ? { computerUseOnce: true } : {})
   })

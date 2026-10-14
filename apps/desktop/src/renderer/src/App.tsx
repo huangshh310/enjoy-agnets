@@ -9,6 +9,7 @@ import { router } from "@renderer/router"
 import { AppToaster } from "@renderer/components/layout/app-toaster"
 import { initThemeSkin } from "@renderer/hooks/use-theme-skin"
 import { installEnjoyE2eBridge } from "@renderer/lib/enjoy-e2e-bridge"
+import { SessionFocusReporter } from "@renderer/hooks/session-focus-reporter"
 
 initThemeSkin()
 installEnjoyE2eBridge()
@@ -19,6 +20,7 @@ export default function App() {
         <RendererErrorBoundary>
           <TooltipProvider>
             <CrashProbe />
+            <SessionFocusReporter />
             <RouterProvider router={router} />
             <AppToaster />
           </TooltipProvider>

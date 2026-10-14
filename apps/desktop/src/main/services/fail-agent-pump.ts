@@ -13,6 +13,18 @@ import { claimCatchUpFail } from "./claim-catchup-fail"
 import { isCatchUpApprovalTimeout } from "./automations-catchup-timeout"
 import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
+import {
+  classifyEnjoyLocalSendFailure,
+  persistCredentialAfterSend
+} from "./credential-send-outcome.ts"
+import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
+import {
+  isForegroundPreOutputFailure,
+  preOutputAttention,
+  preOutputRollbackIds,
+  shouldRollbackPreOutput
+} from "./pre-output-fail"
+import { markRunDiscardedPreOutput, rollbackPreOutputMessages } from "./pre-output-rollback"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
@@ -58,7 +70,22 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
   if (classified.message === INTERNAL_STORE_ERROR) {
     console.error("agent pump store error", error)
   }
-  persistActiveRun(run, runId, "failed", classified.message)
+  const sendFail = classifyEnjoyLocalSendFailure(error)
+  if (sendFail?.persist) {
+    void persistCredentialAfterSend(run, sendFail.persist)
+  }
+  const code = sendFail?.code ?? (isPreOutputFailureCode(classified.message) ? classified.message : undefined)
+  const message = code ?? classified.message
+  const rollback = {
+    producedOutput: Boolean(run.producedOutput),
+    code,
+    eligible: run.rollbackEligible === true
+  }
+  if (shouldRollbackPreOutput(rollback)) {
+    emitPreOutputFail(runId, run, rollback.code)
+    return
+  }
+  persistActiveRun(run, runId, "failed", message)
   recordMetric({
     runId,
     kind: "agent",
@@ -67,16 +94,56 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     durationMs: Date.now() - run.startedAt,
     errorClass: classified.errorClass
   })
-  settleRun(runId, { status: "error", summary: classified.message })
+  settleRun(runId, { status: "error", summary: message })
   const turn = turnOutcomeForRun(run, "error")
   persistTurnWorkflow(run.input.sessionId, turn)
-  emitEvent(run.window, { type: "run.error", runId, message: classified.message, turn })
+  emitEvent(run.window, {
+    type: "run.error",
+    runId,
+    message,
+    ...(code ? { code } : {}),
+    turn
+  })
   if (classified.errorClass !== "timeout") return
   emitEvent(run.window, {
     type: "generation.warning",
     runId,
     code: "timeout",
     message: classified.message
+  })
+}
+
+function emitPreOutputFail(runId: string, run: ActiveRun, code: string): void {
+  rollbackPreOutputMessages({
+    sessionId: run.input.sessionId,
+    messageIds: preOutputRollbackIds(run),
+    snapshot: run.sessionSnapshot,
+    titleAfterStart: run.titleAfterStart
+  })
+  markRunDiscardedPreOutput(runId, code)
+  recordMetric({
+    runId,
+    kind: "agent",
+    modelId: run.input.modelId,
+    status: "failed",
+    durationMs: Date.now() - run.startedAt,
+    errorClass: "pre_output"
+  })
+  settleRun(runId, { status: "error", summary: code })
+  const foreground = isForegroundPreOutputFailure(run)
+  const turn = {
+    ...turnOutcomeForRun(run, "error"),
+    workflow: (run.sessionSnapshot?.workflowStatus as "todo" | "in_progress" | "needs_review") ?? "todo",
+    attention: preOutputAttention(foreground)
+  }
+  emitEvent(run.window, {
+    type: "run.error",
+    runId,
+    message: code,
+    code,
+    preOutput: true,
+    ...(run.userMessageId || !run.keptUserMessage ? {} : { keptUserMessage: true }),
+    turn
   })
 }
 

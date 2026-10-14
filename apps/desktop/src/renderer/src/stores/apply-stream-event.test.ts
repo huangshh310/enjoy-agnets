@@ -348,6 +348,92 @@ test("新一轮 toolCallId 撞上上一轮：不得折进 restart_abandoned，�
   assert.equal(fresh?.tools?.[0]?.state, "output-available")
 })
 
+test("首字前失败 preOutput：拿掉乐观气泡并还回草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_old", role: "assistant", content: "old", createdAt: 1 },
+    { id: "msg_user_1", role: "user", content: "hello", createdAt: 2 },
+    { id: "msg_pending", role: "assistant", content: "", createdAt: 3, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: true
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 1)
+  assert.equal(patch.messages[0]?.id, "msg_old")
+  assert.equal(patch.composer, "hello")
+  assert.equal(patch.running, false)
+  assert.equal(patch.runId, null)
+  assert.equal(patch.error, "provider_unreachable")
+})
+
+test("首字前失败 keptUserMessage（重新生成 / 编辑重发）：只撤空助手，用户句留着、不回填草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello", createdAt: 2 },
+    { id: "msg_pending", role: "assistant", content: "", createdAt: 3, streaming: true }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: true,
+      keptUserMessage: true
+    },
+    "run_1"
+  )
+  assert.deepEqual(
+    patch.messages.map((row) => row.id),
+    ["msg_user_1"]
+  )
+  assert.equal(patch.composer, undefined)
+  assert.equal(patch.error, "provider_unreachable")
+})
+
+test("首发失败稳定码写回 error 并留下草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
+    { id: "msg_1", role: "assistant", content: "", createdAt: 2, streaming: true }
+  ]
+  const invalid = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "401 Unauthorized", code: "credential_invalid" },
+    "run_1"
+  )
+  assert.equal(invalid.error, "credential_invalid")
+  assert.equal(invalid.composer, "hello draft")
+  const unreachable = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "ECONNREFUSED", code: "provider_unreachable" },
+    "run_1"
+  )
+  assert.equal(unreachable.error, "provider_unreachable")
+  assert.equal(unreachable.composer, "hello draft")
+  const forbidden = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "403", code: "provider_forbidden" },
+    "run_1"
+  )
+  assert.equal(forbidden.error, "provider_forbidden")
+  assert.equal(forbidden.composer, "hello draft")
+  const billing = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_1", message: "402", code: "provider_billing" },
+    "run_1"
+  )
+  assert.equal(billing.error, "provider_billing")
+  assert.equal(billing.composer, "hello draft")
+  assert.equal(JSON.stringify(invalid).includes("Unauthorized"), false)
+})
+
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {
   const patch = reduceStreamEvent([], {
     type: "approval.resolved",

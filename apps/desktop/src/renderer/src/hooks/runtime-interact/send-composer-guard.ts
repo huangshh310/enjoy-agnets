@@ -1,7 +1,7 @@
 /**
  * 发送前置：Enjoy Local 共用 chatRouteGateCode；无快照放行。
  */
-import { chatRouteGateCode } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { chatRouteGateCode, CREDENTIAL_INVALID } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { rememberedAgentTool } from "../agent-tools-cache.ts"
 import { peekChatReadiness, peekCodingRuntime } from "../chat-readiness-cache.ts"
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
@@ -31,13 +31,14 @@ type ComposerGuardStore = {
   setAgentPickerOpen: (open: boolean) => void
 }
 
-function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
+function enjoyLocalGateCode(): ReturnType<typeof chatRouteGateCode> {
   const snap = peekChatReadiness()
   return chatRouteGateCode({
     runtimeId: "enjoy-local",
     codingRuntime: peekCodingRuntime(),
     hasEnjoySecret: snap ? (snap.hasEnjoySecret ?? "unknown") : "unknown",
-    verifiedLocal: snap ? snap.localModels.some((row) => row.verified === true) : "unknown"
+    verifiedLocal: snap ? snap.localModels.some((row) => row.verified === true) : "unknown",
+    credentialState: snap?.credentialCheck?.state
   })
 }
 
@@ -92,8 +93,9 @@ export function guardComposerSend(
     }
   }
   if (store.runtimeId === "enjoy-local") {
-    if (enjoyLocalGateCode()) {
-      store.setError(NO_CHAT_ROUTE)
+    const gate = enjoyLocalGateCode()
+    if (gate) {
+      store.setError(gate === CREDENTIAL_INVALID ? CREDENTIAL_INVALID : NO_CHAT_ROUTE)
       return false
     }
     if (currentProfileNeedsModel(store.modelId)) {

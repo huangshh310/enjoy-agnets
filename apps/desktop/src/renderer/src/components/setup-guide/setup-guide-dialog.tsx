@@ -98,7 +98,7 @@ export function SetupGuideDialog() {
       >
         <SetupGuideHeader
           step={step}
-          titleKey={step === "ready" ? readyGuideTitleKey(chatReady) : undefined}
+          titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state) : undefined}
           readyMark={step === "ready" ? chatReady : undefined}
           summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} /> : undefined}
         />

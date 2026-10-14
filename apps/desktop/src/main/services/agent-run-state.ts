@@ -7,6 +7,9 @@ import { sessionAllowScopeFor } from "../../../../../packages/agent-core/src/pol
 import { sessionTableAllowsTool } from "../../../../../packages/agent-core/src/tool-approval.ts"
 import { seedRunSessionAllow } from "./conversation-session-allow"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { eventMarksProducedOutput } from "@enjoy-agents/ipc-contract/pre-output-failure"
+import type { RunBackgroundKind } from "./pre-output-fail"
+import type { SessionTurnSnapshot } from "./pre-output-rollback"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
 import type { CitedSource } from "./cite-knowledge"
@@ -23,6 +26,10 @@ export type ActiveRun = {
   input: RunAgentInput
   workspaceRoot: string
   secret?: StoredSecret
+  /** 本轮实际用的档案；回写 credentialCheck 只认这个 id。 */
+  profileId?: string
+  /** 开跑时的密钥/端点指纹，回写对不上则丢掉。 */
+  credentialFingerprint?: string
   pendingApprovals: PendingApproval[]
   sessionApprovedTools: Set<string>
   sessionApprovedBashCommands: Set<string>
@@ -65,6 +72,20 @@ export type ActiveRun = {
   catchUpApprovalTimedOut?: boolean
   /** 重启回挂 waiting=restart；续跑 / 回挂 running=restore。 */
   reaskReason?: "restart" | "restore"
+  /** 文本 / 工具 / 审批 / 开泵后的 source.added。 */
+  producedOutput?: boolean
+  /** 本轮新 INSERT 的用户句；首字前回滚只删这个 id（UPDATE 已有行不记）。 */
+  userMessageId?: string
+  sessionSnapshot?: SessionTurnSnapshot
+  /** 本轮用户句落在已有行上（重新生成 / 编辑重发）；回滚保留它，run.error 带 keptUserMessage。 */
+  keptUserMessage?: boolean
+  /** 开跑落用户句后的标题；回滚时库里标题已不是它（用户改名）就不复原标题。 */
+  titleAfterStart?: string
+  backgroundKind?: RunBackgroundKind
+  /** 只有全新一轮可首字前回滚；回挂 / 续跑沿用的行不属于本轮。 */
+  rollbackEligible?: boolean
+  /** 挂上时已存在的助手行（回挂沿用）；首字前回滚永远不删它。 */
+  heldAssistantMessageId?: string
 }
 
 const activeRuns = new Map<string, ActiveRun>()
@@ -84,6 +105,7 @@ export function emitEvent(window: BrowserWindow, event: StreamEvent) {
     if (fallback) settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
     return
   }
+  noteProducedOutput(next)
   const sessionId = next.sessionId ?? sessionIdOfRun(next)
   if (sessionId) {
     stampAndSend(window, next, sessionId)
@@ -93,6 +115,14 @@ export function emitEvent(window: BrowserWindow, event: StreamEvent) {
   if (window.isDestroyed()) return
   window.webContents.send("agent.event", next)
   settleRunWaiters(next)
+}
+
+function noteProducedOutput(event: StreamEvent): void {
+  const runId = "runId" in event ? event.runId : undefined
+  if (!runId) return
+  const run = getActiveRun(runId)
+  if (!run || run.producedOutput) return
+  if (eventMarksProducedOutput(event, run.pumping)) run.producedOutput = true
 }
 
 function withAutomationApprovalSource(event: StreamEvent): StreamEvent {
@@ -219,6 +249,8 @@ export function holdAgentRun(
     input: patch.input,
     workspaceRoot: patch.workspaceRoot,
     secret: patch.secret,
+    profileId: patch.profileId,
+    credentialFingerprint: patch.credentialFingerprint,
     pendingApprovals: [],
     // 本会话允许：user 才并写盘/bash 表；心跳/自动化/补跑只并 desktop 表。
     ...seedRunSessionAllow(patch.input.sessionId, {
@@ -236,7 +268,13 @@ export function holdAgentRun(
     transcript: emptyTranscript(),
     tools: patch.tools ?? [],
     assistantPersisted: patch.assistantPersisted ?? Boolean(patch.assistantMessageId),
-    assistantMessageId: patch.assistantMessageId
+    assistantMessageId: patch.assistantMessageId,
+    producedOutput: false,
+    userMessageId: patch.userMessageId,
+    sessionSnapshot: patch.sessionSnapshot,
+    backgroundKind: patch.backgroundKind,
+    rollbackEligible: patch.rollbackEligible === true && !patch.assistantMessageId,
+    heldAssistantMessageId: patch.assistantMessageId
   })
 }
 

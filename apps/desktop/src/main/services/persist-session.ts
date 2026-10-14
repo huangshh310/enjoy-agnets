@@ -63,6 +63,20 @@ export function persistMessage(
   messageId?: string,
   opts?: { inTransaction?: boolean; draftText?: string }
 ): string {
+  return persistMessageOutcome(sessionId, role, content, parts, messageId, opts).id
+}
+
+/** 同 persistMessage，另报这一行是本次新 INSERT 还是 UPDATE 已有行（首字前回滚只删新插入的）。 */
+export type PersistedMessage = { id: string; inserted: boolean }
+
+export function persistMessageOutcome(
+  sessionId: string,
+  role: string,
+  content: string,
+  parts?: UIMessagePart[],
+  messageId?: string,
+  opts?: { inTransaction?: boolean; draftText?: string }
+): PersistedMessage {
   const now = Date.now()
   const db = getDatabase()
   const id = messageId ?? createId("msg")
@@ -107,7 +121,7 @@ export function persistMessage(
       db.exec("COMMIT;")
       advanceSessionAllowWatermark(sessionId)
     }
-    return id
+    return { id, inserted: owner !== sessionId }
   } catch (err) {
     if (!nested) db.exec("ROLLBACK;")
     throw err
