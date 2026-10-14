@@ -84,6 +84,8 @@ export function ImageAttachmentItem({
           <img
             src={src}
             alt={item.name}
+            // luna：blob 预览已被 revoke 时退回资产库重读（只退一次，data URL 不再退）。
+            onError={() => setSrc((cur) => (cur?.startsWith("blob:") ? null : cur))}
             className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
         ) : (

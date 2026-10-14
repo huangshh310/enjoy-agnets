@@ -10,7 +10,11 @@ import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
 import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
 import { composerRunKind } from "../composer-run-kind"
-import { syncReviewGateOnComposerStart } from "../../components/ai-chat/review-gate/sync-review-gate"
+import {
+  commitComposerStartGate,
+  rollbackComposerStartGate,
+  syncReviewGateOnComposerStart
+} from "../../components/ai-chat/review-gate/sync-review-gate"
 import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
 import { failComposerSend } from "./fail-composer-send"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
@@ -26,7 +30,12 @@ import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { readComposerDomText } from "../composer-dom"
 import { holdPastSendWatchdogForE2e } from "../../lib/e2e-send-watchdog"
-import { holdEmptyDraftWrite, releaseEmptyDraftHold, writePersistedDraft } from "../../lib/session-draft-storage"
+import {
+  forgetPersistedDraftAssets,
+  holdEmptyDraftWrite,
+  releaseEmptyDraftHold,
+  writePersistedDraft
+} from "../../lib/session-draft-storage"
 import { setComposerWritebackHeld } from "../composer-sync-lock"
 import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
@@ -206,6 +215,8 @@ export async function sendComposerMessage(
       // 上面的 cancelled 分支已拦下（resolve-send-payload.test 锁住这个顺序）。
       store.setRunning(false)
       store.setPreparingHint(false)
+      // main 没接手：发送前乐观改的 workflow 还原。
+      rollbackComposerStartGate(store.sessionId)
       return
     }
     // leo M1：建会话窗排队首发在入队时已清过输入框——现在框里是后打的 B，不能按 A 去截 / 清
@@ -235,7 +246,8 @@ export async function sendComposerMessage(
     failComposerSend({
       text: snapshot.text,
       reason: SEND_FAILED_RESTORE,
-      sessionId: useChatStore.getState().sessionId,
+      // leo：用发送时的会话（发送途中切走，不能把失败还原到当前界面的会话上）。
+      sessionId: draftSid,
       createdSessionId: prepared?.sessionId,
       assets: snapshot.assets,
       chips: snapshot,
@@ -274,6 +286,7 @@ function armComposerWatchdog(typed: string): SendAttempt {
       const otherHolds = self ? runningHeldByOther(self) : true
       state.setPreparingHint(false)
       restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE)
+      rollbackComposerStartGate(before.sessionId)
       // jojo P3：这次 Enter 新建的空会话不留在侧栏（有在跑的 run / 待回助手 / 任何内容都不删）。
       const empty = emptySessionToDiscardAfterWatchdog(before.sessionId, useChatStore.getState(), otherHolds)
       if (empty) void discardCreatedSession(empty, () => true, { keepComposer: true, onlyIfEmpty: true })
@@ -367,6 +380,8 @@ async function launchComposerRun(
       })
       return userPersisted
     }
+    commitComposerStartGate(sessionId)
+    forgetPersistedDraftAssets(sessionId)
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
     return userPersisted

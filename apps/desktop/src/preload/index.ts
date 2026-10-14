@@ -87,7 +87,11 @@ const ide = {
     delete: (input: unknown) => ipcRenderer.invoke("session.delete", input),
     drafts: {
       loadSync: (): Record<string, string> => ipcRenderer.sendSync("session.drafts.loadSync") ?? {},
-      save: (input: { sessionId: string; text: string }) => ipcRenderer.send("session.drafts.save", input)
+      save: (input: { sessionId: string; text: string }) => ipcRenderer.send("session.drafts.save", input),
+      loadAssetsSync: (): Record<string, Array<{ id: string; name: string; mediaType?: string; size?: number }>> =>
+        ipcRenderer.sendSync("session.drafts.loadAssetsSync") ?? {},
+      saveAssets: (input: { sessionId: string; assets: Array<{ id: string; name: string; mediaType?: string; size?: number }> }) =>
+        ipcRenderer.send("session.drafts.saveAssets", input)
     },
     lastError: (input: unknown) => ipcRenderer.invoke("session.lastError", input),
     changes: (input: unknown) => ipcRenderer.invoke("session.changes", input),

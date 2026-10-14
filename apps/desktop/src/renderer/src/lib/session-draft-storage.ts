@@ -3,6 +3,7 @@
  * 只存正文（附件 / 引用仍是内存草稿）。键是 sessionId；sessionId 为空（新对话创建窗）不存，与会话草稿互不串。
  */
 import { useChatStore } from "../stores/chat-store"
+import { listComposerAssets, setComposerAssetPersister } from "../hooks/composer-assets"
 import type { SessionDraftState } from "../stores/chat-store.types"
 
 const STORAGE_KEY = "enjoy-agents-session-drafts"
@@ -11,9 +12,13 @@ export const DRAFT_PERSIST_DEBOUNCE_MS = 300
 
 type DraftMap = Record<string, string>
 
+type DraftAsset = { id: string; name: string; mediaType?: string; size?: number }
+
 type DraftBridge = {
   loadSync: () => DraftMap
   save: (input: { sessionId: string; text: string }) => void
+  loadAssetsSync?: () => Record<string, DraftAsset[]>
+  saveAssets?: (input: { sessionId: string; assets: DraftAsset[] }) => void
 }
 
 /**
@@ -125,12 +130,81 @@ export function writePersistedDraft(sessionId: string, text: string): void {
   timer = setTimeout(flushPersistedDrafts, DRAFT_PERSIST_DEBOUNCE_MS)
 }
 
-/** 打开会话时的稿：内存草稿优先（带附件 / 引用）；没有就用落盘的正文（重启后）。 */
+let assetCache: Record<string, DraftAsset[]> | null = null
+
+function draftAssets(): Record<string, DraftAsset[]> {
+  if (!assetCache) {
+    try {
+      assetCache = { ...bridge().loadAssetsSync?.() }
+    } catch {
+      assetCache = {}
+    }
+  }
+  return assetCache
+}
+
+export function readPersistedDraftAssets(sessionId: string): DraftAsset[] | undefined {
+  const list = draftAssets()[sessionId]
+  return list && list.length > 0 ? list : undefined
+}
+
+/** jojo P1：草稿附件按**这个**会话落库（只粘图的新会话不是空壳；绝不挂到别的会话）。 */
+export function writePersistedDraftAssets(sessionId: string, assets: DraftAsset[]): void {
+  if (!sessionId) return
+  const clean = assets.map((a) => ({ id: a.id, name: a.name, mediaType: a.mediaType, size: a.size }))
+  const map = draftAssets()
+  if (clean.length > 0) map[sessionId] = clean
+  else delete map[sessionId]
+  try {
+    bridge().saveAssets?.({ sessionId, assets: clean })
+  } catch {
+    // 只丢持久化
+  }
+}
+
+/**
+ * leo：发送已被 main 接手（main 在用户消息落库事务里清了库里的草稿附件）——renderer 缓存也丢掉，
+ * 否则切走再切回，旧图会从缓存冒回输入框。只清缓存，不再往 main 写。
+ */
+export function forgetPersistedDraftAssets(sessionId: string | null | undefined): void {
+  if (!sessionId || !assetCache) return
+  delete assetCache[sessionId]
+}
+
+/**
+ * leo：建会话窗里（还没有 sessionId）粘的图只在内存；会话一建好就落到**这个**会话的草稿附件，
+ * 强杀 / 切走不丢，也不会被当空会话清掉。有排队首发时附件随发送走，不落草稿。
+ */
+export function persistCreateWindowAssets(sessionId: string): void {
+  const assets = listComposerAssets()
+  if (assets.length > 0) writePersistedDraftAssets(sessionId, assets)
+}
+
+export function resetPersistedDraftAssetsForTest(): void {
+  assetCache = null
+}
+
+/**
+ * luna：内存草稿里的附件预览是 blob: URL，离开会话（新对话 / 清输入框）时会被 revoke，切回来缩略图就坏了。
+ * 恢复时丢掉 blob: 预览，让缩略图按 asset id 从资产库重读（和重启后的落盘恢复同一条路）。
+ */
+export function withoutBlobPreviews<T extends { url?: string }>(assets: T[]): T[] {
+  return assets.map((asset) => {
+    if (!asset.url?.startsWith("blob:")) return asset
+    const rest = { ...asset }
+    delete rest.url
+    return rest
+  })
+}
+
+/** 打开会话时的稿：内存草稿优先（带附件 / 引用）；没有就用落盘的正文 + 附件（重启后）。 */
 export function composerDraftForSession(sessionId: string): SessionDraftState | undefined {
   const memory = useChatStore.getState().getSessionDraft(sessionId)
-  if (memory) return memory
+  if (memory) return memory.assets?.length ? { ...memory, assets: withoutBlobPreviews(memory.assets) } : memory
   const persisted = readPersistedDraft(sessionId)
-  return persisted ? { text: persisted } : undefined
+  const assets = readPersistedDraftAssets(sessionId)
+  if (!persisted && !assets) return undefined
+  return { text: persisted ?? "", ...(assets ? { assets } : {}) }
 }
 
 let installed: (() => void) | null = null
@@ -143,11 +217,16 @@ export function installSessionDraftPersistence(): () => void {
     if (!state.sessionId || state.sessionId !== prev.sessionId) return
     writePersistedDraft(state.sessionId, state.composer)
   })
+  setComposerAssetPersister((items) => {
+    const sid = useChatStore.getState().sessionId
+    if (sid) writePersistedDraftAssets(sid, items)
+  })
   const onHide = () => flushPersistedDrafts()
   globalThis.addEventListener?.("pagehide", onHide)
   globalThis.addEventListener?.("beforeunload", onHide)
   installed = () => {
     unsubscribe()
+    setComposerAssetPersister(null)
     globalThis.removeEventListener?.("pagehide", onHide)
     globalThis.removeEventListener?.("beforeunload", onHide)
     installed = null

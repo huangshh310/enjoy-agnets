@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { pruneEmptySessions } from "./services/session-lifecycle"
-import { app, BrowserWindow, nativeImage, shell, type WebContents } from "electron";
+import { app, BrowserWindow, clipboard, dialog, nativeImage, shell, type WebContents } from "electron";
+import { conflictLocale, openDatabaseOrExit } from "./services/migration-conflict-guard";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
@@ -229,7 +230,19 @@ function bootPrimaryInstance(): void {
   app.whenReady().then(async () => {
     electronApp.setAppUserModelId("com.enjoyagents.desktop");
     handleAssetProtocol();
-    getDatabase();
+    if (
+      !openDatabaseOrExit({
+        open: getDatabase,
+        showMessageBoxSync: (options) => dialog.showMessageBoxSync(options),
+        writeClipboard: (text) => clipboard.writeText(text),
+        openPath: (path) => void shell.openPath(path),
+        exit: (code) => app.exit(code),
+        userDataPath: app.getPath("userData"),
+        dbPath: join(app.getPath("userData"), "app.db"),
+        appVersion: app.getVersion(),
+        locale: conflictLocale(process.env.ENJOY_E2E_LANG, app.getLocale())
+      })
+    ) return;
     configureAcpChildLedger(join(app.getPath("userData"), "acp-children.json"))
     reapOrphanAcpChildren()
     abandonOrphanRuns();

@@ -1,7 +1,7 @@
 /**
  * 会话落库：消息写入（checkpoint 同 id 覆盖）、首轮自动改名、流式文本/思考累积。
  */
-import { clearSentDraftInTx } from "./session-drafts"
+import { clearDraftAssetsInTx, clearSentDraftInTx } from "./session-drafts"
 import { MESSAGE_ID_SESSION_MISMATCH } from "@enjoy-agents/ipc-contract/session-truncate"
 import {
   absorbTextDelta,
@@ -97,7 +97,12 @@ export function persistMessage(
     )
     db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
     // jojo P2：用户消息落库与清掉已发出的草稿同一事务，强杀后不会「消息在、稿也在」。
-    if (role === "user") clearSentDraftInTx(db, sessionId, content, opts?.draftText)
+    if (role === "user") {
+      clearSentDraftInTx(db, sessionId, content, opts?.draftText)
+      // leo：带附件的用户轮——草稿附件与消息同一事务清（强杀不会「消息带图、草稿也还有图」）。
+      // 只去掉这条消息里真正发出的 asset（重新生成 / 编辑重发旧图不清草稿里别的图）。
+      clearDraftAssetsInTx(db, sessionId, sentFileAssetIds(stored))
+    }
     if (!nested) {
       db.exec("COMMIT;")
       advanceSessionAllowWatermark(sessionId)
@@ -149,4 +154,13 @@ export function renameSession(sessionId: string, title: string) {
     .prepare("UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?")
     .run(next, Date.now(), sessionId)
   return { id: sessionId, title: next }
+}
+
+function sentFileAssetIds(parts: UIMessagePart[]): string[] {
+  const ids: string[] = []
+  for (const part of parts) {
+    const record = part as unknown as Record<string, unknown>
+    if (record.type === "file" && typeof record.assetId === "string") ids.push(record.assetId)
+  }
+  return ids
 }

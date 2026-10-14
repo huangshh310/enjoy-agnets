@@ -62,3 +62,86 @@ export function clearSentDraftInTx(db: Db, sessionId: string, sentContent: strin
     db.prepare("DELETE FROM session_drafts WHERE session_id = ?").run(sessionId)
   }
 }
+
+/**
+ * jojo P1：草稿附件也落库（只粘了图、没打字的新会话不是空壳）。按会话键，绝不挂到别的会话。
+ * 只存元数据（id / name / mediaType / size），图本体在资产库。
+ */
+export type DraftAsset = { id: string; name: string; mediaType?: string; size?: number }
+
+function ensureAssetTable(db: Db): void {
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS session_draft_assets (session_id TEXT PRIMARY KEY, assets_json TEXT NOT NULL, updated_at INTEGER NOT NULL)"
+  )
+}
+
+export function saveSessionDraftAssets(sessionId: string, assets: DraftAsset[]): void {
+  if (!sessionId) return
+  const db = getDatabase()
+  ensureAssetTable(db)
+  const clean = assets
+    .filter((a) => a && typeof a.id === "string" && a.id)
+    .map((a) => ({ id: a.id, name: String(a.name ?? ""), mediaType: a.mediaType, size: a.size }))
+  if (clean.length > 0) {
+    db.prepare(
+      "INSERT INTO session_draft_assets (session_id, assets_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET assets_json = excluded.assets_json, updated_at = excluded.updated_at"
+    ).run(sessionId, JSON.stringify(clean), Date.now())
+  } else {
+    db.prepare("DELETE FROM session_draft_assets WHERE session_id = ?").run(sessionId)
+  }
+}
+
+export function loadSessionDraftAssets(): Record<string, DraftAsset[]> {
+  try {
+    const db = getDatabase()
+    ensureAssetTable(db)
+    const rows = db.prepare("SELECT session_id as sessionId, assets_json as json FROM session_draft_assets").all() as Array<{
+      sessionId: string
+      json: string
+    }>
+    const out: Record<string, DraftAsset[]> = {}
+    for (const row of rows) {
+      try {
+        const list = JSON.parse(row.json) as DraftAsset[]
+        if (Array.isArray(list) && list.length > 0) out[row.sessionId] = list
+      } catch {
+        // 坏行跳过
+      }
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * 发送带附件的用户轮时（同一事务）从本会话草稿附件里去掉**这次发出的那几个** asset——
+ * 与 clearSentDraftInTx 一致：只清确实发出去的。重新生成 / 编辑重发旧图消息时，草稿里别的图不受影响。
+ */
+export function clearDraftAssetsInTx(db: Db, sessionId: string, sentAssetIds: string[]): void {
+  if (sentAssetIds.length === 0) return
+  ensureAssetTable(db)
+  const row = db.prepare("SELECT assets_json as json FROM session_draft_assets WHERE session_id = ?").get(sessionId) as
+    | { json: string }
+    | undefined
+  if (!row) return
+  let list: DraftAsset[] = []
+  try {
+    const parsed = JSON.parse(row.json) as unknown
+    if (Array.isArray(parsed)) list = parsed as DraftAsset[]
+  } catch {
+    list = []
+  }
+  const sent = new Set(sentAssetIds)
+  const rest = list.filter((a) => a && typeof a.id === "string" && !sent.has(a.id))
+  if (rest.length === list.length && list.length > 0) return
+  if (rest.length === 0) {
+    db.prepare("DELETE FROM session_draft_assets WHERE session_id = ?").run(sessionId)
+  } else {
+    db.prepare("UPDATE session_draft_assets SET assets_json = ?, updated_at = ? WHERE session_id = ?").run(
+      JSON.stringify(rest),
+      Date.now(),
+      sessionId
+    )
+  }
+}

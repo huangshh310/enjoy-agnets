@@ -1,27 +1,14 @@
 /**
- * 用户附件落库：发送时写 file part；旧消息按导入时间窗补回。
+ * 用户附件落库：只在发送时写 file part（绑定发送的会话 + 消息）。不做读时补挂。
  */
-import { getAsset, insertMessageParts, listAssets } from "@enjoy-agents/db"
+import { getAsset } from "@enjoy-agents/db"
 import { resolveMediaType } from "@enjoy-agents/assets"
 import type { UIMessagePart } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
-import { createId } from "./ids"
 import { persistMessage } from "./persist-session"
-import {
-  linkedAssetIdsFromParts,
-  matchOrphanedAssets,
-  userTurnParts,
-  type UserFileAsset
-} from "./user-attachment-parts"
+import { userTurnParts, type UserFileAsset } from "./user-attachment-parts"
 import { shouldSkipDuplicateUserTurn } from "./persist-user-turn-dedupe"
-import { clearSentDraftInTx } from "./session-drafts"
-
-export type MessageRowWithParts = {
-  id: string
-  role: string
-  createdAt: number
-  parts: unknown[]
-}
+import { clearDraftAssetsInTx, clearSentDraftInTx } from "./session-drafts"
 
 export function persistUserTurn(
   sessionId: string,
@@ -32,12 +19,32 @@ export function persistUserTurn(
 ) {
   const last = lastUserTurn(sessionId)
   if (shouldSkipDuplicateUserTurn(last, content, Date.now())) {
-    // 去重跳过也算这句已在库：照样清掉已发出的稿。
-    clearSentDraftInTx(getDatabase(), sessionId, content, opts?.draftText)
+    // 去重跳过也算这句已在库：照样清掉已发出的稿（正文 + 附件，同一事务）。
+    clearSentDraftOnDedupe(sessionId, content, attached.map((a) => a.assetId), opts)
     return
   }
   const parts = userTurnParts(content, attached) as UIMessagePart[]
+  // 草稿附件由 persistMessage 在同一事务里清（只清本会话）。
   persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId, opts)
+}
+
+function clearSentDraftOnDedupe(
+  sessionId: string,
+  content: string,
+  sentAssetIds: string[],
+  opts?: { inTransaction?: boolean; draftText?: string }
+): void {
+  const db = getDatabase()
+  const nested = opts?.inTransaction === true
+  if (!nested) db.exec("BEGIN IMMEDIATE;")
+  try {
+    clearSentDraftInTx(db, sessionId, content, opts?.draftText)
+    clearDraftAssetsInTx(db, sessionId, sentAssetIds)
+    if (!nested) db.exec("COMMIT;")
+  } catch (err) {
+    if (!nested) db.exec("ROLLBACK;")
+    throw err
+  }
 }
 
 function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {
@@ -62,47 +69,4 @@ export function metasFromAssetIds(ids: string[]): UserFileAsset[] {
       }
     ]
   })
-}
-
-/** 列出消息时：旧用户轮只有 text 则按时间窗补 file part 并写回。 */
-export function backfillUserFileParts<T extends MessageRowWithParts>(rows: T[]): T[] {
-  const alreadyLinked = new Set(rows.flatMap((row) => linkedAssetIdsFromParts(row.parts)))
-  const turns = rows
-    .filter((row) => row.role === "user")
-    .map((row) => ({
-      id: row.id,
-      createdAt: row.createdAt,
-      hasFileParts: linkedAssetIdsFromParts(row.parts).length > 0
-    }))
-  const imported = listAssets(getDatabase())
-    .filter((asset) => asset.source === "import")
-    .map((asset) => ({
-      id: asset.id,
-      name: asset.name,
-      mediaType: resolveMediaType(asset.name, asset.mediaType),
-      createdAt: asset.createdAt
-    }))
-  const matched = matchOrphanedAssets(turns, imported, alreadyLinked)
-  if (matched.size === 0) return rows
-  return rows.map((row) => {
-    const extras = matched.get(row.id)
-    if (!extras?.length) return row
-    writeFileParts(row.id, row.parts.length, extras)
-    return { ...row, parts: [...row.parts, ...userTurnParts("", extras)] }
-  })
-}
-
-function writeFileParts(messageId: string, startIdx: number, assets: UserFileAsset[]) {
-  const now = Date.now()
-  insertMessageParts(
-    getDatabase(),
-    userTurnParts("", assets).map((part, idx) => ({
-      id: createId("prt"),
-      messageId,
-      idx: startIdx + idx,
-      type: part.type,
-      payload: JSON.stringify(part),
-      createdAt: now
-    }))
-  )
 }

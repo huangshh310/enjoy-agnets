@@ -2,7 +2,7 @@
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
 import { discardEmptySessionOnLeave } from "./discard-empty-on-leave"
-import { composerDraftForSession } from "../lib/session-draft-storage"
+import { composerDraftForSession, persistCreateWindowAssets } from "../lib/session-draft-storage"
 import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
   modeForLoadedSession,
@@ -192,7 +192,10 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
     absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
     finishNewSessionCreate(token, session.id)
-    if (!hasQueuedComposerSend()) setComposerWritebackHeld(false)
+    if (!hasQueuedComposerSend()) {
+      setComposerWritebackHeld(false)
+      persistCreateWindowAssets(session.id)
+    }
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
     await refreshAllWorkspaces()

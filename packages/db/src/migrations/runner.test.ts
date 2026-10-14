@@ -3,11 +3,11 @@ import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, appliedVersions } from "./runner.ts"
 
-test("空库依次跑全部迁移至 16（含精选 MCP marker）", () => {
+test("空库依次跑全部迁移至 17（含精选 MCP marker）", () => {
   const db = new DatabaseSync(":memory:")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .all() as Array<{ name: string }>
@@ -66,8 +66,8 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
     );
   `)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
   const mcpCols = db.prepare("PRAGMA table_info(mcp_servers)").all() as Array<{ name: string }>
   assert.ok(mcpCols.some((col) => col.name === "curated_preset_id"))
   const runCols = db.prepare("PRAGMA table_info(runs)").all() as Array<{ name: string }>

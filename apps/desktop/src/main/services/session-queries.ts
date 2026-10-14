@@ -2,7 +2,6 @@ import type { SessionPatchInput, SessionSummary } from "@enjoy-agents/ipc-contra
 import { listMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
-import { backfillUserFileParts } from "./persist-user-attachments"
 import { getWorkspace } from "./workspace"
 
 export async function listSessions(workspaceId: string): Promise<SessionSummary[]> {
@@ -100,12 +99,12 @@ export async function listMessages(sessionId: string) {
     content: string
     createdAt: number
   }>
-  return backfillUserFileParts(
-    rows.map((row) => ({
-      ...row,
-      parts: listMessageParts(getDatabase(), row.id).map((part) => JSON.parse(part.payload) as unknown)
-    }))
-  )
+  // jojo P1：列消息只读。旧的按导入时间窗补 file part（backfillUserFileParts）会把别的会话 / 草稿里的图
+  // 写进本会话纯文本用户轮（切换、重启时触发），已删除。附件只在发送时随消息落库。
+  return rows.map((row) => ({
+    ...row,
+    parts: listMessageParts(getDatabase(), row.id).map((part) => JSON.parse(part.payload) as unknown)
+  }))
 }
 
 /** 检查器 preview：Goal / Recap 是否会在下一轮垫进模型。 */
