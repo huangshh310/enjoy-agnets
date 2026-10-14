@@ -39,6 +39,14 @@ export function readyGuidePrimaryAction(ready: boolean, keyStatus?: KeyStatus): 
   return keyStatus === "invalid" ? "fix-key" : "connect"
 }
 
+/** 末屏顶部图标：ok 绿✓；ready 但密钥没法确认 → 中性图标（不配绿✓）；没 ready → 钥匙。 */
+export type ReadyMarkKind = "ok" | "unverified" | "pending"
+
+export function readyMarkKind(ready: boolean, credentialState?: "ok" | "invalid" | "unverified"): ReadyMarkKind {
+  if (!ready) return "pending"
+  return credentialState === "unverified" ? "unverified" : "ok"
+}
+
 export function readyGuideFinishes(ready: boolean): boolean {
   return ready
 }

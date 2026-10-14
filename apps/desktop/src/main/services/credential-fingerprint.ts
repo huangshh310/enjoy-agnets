@@ -60,6 +60,22 @@ export function credentialProbeNeeded(
   )
 }
 
+/**
+ * 保存后是否要重新校验。除了比 input（credentialProbeNeeded），还比落盘前后档案的派生指纹：
+ * 完整编辑器只传 keys[]（input.apiKey 为空），换启用 / 首把密钥后派生 apiKey 变了也要探。
+ * stored = upsert 后重新读到的档案；读不到时只看 input。
+ */
+export function credentialProbeNeededAfterSave(
+  existing: CredentialFingerprintSource | undefined,
+  input: CredentialFingerprintSource,
+  stored: CredentialFingerprintSource | undefined,
+  secret = machineHmacSecret()
+): boolean {
+  if (!existing) return true
+  if (stored && credentialFingerprint(stored, secret) !== credentialFingerprint(existing, secret)) return true
+  return credentialProbeNeeded(existing, input)
+}
+
 export function sameOriginUrl(left: string, right: string): boolean {
   try {
     return new URL(left).origin === new URL(right, left).origin

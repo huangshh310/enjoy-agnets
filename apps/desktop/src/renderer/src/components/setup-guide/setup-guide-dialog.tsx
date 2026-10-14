@@ -18,7 +18,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
-import { readyGuidePrimaryAction, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
+import { readyGuidePrimaryAction, readyMarkKind, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
 import { guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
@@ -131,7 +131,7 @@ export function SetupGuideDialog() {
           step={step}
           titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus?.status) : undefined}
           titleVars={step === "ready" && keyStatus ? { name: keyStatus.providerName ?? t("settings.setupGuide.providerFallback") } : undefined}
-          readyMark={step === "ready" ? chatReady : undefined}
+          readyMark={step === "ready" ? readyMarkKind(chatReady, readiness?.credentialCheck?.state) : undefined}
           summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} keyStatus={keyStatus} /> : undefined}
         />
         <div className={cx("flex min-h-0 flex-col overflow-hidden pt-6", GUIDE_INSET_CLASS, SETUP_GUIDE_FACE[step].mark === "ready" && "justify-center overflow-y-auto pb-6")}>

@@ -150,3 +150,9 @@ export function credentialCheckChanged(
   const b = next.credentialCheck
   return a?.state !== b?.state || a?.code !== b?.code || a?.checkedAt !== b?.checkedAt
 }
+
+/** 设置页顶部「当前：X」圆点：按当前档案密钥三态（被拒红、没法确认灰）；ok / 无需密钥 / 没填密钥绿（沿用原样）。 */
+export function activeProviderDotClass(active: Parameters<typeof profileKeyStatus>[0] | undefined): string {
+  const status = active ? profileKeyStatus(active) : undefined
+  return KEY_TONE_CLASS[status ? keyBadgeTone(status) : "success"].dot
+}

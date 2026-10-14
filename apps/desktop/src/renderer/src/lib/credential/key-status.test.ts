@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { credentialCheckChanged, guideKeyStatus, providerKeyView, keyBadgeTone, keyStatusOf, presetDisplayName, profileKeyStatus } from "./key-status.ts"
+import { activeProviderDotClass, credentialCheckChanged, guideKeyStatus, providerKeyView, keyBadgeTone, keyStatusOf, presetDisplayName, profileKeyStatus } from "./key-status.ts"
 
 const key = (providerId: string, presetId = "openai") => ({ kind: "api_key" as const, providerId, presetId })
 
@@ -151,4 +151,12 @@ test("providerKeyView：设置行 data-key-status / 色调 / 文案 / 改密钥�
   assert.match(good.textClass, /success/)
   assert.equal(good.labelKey, "settings.providers.keyVerified")
   assert.equal(providerKeyView({ requiresKey: true, hasKey: false }), undefined)
+})
+
+test("顶部「当前」圆点：被拒红、没法确认灰、ok 绿", () => {
+  const base = { requiresKey: true, hasKey: true }
+  assert.match(activeProviderDotClass({ ...base, credentialCheck: { state: "invalid" } }), /error/)
+  assert.doesNotMatch(activeProviderDotClass(base), /success|error/)
+  assert.match(activeProviderDotClass({ ...base, credentialCheck: { state: "ok" } }), /success/)
+  assert.match(activeProviderDotClass({ requiresKey: false, hasKey: false }), /success/)
 })

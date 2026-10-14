@@ -3,7 +3,8 @@
  * 红只给 invalid（被拒）；unverified:network 中性灰；ok 绿。
  * 需要先 build。截图：设 ENJOY_E2E_SHOTS_DIR 时落盘，不设不截。
  */
-import { mkdirSync } from "node:fs"
+import { mkdirSync, mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import {
@@ -101,6 +102,7 @@ test("invalid：存密钥后第 4 步红、第 7 步说被拒并直达改密钥�
     await expect(status).toContainText("密钥被 DeepSeek 拒绝了，换一个再试")
     await expect(window.getByTestId("provider-fix-key").first()).toBeVisible()
     await expect(window.getByText("密钥已保存", { exact: true })).toHaveCount(0)
+    await expect(window.getByTestId("provider-active-dot")).toHaveClass(/text-error-primary/)
     await shot(window, "k4-settings-invalid")
 
     // ?edit= 指向不存在的档案：回落到新建表单，不卡在空页面
@@ -144,6 +146,11 @@ for (const fixture of [
 
       await walkToReady(window)
       await expect(window.getByTestId("setup-guide-primary")).toHaveText("开始使用", { timeout: 8_000 })
+      if (fixture.status === "unverified") {
+        // 副标题不重复标题；图标中性，不配绿✓
+        await expect(window.getByTestId("ready-mark-unverified")).toBeVisible()
+        await expect(window.getByTestId("ready-unverified-summary")).toHaveText("发第一句时会再试一次")
+      }
       await shot(window, `${fixture.shot}-step7-${fixture.status}`)
       await clickGuidePrimary(window)
       await expect(window.getByTestId("setup-guide-primary")).toHaveCount(0, { timeout: 8_000 })
@@ -159,3 +166,63 @@ for (const fixture of [
     }
   })
 }
+
+test("换密钥后重新校验：无效 → 重启（校验改 ok）→ 第 7 步改密钥 → 完整编辑器换 keys[] → 绿", async () => {
+  test.setTimeout(240_000)
+  const blocked = canLaunchElectron()
+  test.skip(Boolean(blocked), blocked ?? "")
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-key-swap-ud-"))
+  const first = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "none",
+    ENJOY_E2E_CREDENTIAL: "invalid",
+    ENJOY_E2E_USERDATA: userData
+  })
+  try {
+    await saveKeyFromGuide(first.window, "sk-e2e-bad")
+    await expect(first.window.getByTestId("connect-model-api_key")).toHaveAttribute("data-key-status", "invalid", {
+      timeout: 15_000
+    })
+  } finally {
+    await first.app.close()
+  }
+
+  const { app, window } = await launchEnjoy({
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "none",
+    ENJOY_E2E_CREDENTIAL: "ok",
+    ENJOY_E2E_USERDATA: userData
+  })
+  try {
+    // 重启后存下的仍是 invalid：只有真换了密钥才重新校验
+    await openConnectModelStep(window)
+    await expect(window.getByTestId("connect-model-api_key")).toHaveAttribute("data-key-status", "invalid", {
+      timeout: 12_000
+    })
+    await walkToReady(window)
+    await expect(window.getByTestId("setup-guide-primary")).toHaveText("改密钥", { timeout: 8_000 })
+    await clickGuidePrimary(window)
+    const save = window.getByTestId("provider-editor-save")
+    await expect(save).toBeVisible({ timeout: 8_000 })
+    await expect(save).toHaveAttribute("data-variant", "solid")
+    const keyBox = window.locator('input[type="password"]').first()
+    await keyBox.fill("sk-e2e-new-good")
+    await shot(window, "k8-swap-key-editor")
+    await save.click()
+
+    const row = window.getByTestId("connect-model-api_key")
+    await expect(row).toHaveAttribute("data-key-status", "ok", { timeout: 15_000 })
+    await expect(row).toContainText("已连上")
+    await shot(window, "k8-swap-key-step4-ok")
+    await walkToReady(window)
+    await expect(window.getByTestId("setup-guide-primary")).toHaveText("开始使用", { timeout: 8_000 })
+    await clickGuidePrimary(window)
+    await expect(window.getByTestId("setup-guide-primary")).toHaveCount(0, { timeout: 8_000 })
+    await openProviderSettings(window)
+    await expect(window.getByTestId("provider-key-status").first()).toHaveAttribute("data-key-status", "ok")
+    await expect(window.getByTestId("provider-active-dot")).toHaveClass(/state-success/)
+    await shot(window, "k8-swap-key-settings-ok")
+  } finally {
+    await app.close()
+  }
+})

@@ -35,7 +35,7 @@ import {
   recheckProviderCredential,
   scheduleCredentialCheck
 } from "./services/credential-check-schedule.ts"
-import { credentialProbeNeeded } from "./services/credential-fingerprint.ts"
+import { credentialProbeNeededAfterSave } from "./services/credential-fingerprint.ts"
 import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
@@ -202,7 +202,9 @@ function registerProviderIpc() {
       reasoningFamily: input.reasoningFamily,
       proxy: input.proxy
     })
-    if (credentialProbeNeeded(existing, input)) scheduleCredentialCheck(saved.id)
+    // 只改 keys[]（完整编辑器）时 input.apiKey 为空：比落盘前后派生指纹，换密钥也重新校验。
+    const stored = await findProfileById(saved.id)
+    if (credentialProbeNeededAfterSave(existing, input, stored)) scheduleCredentialCheck(saved.id)
     scheduleChatReadinessPush()
     return settingsSnapshot()
   })

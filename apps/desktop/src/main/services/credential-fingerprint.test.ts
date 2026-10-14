@@ -84,3 +84,37 @@ test("指纹带域前缀：与同钥无前缀 HMAC（旧指纹 / 审批签名同
   const legacy = createHmac("sha256", secret).update(credentialFingerprintMaterial(source)).digest("hex")
   assert.notEqual(credentialFingerprint(source, secret), legacy)
 })
+
+test("只改 keys[]（input.apiKey 为空）也触发校验：比落盘前后派生指纹", async () => {
+  const { applyProfileUpsert } = await import("@enjoy-agents/providers")
+  const { credentialProbeNeededAfterSave } = await import("./credential-fingerprint.ts")
+  const secret = "unit-test-hmac"
+  const before = applyProfileUpsert(
+    undefined,
+    { name: "OpenAI", kind: "openai", apiKey: "sk-old-bad" },
+    "prv_1"
+  )
+  // 完整编辑器：apiKey 空，keys[] 里换了一把
+  const input = {
+    name: "OpenAI",
+    kind: "openai",
+    apiKey: "",
+    keys: before.keys.map((key) => ({ ...key, apiKey: "sk-new-good" }))
+  }
+  const after = applyProfileUpsert(before, input, "prv_1")
+  assert.equal(after.apiKey, "sk-new-good")
+  // 旧逻辑只看 input.apiKey：漏掉
+  assert.equal(credentialProbeNeeded(before, input), false)
+  assert.equal(credentialProbeNeededAfterSave(before, input, after, secret), true)
+})
+
+test("只改名（keys[] 原样）不触发校验", async () => {
+  const { applyProfileUpsert } = await import("@enjoy-agents/providers")
+  const { credentialProbeNeededAfterSave } = await import("./credential-fingerprint.ts")
+  const secret = "unit-test-hmac"
+  const before = applyProfileUpsert(undefined, { name: "OpenAI", kind: "openai", apiKey: "sk-same" }, "prv_1")
+  const input = { name: "Renamed", kind: "openai", apiKey: "", keys: before.keys }
+  const after = applyProfileUpsert(before, input, "prv_1")
+  assert.equal(credentialProbeNeededAfterSave(before, input, after, secret), false)
+  assert.equal(credentialProbeNeededAfterSave(undefined, input, after, secret), true)
+})

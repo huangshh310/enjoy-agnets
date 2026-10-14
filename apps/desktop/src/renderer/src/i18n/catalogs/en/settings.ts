@@ -105,7 +105,7 @@ export const enSettings = {
     readyNeedTitle: "One more step: connect a model",
     readyNeedSummary: "{count} engines installed · no model yet",
     readyUnverifiedTitle: "You're ready · key not verified yet",
-    readyUnverifiedHint: "You're ready · the key isn't verified yet; the first send will try again",
+    readyUnverifiedHint: "The first send will try again",
     engineSummary: "{ready} ready · {missing} not installed",
     redetect: "Re-detect",
     readyState: "Ready",

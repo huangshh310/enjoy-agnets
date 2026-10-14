@@ -5,6 +5,7 @@
 import type { ProviderPublic } from "@enjoy-agents/ipc-contract"
 import { enabledModelCount } from "./provider-configured-row"
 import { useT } from "@renderer/i18n"
+import { activeProviderDotClass } from "@renderer/lib/credential/key-status"
 
 export function ProviderConfiguredMetrics({ providers }: { providers: ProviderPublic[] }) {
   const t = useT()
@@ -14,7 +15,7 @@ export function ProviderConfiguredMetrics({ providers }: { providers: ProviderPu
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-caption-1-medium text-text-secondary">
       <CountMark value={providers.length} label={t("settings.providers.configured")} />
       <Hairline />
-      <ActiveMark name={active?.name} />
+      <ActiveMark name={active?.name} dotClass={activeProviderDotClass(active)} />
       <Hairline />
       <span>
         <span className="font-medium text-text-primary">{total}</span>{" "}
@@ -34,7 +35,7 @@ function CountMark({ value, label }: { value: number; label: string }) {
   )
 }
 
-function ActiveMark({ name }: { name?: string }) {
+function ActiveMark({ name, dotClass }: { name?: string; dotClass: string }) {
   const t = useT()
   if (!name) {
     return (
@@ -46,7 +47,7 @@ function ActiveMark({ name }: { name?: string }) {
   }
   return (
     <div className="flex items-center gap-1.5">
-      <span className="size-2 rounded-full bg-state-success-text" />
+      <span data-testid="provider-active-dot" className={`size-2 rounded-full ${dotClass}`} />
       <span>{t("settings.providers.activePrefix")}</span>
       <span className="font-medium text-text-primary">{name}</span>
     </div>
