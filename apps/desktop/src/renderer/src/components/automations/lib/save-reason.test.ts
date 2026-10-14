@@ -36,3 +36,11 @@ test("立即运行置灰 tooltip：未保存 →「先保存再运行」，已�
   assert.equal(runDisabledTitle({ saved: true, running: false, saveReason: null }, t), undefined)
   assert.equal(runDisabledTitle({ saved: true, running: true, saveReason: "r" }, t), undefined)
 })
+
+test("本机推送端口无效：说出原因（leo #154 S4）", () => {
+  const d = { name: "a", prompt: "x", triggers: ["webhook"] }
+  assert.equal(automationSaveReason({ ...d, webhookPort: "" }, t), "studio.automations.webhookPortRequired")
+  assert.equal(automationSaveReason({ ...d, webhookPort: "70000" }, t), "studio.automations.webhookPortRequired")
+  assert.equal(automationSaveReason({ ...d, webhookPort: "abc" }, t), "studio.automations.webhookPortRequired")
+  assert.equal(automationSaveReason({ ...d, webhookPort: "8787" }, t), null)
+})

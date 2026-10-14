@@ -318,6 +318,7 @@ export const zhChat = {
   approvalReadsDesc: "编辑、提交和终端操作前暂停",
   approvalEdits: "编辑",
   permissionCycled: "权限已切到「{mode}」",
+  permissionCycleFailed: "权限没切成，请再试一次。",
   approvalEditsDesc: "自动应用文件编辑；终端与 Git 前暂停",
   approvalAll: "全部",
   approvalAllDesc: "自动应用文件、终端命令和提交",

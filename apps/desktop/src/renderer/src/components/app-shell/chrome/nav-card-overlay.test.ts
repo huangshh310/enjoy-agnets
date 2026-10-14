@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { overlayClickClosesAfterSelect, overlayClosesOnNavigation, overlayKeyAction } from "./nav-overlay-keys.ts"
+import {
+  createOverlayNavWatcher,
+  overlayClickClosesAfterSelect,
+  overlayClosesOnNavigation,
+  overlayKeyAction
+} from "./nav-overlay-keys.ts"
 import {
   initSidebarCollapse,
   onSidebarManual,
@@ -45,4 +50,19 @@ test("M1：窄窗开关不写偏好，宽窗才写", () => {
   assert.equal(sidebarManualPersists(narrow), false)
   assert.equal(sidebarOverlay(onSidebarManual(narrow, false)), true)
   assert.equal(sidebarManualPersists(initSidebarCollapse(true, false)), true)
+})
+
+test("路由变化时关浮层：开着时切到看板 / 自动化关；没开不关；同一路由不重复关（leo #154 S5）", () => {
+  let dismissed = 0
+  const watch = createOverlayNavWatcher("/|s1", () => dismissed++)
+  watch("/|s1", true)
+  assert.equal(dismissed, 0)
+  watch("/board|s1", true)
+  assert.equal(dismissed, 1)
+  watch("/automations|s1", false)
+  assert.equal(dismissed, 1)
+  watch("/automations|s2", true)
+  assert.equal(dismissed, 2)
+  watch("/automations|s2", true)
+  assert.equal(dismissed, 2)
 })

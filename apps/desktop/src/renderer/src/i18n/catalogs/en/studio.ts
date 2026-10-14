@@ -227,6 +227,7 @@ export const enStudio = {
     nameRequired: "Fill in the name to save",
     cronRequired: "Set a schedule to save",
     saveFirstToRun: "Save first to run",
+    webhookPortRequired: "Enter a port between 1 and 65535 to save",
     editTitle: "Edit automation",
     createTitle: "New automation",
     workspaceHint: "Runs in the current project",

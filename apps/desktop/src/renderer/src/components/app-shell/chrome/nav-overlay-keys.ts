@@ -37,3 +37,15 @@ export function overlayClickClosesAfterSelect(target: { closest: (sel: string) =
 export function overlayClosesOnNavigation(prev: string, next: string, overlay: boolean): boolean {
   return overlay && prev !== next
 }
+
+/**
+ * 导航监视：记住上一次的「路由|会话」，变了且浮层开着就关（leo #154 S5，供组件和行为测试共用）。
+ */
+export function createOverlayNavWatcher(initial: string, dismiss: () => void) {
+  let last = initial
+  return (navKey: string, overlay: boolean) => {
+    const prev = last
+    last = navKey
+    if (overlayClosesOnNavigation(prev, navKey, overlay)) dismiss()
+  }
+}

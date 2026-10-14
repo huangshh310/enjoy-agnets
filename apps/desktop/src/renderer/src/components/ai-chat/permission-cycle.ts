@@ -3,14 +3,25 @@
  * 焦点不在 Composer（浮层、弹窗、菜单、其它输入框、终端）一律不切，让 Shift+Tab 做焦点后退（luna #154）。
  */
 export function shouldCyclePermissionOnShiftTab(input: {
-  composerEmpty: boolean
+  /** 焦点就在 [data-testid="composer-input"] 上（不是附件 / Chip / 模型 / 盾牌按钮；leo #154 B2）。 */
   composerFocus: boolean
-  inputFocus: boolean
+  /** 文字为空。 */
+  composerEmpty: boolean
+  /** 草稿里有附件、上下文 / 引用 / 技能 Chip：不算空（leo #154 B2）。 */
+  hasExtras?: boolean
+  /** 输入法组字中不响应（leo #154 S1）。 */
+  composing?: boolean
   terminalFocus: boolean
+  inputFocus?: boolean
 }): boolean {
-  if (input.terminalFocus) return false
-  if (input.composerFocus) return input.composerEmpty
-  return false
+  if (input.terminalFocus || input.composing) return false
+  if (!input.composerFocus) return false
+  return input.composerEmpty && !input.hasExtras
+}
+
+/** 焦点元素是不是 Composer 输入框本身。 */
+export function isComposerInputElement(el: { getAttribute?: (name: string) => string | null } | null): boolean {
+  return el?.getAttribute?.("data-testid") === "composer-input"
 }
 
 export function composerInputEmpty(
@@ -32,4 +43,27 @@ export function permissionCycledMessage(
   const label =
     mode === "allow-edits" ? t("chat.approvalEdits") : mode === "allow-all" ? t("chat.approvalAll") : t("chat.approvalReads")
   return t("chat.permissionCycled", { mode: label })
+}
+
+/** 快捷键切档写入失败的提示（leo #154 B1）。 */
+export function permissionCycleFailedMessage(t: (key: "chat.permissionCycleFailed") => string): string {
+  return t("chat.permissionCycleFailed")
+}
+
+/**
+ * 先写入、成功后再提示；失败提示没切成、不改本地状态（leo #154 B1）。
+ * 返回值供测试：ok / failed。
+ */
+export async function runPermissionCycle(
+  persist: () => Promise<void>,
+  notify: { ok: () => void; failed: () => void }
+): Promise<"ok" | "failed"> {
+  try {
+    await persist()
+  } catch {
+    notify.failed()
+    return "failed"
+  }
+  notify.ok()
+  return "ok"
 }

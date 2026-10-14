@@ -344,10 +344,21 @@ test("440 浮层：点击 / 回车切到另一个会话、看板 / 自动化入�
     await window.waitForTimeout(300)
     await expect(window.locator("body")).not.toContainText("权限已切到")
 
+    // —— leo #154 S3：轨道里再点当前模块也关浮层 ——
+    await openOverlay()
+    await window.locator('[data-testid="rail-chat"]').click()
+    await expect(nav).toHaveAttribute("data-collapsed", "true")
+
     // —— 输入框内（空）Shift+Tab 改权限并提示 ——
     await window.setViewportSize({ width: 1440, height: 920 })
     await window.waitForTimeout(500)
     const composer = window.locator('[data-testid="composer-input"]').first()
+    // leo #154 B2：焦点在 Composer 里的按钮（附件 / 模型 / 盾牌等）上（不是输入框本身）不切权限。
+    await composer.fill("")
+    await window.locator('[data-composer] button:visible').first().focus()
+    await window.keyboard.press("Shift+Tab")
+    await window.waitForTimeout(500)
+    await expect(window.locator("body")).not.toContainText("权限已切到")
     await composer.fill("")
     await composer.focus()
     await window.keyboard.press("Shift+Tab")

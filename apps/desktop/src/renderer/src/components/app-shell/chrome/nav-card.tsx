@@ -11,7 +11,7 @@ import type { AppModuleId } from "../app-shell.types"
 import { NAV_CARD_COLLAPSED_PX, NAV_CARD_EXPANDED_PX, NARROW_SIDEBAR_PX } from "../constants"
 import { ActivityBar } from "./activity-bar"
 import { ContextColumn } from "./context-column"
-import { overlayClickClosesAfterSelect, overlayClosesOnNavigation, overlayKeyAction } from "./nav-overlay-keys"
+import { createOverlayNavWatcher, overlayClickClosesAfterSelect, overlayKeyAction } from "./nav-overlay-keys"
 import { sidebarOverlay } from "./sidebar-collapse-state"
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -98,17 +98,19 @@ export function NavCard({
 
   // 路由或会话变化（看板、自动化、轨道、会话行……所有导航入口）：统一关浮层（luna #154-2）。
   const navKey = `${pathname}|${sessionId ?? ""}`
-  const lastNavKey = useRef(navKey)
+  const dismissRef = useRef(dismissOverlay)
+  dismissRef.current = dismissOverlay
+  const watchNav = useRef(createOverlayNavWatcher(navKey, () => dismissRef.current()))
   useEffect(() => {
-    const prev = lastNavKey.current
-    lastNavKey.current = navKey
-    if (overlayClosesOnNavigation(prev, navKey, overlay)) dismissOverlay()
-  }, [navKey, overlay, dismissOverlay])
+    watchNav.current(navKey, overlay)
+  }, [navKey, overlay])
 
   function handleSelect(moduleId: AppModuleId, to: string) {
     // S2：窄窗判断统一走 store。宽窗收起时点轨道展开；窄窗浮层里切模块就关浮层（leo #154 S3）。
     if (collapsed && !narrow) setCollapsed(false)
     onSelect(moduleId, to)
+    // 轨道里再点当前模块（路由不变）也关浮层（leo #154 S3）；导航已同步发出，不会被卸载吃掉。
+    if (overlay) dismissOverlay()
   }
 
   const card = (

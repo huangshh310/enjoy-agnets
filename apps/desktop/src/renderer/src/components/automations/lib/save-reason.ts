@@ -5,10 +5,11 @@ type Key =
   | "studio.automations.nameRequired"
   | "studio.automations.cronRequired"
   | "studio.automations.saveFirstToRun"
+  | "studio.automations.webhookPortRequired"
 type T = (key: Key) => string
 
 export function automationSaveReason(
-  draft: { name: string; prompt: string; triggers?: readonly string[]; cronExpr?: string },
+  draft: { name: string; prompt: string; triggers?: readonly string[]; cronExpr?: string; webhookPort?: string },
   t: T
 ): string | null {
   const hasName = Boolean(draft.name.trim())
@@ -17,6 +18,8 @@ export function automationSaveReason(
   if (!hasName) return t("studio.automations.nameRequired")
   if (!hasPrompt) return t("studio.automations.promptRequired")
   if (draft.triggers?.includes("cron") && !draft.cronExpr?.trim()) return t("studio.automations.cronRequired")
+  // webhook 端口无效时说清楚（leo #154 S4）；规则同 trigger-chips.webhookPortReady（1–65535 整数）。
+  if (draft.triggers?.includes("webhook") && !portValid(draft.webhookPort)) return t("studio.automations.webhookPortRequired")
   return null
 }
 
@@ -33,4 +36,9 @@ export function runDisabledTitle(
   if (input.running) return undefined
   if (!input.saved) return t("studio.automations.saveFirstToRun")
   return input.saveReason ?? undefined
+}
+
+function portValid(raw: string | undefined): boolean {
+  const port = Number(raw)
+  return raw !== undefined && raw.trim() !== "" && Number.isInteger(port) && port >= 1 && port <= 65535
 }
