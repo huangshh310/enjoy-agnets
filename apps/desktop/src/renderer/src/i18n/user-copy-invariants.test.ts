@@ -161,19 +161,19 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.noChatRouteNotice, "还差一步：连一个模型，才能发消息。草稿会留着。")
   assert.equal(
     z.chat.credentialInvalidNotice,
-    "密钥没通过：{name} 不认这把密钥，消息没发出去。草稿会留着。"
+    "密钥没通过：{name} 不认这把密钥，消息没发出去。"
   )
   assert.equal(
     z.chat.credentialNetworkNotice,
-    "连不上 {name}，消息没发出去。草稿会留着，检查网络后再试。"
+    "连不上 {name}，消息没发出去。检查网络后再试。"
   )
   assert.equal(
     z.chat.credentialForbiddenNotice,
-    "{name} 拒绝了这次请求，消息没发出去。草稿会留着，可以换个模型，或稍后再试。"
+    "{name} 拒绝了这次请求，消息没发出去。可以换个模型，或稍后再试。"
   )
   assert.equal(
     z.chat.credentialBillingNotice,
-    "{name} 说额度或账单有问题，消息没发出去。草稿会留着，可以先换个模型，处理好后再试。"
+    "{name} 说额度或账单有问题，消息没发出去。可以先换个模型，处理好后再试。"
   )
   assert.equal(z.chat.goFixKey, "改密钥")
   assert.equal(z.chat.switchModel, "换个模型")

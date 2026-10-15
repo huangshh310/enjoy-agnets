@@ -340,7 +340,8 @@ test("luna ②：有字有图出字前失败：字和图都回来；白卡说「
 
 test("白卡第二行：没图不加；文案键与看门狗同一对（不另起新句）", () => {
   assert.equal(restoredImagesDetail(zhT as never, 0, true), null)
-  assert.equal(restoredImagesDetail((k: string) => k, 1, false), "chat.sendFailedRestoreImagesOnly")
+  assert.equal(restoredImagesDetail((k: string) => k, 1, false), "chat.sendFailedRestoreImageOnlyOne")
+  assert.equal(restoredImagesDetail((k: string) => k, 2, false), "chat.sendFailedRestoreImagesOnly")
   assert.equal(restoredImagesDetail((k: string) => k, 2, true), "chat.sendFailedRestoreWithImages")
 })
 
@@ -381,4 +382,13 @@ test("leo r4 soft4：白卡 hook 读快照不读输入框；新一轮开跑清�
   assert.doesNotMatch(body, /useRestoredImageCount|state\.composer/)
   const store = readFileSync(new URL("./chat-store.ts", import.meta.url), "utf8")
   assert.match(store, /if \(patch\.running === true\) clearRestoredImages\(\)/)
+})
+
+test("luna 锁定文案：闸拦发送（直接 setError，输入框没清空过）不带「…已放回」行，即使之前回滚留过快照", () => {
+  seedImageOnlyTurn("ses_gate", "run_gate")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_gate"))
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "回滚还图：有这一行")
+  // 接着再发被闸拦（guardComposerSend → setError(credential_invalid)），图一直在输入框里。
+  useChatStore.getState().setError("credential_invalid")
+  assert.equal(noticeDetailAfterRollback(), null)
 })

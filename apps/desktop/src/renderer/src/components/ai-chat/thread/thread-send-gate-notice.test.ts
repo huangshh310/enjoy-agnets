@@ -7,6 +7,7 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
+import { enChat } from "../../../i18n/catalogs/en/chat.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
@@ -66,20 +67,25 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   assert.doesNotMatch(zhChat.credentialBillingNotice, /401|402|403|Payment Required/i)
   assert.equal(
     zhChat.credentialInvalidNotice,
-    "密钥没通过：{name} 不认这把密钥，消息没发出去。草稿会留着。"
+    "密钥没通过：{name} 不认这把密钥，消息没发出去。"
   )
   assert.equal(
     zhChat.credentialNetworkNotice,
-    "连不上 {name}，消息没发出去。草稿会留着，检查网络后再试。"
+    "连不上 {name}，消息没发出去。检查网络后再试。"
   )
   assert.equal(
     zhChat.credentialForbiddenNotice,
-    "{name} 拒绝了这次请求，消息没发出去。草稿会留着，可以换个模型，或稍后再试。"
+    "{name} 拒绝了这次请求，消息没发出去。可以换个模型，或稍后再试。"
   )
   assert.equal(
     zhChat.credentialBillingNotice,
-    "{name} 说额度或账单有问题，消息没发出去。草稿会留着，可以先换个模型，处理好后再试。"
+    "{name} 说额度或账单有问题，消息没发出去。可以先换个模型，处理好后再试。"
   )
+  // luna 锁定文案：四张发送失败卡（中英）都不再说「草稿会留着」/ "Your draft stays"。
+  for (const key of ["credentialInvalidNotice", "credentialNetworkNotice", "credentialForbiddenNotice", "credentialBillingNotice"] as const) {
+    assert.doesNotMatch(zhChat[key], /草稿会留着/, key)
+    assert.doesNotMatch(enChat[key], /draft stays/i, key)
+  }
   assert.equal(zhChat.switchModel, "换个模型")
   assert.equal(zhChat.retryDraft, "再试一次")
   assert.match(none, /officialProviderSearch/)

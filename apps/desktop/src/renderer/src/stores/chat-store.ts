@@ -264,8 +264,12 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     for (const event of queued) get().applyStreamEvent(event)
   },
   setHasKey: (hasKey) => set({ hasKey }),
-  setError: (error, retryTarget) =>
-    set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null }),
+  setError: (error, retryTarget) => {
+    // luna 锁定文案：闸拦发送（输入框没清空过）等直接 setError 的路径不带「…已放回输入框」；
+    // 出字前回滚走 applyStreamEvent，之后才拍还稿快照，不经这里。
+    clearRestoredImages()
+    set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null })
+  },
   setPreparingHint: (preparingHint, sessionId) => set({ preparingHint, preparingSessionId: preparingHint ? (sessionId === undefined ? get().sessionId : sessionId) : null }),
   setNotice: (notice) => {
     const sessionId = get().sessionId

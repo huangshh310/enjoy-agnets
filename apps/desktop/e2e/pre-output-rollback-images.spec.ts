@@ -27,7 +27,7 @@ async function boot(env: Record<string, string>) {
     ...env
   })
   const window = await firstWindow(app)
-  const skip = window.getByRole("button", { name: "跳过设置" })
+  const skip = window.getByRole("button", { name: /^(跳过设置|Skip setup)$/ })
   await window.waitForTimeout(1_000)
   if ((await skip.count()) > 0) await skip.click()
   await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
@@ -103,6 +103,77 @@ test("②③ 有字有图出字前失败：字和图都回来；重启后草稿�
     await expect(stage.locator('[data-thread-message] img[alt="both.png"]').first()).toBeVisible({ timeout: 20_000 })
     await expect(window.getByTestId("composer-asset-chip")).toHaveCount(0)
     await window.screenshot({ path: join(shots, "32-after-restart-resent-with-image.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+const LOCKED = {
+  zh: {
+    restoredBoth: "文字和图片已放回输入框，可以直接再发。",
+    draftStays: "草稿会留着"
+  },
+  en: {
+    restoredBoth: "Your text and image are back in the input. You can send them again.",
+    draftStays: "draft stays"
+  }
+} as const
+
+for (const lang of ["zh", "en"] as const) {
+  test(`luna 锁定文案（${lang}）：发出后失败还稿带「…已放回」；接着被闸拦（输入框没清空）只给原因 + 按钮`, async () => {
+    test.setTimeout(180_000)
+    const copy = LOCKED[lang]
+    const { app, window } = await boot({
+      ...dirs(),
+      ENJOY_E2E_LANG: lang,
+      ENJOY_E2E_CHAT_READY: "key",
+      ENJOY_E2E_SEND: "rejected"
+    })
+    try {
+      const composer = window.getByTestId("composer-input")
+      const chip = window.getByTestId("composer-asset-chip")
+      const notice = window.getByTestId("thread-credential-invalid-notice")
+      const detail = window.getByTestId("thread-credential-invalid-notice-detail")
+      await window.getByTestId("composer-attach").setInputFiles({ name: "gate.png", mimeType: "image/png", buffer: PNG })
+      await expect(chip).toHaveCount(1, { timeout: 8_000 })
+      await composer.fill(lang === "zh" ? "看看这张图" : "check this image")
+      await composer.press("Enter")
+      // ① 发出去后失败（输入框清空过又还回）：一张图 + 字 → 「文字和图片已放回」（英文单数）。
+      await expect(notice).toBeVisible({ timeout: 15_000 })
+      await expect(detail).toHaveText(copy.restoredBoth)
+      await expect(notice).not.toContainText(new RegExp(copy.draftStays, "i"))
+      await expect(chip).toHaveCount(1)
+      await window.screenshot({ path: join(shots, `r4-copy-${lang}-1-restored-after-send.png`) })
+      // ② 密钥已判无效：再回车被闸拦，输入框从没清空——只有原因 + 按钮，没有「已放回」行。
+      await composer.press("Enter")
+      await window.waitForTimeout(1_500)
+      await expect(notice).toBeVisible()
+      await expect(detail).toHaveCount(0)
+      await expect(notice).not.toContainText(new RegExp(copy.draftStays, "i"))
+      await expect(composer).toHaveValue(lang === "zh" ? "看看这张图" : "check this image")
+      await expect(chip).toHaveCount(1)
+      await window.screenshot({ path: join(shots, `r4-copy-${lang}-2-gate-rejected.png`) })
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
+test("luna 锁定文案（en）：只一张图出字前失败 → 单数「Your image is back in the input」", async () => {
+  test.setTimeout(180_000)
+  const { app, window } = await boot({ ...dirs(), ENJOY_E2E_LANG: "en", ENJOY_E2E_SEND: "unreachable" })
+  try {
+    await window.getByTestId("composer-attach").setInputFiles({ name: "one.png", mimeType: "image/png", buffer: PNG })
+    await expect(window.getByTestId("composer-asset-chip")).toHaveCount(1, { timeout: 8_000 })
+    await window.getByTestId("composer-input").click()
+    await window.keyboard.press("Enter")
+    const notice = window.getByTestId("thread-credential-network-notice")
+    await expect(notice).toBeVisible({ timeout: 15_000 })
+    await expect(window.getByTestId("thread-credential-network-notice-detail")).toHaveText(
+      "Your image is back in the input. You can send it again."
+    )
+    await expect(notice).not.toContainText(/draft stays/i)
+    await window.screenshot({ path: join(shots, "r4-copy-en-3-unreachable-one-image.png") })
   } finally {
     await closeForRelaunch(app)
   }

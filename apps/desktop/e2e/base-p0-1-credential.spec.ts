@@ -110,7 +110,9 @@ test("密钥被拒：红点条 + 改密钥打开本档案密钥框，草稿留�
     await expect(notice).toContainText("密钥没通过")
     await expect(notice).toContainText("E2E Stub Key")
     await expect(notice).toContainText(/不认这把密钥/)
-    await expect(notice).toContainText("草稿会留着")
+    // luna 锁定文案：闸拦 / 失败卡只说原因 + 按钮，不说「草稿会留着」；没还图就没有「…已放回」行。
+    await expect(notice).not.toContainText("草稿会留着")
+    await expect(notice.getByTestId("thread-credential-invalid-notice-detail")).toHaveCount(0)
     await expect(notice).not.toContainText(/401|403|ECONNREFUSED|invalid api key/i)
     await expect(notice.getByTestId("thread-credential-invalid-notice-action")).toHaveText("改密钥")
     await expect(window.getByTestId("composer-input")).toHaveValue("hello invalid key")
@@ -152,7 +154,8 @@ test("连不上：中性点 + 再发一次，发送中改正在发送，态不�
     await expect(notice).toHaveAttribute("data-kind", "provider_unreachable")
     await expect(notice).toContainText("E2E Stub Key")
     await expect(notice).toContainText(/连不上 .+，消息没发出去/)
-    await expect(notice).toContainText("草稿会留着，检查网络后再试")
+    await expect(notice).toContainText("消息没发出去。检查网络后再试。")
+    await expect(notice).not.toContainText("草稿会留着")
     await expect(notice).not.toContainText(/ECONNREFUSED|ECONNRESET|ETIMEDOUT|status|401|403/i)
     const action = notice.getByTestId("thread-credential-network-notice-action")
     await expect(action).toHaveText("再发一次")
@@ -270,11 +273,11 @@ const COPY = {
 const RESTRICTED = {
   forbidden: {
     kind: "provider_forbidden",
-    notice: "{name} 拒绝了这次请求，消息没发出去。草稿会留着，可以换个模型，或稍后再试。"
+    notice: "{name} 拒绝了这次请求，消息没发出去。可以换个模型，或稍后再试。"
   },
   billing: {
     kind: "provider_billing",
-    notice: "{name} 说额度或账单有问题，消息没发出去。草稿会留着，可以先换个模型，处理好后再试。"
+    notice: "{name} 说额度或账单有问题，消息没发出去。可以先换个模型，处理好后再试。"
   }
 } as const
 
