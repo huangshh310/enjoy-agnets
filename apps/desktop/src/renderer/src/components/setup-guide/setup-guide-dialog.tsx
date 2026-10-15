@@ -36,6 +36,7 @@ import { SetupGuideFooter } from "./setup-guide-footer"
 import { SetupGuideHeader } from "./setup-guide-header"
 import { shouldFinishGuideOnDismiss, useSetupGuideStore } from "./setup-guide-store"
 import { WorkspaceChoice } from "./workspace-choice"
+import { useOpenGeneration } from "./dialog-open-generation"
 
 export function SetupGuideDialog() {
   const open = useSetupGuideStore((state) => state.open)
@@ -52,6 +53,8 @@ export function SetupGuideDialog() {
   const chatReady = readiness?.ready === true
   const providers = useSettingsSnapshot().data?.providers
   const keyStatus = guideKeyStatus(readiness, providers ?? [])
+  // 暂停去改密钥后马上恢复：旧内容还在退场时不能复用，否则新遮罩会压在内容上（见 dialog-open-generation.ts）。
+  const openGeneration = useOpenGeneration(open)
 
   useEffect(() => {
     if (!open) return
@@ -123,6 +126,7 @@ export function SetupGuideDialog() {
       }}
     >
       <DialogContent
+        key={openGeneration}
         className="grid h-[min(540px,calc(100vh-4rem))] w-[min(800px,calc(100vw-2rem))] max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-none"
         onInteractOutside={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
