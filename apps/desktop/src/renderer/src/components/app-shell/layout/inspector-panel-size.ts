@@ -30,3 +30,27 @@ export function sanitizeSplitLayout(
   }
   return layout
 }
+
+/** 工作台 Panel 的 minSize（stage-split.tsx），和分隔条宽一起决定并排放不放得下审查栏。 */
+export const STAGE_MIN_PX = 360
+export const INSPECTOR_SEPARATOR_PX = 12
+/** 抽屉最宽；窄窗里给主区左侧至少留一条边，看得出是盖在上面的。 */
+export const INSPECTOR_DRAWER_MAX_PX = 420
+export const INSPECTOR_DRAWER_GUTTER_PX = 24
+/** 聊天顶栏高（chat-stage-header h-12）：抽屉从顶栏下沿开始，顶栏的开关一直露出、可点。 */
+export const INSPECTOR_DRAWER_TOP_INSET_PX = 48
+
+/**
+ * 分栏宽度放不下「工作台 360 + 分隔条 + 审查栏 280」时，审查栏改成覆盖式抽屉。
+ * 不然 react-resizable-panels 只能把它压成 0、画在窗外（768 / 733 宽，g157b-25 / pr157-gate-05-768）。
+ * 0 = 还没量到宽度，按并排处理。
+ */
+export function inspectorUsesDrawer(groupWidthPx: number): boolean {
+  if (!(groupWidthPx > 0)) return false
+  return groupWidthPx < STAGE_MIN_PX + INSPECTOR_SEPARATOR_PX + INSPECTOR_MIN_PX
+}
+
+/** 抽屉宽：最多 420，至少给左边留 24 的缝；分栏本身再窄也不小于 0。 */
+export function inspectorDrawerWidth(groupWidthPx: number): number {
+  return Math.max(0, Math.min(INSPECTOR_DRAWER_MAX_PX, groupWidthPx - INSPECTOR_DRAWER_GUTTER_PX))
+}

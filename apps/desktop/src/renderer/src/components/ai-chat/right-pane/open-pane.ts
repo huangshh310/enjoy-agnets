@@ -12,6 +12,14 @@ export function revealRightPane(
 ) {
   useChatStore.getState().setRightPanelCollapsed(false)
   useRightPaneStore.getState().openTool(kind, options)
+  notifyRightPaneReveal()
+}
+
+/** 「已经开着」时 store 不变、不会触发重渲染；发个事件让分栏检查一下是不是被压成 0 了（main157-patrol）。 */
+export const RIGHT_PANE_REVEAL_EVENT = "enjoy:right-pane-reveal"
+function notifyRightPaneReveal() {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(new Event(RIGHT_PANE_REVEAL_EVENT))
 }
 
 /** 展开审查栏：有 dirty 文件且还没开标签时直接进 Review。 */
@@ -27,6 +35,7 @@ export function expandInspector(kind?: RightPaneKind) {
     return
   }
   useChatStore.getState().setRightPanelCollapsed(false)
+  notifyRightPaneReveal()
 }
 
 export function openBrowserUrl(raw: string) {
@@ -39,4 +48,5 @@ export function openReviewCommits() {
   useChatStore.getState().setRightPanelCollapsed(false)
   useRightPaneStore.getState().openTool("review")
   useRightPaneStore.getState().setReviewScope("commits")
+  notifyRightPaneReveal()
 }
