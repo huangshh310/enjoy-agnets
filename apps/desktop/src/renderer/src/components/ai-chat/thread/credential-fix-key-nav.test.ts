@@ -29,3 +29,15 @@ test("fixKeyNavigation 与点击时的目标一致", () => {
   assert.deepEqual(fixKeyNavigation(undefined).search, { create: "official", from: "chat" })
   assert.deepEqual(fixKeyNavigation("p").search, { edit: "p", from: "chat" })
 })
+
+test("leo r3：幽灵档案（快照 prv_gone 不在列表、prv_other 停用）→ 解析不出 → 打开添加 API 密钥，不开 edit:prv_other", async () => {
+  const { resolveDefaultProviderId } = await import("../../../lib/default-provider-label.ts")
+  const ghost = {
+    defaultRoute: { runtimeId: "enjoy-local", profileId: "prv_gone" },
+    apiKeys: [{ kind: "api_key", providerId: "prv_gone", presetId: "openai" }]
+  } as never
+  const id = resolveDefaultProviderId(ghost, [{ id: "prv_other", hasKey: true, enabled: false, active: false }])
+  assert.deepEqual(clicks(id), [
+    { to: "/settings/$section", params: { section: "providers" }, search: { create: "official", from: "chat" } }
+  ])
+})
