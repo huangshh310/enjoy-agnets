@@ -35,3 +35,29 @@ test("(b) 会话建好：准备中贴的图还在输入框，并落到新会话�
   assert.deepEqual(listComposerAssets().map((a) => a.id), ["ast_mid"])
   assert.deepEqual(readPersistedDraftAssets("ses_new")?.map((a) => a.id), ["ast_mid"])
 })
+
+test("leo #157：新建会话沿真实路径 开创建窗 → 会话建好 → setSession 之后不处于加载中（不白屏 8 秒）", async () => {
+  const { useChatStore } = await import("../stores/chat-store.ts")
+  const pending = await import("./session-history-pending.ts")
+  // 从一个已打开的会话点「新对话」。
+  useChatStore.getState().setSession("ses_prev_open", "上一个会话")
+  detachComposerForCreate()
+  assert.equal(useChatStore.getState().sessionId, null)
+  // session-lifecycle.publishCreatedSession 的顺序：先 publishCreatedComposer，再 setSession。
+  publishCreatedComposer("ses_created_fresh")
+  useChatStore.getState().setSession("ses_created_fresh", "新对话")
+  useChatStore.getState().setMessages([])
+  const state = useChatStore.getState()
+  assert.equal(state.sessionId, "ses_created_fresh")
+  assert.equal(
+    pending.sessionHistoryPending({
+      sessionId: state.sessionId,
+      messageCount: state.messages.length,
+      running: state.running,
+      hydrated: pending.isSessionHistoryHydrated("ses_created_fresh"),
+      timedOut: false
+    }),
+    false,
+    "新建会话发布后停在加载中：每次「新对话」都会白屏到 8 秒兜底"
+  )
+})

@@ -348,8 +348,11 @@ test("⑨ 换会话时上一轮的超时作废：B 兜底超时后 B→A→B，�
   try {
     // 启动选中 B，回灌一直不回来：8 秒兜底后出空态。
     await expect(loading).toBeVisible({ timeout: 10_000 })
+    // 先等前台确实选中 B（挑前台会话那段另有自己的 8 秒兜底），再等 B 自己的 8 秒兜底。
+    await expect
+      .poll(() => window.evaluate(() => window.__enjoyE2e?.getComposerGate()?.sessionId ?? null), { timeout: 15_000 })
+      .toBe(b)
     await expect(greeting).toBeVisible({ timeout: 12_000 })
-    expect(await window.evaluate(() => window.__enjoyE2e?.getComposerGate()?.sessionId ?? null)).toBe(b)
     await sessionRow(window, a).click()
     await expect(loading).toBeVisible({ timeout: 5_000 })
     await sessionRow(window, b).click()
