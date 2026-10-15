@@ -24,3 +24,23 @@ export function emitPreOutputRolledBack(info: PreOutputRolledBack): void {
     }
   }
 }
+
+/**
+ * leo r3 M2：这一轮真出字了（模型文本 / 思考 / 工具 / 审批）或 run.end——首句自动标题从此不再是「可撤回」的。
+ */
+const outputListeners = new Set<(sessionId: string) => void>()
+
+export function onTurnProducedOutput(listener: (sessionId: string) => void): () => void {
+  outputListeners.add(listener)
+  return () => outputListeners.delete(listener)
+}
+
+export function emitTurnProducedOutput(sessionId: string): void {
+  for (const listener of outputListeners) {
+    try {
+      listener(sessionId)
+    } catch {
+      // 忽略
+    }
+  }
+}

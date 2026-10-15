@@ -25,6 +25,7 @@ import {
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { afterPreOutputRollback } from "./after-pre-output-rollback"
 import { readComposerForMerge, writeComposerAfterMerge } from "./composer-io"
+import { noteTurnSettled } from "./turn-settled"
 import { mergeComposerText } from "../lib/merge-composer-text"
 import { isImmediatePreOutputError } from "./pre-output-rollback"
 import { errorAfterOptimisticSend, errorAfterStreamEvent } from "./resend-notice"
@@ -229,6 +230,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     })
     if (composer !== undefined) writeComposerAfterMerge(composer)
     if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages)
+    else noteTurnSettled(sessionId, event)
   },
   appendUserMessage: (content, assets) => {
     const messages: ThreadMessage[] = [

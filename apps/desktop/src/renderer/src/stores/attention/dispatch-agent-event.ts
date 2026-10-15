@@ -17,6 +17,7 @@ import { lastTurnDeniedOnly } from "@renderer/components/ai-chat/right-pane/view
 import { omitCompleteFromTurn } from "@renderer/components/ai-chat/review-gate/turn-from-event"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
+import { noteTurnSettled } from "../turn-settled"
 
 export { belongsToForeground } from "./foreground-event"
 
@@ -77,6 +78,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
     return
   }
   if (sessionId) useAttentionStore.getState().applyParkEvent(sessionId, event)
+  // leo r3 M2：后台这一轮站住（出字 / run.end）同样让首句自动标题落定。
+  noteTurnSettled(sessionId, event)
   syncReviewGateAfterEvent(event, sessionId, false)
 }
 

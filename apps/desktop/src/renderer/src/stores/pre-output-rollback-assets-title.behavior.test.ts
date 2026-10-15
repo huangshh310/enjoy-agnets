@@ -188,3 +188,90 @@ test("leo r3 M1：queue-composer-send 载入即注册输入框读写（回滚合
   useChatStore.setState({ composer: "输入框当下" } as never)
   assert.equal(readComposerForMerge("回落值"), "输入框当下", "无 DOM 时 readComposerDomText 回落 store，而不是没注册的回落值")
 })
+
+function rerunFirstTurnAfterSuccess(sessionId: string, runId: string, title: string) {
+  // 「从这里重来」：线程里只剩重发的那一句 + 空助手，正在跑新的一轮。
+  useChatStore.setState({
+    sessionTitle: title,
+    repositories: [{ id: sessionId, name: title }],
+    running: true,
+    runId,
+    composer: "",
+    messages: [
+      { id: "u_again", role: "user", content: "帮我看看这张图里的报错", createdAt: 10 },
+      { id: "a_again", role: "assistant", content: "", createdAt: 11, streaming: true }
+    ]
+  } as never)
+}
+
+for (const settle of [
+  { name: "run.end", event: (runId: string) => ({ type: "run.end", runId }) },
+  { name: "text.delta", event: (runId: string) => ({ type: "text.delta", runId, text: "好的" }) }
+]) {
+  test(`leo r3 M2：首句已站住（${settle.name}）后「从这里重来」再出字前失败：真标题不被撤回成「新对话」`, () => {
+    seedFirstTurn("ses_real", "run_first")
+    // 真标题就是首句乐观题本身（没精炼 / 精炼失败）：只有「站住即清记录」能保护它。
+    const real = useChatStore.getState().sessionTitle
+    assert.notEqual(real, "新对话")
+    useChatStore.getState().applyStreamEvent(settle.event("run_first") as never)
+    rerunFirstTurnAfterSuccess("ses_real", "run_again", real)
+    useChatStore.getState().applyStreamEvent(preOutputError("run_again"))
+    assert.equal(useChatStore.getState().sessionTitle, real)
+    assert.equal(useChatStore.getState().repositories.find((r) => r.id === "ses_real")?.name, real)
+  })
+}
+
+test("leo r3 M2：首句还没站住、但当前标题已不是本轮自动写的（用户手改）：回滚不撤", () => {
+  seedFirstTurn("ses_manual", "run_manual")
+  useChatStore.setState({ sessionTitle: "我手改的标题", repositories: [{ id: "ses_manual", name: "我手改的标题" }] } as never)
+  useChatStore.getState().applyStreamEvent(preOutputError("run_manual"))
+  assert.equal(useChatStore.getState().sessionTitle, "我手改的标题")
+})
+
+test("leo r3 M2：后台会话 run.end 也让首句标题落定（dispatchAgentEvent 停车分支）", async () => {
+  const { emitTurnProducedOutput } = await import("./pre-output-rollback-listeners.ts")
+  const { restoreTitleAfterPreOutputRollback } = await import("../hooks/session-title.ts")
+  seedFirstTurn("ses_bg", "run_bg")
+  const optimistic = useChatStore.getState().sessionTitle
+  emitTurnProducedOutput("ses_bg")
+  restoreTitleAfterPreOutputRollback({ sessionId: "ses_bg", userTurnsLeft: 0 })
+  assert.equal(useChatStore.getState().sessionTitle, optimistic)
+})
+
+test("jojo P2 / leo r3 M2：精炼先回来改成生成题（stub-title）、之后才出字前失败：认得出是本轮写的，撤回「新对话」", async () => {
+  const { completeSessionTitle } = await import("../hooks/session-title.ts")
+  const listeners = new Set<(event: unknown) => void>()
+  const g = globalThis as { window?: unknown }
+  const hadWindow = "window" in g
+  const prevWindow = g.window
+  g.window = {
+    ide: {
+      settings: { get: async () => ({ defaultModelId: "m_title" }) },
+      ai: { generate: async () => ({ runId: "run_refine2" }) },
+      agent: {
+        onEvent: (cb: (event: unknown) => void) => {
+          listeners.add(cb)
+          return () => listeners.delete(cb)
+        }
+      },
+      session: { rename: async (input: { title: string }) => ({ title: input.title }) }
+    }
+  }
+  try {
+    seedFirstTurn("ses_stub", "run_stub")
+    useChatStore.setState({ modelId: null, preferredModelId: "m_title", runtimeId: null } as never)
+    const refining = completeSessionTitle("帮我看看这张图里的报错")
+    for (let i = 0; i < 20 && listeners.size === 0; i++) await new Promise((r) => setTimeout(r, 5))
+    for (const cb of listeners) {
+      cb({ type: "text.delta", runId: "run_refine2", text: "stub-title" })
+      cb({ type: "run.end", runId: "run_refine2" })
+    }
+    await refining
+    assert.equal(useChatStore.getState().sessionTitle, "stub-title")
+    useChatStore.getState().applyStreamEvent(preOutputError("run_stub"))
+    assert.equal(useChatStore.getState().sessionTitle, "新对话")
+  } finally {
+    if (hadWindow) g.window = prevWindow
+    else delete g.window
+  }
+})
