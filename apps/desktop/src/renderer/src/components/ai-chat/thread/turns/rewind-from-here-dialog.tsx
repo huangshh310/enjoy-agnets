@@ -1,5 +1,6 @@
 /**
  * 从这条用户消息重来。异步结束前不关窗；失败码留在对话框里。
+ * 文案 / 按钮按 luna 定稿（rewind-dialog-view.ts）：Git 工作区三钮、非 Git 两钮、删新文件二次确认、还原失败灰字兜底。
  */
 import { useState } from "react"
 import { RiHistoryLine } from "@remixicon/react"
@@ -15,6 +16,8 @@ import {
 } from "@/components/ui/dialog"
 import { rewindFromUserTurn } from "@renderer/hooks/rewind-from-here"
 import { useT } from "@renderer/i18n"
+import { useChatStore } from "@renderer/stores/chat-store"
+import { isRewindRestoreFailure, rewindDialogView, type RewindButtonId } from "./rewind-dialog-view"
 
 export function RewindFromHereAction({
   messageId,
@@ -59,9 +62,18 @@ export function RewindFromHereDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useT()
+  // 审查面板同一份：workspace.changes 回来的 gitRepo；false = 这个文件夹没用 Git 管理。
+  const gitRepo = useChatStore((state) => state.gitRepo)
   const [busy, setBusy] = useState(false)
-  const [untracked, setUntracked] = useState<string[] | null>(null)
+  const [untracked, setUntracked] = useState<string[] | null | undefined>(undefined)
+  const [restoreFailed, setRestoreFailed] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function reset() {
+    setUntracked(undefined)
+    setRestoreFailed(false)
+    setError(null)
+  }
 
   async function run(restoreFiles: boolean, confirmDeleteUntracked?: boolean) {
     if (busy) return
@@ -74,7 +86,13 @@ export function RewindFromHereDialog({
         confirmDeleteUntracked
       })
       if (!result.ok && result.code === "CHECKPOINT_CONFIRM_REQUIRED") {
-        setUntracked(result.untrackedToDelete ?? [])
+        // 拿不到名单时 N 未知：标题换成不带数字的说法。
+        setUntracked(result.untrackedToDelete && result.untrackedToDelete.length > 0 ? result.untrackedToDelete : null)
+        return
+      }
+      if (!result.ok && restoreFiles && isRewindRestoreFailure(result.code)) {
+        setUntracked(undefined)
+        setRestoreFailed(true)
         return
       }
       if (!result.ok) {
@@ -82,57 +100,85 @@ export function RewindFromHereDialog({
         return
       }
       onOpenChange(false)
-      setUntracked(null)
+      reset()
     } finally {
       setBusy(false)
     }
+  }
+
+  const view = rewindDialogView(
+    untracked !== undefined
+      ? { kind: "untracked", files: untracked }
+      : { kind: "confirm", canRestoreFiles, gitRepo, restoreFailed },
+    t
+  )
+
+  function onButton(id: RewindButtonId) {
+    if (id === "cancel") onOpenChange(false)
+    else if (id === "restore-files") void run(true)
+    else if (id === "delete-and-restore") void run(true, true)
+    else void run(false)
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) {
-          setUntracked(null)
-          setError(null)
-        }
+        if (!next) reset()
         onOpenChange(next)
       }}
     >
-      <DialogContent className="max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card">
+      <DialogContent
+        data-testid="rewind-dialog"
+        data-state-kind={untracked !== undefined ? "untracked" : "confirm"}
+        className="max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
+      >
         <DialogHeader>
-          <DialogTitle className="text-title-3-semibold text-text-primary">
-            {untracked ? t("chat.rewindConfirmUntrackedTitle") : t("chat.rewindTitle")}
+          <DialogTitle data-testid="rewind-title" className="text-title-3-semibold text-text-primary">
+            {view.title}
           </DialogTitle>
-          <DialogDescription className="text-body-medium text-text-secondary">
-            {untracked
-              ? t("chat.rewindConfirmUntrackedBody", { n: untracked.length })
-              : canRestoreFiles
-                ? t("chat.rewindBody")
-                : t("chat.rewindBodyChatOnly")}
+          <DialogDescription data-testid="rewind-body" className="text-body-medium text-text-secondary">
+            {view.body}
           </DialogDescription>
+          {view.hint ? (
+            <p data-testid="rewind-hint" className="text-caption-1-regular text-text-tertiary">
+              {view.hint}
+            </p>
+          ) : null}
         </DialogHeader>
+        {view.files.length > 0 ? (
+          <ul data-testid="rewind-files" className="mt-1 flex flex-col gap-0.5 text-caption-1-regular text-text-secondary">
+            {view.files.map((file) => (
+              <li key={file} className="truncate font-mono" title={file}>
+                {file}
+              </li>
+            ))}
+            {view.moreCount > 0 ? (
+              <li data-testid="rewind-files-more" className="text-text-tertiary">
+                {t("chat.rewindConfirmUntrackedMore", { n: view.moreCount })}
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+        {view.failure ? (
+          <p data-testid="rewind-failure" className="mt-1 text-caption-1-regular text-text-tertiary">
+            {view.failure}
+          </p>
+        ) : null}
         {error ? <p className="mt-2 text-caption-1-medium text-text-error-primary">{error}</p> : null}
         <DialogFooter className="mt-2">
-          <Button variant="outline" size="sm" disabled={busy} onClick={() => onOpenChange(false)}>
-            {t("common.cancel")}
-          </Button>
-          {untracked ? (
-            <Button variant="destructive" size="sm" disabled={busy} onClick={() => void run(true, true)}>
-              {t("chat.rewindRestoreFiles")}
+          {view.buttons.map((button) => (
+            <Button
+              key={button.id}
+              data-testid={`rewind-${button.id}`}
+              variant={button.variant}
+              size="sm"
+              disabled={busy}
+              onClick={() => onButton(button.id)}
+            >
+              {button.label}
             </Button>
-          ) : (
-            <>
-              {canRestoreFiles ? (
-                <Button variant="outline" size="sm" disabled={busy} onClick={() => void run(true)}>
-                  {t("chat.rewindRestoreFiles")}
-                </Button>
-              ) : null}
-              <Button size="sm" disabled={busy} onClick={() => void run(false)}>
-                {t("chat.rewindChatOnly")}
-              </Button>
-            </>
-          )}
+          ))}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -142,11 +188,10 @@ export function RewindFromHereDialog({
 function rewindErrorMessage(code: string, t: (key: string) => string): string {
   if (code.includes("REWIND_BUSY")) return t("chat.rewindBusy")
   if (code.includes("REWIND_PROVIDER_UNSUPPORTED")) return t("chat.rewindUnsupported")
-  if (code.includes("REWIND_NO_CHECKPOINT")) return t("chat.rewindNoCheckpoint")
   if (code.includes("TRUNCATE_MESSAGE_NOT_FOUND")) return t("chat.rewindTruncateMissing")
   if (code.includes("TRUNCATE_STALE_SNAPSHOT")) return t("chat.truncateStaleSnapshot")
   if (code.includes("TRUNCATE_TAIL_CHANGED")) return t("chat.truncateTailChanged")
   if (code.includes("TRUNCATE_RUN_ACTIVE")) return t("chat.truncateRunActive")
-  if (code.includes("CHECKPOINT")) return t("chat.reviewCheckpointRestoreFailed")
+  if (isRewindRestoreFailure(code)) return t("chat.rewindNoCheckpoint")
   return t("chat.rewindFailed")
 }
