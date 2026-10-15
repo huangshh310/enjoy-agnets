@@ -29,7 +29,7 @@ export function detachComposerForCreate(): void {
 /** 会话建好：复位运行态，输入框里准备中贴的图留着并落到新会话的草稿。 */
 export function publishCreatedComposer(sessionId: string): void {
   // 新建的会话本来就没有历史：不等回灌，直接显示空态问候。
-  markSessionHistoryHydrated(sessionId)
+  markSessionHistoryHydrated(sessionId, { beforeOpen: true })
   useChatStore.setState({ ...idleComposerPatch() })
   persistCreateWindowAssets(sessionId)
 }

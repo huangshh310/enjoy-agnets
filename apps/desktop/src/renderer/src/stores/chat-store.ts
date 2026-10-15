@@ -15,7 +15,7 @@ import {
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-restart-notice"
-import { forgetSessionHistoryHydrated } from "../hooks/session-history-pending"
+import { noteSessionOpened } from "../hooks/session-history-pending"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
@@ -351,10 +351,9 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     })
   },
   setSession: (sessionId, sessionTitle) => {
-    // 从另一个会话切过来：这个会话之前的「已回灌」标记作废，等本次回灌（luna/leo #157：A→B→A 不闪空态）。
-    // 从「无会话」（新建窗）发布时不清：publishCreatedComposer 刚打过标。
-    const previous = get().sessionId
-    if (previous && previous !== sessionId) forgetSessionHistoryHydrated(sessionId)
+    // 换到这个会话：之前的「已回灌」标记作废，等本次回灌（luna/leo #157：A→B→A、A→空首页/创建窗→A 都不闪空态）。
+    // 例外：publishCreatedComposer 先打过标的新建会话（beforeOpen），保留。
+    if (get().sessionId !== sessionId) noteSessionOpened(sessionId)
     set((state) => ({
       sessionId,
       sessionTitle,

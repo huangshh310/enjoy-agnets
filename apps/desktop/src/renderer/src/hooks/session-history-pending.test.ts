@@ -56,9 +56,9 @@ test("打标 / 作废 / picking 都通知订阅者，状态随之变化", () => 
 test("A→B→A：切回 A 时旧的回灌标记作废，要等这次回灌；同会话重设、新建窗发布不作废", async () => {
   const { useChatStore } = await import("../stores/chat-store.ts")
   useChatStore.setState({ sessionId: null })
-  markSessionHistoryHydrated("ses_new")
+  markSessionHistoryHydrated("ses_new", { beforeOpen: true })
   useChatStore.getState().setSession("ses_new", "新对话")
-  assert.equal(isSessionHistoryHydrated("ses_new"), true, "从无会话发布新建会话不清标记")
+  assert.equal(isSessionHistoryHydrated("ses_new"), true, "从无会话发布新建会话（先打过标）不清标记")
 
   markSessionHistoryHydrated("ses_a")
   useChatStore.getState().setSession("ses_a", "A")
@@ -70,4 +70,26 @@ test("A→B→A：切回 A 时旧的回灌标记作废，要等这次回灌；�
   useChatStore.getState().setSession("ses_b", "B")
   useChatStore.getState().setSession("ses_a", "A")
   assert.equal(isSessionHistoryHydrated("ses_a"), false, "A→B→A：切回 A 等本次回灌")
+})
+
+test("A→空首页 / 创建窗→A：切回 A 也要等这次回灌，不先闪空态（leo #157 复审）", async () => {
+  const { useChatStore } = await import("../stores/chat-store.ts")
+  useChatStore.setState({ sessionId: null })
+  useChatStore.getState().setSession("ses_home_a", "A")
+  markSessionHistoryHydrated("ses_home_a")
+  // 去空首页（show-empty-chat）或创建窗（detachComposerForCreate）：sessionId 直接写成 null。
+  useChatStore.setState({ sessionId: null })
+  useChatStore.getState().setSession("ses_home_a", "A")
+  assert.equal(isSessionHistoryHydrated("ses_home_a"), false)
+})
+
+test("先打标的新建会话只保留一次：之后离开再回来照样要等回灌", async () => {
+  const { useChatStore } = await import("../stores/chat-store.ts")
+  useChatStore.setState({ sessionId: null })
+  markSessionHistoryHydrated("ses_fresh", { beforeOpen: true })
+  useChatStore.getState().setSession("ses_fresh", "新对话")
+  assert.equal(isSessionHistoryHydrated("ses_fresh"), true)
+  useChatStore.setState({ sessionId: null })
+  useChatStore.getState().setSession("ses_fresh", "新对话")
+  assert.equal(isSessionHistoryHydrated("ses_fresh"), false)
 })

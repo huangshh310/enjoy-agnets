@@ -26,16 +26,33 @@ export function setForegroundSessionPicking(on: boolean): void {
   emit()
 }
 
-export function markSessionHistoryHydrated(sessionId: string | null | undefined): void {
-  if (!sessionId || hydrated.has(sessionId)) return
+/** 在 setSession 之前就打好的标记（新建会话发布：本来就没有历史），下一次 setSession 打开它时保留。 */
+const markedBeforeOpen = new Set<string>()
+
+export function markSessionHistoryHydrated(
+  sessionId: string | null | undefined,
+  opts?: { beforeOpen?: boolean }
+): void {
+  if (!sessionId) return
+  if (opts?.beforeOpen) markedBeforeOpen.add(sessionId)
+  if (hydrated.has(sessionId)) return
   hydrated.add(sessionId)
   emit()
 }
 
-/** 从别的会话切回来（A→B→A）：旧标记作废，等这次回灌，不先闪空态。 */
+/** 旧标记作废，等这次回灌，不先闪空态。 */
 export function forgetSessionHistoryHydrated(sessionId: string | null | undefined): void {
   if (!sessionId || !hydrated.delete(sessionId)) return
   emit()
+}
+
+/**
+ * chat-store.setSession 换到另一个会话时调用（上一个是别的会话、空首页或创建窗都算）：
+ * A→B→A、A→空首页/创建窗→A 都要等这次回灌；只有刚发布、先打过标的新建会话保留标记。
+ */
+export function noteSessionOpened(sessionId: string): void {
+  if (markedBeforeOpen.delete(sessionId)) return
+  forgetSessionHistoryHydrated(sessionId)
 }
 
 export function isForegroundSessionPicking(): boolean {
