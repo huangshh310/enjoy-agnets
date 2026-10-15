@@ -3,7 +3,7 @@
  * 只走 getDatabase() 相对导入，测试才能一跳加载（禁止再 value-import @enjoy-agents/db）。
  */
 import { getDatabase } from "./database"
-import { restoreDraftAssetsInTx, type DraftAsset } from "./session-drafts"
+import { restoreDraftAssetsInTx, restoreDraftTextInTx, type DraftAsset } from "./session-drafts"
 
 export type SessionTurnSnapshot = {
   title: string
@@ -56,8 +56,11 @@ export function rollbackPreOutputMessages(input: {
   try {
     if (throwForTest) throw new Error("PRE_OUTPUT_ROLLBACK_TEST_INJECTED")
     const returned: DraftAsset[] = []
+    const returnedText: string[] = []
     for (const id of ids) {
       returned.push(...userTurnFileAssets(db, id, input.sessionId, since))
+      const text = userTurnText(db, id, input.sessionId, since)
+      if (text) returnedText.push(text)
       db.prepare(
         "DELETE FROM message_parts WHERE message_id IN (SELECT id FROM messages WHERE id = ? AND session_id = ? AND created_at >= ?)"
       ).run(id, input.sessionId, since)
@@ -69,6 +72,8 @@ export function rollbackPreOutputMessages(input: {
     }
     // jojo P1（#136 gate2）：图和字一起回草稿（发送时同事务清掉了 session_draft_assets）。
     restoreDraftAssetsInTx(db, input.sessionId, returned)
+    // leo r3 M4：正文也写回草稿（已切走的后台会话没有 renderer 还稿）。
+    for (const text of returnedText) restoreDraftTextInTx(db, input.sessionId, text)
     if (input.snapshot) {
       const current = readSessionTitle(input.sessionId)
       const renamedMeanwhile =
@@ -87,6 +92,14 @@ export function rollbackPreOutputMessages(input: {
     db.exec("ROLLBACK;")
     throw error
   }
+}
+
+/** 将被回滚删掉的那句用户消息正文（只认本会话、快照之后插入的用户行）。 */
+function userTurnText(db: ReturnType<typeof getDatabase>, messageId: string, sessionId: string, since: number): string {
+  const row = db
+    .prepare("SELECT content FROM messages WHERE id = ? AND session_id = ? AND role = 'user' AND created_at >= ?")
+    .get(messageId, sessionId, since) as { content: string } | undefined
+  return row?.content?.trim() ? row.content : ""
 }
 
 /** 将被回滚删掉的那句用户消息里的 file 部件（只认本会话、快照之后插入的用户行）。 */

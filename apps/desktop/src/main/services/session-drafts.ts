@@ -4,6 +4,7 @@
  * - 用户消息落库时在**同一事务**里清掉这个会话里已发出的那份稿（persistMessage 调 clearSentDraftInTx），
  *   不会出现「消息已落库、重启后草稿又冒出来」导致重复发送。
  */
+import { mergeComposerText } from "@enjoy-agents/ipc-contract/composer-merge"
 import { getDatabase } from "./database"
 
 type Db = ReturnType<typeof getDatabase>
@@ -193,4 +194,20 @@ export function restoreDraftAssetsInTx(db: Db, sessionId: string, assets: DraftA
   db.prepare(
     "INSERT INTO session_draft_assets (session_id, assets_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET assets_json = excluded.assets_json, updated_at = excluded.updated_at"
   ).run(sessionId, JSON.stringify(merged), Date.now())
+}
+
+/**
+ * leo r3 M4：出字前回滚删掉本轮用户句时（同一事务），把它的正文写回本会话草稿——
+ * 发送时 clearSentDraftInTx 清掉了；用户已切走时没有 renderer 帮它还稿。与已有草稿合并（mergeComposerText），不覆盖之后打的字。
+ */
+export function restoreDraftTextInTx(db: Db, sessionId: string, text: string): void {
+  if (!sessionId || !text.trim()) return
+  ensureTable(db)
+  const row = db.prepare("SELECT text FROM session_drafts WHERE session_id = ?").get(sessionId) as
+    | { text: string }
+    | undefined
+  const next = mergeComposerText(text, row?.text ?? "")
+  db.prepare(
+    "INSERT INTO session_drafts (session_id, text, updated_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET text = excluded.text, updated_at = excluded.updated_at"
+  ).run(sessionId, next, Date.now())
 }

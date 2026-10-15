@@ -6,6 +6,7 @@ import { useChatStore } from "../stores/chat-store"
 import { listFollowups } from "../hooks/followup-queue"
 import { listComposerAssets, setComposerAssetPersister } from "../hooks/composer-assets"
 import type { SessionDraftState } from "../stores/chat-store.types"
+import { mergeComposerText } from "./merge-composer-text"
 
 const STORAGE_KEY = "enjoy-agents-session-drafts"
 /** 打字防抖：停手这么久后写到 main（DB）。 */
@@ -280,6 +281,74 @@ export function composerDraftForSession(sessionId: string): SessionDraftState | 
   const assets = readPersistedDraftAssets(sessionId)
   if (!persisted && !assets) return undefined
   return { text: persisted ?? "", ...(assets ? { assets } : {}) }
+}
+
+/**
+ * leo r3 M4：发出后马上切走，出字前失败在后台回滚——main 已在回滚事务里把正文写回 session_drafts、
+ * 图并回 session_draft_assets。renderer 这边的缓存（正文 cache / 附件 assetCache / 内存草稿）还是发送时的旧样子：
+ * 从 main 重读并与本地（防抖中的写、内存草稿）合并，写回缓存；本地多出来的再写回 main。
+ * 否则切回时内存草稿（空）盖住还回的稿，之后一次整行替换的 saveAssets 也会把还回的图丢掉。
+ */
+export function refreshDraftAfterBackgroundRollback(sessionId: string): void {
+  if (!sessionId) return
+  const target = bridge()
+  let mainText = ""
+  let mainAssets: DraftAsset[] = []
+  try {
+    mainText = target.loadSync()[sessionId] ?? ""
+  } catch {
+    mainText = ""
+  }
+  try {
+    mainAssets = target.loadAssetsSync?.()[sessionId] ?? []
+  } catch {
+    mainAssets = []
+  }
+  const store = useChatStore.getState()
+  const memory = store.getSessionDraft(sessionId)
+
+  // 防抖中的写最新，但发出时挂的是空稿 ""：空的不算，回落内存草稿。
+  const pendingText = pending.get(sessionId)
+  const localText = pendingText?.trim() ? pendingText : (memory?.text ?? "")
+  const text = mergeComposerText(mainText, localText)
+  const map = drafts()
+  if (text.trim()) map[sessionId] = text
+  else delete map[sessionId]
+  if (text === mainText) {
+    // 防抖中的 ""（发出时的空稿）不得再落 main 把还回的稿删掉。
+    pending.delete(sessionId)
+  } else {
+    pending.set(sessionId, text)
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(flushPersistedDrafts, DRAFT_PERSIST_DEBOUNCE_MS)
+  }
+
+  const localAssets = (memory?.assets ?? assetCache?.[sessionId] ?? []) as DraftAsset[]
+  const seen = new Set<string>()
+  const assets: DraftAsset[] = []
+  for (const asset of [...localAssets, ...mainAssets]) {
+    if (!asset?.id || seen.has(asset.id)) continue
+    seen.add(asset.id)
+    assets.push(asset)
+  }
+  const cacheMap = draftAssets()
+  if (assets.length > 0) cacheMap[sessionId] = assets.map((a) => ({ id: a.id, name: a.name, mediaType: a.mediaType, size: a.size }))
+  else delete cacheMap[sessionId]
+  if (assets.length !== mainAssets.length) writePersistedDraftAssets(sessionId, assets)
+
+  if (memory) {
+    store.saveSessionDraft(sessionId, { ...memory, text, assets })
+  }
+}
+
+/** 后台会话的出字前回滚（main 删了用户句）才需要重读草稿；保留用户句（keptUserMessage）的不用。 */
+export function noteBackgroundRunError(
+  sessionId: string | undefined,
+  event: { type: string; preOutput?: boolean; keptUserMessage?: boolean }
+): boolean {
+  if (!sessionId || event.type !== "run.error" || event.preOutput !== true || event.keptUserMessage === true) return false
+  refreshDraftAfterBackgroundRollback(sessionId)
+  return true
 }
 
 let installed: (() => void) | null = null

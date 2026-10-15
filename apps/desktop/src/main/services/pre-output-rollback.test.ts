@@ -201,3 +201,37 @@ test("jojo P1：回滚的用户句没带图：草稿附件不被动（不写空�
   rollbackPreOutputMessages({ sessionId, messageIds: ["u_txt"], snapshot })
   assert.equal(loadSessionDraftAssets()[sessionId], undefined)
 })
+
+test("leo r3 M4：回滚删掉本轮用户句时，正文写回本会话草稿（已切走的后台会话也有稿）；与已有草稿合并不覆盖", async () => {
+  const { loadSessionDrafts, saveSessionDraft } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  for (const [sessionId, existing, expected] of [
+    ["ses_m4_empty", "", "后台发出去的那句"],
+    ["ses_m4_typed", "切回来前补的字", "切回来前补的字\n后台发出去的那句"]
+  ] as const) {
+    seedSession(sessionId, `ws_${sessionId}`)
+    if (existing) saveSessionDraft(sessionId, existing)
+    const snapshot = snapshotSessionTurn(sessionId)
+    db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      `u_${sessionId}`, sessionId, "user", "后台发出去的那句", Date.now()
+    )
+    db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      `a_${sessionId}`, sessionId, "assistant", "", Date.now()
+    )
+    rollbackPreOutputMessages({ sessionId, messageIds: [`u_${sessionId}`, `a_${sessionId}`], snapshot })
+    assert.equal(loadSessionDrafts()[sessionId], expected, sessionId)
+  }
+})
+
+test("leo r3 M4：快照前的旧用户句不算本轮，正文不写回草稿", async () => {
+  const { loadSessionDrafts } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  const sessionId = "ses_m4_old"
+  seedSession(sessionId, "ws_m4_old")
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_m4_old", sessionId, "user", "很早以前的话", 5
+  )
+  const snapshot = snapshotSessionTurn(sessionId)
+  rollbackPreOutputMessages({ sessionId, messageIds: ["u_m4_old"], snapshot })
+  assert.equal(loadSessionDrafts()[sessionId], undefined)
+})
