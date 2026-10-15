@@ -260,11 +260,14 @@ test("leo r6 BLOCK：A 在跑时左上返回到会话一——会话一不挂 A 
     await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
     await expect(activeRow).not.toHaveAttribute("data-session-id", one ?? "", { timeout: 8_000 })
     const a = await activeRow.getAttribute("data-session-id")
-    const rowOne = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${one}"]`).first()
-    const rowA = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${a}"]`).first()
+    // 只点项目树里的行（「进行中」分组里也有一行 A，排在前面）。
+    const rowOne = window.locator(`[data-testid="sidebar-session-row"][data-session-surface="tree"][data-session-id="${one}"]`)
+    const rowA = window.locator(`[data-testid="sidebar-session-row"][data-session-surface="tree"][data-session-id="${a}"]`)
     // 历史排成「会话一 → A」，左上返回必然落到会话一。
     await rowOne.locator("button").first().click()
     await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+    // 历史对 350ms 内的连跳只记最后一页（HISTORY_COALESCE_MS）；停一下，像人一样，会话一才单独成一页。
+    await window.waitForTimeout(600)
     await composer.fill("会话一的草稿")
     await rowA.locator("button").first().click()
     await expect(rowA).toHaveAttribute("data-active", "true", { timeout: 10_000 })
