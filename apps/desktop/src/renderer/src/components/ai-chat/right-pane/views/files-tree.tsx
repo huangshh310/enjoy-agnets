@@ -33,14 +33,17 @@ export function FilesTree({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 w-full flex-col">
-      <div className="flex items-center gap-0.5 px-2 pt-2 pb-1">
+      {/* 目录树窄（文件 Tab 约 120px）时筛选框独占一行、展开/收起换到下一行靠右，占位「筛选文件…」不被裁。 */}
+      <div className="flex flex-wrap items-center gap-0.5 px-2 pt-2 pb-1">
         <input
+          data-testid="files-tree-filter"
           value={tree.query}
           onChange={(event) => tree.setQuery(event.target.value)}
           placeholder={t("chat.filterFiles")}
-          className="h-8 min-w-0 flex-1 rounded-2lg border border-border-button-default bg-background-secondary-default px-2 text-caption-1-medium text-text-primary outline-none placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          className="h-8 min-w-[6.5rem] flex-1 rounded-2lg border border-border-button-default bg-background-secondary-default px-2 text-caption-1-medium text-text-primary outline-none placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         />
         <QuietIconButton
+          className="ml-auto"
           icon={RiAddLine}
           aria-label={t("chat.expandFolders")}
           title={t("chat.expandFolders")}

@@ -116,7 +116,8 @@ export function registerBuiltinToolsIpc() {
         ok: true,
         apps: [
           {
-            displayName: "日历",
+            // 真机名单跟随系统语言；stub 跟 ENJOY_E2E_LANG，英文界面不出「@日历 help me in 日历…」。
+            displayName: process.env.ENJOY_E2E_LANG === "en" ? "Calendar" : "日历",
             appKey: "com.apple.iCal",
             appKeySource: "bundleId",
             stable: true

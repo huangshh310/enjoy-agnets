@@ -28,3 +28,16 @@ test("调用处 count === 1 走 One 键", () => {
     assert.match(src, new RegExp(`=== 1 \\? t\\("chat\\.${key}One"\\)`), `${file} ${key}`)
   }
 })
+
+test("英文单数：1 image / 1 file / 1 attachment or context chip（luna main-155）", () => {
+  const c = enChat as Record<string, string>
+  assert.equal(c.imagesCountOne, "1 image")
+  assert.equal(c.filesCountOne, "1 file")
+  assert.equal(c.runtimeQueuedExtrasOne, "1 attachment or context chip")
+  const root = new URL("../../", import.meta.url)
+  const queue = readFileSync(new URL("composer-queue.tsx", root), "utf8")
+  assert.match(queue, /=== 1 \? t\("chat\.imagesCountOne"\)/)
+  assert.match(queue, /=== 1 \? t\("chat\.filesCountOne"\)/)
+  const queued = readFileSync(new URL("thread/turns/queued-user-turn.tsx", root), "utf8")
+  assert.match(queued, /=== 1 \? t\("chat\.runtimeQueuedExtrasOne"\)/)
+})

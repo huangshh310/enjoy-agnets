@@ -8,6 +8,7 @@ import { sessionScopedCount, useSessionChanges } from "@renderer/hooks/session-c
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
+import { isComposerRailNotice } from "@renderer/components/ai-chat/composer/runtime-interact/composer-previous-preparing-rail"
 import { useQuery } from "@tanstack/react-query"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
 import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
@@ -43,11 +44,13 @@ import {
 } from "@renderer/components/ai-chat/thread/thread-find/use-thread-find-hotkey"
 import { ThreadFindBar } from "@renderer/components/ai-chat/thread/thread-find/thread-find-bar"
 import { queueComposerFocus } from "@renderer/hooks/composer-focus"
+import { useSessionHistoryPending } from "@renderer/hooks/session-history-pending"
 
 export function ChatStage() {
   usePermissionCycleHotkey()
   useThreadFindHotkey()
   const workspaceId = useChatStore((state) => state.workspaceId)
+  const sessionId = useChatStore((state) => state.sessionId)
   const workspaceName = useChatStore((state) => state.workspaceName)
   const workspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)
   const sessionTitle = useChatStore((state) => state.sessionTitle)
@@ -67,6 +70,7 @@ export function ChatStage() {
     enabled: hasIde(),
     queryFn: () => getIde().workspace.list() as Promise<WorkspaceRow[]>
   })
+  const historyPending = useSessionHistoryPending(sessionId, messages.length, running)
   const showNoProject = shouldShowNoProjectEmpty({
     workspaceId,
     surface,
@@ -89,7 +93,9 @@ export function ChatStage() {
           sessionTitle={sessionTitle}
           workspaceRootLabel={workspaceRootLabel}
           changesCount={sessionScopedCount(sessionChanges, changes.length)}
-          empty={messages.length === 0 && !running}
+          // 历史还在回灌时不判空：不先闪「在 xx 里做什么？」再跳成历史（luna main-155 重启）。
+          empty={messages.length === 0 && !running && !historyPending}
+          historyPending={historyPending}
           surface={surface}
           rightPanelCollapsed={rightPanelCollapsed}
           onToggleRightPane={() => {
@@ -119,6 +125,7 @@ function ChatWorkspaceBody(props: {
   workspaceRootLabel: string
   changesCount: number
   empty: boolean
+  historyPending: boolean
   surface: "thread" | "kanban" | "automations"
   rightPanelCollapsed: boolean
   onToggleRightPane: () => void
@@ -143,6 +150,7 @@ function ChatThreadBody(props: {
   workspaceRootLabel: string
   changesCount: number
   empty: boolean
+  historyPending: boolean
   rightPanelCollapsed: boolean
   onToggleRightPane: () => void
   onModelChange: (model: ModelOption) => void
@@ -157,6 +165,9 @@ function ChatThreadBody(props: {
   const workflowStatus = repositories.find((node) => node.id === sessionId)?.workflowStatus ?? null
   const reviewPhase = reviewGatePhase({ running, workflowStatus })
   const pendingApproval = useChatStore((state) => state.pendingApproval)
+  const notice = useChatStore((state) => state.notice)
+  // 空会话上段挂了红卡 / 提示卡：下段 pills 区不再与上段平分剩余高度，让问候标题留在可视区（luna main-155 patrol-21/22/51）。
+  const emptyHasBanner = Boolean((error && !isComposerRailNotice(error)) || notice)
   const [ledgerOpen, setLedgerOpen] = useState(false)
   const [environmentOpen, setEnvironmentOpen] = useState(false)
   const findOpen = useThreadFindOpen()
@@ -237,12 +248,17 @@ function ChatThreadBody(props: {
               // 审批时对话列保底 13rem / 25% 主体（#144）；矮窗里消息区自身保 min-h-6（一行），不被卡挤成 0。
               className={cx("flex min-h-14 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)]")}
             >
-              <AiChatThread
-                messages={messages}
-                running={running}
-                thinkingLabel={thinkingLabel}
-                error={error}
-              />
+              {props.historyPending ? (
+                // 中性占位：保持空白，不画问候、不画示例；回灌完再出历史或空态。
+                <div data-testid="thread-history-loading" aria-busy="true" className="min-h-6 flex-1" />
+              ) : (
+                <AiChatThread
+                  messages={messages}
+                  running={running}
+                  thinkingLabel={thinkingLabel}
+                  error={error}
+                />
+              )}
               <PermissionDock />
             </div>
             <EnvironmentPanel open={environmentOpen} />
@@ -267,7 +283,13 @@ function ChatThreadBody(props: {
           onSend={props.onSend}
         />
         {props.empty ? (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-start overflow-hidden px-6 pb-8 [@media(max-height:560px)]:hidden">
+          <div
+            data-testid="empty-start-lower"
+            className={cx(
+              "flex min-h-0 flex-col items-center justify-start overflow-hidden px-6 [@media(max-height:560px)]:hidden",
+              emptyHasBanner ? "flex-none pt-1 pb-3" : "flex-1 pb-8"
+            )}
+          >
             <EmptyStatePills
               onSelectPrompt={(promptText) => {
                 useChatStore.getState().setComposer(promptText)

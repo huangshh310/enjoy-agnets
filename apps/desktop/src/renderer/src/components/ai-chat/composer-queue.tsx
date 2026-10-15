@@ -47,12 +47,15 @@ export function ComposerQueue({ className }: { className?: string }) {
     (item) => !isImageMediaType(resolveMediaType(item.name, item.mediaType))
   )
 
+  // 英文单复数：count === 1 走 One 键（1 image / 1 file）。
+  const imagesLabel = images.length === 1 ? t("chat.imagesCountOne") : t("chat.imagesCount", { count: images.length })
+  const filesLabel = files.length === 1 ? t("chat.filesCountOne") : t("chat.filesCount", { count: files.length })
   const summaryLabel =
     images.length > 0 && files.length > 0
-      ? t("chat.imagesAndFiles", { images: images.length, files: files.length })
+      ? t("chat.imagesAndFiles", { images: imagesLabel, files: filesLabel })
       : images.length > 0
-        ? t("chat.imagesCount", { count: images.length })
-        : t("chat.filesCount", { count: files.length })
+        ? imagesLabel
+        : filesLabel
 
   // 紧凑模式下超过 3 项自动折叠
   const visibleImages = images.slice(0, 2)

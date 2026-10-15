@@ -47,7 +47,7 @@ import { generateSessionRecap } from "./services/session-recap-service"
 import { truncateSessionFrom } from "./services/session-truncate"
 import { forkSession } from "./services/session-fork"
 import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
-import { delaySessionCreateIfDev } from "./services/delay-session-create"
+import { delaySessionCreateIfDev, delaySessionMessagesIfDev } from "./services/delay-session-create"
 import {
   loadSessionDraftAssets,
   loadSessionDrafts,
@@ -129,9 +129,11 @@ function registerSessionCatalogIpc() {
     await delaySessionCreateIfDev({ packaged: app.isPackaged })
     return createSession(input.workspaceId, input.title || "新对话")
   })
-  ipcMain.handle("session.messages", async (_event, raw) =>
-    listMessages(SessionIdInput.parse(raw).sessionId)
-  )
+  ipcMain.handle("session.messages", async (_event, raw) => {
+    const { sessionId } = SessionIdInput.parse(raw)
+    await delaySessionMessagesIfDev({ packaged: app.isPackaged })
+    return listMessages(sessionId)
+  })
   ipcMain.handle("session.estimatedCost", async (_event, raw) => loadSessionEstimatedCost(raw))
   ipcMain.handle("session.setFocused", async (_event, raw) => {
     const { setFocusedSessionId } = await import("./services/session-focus")

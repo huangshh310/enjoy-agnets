@@ -39,7 +39,7 @@ export function QueuedUserTurn({
         {preview ? <p className="whitespace-pre-wrap break-words">{preview}</p> : null}
         {extraCount > 0 ? (
           <p className={cx("text-caption-2-regular text-text-tertiary", preview && "mt-1.5")}>
-            {t("chat.runtimeQueuedExtras", { n: extraCount })}
+            {extraCount === 1 ? t("chat.runtimeQueuedExtrasOne") : t("chat.runtimeQueuedExtras", { n: extraCount })}
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-caption-2-medium">
