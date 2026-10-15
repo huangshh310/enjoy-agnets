@@ -27,6 +27,7 @@ import { afterPreOutputRollback } from "./after-pre-output-rollback"
 import { clearRestoredImages } from "./restored-images-snapshot"
 import { readComposerForMerge, writeComposerAfterMerge } from "./composer-io"
 import { noteTurnSettled } from "./turn-settled"
+import { noteSentUserTurn } from "./sent-user-turns"
 import { mergeComposerText } from "../lib/merge-composer-text"
 import { isImmediatePreOutputError } from "./pre-output-rollback"
 import { errorAfterOptimisticSend, errorAfterStreamEvent } from "./resend-notice"
@@ -230,11 +231,13 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(composer !== undefined ? { composer } : {})
     })
     if (composer !== undefined) writeComposerAfterMerge(composer)
-    if (patch.running === true) clearRestoredImages()
+    // leo r5 MUST 2：只清开跑的这个会话的还稿快照，别的会话的留着。
+    if (patch.running === true) clearRestoredImages(sessionId)
     if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages, patch.composer ?? "")
     else noteTurnSettled(sessionId, event)
   },
   appendUserMessage: (content, assets) => {
+    const first = !get().messages.some((message) => message.role === "user")
     const messages: ThreadMessage[] = [
       ...get().messages,
       {
@@ -246,6 +249,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       }
     ]
     set({ messages, composer: "", error: errorAfterOptimisticSend(get().error), notice: null })
+    // leo r5 MUST 2：记下这一句（后台回滚时拿它拍还稿快照）。
+    noteSentUserTurn(get().sessionId, content, assets, first)
     return messages
   },
   setRunning: (running, runId = null) => {
@@ -265,9 +270,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   },
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error, retryTarget) => {
-    // luna 锁定文案：闸拦发送（输入框没清空过）等直接 setError 的路径不带「…已放回输入框」；
-    // 出字前回滚走 applyStreamEvent，之后才拍还稿快照，不经这里。
-    clearRestoredImages()
+    // leo r5 MUST 2：不在这里清还稿快照——切会话会 setError(null)，卡切回来还在，快照不能丢。
+    // 闸拦发送不带「…已放回」由 sendComposerOnce 在发起这一发时清本会话快照保证（luna 锁定文案）。
     set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null })
   },
   setPreparingHint: (preparingHint, sessionId) => set({ preparingHint, preparingSessionId: preparingHint ? (sessionId === undefined ? get().sessionId : sessionId) : null }),

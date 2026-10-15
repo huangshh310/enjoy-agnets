@@ -1,6 +1,7 @@
 /**
  * 发送失败：还文、可读 notice、清转圈停车；空新会话不留在侧栏。
  */
+import { restoreDraftIntoSession } from "@renderer/lib/session-draft-storage"
 import { rollbackComposerStartGate } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { useAttentionStore } from "../../stores/attention/attention-store"
 import { useChatStore } from "../../stores/chat-store"
@@ -33,6 +34,12 @@ export function failComposerSend(input: {
 }): void {
   // jojo P2：main 没接手，发送前乐观标的「执行中」还原（已通过的会话不留蓝圈、不重现改动条）。
   rollbackComposerStartGate(input.sessionId)
+  // jojo r5 P1：用户已切到别的会话——稿还回发出的那个会话的草稿；当前输入框 / running / 红卡 / 线程都不动。
+  const current = useChatStore.getState().sessionId
+  if (input.sessionId && current !== input.sessionId) {
+    restoreDraftIntoSession(input.sessionId, input.text, input.assets ?? [])
+    return
+  }
   if (input.keepRunning) {
     restoreComposerDraft(input.text, input.assets)
     useChatStore.getState().setError(input.reason)

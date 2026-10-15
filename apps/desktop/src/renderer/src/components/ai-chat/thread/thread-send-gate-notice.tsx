@@ -38,10 +38,11 @@ export function ThreadSendGateNotice({
   message: string
   /** 出字前失败回滚：图回了输入框时的第二行（复用看门狗还稿文案）。 */
   detail?: string | null
-  actionLabel: string
-  actionIcon: ReactNode
+  /** 不给（leo r5：「再发一次」不安全时隐藏）就不渲染主按钮；× 关闭始终在。 */
+  actionLabel?: string
+  actionIcon?: ReactNode
   actionDisabled?: boolean
-  onAction: () => void
+  onAction?: () => void
   secondaryActionLabel?: string
   secondaryActionIcon?: ReactNode
   secondaryActionDisabled?: boolean
@@ -71,14 +72,16 @@ export function ThreadSendGateNotice({
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <NoticeAction
-            testId={`${testId}-action`}
-            label={actionLabel}
-            icon={actionIcon}
-            disabled={actionDisabled}
-            variant="primary"
-            onClick={onAction}
-          />
+          {actionLabel && onAction ? (
+            <NoticeAction
+              testId={`${testId}-action`}
+              label={actionLabel}
+              icon={actionIcon}
+              disabled={actionDisabled}
+              variant="primary"
+              onClick={onAction}
+            />
+          ) : null}
           {secondaryActionLabel && onSecondaryAction ? (
             <NoticeAction
               testId={`${testId}-retry`}

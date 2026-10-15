@@ -8,7 +8,7 @@ import { subscribeComposerAssets } from "@renderer/hooks/composer-assets"
 import { useT } from "@renderer/i18n"
 import { restoredImagesDetail } from "@renderer/lib/usage/send-restore-detail"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { getRestoredImagesSnapshot, subscribeRestoredImages } from "@renderer/stores/restored-images-snapshot"
+import { getRestoredImagesSnapshots, subscribeRestoredImages } from "@renderer/stores/restored-images-snapshot"
 
 export function useRestoredImageCount(): number {
   const [count, setCount] = useState(0)
@@ -28,7 +28,8 @@ export function useRestoredImageCount(): number {
 export function useRestoredImagesDetail(): string | null {
   const t = useT()
   const sessionId = useChatStore((state) => state.sessionId)
-  const snapshot = useSyncExternalStore(subscribeRestoredImages, getRestoredImagesSnapshot)
-  const restored = snapshot && snapshot.sessionId === sessionId ? snapshot : null
+  // leo r5 MUST 2：快照按会话存，切走再切回仍在。
+  const snapshots = useSyncExternalStore(subscribeRestoredImages, getRestoredImagesSnapshots)
+  const restored = sessionId ? (snapshots[sessionId] ?? null) : null
   return restored ? restoredImagesDetail(t, restored.images, restored.hasText) : null
 }

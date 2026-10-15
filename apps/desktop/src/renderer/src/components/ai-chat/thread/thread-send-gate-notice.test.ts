@@ -53,13 +53,15 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   // luna P1：出字前失败白卡带还稿第二行（复用看门狗那两句）。
   for (const src of [network, invalid, restricted]) {
     assert.match(src, /const restoredDetail = useRestoredImagesDetail\(\)/)
-    assert.match(src, /detail=\{restoredDetail\}/)
   }
+  assert.match(invalid, /detail=\{restoredDetail\}/)
+  // leo r5 / luna：重试卡按 retryCardView 换第二行（行为测试见 retry-kept-draft.behavior）。
+  for (const src of [network, restricted]) assert.match(src, /detail=\{view\.detail\}/)
   assert.match(restricted, /tone="warning"/)
   assert.match(restricted, /chat\.switchModel/)
   assert.match(restricted, /chat\.retryDraft/)
   assert.match(restricted, /setAgentPickerOpen\(true\)/)
-  assert.match(restricted, /onSecondaryAction=\{retryKeptDraft\}/)
+  assert.match(restricted, /onSecondaryAction=\{view\.showRetry \? retryKeptDraft : undefined\}/)
   assert.doesNotMatch(invalid, /401|403|ECONNREFUSED/)
   assert.doesNotMatch(network, /ECONNREFUSED|401|403/)
   assert.doesNotMatch(restricted, /Payment Required/)

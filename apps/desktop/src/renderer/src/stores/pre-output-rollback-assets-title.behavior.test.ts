@@ -327,11 +327,11 @@ test("luna ①：只图发送出字前失败：图回输入框并落草稿；白
     retryKeptDraftPlan({
       kept: (() => {
         const kept = restoredImagesFor("ses_only")?.kept
-        return kept ? { text: kept.text, assetCount: kept.assets.length } : null
+        return kept ? { text: kept.text, assetIds: kept.assets.map((a) => a.id) } : null
       })(),
       lastUserPending: false,
       composer: state.composer,
-      composerAssetCount: listComposerAssets().length
+      composerAssetIds: listComposerAssets().map((a) => a.id)
     }),
     "resend-kept",
     "只有图的那一句也得重发，不能因为没字就什么都不做"
@@ -387,17 +387,19 @@ test("leo r4 soft4：白卡第二行按还稿时快照——回滚后再贴的�
 test("leo r4 soft4：白卡 hook 读快照不读输入框；新一轮开跑清快照（接线断言）", () => {
   const hook = readFileSync(new URL("../components/ai-chat/thread/use-restored-images-detail.ts", import.meta.url), "utf8")
   const body = hook.slice(hook.indexOf("export function useRestoredImagesDetail"))
-  assert.match(body, /useSyncExternalStore\(subscribeRestoredImages, getRestoredImagesSnapshot\)/)
+  assert.match(body, /useSyncExternalStore\(subscribeRestoredImages, getRestoredImagesSnapshots\)/)
   assert.doesNotMatch(body, /useRestoredImageCount|state\.composer/)
   const store = readFileSync(new URL("./chat-store.ts", import.meta.url), "utf8")
-  assert.match(store, /if \(patch\.running === true\) clearRestoredImages\(\)/)
+  assert.match(store, /if \(patch\.running === true\) clearRestoredImages\(sessionId\)/)
 })
 
-test("luna 锁定文案：闸拦发送（直接 setError，输入框没清空过）不带「…已放回」行，即使之前回滚留过快照", () => {
+test("luna 锁定文案 + leo r5：闸拦不再靠 setError 清快照（切会话的 setError(null) 不丢快照）；发起新一发时清本会话快照（接线断言，行为见 retry-kept-draft.behavior）", () => {
   seedImageOnlyTurn("ses_gate", "run_gate")
   useChatStore.getState().applyStreamEvent(preOutputError("run_gate"))
   assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "回滚还图：有这一行")
-  // 接着再发被闸拦（guardComposerSend → setError(credential_invalid)），图一直在输入框里。
-  useChatStore.getState().setError("credential_invalid")
-  assert.equal(noticeDetailAfterRollback(), null)
+  useChatStore.getState().setError(null)
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "切会话清红卡不丢快照")
+  const send = readFileSync(new URL("../hooks/runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
+  const clearAt = send.indexOf("clearRestoredImages(store.sessionId)")
+  assert.ok(clearAt > 0 && clearAt < send.indexOf("if (!guardComposerSend(store))"), "闸判之前清")
 })

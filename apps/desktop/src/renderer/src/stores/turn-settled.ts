@@ -3,6 +3,7 @@
  */
 import { eventMarksProducedOutput } from "@enjoy-agents/ipc-contract/pre-output-failure"
 import { emitTurnProducedOutput } from "./pre-output-rollback-listeners"
+import { forgetSentUserTurn } from "./sent-user-turns"
 
 export function turnSettledByEvent(event: { type: string }): boolean {
   if (event.type === "run.end") return true
@@ -21,5 +22,7 @@ export function noteTurnSettled(
 ): boolean {
   if (nonAgentRun || !sessionId || !turnSettledByEvent(event)) return false
   emitTurnProducedOutput(sessionId)
+  // 站住了就不会再被撕：忘掉发出时记的那一句。
+  forgetSentUserTurn(sessionId)
   return true
 }

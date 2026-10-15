@@ -143,6 +143,100 @@ test("jojo P2：失败后又打了新字、贴了新图 → 「再发一次」�
   }
 })
 
+const R5 = {
+  zh: {
+    sentence: "看看这张图",
+    edited: "看看这张图片吧",
+    restored: "文字和图片已放回输入框，可以直接再发。",
+    editThenSend: "改好后点发送就行，不会自动发出。"
+  },
+  en: {
+    sentence: "check this image",
+    edited: "check this image please",
+    restored: "Your text and image are back in the input. You can send them again.",
+    editThenSend: "Press Send when you're ready. Nothing goes out on its own."
+  }
+} as const
+
+for (const lang of ["zh", "en"] as const) {
+  test(`leo r5 fail closed（${lang}）：改了那一句 / 删了图 → 「再发一次」隐藏、第二行换成「改好后点发送…」；改回去立刻恢复`, async () => {
+    test.setTimeout(180_000)
+    const copy = R5[lang]
+    const { app, window } = await boot({ ...dirs(), ENJOY_E2E_LANG: lang, ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_ONCE: "1" })
+    try {
+      const composer = window.getByTestId("composer-input")
+      const chip = window.getByTestId("composer-asset-chip")
+      const action = window.getByTestId("thread-credential-network-notice-action")
+      const detail = window.getByTestId("thread-credential-network-notice-detail")
+      await window.getByTestId("composer-attach").setInputFiles({ name: "r5.png", mimeType: "image/png", buffer: PNG })
+      await expect(chip).toHaveCount(1, { timeout: 8_000 })
+      await composer.fill(copy.sentence)
+      await composer.press("Enter")
+      await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 15_000 })
+      await expect(action).toBeVisible()
+      await expect(detail).toHaveText(copy.restored)
+      await window.screenshot({ path: join(shots, `r5-${lang}-1-restored-with-button.png`) })
+      // 改了那一句：按钮隐藏（不是置灰），第二行替换；× 还在。
+      await composer.fill(copy.edited)
+      await expect(action).toHaveCount(0)
+      await expect(detail).toHaveText(copy.editThenSend)
+      await expect(window.getByTestId("thread-credential-network-notice-dismiss")).toBeVisible()
+      await window.screenshot({ path: join(shots, `r5-${lang}-2-hidden-edited.png`) })
+      // 改回去：立刻恢复。
+      await composer.fill(copy.sentence)
+      await expect(action).toBeVisible()
+      await expect(detail).toHaveText(copy.restored)
+      // 删掉那张图：隐藏。
+      await chip.first().hover()
+      await chip.first().locator('button[aria-label*="r5.png"]').click({ force: true })
+      await expect(chip).toHaveCount(0)
+      await expect(action).toHaveCount(0)
+      await expect(detail).toHaveText(copy.editThenSend)
+      await window.screenshot({ path: join(shots, `r5-${lang}-3-hidden-chip-deleted.png`) })
+      // 隐藏时什么都没自动发出去。
+      await expect(window.locator('[data-chat-stage="true"]')).not.toContainText("stub-ok")
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
+test("leo r5 MUST 2：回滚后切到别的会话再切回——卡和「再发一次」都在，点了只发那一句", async () => {
+  test.setTimeout(180_000)
+  const { app, window } = await boot({ ...dirs(), ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_ONCE: "1" })
+  try {
+    const composer = window.getByTestId("composer-input")
+    const chip = window.getByTestId("composer-asset-chip")
+    await window.getByTestId("composer-attach").setInputFiles({ name: "sw.png", mimeType: "image/png", buffer: PNG })
+    await expect(chip).toHaveCount(1, { timeout: 8_000 })
+    await composer.fill("切回来再发")
+    await composer.press("Enter")
+    await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 15_000 })
+    const active = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
+    const sid = await active.getAttribute("data-session-id")
+    expect(sid).toBeTruthy()
+    await window.getByTestId("sidebar-new-session").click()
+    const row = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sid}"]`).first()
+    await expect(row).toHaveAttribute("data-active", "false", { timeout: 8_000 })
+    await row.locator("button").first().click()
+    await expect(row).toHaveAttribute("data-active", "true", { timeout: 8_000 })
+    await expect(composer).toHaveValue("切回来再发", { timeout: 10_000 })
+    await expect(chip).toHaveCount(1, { timeout: 10_000 })
+    const action = window.getByTestId("thread-credential-network-notice-action")
+    await expect(action).toBeVisible({ timeout: 10_000 })
+    await expect(window.getByTestId("thread-credential-network-notice-detail")).toHaveText("文字和图片已放回输入框，可以直接再发。")
+    await window.screenshot({ path: join(shots, "r5-switch-back-1-card-and-button.png") })
+    await action.click()
+    const stage = window.locator('[data-chat-stage="true"]')
+    await expect(stage).toContainText("attached:sw.png", { timeout: 20_000 })
+    await expect(chip).toHaveCount(0)
+    await expect(composer).toHaveValue("")
+    await window.screenshot({ path: join(shots, "r5-switch-back-2-resent.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
 const LOCKED = {
   zh: {
     restoredBoth: "文字和图片已放回输入框，可以直接再发。",

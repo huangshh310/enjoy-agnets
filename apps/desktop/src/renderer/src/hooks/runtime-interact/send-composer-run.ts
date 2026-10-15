@@ -1,6 +1,7 @@
 /**
  * 空闲发送：占 running 槽、乐观气泡、再开 agent.run / 媒体生成。
  */
+import { clearRestoredImages } from "@renderer/stores/restored-images-snapshot"
 import { settleLaunchedRun } from "./settle-launched-run.ts"
 import { shouldDismissOnNextSend } from "./send-restore-dismiss"
 import { emptySessionToDiscardAfterWatchdog } from "./watchdog-empty-session"
@@ -213,6 +214,9 @@ async function sendComposerOnce(
   }
   const firstTurn = !store.messages.some((item) => item.role === "user")
   if (firstTurn) store.setPreparingHint(true, prepared?.sessionId ?? store.sessionId)
+  // luna 锁定文案 + leo r5 MUST 2：发起新一发，本会话上一次的还稿快照作废（闸拦这一发时白卡不带「…已放回」，
+  // 也不再给「再发一次」）；别的会话的快照不动。
+  clearRestoredImages(store.sessionId)
   // running 归属：迟到作废时只放掉自己占的。
   const runningToken: object = attempt ?? {}
   claimComposerRunning(runningToken)

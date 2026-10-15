@@ -22,6 +22,10 @@ export function belongsToForeground(
   // leo #147 MF-1：落库 id 回报可能晚于 run.end（收工才首次写行），只认会话，不看 running / runId。
   if (event.type === "message.persisted") return Boolean(eventSessionId) && eventSessionId === currentSessionId
   if (isNonAgentRunKind(event, rememberedKind)) return false
+  // jojo r5 P1：事件明确属于别的会话时绝不进前台——左上返回切会话（或回到「新对话」落地页，sessionId 为空）
+  // 不重置 runId，只认 runId 会把 A 的出字前失败撕在当前页上（A 的字 / 卡冒过来，A 的后台回滚和标题复原都没走）。
+  // 认领 runId 时会话已建好，属于这一轮的事件不会出现「当前页无会话」。
+  if (eventSessionId && eventSessionId !== currentSessionId) return false
   if (runId && currentRunId && runId === currentRunId) return true
   if (!eventSessionId || eventSessionId !== currentSessionId) return false
   if (isCurrentSessionPreOutputError(event)) return true

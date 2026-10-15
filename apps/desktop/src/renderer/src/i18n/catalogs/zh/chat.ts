@@ -463,6 +463,8 @@ export const zhChat = {
   switchModel: "换个模型",
   retryDraft: "再试一次",
   resendDraft: "再发一次",
+  // luna 锁定（#136 r5）：「再发一次」/「再试一次」隐藏时替换第二行（重试卡）或接在原因下（受限卡）。
+  sendFailedEditThenSend: "改好后点发送就行，不会自动发出。",
   resendingDraft: "正在发送…",
   credentialProviderFallback: "当前供应商",
   agentOpenSettings: "去设置看路径",

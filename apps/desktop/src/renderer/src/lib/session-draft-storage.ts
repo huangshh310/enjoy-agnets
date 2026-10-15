@@ -347,6 +347,33 @@ export function refreshDraftAfterBackgroundRollback(sessionId: string): void {
   }
 }
 
+/**
+ * jojo r5 P1：发送失败要还稿，但用户已切到别的会话——稿还回**发出的那个会话**的草稿（内存 + 缓存 + main），
+ * 绝不写进当前输入框（否则 A 的字和图冒到 B 的输入框里，切回 A 又少图）。与已有草稿按行合并，附件按 id 去重。
+ */
+export function restoreDraftIntoSession(
+  sessionId: string,
+  text: string,
+  assets: readonly { id: string; name: string; mediaType?: string; size?: number }[] = []
+): void {
+  if (!sessionId) return
+  const store = useChatStore.getState()
+  const memory = store.getSessionDraft(sessionId)
+  const before = memory?.text ?? readPersistedDraft(sessionId) ?? ""
+  const merged = text.trim() ? mergeComposerText(text, before) : before
+  writePersistedDraft(sessionId, merged)
+  const existing = ((memory?.assets ?? readPersistedDraftAssets(sessionId) ?? []) as DraftAsset[]).filter((a) => !a?.queued)
+  const seen = new Set(existing.map((a) => a.id))
+  const nextAssets: DraftAsset[] = [...existing]
+  for (const asset of assets) {
+    if (!asset?.id || seen.has(asset.id)) continue
+    seen.add(asset.id)
+    nextAssets.push({ id: asset.id, name: asset.name, mediaType: asset.mediaType, size: asset.size })
+  }
+  if (nextAssets.length !== existing.length) writePersistedDraftAssets(sessionId, nextAssets)
+  if (memory) store.saveSessionDraft(sessionId, { ...memory, text: merged, assets: nextAssets })
+}
+
 /** 后台会话的出字前回滚（main 删了用户句）才需要重读草稿；保留用户句（keptUserMessage）的不用。 */
 export function noteBackgroundRunError(
   sessionId: string | undefined,

@@ -170,3 +170,74 @@ test("leo r4 B1：A 带图发出、出字前贴 B 图排队后切走，A 后台�
     await closeForRelaunch(app)
   }
 })
+
+for (const via of ["back", "sidebar"] as const) {
+  test(`jojo r5 P1/P2（${via === "back" ? "左上返回" : "侧栏"}切走）：A 后台出字前回滚——字和图不冒进当前会话；切回 A 字和图都在；A 的自动标题撤回，重启后也是`, async () => {
+    test.setTimeout(240_000)
+    const base = dirs()
+    let { app, window } = await boot({
+      ...base,
+      ENJOY_E2E_SEND: "unreachable",
+      ENJOY_E2E_SEND_SKIP: "1",
+      ENJOY_E2E_SEND_DELAY_MS: "5000",
+      ENJOY_E2E_STUB_VISION: "1"
+    })
+    try {
+      const composer = window.getByTestId("composer-input")
+      const activeRow = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
+      // 会话一：正常发一轮（站住）。
+      await composer.fill("会话一成功")
+      await composer.press("Enter")
+      await expect(window.locator('[data-chat-stage="true"]')).toContainText("stub-ok", { timeout: 30_000 })
+      const one = await activeRow.getAttribute("data-session-id")
+      // 新会话 A：带图发出，出字前（5s 后）失败。
+      await window.getByTestId("sidebar-new-session").click()
+      await expect(composer).toHaveValue("", { timeout: 8_000 })
+      await window.getByTestId("composer-attach").setInputFiles({ name: "p1-a.png", mimeType: "image/png", buffer: PNG })
+      await expect(chipNamed(window, "p1-a.png")).toHaveCount(1, { timeout: 8_000 })
+      await composer.fill("甲句带图A")
+      await composer.press("Enter")
+      await expect(window.getByTestId("composer-asset-chip")).toHaveCount(0, { timeout: 8_000 })
+      await expect(activeRow).not.toHaveAttribute("data-session-id", one ?? "", { timeout: 8_000 })
+      const a = await activeRow.getAttribute("data-session-id")
+      expect(a).toBeTruthy()
+      // 立刻切回会话一。
+      const rowOne = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${one}"]`).first()
+      const rowA = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${a}"]`).first()
+      if (via === "back") {
+        // 左上返回：落到历史上一页（会话一或「新对话」落地页，取决于建会话时历史怎么记），都不是 A。
+        await window.getByTestId("nav-back").click()
+        await expect(rowA).toHaveAttribute("data-active", "false", { timeout: 10_000 })
+      } else {
+        await rowOne.locator("button").first().click()
+        await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+      }
+      const before = await composer.inputValue()
+      // 等 A 在后台出字前失败、agent.run 迟到回执也回来。
+      await window.waitForTimeout(9_000)
+      await window.screenshot({ path: join(shots, `r5-p1-${via}-0-after-wait.png`) })
+      // 会话一的输入框保持原样（空）：A 的字不冒进来，A 的失败也不被当成会话一的（不还会话一的旧句）。
+      await expect(composer, "A 的字不得冒进当前页").toHaveValue(before)
+      await expect(composer).not.toHaveValue(/甲句|会话一成功/)
+      await expect(window.getByTestId("thread-credential-network-notice"), "A 的卡不挂到当前页").toHaveCount(0)
+      await expect(window.getByTestId("composer-asset-chip"), "A 的图不得冒进当前页").toHaveCount(0)
+      await expect(rowA, "A 的自动标题撤回").not.toHaveAttribute("data-session-name", /甲句|stub-title/, { timeout: 8_000 })
+      await window.screenshot({ path: join(shots, `r5-p1-${via}-1-session-one-clean.png`) })
+      // 切回 A：字和图都在。
+      await rowA.locator("button").first().click()
+      await expect(composer).toHaveValue(/甲句带图A/, { timeout: 10_000 })
+      await expect(chipNamed(window, "p1-a.png")).toHaveCount(1, { timeout: 10_000 })
+      await window.screenshot({ path: join(shots, `r5-p1-${via}-2-back-to-a.png`) })
+      if (via === "back") {
+        await closeForRelaunch(app)
+        ;({ app, window } = await boot(base))
+        const rowAfter = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${a}"]`).first()
+        await expect(rowAfter).toBeVisible({ timeout: 15_000 })
+        await expect(rowAfter, "重启后标题仍是撤回后的").not.toHaveAttribute("data-session-name", /甲句|stub-title/)
+        await window.screenshot({ path: join(shots, "r5-p2-title-after-restart.png") })
+      }
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}

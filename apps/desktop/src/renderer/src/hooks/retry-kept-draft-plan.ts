@@ -1,35 +1,55 @@
 /**
- * 红卡 / 白卡「再发一次」怎么走（纯判定，便于测）。
- * jojo P2（#136 r4 产品决定）：只重发**被留下的那一句**（字 + 它自己的附件），恰好一条消息；
- * 输入框里新打的字 / 新贴的图是用户的下一条草稿——不自动另发、不并进重发、不清掉。
- * - 本会话刚回滚过、记着还回的那一句 → resend-kept（重发那一句，再把它从输入框摘掉，新草稿原样留着）；
- * - 用户句还在线程里、后面没有助手（keptUserMessage）→ retry-turn（原地重跑那一句，带它自己的附件）；
- * - 都没有（闸拦：输入框从没清空过，草稿就是整个输入框）→ 输入框有字或有图才 send；
- * - 否则 none。
+ * 白卡「再发一次」/「再试一次」怎么走（纯判定，便于测）。
+ * jojo P2（#136 r4）：只重发**被留下的那一句**（字 + 它自己的附件），恰好一条；输入框里的新字 / 新图是下一条草稿，不动。
+ * leo r5 MUST 1（fail closed）：那一句必须**原样**还在输入框里——作为整行（可多行，只容忍行首行尾空白），
+ * 且它的附件 chip 一个不少；被改过（「看看这张图片吧」）、被并进别的句子（「继续之前先跑一下测试」）、
+ * 图被删掉——都不重发，也绝不自动发输入框：按钮隐藏，卡上改说「内容还在输入框里，改好后点发送」。
+ * leo r5 MUST 2：没有还稿快照（不是这次回滚还回来的）同样不给按钮。
+ * - resend-kept：重发那一句；输入框去掉那几整行和它的 chip，其余原样；
+ * - retry-turn：用户句还在线程里（keptUserMessage），原地重跑，不碰输入框；
+ * - none：不给按钮。
  */
-import { composerCanSend } from "./runtime-interact/composer-can-send.ts"
+export type RetryKeptDraftPlan = "resend-kept" | "retry-turn" | "none"
 
-export type RetryKeptDraftPlan = "resend-kept" | "retry-turn" | "send" | "none"
+export type KeptForPlan = { text: string; assetIds: readonly string[] }
 
-export function retryKeptDraftPlan(input: {
-  kept: { text: string; assetCount: number } | null
-  lastUserPending: boolean
-  composer: string
-  composerAssetCount: number
-}): RetryKeptDraftPlan {
-  if (input.kept && (input.kept.text.trim() || input.kept.assetCount > 0)) return "resend-kept"
-  if (input.lastUserPending) return "retry-turn"
-  if (composerCanSend({ text: input.composer, assetCount: input.composerAssetCount })) return "send"
-  return "none"
+const lines = (text: string) => text.split(/\r?\n/)
+const trimBlankEdges = (rows: string[]) => {
+  let start = 0
+  let end = rows.length
+  while (start < end && !rows[start]!.trim()) start++
+  while (end > start && !rows[end - 1]!.trim()) end--
+  return rows.slice(start, end)
 }
 
-/** 把还回的那一句从输入框全文里摘掉（还稿时与后打的字按行合并过），剩下的是下一条草稿。 */
-export function composerWithoutKept(current: string, kept: string): string {
-  const sentence = kept.trim()
-  if (!sentence) return current
-  const at = current.indexOf(sentence)
-  if (at < 0) return current
-  const before = current.slice(0, at).replace(/\s+$/, "")
-  const after = current.slice(at + sentence.length).replace(/^\s+/, "")
-  return before && after ? `${before}\n${after}` : before || after
+/**
+ * 那一句是否原样整行留在输入框里；是则返回去掉它之后的输入框（下一条草稿，一个字不截），否则 null。
+ * 只容忍每行行首 / 行尾空白（还稿合并、粘贴会带）；行内任何改动都算改过。
+ */
+export function composerWithoutKept(current: string, kept: string): string | null {
+  const want = trimBlankEdges(lines(kept)).map((row) => row.trim())
+  if (want.length === 0) return current
+  const rows = lines(current)
+  for (let at = 0; at + want.length <= rows.length; at++) {
+    if (want.every((row, i) => rows[at + i]!.trim() === row)) {
+      return trimBlankEdges([...rows.slice(0, at), ...rows.slice(at + want.length)]).join("\n")
+    }
+  }
+  return null
+}
+
+export function retryKeptDraftPlan(input: {
+  kept: KeptForPlan | null
+  lastUserPending: boolean
+  composer: string
+  composerAssetIds: readonly string[]
+}): RetryKeptDraftPlan {
+  const kept = input.kept
+  if (kept && (kept.text.trim() || kept.assetIds.length > 0)) {
+    const have = new Set(input.composerAssetIds)
+    const chipsIntact = kept.assetIds.every((id) => have.has(id))
+    return chipsIntact && composerWithoutKept(input.composer, kept.text) !== null ? "resend-kept" : "none"
+  }
+  if (input.lastUserPending) return "retry-turn"
+  return "none"
 }

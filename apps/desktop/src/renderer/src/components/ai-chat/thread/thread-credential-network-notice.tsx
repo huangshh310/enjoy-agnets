@@ -3,13 +3,14 @@
  * 重复失败只换同一条，不叠层。
  */
 import { RiRefreshLine } from "@remixicon/react"
-import { retryKeptDraft } from "@renderer/hooks/retry-kept-draft"
+import { retryKeptDraft, useRetryKeptDraftAvailable } from "@renderer/hooks/retry-kept-draft"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
+import { retryCardView } from "./retry-card-view"
 import { useRestoredImagesDetail } from "./use-restored-images-detail"
 
 export function ThreadCredentialNetworkNotice({
@@ -22,6 +23,13 @@ export function ThreadCredentialNetworkNotice({
   const t = useT()
   const restoredDetail = useRestoredImagesDetail()
   const running = useChatStore((state) => state.running)
+  // leo r5 / jojo：那一句不在原样 / 没有还稿快照 → 隐藏「再发一次」，第二行改说下一步（重发进行中照常显示禁用态）。
+  const view = retryCardView({
+    canRetry: useRetryKeptDraftAvailable(),
+    running,
+    restoredDetail,
+    editThenSend: t("chat.sendFailedEditThenSend")
+  })
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
   const name = defaultProviderLabel(readiness, providers, t("chat.credentialProviderFallback"))
@@ -31,11 +39,11 @@ export function ThreadCredentialNetworkNotice({
       kind="provider_unreachable"
       tone="neutral"
       message={t("chat.credentialNetworkNotice", { name })}
-      detail={restoredDetail}
-      actionLabel={running ? t("chat.resendingDraft") : t("chat.resendDraft")}
+      detail={view.detail}
+      actionLabel={view.showRetry ? (running ? t("chat.resendingDraft") : t("chat.resendDraft")) : undefined}
       actionIcon={<RiRefreshLine className="size-3" />}
       actionDisabled={running}
-      onAction={retryKeptDraft}
+      onAction={view.showRetry ? retryKeptDraft : undefined}
       onDismiss={onDismiss}
       className={className}
     />

@@ -18,6 +18,7 @@ import { omitCompleteFromTurn } from "@renderer/components/ai-chat/review-gate/t
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 import { noteTurnSettled } from "../turn-settled"
+import { noteBackgroundPreOutputRollback } from "../after-pre-output-rollback"
 import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
 
 export { belongsToForeground } from "./foreground-event"
@@ -84,7 +85,7 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   const nonAgentRun = isNonAgentRunKind(event, rememberedKind)
   noteTurnSettled(sessionId, event, nonAgentRun)
   // leo r3 M4：后台出字前回滚——main 已把稿和图写回草稿，renderer 缓存 / 内存草稿重读合并。
-  if (!nonAgentRun) noteBackgroundRunError(sessionId, event)
+  if (!nonAgentRun && noteBackgroundRunError(sessionId, event)) noteBackgroundPreOutputRollback(sessionId, runId)
   syncReviewGateAfterEvent(event, sessionId, false)
 }
 
