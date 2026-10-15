@@ -1,7 +1,7 @@
 /**
  * 对话末尾的虚线用户气泡：排队是时间线的一部分，不是 Composer 上一条折叠条。
  */
-import { RiArrowDownSLine, RiArrowUpSLine, RiCloseLine, RiSendPlaneLine } from "@remixicon/react"
+import { RiArrowDownSLine, RiArrowUpSLine, RiAttachment2, RiCloseLine, RiSendPlaneLine } from "@remixicon/react"
 import { Message } from "@/components/ai-elements/message"
 import { cx } from "@/utils/cx"
 import { discardFollowup, returnFollowupToComposer, sendFollowupNow } from "@renderer/hooks/runtime-interact/followup-actions"
@@ -81,6 +81,18 @@ export function QueuedUserTurn({
         <p className="min-w-0 flex-1 truncate text-caption-1-regular" title={preview}>
           {preview || queuedExtrasLabel(t, extraCount)}
         </p>
+        {/* 有文字时预览只放得下文字：附件 / 引用数另起一个小签，不然单行里看不出这条还带着图。 */}
+        {preview && extraCount > 0 ? (
+          <span
+            data-testid="queued-extras"
+            title={queuedExtrasLabel(t, extraCount)}
+            className="inline-flex shrink-0 items-center gap-0.5 text-text-tertiary"
+          >
+            <RiAttachment2 className="size-3" aria-hidden />
+            <span aria-hidden>{extraCount}</span>
+            <span className="sr-only">{queuedExtrasLabel(t, extraCount)}</span>
+          </span>
+        ) : null}
         <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
       </div>
     )
