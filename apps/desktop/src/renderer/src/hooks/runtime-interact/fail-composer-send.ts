@@ -38,6 +38,10 @@ export function failComposerSend(input: {
   const current = useChatStore.getState().sessionId
   if (input.sessionId && current !== input.sessionId) {
     restoreDraftIntoSession(input.sessionId, input.text, input.assets ?? [])
+    // leo r6 BLOCK：离开时这一发被停车成「在跑」；没开跑就失败了，停车档也要收掉，否则切回去永远转圈、Enter 只排队。
+    // keepRunning = 那个会话里还有别的轮真在跑：停车档是它的，不动。
+    // 同会话分支一样 takePark：切回去不转圈、字和图在输入框里（换会话本来就清红卡，原因条不跟着停车）。
+    if (!input.keepRunning) useAttentionStore.getState().takePark(input.sessionId)
     return
   }
   if (input.keepRunning) {

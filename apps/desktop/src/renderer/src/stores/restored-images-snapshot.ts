@@ -55,7 +55,15 @@ export function clearRestoredImages(sessionId?: string | null): void {
 }
 
 export function restoredImagesFor(sessionId: string | null | undefined): RestoredImagesSnapshot | null {
-  return sessionId ? (snapshots[sessionId] ?? null) : null
+  return snapshotForSession(snapshots, sessionId)
+}
+
+/** 只认当前会话自己的快照；别的会话的回滚绝不出现在这张卡上（白卡第二行用）。 */
+export function snapshotForSession(
+  all: Readonly<Record<string, RestoredImagesSnapshot>>,
+  sessionId: string | null | undefined
+): RestoredImagesSnapshot | null {
+  return sessionId ? (all[sessionId] ?? null) : null
 }
 
 export function getRestoredImagesSnapshots(): Readonly<Record<string, RestoredImagesSnapshot>> {

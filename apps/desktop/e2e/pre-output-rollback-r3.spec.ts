@@ -241,3 +241,93 @@ for (const via of ["back", "sidebar"] as const) {
     }
   })
 }
+
+test("leo r6 BLOCK：A 在跑时左上返回到会话一——会话一不挂 A 的执行中，Enter 直接发出；回到 A 还是 A 自己的运行态", async () => {
+  test.setTimeout(240_000)
+  const { app, window } = await boot({ ...dirs() })
+  try {
+    const composer = window.getByTestId("composer-input")
+    const activeRow = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
+    const stage = window.locator('[data-chat-stage="true"]')
+    await composer.fill("会话一第一句")
+    await composer.press("Enter")
+    await expect(stage).toContainText("stub-ok 会话一第一句", { timeout: 30_000 })
+    const one = await activeRow.getAttribute("data-session-id")
+    await window.getByTestId("sidebar-new-session").click()
+    await expect(composer).toHaveValue("", { timeout: 8_000 })
+    await composer.fill("very slow 甲在跑")
+    await composer.press("Enter")
+    await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+    await expect(activeRow).not.toHaveAttribute("data-session-id", one ?? "", { timeout: 8_000 })
+    const a = await activeRow.getAttribute("data-session-id")
+    const rowOne = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${one}"]`).first()
+    const rowA = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${a}"]`).first()
+    // 历史排成「会话一 → A」，左上返回必然落到会话一。
+    await rowOne.locator("button").first().click()
+    await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+    await composer.fill("会话一的草稿")
+    await rowA.locator("button").first().click()
+    await expect(rowA).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+    await expect(window.getByTestId("composer-stop"), "A 自己在跑").toBeVisible({ timeout: 10_000 })
+    await composer.fill("A里后打的字")
+    await window.getByTestId("nav-back").click()
+    await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+    await expect(composer, "会话一的草稿还回来").toHaveValue("会话一的草稿", { timeout: 10_000 })
+    await expect(window.getByTestId("composer-stop"), "会话一不挂 A 的执行中").toHaveCount(0)
+    await expect(stage).not.toContainText("甲在跑")
+    await window.screenshot({ path: join(shots, "r6-back-1-session-one-idle.png") })
+    // Enter 直接发出（不进排队）。
+    await composer.fill("会话一第二句")
+    await composer.press("Enter")
+    await expect(stage).toContainText("stub-ok 会话一第二句", { timeout: 30_000 })
+    await expect(window.getByTestId("queued-user-turn")).toHaveCount(0)
+    await window.screenshot({ path: join(shots, "r6-back-2-enter-sends.png") })
+    // 回到 A：A 的稿和 A 自己的运行态（还在跑 / 等审批）都在。
+    await rowA.locator("button").first().click()
+    await expect(composer).toHaveValue("A里后打的字", { timeout: 10_000 })
+    await expect(stage).toContainText("甲在跑")
+    await window.screenshot({ path: join(shots, "r6-back-3-back-to-a.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+test("jojo r6 P1：左上返回到已被丢弃的空「新对话」——跳过它，不顶着它的标题挂着上一会话的消息，发送照常", async () => {
+  test.setTimeout(180_000)
+  const { app, window } = await boot({ ...dirs() })
+  try {
+    const composer = window.getByTestId("composer-input")
+    const activeRow = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
+    const stage = window.locator('[data-chat-stage="true"]')
+    await composer.fill("会话一第一句")
+    await composer.press("Enter")
+    await expect(stage).toContainText("stub-ok 会话一第一句", { timeout: 30_000 })
+    const one = await activeRow.getAttribute("data-session-id")
+    const rowOne = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${one}"]`).first()
+    // 开一个空新对话，再点回会话一：空的那个离开时被删。
+    await window.getByTestId("sidebar-new-session").click()
+    await expect(activeRow).not.toHaveAttribute("data-session-id", one ?? "", { timeout: 8_000 })
+    const ghost = await activeRow.getAttribute("data-session-id")
+    await rowOne.locator("button").first().click()
+    await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+    await expect(window.locator(`[data-testid="sidebar-session-row"][data-session-id="${ghost}"]`)).toHaveCount(0, { timeout: 10_000 })
+    await window.getByTestId("nav-back").click()
+    await window.waitForTimeout(1_500)
+    await window.screenshot({ path: join(shots, "r6-ghost-1-after-back.png") })
+    // 不落在被删的会话上：要么还在会话一（选中、消息是它自己的），要么回空首页（没有消息）。
+    const activeNow = await window.locator('[data-testid="sidebar-session-row"][data-active="true"]').count()
+    if (activeNow > 0) {
+      await expect(rowOne).toHaveAttribute("data-active", "true")
+      await expect(stage).toContainText("stub-ok 会话一第一句")
+    } else {
+      await expect(stage).not.toContainText("会话一第一句")
+    }
+    await composer.fill("返回后再发一句")
+    await composer.press("Enter")
+    await expect(stage).toContainText("stub-ok 返回后再发一句", { timeout: 30_000 })
+    await expect(window.getByText(/内容已放回输入框/)).toHaveCount(0)
+    await window.screenshot({ path: join(shots, "r6-ghost-2-send-ok.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
