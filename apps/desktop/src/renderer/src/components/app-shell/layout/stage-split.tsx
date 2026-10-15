@@ -1,8 +1,9 @@
 /**
  * 工作台 + Inspector 分栏。Chat 与其它模块共用，Chat 用 hidden 保活。
  * 工作台 Panel 不可 collapse：审查栏加宽最多压到 42%，切模块拉回 62%。
+ * 分栏放不下工作台 + 审查栏最小宽时（768 / 733 宽），审查栏改成盖在主区上的抽屉（useInspectorDrawer）。
  */
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Outlet, useRouterState } from "@tanstack/react-router"
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels"
 import { cx } from "@/utils/cx"
@@ -15,7 +16,13 @@ import { InspectorPane } from "./inspector-pane"
 import { isConversationSurface } from "./inspector-conversation"
 import { useInspectorOnConversation } from "./use-inspector-on-conversation"
 import { HistoryPageSlide } from "@renderer/components/layout/nav-history/history-page-slide"
-import { sanitizeSplitLayout, STAGE_DEFAULT_SIZE, STAGE_MIN_PERCENT } from "./inspector-panel-size"
+import {
+  sanitizeSplitLayout,
+  STAGE_DEFAULT_SIZE,
+  STAGE_MIN_PERCENT,
+  STAGE_MIN_PX
+} from "./inspector-panel-size"
+import { useInspectorDrawer } from "./use-inspector-drawer"
 
 export function StageSplit({
   isChat,
@@ -40,12 +47,16 @@ export function StageSplit({
     restoreStage()
   }, [activeModule, restoreStage])
 
+  const splitRef = useRef<HTMLDivElement>(null)
+  const drawer = useInspectorDrawer(splitRef)
+
   const splitLayout =
     defaultLayout && typeof defaultLayout === "object"
       ? sanitizeSplitLayout(defaultLayout as Record<string, number>)
       : defaultLayout
 
   return (
+    <div ref={splitRef} className="flex h-full min-h-0 min-w-0 flex-1">
     <Group
       id="enjoy-agents-chat-split"
       orientation="horizontal"
@@ -64,7 +75,7 @@ export function StageSplit({
       <Panel
         id="chat"
         panelRef={chatPanelRef}
-        minSize="360px"
+        minSize={`${STAGE_MIN_PX}px`}
         defaultSize={STAGE_DEFAULT_SIZE}
         className="h-full min-h-0 overflow-hidden bg-transparent"
       >
@@ -79,7 +90,13 @@ export function StageSplit({
         </div>
         </HistoryPageSlide>
       </Panel>
-      <InspectorPane maximized={maximized} toggleWidth={toggleWidth} resetWidth={resetWidth} />
+      <InspectorPane
+        maximized={maximized}
+        toggleWidth={toggleWidth}
+        resetWidth={resetWidth}
+        drawer={drawer}
+      />
     </Group>
+    </div>
   )
 }
