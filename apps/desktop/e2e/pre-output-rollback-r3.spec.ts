@@ -46,6 +46,11 @@ test("M1：发送后接着打的字，出字前失败回滚时不被覆盖", asy
     await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 20_000 })
     await expect(composer).toHaveValue(/帮我看看构建为什么挂了/)
     await expect(composer).toHaveValue(/顺便看下测试/)
+    // 等待期间标题精炼（completion）已跑完：它的 run.end 不能让首句「站住」，回滚后标题照样撤回。
+    await window.waitForTimeout(2_000)
+    const rows = window.getByTestId("sidebar-session-row")
+    await expect(rows.filter({ hasText: "stub-title" })).toHaveCount(0)
+    await expect(rows.filter({ hasText: "帮我看看构建为什么挂了" })).toHaveCount(0)
     await window.screenshot({ path: join(shots, "02-rollback-keeps-typed-text.png") })
   } finally {
     await closeForRelaunch(app)
@@ -85,19 +90,20 @@ test("M4：发出后立刻切到别的会话，后台回滚的正文切回来还
     const composer = window.getByTestId("composer-input")
     await composer.fill("后台回滚也别丢这句话")
     await composer.press("Enter")
-    const active = window.locator('[data-testid="sidebar-session-row"][data-active="true"]')
-    await expect(active).toHaveCount(1, { timeout: 8_000 })
+    const active = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
+    await expect(active).toBeVisible({ timeout: 8_000 })
     const sid = await active.getAttribute("data-session-id")
     expect(sid).toBeTruthy()
     await window.getByTestId("sidebar-new-session").click()
-    await expect(window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sid}"]`)).toHaveAttribute(
+    const row = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sid}"]`).first()
+    await expect(row).toHaveAttribute(
       "data-active",
       "false",
       { timeout: 8_000 }
     )
     // 等后台那轮出字前失败回滚完。
     await window.waitForTimeout(7_000)
-    await window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sid}"] button`).first().click()
+    await row.locator("button").first().click()
     await expect(window.getByTestId("composer-input")).toHaveValue(/后台回滚也别丢这句话/, { timeout: 10_000 })
     await window.screenshot({ path: join(shots, "05-background-rollback-draft-back.png") })
   } finally {

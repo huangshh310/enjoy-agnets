@@ -80,9 +80,11 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   }
   if (sessionId) useAttentionStore.getState().applyParkEvent(sessionId, event)
   // leo r3 M2：后台这一轮站住（出字 / run.end）同样让首句自动标题落定。
-  noteTurnSettled(sessionId, event)
+  // 标题精炼（completion）也走这条停车分支：它的 run.end 不算首句站住，否则回滚时标题撤不回。
+  const nonAgentRun = isNonAgentRunKind(event, rememberedKind)
+  noteTurnSettled(sessionId, event, nonAgentRun)
   // leo r3 M4：后台出字前回滚——main 已把稿和图写回草稿，renderer 缓存 / 内存草稿重读合并。
-  noteBackgroundRunError(sessionId, event)
+  if (!nonAgentRun) noteBackgroundRunError(sessionId, event)
   syncReviewGateAfterEvent(event, sessionId, false)
 }
 

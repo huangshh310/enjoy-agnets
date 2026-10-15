@@ -10,9 +10,16 @@ export function turnSettledByEvent(event: { type: string }): boolean {
   return eventMarksProducedOutput(event, false)
 }
 
-/** 这一轮站住就通知（首句自动标题落定）。前台走 chat-store，后台停车分支走 dispatchAgentEvent。 */
-export function noteTurnSettled(sessionId: string | undefined | null, event: { type: string }): boolean {
-  if (!sessionId || !turnSettledByEvent(event)) return false
+/**
+ * 这一轮站住就通知（首句自动标题落定）。前台走 chat-store，后台停车分支走 dispatchAgentEvent。
+ * nonAgentRun：标题精炼等 completion 跑在同一会话上，它的出字 / run.end 不是这一轮站住，不算。
+ */
+export function noteTurnSettled(
+  sessionId: string | undefined | null,
+  event: { type: string },
+  nonAgentRun = false
+): boolean {
+  if (nonAgentRun || !sessionId || !turnSettledByEvent(event)) return false
   emitTurnProducedOutput(sessionId)
   return true
 }

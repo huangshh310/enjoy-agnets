@@ -32,6 +32,19 @@ test("noteTurnSettled：站住才通知，带会话 id；没有会话 id 不通�
 test("后台停车分支同样通知（dispatchAgentEvent 在 applyParkEvent 之后调 noteTurnSettled）", () => {
   const src = readFileSync(new URL("./attention/dispatch-agent-event.ts", import.meta.url), "utf8")
   const park = src.indexOf("applyParkEvent(sessionId, event)")
-  const note = src.indexOf("noteTurnSettled(sessionId, event)")
-  assert.ok(park > 0 && note > park, "停车分支里要调 noteTurnSettled")
+  const note = src.indexOf("noteTurnSettled(sessionId, event, nonAgentRun)")
+  assert.ok(park > 0 && note > park, "停车分支里要调 noteTurnSettled，并带上 nonAgentRun")
+  assert.match(src, /const nonAgentRun = isNonAgentRunKind\(event, rememberedKind\)/)
+})
+
+test("标题精炼（completion）的 run.end / 出字不让首句站住", () => {
+  const seen: string[] = []
+  const off = onTurnProducedOutput((sid) => seen.push(sid))
+  try {
+    assert.equal(noteTurnSettled("ses_a", { type: "run.end" }, true), false)
+    assert.equal(noteTurnSettled("ses_a", { type: "text.delta" }, true), false)
+    assert.deepEqual(seen, [])
+  } finally {
+    off()
+  }
 })
