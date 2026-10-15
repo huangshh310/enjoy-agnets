@@ -11,6 +11,7 @@ import {
   shouldRefineSessionTitle
 } from "../lib/session-title"
 import { useChatStore } from "../stores/chat-store"
+import { onPreOutputRolledBack, type PreOutputRolledBack } from "../stores/pre-output-rollback-listeners"
 import { composerRunKind } from "./composer-run-kind"
 import { completePrompt } from "./use-completion"
 import { collectRunOutput } from "./wait-run-events"
@@ -22,10 +23,41 @@ export {
   shouldRefineSessionTitle
 } from "../lib/session-title"
 
+/**
+ * jojo P2（#136 gate2）：自动标题只来自会话第一句。那句出字前就失败、被回滚时，标题要回到发之前的占位，
+ * 后台精炼也作废（不然过几秒又被改成生成的标题）。
+ */
+const titleBeforeFirstTurn = new Map<string, string>()
+const titleEpoch = new Map<string, number>()
+
+function epochOf(sessionId: string): number {
+  return titleEpoch.get(sessionId) ?? 0
+}
+
+export function restoreTitleAfterPreOutputRollback(info: PreOutputRolledBack): void {
+  const previous = titleBeforeFirstTurn.get(info.sessionId)
+  if (previous === undefined) return
+  // 线程里还有别的用户句：标题不是这一句起的，不动。
+  if (info.userTurnsLeft > 0) return
+  titleBeforeFirstTurn.delete(info.sessionId)
+  titleEpoch.set(info.sessionId, epochOf(info.sessionId) + 1)
+  patchSessionTitle(info.sessionId, previous)
+  if (!hasIde() || !previous.trim()) return
+  void getIde().session.rename({ sessionId: info.sessionId, title: previous }).catch(() => undefined)
+}
+
+onPreOutputRolledBack(restoreTitleAfterPreOutputRollback)
+
+export function resetSessionTitleRollbackForTest(): void {
+  titleBeforeFirstTurn.clear()
+  titleEpoch.clear()
+}
+
 export function applyOptimisticTitle(userText: string) {
   const store = useChatStore.getState()
   const sessionId = store.sessionId
   if (!sessionId || !isDefaultSessionTitle(store.sessionTitle)) return
+  titleBeforeFirstTurn.set(sessionId, store.sessionTitle)
   const title = formatOptimisticTitle(userText)
   patchSessionTitle(sessionId, title)
   if (!hasIde()) return
@@ -37,6 +69,7 @@ export async function completeSessionTitle(userText: string) {
   const sessionId = store.sessionId
   const startedTitle = store.sessionTitle
   if (!hasIde() || !sessionId) return
+  const epoch = epochOf(sessionId)
   if (!shouldRefineSessionTitle(startedTitle, userText)) return
 
   const modelId = await pickTitleModelId()
@@ -52,12 +85,15 @@ export async function completeSessionTitle(userText: string) {
     )
     const title = sanitizeTitle(output.text)
     if (!title || isDefaultSessionTitle(title)) return
+    // 这一句已被出字前回滚撕掉：精炼作废。
+    if (epochOf(sessionId) !== epoch) return
     const current = titleOfSession(sessionId)
     if (!shouldRefineSessionTitle(current, userText)) return
     const renamed = (await getIde().session.rename({
       sessionId,
       title
     })) as { title: string }
+    if (epochOf(sessionId) !== epoch) return
     patchSessionTitle(sessionId, renamed.title)
   } catch {
     // 失败保留乐观标题，不打断主循环

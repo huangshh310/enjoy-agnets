@@ -5,6 +5,7 @@ import { rollbackComposerStartGate } from "../../components/ai-chat/review-gate/
 import { useAttentionStore } from "../../stores/attention/attention-store"
 import { useChatStore } from "../../stores/chat-store"
 import { messageHasBody } from "./composer-can-send"
+import { emitPreOutputRolledBack } from "../../stores/pre-output-rollback-listeners"
 import { discardCreatedSession } from "../discard-created-session"
 import { dropEmptyPendingAssistant } from "../composer-run-control"
 import {
@@ -61,7 +62,15 @@ function dropMatchingOptimisticUser(content: string): void {
   const store = useChatStore.getState()
   const last = [...store.messages].reverse().find((message) => message.role === "user")
   if (!last || last.content !== content) return
-  store.setMessages(store.messages.filter((message) => message.id !== last.id))
+  const next = store.messages.filter((message) => message.id !== last.id)
+  store.setMessages(next)
+  // jojo P2（#136 gate2）：乐观首句撤掉了，按它起的自动标题也复原。
+  if (store.sessionId) {
+    emitPreOutputRolledBack({
+      sessionId: store.sessionId,
+      userTurnsLeft: next.filter((message) => message.role === "user").length
+    })
+  }
 }
 
 function isEmptyFailedSession(sessionId: string | null): boolean {

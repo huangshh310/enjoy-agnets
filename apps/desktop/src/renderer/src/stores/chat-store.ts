@@ -23,6 +23,7 @@ import {
   rememberDiscardedPreOutputRun
 } from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
+import { afterPreOutputRollback } from "./after-pre-output-rollback"
 import { isImmediatePreOutputError } from "./pre-output-rollback"
 import { errorAfterOptimisticSend, errorAfterStreamEvent } from "./resend-notice"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
@@ -219,6 +220,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(patch.notice !== undefined ? { notice: patch.notice } : {}),
       ...(patch.composer !== undefined ? { composer: patch.composer } : {})
     })
+    if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages)
   },
   appendUserMessage: (content, assets) => {
     const messages: ThreadMessage[] = [

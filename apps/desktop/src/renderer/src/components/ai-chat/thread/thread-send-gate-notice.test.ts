@@ -41,8 +41,9 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   const restricted = readFileSync(join(dir, "thread-credential-restricted-notice.tsx"), "utf8")
   assert.match(invalid, /tone="danger"/)
   assert.match(invalid, /chat\.goFixKey/)
-  assert.match(invalid, /editProviderSearch\(providerId\)/)
-  assert.match(invalid, /officialProviderSearch\(\)/)
+  // 跳转目标的行为测试见 credential-fix-key-nav.test.ts。
+  assert.match(invalid, /goFixKey\(navigate as never, providerId\)/)
+  assert.doesNotMatch(invalid, /if \(!providerId\) return/)
   assert.doesNotMatch(invalid, /goConnect/)
   assert.match(network, /tone="neutral"/)
   assert.match(network, /chat\.resendDraft/)

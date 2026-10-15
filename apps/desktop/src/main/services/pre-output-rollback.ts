@@ -3,6 +3,7 @@
  * 只走 getDatabase() 相对导入，测试才能一跳加载（禁止再 value-import @enjoy-agents/db）。
  */
 import { getDatabase } from "./database"
+import { restoreDraftAssetsInTx, type DraftAsset } from "./session-drafts"
 
 export type SessionTurnSnapshot = {
   title: string
@@ -54,7 +55,9 @@ export function rollbackPreOutputMessages(input: {
   db.exec("BEGIN IMMEDIATE;")
   try {
     if (throwForTest) throw new Error("PRE_OUTPUT_ROLLBACK_TEST_INJECTED")
+    const returned: DraftAsset[] = []
     for (const id of ids) {
+      returned.push(...userTurnFileAssets(db, id, input.sessionId, since))
       db.prepare(
         "DELETE FROM message_parts WHERE message_id IN (SELECT id FROM messages WHERE id = ? AND session_id = ? AND created_at >= ?)"
       ).run(id, input.sessionId, since)
@@ -64,6 +67,8 @@ export function rollbackPreOutputMessages(input: {
         since
       )
     }
+    // jojo P1（#136 gate2）：图和字一起回草稿（发送时同事务清掉了 session_draft_assets）。
+    restoreDraftAssetsInTx(db, input.sessionId, returned)
     if (input.snapshot) {
       const current = readSessionTitle(input.sessionId)
       const renamedMeanwhile =
@@ -82,6 +87,37 @@ export function rollbackPreOutputMessages(input: {
     db.exec("ROLLBACK;")
     throw error
   }
+}
+
+/** 将被回滚删掉的那句用户消息里的 file 部件（只认本会话、快照之后插入的用户行）。 */
+function userTurnFileAssets(
+  db: ReturnType<typeof getDatabase>,
+  messageId: string,
+  sessionId: string,
+  since: number
+): DraftAsset[] {
+  const rows = db
+    .prepare(
+      `SELECT p.payload as payload FROM message_parts p JOIN messages m ON m.id = p.message_id
+       WHERE m.id = ? AND m.session_id = ? AND m.role = 'user' AND m.created_at >= ? AND p.type = 'file'
+       ORDER BY p.idx ASC`
+    )
+    .all(messageId, sessionId, since) as Array<{ payload: string }>
+  const out: DraftAsset[] = []
+  for (const row of rows) {
+    try {
+      const part = JSON.parse(row.payload) as Record<string, unknown>
+      if (typeof part.assetId !== "string" || !part.assetId) continue
+      out.push({
+        id: part.assetId,
+        name: typeof part.name === "string" ? part.name : "",
+        ...(typeof part.mediaType === "string" ? { mediaType: part.mediaType } : {})
+      })
+    } catch {
+      // 坏部件跳过
+    }
+  }
+  return out
 }
 
 export function markRunDiscardedPreOutput(runId: string, error: string): void {

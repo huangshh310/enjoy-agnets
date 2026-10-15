@@ -23,7 +23,7 @@ import { isRestoreFamilyCode, restoreFamilyCodeOf } from "@enjoy-agents/ipc-cont
 import { RESTORE_NO_MATCHING } from "../lib/usage/classify-thread-error"
 import { lastTurnHasNoOutput, rollbackPreOutputTurn, shouldRollbackPreOutput } from "./pre-output-rollback"
 import { applyV2Part } from "./apply-v2-parts"
-import type { ThreadMessage } from "./chat-store"
+import type { ThreadAsset, ThreadMessage } from "./chat-store"
 import { canFoldIntoAssistant, findAssistantForToolEvent, foldAssistantIndex } from "./assistant-fold-target"
 import {
   canOpenAssistantTurn,
@@ -42,6 +42,11 @@ export type StreamPatch = {
   error?: string | null
   notice?: string | null
   composer?: string
+  /**
+   * jojo P1 / P2（#136 gate2）：出字前回滚撕掉了本轮用户句——它带的图要和字一起回输入框，
+   * 新会话的自动标题也要复原（store 交给 pre-output-rollback-listeners）。
+   */
+  rolledBack?: { assets: ThreadAsset[] }
   /** 消息还没回灌：先挂住，applySessionHydrate 后再折。 */
   heldResolved?: StreamEvent & { type: "approval.resolved" }
 }
@@ -191,7 +196,8 @@ function rolledPreOutputPatch(messages: ThreadMessage[], error: string, keepUser
     running: false,
     runId: null,
     error,
-    composer: rolled.composer || draft
+    composer: rolled.composer || draft,
+    rolledBack: { assets: rolled.assets ?? [] }
   }
 }
 

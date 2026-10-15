@@ -1,5 +1,5 @@
 /**
- * 发送被 credential_invalid 挡住：白卡片 + 红点 + 改密钥，打开本档案密钥框。
+ * 发送被 credential_invalid 挡住：白卡片 + 红点 + 改密钥，打开本档案密钥框；解析不出档案时打开添加密钥。
  */
 import { RiKey2Line } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
@@ -7,7 +7,7 @@ import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { defaultProviderLabel, resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
-import { editProviderSearch, officialProviderSearch } from "@renderer/components/setup-guide/open-provider-form"
+import { goFixKey } from "./credential-fix-key-nav"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
 export function ThreadCredentialInvalidNotice({
@@ -31,14 +31,7 @@ export function ThreadCredentialInvalidNotice({
       message={t("chat.credentialInvalidNotice", { name })}
       actionLabel={t("chat.goFixKey")}
       actionIcon={<RiKey2Line className="size-3" />}
-      onAction={() => {
-        if (!providerId) return
-        void navigate({
-          to: "/settings/$section",
-          params: { section: "providers" },
-          search: providerId ? editProviderSearch(providerId) : officialProviderSearch()
-        })
-      }}
+      onAction={() => goFixKey(navigate as never, providerId)}
       onDismiss={onDismiss}
       className={className}
     />

@@ -2,7 +2,7 @@
  * 出字前失败：丢掉乐观用户句 + 空助手，草稿回 Composer。
  */
 import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
-import type { ThreadMessage } from "./chat-store"
+import type { ThreadAsset, ThreadMessage } from "./chat-store"
 
 /** 模型真出字 = 文本 / 思考 / 工具。开泵前 cite 的 sources 不算。 */
 export function assistantHasOutput(message: ThreadMessage | undefined): boolean {
@@ -19,6 +19,8 @@ export function rollbackPreOutputTurn(
 ): {
   messages: ThreadMessage[]
   composer?: string
+  /** jojo P1（#136 gate2）：本轮用户句带的图，和字一起还回输入框。 */
+  assets?: ThreadAsset[]
 } {
   let next = messages
   const last = next.at(-1)
@@ -28,7 +30,11 @@ export function rollbackPreOutputTurn(
   }
   const user = next.at(-1)
   if (user?.role === "user") {
-    return { messages: next.slice(0, -1), composer: user.content }
+    return {
+      messages: next.slice(0, -1),
+      composer: user.content,
+      ...(user.assets?.length ? { assets: user.assets } : {})
+    }
   }
   return { messages: next }
 }

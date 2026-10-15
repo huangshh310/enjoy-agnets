@@ -8,12 +8,14 @@ function store(partial: {
   workspaceId?: string | null
   sessionTitle?: string
   messages?: Array<{ role: "user" | "assistant" }>
+  composer?: string
 }) {
   return {
     sessionId: "sessionId" in partial ? (partial.sessionId ?? null) : "ses_empty",
     workspaceId: "workspaceId" in partial ? (partial.workspaceId ?? null) : "ws_a",
     sessionTitle: partial.sessionTitle ?? "新对话",
-    messages: (partial.messages ?? []) as never
+    messages: (partial.messages ?? []) as never,
+    composer: partial.composer ?? ""
   }
 }
 
@@ -39,4 +41,10 @@ test("Composer 已有附件则不复用（第一条附件即落库，归 BASE-P0
   queueComposerAsset("asset_1", "shot.png")
   assert.equal(isReusableEmptySession(store({}), "ws_a"), false)
   clearComposerAssets()
+})
+
+test("#136 gate2：输入框有字（如出字前回滚还回来的稿）则不复用，点「新对话」真开新的", () => {
+  clearComposerAssets()
+  assert.equal(isReusableEmptySession(store({ composer: "hello rollback" }), "ws_a"), false)
+  assert.equal(isReusableEmptySession(store({ composer: "  \n " }), "ws_a"), true, "只有空白仍算空")
 })
