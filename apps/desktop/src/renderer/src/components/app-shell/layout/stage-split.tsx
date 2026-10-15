@@ -57,46 +57,46 @@ export function StageSplit({
 
   return (
     <div ref={splitRef} className="flex h-full min-h-0 min-w-0 flex-1">
-    <Group
-      id="enjoy-agents-chat-split"
-      orientation="horizontal"
-      className="h-full min-h-0 min-w-0 flex-1"
-      groupRef={groupRef}
-      defaultLayout={splitLayout}
-      onLayoutChanged={(layout, meta) => {
-        if (maximized || rightPanelCollapsed || Object.keys(layout).length < 2) return
-        const inspectorPercent = layout.changes
-        if (typeof inspectorPercent === "number" && inspectorPercent < 10) return
-        const chatPercent = layout.chat
-        if (typeof chatPercent === "number" && chatPercent < STAGE_MIN_PERCENT) return
-        onLayoutChanged(layout, meta)
-      }}
-    >
-      <Panel
-        id="chat"
-        panelRef={chatPanelRef}
-        minSize={`${STAGE_MIN_PX}px`}
-        defaultSize={STAGE_DEFAULT_SIZE}
-        className="h-full min-h-0 overflow-hidden bg-transparent"
+      <Group
+        id="enjoy-agents-chat-split"
+        orientation="horizontal"
+        className="h-full min-h-0 min-w-0 flex-1"
+        groupRef={groupRef}
+        defaultLayout={splitLayout}
+        onLayoutChanged={(layout, meta) => {
+          if (maximized || rightPanelCollapsed || Object.keys(layout).length < 2) return
+          const inspectorPercent = layout.changes
+          if (typeof inspectorPercent === "number" && inspectorPercent < 10) return
+          const chatPercent = layout.chat
+          if (typeof chatPercent === "number" && chatPercent < STAGE_MIN_PERCENT) return
+          onLayoutChanged(layout, meta)
+        }}
       >
-        <HistoryPageSlide>
-        <div className="relative h-full min-h-0 flex-1">
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
-            <ChatStage />
-          </div>
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
-            <Outlet />
-          </div>
-        </div>
-        </HistoryPageSlide>
-      </Panel>
-      <InspectorPane
-        maximized={maximized}
-        toggleWidth={toggleWidth}
-        resetWidth={resetWidth}
-        drawer={drawer}
-      />
-    </Group>
+        <Panel
+          id="chat"
+          panelRef={chatPanelRef}
+          minSize={`${STAGE_MIN_PX}px`}
+          defaultSize={STAGE_DEFAULT_SIZE}
+          className="h-full min-h-0 overflow-hidden bg-transparent"
+        >
+          <HistoryPageSlide>
+            <div className="relative h-full min-h-0 flex-1">
+              <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
+                <ChatStage />
+              </div>
+              <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
+                <Outlet />
+              </div>
+            </div>
+          </HistoryPageSlide>
+        </Panel>
+        <InspectorPane
+          maximized={maximized}
+          toggleWidth={toggleWidth}
+          resetWidth={resetWidth}
+          drawer={drawer}
+        />
+      </Group>
     </div>
   )
 }
