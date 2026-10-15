@@ -9,6 +9,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { refreshAllWorkspaces } from "@renderer/hooks/session-lifecycle"
 import { acpSessionListFailedCopy } from "./acp-session-import-copy"
+import { openImportedAcpSession } from "./acp-session-import-open"
 
 export function AcpSessionImport({ runtimeId }: { runtimeId: string }) {
   const t = useT()
@@ -61,11 +62,7 @@ export function AcpSessionImport({ runtimeId }: { runtimeId: string }) {
         title: row.title
       })
       await refreshAllWorkspaces()
-      const store = useChatStore.getState()
-      store.setSession(created.id, created.title)
-      store.setRuntimeId(runtimeId)
-      store.setSessionRuntimes({ ...store.sessionRuntimes, [created.id]: runtimeId })
-      store.setMessages([])
+      openImportedAcpSession(created, runtimeId)
     } catch {
       setImportError(t("chat.importAcpFailed"))
     } finally {

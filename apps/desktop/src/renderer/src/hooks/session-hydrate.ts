@@ -10,6 +10,7 @@ import { hydrateSessionRunning } from "./hydrate-session-running"
 import { applyFinishedHydrate } from "./session-hydrate-finish"
 import { noticeAfterRestartHydrate } from "./hydrate-restart-notice"
 import { shouldClearErrorOnSwitch } from "./session-switch-error"
+import { markSessionHistoryHydrated } from "./session-history-pending"
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]
@@ -39,6 +40,7 @@ export function applySessionHydrate(input: {
     }
   )
   if (!ok) return false
+  markSessionHistoryHydrated(input.sessionId)
   const store = useChatStore.getState()
   const notice = noticeAfterRestartHydrate({
     sessionId: input.sessionId,

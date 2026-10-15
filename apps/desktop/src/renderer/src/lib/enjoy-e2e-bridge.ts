@@ -1,6 +1,7 @@
 /**
  * 窗口 E2E / 截图桥：只挂已有单例，不新开 IPC。
  */
+import { markSessionHistoryHydrated } from "@renderer/hooks/session-history-pending"
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { resumeSetupGuide, replaySetupGuide, useSetupGuideStore } from "@renderer/components/setup-guide/setup-guide-store"
 import { useCreateProjectStore } from "@renderer/components/workspace/create-project-open"
@@ -161,7 +162,11 @@ export function installEnjoyE2eBridge(): void {
       const existing = store.sessionId
       const fallback = store.repositories.find((node) => node.kind === "session")?.id
       const sessionId = existing ?? fallback ?? null
-      if (sessionId && input.title) store.setSession(sessionId, input.title)
+      if (sessionId && input.title) {
+        store.setSession(sessionId, input.title)
+        // e2e 桩只改页头，不回灌历史：保持原来的展示，不进「加载中」。
+        markSessionHistoryHydrated(sessionId)
+      }
       if (sessionId && input.workflowStatus) {
         store.patchSessionNode(sessionId, { workflowStatus: input.workflowStatus })
       }

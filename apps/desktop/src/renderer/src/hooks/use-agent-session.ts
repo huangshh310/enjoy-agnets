@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { setForegroundSessionPicking } from "./session-history-pending"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   StreamEvent,
@@ -137,22 +138,30 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
   }
   const store = useChatStore.getState()
   await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
-  store.setWorkspace(workspace)
-  await connectSshIfNeeded(workspace)
-  await refreshAllWorkspaces()
-  await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
-  const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as Array<{
-    id: string
-    title: string
-  }>
-  const currentId = useChatStore.getState().sessionId
-  const picked = pickForegroundSession(sessions, currentId)
-  if (picked === "keep") return
-  if (picked === "create") {
-    await createAndOpenSession(workspace.id, "新对话")
-    return
+  // 挑前台会话期间（sessionId 还空着）渲染层不画空态问候，避免重启先闪空态（luna main-155）。
+  setForegroundSessionPicking(true)
+  try {
+    store.setWorkspace(workspace)
+    await connectSshIfNeeded(workspace)
+    await refreshAllWorkspaces()
+    await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+    const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as Array<{
+      id: string
+      title: string
+    }>
+    const currentId = useChatStore.getState().sessionId
+    const picked = pickForegroundSession(sessions, currentId)
+    if (picked === "keep") return
+    if (picked === "create") {
+      setForegroundSessionPicking(false)
+      await createAndOpenSession(workspace.id, "新对话")
+      return
+    }
+    // 回灌失败时立刻退回空态由 loadSession 自己处理（所有入口共用）。
+    await loadSession(picked.id, picked.title)
+  } finally {
+    setForegroundSessionPicking(false)
   }
-  await loadSession(picked.id, picked.title)
 }
 
 export { abortComposerRun }

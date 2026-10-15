@@ -30,6 +30,7 @@ import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import { detachComposerForCreate, publishCreatedComposer } from "./create-window-composer"
+import { settleFailedSessionHydrate } from "./session-hydrate-failure"
 import { clearComposerAssets, listComposerAssets, setComposerAssets } from "./composer-assets"
 import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
 import { workspaceRowFromNode } from "./workspace-row"
@@ -130,7 +131,13 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   } else {
     store.setSession(sessionId, title)
   }
-  const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
+  let rows: MessageRow[]
+  try {
+    rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
+  } catch (error) {
+    // leo #157（经 host / leo 同意在 #157 改）：回灌失败别停在加载占位等 8 秒兜底，立刻退回空态；原样抛出。
+    throw settleFailedSessionHydrate(error, { sessionId, generation, stale })
+  }
   if (stale?.()) return
   applySessionHydrate({
     dbRows: rows,

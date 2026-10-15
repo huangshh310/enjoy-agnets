@@ -3,6 +3,7 @@
  * 1. 紧凑态：图片与文件分区呈现、超出阈值折叠 (+N 徽标)、彻底消除原生滚动条。
  * 2. 展开态：就地变形为轻量紧凑资产抽屉（无重复渲染、紧凑流式自适应排布、大图 Lightbox 与一键清空）。
  */
+import { attachmentSummaryLabel } from "./composer-count-labels"
 import { useEffect, useState } from "react"
 import {
   RiArrowDownSLine,
@@ -47,12 +48,8 @@ export function ComposerQueue({ className }: { className?: string }) {
     (item) => !isImageMediaType(resolveMediaType(item.name, item.mediaType))
   )
 
-  const summaryLabel =
-    images.length > 0 && files.length > 0
-      ? t("chat.imagesAndFiles", { images: images.length, files: files.length })
-      : images.length > 0
-        ? t("chat.imagesCount", { count: images.length })
-        : t("chat.filesCount", { count: files.length })
+  // 英文单复数：count === 1 走 One 键（1 image / 1 file）。
+  const summaryLabel = attachmentSummaryLabel(t, images.length, files.length)
 
   // 紧凑模式下超过 3 项自动折叠
   const visibleImages = images.slice(0, 2)
@@ -65,9 +62,11 @@ export function ComposerQueue({ className }: { className?: string }) {
     <>
       {/* 顶部探出式层叠附件托盘 (Layered Shelf) */}
       <div
+        data-testid="composer-attachment-tray"
         data-frost="tile"
         className={cx(
-          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] flex-col gap-2",
+          // 只在 Composer 正上方：-mb 只让底部留白（pb-4）藏到输入框下，缩略图本身不被任何条盖住。
+          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] shrink-0 flex-col gap-2",
           "-mb-3.5 rounded-t-2xl border-x border-t border-border-button-default/80",
           "bg-background-secondary-default/95 px-3.5 pt-2 pb-4 shadow-2xs backdrop-blur-md",
           "animate-in fade-in-50 slide-in-from-bottom-2 duration-200 select-none",
