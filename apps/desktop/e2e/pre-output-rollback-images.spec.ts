@@ -108,6 +108,41 @@ test("②③ 有字有图出字前失败：字和图都回来；重启后草稿�
   }
 })
 
+test("jojo P2：失败后又打了新字、贴了新图 → 「再发一次」只重发那一句 + 它的图；新字新图留在输入框", async () => {
+  test.setTimeout(180_000)
+  const { app, window } = await boot({ ...dirs(), ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_ONCE: "1" })
+  try {
+    const composer = window.getByTestId("composer-input")
+    const chip = window.getByTestId("composer-asset-chip")
+    await window.getByTestId("composer-attach").setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG })
+    await expect(chip).toHaveCount(1, { timeout: 8_000 })
+    await composer.fill("看看这张图")
+    await composer.press("Enter")
+    await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 15_000 })
+    await expect(composer).toHaveValue("看看这张图")
+    // 用户接着写下一条：新字 + 新图（与还回来的那一句同框）。
+    await composer.fill("看看这张图\n下一条：再看看这张")
+    await window.getByTestId("composer-attach").setInputFiles({ name: "b.png", mimeType: "image/png", buffer: PNG })
+    await expect(chip).toHaveCount(2, { timeout: 8_000 })
+    await window.screenshot({ path: join(shots, "r4-jojo-retry-1-before.png") })
+    await window.getByTestId("thread-credential-network-notice-action").click()
+    const stage = window.locator('[data-chat-stage="true"]')
+    await expect(stage).toContainText("attached:a.png", { timeout: 20_000 })
+    await expect(stage.locator('[data-thread-message] img[alt="a.png"]')).toHaveCount(1, { timeout: 20_000 })
+    // 恰好一条：新图没跟着发，也没另发一条。
+    await window.waitForTimeout(1_500)
+    await expect(stage).not.toContainText("attached:b.png")
+    await expect(stage.locator('[data-thread-message] img[alt="b.png"]')).toHaveCount(0)
+    await expect(stage.locator("[data-thread-message]").filter({ hasText: "下一条：再看看这张" })).toHaveCount(0)
+    await expect(composer).toHaveValue("下一条：再看看这张")
+    await expect(chip).toHaveCount(1)
+    await expect(window.locator('[data-testid="composer-asset-chip"]:has([title*="b.png"])')).toHaveCount(1)
+    await window.screenshot({ path: join(shots, "r4-jojo-retry-2-after.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
 const LOCKED = {
   zh: {
     restoredBoth: "文字和图片已放回输入框，可以直接再发。",

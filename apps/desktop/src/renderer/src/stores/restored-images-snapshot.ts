@@ -5,7 +5,13 @@
  */
 import { isImageMediaType } from "@enjoy-agents/assets/media-type"
 
-export type RestoredImagesSnapshot = { sessionId: string; images: number; hasText: boolean }
+/**
+ * jojo P2（r4）：同一份快照也记下这次回滚还回的那一句（字 + 它自己的附件），
+ * 「再发一次」只重发这一句；输入框里后来打的字 / 贴的图是下一条草稿，不动。
+ */
+export type KeptSentence = { text: string; assets: Array<{ id: string; name: string; mediaType?: string }> }
+
+export type RestoredImagesSnapshot = { sessionId: string; images: number; hasText: boolean; kept: KeptSentence }
 
 let snapshot: RestoredImagesSnapshot | null = null
 const listeners = new Set<() => void>()
@@ -16,14 +22,18 @@ function notify(): void {
 
 export function noteRestoredImages(
   sessionId: string | null,
-  assets: readonly { mediaType?: string }[],
+  assets: readonly { id: string; name: string; mediaType?: string }[],
   restoredText: string
 ): void {
   snapshot = sessionId
     ? {
         sessionId,
         images: assets.filter((a) => isImageMediaType(a.mediaType ?? "")).length,
-        hasText: restoredText.trim().length > 0
+        hasText: restoredText.trim().length > 0,
+        kept: {
+          text: restoredText,
+          assets: assets.map((a) => ({ id: a.id, name: a.name, ...(a.mediaType ? { mediaType: a.mediaType } : {}) }))
+        }
       }
     : null
   notify()

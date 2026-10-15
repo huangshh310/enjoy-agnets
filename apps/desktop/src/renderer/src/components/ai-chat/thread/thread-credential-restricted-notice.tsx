@@ -3,7 +3,7 @@
  * 草稿留下，不摊状态码或服务英文，不当密钥无效。
  */
 import { RiCpuLine, RiRefreshLine } from "@remixicon/react"
-import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
+import { retryKeptDraft } from "@renderer/hooks/retry-kept-draft"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -45,9 +45,8 @@ export function ThreadCredentialRestrictedNotice({
       secondaryActionLabel={running ? t("chat.resendingDraft") : t("chat.retryDraft")}
       secondaryActionIcon={<RiRefreshLine className="size-3" />}
       secondaryActionDisabled={running}
-      onSecondaryAction={() => {
-        void sendComposerMessage()
-      }}
+      // jojo P2（r4）：与「再发一次」同一规则——只重发被留下的那一句，输入框里的新草稿不动。
+      onSecondaryAction={retryKeptDraft}
       onDismiss={onDismiss}
       className={className}
     />

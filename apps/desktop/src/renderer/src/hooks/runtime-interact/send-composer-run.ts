@@ -270,7 +270,13 @@ async function sendComposerOnce(
     // leo M1：建会话窗排队首发在入队时已清过输入框——现在框里是后打的 B，不能按 A 去截 / 清
     // （appendUserMessage 会清 store.composer，这里原样放回）。B 以输入框 DOM 为准（写回锁期间 store 可能落后），
     // 没有 DOM（测试 / 无窗）才回落 store。
-    const laterTyped = prepared?.sessionId ? readComposerDomText() : null
+    // jojo P2（#136 r4）：不带会话的预备发送（「再发一次」重发留下的那一句、排队项「马上发」）自带正文和附件，
+    // 从不取输入框——框里是用户的下一条草稿，原样留着（不截、不清）。在 appendUserMessage 清 store 之前取。
+    const laterTyped = prepared?.sessionId
+      ? readComposerDomText()
+      : prepared
+        ? readComposerDomText() || useChatStore.getState().composer
+        : null
     const messages = beginOptimisticTurn(store, payload)
     optimisticContent = payload.content
     if (laterTyped !== null) {

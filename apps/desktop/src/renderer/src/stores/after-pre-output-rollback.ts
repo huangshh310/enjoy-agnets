@@ -12,16 +12,16 @@ export function afterPreOutputRollback(
   messagesAfter: readonly ThreadMessage[],
   restoredText = ""
 ): void {
-  // leo r4 soft4：白卡第二行按这次还回的图 / 字拍快照，不实时数输入框。
-  noteRestoredImages(sessionId, assets, restoredText)
-  restoreComposerAssets(
-    assets.map((asset) => ({
-      id: asset.assetId,
-      name: asset.name,
-      mediaType: asset.mediaType,
-      ...(asset.url ? { url: asset.url } : {})
-    }))
-  )
+  const items = assets.map((asset) => ({
+    id: asset.assetId,
+    name: asset.name,
+    mediaType: asset.mediaType,
+    ...(asset.url ? { url: asset.url } : {})
+  }))
+  // leo r4 soft4：白卡第二行按这次还回的图 / 字拍快照，不实时数输入框；
+  // jojo P2：同时记下还回的这一句，「再发一次」只重发它。
+  noteRestoredImages(sessionId, items, restoredText)
+  restoreComposerAssets(items)
   if (!sessionId) return
   emitPreOutputRolledBack({
     sessionId,

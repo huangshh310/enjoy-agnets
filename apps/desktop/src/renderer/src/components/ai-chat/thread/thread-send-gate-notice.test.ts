@@ -59,7 +59,7 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   assert.match(restricted, /chat\.switchModel/)
   assert.match(restricted, /chat\.retryDraft/)
   assert.match(restricted, /setAgentPickerOpen\(true\)/)
-  assert.match(restricted, /sendComposerMessage/)
+  assert.match(restricted, /onSecondaryAction=\{retryKeptDraft\}/)
   assert.doesNotMatch(invalid, /401|403|ECONNREFUSED/)
   assert.doesNotMatch(network, /ECONNREFUSED|401|403/)
   assert.doesNotMatch(restricted, /Payment Required/)

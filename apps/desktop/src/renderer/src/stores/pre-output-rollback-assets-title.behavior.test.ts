@@ -314,7 +314,7 @@ function seedImageOnlyTurn(sessionId: string, runId: string) {
   } as never)
 }
 
-test("luna ①：只图发送出字前失败：图回输入框并落草稿；白卡说「图片已放回输入框」；再发一次走发送", () => {
+test("luna ①：只图发送出字前失败：图回输入框并落草稿；白卡说「图片已放回输入框」；再发一次重发那张图", () => {
   seedImageOnlyTurn("ses_only", "run_only")
   useChatStore.getState().applyStreamEvent(preOutputError("run_only"))
   const state = useChatStore.getState()
@@ -324,10 +324,19 @@ test("luna ①：只图发送出字前失败：图回输入框并落草稿；白
   assert.deepEqual(persisted.at(-1), { sessionId: "ses_only", ids: ["ast_only"] })
   assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。")
   assert.equal(
-    retryKeptDraftPlan({ composer: state.composer, composerAssetCount: listComposerAssets().length, lastUserContent: undefined }),
-    "send",
-    "输入框只有图也得发出去，不能因为没字就什么都不做"
+    retryKeptDraftPlan({
+      kept: (() => {
+        const kept = restoredImagesFor("ses_only")?.kept
+        return kept ? { text: kept.text, assetCount: kept.assets.length } : null
+      })(),
+      lastUserPending: false,
+      composer: state.composer,
+      composerAssetCount: listComposerAssets().length
+    }),
+    "resend-kept",
+    "只有图的那一句也得重发，不能因为没字就什么都不做"
   )
+  assert.deepEqual(restoredImagesFor("ses_only")?.kept?.assets.map((a) => a.id), ["ast_only"])
 })
 
 test("luna ②：有字有图出字前失败：字和图都回来；白卡说「文字和图片已放回输入框」", () => {
