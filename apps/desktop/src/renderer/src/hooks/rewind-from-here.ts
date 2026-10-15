@@ -114,8 +114,9 @@ async function restoreTurnFiles(
     if (!restored.ok) {
       return { ok: false, code: restored.code, untrackedToDelete: restored.untrackedToDelete }
     }
-  } catch (error) {
-    return { ok: false, code: error instanceof Error ? error.message : "CHECKPOINT_RESTORE_FAILED" }
+  } catch {
+    // 原始错误不进弹窗：统一成还原失败，弹窗用灰字兜底（luna 定稿）。
+    return { ok: false, code: "REWIND_RESTORE_FAILED" }
   }
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["changes", store.workspaceId] }),
