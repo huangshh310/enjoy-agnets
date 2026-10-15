@@ -1,11 +1,13 @@
 /**
  * 按会话挂纠偏队列。只在安全检查点 drain，不打断正在 execute 的工具。
  */
-import type { ModelMessage } from "ai"
+import type { ModelMessage, UserContent } from "ai"
 
 export type SteerItem = {
   id: string
   text: string
+  /** 带图纠偏：已编好的 text + file parts；没有就只发 text。 */
+  content?: UserContent
 }
 
 const queues = new Map<string, SteerItem[]>()
@@ -30,5 +32,5 @@ export function clearSteer(sessionId: string): void {
 }
 
 export function steerToModelMessages(items: readonly SteerItem[]): ModelMessage[] {
-  return items.map((item) => ({ role: "user", content: item.text }))
+  return items.map((item) => ({ role: "user", content: item.content ?? item.text }))
 }

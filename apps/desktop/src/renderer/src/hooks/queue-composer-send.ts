@@ -11,6 +11,7 @@ import {
   takeComposerAssetDetails,
   type QueuedComposerAsset
 } from "./composer-assets"
+import { composerCanSend } from "./runtime-interact/composer-can-send"
 import {
   isNewSessionCreatePending,
   shouldQueueComposerSend,
@@ -47,6 +48,12 @@ let queueSeq = 0
 let queuedSend: QueuedSend | null = null
 /** 最近一次被「新对话」取消掉的排队序号：只有它要还稿出提示，被它顶替过的旧序号已并进它。 */
 let cancelledSeq: number | null = null
+/** 当前排队首发（A）的整条等待；B 排在它后面。 */
+let pendingFirstSend: Promise<void> | null = null
+/** leo BLOCK：A 的结局。A 期间任何还稿（失败 / 闸拦 / 看门狗）都算没发出；sentSessionId 是 A 真交给 sendReady 的会话。 */
+type FirstSendOutcome = { failed: boolean; sentSessionId: string | null }
+let activeFirstSend: FirstSendOutcome | null = null
+let firstSendOutcomes = new WeakMap<Promise<void>, FirstSendOutcome>()
 
 export function composerNeedsSessionReady(): boolean {
   const store = useChatStore.getState()
@@ -93,6 +100,7 @@ export function clearQueuedComposerText(): void {
 
 /** 还全文草稿，不改 error：发送闸中性条要留着。 */
 export function restoreComposerDraft(text: string, assets?: QueuedComposerAsset[]): void {
+  if (activeFirstSend) activeFirstSend.failed = true
   const store = useChatStore.getState()
   const next = mergeComposerText(text, store.composer)
   store.setComposer(next)
@@ -127,13 +135,11 @@ export function sendFailureCopy(error: unknown): string {
   return SEND_FAILED_RESTORE
 }
 
-export function absorbAssetsIntoQueuedSend(assets: QueuedComposerAsset[]): void {
-  if (!queuedSend || assets.length === 0) return
-  queuedSend = { ...queuedSend, assets: mergeQueuedAssets(queuedSend.assets, assets) }
-}
-
 export function resetQueuedComposerSendForTest(): void {
   queuedSend = null
+  pendingFirstSend = null
+  activeFirstSend = null
+  firstSendOutcomes = new WeakMap()
   cancelledSeq = null
   queueSeq = 0
   setComposerWritebackHeld(false)
@@ -151,7 +157,70 @@ export function hasQueuedComposerSend(): boolean {
   return queuedSend !== null
 }
 
-export async function waitThenSendAfterCreate(
+export function waitThenSendAfterCreate(
+  text: string,
+  sendReady: (prepared: PreparedComposerSend) => Promise<void>,
+  assets?: QueuedComposerAsset[],
+  deps?: {
+    readSessionId?: () => string | null
+    onFail?: (text: string, reason: string, assets?: QueuedComposerAsset[]) => void
+  }
+): Promise<void> {
+  const outcome: FirstSendOutcome = { failed: false, sentSessionId: null }
+  activeFirstSend = outcome
+  const run = waitThenSendAfterCreateInner(
+    text,
+    (prepared) => {
+      outcome.sentSessionId = prepared.sessionId ?? null
+      return sendReady(prepared)
+    },
+    assets,
+    deps
+  ).catch(() => {
+    outcome.failed = true
+  })
+  firstSendOutcomes.set(run, outcome)
+  pendingFirstSend = run
+  void run.finally(() => {
+    if (pendingFirstSend === run) pendingFirstSend = null
+    if (activeFirstSend === outcome) activeFirstSend = null
+  })
+  return run
+}
+
+/**
+ * jojo P1（#155 gate2）：「正在准备…」期间又按 Enter（B）。B 的正文和附件在按下那一刻取走（快照），
+ * 输入框清空；等 A 真发出去（会话已建、A 已开跑）再把 B 放进运行中排队，A 跑完自动发 B。
+ * 绝不把 B 的图并进 A，也不把 B 留在输入框。会话没建成 → B 原样还回输入框。
+ */
+export async function queueBehindPreparingSend(
+  text: string,
+  assets: QueuedComposerAsset[],
+  deps: {
+    enqueue: (input: { sessionId: string; prompt: string; assets: QueuedComposerAsset[] }) => void
+    onFail?: (text: string, reason: string, assets?: QueuedComposerAsset[]) => void
+  }
+): Promise<void> {
+  const ahead = pendingFirstSend
+  const outcome = ahead ? firstSendOutcomes.get(ahead) : undefined
+  if (ahead) await ahead
+  const sessionId = useChatStore.getState().sessionId
+  // leo BLOCK：A 没发出去（已还回输入框）时绝不自动续发 B——B 未经确认、且会跑到 A 前面；
+  // A 失败后空会话可能已被删，B 也不能绑到它上面。B 的字和图接在 A 后面还回输入框，提示沿用 A 的。
+  const aheadFailed = outcome ? outcome.failed || !outcome.sentSessionId || outcome.sentSessionId !== sessionId : false
+  if (aheadFailed) {
+    if (deps.onFail) deps.onFail(text, SEND_FAILED_RESTORE, assets)
+    else restoreComposerDraft(text, assets)
+    return
+  }
+  if (!sessionId) {
+    ;(deps.onFail ?? restoreComposerAfterFailedSend)(text, SEND_FAILED_RESTORE, assets)
+    return
+  }
+  deps.enqueue({ sessionId, prompt: text, assets })
+}
+
+async function waitThenSendAfterCreateInner(
   text: string,
   sendReady: (prepared: PreparedComposerSend) => Promise<void>,
   assets?: QueuedComposerAsset[],
@@ -161,7 +230,8 @@ export async function waitThenSendAfterCreate(
   }
 ): Promise<void> {
   const trimmed = text.trim()
-  if (!trimmed) return
+  // 只贴图不打字也排队首发：正文空但有附件照样走。
+  if (!composerCanSend({ text: trimmed, assetCount: assets?.length ?? listComposerAssets().length })) return
   setComposerWritebackHeld(true)
   const captured = assets ?? takeComposerAssetDetails()
   const seq = replaceQueuedSend(trimmed, captured)

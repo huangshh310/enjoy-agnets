@@ -53,5 +53,6 @@ function hintLabel(hint: RuntimeHintCode, t: TranslateFn, nextText: string) {
     return nextText ? t("chat.runtimeQueuedNext", { text: nextText }) : t("chat.runtimeQueuedHint")
   }
   if (hint === "steered") return t("chat.runtimeSteeredHint")
+  if (hint === "imageSteerQueued") return t("chat.runtimeImageSteerQueuedHint")
   return ""
 }

@@ -6,7 +6,7 @@ import { resolveMediaType } from "@enjoy-agents/assets"
 import type { UIMessagePart } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { persistMessageOutcome, type PersistedMessage } from "./persist-session"
-import { userTurnParts, type UserFileAsset } from "./user-attachment-parts"
+import { linkedAssetIdsFromParts, userTurnParts, type UserFileAsset } from "./user-attachment-parts"
 import { shouldSkipDuplicateUserTurn } from "./persist-user-turn-dedupe"
 import { clearDraftAssetsInTx, clearSentDraftInTx } from "./session-drafts"
 
@@ -29,9 +29,10 @@ export function persistUserTurnOutcome(
   opts?: { inTransaction?: boolean; draftText?: string }
 ): PersistedMessage | undefined {
   const last = lastUserTurn(sessionId)
-  if (shouldSkipDuplicateUserTurn(last, content, Date.now())) {
+  const sentAssetIds = attached.map((a) => a.assetId)
+  if (shouldSkipDuplicateUserTurn(last, content, Date.now(), undefined, sentAssetIds)) {
     // 去重跳过也算这句已在库：照样清掉已发出的稿（正文 + 附件，同一事务）。
-    clearSentDraftOnDedupe(sessionId, content, attached.map((a) => a.assetId), opts)
+    clearSentDraftOnDedupe(sessionId, content, sentAssetIds, opts)
     return undefined
   }
   const parts = userTurnParts(content, attached) as UIMessagePart[]
@@ -58,14 +59,32 @@ function clearSentDraftOnDedupe(
   }
 }
 
-function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {
-  return getDatabase()
+function lastUserTurn(
+  sessionId: string
+): { content: string; createdAt: number; assetIds: string[] } | undefined {
+  const db = getDatabase()
+  const row = db
     .prepare(
-      `SELECT content, created_at as createdAt
+      `SELECT id, content, created_at as createdAt
        FROM messages WHERE session_id = ? AND role = 'user'
        ORDER BY created_at DESC LIMIT 1`
     )
-    .get(sessionId) as { content: string; createdAt: number } | undefined
+    .get(sessionId) as { id: string; content: string; createdAt: number } | undefined
+  if (!row) return undefined
+  // 去重键带附件（leo MUST 2）：读这条用户句已落的 file part。
+  const parts = db
+    .prepare("SELECT payload FROM message_parts WHERE message_id = ? AND type = 'file' ORDER BY idx")
+    .all(row.id) as Array<{ payload: string }>
+  const assetIds = linkedAssetIdsFromParts(parts.map((part) => safeJson(part.payload)))
+  return { content: row.content, createdAt: row.createdAt, assetIds }
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
 }
 
 export function metasFromAssetIds(ids: string[]): UserFileAsset[] {

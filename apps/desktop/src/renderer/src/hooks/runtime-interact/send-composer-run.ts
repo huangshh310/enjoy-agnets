@@ -8,7 +8,10 @@ import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
-import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { listComposerAssets, setComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { takeComposerText } from "./composer-draft"
+import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
+import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
   commitComposerStartGate,
@@ -61,7 +64,8 @@ import {
   PREVIOUS_STILL_PREPARING,
   SEND_FAILED_RESTORE,
   SESSION_NOT_READY,
-  waitThenSendAfterCreate
+  waitThenSendAfterCreate,
+  queueBehindPreparingSend
 } from "../queue-composer-send"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
@@ -100,7 +104,7 @@ export async function sendComposerMessage(
       // 原文（+附件）还回输入框并出提示，用户看得见、可以再发。
       traceSend("send:running-restore")
       const text = prepared ? prepared.content : typed
-      if (text.trim() || prepared?.assets?.length) {
+      if (composerCanSend({ text, assetCount: prepared?.assets?.length })) {
         restoreComposerDraft(text, prepared?.assets)
         const busy = useChatStore.getState()
         // leo soft：上一条还在「正在准备…」→ 说清是在等上一条，不是发送失败。
@@ -134,15 +138,28 @@ export async function sendComposerMessage(
   // jojo P1：建会话窗里已有一条排队（A 在「正在准备…」）又按 Enter（B）：B 不并进 A、不自动续发，
   // 留在输入框并提示「上一条还在准备」；不挂看门狗。
   if (!prepared && composerNeedsSessionReady() && hasQueuedComposerSend()) {
-    traceSend("send:queued-busy")
-    if (typed.trim()) {
-      if (useChatStore.getState().composer !== typed) useChatStore.getState().setComposer(typed)
-      useChatStore.getState().setError(PREVIOUS_STILL_PREPARING)
+    traceSend("send:queued-behind")
+    // jojo P1（#155 gate2）：B 在按下那一刻快照正文 + 附件、清输入框，排在 A 后面（A 开跑后进运行中排队）。
+    // leo：正文走 takeComposerText，引用 / 技能 / 知识 Chip 随 B 一起取走（只有 Chip 也能发）。
+    const behindAssets = takeComposerAssetDetails()
+    const behindText = (await takeComposerText(typed)).trim()
+    if (!composerCanSend({ text: behindText, assetCount: behindAssets.length })) {
+      if (behindAssets.length) setComposerAssets(behindAssets)
+      return
     }
+    clearQueuedComposerText()
+    await queueBehindPreparingSend(behindText, behindAssets, {
+      enqueue: ({ sessionId, prompt, assets }) => {
+        enqueueFollowup({ sessionId, prompt, assets })
+        setRuntimeHint("queued", sessionId)
+      }
+    })
     return
   }
   // leo soft：running 直接丢弃的那一发不挂看门狗（否则 3s 后误报「发送失败」）。
-  const attempt = queuedAttempt ?? (!prepared && typed.trim() ? armComposerWatchdog(typed) : undefined)
+  const attempt = queuedAttempt ?? (!prepared && composerCanSend({ text: typed, assetCount: listComposerAssets().length })
+    ? armComposerWatchdog(typed)
+    : undefined)
   if (!prepared && store.composer !== typed) store.setComposer(typed)
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
@@ -150,7 +167,7 @@ export async function sendComposerMessage(
   }
   if (composerNeedsSessionReady() && !prepared) {
     const text = typed
-    if (!text.trim()) {
+    if (!composerCanSend({ text, assetCount: listComposerAssets().length })) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return
     }

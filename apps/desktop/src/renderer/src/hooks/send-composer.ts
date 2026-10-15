@@ -4,11 +4,14 @@
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
-import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import { listComposerAssets, queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import { composerCanSend } from "./runtime-interact/composer-can-send"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
+import { markDraftAssetsQueued } from "../lib/session-draft-storage"
 import { useChatStore } from "../stores/chat-store"
 import { traceSend } from "./send-debug"
+import { queueComposerFocus } from "./composer-focus"
 import { clearComposerDraft, snapshotComposerDraft, takeComposerText } from "./runtime-interact/composer-draft"
 import { takeComposerEnter } from "./composer-dom"
 import { SESSION_NOT_READY } from "./queue-composer-send-copy"
@@ -30,15 +33,20 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
 
   const { quotes, skills, draft } = snapshotComposerDraft()
   const content = await takeComposerText(typed)
-  if (!content) return
-  if (intent === "queue") {
+  const assetCount = listComposerAssets().length
+  // leo soft：纠偏只能塞文字；只带图的「纠偏」改走排队，不能静默丢。
+  const effective = intent === "steer" && !content.trim() && assetCount > 0 ? "queue" : intent
+  if (effective === "queue") {
+    // 引用 / 知识 / 技能 Chip 已由 takeComposerText 拼进 content（只有 Chip 时 content 也非空），
+    // 这里不再单算 hasChips（算了也翻不动结果，是死分支）；附件不进 content，按 assetCount 计。
+    if (!composerCanSend({ text: content, assetCount })) return
     if (!store.sessionId) {
       // 运行中又没有会话：不能静默，留稿出提示。
       traceSend("submit:queue-no-session")
       store.setError(SESSION_NOT_READY)
       return
     }
-    enqueueFollowup({
+    const queuedItem = enqueueFollowup({
       sessionId: store.sessionId,
       prompt: content,
       draft,
@@ -46,10 +54,14 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
       skillChips: skills,
       assets: takeComposerAssetDetails()
     })
+    // leo MUST 1（#155）：图在草稿库里改打排队标记（不删）——马上发失败 / 崩溃都找得回；
+    // 输入框与切回恢复不认带标记的图（jojo P2）。
+    markDraftAssetsQueued(store.sessionId, queuedItem.id, draft || content, queuedItem.assets)
     clearComposerDraft()
     setRuntimeHint("queued", store.sessionId)
     return
   }
+  if (!content) return
   await steerPreparedText(content)
 }
 
@@ -70,10 +82,21 @@ export async function attachComposerFile(file: File) {
       size: file.size,
       url: previewUrl
     })
+    // jojo P2（#155）：新对话里粘图后附件托盘出现，焦点掉出输入框，Enter 发不出去。附件进托盘后把焦点放回输入框
+    // （queueComposerFocus 自带护栏：用户在别的输入框 / 对话框里时不抢）。
+    keepComposerFocusAfterAttach()
   } catch (error) {
     URL.revokeObjectURL(previewUrl)
     throw error
   }
+}
+
+function keepComposerFocusAfterAttach(): void {
+  if (typeof requestAnimationFrame === "undefined") {
+    queueComposerFocus()
+    return
+  }
+  requestAnimationFrame(() => queueComposerFocus())
 }
 
 export async function attachComposerFiles(files: File[] | FileList) {

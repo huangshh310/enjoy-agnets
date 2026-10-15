@@ -95,3 +95,15 @@ test("leo M2：输入框发送只清发出的那几张，草稿里没发的留�
   persistUserTurn(sid, "再发一张", [{ assetId: "ast_p2", mediaType: "image/png", name: "2.png" }])
   assert.equal(loadSessionDraftAssets()[sid], undefined)
 })
+
+test("leo #155：排队标记随草稿附件落库往返；发出这张图（含纠偏落库）即在同一事务里清掉", () => {
+  const sid = session("ses_da_q")
+  saveSessionDraftAssets(sid, [
+    { id: "ast_n", name: "n.png" },
+    { id: "ast_q", name: "q.png", queued: { itemId: "follow_1", text: "看这张" } }
+  ])
+  const loaded = loadSessionDraftAssets()[sid]
+  assert.deepEqual(loaded?.map((x) => [x.id, x.queued?.itemId]), [["ast_n", undefined], ["ast_q", "follow_1"]])
+  persistUserTurn(sid, "看这张", [{ assetId: "ast_q", mediaType: "image/png", name: "q.png" }])
+  assert.deepEqual(loadSessionDraftAssets()[sid]?.map((x) => x.id), ["ast_n"])
+})

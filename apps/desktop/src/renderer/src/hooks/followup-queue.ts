@@ -40,6 +40,13 @@ export function enqueueFollowup(item: EnqueueFollowupInput): FollowupItem {
   return next
 }
 
+/** leo MUST 1（#155）：马上发失败 / 不能带图纠偏——原样放回队首（id、字、图、Chip 都不变）。 */
+export function restoreFollowup(item: FollowupItem) {
+  if (items.some((row) => row.id === item.id)) return
+  items = [{ ...item, status: "pending" }, ...items]
+  notify()
+}
+
 export function removeFollowup(id: string) {
   items = items.filter((item) => item.id !== id)
   notify()

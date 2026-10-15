@@ -42,3 +42,13 @@ test("红卡：没发出去类在下一发开始时收；「上一条还在准�
   assert.equal(shouldDismissOnNextSend("PREVIOUS_STILL_PREPARING"), false)
   assert.equal(shouldDismissOnNextSend(null), false)
 })
+
+test("leo soft：只图用户轮也算有内容，不当空会话删", () => {
+  assert.equal(
+    emptySessionToDiscardAfterWatchdog(null, {
+      sessionId: "ses_img",
+      messages: [{ role: "user", content: "", assets: [{ assetId: "ast_1" }] }]
+    }),
+    null
+  )
+})

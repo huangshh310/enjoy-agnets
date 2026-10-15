@@ -71,7 +71,11 @@ test("leo：建会话窗里粘的图，会话建好立刻落到该会话草稿",
   assert.deepEqual(saved.at(-1)?.sessionId, "ses_new")
   assert.deepEqual(lib.readPersistedDraftAssets("ses_new")?.map((a) => a.id), ["ast_c"])
   const src = readFileSync(new URL("../hooks/session-lifecycle.ts", import.meta.url), "utf8")
-  assert.match(src, /if \(!hasQueuedComposerSend\(\)\) \{[^}]*persistCreateWindowAssets\(session\.id\)/)
+  const publish = readFileSync(new URL("../hooks/create-window-composer.ts", import.meta.url), "utf8")
+  // jojo P1（#155 gate2）：有排队首发也要落——框里留着的图是下一条的，不并进 A（会话建好时走 publishCreatedComposer）。
+  assert.match(src, /publishCreatedComposer\(session\.id\)/)
+  assert.match(publish, /persistCreateWindowAssets\(sessionId\)/)
+  assert.doesNotMatch(src, /absorbAssetsIntoQueuedSend/)
   assets.clearComposerAssets()
 })
 

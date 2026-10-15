@@ -22,3 +22,24 @@ test("没作废的空稿：仍是 null", async () => {
   const result = await resolveSendPayload(undefined, snapshot, undefined, async () => "")
   assert.equal(result, null)
 })
+
+test("luna 只图发送：正文空但有附件（排队续发 prepared）→ 照发，content 为空、带附件", async () => {
+  const result = await resolveSendPayload(
+    { content: "", assets: [{ id: "ast_png", name: "shot.png", mediaType: "image/png" }] },
+    snapshot
+  )
+  assert.ok(result && result !== "cancelled")
+  assert.equal(result.content, "")
+  assert.deepEqual(result.assetIds, ["ast_png"])
+  assert.equal(result.messageAssets[0]?.mediaType, "image/png")
+})
+
+test("luna 只图发送：输入框只贴了图 → 照发并取走附件", async () => {
+  const { clearComposerAssets, listComposerAssets, setComposerAssets } = await import("../composer-assets.ts")
+  setComposerAssets([{ id: "ast_draft_png", name: "a.png", mediaType: "image/png" }])
+  const result = await resolveSendPayload(undefined, snapshot, undefined, async () => "")
+  assert.ok(result && result !== "cancelled")
+  assert.deepEqual(result.assetIds, ["ast_draft_png"])
+  assert.equal(listComposerAssets().length, 0)
+  clearComposerAssets()
+})

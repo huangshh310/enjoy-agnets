@@ -3,7 +3,8 @@
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
-import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { listComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
+import { composerCanSend } from "./composer-can-send"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
 import type { ComposerSendSnapshot } from "./composer-send-snapshot"
 import { sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
@@ -36,9 +37,11 @@ export async function resolveSendPayload(
   // leo M1：看门狗已还稿出提示 → 迟到的这一发作废，且必须在清稿 / 取附件**之前**退出，
   // 否则输入框和附件被清掉、什么也没发出去。
   if (sendAttemptCancelled(attempt)) return "cancelled"
-  if (!raw.trim()) return null
+  // 只贴图不打字：正文为空但有附件也照发（luna 巡检：此处只看正文，蓝按钮点了没反应）。
+  const assetCount = prepared ? (prepared.assets?.length ?? 0) : listComposerAssets().length
+  if (!composerCanSend({ text: raw, assetCount })) return null
   const slash = takeComputerUseSlash(raw)
-  const body = slash.once ? slash.text || raw.trim() : raw
+  const body = slash.once ? slash.text || raw.trim() : raw.trim() ? raw : ""
   const content = prefixHostModeForSend(body)
   if (fromDraft) clearComposerDraft()
   const queuedAssets = prepared?.assets ?? takeComposerAssetDetails()

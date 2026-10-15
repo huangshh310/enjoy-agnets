@@ -3,6 +3,7 @@
  * 只存正文（附件 / 引用仍是内存草稿）。键是 sessionId；sessionId 为空（新对话创建窗）不存，与会话草稿互不串。
  */
 import { useChatStore } from "../stores/chat-store"
+import { listFollowups } from "../hooks/followup-queue"
 import { listComposerAssets, setComposerAssetPersister } from "../hooks/composer-assets"
 import type { SessionDraftState } from "../stores/chat-store.types"
 
@@ -12,7 +13,14 @@ export const DRAFT_PERSIST_DEBOUNCE_MS = 300
 
 type DraftMap = Record<string, string>
 
-type DraftAsset = { id: string; name: string; mediaType?: string; size?: number }
+type DraftAsset = {
+  id: string
+  name: string
+  mediaType?: string
+  size?: number
+  /** leo #155：已随排队项走的图——输入框 / 草稿恢复一律不认；发出或删排队项才清。 */
+  queued?: { itemId: string; text: string }
+}
 
 type DraftBridge = {
   loadSync: () => DraftMap
@@ -144,22 +152,82 @@ function draftAssets(): Record<string, DraftAsset[]> {
 }
 
 export function readPersistedDraftAssets(sessionId: string): DraftAsset[] | undefined {
-  const list = draftAssets()[sessionId]
-  return list && list.length > 0 ? list : undefined
+  const list = (draftAssets()[sessionId] ?? []).filter((a) => !a.queued)
+  return list.length > 0 ? list : undefined
 }
 
-/** jojo P1：草稿附件按**这个**会话落库（只粘图的新会话不是空壳；绝不挂到别的会话）。 */
-export function writePersistedDraftAssets(sessionId: string, assets: DraftAsset[]): void {
-  if (!sessionId) return
-  const clean = assets.map((a) => ({ id: a.id, name: a.name, mediaType: a.mediaType, size: a.size }))
+function queuedEntries(sessionId: string): DraftAsset[] {
+  return (draftAssets()[sessionId] ?? []).filter((a) => a.queued)
+}
+
+function writeDraftAssetRows(sessionId: string, rows: DraftAsset[]): void {
   const map = draftAssets()
-  if (clean.length > 0) map[sessionId] = clean
+  if (rows.length > 0) map[sessionId] = rows
   else delete map[sessionId]
   try {
-    bridge().saveAssets?.({ sessionId, assets: clean })
+    bridge().saveAssets?.({ sessionId, assets: rows })
   } catch {
     // 只丢持久化
   }
+}
+
+/** jojo P1：草稿附件按**这个**会话落库（只粘图的新会话不是空壳；绝不挂到别的会话）。排队标记的图原样保留。 */
+export function writePersistedDraftAssets(sessionId: string, assets: DraftAsset[]): void {
+  if (!sessionId) return
+  const clean = assets.map((a) => ({ id: a.id, name: a.name, mediaType: a.mediaType, size: a.size }))
+  const ids = new Set(clean.map((a) => a.id))
+  writeDraftAssetRows(sessionId, [...clean, ...queuedEntries(sessionId).filter((a) => !ids.has(a.id))])
+}
+
+/**
+ * leo MUST 1（#155）：入队不删草稿附件，只打上排队标记（马上发失败 / 崩溃都不丢）；
+ * 输入框和切回恢复不认带标记的图（jojo P2：不冒只图草稿）。
+ */
+export function markDraftAssetsQueued(
+  sessionId: string,
+  itemId: string,
+  text: string,
+  assets: readonly DraftAsset[]
+): void {
+  if (!sessionId || assets.length === 0) return
+  const ids = new Set(assets.map((a) => a.id))
+  const rest = (draftAssets()[sessionId] ?? []).filter((a) => !ids.has(a.id))
+  const marked = assets.map((a) => ({
+    id: a.id,
+    name: a.name,
+    mediaType: a.mediaType,
+    size: a.size,
+    queued: { itemId, text }
+  }))
+  writeDraftAssetRows(sessionId, [...rest, ...marked])
+}
+
+/** 排队项被删 / 已发出（main 已在落库事务里清）/ 退回输入框：去掉这一项的排队标记行。 */
+export function releaseQueuedDraftAssets(sessionId: string, itemId: string): void {
+  const rows = draftAssets()[sessionId] ?? []
+  const rest = rows.filter((a) => a.queued?.itemId !== itemId)
+  if (rest.length !== rows.length) writeDraftAssetRows(sessionId, rest)
+}
+
+/**
+ * 重启后队列没了（只在内存）：库里还挂着排队标记的图不能悄悄丢——连同那条的字退回这个会话的草稿。
+ * 进程内队列还在的项不动。
+ */
+export function returnOrphanQueuedAssets(sessionId: string): { text: string } | undefined {
+  const rows = draftAssets()[sessionId] ?? []
+  const alive = new Set(listFollowups(sessionId).map((item) => item.id))
+  const orphans = rows.filter((a) => a.queued && !alive.has(a.queued.itemId))
+  if (orphans.length === 0) return undefined
+  const texts: string[] = []
+  for (const row of orphans) {
+    const text = row.queued!.text.trim()
+    if (text && !texts.includes(text)) texts.push(text)
+  }
+  writeDraftAssetRows(
+    sessionId,
+    rows.map((a) => (a.queued && !alive.has(a.queued.itemId) ? { id: a.id, name: a.name, mediaType: a.mediaType, size: a.size } : a))
+  )
+  return { text: texts.join("\n\n") }
 }
 
 /**
@@ -168,7 +236,10 @@ export function writePersistedDraftAssets(sessionId: string, assets: DraftAsset[
  */
 export function forgetPersistedDraftAssets(sessionId: string | null | undefined): void {
   if (!sessionId || !assetCache) return
-  delete assetCache[sessionId]
+  // 排队标记的图还挂在别的排队项上，缓存里留着（库里也还在）。
+  const queued = (assetCache[sessionId] ?? []).filter((a) => a.queued)
+  if (queued.length > 0) assetCache[sessionId] = queued
+  else delete assetCache[sessionId]
 }
 
 /**
@@ -201,7 +272,11 @@ export function withoutBlobPreviews<T extends { url?: string }>(assets: T[]): T[
 export function composerDraftForSession(sessionId: string): SessionDraftState | undefined {
   const memory = useChatStore.getState().getSessionDraft(sessionId)
   if (memory) return memory.assets?.length ? { ...memory, assets: withoutBlobPreviews(memory.assets) } : memory
-  const persisted = readPersistedDraft(sessionId)
+  const orphan = returnOrphanQueuedAssets(sessionId)
+  const saved = readPersistedDraft(sessionId)
+  const persisted = orphan?.text && !(saved ?? "").includes(orphan.text)
+    ? [saved, orphan.text].filter(Boolean).join("\n\n")
+    : saved
   const assets = readPersistedDraftAssets(sessionId)
   if (!persisted && !assets) return undefined
   return { text: persisted ?? "", ...(assets ? { assets } : {}) }

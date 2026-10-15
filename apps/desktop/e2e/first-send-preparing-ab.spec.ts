@@ -1,7 +1,7 @@
 /**
  * jojo P1（#145 gate5-11/12/13）：新对话「正在准备…」时发 A，0.5s 后再发 B。
- * A：Enter 即清输入框、只发一次；B：不并进 A、不自动发出，留在输入框并提示「上一条还在准备」；
- * A 发出后不得再弹「没发出去 / 已放回」红卡、不得把 A 还回输入框；再按 Enter 只发 B，不重复 A。
+ * A：Enter 即清输入框、只发一次；B（#155 gate2 jojo P1 改口径）：按下即取走（输入框清空）、不并进 A，
+ * 排在 A 后面，A 跑完自动发 B，各发一次；不弹「没发出去 / 已放回」红卡、不把 A / B 还回输入框。
  *
  * （以下沿用 first-send-composer-clear 的启动助手）P1：新对话首发后输入框必须清空；创建窗内排队首发、重启后首发同理，且消息只入库一条。
  * 慢打（每键 80–150ms），不走 fill，贴近真人打字时序。
@@ -108,7 +108,7 @@ async function seedUsedSession(window: Page, userData: string, text = "seed used
   await expect(composer).toHaveValue("")
 }
 
-test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B 留稿提示，不合并不自动发不重复", async () => {
+test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B 取走排队、A 后自动发，不合并不重复", async () => {
   test.setTimeout(240_000)
   // leo soft：CI 里缺构建产物必须挂，不能静默跳过（e2e-window 先 build 再跑 playwright）。
   if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js：build 步骤没产出").toBe(true)
@@ -130,35 +130,18 @@ test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B �
     await window.waitForTimeout(500)
     await window.keyboard.type(b, { delay: 20 })
     await composer.press("Enter")
-    // luna：中性灰条贴 Composer 上沿，不是红卡。
-    const strip = window.locator('[data-testid="composer-previous-preparing"]')
-    await expect(strip).toHaveText("上一条还在准备，这条已放回输入框，稍后再发。", { timeout: 5_000 })
+    // B 按下即取走排队：输入框清空，没有「上一条还在准备」灰条，也没有红卡。
+    await expect(composer).toHaveValue("", { timeout: 2_000 })
+    await expect(window.locator('[data-testid="composer-previous-preparing"]')).toHaveCount(0)
     await expect(banner).toHaveCount(0)
-    await expect(composer).toHaveValue(b)
-    const stripShots = process.env.ENJOY_E2E_NOTICE_SHOTS_DIR
-    if (stripShots) mkdirSync(stripShots, { recursive: true })
-    if (stripShots) await window.screenshot({ path: join(stripShots, "notice-1440x900.png") })
-    // 与 Composer 同宽对齐（左右边差 ≤ 2px）。
-    const shell = window.locator('[data-testid="composer-input"]').locator("xpath=ancestor::form[1]")
-    const frameBox = await strip.locator("xpath=..").boundingBox()
-    const shellBox = await shell.boundingBox()
-    expect(frameBox).not.toBeNull()
-    expect(shellBox).not.toBeNull()
-    expect(Math.abs(frameBox!.width - shellBox!.width)).toBeLessThanOrEqual(2)
-    expect(Math.abs(frameBox!.x - shellBox!.x)).toBeLessThanOrEqual(2)
-    // ✕ 关掉：灰条消失、焦点回输入框。
-    await window.locator('[data-testid="composer-previous-preparing-close"]').click()
-    await expect(strip).toHaveCount(0)
-    await expect(composer).toBeFocused()
-    // 733×480 窄矮窗里还在准备时再按 Enter：灰条再出，输入框与发送键仍在视口内。
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, "ab-b-queued.png"), fullPage: true })
+    // luna #145 回归护栏（保留）：733×480 窄矮窗里 B 排着队，输入框与发送键仍在视口内、不溢出。
     await window.setViewportSize({ width: 733, height: 480 })
-    await composer.press("End")
-    await composer.press("Enter")
-    await expect(strip).toBeVisible({ timeout: 5_000 })
     await window.waitForTimeout(300)
-    if (stripShots) await window.screenshot({ path: join(stripShots, "notice-733x480.png") })
+    await window.screenshot({ path: join(shots, "ab-b-queued-733x480.png") })
     for (const sel of ['[data-testid="composer-input"]', '[data-testid="composer-send"]']) {
-      const box = await window.locator(sel).boundingBox()
+      const box = await window.locator(sel).first().boundingBox()
       expect(box, sel).not.toBeNull()
       expect(box!.x, sel).toBeGreaterThanOrEqual(0)
       expect(box!.y, sel).toBeGreaterThanOrEqual(0)
@@ -166,32 +149,75 @@ test("新对话正在准备时发 A、0.5s 后发 B：A 清稿只发一次，B �
       expect(box!.y + box!.height, sel).toBeLessThanOrEqual(480)
     }
     await window.setViewportSize({ width: 1440, height: 900 })
-    // 会话准备好后自动消失。
-    await expect(strip).toHaveCount(0, { timeout: 30_000 })
 
     const rows = () => userMessages(boot.userData)
     await expect.poll(() => rows().filter((item) => item.endsWith(a)).length, { timeout: 30_000 }).toBe(1)
-    await expect(window.locator('[data-chat-stage="true"]').getByText(`stub-ok ${a}`).first()).toBeVisible({
+    await expect.poll(() => rows().filter((item) => item.endsWith(b)).length, { timeout: 40_000 }).toBe(1)
+    await expect(window.locator('[data-chat-stage="true"]').getByText(`stub-ok ${b}`).first()).toBeVisible({
       timeout: 30_000
     })
-    // 回复到齐后再等一会：看门狗 / 失败路径不得把 A 还回来、不得弹「没发出去」。
-    await window.waitForTimeout(4_000)
-    expect(rows().some((item) => item.includes(b))).toBe(false)
-    expect(rows().some((item) => item.includes(a) && item.includes(b))).toBe(false)
-    await expect(composer).toHaveValue(b)
-    await expect(window.getByText("这次没发出去")).toHaveCount(0)
-    await expect(window.getByText("模型这次没回完")).toHaveCount(0)
-    mkdirSync(shots, { recursive: true })
-    await window.screenshot({ path: join(shots, "ab-after-ready.png"), fullPage: true })
-
-    await waitSendReady(window)
-    await composer.click()
-    await composer.press("End")
-    await composer.press("Enter")
-    await expect.poll(() => rows().filter((item) => item.endsWith(b)).length, { timeout: 30_000 }).toBe(1)
-    await expect(composer).toHaveValue("", { timeout: 10_000 })
-    await window.waitForTimeout(1_500)
+    // A 先于 B 入库。
+    const order = rows()
+    expect(order.findIndex((item) => item.endsWith(a))).toBeLessThan(order.findIndex((item) => item.endsWith(b)))
+    // 回复到齐后再等一会：不重复、不合并、不还回输入框、不弹「没发出去」。
+    await window.waitForTimeout(3_000)
     expect(rows().filter((item) => item.endsWith(a)).length).toBe(1)
+    expect(rows().filter((item) => item.endsWith(b)).length).toBe(1)
+    expect(rows().some((item) => item.includes(a) && item.includes(b))).toBe(false)
+    await expect(composer).toHaveValue("")
+    await expect(window.getByText("这次没发出去")).toHaveCount(0)
+    await window.screenshot({ path: join(shots, "ab-after-ready.png"), fullPage: true })
+  } finally {
+    await shutdown(app)
+  }
+})
+
+const PNG_1PX = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64"
+)
+
+test("leo BLOCK：A 没发出去（看门狗还回）——带图的 B 不被静默续发，字和图都回到输入框，A 在前", async () => {
+  test.setTimeout(240_000)
+  if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js：build 步骤没产出").toBe(true)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const boot = freshEnv({ ENJOY_DEV_DELAY_SESSION_CREATE_MS: "6000" })
+  // 先正常启动把自带空会话用掉，再带看门狗开关重启（同一 userData）：之后点新对话才真走创建、A 必卡过看门狗。
+  const seeded = await launch(boot.env)
+  try {
+    await seedUsedSession(seeded.window, boot.userData)
+  } finally {
+    await shutdown(seeded.app)
+  }
+  const { app, window } = await launch({ ...boot.env, ENJOY_E2E_SEND_WATCHDOG: "1" })
+  try {
+    const composer = window.locator('[data-testid="composer-input"]')
+    await window.locator('[data-testid="sidebar-new-session"]').click({ noWaitAfter: true })
+    await expect(window.getByText("正在准备…")).toBeVisible({ timeout: 8_000 })
+    const chip = window.locator('[data-testid="composer-asset-chip"]')
+    await composer.click()
+    const a = "失败首条A"
+    const b = "带图第二条B"
+    await window.keyboard.type(a, { delay: 20 })
+    await composer.press("Enter")
+    await expect(composer).toHaveValue("", { timeout: 2_000 })
+    await window.keyboard.type(b, { delay: 20 })
+    await window.locator('[data-testid="composer-attach"]').setInputFiles({ name: "b-img.png", mimeType: "image/png", buffer: PNG_1PX })
+    await expect(chip).toHaveCount(1, { timeout: 8_000 })
+    await composer.press("Enter")
+    await expect(composer).toHaveValue("", { timeout: 2_000 })
+    await expect(chip).toHaveCount(0)
+    // A 卡过看门狗被还回；B 必须跟着回来（接在 A 后面），图也在，不进运行中排队、不入库。
+    await expect(composer).toHaveValue(new RegExp(`${a}[\\s\\S]*${b}`), { timeout: 20_000 })
+    await expect(chip).toHaveCount(1)
+    await expect(window.locator('[data-testid="thread-error-banner"]')).toContainText("没发出去")
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, "ab-first-fail-restored.png"), fullPage: true })
+    // 再等过 A 的迟到发送：B 仍不被自动发出。
+    await window.waitForTimeout(8_000)
+    expect(userMessages(boot.userData).filter((m) => m.includes(b))).toEqual([])
+    await expect(composer).toHaveValue(new RegExp(b))
+    await expect(chip).toHaveCount(1)
   } finally {
     await shutdown(app)
   }

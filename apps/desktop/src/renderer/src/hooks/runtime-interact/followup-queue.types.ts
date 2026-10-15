@@ -29,4 +29,4 @@ export type EnqueueFollowupInput = Omit<FollowupItem, "id" | "createdAt" | "stat
   status?: FollowupStatus
 }
 
-export type RuntimeHintCode = "queued" | "steered" | "chipQueued" | null
+export type RuntimeHintCode = "queued" | "steered" | "chipQueued" | "imageSteerQueued" | null
