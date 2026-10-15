@@ -11,7 +11,12 @@ import {
   classifyChatSendFailure
 } from "@enjoy-agents/ipc-contract/credential-check"
 import { createE2eStubStream, setE2eStubPackagedForTest } from "./e2e-stub.ts"
-import { e2eSendFixture, e2eSendFixtureError, resetE2eSendFixtureForTest } from "./e2e-send-fixture.ts"
+import {
+  e2eSendFixture,
+  e2eSendFixtureDelayMs,
+  e2eSendFixtureError,
+  resetE2eSendFixtureForTest
+} from "./e2e-send-fixture.ts"
 
 const isolated = {
   ENJOY_E2E_STUB: "1",
@@ -107,3 +112,20 @@ async function rejectStub(
     return error
   }
 }
+
+test("ENJOY_E2E_SEND_SKIP=N：前 N 次照常成功，之后才炸", () => {
+  resetE2eSendFixtureForTest()
+  const skip = { ...isolated, ENJOY_E2E_SEND_SKIP: "1" }
+  assert.equal(e2eSendFixture(skip, false, "/tmp/e2e-ud"), undefined)
+  assert.equal(e2eSendFixture(skip, false, "/tmp/e2e-ud"), "rejected")
+  assert.equal(e2eSendFixture(skip, false, "/tmp/e2e-ud"), "rejected")
+  resetE2eSendFixtureForTest()
+})
+
+test("ENJOY_E2E_SEND_DELAY_MS：非数字 / 负数当 0，上限 10s", () => {
+  assert.equal(e2eSendFixtureDelayMs({}), 0)
+  assert.equal(e2eSendFixtureDelayMs({ ENJOY_E2E_SEND_DELAY_MS: "abc" }), 0)
+  assert.equal(e2eSendFixtureDelayMs({ ENJOY_E2E_SEND_DELAY_MS: "-5" }), 0)
+  assert.equal(e2eSendFixtureDelayMs({ ENJOY_E2E_SEND_DELAY_MS: "2500" }), 2500)
+  assert.equal(e2eSendFixtureDelayMs({ ENJOY_E2E_SEND_DELAY_MS: "999999" }), 10_000)
+})
