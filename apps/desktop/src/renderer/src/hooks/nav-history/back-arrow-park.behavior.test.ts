@@ -50,7 +50,8 @@ const { abortComposerRun } = await import("../composer-run-control.ts")
 const { sendComposerMessage } = await import("../runtime-interact/send-composer-run.ts")
 const { steerPreparedText } = await import("../runtime-interact/steer-composer.ts")
 const { submitComposer } = await import("../send-composer.ts")
-const { listFollowups } = await import("../followup-queue.ts")
+const { listFollowups, takeNextFollowup } = await import("../followup-queue.ts")
+const { tryStartNextFollowup, drainFollowupAutostart, resetFollowupAutostart } = await import("../followup-autostart.ts")
 const { failComposerSend } = await import("../runtime-interact/fail-composer-send.ts")
 const { applyOptimisticTitle, resetSessionTitleRollbackForTest } = await import("../session-title.ts")
 const snap = await import("../../stores/restored-images-snapshot.ts")
@@ -73,7 +74,9 @@ afterEach(() => {
   resetSessionTitleRollbackForTest()
   assets.clearComposerAssets()
   snap.clearRestoredImages()
-  useAttentionStore.setState({ parks: {} } as never)
+  resetFollowupAutostart()
+  for (const id of ["ses_one", "ses_A"]) while (takeNextFollowup(id)) { /* 清空排队 */ }
+  useAttentionStore.setState({ parks: {}, runSessions: {} } as never)
   calls.length = 0
   holdRun = null
   parkNextRun = false
@@ -123,22 +126,24 @@ test("左上返回到会话一：停车 A、存 A 的稿、还会话一的稿、
   await backToOne()
   const s = useChatStore.getState()
   assert.equal(s.sessionId, "ses_one")
-  assert.equal(s.running, false, "会话一不挂 A 的执行中")
-  assert.equal(s.runId, null)
   assert.equal(s.composer, "会话一的草稿", "会话一的草稿还回来")
   assert.equal(s.getSessionDraft("ses_A")?.text, "A里后打的字", "A 的稿存进 A")
+  assert.ok(!s.messages.some((m: any) => m.content === "A在跑"), "会话一不显示 A 的消息")
   const park = useAttentionStore.getState().parks.ses_A
   assert.equal(park?.running, true)
   assert.equal(park?.runId, "run_A")
+  // 状态位最后看。
+  assert.equal(s.running, false, "会话一不挂 A 的执行中")
+  assert.equal(s.runId, null)
 })
 
 test("左上返回后 A 跑完：会话一仍空闲；会话一里点停止不中止 A", async () => {
   aRunning()
   await backToOne()
   dispatchAgentEvent({ type: "run.end", runId: "run_A", sessionId: "ses_A" } as never)
-  assert.equal(useChatStore.getState().running, false)
   await abortComposerRun()
   assert.deepEqual(calls.filter((c) => c.path === ".ai.abort").map((c) => c.args[0]), [], "不中止 run_A")
+  assert.equal(useChatStore.getState().running, false)
 })
 
 test("左上返回后会话一里 Enter 直接发出（不进排队）；⌘Enter 纠偏也是新发一轮，不塞进 run_A", async () => {
@@ -159,6 +164,84 @@ test("左上返回后会话一里 Enter 直接发出（不进排队）；⌘Ente
   await flush()
   assert.deepEqual(calls.filter((c) => c.path === ".agent.steer"), [], "不往 run_A 纠偏")
   assert.equal(calls.filter((c) => c.path === ".agent.run").length, 1)
+})
+
+/** A 在跑且 run_A 已登记到 run → 会话表（全局最早的一条就是 run_A）。 */
+function aRunningRemembered() {
+  aRunning()
+  useAttentionStore.getState().rememberRun("run_A", "ses_A")
+}
+
+/** 会话一发出自己的一轮并认领，返回它的 runId。 */
+async function oneStartsOwnTurn(text = "会话一自己的一轮") {
+  useChatStore.getState().setComposer(text)
+  await submitComposer("send")
+  await flush()
+  const own = useChatStore.getState().runId
+  assert.ok(own && own !== "run_A", `会话一认领了自己的轮 got ${own}`)
+  return own as string
+}
+
+test("leo r6b ①：A 仍在跑时返回会话一，会话一开了自己的一轮后 ⌘Enter——纠偏进会话一自己的轮，不进 run_A", async () => {
+  aRunningRemembered()
+  await backToOne()
+  const own = await oneStartsOwnTurn()
+  calls.length = 0
+  const outcome = await steerPreparedText("纠偏一句")
+  await flush()
+  const steers = calls.filter((c) => c.path === ".agent.steer").map((c) => c.args[0])
+  assert.equal(steers.length, 1, "走了一次 agent.steer")
+  assert.equal(steers[0].sessionId, "ses_one")
+  assert.equal(steers[0].runId, own, "带会话一自己的 runId，不是 run_A")
+  assert.equal(calls.filter((c) => c.path === ".agent.run").length, 0, "没另开一轮")
+  assert.equal(outcome, "steered")
+  assert.equal(useAttentionStore.getState().parks.ses_A?.running, true, "A 仍在后台跑")
+})
+
+test("leo r6b ②：A 仍在跑时返回会话一，会话一自己的轮收工后排队项自启——真的发出去", async () => {
+  aRunningRemembered()
+  await backToOne()
+  const own = await oneStartsOwnTurn()
+  // 会话一自己在跑时 Enter：进会话一的排队。
+  useChatStore.getState().setComposer("一的排队")
+  await submitComposer("send")
+  await flush()
+  assert.deepEqual(listFollowups("ses_one").map((i) => i.prompt), ["一的排队"], "先进了会话一的排队")
+  dispatchAgentEvent({ type: "run.end", runId: own, sessionId: "ses_one" } as never)
+  await flush()
+  calls.length = 0
+  // 和 useFollowupAutostart 的 kick 同一套入参（前台会话的 running / pendingApproval）。
+  const s = useChatStore.getState()
+  const started = tryStartNextFollowup({
+    sessionId: s.sessionId,
+    running: s.running,
+    pendingApproval: Boolean(s.pendingApproval),
+    send: (item) => sendComposerMessage({ content: item.prompt, assets: item.assets })
+  })
+  await drainFollowupAutostart()
+  await flush()
+  const runs = calls.filter((c) => c.path === ".agent.run").map((c) => c.args[0])
+  assert.equal(runs.length, 1, "排队项真的发出（agent.run）")
+  assert.equal(runs[0].sessionId, "ses_one")
+  assert.match(JSON.stringify(runs[0]), /一的排队/)
+  assert.deepEqual(listFollowups("ses_one"), [], "排队已取走")
+  assert.equal(useAttentionStore.getState().parks.ses_A?.running, true, "A 仍在后台跑")
+  assert.equal(started, true)
+})
+
+test("leo r6b ③：A 仍在跑时返回会话一——(a) 会话一空闲时 abortComposerRun（换引擎路径）不中止 A；(b) 会话一自己在跑时停止只中止自己的轮", async () => {
+  aRunningRemembered()
+  await backToOne()
+  await abortComposerRun()
+  assert.deepEqual(calls.filter((c) => c.path === ".ai.abort").map((c) => c.args[0]), [], "(a) 空闲时不中止任何轮")
+  assert.equal(useAttentionStore.getState().parks.ses_A?.running, true, "(a) A 仍在跑")
+  useChatStore.setState({ notice: null } as never)
+  const own = await oneStartsOwnTurn()
+  calls.length = 0
+  await abortComposerRun()
+  assert.deepEqual(calls.filter((c) => c.path === ".ai.abort").map((c) => c.args[0]), [own], "(b) 只中止会话一自己的轮")
+  assert.equal(useAttentionStore.getState().parks.ses_A?.running, true, "(b) A 仍在跑")
+  assert.equal(useChatStore.getState().running, false)
 })
 
 test("左上返回再回到 A（A 期间跑完）：A 显示空闲", async () => {

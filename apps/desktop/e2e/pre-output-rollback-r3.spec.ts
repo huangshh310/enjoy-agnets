@@ -253,6 +253,9 @@ test("leo r6 BLOCK：A 在跑时左上返回到会话一——会话一不挂 A 
     await composer.press("Enter")
     await expect(stage).toContainText("stub-ok 会话一第一句", { timeout: 30_000 })
     const one = await activeRow.getAttribute("data-session-id")
+    // 会话一留一句草稿再去新对话（离开时存稿）。历史：会话一 → 新对话落地页，A 发出后落地页就是 A。
+    // 两页之间隔着一整轮发送，不会被历史的 350ms 连跳合并；不靠固定等待。
+    await composer.fill("会话一的草稿")
     await window.getByTestId("sidebar-new-session").click()
     await expect(composer).toHaveValue("", { timeout: 8_000 })
     await composer.fill("very slow 甲在跑")
@@ -260,18 +263,10 @@ test("leo r6 BLOCK：A 在跑时左上返回到会话一——会话一不挂 A 
     await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
     await expect(activeRow).not.toHaveAttribute("data-session-id", one ?? "", { timeout: 8_000 })
     const a = await activeRow.getAttribute("data-session-id")
-    // 只点项目树里的行（「进行中」分组里也有一行 A，排在前面）。
+    // 只认项目树里的行（「进行中」分组里也有一行 A，排在前面）。
     const rowOne = window.locator(`[data-testid="sidebar-session-row"][data-session-surface="tree"][data-session-id="${one}"]`)
     const rowA = window.locator(`[data-testid="sidebar-session-row"][data-session-surface="tree"][data-session-id="${a}"]`)
-    // 历史排成「会话一 → A」，左上返回必然落到会话一。
-    await rowOne.locator("button").first().click()
-    await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
-    // 历史对 350ms 内的连跳只记最后一页（HISTORY_COALESCE_MS）；停一下，像人一样，会话一才单独成一页。
-    await window.waitForTimeout(600)
-    await composer.fill("会话一的草稿")
-    await rowA.locator("button").first().click()
     await expect(rowA).toHaveAttribute("data-active", "true", { timeout: 10_000 })
-    await expect(window.getByTestId("composer-stop"), "A 自己在跑").toBeVisible({ timeout: 10_000 })
     await composer.fill("A里后打的字")
     await window.getByTestId("nav-back").click()
     await expect(rowOne).toHaveAttribute("data-active", "true", { timeout: 10_000 })
@@ -287,8 +282,15 @@ test("leo r6 BLOCK：A 在跑时左上返回到会话一——会话一不挂 A 
     await window.screenshot({ path: join(shots, "r6-back-2-enter-sends.png") })
     // 回到 A：A 的稿和 A 自己的运行态（还在跑 / 等审批）都在。
     await rowA.locator("button").first().click()
+    await expect(rowA).toHaveAttribute("data-active", "true", { timeout: 10_000 })
     await expect(composer).toHaveValue("A里后打的字", { timeout: 10_000 })
     await expect(stage).toContainText("甲在跑")
+    // A 仍在跑：「very slow」中途停在写盘审批，所以停止按钮或审批卡二者之一在，输入框提示仍是「任务进行中」。
+    await expect(
+      window.getByTestId("composer-stop").or(window.getByRole("button", { name: "批准", exact: true })),
+      "A 仍在跑（停止按钮或待审批）"
+    ).toBeVisible({ timeout: 10_000 })
+    await expect(composer, "A 仍在跑").toHaveAttribute("placeholder", /任务进行中/)
     await window.screenshot({ path: join(shots, "r6-back-3-back-to-a.png") })
   } finally {
     await closeForRelaunch(app)
