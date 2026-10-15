@@ -1,5 +1,6 @@
 /**
  * 会话右侧刻度：只收有正文的用户句。少于两句不出现。点击滚到该句。
+ * 整个浮层 pointer-events:none，只有刻度按钮可点，不挡下面消息的按钮。
  */
 "use client"
 
@@ -38,7 +39,10 @@ export function ThreadPreviewRail({
         label={t("chat.previewRailLabel")}
         activeId={activeId}
         itemSize={railItemSize(items.length)}
-        className="pointer-events-auto h-[min(28rem,72%)] w-full"
+        // 外框约 256×256 只是给悬停预览留位，透明处必须让点击穿透到消息（编辑/重来/复制/保存/取消）。
+        // 只有刻度按钮自己接指针事件。
+        className="pointer-events-none h-[min(28rem,72%)] w-full"
+        railClassName="pointer-events-none [&>[data-slot=preview-rail-item]]:pointer-events-auto"
         onActiveChange={setActiveId}
         onItemSelect={(item) => scrollToThreadMessage(item.id)}
       />
