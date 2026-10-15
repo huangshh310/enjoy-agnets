@@ -6,7 +6,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { beforeEach, test } from "node:test"
 
-type DraftAsset = { id: string; name: string; mediaType?: string; size?: number }
+type DraftAsset = { id: string; name: string; mediaType?: string; size?: number; queued?: { itemId: string; text: string } }
 const main = {
   text: {} as Record<string, string>,
   assets: {} as Record<string, DraftAsset[]>,
@@ -79,6 +79,33 @@ test("后台回滚后再加一张图（整行替换 saveAssets）：还回的图
   const cached = storage.readPersistedDraftAssets("ses_A") ?? []
   storage.writePersistedDraftAssets("ses_A", [...cached, { id: "ast_new", name: "new.png" }])
   assert.deepEqual(main.assets.ses_A?.map((a) => a.id), ["ast_a", "ast_new"])
+})
+
+test("leo r4 B1：A 带图发出、出字前又贴 B 图排队后切走，A 后台回滚：草稿只有 A 的图，B 的图留在排队标记里", () => {
+  sendThenSwitchAway("ses_A")
+  // 出字前贴 B 图 + Enter：入队，草稿附件打排队标记（整行写 main）。
+  storage.markDraftAssetsQueued("ses_A", "follow_B", "B", [{ id: "ast_q", name: "q.png", mediaType: "image/png" }])
+  // main 回滚事务把 A 的图并回同一整行（排队行原样在前）。
+  mainRollsBack("ses_A", "A 那句", [...(main.assets.ses_A ?? []), { id: "ast_a", name: "a.png", mediaType: "image/png" }])
+  storage.noteBackgroundRunError("ses_A", { type: "run.error", preOutput: true })
+
+  assert.deepEqual(storage.composerDraftForSession("ses_A")?.assets?.map((a: DraftAsset) => a.id), ["ast_a"], "切回只有 A 的图")
+  assert.deepEqual(storage.readPersistedDraftAssets("ses_A")?.map((a) => a.id), ["ast_a"])
+  assert.deepEqual(
+    useChatStore.getState().getSessionDraft("ses_A")?.assets?.map((a: { id: string }) => a.id),
+    ["ast_a"],
+    "内存草稿不带排队项的图"
+  )
+  // 之后一次整行替换（再贴一张）：排队标记不丢。
+  storage.writePersistedDraftAssets("ses_A", [...(storage.readPersistedDraftAssets("ses_A") ?? []), { id: "ast_new", name: "n.png" }])
+  assert.deepEqual(
+    main.assets.ses_A?.map((a) => [a.id, a.queued?.itemId ?? null]),
+    [["ast_a", null], ["ast_new", null], ["ast_q", "follow_B"]]
+  )
+  // 删掉排队项：B 的图随项走，不留在草稿里。
+  storage.releaseQueuedDraftAssets("ses_A", "follow_B")
+  assert.deepEqual(main.assets.ses_A?.map((a) => a.id), ["ast_a", "ast_new"])
+  assert.deepEqual(storage.readPersistedDraftAssets("ses_A")?.map((a) => a.id), ["ast_a", "ast_new"])
 })
 
 test("切走前又补了字：与还回的稿合并并写回 main", () => {

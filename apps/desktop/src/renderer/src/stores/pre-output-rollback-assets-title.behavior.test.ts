@@ -4,6 +4,7 @@
  * - P2：新会话第一句被回滚：自动标题回到发之前的占位，并作废还在跑的标题精炼。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { beforeEach, test } from "node:test"
 
 const { useChatStore } = await import("./chat-store.ts")
@@ -282,9 +283,12 @@ const { retryKeptDraftPlan } = await import("../hooks/retry-kept-draft-plan.ts")
 const { zhChat } = await import("../i18n/catalogs/zh/chat.ts")
 const zhT = (key: string) => (zhChat as Record<string, string>)[key.replace(/^chat\./, "")] ?? key
 
+const { restoredImagesFor } = await import("./restored-images-snapshot.ts")
+
+/** 白卡第二行（与 useRestoredImagesDetail 同一算法）：按还稿时的快照，不数输入框。 */
 function noticeDetailAfterRollback(): string | null {
-  const images = listComposerAssets().filter((a) => (a.mediaType ?? "").startsWith("image/")).length
-  return restoredImagesDetail(zhT as never, images, useChatStore.getState().composer.trim().length > 0)
+  const snap = restoredImagesFor(useChatStore.getState().sessionId)
+  return snap ? restoredImagesDetail(zhT as never, snap.images, snap.hasText) : null
 }
 
 function seedImageOnlyTurn(sessionId: string, runId: string) {
@@ -338,4 +342,43 @@ test("白卡第二行：没图不加；文案键与看门狗同一对（不另�
   assert.equal(restoredImagesDetail(zhT as never, 0, true), null)
   assert.equal(restoredImagesDetail((k: string) => k, 1, false), "chat.sendFailedRestoreImagesOnly")
   assert.equal(restoredImagesDetail((k: string) => k, 2, true), "chat.sendFailedRestoreWithImages")
+})
+
+test("leo r4 soft4：白卡第二行按还稿时快照——回滚后再贴的图不算；只回了字的回滚之后贴图也不说「文字和图片」", () => {
+  seedImageOnlyTurn("ses_snap1", "run_snap1")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_snap1"))
+  setComposerAssets([...listComposerAssets(), { id: "ast_later", name: "later.png", mediaType: "image/png" }])
+  useChatStore.getState().setComposer("回滚后补的字")
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "按还回时：只有图")
+
+  // 只回了字的回滚：之后贴图，白卡不加第二行。
+  useChatStore.setState({
+    sessionId: "ses_snap2",
+    running: true,
+    runId: "run_snap2",
+    composer: "",
+    error: null,
+    pendingStreamEvents: [],
+    messages: [
+      { id: "u2", role: "user", content: "只有字", createdAt: 1 },
+      { id: "a2", role: "assistant", content: "", createdAt: 2, streaming: true }
+    ]
+  } as never)
+  setComposerAssets([])
+  useChatStore.getState().applyStreamEvent(preOutputError("run_snap2"))
+  setComposerAssets([{ id: "ast_after", name: "after.png", mediaType: "image/png" }])
+  assert.equal(noticeDetailAfterRollback(), null)
+
+  // 换到别的会话：不带过去。
+  useChatStore.setState({ sessionId: "ses_other" } as never)
+  assert.equal(noticeDetailAfterRollback(), null)
+})
+
+test("leo r4 soft4：白卡 hook 读快照不读输入框；新一轮开跑清快照（接线断言）", () => {
+  const hook = readFileSync(new URL("../components/ai-chat/thread/use-restored-images-detail.ts", import.meta.url), "utf8")
+  const body = hook.slice(hook.indexOf("export function useRestoredImagesDetail"))
+  assert.match(body, /useSyncExternalStore\(subscribeRestoredImages, getRestoredImagesSnapshot\)/)
+  assert.doesNotMatch(body, /useRestoredImageCount|state\.composer/)
+  const store = readFileSync(new URL("./chat-store.ts", import.meta.url), "utf8")
+  assert.match(store, /if \(patch\.running === true\) clearRestoredImages\(\)/)
 })

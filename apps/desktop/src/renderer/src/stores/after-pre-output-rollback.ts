@@ -4,12 +4,16 @@
 import { restoreComposerAssets } from "../hooks/composer-assets"
 import type { ThreadAsset, ThreadMessage } from "./chat-store.types"
 import { emitPreOutputRolledBack } from "./pre-output-rollback-listeners"
+import { noteRestoredImages } from "./restored-images-snapshot"
 
 export function afterPreOutputRollback(
   sessionId: string | null,
   assets: readonly ThreadAsset[],
-  messagesAfter: readonly ThreadMessage[]
+  messagesAfter: readonly ThreadMessage[],
+  restoredText = ""
 ): void {
+  // leo r4 soft4：白卡第二行按这次还回的图 / 字拍快照，不实时数输入框。
+  noteRestoredImages(sessionId, assets, restoredText)
   restoreComposerAssets(
     assets.map((asset) => ({
       id: asset.assetId,

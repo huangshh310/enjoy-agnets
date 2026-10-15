@@ -323,18 +323,24 @@ export function refreshDraftAfterBackgroundRollback(sessionId: string): void {
     timer = setTimeout(flushPersistedDrafts, DRAFT_PERSIST_DEBOUNCE_MS)
   }
 
-  const localAssets = (memory?.assets ?? assetCache?.[sessionId] ?? []) as DraftAsset[]
-  const seen = new Set<string>()
+  // leo r4 B1：main 回的是整行，含排队项的图（带 queued 标记）。那些属于排队项，不是还回的稿：
+  // 单独留着、原样保留标记写回缓存，不并进普通草稿、不进内存草稿（否则切回会冒出来，再发一遍）。
+  const mainQueued = mainAssets.filter((a) => a?.queued)
+  const queuedIds = new Set(mainQueued.map((a) => a.id))
+  const mainNormal = mainAssets.filter((a) => !a?.queued)
+  const localAssets = ((memory?.assets ?? assetCache?.[sessionId] ?? []) as DraftAsset[]).filter((a) => !a?.queued)
+  const seen = new Set<string>(queuedIds)
   const assets: DraftAsset[] = []
-  for (const asset of [...localAssets, ...mainAssets]) {
+  for (const asset of [...localAssets, ...mainNormal]) {
     if (!asset?.id || seen.has(asset.id)) continue
     seen.add(asset.id)
-    assets.push(asset)
+    assets.push({ id: asset.id, name: asset.name, mediaType: asset.mediaType, size: asset.size })
   }
   const cacheMap = draftAssets()
-  if (assets.length > 0) cacheMap[sessionId] = assets.map((a) => ({ id: a.id, name: a.name, mediaType: a.mediaType, size: a.size }))
+  const rows = [...assets, ...mainQueued]
+  if (rows.length > 0) cacheMap[sessionId] = rows
   else delete cacheMap[sessionId]
-  if (assets.length !== mainAssets.length) writePersistedDraftAssets(sessionId, assets)
+  if (assets.length !== mainNormal.length) writePersistedDraftAssets(sessionId, assets)
 
   if (memory) {
     store.saveSessionDraft(sessionId, { ...memory, text, assets })

@@ -24,6 +24,7 @@ import {
 } from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { afterPreOutputRollback } from "./after-pre-output-rollback"
+import { clearRestoredImages } from "./restored-images-snapshot"
 import { readComposerForMerge, writeComposerAfterMerge } from "./composer-io"
 import { noteTurnSettled } from "./turn-settled"
 import { mergeComposerText } from "../lib/merge-composer-text"
@@ -229,7 +230,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(composer !== undefined ? { composer } : {})
     })
     if (composer !== undefined) writeComposerAfterMerge(composer)
-    if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages)
+    if (patch.running === true) clearRestoredImages()
+    if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages, patch.composer ?? "")
     else noteTurnSettled(sessionId, event)
   },
   appendUserMessage: (content, assets) => {

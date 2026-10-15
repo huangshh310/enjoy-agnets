@@ -11,6 +11,16 @@ import { expect, test } from "@playwright/test"
 import { closeForRelaunch, firstWindow, mainEntry, relaunchElectron } from "./approval-restart-helpers"
 
 const shots = process.env.ENJOY_E2E_SHOTS_DIR ?? join(process.cwd(), "test-results/pre-output-rollback-r3")
+// 160x100 蓝色 PNG（截图里看得见）
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAAAsUlEQVR42u3RAQkAAAgEsY9jRBObwxoig0twS/XocbEAsAALsAALsAALMGABFmABFmABFmDAAizAAizAAizAAgxYgAVYgAVYgAUYsAALsAALsAALMGABFmABFmABFmABBizAAizAAizAAgxYgAVYgAVYgAUYsAuABViABViABViAAQuwAAuwAAuwAAMWYAEWYAEWYAEWYMACLMACLMACLMCABViABViABViAAQuwAOteC5G5PJKX/77QAAAAAElFTkSuQmCC",
+  "base64"
+)
+
+/** 输入框里叫这个名字的图片附件（缩略图按钮的 title 带文件名）。 */
+function chipNamed(window: import("@playwright/test").Page, name: string) {
+  return window.locator(`[data-testid="composer-asset-chip"]:has([title*="${name}"])`)
+}
 
 async function boot(env: Record<string, string>) {
   const app = await relaunchElectron({ ...process.env, ENJOY_E2E_STUB: "1", ENJOY_E2E_LANG: "zh", ...env })
@@ -83,11 +93,18 @@ test("M2：第一轮出字后从这里重来再发，出字前失败不回滚已
   }
 })
 
-test("M4：发出后立刻切到别的会话，后台回滚的正文切回来还在", async () => {
+test("M4：发出后立刻切到别的会话，后台回滚的字和图切回来都在", async () => {
   test.setTimeout(180_000)
-  const { app, window } = await boot({ ...dirs(), ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_DELAY_MS: "4000" })
+  const { app, window } = await boot({
+    ...dirs(),
+    ENJOY_E2E_SEND: "unreachable",
+    ENJOY_E2E_SEND_DELAY_MS: "4000",
+    ENJOY_E2E_STUB_VISION: "1"
+  })
   try {
     const composer = window.getByTestId("composer-input")
+    await window.getByTestId("composer-attach").setInputFiles({ name: "m4-a.png", mimeType: "image/png", buffer: PNG })
+    await expect(chipNamed(window, "m4-a.png")).toHaveCount(1, { timeout: 8_000 })
     await composer.fill("后台回滚也别丢这句话")
     await composer.press("Enter")
     const active = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
@@ -96,16 +113,59 @@ test("M4：发出后立刻切到别的会话，后台回滚的正文切回来还
     expect(sid).toBeTruthy()
     await window.getByTestId("sidebar-new-session").click()
     const row = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sid}"]`).first()
-    await expect(row).toHaveAttribute(
-      "data-active",
-      "false",
-      { timeout: 8_000 }
-    )
+    await expect(row).toHaveAttribute("data-active", "false", { timeout: 8_000 })
     // 等后台那轮出字前失败回滚完。
     await window.waitForTimeout(7_000)
     await row.locator("button").first().click()
     await expect(window.getByTestId("composer-input")).toHaveValue(/后台回滚也别丢这句话/, { timeout: 10_000 })
+    // leo r4 soft2：图也回来。
+    await expect(window.getByTestId("composer-asset-chip")).toHaveCount(1, { timeout: 10_000 })
+    await expect(chipNamed(window, "m4-a.png")).toHaveCount(1)
     await window.screenshot({ path: join(shots, "05-background-rollback-draft-back.png") })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+test("leo r4 B1：A 带图发出、出字前贴 B 图排队后切走，A 后台回滚——切回草稿只有 A 的图，B 的图不进草稿", async () => {
+  test.setTimeout(180_000)
+  const { app, window } = await boot({
+    ...dirs(),
+    ENJOY_E2E_SEND: "unreachable",
+    ENJOY_E2E_SEND_ONCE: "1",
+    ENJOY_E2E_SEND_DELAY_MS: "5000",
+    ENJOY_E2E_STUB_VISION: "1"
+  })
+  try {
+    const composer = window.getByTestId("composer-input")
+    await window.getByTestId("composer-attach").setInputFiles({ name: "b1-a.png", mimeType: "image/png", buffer: PNG })
+    await expect(chipNamed(window, "b1-a.png")).toHaveCount(1, { timeout: 8_000 })
+    await composer.fill("A 这句带图")
+    await composer.press("Enter")
+    await expect(window.getByTestId("composer-asset-chip")).toHaveCount(0, { timeout: 8_000 })
+    // 出字前：贴 B 图 + 回车 → 进排队。
+    await window.getByTestId("composer-attach").setInputFiles({ name: "b1-q.png", mimeType: "image/png", buffer: PNG })
+    await expect(chipNamed(window, "b1-q.png")).toHaveCount(1, { timeout: 8_000 })
+    await composer.click()
+    await window.keyboard.type("B 排队")
+    await composer.press("Enter")
+    await expect(window.getByTestId("queued-user-turn")).toBeVisible({ timeout: 5_000 })
+    await expect(window.getByTestId("composer-asset-chip")).toHaveCount(0)
+    await window.screenshot({ path: join(shots, "r4-b1-1-queued-before-switch.png") })
+    const active = window.locator('[data-testid="sidebar-session-row"][data-active="true"]').first()
+    const sid = await active.getAttribute("data-session-id")
+    expect(sid).toBeTruthy()
+    await window.getByTestId("sidebar-new-session").click()
+    const row = window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sid}"]`).first()
+    await expect(row).toHaveAttribute("data-active", "false", { timeout: 8_000 })
+    await window.waitForTimeout(8_000)
+    await row.locator("button").first().click()
+    await expect(window.getByTestId("composer-input")).toHaveValue(/A 这句带图/, { timeout: 10_000 })
+    await expect(chipNamed(window, "b1-a.png")).toHaveCount(1, { timeout: 10_000 })
+    await expect(chipNamed(window, "b1-q.png"), "B 的图不得冒进草稿").toHaveCount(0)
+    await expect(window.getByTestId("composer-asset-chip")).toHaveCount(1)
+    await window.waitForTimeout(1_000)
+    await window.screenshot({ path: join(shots, "r4-b1-2-back-only-a-image.png") })
   } finally {
     await closeForRelaunch(app)
   }
