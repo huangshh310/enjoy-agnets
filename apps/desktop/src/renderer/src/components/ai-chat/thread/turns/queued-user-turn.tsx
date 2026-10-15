@@ -1,7 +1,7 @@
 /**
  * 对话末尾的虚线用户气泡：排队是时间线的一部分，不是 Composer 上一条折叠条。
  */
-import { RiArrowDownSLine, RiArrowUpSLine, RiCloseLine, RiSendPlaneLine } from "@remixicon/react"
+import { RiArrowDownSLine, RiArrowUpSLine, RiAttachment2, RiCloseLine, RiSendPlaneLine } from "@remixicon/react"
 import { Message } from "@/components/ai-elements/message"
 import { cx } from "@/utils/cx"
 import { discardFollowup, returnFollowupToComposer, sendFollowupNow } from "@renderer/hooks/runtime-interact/followup-actions"
@@ -13,16 +13,90 @@ import { queuedExtrasLabel } from "../../composer-count-labels"
 export function QueuedUserTurn({
   item,
   canMoveUp,
-  canMoveDown
+  canMoveDown,
+  compact = false
 }: {
   item: FollowupItem
   canMoveUp: boolean
   canMoveDown: boolean
+  /** 审批卡上方的单行紧凑版：预览截断，按钮整行露出。 */
+  compact?: boolean
 }) {
   const t = useT()
   const running = useChatStore((state) => state.running)
   const preview = (item.draft ?? item.prompt).trim()
   const extraCount = (item.quotedContexts?.length ?? 0) + item.assets.length + (item.skillChips?.length ?? 0)
+
+  const actions = (
+    <>
+      <button type="button" className={iconClass} disabled={!canMoveUp} onClick={() => moveFollowup(item.id, -1)}>
+        <RiArrowUpSLine className="size-3.5" aria-hidden />
+        <span className="sr-only">{t("chat.runtimeMoveUp")}</span>
+      </button>
+      <button type="button" className={iconClass} disabled={!canMoveDown} onClick={() => moveFollowup(item.id, 1)}>
+        <RiArrowDownSLine className="size-3.5" aria-hidden />
+        <span className="sr-only">{t("chat.runtimeMoveDown")}</span>
+      </button>
+      <button
+        type="button"
+        data-testid="queued-send-now"
+        className={actionClass}
+        onClick={() => void sendFollowupNow(item)}
+      >
+        <RiSendPlaneLine className="size-3.5" aria-hidden />
+        {running ? t("chat.runtimeSteerItem") : t("chat.runtimeSendNow")}
+      </button>
+      <button
+        type="button"
+        data-testid="queued-return"
+        className={actionClass}
+        onClick={() => returnFollowupToComposer(item)}
+      >
+        {t("chat.runtimeReturnToComposer")}
+      </button>
+      <button
+        type="button"
+        data-testid="queued-remove"
+        aria-label={t("chat.runtimeRemoveFollowup")}
+        onClick={() => discardFollowup(item)}
+        className={iconClass}
+      >
+        <RiCloseLine className="size-3.5" aria-hidden />
+      </button>
+    </>
+  )
+
+  if (compact) {
+    return (
+      <div
+        data-testid="queued-user-turn"
+        data-queued-id={item.id}
+        data-placement="dock"
+        className={cx(
+          "flex min-w-0 shrink-0 items-center gap-1.5 rounded-xl border border-dashed border-border-button-default",
+          "bg-background-secondary-default/60 py-0.5 pr-1 pl-3 text-caption-2-medium text-text-secondary"
+        )}
+      >
+        <span className="shrink-0 text-text-tertiary">{t("chat.runtimeQueuedBubble")}</span>
+        <p className="min-w-0 flex-1 truncate text-caption-1-regular" title={preview}>
+          {preview || queuedExtrasLabel(t, extraCount)}
+        </p>
+        {/* 有文字时预览只放得下文字：附件 / 引用数另起一个小签，不然单行里看不出这条还带着图。 */}
+        {preview && extraCount > 0 ? (
+          <span
+            data-testid="queued-extras"
+            title={queuedExtrasLabel(t, extraCount)}
+            className="inline-flex shrink-0 items-center gap-0.5 text-text-tertiary"
+          >
+            <RiAttachment2 className="size-3" aria-hidden />
+            <span aria-hidden>{extraCount}</span>
+            <span className="sr-only">{queuedExtrasLabel(t, extraCount)}</span>
+          </span>
+        ) : null}
+        <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
+      </div>
+    )
+  }
 
   return (
     <Message
@@ -45,29 +119,7 @@ export function QueuedUserTurn({
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-caption-2-medium">
           <span className="text-text-tertiary">{t("chat.runtimeQueuedBubble")}</span>
-          <button type="button" className={iconClass} disabled={!canMoveUp} onClick={() => moveFollowup(item.id, -1)}>
-            <RiArrowUpSLine className="size-3.5" aria-hidden />
-            <span className="sr-only">{t("chat.runtimeMoveUp")}</span>
-          </button>
-          <button type="button" className={iconClass} disabled={!canMoveDown} onClick={() => moveFollowup(item.id, 1)}>
-            <RiArrowDownSLine className="size-3.5" aria-hidden />
-            <span className="sr-only">{t("chat.runtimeMoveDown")}</span>
-          </button>
-          <button type="button" className={actionClass} onClick={() => void sendFollowupNow(item)}>
-            <RiSendPlaneLine className="size-3.5" aria-hidden />
-            {running ? t("chat.runtimeSteerItem") : t("chat.runtimeSendNow")}
-          </button>
-          <button type="button" className={actionClass} onClick={() => returnFollowupToComposer(item)}>
-            {t("chat.runtimeReturnToComposer")}
-          </button>
-          <button
-            type="button"
-            aria-label={t("chat.runtimeRemoveFollowup")}
-            onClick={() => discardFollowup(item)}
-            className={iconClass}
-          >
-            <RiCloseLine className="size-3.5" aria-hidden />
-          </button>
+          {actions}
         </div>
       </div>
     </Message>

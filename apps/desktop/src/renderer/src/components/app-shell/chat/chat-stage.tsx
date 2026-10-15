@@ -4,6 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
+import { QueuedFollowups } from "@renderer/components/ai-chat/thread/queued-followups"
 import { sessionScopedCount, useSessionChanges } from "@renderer/hooks/session-changes"
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
@@ -246,7 +247,12 @@ function ChatThreadBody(props: {
             <div
               data-testid="chat-conversation"
               // 审批时对话列保底 13rem / 25% 主体（#144）；矮窗里消息区自身保 min-h-6（一行），不被卡挤成 0。
-              className={cx("flex min-h-14 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)]")}
+              // 审批卡上方挂着紧凑排队区时，那一行已经是「看得见的上下文」，消息区的 min-h-6 让出来给审批三钮（luna g158-42）。
+              className={cx(
+                "flex min-h-14 min-w-0 flex-1 flex-col",
+                pendingApproval && "min-h-[min(13rem,25cqh)]",
+                "[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0"
+              )}
             >
               {props.historyPending ? (
                 // 中性占位：保持空白，不画问候、不画示例；回灌完再出历史或空态。
@@ -259,6 +265,8 @@ function ChatThreadBody(props: {
                   error={error}
                 />
               )}
+              {/* 有审批卡时排队项挂在审批卡正上方、不随消息滚，按钮不被页头挡、不和审批按钮叠（pr157-gate-52/53）。 */}
+              <QueuedFollowups placement="dock" />
               <PermissionDock />
             </div>
             <EnvironmentPanel open={environmentOpen} />

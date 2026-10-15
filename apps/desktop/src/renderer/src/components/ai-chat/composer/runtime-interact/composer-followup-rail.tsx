@@ -11,6 +11,7 @@ import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-style
 export function ComposerFollowupRail() {
   const t = useT()
   const sessionId = useChatStore((state) => state.sessionId)
+  const approvalPending = useChatStore((state) => state.pendingApproval != null)
   const [hint, setHint] = useState<RuntimeHintCode>(() => visibleRuntimeHint(sessionId))
   const [nextText, setNextText] = useState(() => nextQueuedText(sessionId))
   useEffect(() => {
@@ -24,6 +25,8 @@ export function ComposerFollowupRail() {
   if (!hint) return null
   // 队列已空时不再挂「将在当前任务完成后执行」（jojo 巡检）。
   if ((hint === "queued" || hint === "chipQueued") && listFollowups(sessionId).length === 0) return null
+  // 有审批卡时排队项已经挂在审批卡上方的紧凑行里，再挂「下一句 / 将在当前任务完成后执行」是重复，还多占 34px（luna g158-03、36）。
+  if (hideQueuedHintForDock(hint, approvalPending)) return null
 
   return (
     <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>
@@ -40,6 +43,11 @@ export function ComposerFollowupRail() {
       </button>
     </div>
   )
+}
+
+/** 紧凑排队行（shouldDockQueuedFollowups）在的时候，排队类提示不再单独占一条。 */
+export function hideQueuedHintForDock(hint: RuntimeHintCode, approvalPending: boolean): boolean {
+  return approvalPending && (hint === "queued" || hint === "chipQueued")
 }
 
 function nextQueuedText(sessionId: string | null): string {

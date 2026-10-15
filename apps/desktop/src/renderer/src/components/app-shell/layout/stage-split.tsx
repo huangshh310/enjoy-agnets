@@ -1,8 +1,9 @@
 /**
  * 工作台 + Inspector 分栏。Chat 与其它模块共用，Chat 用 hidden 保活。
  * 工作台 Panel 不可 collapse：审查栏加宽最多压到 42%，切模块拉回 62%。
+ * 分栏放不下工作台 + 审查栏最小宽时（768 / 733 宽），审查栏改成盖在主区上的抽屉（useInspectorDrawer）。
  */
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Outlet, useRouterState } from "@tanstack/react-router"
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels"
 import { cx } from "@/utils/cx"
@@ -15,7 +16,13 @@ import { InspectorPane } from "./inspector-pane"
 import { isConversationSurface } from "./inspector-conversation"
 import { useInspectorOnConversation } from "./use-inspector-on-conversation"
 import { HistoryPageSlide } from "@renderer/components/layout/nav-history/history-page-slide"
-import { sanitizeSplitLayout, STAGE_DEFAULT_SIZE, STAGE_MIN_PERCENT } from "./inspector-panel-size"
+import {
+  sanitizeSplitLayout,
+  STAGE_DEFAULT_SIZE,
+  STAGE_MIN_PERCENT,
+  STAGE_MIN_PX
+} from "./inspector-panel-size"
+import { useInspectorDrawer } from "./use-inspector-drawer"
 
 export function StageSplit({
   isChat,
@@ -40,46 +47,56 @@ export function StageSplit({
     restoreStage()
   }, [activeModule, restoreStage])
 
+  const splitRef = useRef<HTMLDivElement>(null)
+  const drawer = useInspectorDrawer(splitRef)
+
   const splitLayout =
     defaultLayout && typeof defaultLayout === "object"
       ? sanitizeSplitLayout(defaultLayout as Record<string, number>)
       : defaultLayout
 
   return (
-    <Group
-      id="enjoy-agents-chat-split"
-      orientation="horizontal"
-      className="h-full min-h-0 min-w-0 flex-1"
-      groupRef={groupRef}
-      defaultLayout={splitLayout}
-      onLayoutChanged={(layout, meta) => {
-        if (maximized || rightPanelCollapsed || Object.keys(layout).length < 2) return
-        const inspectorPercent = layout.changes
-        if (typeof inspectorPercent === "number" && inspectorPercent < 10) return
-        const chatPercent = layout.chat
-        if (typeof chatPercent === "number" && chatPercent < STAGE_MIN_PERCENT) return
-        onLayoutChanged(layout, meta)
-      }}
-    >
-      <Panel
-        id="chat"
-        panelRef={chatPanelRef}
-        minSize="360px"
-        defaultSize={STAGE_DEFAULT_SIZE}
-        className="h-full min-h-0 overflow-hidden bg-transparent"
+    <div ref={splitRef} className="flex h-full min-h-0 min-w-0 flex-1">
+      <Group
+        id="enjoy-agents-chat-split"
+        orientation="horizontal"
+        className="h-full min-h-0 min-w-0 flex-1"
+        groupRef={groupRef}
+        defaultLayout={splitLayout}
+        onLayoutChanged={(layout, meta) => {
+          if (maximized || rightPanelCollapsed || Object.keys(layout).length < 2) return
+          const inspectorPercent = layout.changes
+          if (typeof inspectorPercent === "number" && inspectorPercent < 10) return
+          const chatPercent = layout.chat
+          if (typeof chatPercent === "number" && chatPercent < STAGE_MIN_PERCENT) return
+          onLayoutChanged(layout, meta)
+        }}
       >
-        <HistoryPageSlide>
-        <div className="relative h-full min-h-0 flex-1">
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
-            <ChatStage />
-          </div>
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
-            <Outlet />
-          </div>
-        </div>
-        </HistoryPageSlide>
-      </Panel>
-      <InspectorPane maximized={maximized} toggleWidth={toggleWidth} resetWidth={resetWidth} />
-    </Group>
+        <Panel
+          id="chat"
+          panelRef={chatPanelRef}
+          minSize={`${STAGE_MIN_PX}px`}
+          defaultSize={STAGE_DEFAULT_SIZE}
+          className="h-full min-h-0 overflow-hidden bg-transparent"
+        >
+          <HistoryPageSlide>
+            <div className="relative h-full min-h-0 flex-1">
+              <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
+                <ChatStage />
+              </div>
+              <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
+                <Outlet />
+              </div>
+            </div>
+          </HistoryPageSlide>
+        </Panel>
+        <InspectorPane
+          maximized={maximized}
+          toggleWidth={toggleWidth}
+          resetWidth={resetWidth}
+          drawer={drawer}
+        />
+      </Group>
+    </div>
   )
 }
