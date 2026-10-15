@@ -3,7 +3,8 @@
  * ① 新会话首发失败：红卡不把空态标题「在 xx 里做什么？」顶出可视区（patrol-21/22/51）。
  * ② 英文单复数：1 image；英文界面示例 chip 不出「@日历 help me in 日历…」。
  * ③ 文件 Tab 目录树窄时，「筛选文件…」不被裁（patrol-64）。
- * ④ 重启后选中的会话：历史回灌前不闪空态问候，只留空白占位。
+ * ④ 重启后选中的会话：历史回灌前不闪空态问候，只留空白占位；之后点「新对话」立刻出问候。
+ * ⑤ 回灌一直不回来：8 秒兜底回空态。⑥ 回灌抛错：立刻回空态。⑦ 真空会话重启：回灌完就出问候。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
@@ -147,7 +148,12 @@ test("④ 重启后选中的会话：历史回灌前不闪空态问候，回灌�
   } finally {
     await closeForRelaunch(first)
   }
-  const second = await relaunchElectron({ ...env, ENJOY_DEV_DELAY_SESSION_MESSAGES_MS: "3000" })
+  // 建会话也拉长 3 秒：点「新对话」后的创建窗里 sessionId 为空，picking 没复位就会白屏等兜底。
+  const second = await relaunchElectron({
+    ...env,
+    ENJOY_DEV_DELAY_SESSION_MESSAGES_MS: "3000",
+    ENJOY_DEV_DELAY_SESSION_CREATE_MS: "3000"
+  })
   try {
     const window = await second.firstWindow()
     await window.waitForSelector("#root", { timeout: 20_000 })
@@ -173,8 +179,108 @@ test("④ 重启后选中的会话：历史回灌前不闪空态问候，回灌�
     await expect(window.locator("body")).toContainText("stub-ok 重启前一句 delta", { timeout: 10_000 })
     await expect(greeting).toHaveCount(0)
     await snap(window, "1024x670-restart-history-loaded")
+    // 挑前台会话的 picking 标记要在 loadWorkspace 结束时复位：之后点「新对话」（创建窗 3 秒、sessionId 为空）
+    // 应立刻出问候，不白屏等兜底。
+    const clickedAt = Date.now()
+    await window.locator('[data-testid="sidebar-new-session"]').click()
+    await expect(greeting).toBeVisible({ timeout: 2_000 })
+    expect(Date.now() - clickedAt, "new chat greeting waited for the fallback timer").toBeLessThan(2_500)
+    await expect(loading).toHaveCount(0)
   } finally {
     await closeForRelaunch(second)
+  }
+})
+
+async function seedHistory(env: NodeJS.ProcessEnv, text: string): Promise<void> {
+  const first = await relaunchElectron(env)
+  try {
+    const window = await firstWindow(first)
+    await sendComposer(window, window.locator('[data-testid="composer-input"]'), text)
+    await expect(window.locator("body")).toContainText(`stub-ok ${text}`, { timeout: 20_000 })
+    await window.waitForTimeout(800)
+  } finally {
+    await closeForRelaunch(first)
+  }
+}
+
+async function openRelaunched(env: NodeJS.ProcessEnv) {
+  const app = await relaunchElectron(env)
+  const window = await app.firstWindow()
+  await window.waitForSelector("#root", { timeout: 20_000 })
+  await window.setViewportSize({ width: 1024, height: 670 })
+  return {
+    app,
+    window,
+    greeting: window.locator('[data-testid="empty-start-upper"] h1'),
+    loading: window.locator('[data-testid="thread-history-loading"]')
+  }
+}
+
+test("⑤ 回灌一直不回来（hang）：先空白占位，8 秒兜底后回到空态，不卡死", async () => {
+  test.setTimeout(150_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = stubEnv()
+  await seedHistory(env, "重启前一句 hang")
+  const { app, window, greeting, loading } = await openRelaunched({ ...env, ENJOY_E2E_SESSION_MESSAGES_FAULT: "hang" })
+  try {
+    await expect(loading).toBeVisible({ timeout: 10_000 })
+    const loadingAt = Date.now()
+    await window.waitForTimeout(4_000)
+    await expect(greeting, "greeting must wait for hydrate or the fallback").toHaveCount(0)
+    await expect(greeting).toBeVisible({ timeout: 10_000 })
+    expect(Date.now() - loadingAt).toBeGreaterThan(5_000)
+    await expect(loading).toHaveCount(0)
+    await expect(window.locator('[data-testid="composer-input"]')).toBeEditable()
+    await snap(window, "1024x670-restart-hydrate-timeout-empty")
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+test("⑥ 回灌失败（session.messages 抛错）：立刻回到空态，不停在加载中", async () => {
+  test.setTimeout(150_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = stubEnv()
+  await seedHistory(env, "重启前一句 error")
+  const { app, window, greeting, loading } = await openRelaunched({
+    ...env,
+    ENJOY_DEV_DELAY_SESSION_MESSAGES_MS: "1500",
+    ENJOY_E2E_SESSION_MESSAGES_FAULT: "error"
+  })
+  try {
+    await expect(loading).toBeVisible({ timeout: 10_000 })
+    const loadingAt = Date.now()
+    await expect(greeting).toBeVisible({ timeout: 5_000 })
+    expect(Date.now() - loadingAt, "failure fell through to the 8s fallback").toBeLessThan(5_000)
+    await expect(loading).toHaveCount(0)
+    await snap(window, "1024x670-restart-hydrate-error-empty")
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+test("⑦ 真空会话重启：回灌完（不是靠 8 秒兜底）就出空态问候", async () => {
+  test.setTimeout(150_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = stubEnv()
+  const first = await relaunchElectron(env)
+  try {
+    const window = await firstWindow(first)
+    await expect(window.locator('[data-testid="empty-start-upper"] h1')).toBeVisible({ timeout: 20_000 })
+    await window.waitForTimeout(800)
+  } finally {
+    await closeForRelaunch(first)
+  }
+  const { app, window, greeting, loading } = await openRelaunched({ ...env, ENJOY_DEV_DELAY_SESSION_MESSAGES_MS: "2000" })
+  try {
+    const startedAt = Date.now()
+    await expect(greeting).toBeVisible({ timeout: 15_000 })
+    expect(Date.now() - startedAt, "empty session waited for the 8s fallback").toBeLessThan(7_500)
+    await expect(loading).toHaveCount(0)
+    await expect(window.locator("[data-thread-message]")).toHaveCount(0)
+    await snap(window, "1024x670-restart-empty-session-greeting")
+  } finally {
+    await closeForRelaunch(app)
   }
 })
 

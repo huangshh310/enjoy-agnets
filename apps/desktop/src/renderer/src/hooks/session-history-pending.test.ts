@@ -1,7 +1,14 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { isSessionHistoryHydrated, markSessionHistoryHydrated, sessionHistoryPending } from "./session-history-pending.ts"
+import {
+  forgetSessionHistoryHydrated,
+  isForegroundSessionPicking,
+  isSessionHistoryHydrated,
+  markSessionHistoryHydrated,
+  sessionHistoryPending,
+  setForegroundSessionPicking,
+  subscribeSessionHistory
+} from "./session-history-pending.ts"
 
 const base = { sessionId: "s1", messageCount: 0, running: false, hydrated: false, timedOut: false }
 
@@ -9,7 +16,7 @@ test("选中会话、历史还没回灌：算加载中，不画空态", () => {
   assert.equal(sessionHistoryPending(base), true)
 })
 
-test("回灌完、有消息、在跑、没会话、等超时：都不算加载中", () => {
+test("回灌完、有消息、在跑、没会话、等超时：都不算加载中（超时后回到空态）", () => {
   assert.equal(sessionHistoryPending({ ...base, hydrated: true }), false)
   assert.equal(sessionHistoryPending({ ...base, messageCount: 2 }), false)
   assert.equal(sessionHistoryPending({ ...base, running: true }), false)
@@ -17,27 +24,50 @@ test("回灌完、有消息、在跑、没会话、等超时：都不算加载�
   assert.equal(sessionHistoryPending({ ...base, timedOut: true }), false)
 })
 
-test("工作区挑前台会话期间（还没 sessionId）也算加载中；没在挑就照常空态", () => {
+test("工作区挑前台会话期间（还没 sessionId）也算加载中；没在挑、或超时就照常空态", () => {
   assert.equal(sessionHistoryPending({ ...base, sessionId: null, picking: true }), true)
   assert.equal(sessionHistoryPending({ ...base, sessionId: null, picking: false }), false)
   assert.equal(sessionHistoryPending({ ...base, sessionId: null, picking: true, timedOut: true }), false)
+  assert.equal(sessionHistoryPending({ ...base, sessionId: null, picking: true, messageCount: 1 }), false)
 })
 
-test("打标后即视为已回灌", () => {
-  assert.equal(isSessionHistoryHydrated("s-mark"), false)
+test("打标 / 作废 / picking 都通知订阅者，状态随之变化", () => {
+  let calls = 0
+  const off = subscribeSessionHistory(() => {
+    calls += 1
+  })
   markSessionHistoryHydrated("s-mark")
   assert.equal(isSessionHistoryHydrated("s-mark"), true)
+  markSessionHistoryHydrated("s-mark")
+  assert.equal(calls, 1, "重复打标不重复通知")
+  forgetSessionHistoryHydrated("s-mark")
+  assert.equal(isSessionHistoryHydrated("s-mark"), false)
+  assert.equal(calls, 2)
+  setForegroundSessionPicking(true)
+  assert.equal(isForegroundSessionPicking(), true)
+  setForegroundSessionPicking(false)
+  assert.equal(isForegroundSessionPicking(), false)
+  assert.equal(calls, 4)
+  off()
+  markSessionHistoryHydrated("s-after-off")
+  assert.equal(calls, 4)
 })
 
-test("回灌成功与新建会话两个入口都打标；ChatStage 空态吃这个判定", () => {
-  const hydrate = readFileSync(new URL("./session-hydrate.ts", import.meta.url), "utf8")
-  assert.match(hydrate, /markSessionHistoryHydrated\(input\.sessionId\)/)
-  const created = readFileSync(new URL("./create-window-composer.ts", import.meta.url), "utf8")
-  assert.match(created, /markSessionHistoryHydrated\(sessionId\)/)
-  const stage = readFileSync(new URL("../components/app-shell/chat/chat-stage.tsx", import.meta.url), "utf8")
-  assert.match(stage, /useSessionHistoryPending/)
-  assert.match(stage, /thread-history-loading/)
-  const boot = readFileSync(new URL("./use-agent-session.ts", import.meta.url), "utf8")
-  assert.match(boot, /setForegroundSessionPicking\(true\)/)
-  assert.match(boot, /setForegroundSessionPicking\(false\)/)
+test("A→B→A：切回 A 时旧的回灌标记作废，要等这次回灌；同会话重设、新建窗发布不作废", async () => {
+  const { useChatStore } = await import("../stores/chat-store.ts")
+  useChatStore.setState({ sessionId: null })
+  markSessionHistoryHydrated("ses_new")
+  useChatStore.getState().setSession("ses_new", "新对话")
+  assert.equal(isSessionHistoryHydrated("ses_new"), true, "从无会话发布新建会话不清标记")
+
+  markSessionHistoryHydrated("ses_a")
+  useChatStore.getState().setSession("ses_a", "A")
+  assert.equal(isSessionHistoryHydrated("ses_a"), false, "从 ses_new 切到 A：A 要重新回灌")
+  markSessionHistoryHydrated("ses_a")
+  useChatStore.getState().setSession("ses_a", "A 改名")
+  assert.equal(isSessionHistoryHydrated("ses_a"), true, "同会话重设不作废")
+  markSessionHistoryHydrated("ses_b")
+  useChatStore.getState().setSession("ses_b", "B")
+  useChatStore.getState().setSession("ses_a", "A")
+  assert.equal(isSessionHistoryHydrated("ses_a"), false, "A→B→A：切回 A 等本次回灌")
 })

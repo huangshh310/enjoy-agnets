@@ -32,6 +32,22 @@ export function markSessionHistoryHydrated(sessionId: string | null | undefined)
   emit()
 }
 
+/** 从别的会话切回来（A→B→A）：旧标记作废，等这次回灌，不先闪空态。 */
+export function forgetSessionHistoryHydrated(sessionId: string | null | undefined): void {
+  if (!sessionId || !hydrated.delete(sessionId)) return
+  emit()
+}
+
+export function isForegroundSessionPicking(): boolean {
+  return picking
+}
+
+/** 订阅变更（测试与 hook 共用）。 */
+export function subscribeSessionHistory(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
 export function isSessionHistoryHydrated(sessionId: string): boolean {
   return hydrated.has(sessionId)
 }
@@ -48,21 +64,21 @@ export function sessionHistoryPending(input: {
 }): boolean {
   if (input.messageCount > 0 || input.running) return false
   if (!input.sessionId) return Boolean(input.picking) && !input.timedOut
-  if (input.messageCount > 0 || input.running) return false
   return !input.hydrated && !input.timedOut
 }
 
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
 export function useSessionHistoryPending(sessionId: string | null, messageCount: number, running: boolean): boolean {
-  useSyncExternalStore(subscribe, () => version)
+  useSyncExternalStore(subscribeSessionHistory, () => version)
   const isHydrated = sessionId ? hydrated.has(sessionId) : false
   const key = sessionId ?? (picking ? "__picking__" : null)
   const waiting = key !== null && !isHydrated
   const [timedOutFor, setTimedOutFor] = useState<string | null>(null)
+  const [prevKey, setPrevKey] = useState(key)
+  if (prevKey !== key) {
+    // 换了会话（含 A→B→A 切回）：上一轮的超时不算数，重新等。
+    setPrevKey(key)
+    setTimedOutFor(null)
+  }
   useEffect(() => {
     if (!waiting || key === null) return
     const timer = window.setTimeout(() => setTimedOutFor(key), HISTORY_PENDING_MAX_MS)

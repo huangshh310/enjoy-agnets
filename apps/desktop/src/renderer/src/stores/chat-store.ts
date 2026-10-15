@@ -15,6 +15,7 @@ import {
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-restart-notice"
+import { forgetSessionHistoryHydrated } from "../hooks/session-history-pending"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
@@ -349,7 +350,11 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       expandedIds: [workspace.id]
     })
   },
-  setSession: (sessionId, sessionTitle) =>
+  setSession: (sessionId, sessionTitle) => {
+    // 从另一个会话切过来：这个会话之前的「已回灌」标记作废，等本次回灌（luna/leo #157：A→B→A 不闪空态）。
+    // 从「无会话」（新建窗）发布时不清：publishCreatedComposer 刚打过标。
+    const previous = get().sessionId
+    if (previous && previous !== sessionId) forgetSessionHistoryHydrated(sessionId)
     set((state) => ({
       sessionId,
       sessionTitle,
@@ -357,7 +362,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )
-    })),
+    }))
+  },
   setMessages: (messages) => set({ messages })
 })))
 

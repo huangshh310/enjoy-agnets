@@ -2,6 +2,7 @@
  * 本机 CLI 面板：导入 Agent 侧 ACP 会话。未广告 list 则不画。
  * 列失败只走人话，不把 JS 异常原文写进界面。
  */
+import { markSessionHistoryHydrated } from "@renderer/hooks/session-history-pending"
 import { useEffect, useState } from "react"
 import type { AcpRemoteSession } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -66,6 +67,8 @@ export function AcpSessionImport({ runtimeId }: { runtimeId: string }) {
       store.setRuntimeId(runtimeId)
       store.setSessionRuntimes({ ...store.sessionRuntimes, [created.id]: runtimeId })
       store.setMessages([])
+      // 导入后直接以空线程展示，不走 loadSession 回灌：这里就打「已回灌」，否则要白屏等 8 秒兜底（leo #157）。
+      markSessionHistoryHydrated(created.id)
     } catch {
       setImportError(t("chat.importAcpFailed"))
     } finally {
