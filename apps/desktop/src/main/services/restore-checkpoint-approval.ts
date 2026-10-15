@@ -163,7 +163,8 @@ export function endRestoredRunWithoutSdkReply(
       sessionId: sessionId ?? run?.input.sessionId,
       message: RESTORE_NO_MATCHING_CODE,
       code: RESTORE_NO_MATCHING_CODE,
-      turn: { workflow: "todo", attention: "neutral" }
+      turn: { workflow: "todo", attention: "neutral" },
+      preOutput: false
     })
   }
   if (run) deleteActiveRun(runId)

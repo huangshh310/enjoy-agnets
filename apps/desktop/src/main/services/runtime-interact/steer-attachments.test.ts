@@ -65,3 +65,19 @@ test("leo MUST 2：ACP 运行时带图纠偏被拒（不落库、不入队）；
   await performSteer({ sessionId: "s", text: "停" }, "claude", d)
   assert.equal(queued.length, 1)
 })
+
+test("主线决定：模型看不了图（编图抛 model_needs_vision）→ 与 ACP 同样回 STEER_IMAGES_UNSUPPORTED，不落库、不入队", async () => {
+  const { persisted, queued, d } = deps()
+  const visionless = { ...d, append: async () => { throw new Error("model_needs_vision") } }
+  await assert.rejects(
+    performSteer({ sessionId: "s", text: "看这张", attachments: ["ast_1"] }, "enjoy-local", visionless),
+    /STEER_IMAGES_UNSUPPORTED/
+  )
+  assert.equal(persisted.length + queued.length, 0)
+  // 别的编图错误照旧原样抛（排队项由 renderer 放回队首）。
+  const broken = { ...d, append: async () => { throw new Error("ASSET_READ_FAILED") } }
+  await assert.rejects(
+    performSteer({ sessionId: "s", text: "看这张", attachments: ["ast_1"] }, "enjoy-local", broken),
+    /ASSET_READ_FAILED/
+  )
+})

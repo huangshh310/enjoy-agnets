@@ -17,6 +17,9 @@ import { lastTurnDeniedOnly } from "@renderer/components/ai-chat/right-pane/view
 import { omitCompleteFromTurn } from "@renderer/components/ai-chat/review-gate/turn-from-event"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
+import { noteTurnSettled } from "../turn-settled"
+import { noteBackgroundPreOutputRollback } from "../after-pre-output-rollback"
+import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
 
 export { belongsToForeground } from "./foreground-event"
 
@@ -41,7 +44,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
       omitComplete: omitCompleteFromTurn(
         event,
         foreground && event.type === "run.end" && lastTurnDeniedOnly(storeEarly.messages)
-      )
+      ),
+      foreground
     })
   }
 
@@ -76,6 +80,12 @@ export function dispatchAgentEvent(event: StreamEvent): void {
     return
   }
   if (sessionId) useAttentionStore.getState().applyParkEvent(sessionId, event)
+  // leo r3 M2：后台这一轮站住（出字 / run.end）同样让首句自动标题落定。
+  // 标题精炼（completion）也走这条停车分支：它的 run.end 不算首句站住，否则回滚时标题撤不回。
+  const nonAgentRun = isNonAgentRunKind(event, rememberedKind)
+  noteTurnSettled(sessionId, event, nonAgentRun)
+  // leo r3 M4：后台出字前回滚——main 已把稿和图写回草稿，renderer 缓存 / 内存草稿重读合并。
+  if (!nonAgentRun && noteBackgroundRunError(sessionId, event)) noteBackgroundPreOutputRollback(sessionId, runId)
   syncReviewGateAfterEvent(event, sessionId, false)
 }
 

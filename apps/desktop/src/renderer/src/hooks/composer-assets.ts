@@ -73,6 +73,27 @@ export function clearComposerAssets() {
   notify()
 }
 
+/**
+ * jojo P1（#136 gate2）：出字前回滚把本轮用户句的图还回输入框——并进现有附件（按 id 去重），
+ * 并按当前会话落草稿附件（session_draft_assets），切走 / 重启都还在。blob: 预览已随发送释放，去掉让缩略图按 id 重读。
+ */
+export function restoreComposerAssets(items: QueuedComposerAsset[]) {
+  if (items.length === 0) return
+  const seen = new Set(pending.map((item) => item.id))
+  const added = items
+    .filter((item) => item.id && !seen.has(item.id))
+    .map((item) => {
+      if (!item.url?.startsWith("blob:")) return { ...item }
+      const rest = { ...item }
+      delete rest.url
+      return rest
+    })
+  if (added.length === 0) return
+  pending = [...pending, ...added]
+  notify()
+  persistUserEdit?.([...pending])
+}
+
 export function setComposerAssets(items: QueuedComposerAsset[]) {
   pending = [...items]
   notify()

@@ -1,0 +1,405 @@
+/**
+ * jojo P1 / P2（#136 gate2）：出字前回滚走 store.applyStreamEvent 真实路径。
+ * - P1：本轮用户句带的图跟字一起回输入框，并按本会话落草稿附件（不只是字）。
+ * - P2：新会话第一句被回滚：自动标题回到发之前的占位，并作废还在跑的标题精炼。
+ */
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { beforeEach, test } from "node:test"
+
+const { useChatStore } = await import("./chat-store.ts")
+const { resetDiscardedPreOutputRunsForTest } = await import("./discarded-pre-output-runs.ts")
+const { listComposerAssets, setComposerAssets, setComposerAssetPersister } = await import("../hooks/composer-assets.ts")
+const { applyOptimisticTitle, resetSessionTitleRollbackForTest } = await import("../hooks/session-title.ts")
+
+const persisted: Array<{ sessionId: string | null; ids: string[] }> = []
+
+beforeEach(() => {
+  resetDiscardedPreOutputRunsForTest()
+  resetSessionTitleRollbackForTest()
+  setComposerAssets([])
+  persisted.length = 0
+  setComposerAssetPersister((items) =>
+    persisted.push({ sessionId: useChatStore.getState().sessionId, ids: items.map((item) => item.id) })
+  )
+})
+
+const preOutputError = (runId: string) =>
+  ({ type: "run.error", runId, message: "provider_unreachable", code: "provider_unreachable", preOutput: true }) as never
+
+function seedFirstTurn(sessionId: string, runId: string) {
+  useChatStore.setState({
+    sessionId,
+    sessionTitle: "新对话",
+    repositories: [],
+    running: true,
+    runId,
+    composer: "",
+    error: null,
+    pendingStreamEvents: [],
+    messages: []
+  } as never)
+  applyOptimisticTitle("帮我看看这张图里的报错")
+  useChatStore.setState({
+    messages: [
+      {
+        id: "u1",
+        role: "user",
+        content: "帮我看看这张图里的报错",
+        createdAt: 1,
+        assets: [
+          { assetId: "ast_a", mediaType: "image/png", name: "a.png", url: "blob:revoked-a" },
+          { assetId: "ast_b", mediaType: "image/jpeg", name: "b.jpg" }
+        ]
+      },
+      { id: "a1", role: "assistant", content: "", createdAt: 2, streaming: true }
+    ]
+  } as never)
+}
+
+test("P1：出字前回滚后，图和字一起回输入框，并落本会话草稿附件", () => {
+  seedFirstTurn("ses_img", "run_img")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_img"))
+  const state = useChatStore.getState()
+  assert.deepEqual(state.messages, [])
+  assert.equal(state.composer, "帮我看看这张图里的报错")
+  const assets = listComposerAssets()
+  assert.deepEqual(assets.map((a) => a.id), ["ast_a", "ast_b"])
+  assert.equal(assets[0]?.url, undefined, "已释放的 blob: 预览去掉，缩略图按 id 重读")
+  assert.equal(assets[1]?.mediaType, "image/jpeg")
+  assert.deepEqual(persisted.at(-1), { sessionId: "ses_img", ids: ["ast_a", "ast_b"] })
+})
+
+test("P1：输入框里已有别的附件时并进去，按 id 去重", () => {
+  seedFirstTurn("ses_merge", "run_merge")
+  setComposerAssets([{ id: "ast_new", name: "new.png" }, { id: "ast_b", name: "b.jpg" }])
+  useChatStore.getState().applyStreamEvent(preOutputError("run_merge"))
+  assert.deepEqual(listComposerAssets().map((a) => a.id), ["ast_new", "ast_b", "ast_a"])
+})
+
+test("P2：新会话第一句被回滚：标题回到发之前的占位（侧栏和标题栏）", () => {
+  seedFirstTurn("ses_title", "run_title")
+  useChatStore.setState({ repositories: [{ id: "ses_title", name: "帮我看看这张图里的报错" }] } as never)
+  assert.notEqual(useChatStore.getState().sessionTitle, "新对话", "乐观标题已上屏")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_title"))
+  assert.equal(useChatStore.getState().sessionTitle, "新对话")
+})
+
+test("P2：线程里还有更早的用户句：标题不是这一句起的，不动", () => {
+  seedFirstTurn("ses_keep", "run_keep")
+  useChatStore.setState({
+    sessionTitle: "早先的标题",
+    messages: [
+      { id: "u0", role: "user", content: "早先", createdAt: 0 },
+      { id: "a0", role: "assistant", content: "早先的回复", createdAt: 0 },
+      ...useChatStore.getState().messages
+    ]
+  } as never)
+  useChatStore.getState().applyStreamEvent(preOutputError("run_keep"))
+  assert.equal(useChatStore.getState().sessionTitle, "早先的标题")
+})
+
+test("P2：标题精炼还在跑时第一句被回滚：精炼回来也不改名（库和界面都留在占位）", async () => {
+  const { completeSessionTitle } = await import("../hooks/session-title.ts")
+  const listeners = new Set<(event: unknown) => void>()
+  const renames: Array<{ sessionId: string; title: string }> = []
+  const g = globalThis as { window?: unknown }
+  const hadWindow = "window" in g
+  const prevWindow = g.window
+  g.window = {
+    ide: {
+      settings: { get: async () => ({ defaultModelId: "m_title" }) },
+      ai: { generate: async () => ({ runId: "run_refine" }) },
+      agent: {
+        onEvent: (cb: (event: unknown) => void) => {
+          listeners.add(cb)
+          return () => listeners.delete(cb)
+        }
+      },
+      session: {
+        rename: async (input: { sessionId: string; title: string }) => {
+          renames.push(input)
+          return { title: input.title }
+        }
+      }
+    }
+  }
+  try {
+    seedFirstTurn("ses_refine", "run_turn")
+    useChatStore.setState({ modelId: null, preferredModelId: "m_title", runtimeId: null } as never)
+    const refining = completeSessionTitle("帮我看看这张图里的报错")
+    for (let i = 0; i < 20 && listeners.size === 0; i++) await new Promise((r) => setTimeout(r, 5))
+    assert.equal(listeners.size, 1, "精炼已开跑")
+    useChatStore.getState().applyStreamEvent(preOutputError("run_turn"))
+    await new Promise((r) => setTimeout(r, 5))
+    for (const cb of listeners) {
+      cb({ type: "text.delta", runId: "run_refine", text: "截图报错排查" })
+      cb({ type: "run.end", runId: "run_refine" })
+    }
+    await refining
+    assert.equal(useChatStore.getState().sessionTitle, "新对话")
+    assert.equal(renames.at(-1)?.title, "新对话", "库里也改回占位")
+    assert.ok(!renames.some((r) => r.title === "截图报错排查"), "精炼结果不得落库")
+  } finally {
+    if (hadWindow) g.window = prevWindow
+    else delete g.window
+  }
+})
+
+test("P2：发送被挡、撤掉乐观首句（failComposerSend dropOptimisticUser）：标题也复原", async () => {
+  const { failComposerSend } = await import("../hooks/runtime-interact/fail-composer-send.ts")
+  seedFirstTurn("ses_blocked", "run_blocked")
+  useChatStore.setState({ messages: [useChatStore.getState().messages[0]!] } as never)
+  failComposerSend({
+    text: "帮我看看这张图里的报错",
+    reason: "credential_invalid",
+    sessionId: "ses_blocked",
+    dropOptimisticUser: true
+  })
+  assert.deepEqual(useChatStore.getState().messages, [])
+  assert.equal(useChatStore.getState().sessionTitle, "新对话")
+})
+
+test("leo r3 M1：发出后又打了字，出字前回滚：还回的稿并进去，不覆盖后打的字", () => {
+  seedFirstTurn("ses_typed", "run_typed")
+  useChatStore.setState({ composer: "我后来又补了一句" } as never)
+  useChatStore.getState().applyStreamEvent(preOutputError("run_typed"))
+  assert.equal(useChatStore.getState().composer, "我后来又补了一句\n帮我看看这张图里的报错")
+})
+
+test("leo r3 M1：输入框 DOM 比 store 新（写回锁中）：按 DOM 全文合并，并写回 DOM", async () => {
+  const { setComposerIo } = await import("./composer-io.ts")
+  const written: string[] = []
+  setComposerIo({ read: () => "DOM 里刚打的字", write: (text) => written.push(text) })
+  try {
+    seedFirstTurn("ses_dom", "run_dom")
+    useChatStore.setState({ composer: "DOM 里" } as never)
+    useChatStore.getState().applyStreamEvent(preOutputError("run_dom"))
+    assert.equal(useChatStore.getState().composer, "DOM 里刚打的字\n帮我看看这张图里的报错")
+    assert.deepEqual(written, ["DOM 里刚打的字\n帮我看看这张图里的报错"])
+  } finally {
+    setComposerIo(null)
+  }
+})
+
+test("leo r3 M1：queue-composer-send 载入即注册输入框读写（回滚合并读的是输入框当下全文）", async () => {
+  const { readComposerForMerge, setComposerIo } = await import("./composer-io.ts")
+  setComposerIo(null)
+  await import(`../hooks/queue-composer-send.ts?register=${Date.now()}`)
+  useChatStore.setState({ composer: "输入框当下" } as never)
+  assert.equal(readComposerForMerge("回落值"), "输入框当下", "无 DOM 时 readComposerDomText 回落 store，而不是没注册的回落值")
+})
+
+function rerunFirstTurnAfterSuccess(sessionId: string, runId: string, title: string) {
+  // 「从这里重来」：线程里只剩重发的那一句 + 空助手，正在跑新的一轮。
+  useChatStore.setState({
+    sessionTitle: title,
+    repositories: [{ id: sessionId, name: title }],
+    running: true,
+    runId,
+    composer: "",
+    messages: [
+      { id: "u_again", role: "user", content: "帮我看看这张图里的报错", createdAt: 10 },
+      { id: "a_again", role: "assistant", content: "", createdAt: 11, streaming: true }
+    ]
+  } as never)
+}
+
+for (const settle of [
+  { name: "run.end", event: (runId: string) => ({ type: "run.end", runId }) },
+  { name: "text.delta", event: (runId: string) => ({ type: "text.delta", runId, text: "好的" }) }
+]) {
+  test(`leo r3 M2：首句已站住（${settle.name}）后「从这里重来」再出字前失败：真标题不被撤回成「新对话」`, () => {
+    seedFirstTurn("ses_real", "run_first")
+    // 真标题就是首句乐观题本身（没精炼 / 精炼失败）：只有「站住即清记录」能保护它。
+    const real = useChatStore.getState().sessionTitle
+    assert.notEqual(real, "新对话")
+    useChatStore.getState().applyStreamEvent(settle.event("run_first") as never)
+    rerunFirstTurnAfterSuccess("ses_real", "run_again", real)
+    useChatStore.getState().applyStreamEvent(preOutputError("run_again"))
+    assert.equal(useChatStore.getState().sessionTitle, real)
+    assert.equal(useChatStore.getState().repositories.find((r) => r.id === "ses_real")?.name, real)
+  })
+}
+
+test("leo r3 M2：首句还没站住、但当前标题已不是本轮自动写的（用户手改）：回滚不撤", () => {
+  seedFirstTurn("ses_manual", "run_manual")
+  useChatStore.setState({ sessionTitle: "我手改的标题", repositories: [{ id: "ses_manual", name: "我手改的标题" }] } as never)
+  useChatStore.getState().applyStreamEvent(preOutputError("run_manual"))
+  assert.equal(useChatStore.getState().sessionTitle, "我手改的标题")
+})
+
+test("leo r3 M2：后台会话 run.end 也让首句标题落定（dispatchAgentEvent 停车分支）", async () => {
+  const { emitTurnProducedOutput } = await import("./pre-output-rollback-listeners.ts")
+  const { restoreTitleAfterPreOutputRollback } = await import("../hooks/session-title.ts")
+  seedFirstTurn("ses_bg", "run_bg")
+  const optimistic = useChatStore.getState().sessionTitle
+  emitTurnProducedOutput("ses_bg")
+  restoreTitleAfterPreOutputRollback({ sessionId: "ses_bg", userTurnsLeft: 0 })
+  assert.equal(useChatStore.getState().sessionTitle, optimistic)
+})
+
+test("jojo P2 / leo r3 M2：精炼先回来改成生成题（stub-title）、之后才出字前失败：认得出是本轮写的，撤回「新对话」", async () => {
+  const { completeSessionTitle } = await import("../hooks/session-title.ts")
+  const listeners = new Set<(event: unknown) => void>()
+  const g = globalThis as { window?: unknown }
+  const hadWindow = "window" in g
+  const prevWindow = g.window
+  g.window = {
+    ide: {
+      settings: { get: async () => ({ defaultModelId: "m_title" }) },
+      ai: { generate: async () => ({ runId: "run_refine2" }) },
+      agent: {
+        onEvent: (cb: (event: unknown) => void) => {
+          listeners.add(cb)
+          return () => listeners.delete(cb)
+        }
+      },
+      session: { rename: async (input: { title: string }) => ({ title: input.title }) }
+    }
+  }
+  try {
+    seedFirstTurn("ses_stub", "run_stub")
+    useChatStore.setState({ modelId: null, preferredModelId: "m_title", runtimeId: null } as never)
+    const refining = completeSessionTitle("帮我看看这张图里的报错")
+    for (let i = 0; i < 20 && listeners.size === 0; i++) await new Promise((r) => setTimeout(r, 5))
+    for (const cb of listeners) {
+      cb({ type: "text.delta", runId: "run_refine2", text: "stub-title" })
+      cb({ type: "run.end", runId: "run_refine2" })
+    }
+    await refining
+    assert.equal(useChatStore.getState().sessionTitle, "stub-title")
+    useChatStore.getState().applyStreamEvent(preOutputError("run_stub"))
+    assert.equal(useChatStore.getState().sessionTitle, "新对话")
+  } finally {
+    if (hadWindow) g.window = prevWindow
+    else delete g.window
+  }
+})
+
+// luna（main c849e3f4 巡检 P1）：出字前失败丢图的三种情况。
+const { restoredImagesDetail } = await import("../lib/usage/send-restore-detail.ts")
+const { retryKeptDraftPlan } = await import("../hooks/retry-kept-draft-plan.ts")
+const { zhChat } = await import("../i18n/catalogs/zh/chat.ts")
+const zhT = (key: string) => (zhChat as Record<string, string>)[key.replace(/^chat\./, "")] ?? key
+
+const { restoredImagesFor } = await import("./restored-images-snapshot.ts")
+
+/** 白卡第二行（与 useRestoredImagesDetail 同一算法）：按还稿时的快照，不数输入框。 */
+function noticeDetailAfterRollback(): string | null {
+  const snap = restoredImagesFor(useChatStore.getState().sessionId)
+  return snap ? restoredImagesDetail(zhT as never, snap.images, snap.hasText) : null
+}
+
+function seedImageOnlyTurn(sessionId: string, runId: string) {
+  useChatStore.setState({
+    sessionId,
+    sessionTitle: "新对话",
+    repositories: [],
+    running: true,
+    runId,
+    composer: "",
+    error: null,
+    pendingStreamEvents: [],
+    messages: [
+      {
+        id: "u1",
+        role: "user",
+        content: "",
+        createdAt: 1,
+        assets: [{ assetId: "ast_only", mediaType: "image/png", name: "only.png", url: "blob:only" }]
+      },
+      { id: "a1", role: "assistant", content: "", createdAt: 2, streaming: true }
+    ]
+  } as never)
+}
+
+test("luna ①：只图发送出字前失败：图回输入框并落草稿；白卡说「图片已放回输入框」；再发一次重发那张图", () => {
+  seedImageOnlyTurn("ses_only", "run_only")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_only"))
+  const state = useChatStore.getState()
+  assert.deepEqual(state.messages, [])
+  assert.equal(state.composer, "")
+  assert.deepEqual(listComposerAssets().map((a) => a.id), ["ast_only"])
+  assert.deepEqual(persisted.at(-1), { sessionId: "ses_only", ids: ["ast_only"] })
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。")
+  assert.equal(
+    retryKeptDraftPlan({
+      kept: (() => {
+        const kept = restoredImagesFor("ses_only")?.kept
+        return kept ? { text: kept.text, assetIds: kept.assets.map((a) => a.id) } : null
+      })(),
+      lastUserPending: false,
+      composer: state.composer,
+      composerAssetIds: listComposerAssets().map((a) => a.id)
+    }),
+    "resend-kept",
+    "只有图的那一句也得重发，不能因为没字就什么都不做"
+  )
+  assert.deepEqual(restoredImagesFor("ses_only")?.kept?.assets.map((a) => a.id), ["ast_only"])
+})
+
+test("luna ②：有字有图出字前失败：字和图都回来；白卡说「文字和图片已放回输入框」", () => {
+  seedFirstTurn("ses_both", "run_both")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_both"))
+  assert.equal(useChatStore.getState().composer, "帮我看看这张图里的报错")
+  assert.deepEqual(listComposerAssets().map((a) => a.id), ["ast_a", "ast_b"])
+  assert.equal(noticeDetailAfterRollback(), "文字和图片已放回输入框，可以直接再发。")
+})
+
+test("白卡第二行：没图不加；文案键与看门狗同一对（不另起新句）", () => {
+  assert.equal(restoredImagesDetail(zhT as never, 0, true), null)
+  assert.equal(restoredImagesDetail((k: string) => k, 1, false), "chat.sendFailedRestoreImageOnlyOne")
+  assert.equal(restoredImagesDetail((k: string) => k, 2, false), "chat.sendFailedRestoreImagesOnly")
+  assert.equal(restoredImagesDetail((k: string) => k, 2, true), "chat.sendFailedRestoreWithImages")
+})
+
+test("leo r4 soft4：白卡第二行按还稿时快照——回滚后再贴的图不算；只回了字的回滚之后贴图也不说「文字和图片」", () => {
+  seedImageOnlyTurn("ses_snap1", "run_snap1")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_snap1"))
+  setComposerAssets([...listComposerAssets(), { id: "ast_later", name: "later.png", mediaType: "image/png" }])
+  useChatStore.getState().setComposer("回滚后补的字")
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "按还回时：只有图")
+
+  // 只回了字的回滚：之后贴图，白卡不加第二行。
+  useChatStore.setState({
+    sessionId: "ses_snap2",
+    running: true,
+    runId: "run_snap2",
+    composer: "",
+    error: null,
+    pendingStreamEvents: [],
+    messages: [
+      { id: "u2", role: "user", content: "只有字", createdAt: 1 },
+      { id: "a2", role: "assistant", content: "", createdAt: 2, streaming: true }
+    ]
+  } as never)
+  setComposerAssets([])
+  useChatStore.getState().applyStreamEvent(preOutputError("run_snap2"))
+  setComposerAssets([{ id: "ast_after", name: "after.png", mediaType: "image/png" }])
+  assert.equal(noticeDetailAfterRollback(), null)
+
+  // 换到别的会话：不带过去。
+  useChatStore.setState({ sessionId: "ses_other" } as never)
+  assert.equal(noticeDetailAfterRollback(), null)
+})
+
+test("leo r4 soft4：白卡 hook 读快照不读输入框；新一轮开跑清快照（接线断言）", () => {
+  const hook = readFileSync(new URL("../components/ai-chat/thread/use-restored-images-detail.ts", import.meta.url), "utf8")
+  const body = hook.slice(hook.indexOf("export function useRestoredImagesDetail"))
+  assert.match(body, /useSyncExternalStore\(subscribeRestoredImages, getRestoredImagesSnapshots\)/)
+  assert.doesNotMatch(body, /useRestoredImageCount|state\.composer/)
+  const store = readFileSync(new URL("./chat-store.ts", import.meta.url), "utf8")
+  assert.match(store, /if \(patch\.running === true\) clearRestoredImages\(sessionId\)/)
+})
+
+test("luna 锁定文案 + leo r5：闸拦不再靠 setError 清快照（切会话的 setError(null) 不丢快照）；发起新一发时清本会话快照（接线断言，行为见 retry-kept-draft.behavior）", () => {
+  seedImageOnlyTurn("ses_gate", "run_gate")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_gate"))
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "回滚还图：有这一行")
+  useChatStore.getState().setError(null)
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。", "切会话清红卡不丢快照")
+  const send = readFileSync(new URL("../hooks/runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
+  const clearAt = send.indexOf("clearRestoredImages(store.sessionId)")
+  assert.ok(clearAt > 0 && clearAt < send.indexOf("if (!guardComposerSend(store))"), "闸判之前清")
+})

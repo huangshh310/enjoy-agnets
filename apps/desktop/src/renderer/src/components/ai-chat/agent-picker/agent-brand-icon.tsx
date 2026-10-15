@@ -1,4 +1,3 @@
-import { AgentToolId } from "@enjoy-agents/ipc-contract"
 import {
   Amp,
   Antigravity,
@@ -71,9 +70,7 @@ function AgentFallbackMark({ id, size, className }: { id: string; size: number; 
   )
 }
 
-export function isAgentToolId(id: string): id is AgentToolId {
-  return AgentToolId.safeParse(id).success
-}
+export { isAgentToolId } from "./is-agent-tool-id"
 
 function fallbackLetter(id: string): string {
   const slug = id.startsWith("custom:") ? id.slice("custom:".length) : id

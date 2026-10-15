@@ -18,7 +18,19 @@ import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-re
 import { noteSessionOpened } from "../hooks/session-history-pending"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
+import {
+  isDiscardedPreOutputRun,
+  rememberDiscardedPreOutputRun
+} from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
+import { afterPreOutputRollback } from "./after-pre-output-rollback"
+import { clearRestoredImages } from "./restored-images-snapshot"
+import { readComposerForMerge, writeComposerAfterMerge } from "./composer-io"
+import { noteTurnSettled } from "./turn-settled"
+import { noteSentUserTurn } from "./sent-user-turns"
+import { mergeComposerText } from "../lib/merge-composer-text"
+import { isImmediatePreOutputError } from "./pre-output-rollback"
+import { errorAfterOptimisticSend, errorAfterStreamEvent } from "./resend-notice"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
 import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
 import { withErrorRetryInvariant } from "./error-retry-invariant"
@@ -178,13 +190,19 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       })
       return
     }
-    if (shouldBufferComposerEvent(get().running, get().runId)) {
+    const eventRunId = "runId" in event ? event.runId : undefined
+    if (isDiscardedPreOutputRun(eventRunId)) return
+    if (shouldBufferComposerEvent(get().running, get().runId) && !isImmediatePreOutputError(event)) {
       const queued = get().pendingStreamEvents
       if (queued.length >= 80) return
       set({ pendingStreamEvents: [...queued, event] })
       return
     }
-    const patch = reduceStreamEvent(get().messages, event, get().runId)
+    const beforeCount = get().messages.length
+    const patch = reduceStreamEvent(get().messages, event, get().runId, get().running)
+    if (event.type === "run.error" && patch.messages.length < beforeCount) {
+      rememberDiscardedPreOutputRun(event.runId)
+    }
     const sessionId = get().sessionId
     const noticeSessionId = sessionId ?? event.sessionId
     if (patch.notice !== undefined && noticeSessionId && isRestoreFamilyCode(patch.notice)) {
@@ -193,6 +211,12 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     if (patch.heldResolved && sessionId) {
       holdApprovalResolved(sessionId, patch.heldResolved)
     }
+    const error = errorAfterStreamEvent(get().error, event, patch.error)
+    // leo r3 M1：还稿不得整段覆盖用户之后打的字——与输入框当下全文合并（同 restoreComposerDraft）。
+    const composer =
+      patch.composer !== undefined
+        ? mergeComposerText(patch.composer, readComposerForMerge(get().composer))
+        : undefined
     set({
       messages: patch.messages,
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
@@ -202,12 +226,18 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
       ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
-      ...(patch.error !== undefined ? { error: patch.error } : {}),
+      ...(error !== undefined ? { error } : {}),
       ...(patch.notice !== undefined ? { notice: patch.notice } : {}),
-      ...(patch.composer !== undefined ? { composer: patch.composer } : {})
+      ...(composer !== undefined ? { composer } : {})
     })
+    if (composer !== undefined) writeComposerAfterMerge(composer)
+    // leo r5 MUST 2：只清开跑的这个会话的还稿快照，别的会话的留着。
+    if (patch.running === true) clearRestoredImages(sessionId)
+    if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages, patch.composer ?? "")
+    else noteTurnSettled(sessionId, event)
   },
   appendUserMessage: (content, assets) => {
+    const first = !get().messages.some((message) => message.role === "user")
     const messages: ThreadMessage[] = [
       ...get().messages,
       {
@@ -218,7 +248,9 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
         ...(assets?.length ? { assets } : {})
       }
     ]
-    set({ messages, composer: "", error: null, notice: null })
+    set({ messages, composer: "", error: errorAfterOptimisticSend(get().error), notice: null })
+    // leo r5 MUST 2：记下这一句（后台回滚时拿它拍还稿快照）。
+    noteSentUserTurn(get().sessionId, content, assets, first)
     return messages
   },
   setRunning: (running, runId = null) => {
@@ -237,8 +269,11 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     for (const event of queued) get().applyStreamEvent(event)
   },
   setHasKey: (hasKey) => set({ hasKey }),
-  setError: (error, retryTarget) =>
-    set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null }),
+  setError: (error, retryTarget) => {
+    // leo r5 MUST 2：不在这里清还稿快照——切会话会 setError(null)，卡切回来还在，快照不能丢。
+    // 闸拦发送不带「…已放回」由 sendComposerOnce 在发起这一发时清本会话快照保证（luna 锁定文案）。
+    set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null })
+  },
   setPreparingHint: (preparingHint, sessionId) => set({ preparingHint, preparingSessionId: preparingHint ? (sessionId === undefined ? get().sessionId : sessionId) : null }),
   setNotice: (notice) => {
     const sessionId = get().sessionId

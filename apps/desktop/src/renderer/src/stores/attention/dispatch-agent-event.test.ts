@@ -137,3 +137,22 @@ test("空闲时标题补全 run.error 不归前台，即使缺 kind", () => {
     false
   )
 })
+
+test("当前会话出字前失败即使空闲也归前台", () => {
+  assert.equal(
+    belongsToForeground(
+      {
+        type: "run.error",
+        runId: "run_fail",
+        message: "provider_unreachable",
+        code: "provider_unreachable",
+        preOutput: true
+      },
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    true
+  )
+})

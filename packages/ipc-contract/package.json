@@ -23,6 +23,7 @@
     "./chat-readiness": "./src/chat-readiness.ts",
     "./automations": "./src/automations.ts",
     "./pre-output-failure": "./src/pre-output-failure.ts",
+    "./composer-merge": "./src/composer-merge.ts",
     "./credential-check": "./src/credential-check.ts",
     "./host-inject": "./src/host-inject.ts",
     "./stream-event": "./src/stream-event.ts",

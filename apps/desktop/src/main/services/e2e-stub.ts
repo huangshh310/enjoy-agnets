@@ -64,7 +64,17 @@ export {
   STUB_WRITE_PATH,
   writeStubApprovedFile
 } from "./e2e-stub-write.ts"
-import { e2eSendFixture, e2eSendFixtureError } from "./e2e-send-fixture.ts"
+import { e2eSendFixture, e2eSendFixtureDelayMs, e2eSendFixtureError } from "./e2e-send-fixture.ts"
+
+function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer)
+      resolve()
+    }, { once: true })
+  })
+}
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
 export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
@@ -195,7 +205,11 @@ export async function* createE2eStubStream(
   const real = lastRealUser(messages)
   const prompt = userText(real)
   const sendFail = e2eSendFixture(opts?.env ?? process.env, e2eStubPackaged(), opts?.userData)
-  if (sendFail) throw e2eSendFixtureError(sendFail)
+  if (sendFail) {
+    const delay = e2eSendFixtureDelayMs(opts?.env ?? process.env)
+    if (delay > 0) await abortableDelay(delay, signal)
+    throw e2eSendFixtureError(sendFail)
+  }
   if (shouldFailStubStore(prompt)) {
     throw new Error("INTERNAL_STORE_ERROR")
   }

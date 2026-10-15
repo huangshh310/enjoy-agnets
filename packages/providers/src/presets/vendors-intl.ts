@@ -13,6 +13,7 @@ export const INTL_VENDOR_PRESETS: ProviderPreset[] = [
     requiresKey: true,
     docsURL: "https://api-docs.deepseek.com/",
     keysURL: "https://platform.deepseek.com/api_keys",
+    billingURL: "https://platform.deepseek.com/top_up",
     endpoints: {
       openai: "https://api.deepseek.com/v1",
       "openai-responses": "https://api.deepseek.com/v1",
@@ -34,6 +35,7 @@ export const INTL_VENDOR_PRESETS: ProviderPreset[] = [
     requiresKey: true,
     docsURL: "https://platform.openai.com/docs",
     keysURL: "https://platform.openai.com/api-keys",
+    billingURL: "https://platform.openai.com/settings/organization/billing/overview",
     endpoints: {
       openai: "https://api.openai.com/v1",
       "openai-responses": "https://api.openai.com/v1"
@@ -53,6 +55,7 @@ export const INTL_VENDOR_PRESETS: ProviderPreset[] = [
     requiresKey: true,
     docsURL: "https://docs.anthropic.com/",
     keysURL: "https://console.anthropic.com/settings/keys",
+    billingURL: "https://console.anthropic.com/settings/billing",
     headerHints: ["anthropic-workspace-id"],
     endpoints: { anthropic: "https://api.anthropic.com" },
     models: [

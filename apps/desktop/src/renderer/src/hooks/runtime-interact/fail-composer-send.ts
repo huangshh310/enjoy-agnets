@@ -1,10 +1,12 @@
 /**
  * 发送失败：还文、可读 notice、清转圈停车；空新会话不留在侧栏。
  */
+import { restoreDraftIntoSession } from "@renderer/lib/session-draft-storage"
 import { rollbackComposerStartGate } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { useAttentionStore } from "../../stores/attention/attention-store"
 import { useChatStore } from "../../stores/chat-store"
 import { messageHasBody } from "./composer-can-send"
+import { emitPreOutputRolledBack } from "../../stores/pre-output-rollback-listeners"
 import { discardCreatedSession } from "../discard-created-session"
 import { dropEmptyPendingAssistant } from "../composer-run-control"
 import {
@@ -32,6 +34,16 @@ export function failComposerSend(input: {
 }): void {
   // jojo P2：main 没接手，发送前乐观标的「执行中」还原（已通过的会话不留蓝圈、不重现改动条）。
   rollbackComposerStartGate(input.sessionId)
+  // jojo r5 P1：用户已切到别的会话——稿还回发出的那个会话的草稿；当前输入框 / running / 红卡 / 线程都不动。
+  const current = useChatStore.getState().sessionId
+  if (input.sessionId && current !== input.sessionId) {
+    restoreDraftIntoSession(input.sessionId, input.text, input.assets ?? [])
+    // leo r6 BLOCK：离开时这一发被停车成「在跑」；没开跑就失败了，停车档也要收掉，否则切回去永远转圈、Enter 只排队。
+    // keepRunning = 那个会话里还有别的轮真在跑：停车档是它的，不动。
+    // 同会话分支一样 takePark：切回去不转圈、字和图在输入框里（换会话本来就清红卡，原因条不跟着停车）。
+    if (!input.keepRunning) useAttentionStore.getState().takePark(input.sessionId)
+    return
+  }
   if (input.keepRunning) {
     restoreComposerDraft(input.text, input.assets)
     useChatStore.getState().setError(input.reason)
@@ -61,7 +73,15 @@ function dropMatchingOptimisticUser(content: string): void {
   const store = useChatStore.getState()
   const last = [...store.messages].reverse().find((message) => message.role === "user")
   if (!last || last.content !== content) return
-  store.setMessages(store.messages.filter((message) => message.id !== last.id))
+  const next = store.messages.filter((message) => message.id !== last.id)
+  store.setMessages(next)
+  // jojo P2（#136 gate2）：乐观首句撤掉了，按它起的自动标题也复原。
+  if (store.sessionId) {
+    emitPreOutputRolledBack({
+      sessionId: store.sessionId,
+      userTurnsLeft: next.filter((message) => message.role === "user").length
+    })
+  }
 }
 
 function isEmptyFailedSession(sessionId: string | null): boolean {

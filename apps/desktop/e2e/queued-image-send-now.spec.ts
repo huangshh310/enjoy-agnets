@@ -155,3 +155,34 @@ for (const variant of ["send-now", "remove"] as const) {
     }
   })
 }
+
+test("主线决定（#136）：模型看不了图时「马上发给它」——留在队首、锁定提示，不弹 agent.steer 原始红卡", async () => {
+  test.setTimeout(300_000)
+  if (process.env.CI) expect(existsSync(mainEntry), "CI 缺 out/main/index.js").toBe(true)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  // 不开 ENJOY_E2E_STUB_VISION：stub 模型看不了图，纠偏编图会抛 model_needs_vision。
+  const boot = freshEnv()
+  const { app, window } = await launch(boot.env)
+  const db = () => dump(boot.userData) as Dump
+  try {
+    await waitSendReady(window)
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.click()
+    await window.keyboard.type(FIRST, { delay: 20 })
+    await composer.press("Enter")
+    await expect.poll(() => db().users.some((u) => u.content === FIRST), { timeout: 20_000 }).toBe(true)
+    await window.waitForTimeout(1_500)
+    await queueWithImage(window, "带图插话", "noVision.png")
+    const item = window.locator('[data-testid="queued-user-turn"]')
+    await item.getByRole("button", { name: "马上发给它" }).click()
+    await expect(window.getByText("这个 Agent 运行中收不了图，带图的这条排在下一轮发出")).toBeVisible({ timeout: 10_000 })
+    await expect(item.first()).toBeVisible()
+    await expect(item.first()).toContainText("带图插话")
+    await expect(window.getByText(/agent\.steer|model_needs_vision|Error invoking remote method/)).toHaveCount(0)
+    expect(db().users.some((u) => u.content === "带图插话"), "没纠偏成功就不落库").toBe(false)
+    mkdirSync(shots, { recursive: true })
+    await window.screenshot({ path: join(shots, "41-vision-off-send-now-requeued.png"), fullPage: true })
+  } finally {
+    await shutdown(app)
+  }
+})

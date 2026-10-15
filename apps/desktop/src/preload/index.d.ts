@@ -5,6 +5,7 @@ declare global {
     ide: EnjoyIdeApi;
     enjoyGpuCompositing?: "on" | "off";
     enjoyE2eSendWatchdog?: boolean;
+    enjoyE2eStub?: boolean;
   }
 }
 

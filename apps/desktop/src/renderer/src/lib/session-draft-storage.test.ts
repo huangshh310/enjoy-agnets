@@ -195,6 +195,7 @@ test("leo：交接返回但 main 没确认落库（无 userMessageId）→ 强�
 test("接线：生图发送把输入框原文交给 main（draftText），落 prompt 同事务清稿", async () => {
   const { readFileSync } = await import("node:fs")
   const src = readFileSync(new URL("../hooks/runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
-  assert.match(src, /payload\.computerUseOnce,\s*payload\.typed\s*\)/)
+  // #136：其后可再带 clientRequestId（同一手势去重），draftText 仍紧跟 computerUseOnce。
+  assert.match(src, /payload\.computerUseOnce,\s*payload\.typed\s*(,\s*clientRequestId\s*)?\)/)
   assert.match(src, /\.\.\.\(draftText\?\.trim\(\) \? \{ draftText \} : \{\}\)/)
 })

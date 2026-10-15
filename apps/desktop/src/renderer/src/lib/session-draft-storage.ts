@@ -6,6 +6,7 @@ import { useChatStore } from "../stores/chat-store"
 import { listFollowups } from "../hooks/followup-queue"
 import { listComposerAssets, setComposerAssetPersister } from "../hooks/composer-assets"
 import type { SessionDraftState } from "../stores/chat-store.types"
+import { mergeComposerText } from "./merge-composer-text"
 
 const STORAGE_KEY = "enjoy-agents-session-drafts"
 /** 打字防抖：停手这么久后写到 main（DB）。 */
@@ -280,6 +281,107 @@ export function composerDraftForSession(sessionId: string): SessionDraftState | 
   const assets = readPersistedDraftAssets(sessionId)
   if (!persisted && !assets) return undefined
   return { text: persisted ?? "", ...(assets ? { assets } : {}) }
+}
+
+/**
+ * leo r3 M4：发出后马上切走，出字前失败在后台回滚——main 已在回滚事务里把正文写回 session_drafts、
+ * 图并回 session_draft_assets。renderer 这边的缓存（正文 cache / 附件 assetCache / 内存草稿）还是发送时的旧样子：
+ * 从 main 重读并与本地（防抖中的写、内存草稿）合并，写回缓存；本地多出来的再写回 main。
+ * 否则切回时内存草稿（空）盖住还回的稿，之后一次整行替换的 saveAssets 也会把还回的图丢掉。
+ */
+export function refreshDraftAfterBackgroundRollback(sessionId: string): void {
+  if (!sessionId) return
+  const target = bridge()
+  let mainText = ""
+  let mainAssets: DraftAsset[] = []
+  try {
+    mainText = target.loadSync()[sessionId] ?? ""
+  } catch {
+    mainText = ""
+  }
+  try {
+    mainAssets = target.loadAssetsSync?.()[sessionId] ?? []
+  } catch {
+    mainAssets = []
+  }
+  const store = useChatStore.getState()
+  const memory = store.getSessionDraft(sessionId)
+
+  // 防抖中的写最新，但发出时挂的是空稿 ""：空的不算，回落内存草稿。
+  const pendingText = pending.get(sessionId)
+  const localText = pendingText?.trim() ? pendingText : (memory?.text ?? "")
+  const text = mergeComposerText(mainText, localText)
+  const map = drafts()
+  if (text.trim()) map[sessionId] = text
+  else delete map[sessionId]
+  if (text === mainText) {
+    // 防抖中的 ""（发出时的空稿）不得再落 main 把还回的稿删掉。
+    pending.delete(sessionId)
+  } else {
+    pending.set(sessionId, text)
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(flushPersistedDrafts, DRAFT_PERSIST_DEBOUNCE_MS)
+  }
+
+  // leo r4 B1：main 回的是整行，含排队项的图（带 queued 标记）。那些属于排队项，不是还回的稿：
+  // 单独留着、原样保留标记写回缓存，不并进普通草稿、不进内存草稿（否则切回会冒出来，再发一遍）。
+  const mainQueued = mainAssets.filter((a) => a?.queued)
+  const queuedIds = new Set(mainQueued.map((a) => a.id))
+  const mainNormal = mainAssets.filter((a) => !a?.queued)
+  const localAssets = ((memory?.assets ?? assetCache?.[sessionId] ?? []) as DraftAsset[]).filter((a) => !a?.queued)
+  const seen = new Set<string>(queuedIds)
+  const assets: DraftAsset[] = []
+  for (const asset of [...localAssets, ...mainNormal]) {
+    if (!asset?.id || seen.has(asset.id)) continue
+    seen.add(asset.id)
+    assets.push({ id: asset.id, name: asset.name, mediaType: asset.mediaType, size: asset.size })
+  }
+  const cacheMap = draftAssets()
+  const rows = [...assets, ...mainQueued]
+  if (rows.length > 0) cacheMap[sessionId] = rows
+  else delete cacheMap[sessionId]
+  if (assets.length !== mainNormal.length) writePersistedDraftAssets(sessionId, assets)
+
+  if (memory) {
+    store.saveSessionDraft(sessionId, { ...memory, text, assets })
+  }
+}
+
+/**
+ * jojo r5 P1：发送失败要还稿，但用户已切到别的会话——稿还回**发出的那个会话**的草稿（内存 + 缓存 + main），
+ * 绝不写进当前输入框（否则 A 的字和图冒到 B 的输入框里，切回 A 又少图）。与已有草稿按行合并，附件按 id 去重。
+ */
+export function restoreDraftIntoSession(
+  sessionId: string,
+  text: string,
+  assets: readonly { id: string; name: string; mediaType?: string; size?: number }[] = []
+): void {
+  if (!sessionId) return
+  const store = useChatStore.getState()
+  const memory = store.getSessionDraft(sessionId)
+  const before = memory?.text ?? readPersistedDraft(sessionId) ?? ""
+  const merged = text.trim() ? mergeComposerText(text, before) : before
+  writePersistedDraft(sessionId, merged)
+  const existing = ((memory?.assets ?? readPersistedDraftAssets(sessionId) ?? []) as DraftAsset[]).filter((a) => !a?.queued)
+  const seen = new Set(existing.map((a) => a.id))
+  const nextAssets: DraftAsset[] = [...existing]
+  for (const asset of assets) {
+    if (!asset?.id || seen.has(asset.id)) continue
+    seen.add(asset.id)
+    nextAssets.push({ id: asset.id, name: asset.name, mediaType: asset.mediaType, size: asset.size })
+  }
+  if (nextAssets.length !== existing.length) writePersistedDraftAssets(sessionId, nextAssets)
+  if (memory) store.saveSessionDraft(sessionId, { ...memory, text: merged, assets: nextAssets })
+}
+
+/** 后台会话的出字前回滚（main 删了用户句）才需要重读草稿；保留用户句（keptUserMessage）的不用。 */
+export function noteBackgroundRunError(
+  sessionId: string | undefined,
+  event: { type: string; preOutput?: boolean; keptUserMessage?: boolean }
+): boolean {
+  if (!sessionId || event.type !== "run.error" || event.preOutput !== true || event.keptUserMessage === true) return false
+  refreshDraftAfterBackgroundRollback(sessionId)
+  return true
 }
 
 let installed: (() => void) | null = null

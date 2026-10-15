@@ -7,3 +7,10 @@ export const E2E_SEND_WATCHDOG_ARG = "--enjoy-e2e-send-watchdog=1"
 export function readE2eSendWatchdogArg(argv: readonly string[] = process.argv): boolean {
   return argv.includes(E2E_SEND_WATCHDOG_ARG)
 }
+
+/** main 判过 isE2eStub 才带：renderer 据此才露出会真打 agent.run / 上报焦点的 e2e 桥（leo soft #136）。 */
+export const E2E_STUB_ARG = "--enjoy-e2e-stub=1"
+
+export function readE2eStubArg(argv: readonly string[] = process.argv): boolean {
+  return argv.includes(E2E_STUB_ARG)
+}

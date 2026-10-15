@@ -35,6 +35,7 @@ import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/sa
 import { useRightPaneStore } from "../stores/right-pane-store"
 import { useWorkspaceChangeInvalidation } from "./use-workspace-change-invalidation"
 import { useChatReadiness } from "./use-chat-readiness"
+import { useSessionFocus } from "./use-session-focus"
 import { planNewSession } from "./plan-new-session"
 import { rememberWorkspaceOnLoad } from "./unknown-workspace-remember"
 import { landEmptyHome } from "./nav-history/nav-history-controller"
@@ -92,6 +93,7 @@ export function useAgentSession() {
   }, [settingsQuery.data])
 
   useChatReadiness()
+  useSessionFocus()
 
   useBootWorkspace(
     Boolean(settingsQuery.data),

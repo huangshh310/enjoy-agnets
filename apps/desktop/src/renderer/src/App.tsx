@@ -8,11 +8,12 @@ import { queryClient } from "@renderer/lib/query-client"
 import { router } from "@renderer/router"
 import { AppToaster } from "@renderer/components/layout/app-toaster"
 import { initThemeSkin } from "@renderer/hooks/use-theme-skin"
-import { installEnjoyE2eBridge } from "@renderer/lib/enjoy-e2e-bridge"
+import { createEnjoyE2eBridge } from "@renderer/lib/enjoy-e2e-bridge"
+import { installEnjoyE2eBridge } from "@renderer/lib/install-enjoy-e2e-bridge"
 import { SessionFocusReporter } from "@renderer/hooks/session-focus-reporter"
 
 initThemeSkin()
-installEnjoyE2eBridge()
+installEnjoyE2eBridge(typeof window === "undefined" ? undefined : (window as never), createEnjoyE2eBridge)
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>

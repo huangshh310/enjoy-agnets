@@ -1,7 +1,6 @@
 import { displayThreadErrorText } from "@renderer/lib/usage/redact-thread-error"
 import { sendRestoreDetail } from "@renderer/lib/usage/send-restore-detail"
-import { subscribeComposerAssets } from "@renderer/hooks/composer-assets"
-import { isImageMediaType } from "@enjoy-agents/assets/media-type"
+import { useRestoredImageCount } from "./use-restored-images-detail"
 import {
   RiAlertLine,
   RiCheckLine,
@@ -14,11 +13,10 @@ import {
 } from "@remixicon/react"
 import { showAppToast } from "@renderer/lib/app-toast"
 import { dismissSessionErrorCard } from "../../../hooks/hydrate-session-error"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { retryKeptDraft } from "@renderer/hooks/retry-kept-draft"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
 import { editAndResendUserTurn, regenerateAssistantTurn, retryFailedUserTurn } from "@renderer/hooks/regenerate-turn"
 import {
@@ -29,9 +27,7 @@ import {
 import { RegenerateConfirmDialog } from "./turns/regenerate-confirm-dialog"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
-import { useT, type TranslateFn } from "@renderer/i18n"
-import { peekChatReadiness } from "@renderer/hooks/chat-readiness-cache"
-import { unreachableProviderName as pickUnreachableProviderName } from "@renderer/lib/usage/unreachable-provider-name"
+import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
@@ -41,9 +37,11 @@ import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-l
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
+import { ThreadCredentialInvalidNotice } from "./thread-credential-invalid-notice"
+import { ThreadCredentialNetworkNotice } from "./thread-credential-network-notice"
+import { ThreadCredentialRestrictedNotice } from "./thread-credential-restricted-notice"
 import { ThreadNeedModelNotice } from "./thread-need-model-notice"
 import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
-import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
 const REMOTE_INSTALL_MAP: Record<string, string> = {
   deepseek: "npm i -g @deepseek-ai/dsh",
@@ -59,18 +57,6 @@ const REMOTE_INSTALL_MAP: Record<string, string> = {
 }
 
 /** 输入框里还回来的图片张数（jojo P3：有图时还稿文案要提到图片）。 */
-function useRestoredImageCount(): number {
-  const [count, setCount] = useState(0)
-  useEffect(
-    () =>
-      subscribeComposerAssets((items) =>
-        setCount(items.filter((item) => isImageMediaType(item.mediaType ?? "")).length)
-      ),
-    []
-  )
-  return count
-}
-
 export function ThreadErrorBanner({ error, className }: { error: string; className?: string }) {
   const t = useT()
   const restoredImageCount = useRestoredImageCount()
@@ -92,69 +78,15 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
     return <ThreadNoChatRouteNotice onDismiss={() => setError(null)} className={className} />
   }
   if (kind === "credential_invalid") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-credential-invalid-notice"
-        kind="credential_invalid"
-        tone="error"
-        message={t("chat.credentialInvalidNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
+    return <ThreadCredentialInvalidNotice onDismiss={() => setError(null)} className={className} />
   }
   if (kind === "provider_unreachable") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-provider-unreachable-notice"
-        kind="provider_unreachable"
-        message={t("chat.providerUnreachableNotice", { name: unreachableProviderName(t) })}
-        actionLabel={t("chat.tryAgain")}
-        actionIcon={<RiRefreshLine className="size-3" />}
-        onAction={() => {
-          setError(null)
-          retryKeptDraft()
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
+    return <ThreadCredentialNetworkNotice onDismiss={() => setError(null)} className={className} />
   }
-  if (kind === "provider_forbidden") {
+  if (kind === "provider_forbidden" || kind === "provider_billing") {
     return (
-      <ThreadSendGateNotice
-        testId="thread-provider-forbidden-notice"
-        kind="provider_forbidden"
-        message={t("chat.providerForbiddenNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
-  }
-  if (kind === "provider_billing") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-provider-billing-notice"
-        kind="provider_billing"
-        message={t("chat.providerBillingNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
+      <ThreadCredentialRestrictedNotice
+        code={kind}
         onDismiss={() => setError(null)}
         className={className}
       />
@@ -454,8 +386,4 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
       />
     </div>
   )
-}
-
-function unreachableProviderName(t: TranslateFn): string {
-  return pickUnreachableProviderName(peekChatReadiness(), String(t("chat.providerFallbackName")))
 }

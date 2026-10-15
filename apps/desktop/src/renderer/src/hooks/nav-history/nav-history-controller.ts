@@ -3,6 +3,7 @@
  */
 import { useChatStore } from "@renderer/stores/chat-store"
 import { applyHistoryEntry } from "./apply-entry"
+import { loadHistoryRouter } from "./history-router"
 import { DEFAULT_HISTORY_ID } from "./constants"
 import { historyPathname } from "./derive-entry"
 import {
@@ -107,7 +108,7 @@ function defaultEntry(): HistoryEntry {
 
 async function watchDivergence(entry: HistoryEntry, my: number): Promise<() => void> {
   const targetPath = historyPathname(entry)
-  const { router } = await import("@renderer/router")
+  const router = await loadHistoryRouter()
   const unsubRoute = router.history.subscribe(() => {
     if (!isApplyCurrent(my)) return
     if (router.state.location.pathname === targetPath) return

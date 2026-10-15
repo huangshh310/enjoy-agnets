@@ -148,3 +148,113 @@ test("同一 clientRequestId 60s 内不写第二遍", () => {
   assert.equal(peekClientRequest("ses_dup", "req_1", Date.now() + 61_000), undefined)
   resetClientRequestsForTest()
 })
+
+test("jojo P1（#136 gate2）：回滚删掉本轮用户句时，它带的图回到本会话草稿附件（同一事务，与已有草稿图合并去重）", async () => {
+  const { loadSessionDraftAssets, saveSessionDraftAssets } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  const sessionId = "ses_p1_assets"
+  seedSession(sessionId, "ws_p1_assets")
+  // 更早一轮（快照之前）的用户句也带图：不是本轮的，不能被还回草稿。
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_old_img", sessionId, "user", "旧图", 5
+  )
+  const part = (id: string, messageId: string, idx: number, payload: Record<string, unknown>) =>
+    db.prepare("INSERT INTO message_parts (id, message_id, idx, type, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+      id, messageId, idx, String(payload.type), JSON.stringify(payload), 5
+    )
+  part("p_old", "u_old_img", 0, { type: "file", assetId: "ast_old_turn", mediaType: "image/png", name: "old.png" })
+  saveSessionDraftAssets(sessionId, [{ id: "ast_draft", name: "draft.png", mediaType: "image/png" }])
+  const snapshot = snapshotSessionTurn(sessionId)
+  const now = Date.now()
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_img", sessionId, "user", "看图", now
+  )
+  part("p_t", "u_img", 0, { type: "text", text: "看图" })
+  part("p_a", "u_img", 1, { type: "file", assetId: "ast_a", mediaType: "image/png", name: "a.png" })
+  part("p_b", "u_img", 2, { type: "file", assetId: "ast_b", mediaType: "image/jpeg", name: "b.jpg" })
+  part("p_dup", "u_img", 3, { type: "file", assetId: "ast_draft", mediaType: "image/png", name: "draft.png" })
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "a_img", sessionId, "assistant", "", now
+  )
+  part("p_asst", "a_img", 0, { type: "file", assetId: "ast_assistant", mediaType: "image/png", name: "gen.png" })
+
+  rollbackPreOutputMessages({ sessionId, messageIds: ["u_img", "a_img", "u_old_img"], snapshot })
+
+  assert.deepEqual(
+    (loadSessionDraftAssets()[sessionId] ?? []).map((a) => a.id),
+    ["ast_draft", "ast_a", "ast_b"],
+    "本轮用户句的图回草稿；助手的、快照前的不回；已有的不重复"
+  )
+  assert.equal(loadSessionDraftAssets()[sessionId]?.[2]?.mediaType, "image/jpeg")
+  assert.equal(countSessionMessages(sessionId), 1, "只删本轮两行")
+})
+
+test("jojo P1：回滚的用户句没带图：草稿附件不被动（不写空行）", async () => {
+  const { loadSessionDraftAssets } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  const sessionId = "ses_p1_noimg"
+  seedSession(sessionId, "ws_p1_noimg")
+  const snapshot = snapshotSessionTurn(sessionId)
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_txt", sessionId, "user", "只有字", Date.now()
+  )
+  rollbackPreOutputMessages({ sessionId, messageIds: ["u_txt"], snapshot })
+  assert.equal(loadSessionDraftAssets()[sessionId], undefined)
+})
+
+test("leo r3 M4：回滚删掉本轮用户句时，正文写回本会话草稿（已切走的后台会话也有稿）；与已有草稿合并不覆盖", async () => {
+  const { loadSessionDrafts, saveSessionDraft } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  for (const [sessionId, existing, expected] of [
+    ["ses_m4_empty", "", "后台发出去的那句"],
+    ["ses_m4_typed", "切回来前补的字", "切回来前补的字\n后台发出去的那句"]
+  ] as const) {
+    seedSession(sessionId, `ws_${sessionId}`)
+    if (existing) saveSessionDraft(sessionId, existing)
+    const snapshot = snapshotSessionTurn(sessionId)
+    db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      `u_${sessionId}`, sessionId, "user", "后台发出去的那句", Date.now()
+    )
+    db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      `a_${sessionId}`, sessionId, "assistant", "", Date.now()
+    )
+    rollbackPreOutputMessages({ sessionId, messageIds: [`u_${sessionId}`, `a_${sessionId}`], snapshot })
+    assert.equal(loadSessionDrafts()[sessionId], expected, sessionId)
+  }
+})
+
+test("leo r3 M4：快照前的旧用户句不算本轮，正文不写回草稿", async () => {
+  const { loadSessionDrafts } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  const sessionId = "ses_m4_old"
+  seedSession(sessionId, "ws_m4_old")
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_m4_old", sessionId, "user", "很早以前的话", 5
+  )
+  const snapshot = snapshotSessionTurn(sessionId)
+  rollbackPreOutputMessages({ sessionId, messageIds: ["u_m4_old"], snapshot })
+  assert.equal(loadSessionDrafts()[sessionId], undefined)
+})
+
+test("luna ①③：只图用户句出字前回滚：图写进本会话草稿附件（重启后还在），草稿正文不写空行", async () => {
+  const { loadSessionDraftAssets, loadSessionDrafts } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  const sessionId = "ses_luna_imgonly"
+  seedSession(sessionId, "ws_luna_imgonly")
+  const snapshot = snapshotSessionTurn(sessionId)
+  const now = Date.now()
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_only", sessionId, "user", "", now
+  )
+  db.prepare("INSERT INTO message_parts (id, message_id, idx, type, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    "p_only", "u_only", 0, "file", JSON.stringify({ type: "file", assetId: "ast_only", mediaType: "image/png", name: "only.png" }), now
+  )
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "a_only", sessionId, "assistant", "", now
+  )
+  rollbackPreOutputMessages({ sessionId, messageIds: ["u_only", "a_only"], snapshot })
+  assert.deepEqual((loadSessionDraftAssets()[sessionId] ?? []).map((a) => a.id), ["ast_only"])
+  assert.equal(loadSessionDraftAssets()[sessionId]?.[0]?.mediaType, "image/png")
+  assert.equal(loadSessionDrafts()[sessionId], undefined)
+  assert.equal(countSessionMessages(sessionId), 0)
+})

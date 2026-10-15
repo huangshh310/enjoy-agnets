@@ -1,6 +1,16 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { sendGateCopy } from "./send-gate-copy.ts"
+
+test("发送带 clientRequestId，同一手势复用", () => {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "send-composer-run.ts"), "utf8")
+  assert.match(src, /takeClientRequestId/)
+  assert.match(src, /clientRequestId/)
+  assert.match(src, /releaseClientRequestId/)
+})
 
 const t = (key: string, vars?: Record<string, string | number>) => {
   const copy: Record<string, string> = {

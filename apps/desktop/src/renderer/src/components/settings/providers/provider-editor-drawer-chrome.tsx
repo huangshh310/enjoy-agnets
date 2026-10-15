@@ -54,6 +54,7 @@ export function EditorDrawerHeader({
         type="button"
         onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
         onClick={onClose}
+        data-testid="provider-editor-close"
         data-app-region="no-drag"
         className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary [app-region:no-drag] hover:bg-background-secondary-default hover:text-text-primary"
         aria-label={t("common.close")}
@@ -89,7 +90,7 @@ export function EditorDrawerFooter({
           href={docsURL}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-caption-1-medium text-text-tertiary hover:text-text-primary"
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-caption-1-medium text-text-tertiary hover:text-text-primary"
         >
           {t("settings.providers.apiDocs")}
           <RiExternalLinkLine className="size-3" />
@@ -106,6 +107,7 @@ export function EditorDrawerFooter({
             variant="ghost"
             onPointerDown={(event) => handleDrawerClosePointer(event, onClose)}
             onClick={onClose}
+            data-testid="provider-editor-cancel"
           >
             {t("common.cancel")}
           </Button>

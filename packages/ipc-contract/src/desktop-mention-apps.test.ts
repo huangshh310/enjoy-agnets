@@ -1,6 +1,5 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
 import {
   DesktopMentionApp,
   DesktopMentionAppsResult,
@@ -60,8 +59,19 @@ test("DesktopMentionBias 宿主 / 稳应用 / 无稳键", () => {
   )
 })
 
-test("RunAgentInput 声明可选 desktopBias（node:test 不 value-import chat.ts）", () => {
-  const src = readFileSync(new URL("./chat.ts", import.meta.url), "utf8")
-  assert.match(src, /desktopBias: DesktopMentionBias\.optional/)
-  assert.match(src, /clearSessionAllow: z\.boolean\(\)\.optional/)
+test("RunAgentInput：desktopBias / clearSessionAllow / clientRequestId 可选且按 schema 校验", async () => {
+  const { RunAgentInput } = await import("./chat.ts")
+  const { CLIENT_REQUEST_ID_MAX } = await import("./pre-output-failure.ts")
+  const base = { sessionId: "s", workspaceId: "w", modelId: "m", messages: [{ role: "user", content: "hi" }] }
+  assert.equal(RunAgentInput.safeParse(base).success, true)
+  const ok = RunAgentInput.parse({ ...base, clearSessionAllow: true, clientRequestId: "req-1" })
+  assert.equal(ok.clientRequestId, "req-1")
+  assert.equal(ok.clearSessionAllow, true)
+  assert.equal(RunAgentInput.safeParse({ ...base, clientRequestId: "" }).success, false)
+  assert.equal(
+    RunAgentInput.safeParse({ ...base, clientRequestId: "x".repeat(CLIENT_REQUEST_ID_MAX + 1) }).success,
+    false
+  )
+  assert.equal(RunAgentInput.safeParse({ ...base, clearSessionAllow: "yes" }).success, false)
+  assert.equal(RunAgentInput.safeParse({ ...base, desktopBias: 42 }).success, false)
 })

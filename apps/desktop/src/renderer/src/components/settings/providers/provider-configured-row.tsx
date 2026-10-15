@@ -11,7 +11,8 @@ import { WIRE_LABEL, wireLinesOf } from "./provider-wire-lines"
 import type { PingStateMap } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { profileKeyStatus } from "@renderer/lib/credential/key-status"
-import { renderProviderKeyStatus } from "./provider-key-status-text"
+import { renderProviderKeyHint, renderProviderKeyStatus } from "./provider-key-status-text"
+import { requestOpenExternalQuiet } from "@renderer/components/ai-chat/right-pane/views/terminal/attach-xterm-addons"
 
 export function ProviderConfiguredRow({
   profile,
@@ -126,6 +127,7 @@ function WireHosts({ profile }: { profile: ProviderPublic }) {
 function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; hasKeyIssue: boolean; onEdit: () => void }) {
   const t = useT()
   const keyStatus = renderProviderKeyStatus(profile, t, onEdit)
+  const keyHint = renderProviderKeyHint(profile, t, { onEdit, onOpenUrl: requestOpenExternalQuiet })
   return (
     <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-caption-2-medium text-text-tertiary">
       <span className="font-mono font-medium text-text-secondary">{profile.modelId || t("settings.providers.noModel")}</span>
@@ -139,6 +141,7 @@ function RowMeta({ profile, hasKeyIssue, onEdit }: { profile: ProviderPublic; ha
               : t("settings.providers.noKeyRequired")}
         </span>
       )}
+      {keyHint}
     </span>
   )
 }

@@ -33,6 +33,7 @@ export function AttentionChip(props: {
       <button
         type="button"
         tabIndex={complete ? -1 : 0}
+        data-attention-kind={item.kind}
         onClick={() => onOpen(item)}
         aria-label={t("attention.currentSession")}
         className="flex size-4 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
@@ -47,6 +48,7 @@ export function AttentionChip(props: {
 
   return (
     <div
+      data-attention-kind={item.kind}
       className={cx(
         "group flex h-7 min-w-32 max-w-56 shrink-0 animate-in fade-in items-center gap-1.5 rounded-full border border-border-button-default/70",
         "bg-background-secondary-default/80 pl-2.5 pr-1.5 shadow-2xs outline-none duration-200 transition-all",

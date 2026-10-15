@@ -3,6 +3,8 @@
  * 二次 Enter 替换队列；还文与已键入合并；成功只清已发出的正文。
  */
 import { useChatStore } from "../stores/chat-store"
+import { setComposerIo } from "../stores/composer-io"
+import { mergeComposerText } from "../lib/merge-composer-text"
 import { readComposerDomText, syncComposerDom } from "./composer-dom"
 import { setComposerWritebackHeld } from "./composer-sync-lock"
 import {
@@ -60,15 +62,16 @@ export function composerNeedsSessionReady(): boolean {
   return shouldQueueComposerSend(store.sessionId, isNewSessionCreatePending())
 }
 
-export function mergeComposerText(restored: string, current: string): string {
-  const queued = restored.trim()
-  const typed = current.trim()
-  if (!typed) return restored
-  if (!queued) return current
-  if (typed.includes(queued) || typed === queued) return current
-  if (queued.includes(typed)) return restored
-  return `${current}\n${restored}`
-}
+export { mergeComposerText }
+
+// leo r3 M1：store 补丁还稿（出字前回滚 / 失败回填）读输入框当下全文合并，再写回 DOM 并放开写回锁。
+setComposerIo({
+  read: () => readComposerDomText(),
+  write: (text) => {
+    setComposerWritebackHeld(false)
+    syncComposerDom(text, true)
+  }
+})
 
 export function remainingComposerAfterSend(sent: string, current: string): string {
   if (!current) return current

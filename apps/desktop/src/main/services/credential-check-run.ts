@@ -6,6 +6,7 @@ import {
   catalogMissingStatus,
   classifyCredentialFailure,
   classifyCredentialStatus,
+  CredentialCheckCode,
   parseCredentialCheck,
   withCredentialCheckedAt,
   type CredentialCheck
@@ -38,9 +39,13 @@ export function e2eCredentialFixture(
   return undefined
 }
 
-function unverifiedFixtureCode(flag: string): "network" | "timeout" | "unknown" {
-  if (flag === "unverified:network") return "network"
-  if (flag === "unverified:timeout") return "timeout"
+/** 只认 CredentialCheckCode 里 unverified 子码；#135 没有单独的 forbidden/billing 夹具值。 */
+function unverifiedFixtureCode(flag: string): CredentialCheckCode {
+  const suffix = flag.startsWith("unverified:") ? flag.slice("unverified:".length) : "unknown"
+  if (suffix === CredentialCheckCode.enum.network) return "network"
+  if (suffix === CredentialCheckCode.enum.timeout) return "timeout"
+  if (suffix === CredentialCheckCode.enum.forbidden) return "forbidden"
+  if (suffix === CredentialCheckCode.enum.billing) return "billing"
   return "unknown"
 }
 
