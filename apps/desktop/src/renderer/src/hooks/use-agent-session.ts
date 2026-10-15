@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { markSessionHistoryHydrated, setForegroundSessionPicking } from "./session-history-pending"
+import { setForegroundSessionPicking } from "./session-history-pending"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   StreamEvent,
@@ -157,13 +157,8 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
       await createAndOpenSession(workspace.id, "新对话")
       return
     }
-    try {
-      await loadSession(picked.id, picked.title)
-    } catch (error) {
-      // 回灌失败（session.messages 抛错）：别让前台停在「加载中」等 8 秒兜底，立刻退回空态（leo #157）。
-      if (useChatStore.getState().sessionId === picked.id) markSessionHistoryHydrated(picked.id)
-      throw error
-    }
+    // 回灌失败时立刻退回空态由 loadSession 自己处理（所有入口共用）。
+    await loadSession(picked.id, picked.title)
   } finally {
     setForegroundSessionPicking(false)
   }

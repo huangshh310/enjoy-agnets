@@ -5,6 +5,7 @@
  * ③ 文件 Tab 目录树窄时，「筛选文件…」不被裁（patrol-64）。
  * ④ 重启后选中的会话：历史回灌前不闪空态问候，只留空白占位；之后点「新对话」立刻出问候。
  * ⑤ 回灌一直不回来：8 秒兜底回空态。⑥ 回灌抛错：立刻回空态。⑦ 真空会话重启：回灌完就出问候。
+ * ⑧ 侧栏切会话时回灌抛错：立刻回空态。⑨ 换会话时上一轮超时作废。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
@@ -279,6 +280,89 @@ test("⑦ 真空会话重启：回灌完（不是靠 8 秒兜底）就出空态�
     await expect(loading).toHaveCount(0)
     await expect(window.locator("[data-thread-message]")).toHaveCount(0)
     await snap(window, "1024x670-restart-empty-session-greeting")
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+/** 起一次，建两个带历史的会话 A、B（B 在前台），返回两者 id。 */
+async function seedTwoSessions(env: NodeJS.ProcessEnv): Promise<{ a: string; b: string }> {
+  const app = await relaunchElectron(env)
+  try {
+    const window = await firstWindow(app)
+    const composer = window.locator('[data-testid="composer-input"]')
+    const ids: string[] = []
+    for (const [index, text] of ["会话甲 一句", "会话乙 一句"].entries()) {
+      if (index > 0) {
+        await window.locator('[data-testid="sidebar-new-session"]').click()
+        await expect(window.locator('[data-testid="empty-start-upper"] h1')).toBeVisible({ timeout: 10_000 })
+      }
+      await sendComposer(window, composer, text)
+      await expect(window.locator("body")).toContainText(`stub-ok ${text}`, { timeout: 20_000 })
+      const id = await window.evaluate(() => window.__enjoyE2e?.getComposerGate()?.sessionId ?? null)
+      expect(id).toBeTruthy()
+      ids.push(id as string)
+    }
+    await window.waitForTimeout(800)
+    return { a: ids[0], b: ids[1] }
+  } finally {
+    await closeForRelaunch(app)
+  }
+}
+
+function sessionRow(window: Page, sessionId: string): Locator {
+  return window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sessionId}"]`).first()
+}
+
+test("⑧ 侧栏切会话时回灌失败（session.messages 抛错）：立刻回到空态，不等 8 秒兜底", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = stubEnv()
+  const { a } = await seedTwoSessions(env)
+  const { app, window, greeting, loading } = await openRelaunched({
+    ...env,
+    ENJOY_DEV_DELAY_SESSION_MESSAGES_MS: "1500",
+    ENJOY_E2E_SESSION_MESSAGES_FAULT: "error"
+  })
+  try {
+    // 启动那次回灌也失败，先回到空态。
+    await expect(greeting).toBeVisible({ timeout: 15_000 })
+    await sessionRow(window, a).click()
+    await expect(loading).toBeVisible({ timeout: 5_000 })
+    const loadingAt = Date.now()
+    await expect(greeting).toBeVisible({ timeout: 5_000 })
+    expect(Date.now() - loadingAt, "sidebar switch fell through to the 8s fallback").toBeLessThan(5_000)
+    await expect(loading).toHaveCount(0)
+    await snap(window, "1024x670-sidebar-switch-hydrate-error-empty")
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+test("⑨ 换会话时上一轮的超时作废：B 兜底超时后 B→A→B，切回 B 仍先等回灌", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const env = stubEnv()
+  const { a, b } = await seedTwoSessions(env)
+  const { app, window, greeting, loading } = await openRelaunched({ ...env, ENJOY_E2E_SESSION_MESSAGES_FAULT: "hang" })
+  try {
+    // 启动选中 B，回灌一直不回来：8 秒兜底后出空态。
+    await expect(loading).toBeVisible({ timeout: 10_000 })
+    await expect(greeting).toBeVisible({ timeout: 12_000 })
+    expect(await window.evaluate(() => window.__enjoyE2e?.getComposerGate()?.sessionId ?? null)).toBe(b)
+    await sessionRow(window, a).click()
+    await expect(loading).toBeVisible({ timeout: 5_000 })
+    await sessionRow(window, b).click()
+    await expect
+      .poll(() => window.evaluate(() => window.__enjoyE2e?.getComposerGate()?.sessionId ?? null), { timeout: 5_000 })
+      .toBe(b)
+    // 切回 B：上一轮 B 的超时不能直接算数，要重新等。
+    await expect(loading).toBeVisible({ timeout: 2_000 })
+    for (let i = 0; i < 20; i += 1) {
+      expect(await greeting.count(), "stale timeout let greeting show right after switching back").toBe(0)
+      await window.waitForTimeout(100)
+    }
+    await snap(window, "1024x670-switch-back-after-timeout-loading")
   } finally {
     await closeForRelaunch(app)
   }
