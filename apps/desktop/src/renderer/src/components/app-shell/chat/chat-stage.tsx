@@ -96,7 +96,7 @@ export function ChatStage() {
           workspaceRootLabel={workspaceRootLabel}
           changesCount={sessionScopedCount(sessionChanges, changes.length)}
           // 历史还在回灌时不判空：不先闪「在 xx 里做什么？」再跳成历史（luna main-155 重启）。
-          empty={(messages.length === 0 && !running && !historyPending) || holdEmptyForResend(messages, running, error)}
+          empty={((messages.length === 0 && !running) || holdEmptyForResend(messages, running, error)) && !historyPending}
           historyPending={historyPending}
           surface={surface}
           rightPanelCollapsed={rightPanelCollapsed}
