@@ -10,6 +10,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
+import { useRestoredImagesDetail } from "./use-restored-images-detail"
 
 export function ThreadCredentialNetworkNotice({
   onDismiss,
@@ -19,6 +20,7 @@ export function ThreadCredentialNetworkNotice({
   className?: string
 }) {
   const t = useT()
+  const restoredDetail = useRestoredImagesDetail()
   const running = useChatStore((state) => state.running)
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
@@ -29,6 +31,7 @@ export function ThreadCredentialNetworkNotice({
       kind="provider_unreachable"
       tone="neutral"
       message={t("chat.credentialNetworkNotice", { name })}
+      detail={restoredDetail}
       actionLabel={running ? t("chat.resendingDraft") : t("chat.resendDraft")}
       actionIcon={<RiRefreshLine className="size-3" />}
       actionDisabled={running}

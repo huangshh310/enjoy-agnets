@@ -9,6 +9,7 @@ import { useT } from "@renderer/i18n"
 import { defaultProviderLabel, resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
 import { goFixKey } from "./credential-fix-key-nav"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
+import { useRestoredImagesDetail } from "./use-restored-images-detail"
 
 export function ThreadCredentialInvalidNotice({
   onDismiss,
@@ -18,6 +19,7 @@ export function ThreadCredentialInvalidNotice({
   className?: string
 }) {
   const t = useT()
+  const restoredDetail = useRestoredImagesDetail()
   const navigate = useNavigate()
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
@@ -29,6 +31,7 @@ export function ThreadCredentialInvalidNotice({
       kind="credential_invalid"
       tone="danger"
       message={t("chat.credentialInvalidNotice", { name })}
+      detail={restoredDetail}
       actionLabel={t("chat.goFixKey")}
       actionIcon={<RiKey2Line className="size-3" />}
       onAction={() => goFixKey(navigate as never, providerId)}

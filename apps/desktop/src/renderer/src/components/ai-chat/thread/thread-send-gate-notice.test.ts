@@ -49,6 +49,11 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   assert.match(network, /chat\.resendDraft/)
   // 红卡重试走 hooks/retry-kept-draft（行为测试 retry-kept-draft.behavior.test.ts 覆盖）。
   assert.match(network, /from "@renderer\/hooks\/retry-kept-draft"/)
+  // luna P1：出字前失败白卡带还稿第二行（复用看门狗那两句）。
+  for (const src of [network, invalid, restricted]) {
+    assert.match(src, /const restoredDetail = useRestoredImagesDetail\(\)/)
+    assert.match(src, /detail=\{restoredDetail\}/)
+  }
   assert.match(restricted, /tone="warning"/)
   assert.match(restricted, /chat\.switchModel/)
   assert.match(restricted, /chat\.retryDraft/)

@@ -1,7 +1,6 @@
 import { displayThreadErrorText } from "@renderer/lib/usage/redact-thread-error"
 import { sendRestoreDetail } from "@renderer/lib/usage/send-restore-detail"
-import { subscribeComposerAssets } from "@renderer/hooks/composer-assets"
-import { isImageMediaType } from "@enjoy-agents/assets/media-type"
+import { useRestoredImageCount } from "./use-restored-images-detail"
 import {
   RiAlertLine,
   RiCheckLine,
@@ -14,7 +13,7 @@ import {
 } from "@remixicon/react"
 import { showAppToast } from "@renderer/lib/app-toast"
 import { dismissSessionErrorCard } from "../../../hooks/hydrate-session-error"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -58,18 +57,6 @@ const REMOTE_INSTALL_MAP: Record<string, string> = {
 }
 
 /** 输入框里还回来的图片张数（jojo P3：有图时还稿文案要提到图片）。 */
-function useRestoredImageCount(): number {
-  const [count, setCount] = useState(0)
-  useEffect(
-    () =>
-      subscribeComposerAssets((items) =>
-        setCount(items.filter((item) => isImageMediaType(item.mediaType ?? "")).length)
-      ),
-    []
-  )
-  return count
-}
-
 export function ThreadErrorBanner({ error, className }: { error: string; className?: string }) {
   const t = useT()
   const restoredImageCount = useRestoredImageCount()

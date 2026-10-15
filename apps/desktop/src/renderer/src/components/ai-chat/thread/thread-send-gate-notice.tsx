@@ -20,6 +20,7 @@ export function ThreadSendGateNotice({
   kind,
   tone = "neutral",
   message,
+  detail,
   actionLabel,
   actionIcon,
   actionDisabled = false,
@@ -35,6 +36,8 @@ export function ThreadSendGateNotice({
   kind?: string
   tone?: SendGateNoticeTone
   message: string
+  /** 出字前失败回滚：图回了输入框时的第二行（复用看门狗还稿文案）。 */
+  detail?: string | null
   actionLabel: string
   actionIcon: ReactNode
   actionDisabled?: boolean
@@ -62,6 +65,11 @@ export function ThreadSendGateNotice({
       <span className={cx("mt-1.5 size-2 shrink-0 rounded-full", noticeDotClass(tone))} aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="text-caption-1-medium text-text-primary">{message}</p>
+        {detail ? (
+          <p data-testid={`${testId}-detail`} className="mt-0.5 text-caption-1-medium text-text-secondary">
+            {detail}
+          </p>
+        ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <NoticeAction
             testId={`${testId}-action`}

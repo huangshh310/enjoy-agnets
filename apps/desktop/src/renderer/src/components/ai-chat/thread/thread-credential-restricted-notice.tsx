@@ -11,6 +11,7 @@ import { useT } from "@renderer/i18n"
 import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
 import { isProviderBilling } from "@renderer/lib/send-gate-codes"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
+import { useRestoredImagesDetail } from "./use-restored-images-detail"
 
 export function ThreadCredentialRestrictedNotice({
   code,
@@ -22,6 +23,7 @@ export function ThreadCredentialRestrictedNotice({
   className?: string
 }) {
   const t = useT()
+  const restoredDetail = useRestoredImagesDetail()
   const running = useChatStore((state) => state.running)
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
@@ -33,6 +35,7 @@ export function ThreadCredentialRestrictedNotice({
       kind={billing ? "provider_billing" : "provider_forbidden"}
       tone="warning"
       message={t(billing ? "chat.credentialBillingNotice" : "chat.credentialForbiddenNotice", { name })}
+      detail={restoredDetail}
       actionLabel={t("chat.switchModel")}
       actionIcon={<RiCpuLine className="size-3" />}
       onAction={() => {

@@ -235,3 +235,26 @@ test("leo r3 M4：快照前的旧用户句不算本轮，正文不写回草稿",
   rollbackPreOutputMessages({ sessionId, messageIds: ["u_m4_old"], snapshot })
   assert.equal(loadSessionDrafts()[sessionId], undefined)
 })
+
+test("luna ①③：只图用户句出字前回滚：图写进本会话草稿附件（重启后还在），草稿正文不写空行", async () => {
+  const { loadSessionDraftAssets, loadSessionDrafts } = await import("./session-drafts.ts")
+  const db = getDatabase()
+  const sessionId = "ses_luna_imgonly"
+  seedSession(sessionId, "ws_luna_imgonly")
+  const snapshot = snapshotSessionTurn(sessionId)
+  const now = Date.now()
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "u_only", sessionId, "user", "", now
+  )
+  db.prepare("INSERT INTO message_parts (id, message_id, idx, type, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    "p_only", "u_only", 0, "file", JSON.stringify({ type: "file", assetId: "ast_only", mediaType: "image/png", name: "only.png" }), now
+  )
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "a_only", sessionId, "assistant", "", now
+  )
+  rollbackPreOutputMessages({ sessionId, messageIds: ["u_only", "a_only"], snapshot })
+  assert.deepEqual((loadSessionDraftAssets()[sessionId] ?? []).map((a) => a.id), ["ast_only"])
+  assert.equal(loadSessionDraftAssets()[sessionId]?.[0]?.mediaType, "image/png")
+  assert.equal(loadSessionDrafts()[sessionId], undefined)
+  assert.equal(countSessionMessages(sessionId), 0)
+})

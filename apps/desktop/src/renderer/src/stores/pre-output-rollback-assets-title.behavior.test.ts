@@ -275,3 +275,67 @@ test("jojo P2 / leo r3 M2：精炼先回来改成生成题（stub-title）、之
     else delete g.window
   }
 })
+
+// luna（main c849e3f4 巡检 P1）：出字前失败丢图的三种情况。
+const { restoredImagesDetail } = await import("../lib/usage/send-restore-detail.ts")
+const { retryKeptDraftPlan } = await import("../hooks/retry-kept-draft-plan.ts")
+const { zhChat } = await import("../i18n/catalogs/zh/chat.ts")
+const zhT = (key: string) => (zhChat as Record<string, string>)[key.replace(/^chat\./, "")] ?? key
+
+function noticeDetailAfterRollback(): string | null {
+  const images = listComposerAssets().filter((a) => (a.mediaType ?? "").startsWith("image/")).length
+  return restoredImagesDetail(zhT as never, images, useChatStore.getState().composer.trim().length > 0)
+}
+
+function seedImageOnlyTurn(sessionId: string, runId: string) {
+  useChatStore.setState({
+    sessionId,
+    sessionTitle: "新对话",
+    repositories: [],
+    running: true,
+    runId,
+    composer: "",
+    error: null,
+    pendingStreamEvents: [],
+    messages: [
+      {
+        id: "u1",
+        role: "user",
+        content: "",
+        createdAt: 1,
+        assets: [{ assetId: "ast_only", mediaType: "image/png", name: "only.png", url: "blob:only" }]
+      },
+      { id: "a1", role: "assistant", content: "", createdAt: 2, streaming: true }
+    ]
+  } as never)
+}
+
+test("luna ①：只图发送出字前失败：图回输入框并落草稿；白卡说「图片已放回输入框」；再发一次走发送", () => {
+  seedImageOnlyTurn("ses_only", "run_only")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_only"))
+  const state = useChatStore.getState()
+  assert.deepEqual(state.messages, [])
+  assert.equal(state.composer, "")
+  assert.deepEqual(listComposerAssets().map((a) => a.id), ["ast_only"])
+  assert.deepEqual(persisted.at(-1), { sessionId: "ses_only", ids: ["ast_only"] })
+  assert.equal(noticeDetailAfterRollback(), "图片已放回输入框，可以直接再发。")
+  assert.equal(
+    retryKeptDraftPlan({ composer: state.composer, composerAssetCount: listComposerAssets().length, lastUserContent: undefined }),
+    "send",
+    "输入框只有图也得发出去，不能因为没字就什么都不做"
+  )
+})
+
+test("luna ②：有字有图出字前失败：字和图都回来；白卡说「文字和图片已放回输入框」", () => {
+  seedFirstTurn("ses_both", "run_both")
+  useChatStore.getState().applyStreamEvent(preOutputError("run_both"))
+  assert.equal(useChatStore.getState().composer, "帮我看看这张图里的报错")
+  assert.deepEqual(listComposerAssets().map((a) => a.id), ["ast_a", "ast_b"])
+  assert.equal(noticeDetailAfterRollback(), "文字和图片已放回输入框，可以直接再发。")
+})
+
+test("白卡第二行：没图不加；文案键与看门狗同一对（不另起新句）", () => {
+  assert.equal(restoredImagesDetail(zhT as never, 0, true), null)
+  assert.equal(restoredImagesDetail((k: string) => k, 1, false), "chat.sendFailedRestoreImagesOnly")
+  assert.equal(restoredImagesDetail((k: string) => k, 2, true), "chat.sendFailedRestoreWithImages")
+})
