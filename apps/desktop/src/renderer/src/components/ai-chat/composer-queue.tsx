@@ -3,6 +3,7 @@
  * 1. 紧凑态：图片与文件分区呈现、超出阈值折叠 (+N 徽标)、彻底消除原生滚动条。
  * 2. 展开态：就地变形为轻量紧凑资产抽屉（无重复渲染、紧凑流式自适应排布、大图 Lightbox 与一键清空）。
  */
+import { attachmentSummaryLabel } from "./composer-count-labels"
 import { useEffect, useState } from "react"
 import {
   RiArrowDownSLine,
@@ -48,14 +49,7 @@ export function ComposerQueue({ className }: { className?: string }) {
   )
 
   // 英文单复数：count === 1 走 One 键（1 image / 1 file）。
-  const imagesLabel = images.length === 1 ? t("chat.imagesCountOne") : t("chat.imagesCount", { count: images.length })
-  const filesLabel = files.length === 1 ? t("chat.filesCountOne") : t("chat.filesCount", { count: files.length })
-  const summaryLabel =
-    images.length > 0 && files.length > 0
-      ? t("chat.imagesAndFiles", { images: imagesLabel, files: filesLabel })
-      : images.length > 0
-        ? imagesLabel
-        : filesLabel
+  const summaryLabel = attachmentSummaryLabel(t, images.length, files.length)
 
   // 紧凑模式下超过 3 项自动折叠
   const visibleImages = images.slice(0, 2)

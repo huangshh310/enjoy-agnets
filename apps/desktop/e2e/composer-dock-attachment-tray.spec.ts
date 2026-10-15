@@ -3,7 +3,8 @@
  * 盖住附件托盘，图片缩略图下半截被挡。1024 / 768 宽都能复现。
  * 根因：附件托盘靠 -mb 把底边塞进输入框下面，却排在待验收条上方，于是把待验收条拉上来叠在缩略图上。
  * 断言：有已改文件的待验收条 + 一张图片附件时，1024 / 768 / 733×480 下缩略图与条不重叠、整张可见，
- * 输入框完整可见、没被挤没。截图：设 ENJOY_E2E_SHOTS_DIR 时按尺寸落盘，另截一张深色。
+ * 输入框完整可见、没被挤没；审核条按钮（去审查/打回/通过、全部撤销/全部保留/审查）可见且 elementFromPoint
+ * 命中按钮本身；托盘展开 + 733×480 也一样。截图：设 ENJOY_E2E_SHOTS_DIR 时按尺寸落盘，另截一张深色。
  */
 import { existsSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
@@ -30,6 +31,20 @@ const PNG = Buffer.from(
 )
 
 type Box = { x: number; y: number; width: number; height: number }
+type DockButton = { name: string; locate: (window: Page) => Locator }
+
+// 待验收态：去审查 / 打回 / 通过（composer-review-gate-parts）。
+const GATE_BUTTONS: DockButton[] = [
+  { name: "去审查", locate: (w) => w.locator('[data-testid="review-gate-open"]') },
+  { name: "打回", locate: (w) => w.locator('[data-testid="review-gate-reject"]') },
+  { name: "通过", locate: (w) => w.locator('[data-testid="review-gate-approve"]') }
+]
+// 普通改动态：全部撤销 / 全部保留 / 审查（composer-live-changes.tsx KeepRowActions）。
+const KEEP_BUTTONS: DockButton[] = [
+  { name: "全部撤销", locate: (w) => w.locator('[data-testid="composer-live-changes"]').getByRole("button", { name: "全部撤销" }) },
+  { name: "全部保留", locate: (w) => w.locator('[data-testid="composer-live-changes"]').getByRole("button", { name: "全部保留" }) },
+  { name: "审查", locate: (w) => w.locator('[data-testid="session-review-open"]') }
+]
 
 test("有已改文件的待验收条 + 一张图片附件：缩略图不被条挡住，输入框不被挤没", async () => {
   test.setTimeout(180_000)
@@ -60,18 +75,64 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
         await window.setViewportSize(size)
         await window.waitForTimeout(500)
         const label = `${size.width}x${size.height} ${theme}`
-        if (size.height > 640) await expect(gate).toContainText("1 个文件已改")
+        await expect(gate).toContainText("1 个文件已改")
         await expectTrayClear(window, label, size)
+        await expectDockButtons(window, label, GATE_BUTTONS)
         if (theme === "light" || size.width === 1024) {
           await snap(window, `${size.width}x${size.height}-dock-tray-${theme}`)
         }
       }
     }
     await setTheme(window, "light")
+
+    // 展开的附件托盘 + 最小窗 733×480：托盘变高也不能顶到审核条上、按钮照样点得到。
+    const small = { width: 733, height: 480 }
+    await window.setViewportSize(small)
+    const tray = window.locator('[data-testid="composer-attachment-tray"]')
+    await tray.getByRole("button", { name: /1 张图片/ }).click()
+    await expect(tray.getByRole("button", { name: /收起/ })).toBeVisible({ timeout: 5_000 })
+    await window.waitForTimeout(500)
+    await expect(gate).toContainText("1 个文件已改")
+    await expectTrayClear(window, "733x480 expanded", small)
+    await expectDockButtons(window, "733x480 expanded", GATE_BUTTONS)
+    await snap(window, "733x480-dock-tray-expanded-light")
+    await tray.getByRole("button", { name: /收起/ }).click()
+
+    // 不在待验收（workflow 非 needs_review）时条是「全部撤销 / 全部保留 / 审查」：三种尺寸下也得露出来、命中自己。
+    await window.setViewportSize(SIZES[0])
+    await window.evaluate(() => window.__enjoyE2e?.setReviewChrome({ workflowStatus: "in_progress" }))
+    const live = window.locator('[data-testid="composer-live-changes"]')
+    await expect(live).toBeVisible({ timeout: 15_000 })
+    for (const size of SIZES) {
+      await window.setViewportSize(size)
+      await window.waitForTimeout(500)
+      const label = `${size.width}x${size.height} keep-row`
+      await expectTrayClear(window, label, size)
+      await expectDockButtons(window, label, KEEP_BUTTONS)
+      await snap(window, `${size.width}x${size.height}-dock-tray-keep-row-light`)
+    }
   } finally {
     await closeForRelaunch(env.app)
   }
 })
+
+/** 审核条上的按钮：可见、整颗在视口内、中心 elementFromPoint 命中按钮本身（没被托盘或别的层盖住）。 */
+async function expectDockButtons(window: Page, label: string, buttons: DockButton[]): Promise<void> {
+  for (const button of buttons) {
+    const locator = button.locate(window)
+    await expect(locator, `${label}: ${button.name} visible`).toBeVisible()
+    const b = await box(locator)
+    const vp = window.viewportSize()
+    expect(b.y, `${label}: ${button.name} above viewport`).toBeGreaterThanOrEqual(0)
+    expect(b.x + b.width, `${label}: ${button.name} beyond right edge`).toBeLessThanOrEqual((vp?.width ?? 0) + 0.5)
+    const hit = await locator.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+      return { ok: !!at && (at === el || el.contains(at)), by: at ? `${at.tagName}.${at.getAttribute("data-testid") ?? ""}` : "none" }
+    })
+    expect(hit.ok, `${label}: ${button.name} covered by ${hit.by}`).toBe(true)
+  }
+}
 
 async function expectTrayClear(window: Page, label: string, size: { width: number; height: number }): Promise<void> {
   const dock = await box(window.locator('[data-testid="composer-review-frame"]'))

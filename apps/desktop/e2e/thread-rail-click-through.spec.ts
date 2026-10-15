@@ -3,7 +3,8 @@
  * 透明处也吃掉点击。1100 宽下用户消息的编辑 / 从这里重来 / 复制、编辑框的保存 / 取消，真实鼠标点都没反应。
  * 出现条件：会话里 ≥2 条带文字的用户消息、且没有本轮账本（没改文件）。
  * 断言：真实鼠标 page.mouse.click 坐标点击（不 force）都生效；elementFromPoint 命中的就是按钮本身；
- * 刻度按钮不与消息操作按钮 / 编辑框重叠。截图：设 ENJOY_E2E_SHOTS_DIR 时落盘。
+ * 刻度按钮不与消息操作按钮 / 编辑框重叠；刻度自己仍能悬停出预览、点击滚到对应消息。
+ * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -101,6 +102,72 @@ test("1100 宽、两条带字用户消息、无账本：右侧刻度不吃点击
     await closeForRelaunch(app)
   }
 })
+
+test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对应消息", async () => {
+  test.setTimeout(180_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-rail-ws-"))
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-rail-ud-"))
+  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  const app = await relaunchElectron({
+    ...process.env,
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_LANG: "zh",
+    ENJOY_E2E_CHAT_READY: "key",
+    ENJOY_E2E_WORKSPACE: workspace,
+    ENJOY_E2E_USERDATA: userData
+  })
+  try {
+    const window = await firstWindow(app)
+    await window.setViewportSize({ width: 1100, height: 720 })
+    const composer = window.locator('[data-testid="composer-input"]')
+    const filler = "，这一句故意写长一点好把会话撑出一屏".repeat(12)
+    const prompts = ["刻度一号 alpha", "刻度二号 beta", "刻度三号 gamma", "刻度四号 delta", "刻度五号 epsilon"]
+    for (const head of prompts) {
+      await sendComposer(window, composer, `${head}${filler}`)
+      await expect(window.locator("body")).toContainText(`stub-ok ${head}`, { timeout: 20_000 })
+      await expect(window.locator('[data-testid="composer-send"]')).toHaveAttribute("aria-label", /Send|发送/, {
+        timeout: 20_000
+      })
+    }
+    const ticks = window.locator('[data-slot="preview-rail-item"]')
+    await expect(ticks).toHaveCount(prompts.length, { timeout: 10_000 })
+    await window.waitForTimeout(800)
+    const first = window.locator("[data-thread-message]").filter({ hasText: prompts[0] }).first()
+    // 前提：第一句已经滚出可视区，否则测不出「点刻度滚过去」。贴底滚动可能还没落定，先滚到最后一句再等。
+    await window.locator("[data-thread-message]").last().scrollIntoViewIfNeeded()
+    await expect.poll(() => inViewport(first), { timeout: 5_000, message: "first message should start offscreen" }).toBe(false)
+
+    const tick = ticks.first()
+    expect(await hitsSelf(tick), "tick: elementFromPoint not the tick").toBe(true)
+    const t = await box(tick)
+    await window.mouse.move(t.x + t.width / 2, t.y + t.height / 2)
+    const card = window.locator('[data-slot="preview-rail-card"]')
+    await expect(card).toBeVisible({ timeout: 3_000 })
+    await expect(card).toContainText("刻度一号")
+    await snap(window, "1100x720-rail-tick-hover")
+
+    await window.mouse.click(t.x + t.width / 2, t.y + t.height / 2)
+    await expect.poll(() => inViewport(first), { timeout: 5_000 }).toBe(true)
+    await expect(tick).toHaveAttribute("aria-current", "location")
+    await snap(window, "1100x720-rail-tick-click-scrolled")
+
+    // 移开后预览收起，不残留在消息上。
+    await window.mouse.move(200, 300)
+    await expect(card).toHaveCount(0, { timeout: 3_000 })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+async function inViewport(locator: Locator): Promise<boolean> {
+  return locator.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const top = Math.max(r.top, 0)
+    const bottom = Math.min(r.bottom, window.innerHeight)
+    return bottom - top > Math.min(40, r.height / 2)
+  })
+}
 
 async function clickCenter(window: Page, locator: Locator): Promise<void> {
   const b = await box(locator)

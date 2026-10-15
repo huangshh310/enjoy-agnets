@@ -8,6 +8,7 @@ import { discardFollowup, returnFollowupToComposer, sendFollowupNow } from "@ren
 import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { queuedExtrasLabel } from "../../composer-count-labels"
 
 export function QueuedUserTurn({
   item,
@@ -39,7 +40,7 @@ export function QueuedUserTurn({
         {preview ? <p className="whitespace-pre-wrap break-words">{preview}</p> : null}
         {extraCount > 0 ? (
           <p className={cx("text-caption-2-regular text-text-tertiary", preview && "mt-1.5")}>
-            {extraCount === 1 ? t("chat.runtimeQueuedExtrasOne") : t("chat.runtimeQueuedExtras", { n: extraCount })}
+            {queuedExtrasLabel(t, extraCount)}
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-caption-2-medium">
