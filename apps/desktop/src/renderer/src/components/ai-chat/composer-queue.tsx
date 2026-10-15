@@ -65,9 +65,11 @@ export function ComposerQueue({ className }: { className?: string }) {
     <>
       {/* 顶部探出式层叠附件托盘 (Layered Shelf) */}
       <div
+        data-testid="composer-attachment-tray"
         data-frost="tile"
         className={cx(
-          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] flex-col gap-2",
+          // 只在 Composer 正上方：-mb 只让底部留白（pb-4）藏到输入框下，缩略图本身不被任何条盖住。
+          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] shrink-0 flex-col gap-2",
           "-mb-3.5 rounded-t-2xl border-x border-t border-border-button-default/80",
           "bg-background-secondary-default/95 px-3.5 pt-2 pb-4 shadow-2xs backdrop-blur-md",
           "animate-in fade-in-50 slide-in-from-bottom-2 duration-200 select-none",

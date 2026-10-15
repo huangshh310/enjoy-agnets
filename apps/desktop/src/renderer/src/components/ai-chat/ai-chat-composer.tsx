@@ -135,12 +135,13 @@ export function AiChatComposer({
   return (
     <div className={cx("relative flex flex-col w-full min-w-0 px-6 pb-2", className)}>
       <EngineHandoffDock />
-      <ComposerQueue />
       <ExploreDesktopBanner />
       <ExploreInterceptBanner />
       <ComposerBranchMismatch />
       <ModelSwitchNotice />
       <ComposerActivityFrame />
+      {/* 附件托盘必须紧挨输入框：它靠 -mb 把底边塞进输入框下面，放在别的条上方会把下一条拉上来盖住缩略图。 */}
+      <ComposerQueue />
       <form
         data-composer="true"
         data-toast-clearance=""
