@@ -4,6 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
+import { QueuedFollowups } from "@renderer/components/ai-chat/thread/queued-followups"
 import { sessionScopedCount, useSessionChanges } from "@renderer/hooks/session-changes"
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
@@ -261,6 +262,8 @@ function ChatThreadBody(props: {
                   error={error}
                 />
               )}
+              {/* 有审批卡时排队项挂在审批卡正上方、不随消息滚，按钮不被页头挡、不和审批按钮叠（pr157-gate-52/53）。 */}
+              <QueuedFollowups placement="dock" />
               <PermissionDock />
             </div>
             <EnvironmentPanel open={environmentOpen} />
