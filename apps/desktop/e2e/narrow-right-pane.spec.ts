@@ -5,7 +5,9 @@
  * 断言：面板宽度 > 0（≥ 240）且完全在视口内；关闭后面板不再占视口、主区宽度复原。
  * 另两条（luna / jojo main157-patrol-08~15、m157-20/21：窄窗把面板压成 0 后放宽也回不来，「去审查」要点两次开关才找回）：
  *   ① 1440 打开 → 拖窄到 800 → 放宽回 1440：面板宽 > 0 且可见；
- *   ② 800 打开 → 放宽到 1024 → 关闭 → 点一次「去审查」就打开。
+ *   ② 800 打开 → 放宽到 1024 → 关闭 → 点一次「去审查」就打开；
+ *   ③ 1024 开着时把分隔条拖到窗外、面板被压成 0（开关仍是「开」），不先关，直接点一次「去审查」宽度就恢复（leo e40edfb0 BLOCK）。
+ * 窄窗抽屉开着时来了审批：抽屉自动收起，审批卡按钮露出、点得到；审批期间手动再开抽屉不被收回。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘，文件名前缀 ENJOY_E2E_SHOT_TAG（默认 after）。
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
@@ -89,6 +91,13 @@ async function clickToggle(page: Page, toggle: Locator, tag: string, size: { wid
   else await toggle.evaluate((el) => (el as HTMLElement).click())
 }
 
+/** 覆盖式抽屉：打开时主区不被挤（x、宽度和关着时一样，分隔条也不占位）。 */
+async function expectMainUntouched(page: Page, tag: string, before: Box | null) {
+  const now = await boxOf(page, '[data-testid="chat-conversation"]')
+  expect.soft(now && before ? Math.abs(now.width - before.width) : -1, `${tag} main width untouched`).toBeLessThanOrEqual(1)
+  expect.soft(now && before ? Math.abs(now.x - before.x) : -1, `${tag} main x untouched`).toBeLessThanOrEqual(1)
+}
+
 async function expectRestored(page: Page, tag: string, before: Box | null) {
   await expect.poll(() => paneVisibleWidth(page), { message: `${tag} pane closed`, timeout: 3_000 }).toBe(0)
   const after = await boxOf(page, '[data-testid="chat-conversation"]')
@@ -140,6 +149,7 @@ for (const lang of ["zh", "en"] as const) {
         await page.waitForTimeout(400)
         if (shotsDir) await page.screenshot({ path: join(shotsDir, `${shotTag}-panel-${lang}-${size.width}x${size.height}-toggle.png`) })
         await expectPaneUsable(page, `${tag} toggle`, size)
+        if (size.narrow) await expectMainUntouched(page, `${tag} toggle drawer`, before)
         await clickToggle(page, collapse, `${tag} close`, size)
         await expect(expand).toHaveCount(1)
         await expectRestored(page, `${tag} toggle→button`, before)
@@ -150,6 +160,7 @@ for (const lang of ["zh", "en"] as const) {
         await page.waitForTimeout(400)
         if (shotsDir) await page.screenshot({ path: join(shotsDir, `${shotTag}-panel-${lang}-${size.width}x${size.height}-review.png`) })
         await expectPaneUsable(page, `${tag} review`, size)
+        if (size.narrow) await expectMainUntouched(page, `${tag} review drawer`, before)
         if (size.narrow) {
           await page.keyboard.press("Escape")
         } else {
@@ -252,6 +263,122 @@ for (const lang of ["zh", "en"] as const) {
       await page.waitForTimeout(400)
       await shot(page, `patrol2-${lang}-1024-review-once`)
       await expectPaneUsable(page, `${lang} 1024 review once`, mid)
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
+/** 分栏里审查栏 Panel 的实际宽度（不看抽屉）。 */
+async function inspectorPanelWidth(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="inspector-host"]')?.closest("[data-panel]")
+    return panel ? panel.getBoundingClientRect().width : -1
+  })
+}
+
+async function inspectorSeparatorBox(page: Page): Promise<Box | null> {
+  return page.evaluate(() => {
+    const sep = document.querySelector('[data-testid="inspector-host"]')?.closest("[data-panel]")?.previousElementSibling
+    if (!sep || sep.getAttribute("role") !== "separator") return null
+    const r = sep.getBoundingClientRect()
+    return { x: r.x, y: r.y, width: r.width, height: r.height }
+  })
+}
+
+for (const lang of ["zh", "en"] as const) {
+  test(`1024 面板开着被压成 0（不关）→ 直接点一次「去审查」宽度恢复（${lang}）`, async () => {
+    test.setTimeout(180_000)
+    const { app, page, collapse, review } = await launchWithChange(lang)
+    try {
+      const mid = { width: 1024, height: 670 }
+      await page.setViewportSize(mid)
+      await page.waitForTimeout(400)
+      await review.click()
+      await expect(collapse).toHaveCount(1)
+      await expectPaneUsable(page, `${lang} 1024 opened`, mid)
+      // 把分隔条拖到窗外右缘：库把可折叠的审查栏压成 0。onResize 兜底每次打开最多补 3 次，
+      // 反复拖到它补不动为止；全程不点开关，store 里一直是「开」。
+      for (let i = 0; i < 8; i++) {
+        if ((await inspectorPanelWidth(page)) < 1) {
+          await page.waitForTimeout(600)
+          if ((await inspectorPanelWidth(page)) < 1) break
+        }
+        const sep = await inspectorSeparatorBox(page)
+        if (!sep) break
+        const y = sep.y + sep.height / 2
+        await page.mouse.move(sep.x + sep.width / 2, y)
+        await page.mouse.down()
+        await page.mouse.move(mid.width - 2, y, { steps: 12 })
+        await page.mouse.up()
+        await page.waitForTimeout(600)
+      }
+      await expect(collapse, `${lang} still open (not closed)`).toHaveCount(1)
+      expect(await inspectorPanelWidth(page), `${lang} squashed to 0`).toBeLessThan(1)
+      await shot(page, `squash-${lang}-1024-squashed`)
+      // 只点一次「去审查」，不先关、不碰开关。
+      await review.click()
+      await expect
+        .poll(() => inspectorPanelWidth(page), { message: `${lang} review restores width`, timeout: 3_000 })
+        // 1024 宽时默认 38% 约 275px；和其它用例一样按「可用宽度 ≥ 240」判。
+        .toBeGreaterThanOrEqual(240)
+      await expect(collapse).toHaveCount(1)
+      await page.waitForTimeout(300)
+      await shot(page, `squash-${lang}-1024-review-restored`)
+      await expectPaneUsable(page, `${lang} 1024 review restored`, mid)
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+
+  test(`窄窗抽屉开着时来了审批：抽屉自动收起，审批按钮露出可点（${lang}）`, async () => {
+    test.setTimeout(180_000)
+    const { app, page, expand, collapse, review } = await launchWithChange(lang)
+    try {
+      const narrow = { width: 768, height: 654 }
+      await page.setViewportSize(narrow)
+      await page.waitForTimeout(400)
+      const host = page.locator('[data-testid="inspector-host"]')
+      await review.click()
+      await expect(host).toHaveAttribute("data-drawer", "open")
+      await expectPaneUsable(page, `${lang} 768 drawer open`, narrow)
+      await shot(page, `approval-drawer-${lang}-768-before`)
+      // 抽屉开着时再要一次写盘审批（上一次只点了「允许」，不是本会话总是允许，所以还会再弹卡）。
+      const composer = page.locator('[data-testid="composer-input"]')
+      await composer.fill("please write a note")
+      await page.waitForFunction(
+        () => {
+          const label = document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? ""
+          return label === "Send" || label === "发送"
+        },
+        undefined,
+        { timeout: 15_000 }
+      )
+      await composer.press("Enter")
+      const allow = page.locator('[data-testid="approval-allow"]')
+      await expect(allow).toBeVisible({ timeout: 15_000 })
+      await expect(host, `${lang} drawer auto-closed`).toHaveAttribute("data-drawer", "closed", { timeout: 3_000 })
+      await expect(expand).toHaveCount(1)
+      await page.waitForTimeout(300)
+      await shot(page, `approval-drawer-${lang}-768-approval`)
+      for (const id of ["approval-allow", "approval-deny"]) {
+        const button = page.locator(`[data-testid="${id}"]`)
+        const box = await button.boundingBox()
+        expect(box, `${lang} ${id} box`).not.toBeNull()
+        const hitsSelf = await button.evaluate(
+          (el, p) => {
+            const hit = document.elementFromPoint(p.x, p.y)
+            return Boolean(hit && (hit === el || el.contains(hit)))
+          },
+          { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 }
+        )
+        expect.soft(hitsSelf, `${lang} ${id} not covered by drawer`).toBe(true)
+      }
+      // 审批期间自己再打开抽屉：不会被立刻收回去。
+      await clickToggle(page, expand, `${lang} 768 reopen during approval`, narrow)
+      await expect(collapse).toHaveCount(1)
+      await page.waitForTimeout(500)
+      await expect(host, `${lang} manual reopen sticks`).toHaveAttribute("data-drawer", "open")
     } finally {
       await closeForRelaunch(app)
     }

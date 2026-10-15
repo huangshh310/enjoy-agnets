@@ -1,8 +1,9 @@
 /**
  * 窄窗审查栏抽屉：量分栏宽度，放不下并排时给出抽屉的位置（fixed，贴分栏右缘、从聊天顶栏下沿到底）。
  * 抽屉打开时 Esc 关（不抢菜单 / 弹窗自己的 Esc）。
+ * 抽屉开着时来了审批（或带着待审批进入抽屉模式）：自动收起，不然 z-40 的抽屉盖住审批卡。
  */
-import { useEffect, useState, type RefObject } from "react"
+import { useEffect, useRef, useState, type RefObject } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
 import {
   INSPECTOR_DRAWER_TOP_INSET_PX,
@@ -62,6 +63,15 @@ export function useInspectorDrawer(splitRef: RefObject<HTMLElement | null>): Ins
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [open])
+
+  // 只在「审批到来 / 进入抽屉模式」这两个时刻收一次；审批期间用户自己再打开抽屉不拦。
+  const approvalId = useChatStore((state) => state.pendingApproval?.approvalId ?? null)
+  const openRef = useRef(open)
+  openRef.current = open
+  useEffect(() => {
+    if (approvalId == null || !drawer.active || !openRef.current) return
+    useChatStore.getState().setRightPanelCollapsed(true)
+  }, [approvalId, drawer.active])
 
   return drawer
 }
