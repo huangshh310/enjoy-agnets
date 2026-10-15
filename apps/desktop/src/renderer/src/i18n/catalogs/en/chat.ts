@@ -99,6 +99,7 @@ export const enChat = {
   runtimeMoveUp: "Move queued item up",
   runtimeMoveDown: "Move queued item down",
   runtimeQueueCount: "{n} queued",
+  runtimeQueueMore: "{n} more",
   runtimeQueueExpand: "Expand",
   runtimeQueueCollapse: "Collapse",
   runtimeJumpToQueue: "See them at the end of the thread",
