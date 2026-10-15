@@ -24,6 +24,8 @@ import {
 } from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { afterPreOutputRollback } from "./after-pre-output-rollback"
+import { readComposerForMerge, writeComposerAfterMerge } from "./composer-io"
+import { mergeComposerText } from "../lib/merge-composer-text"
 import { isImmediatePreOutputError } from "./pre-output-rollback"
 import { errorAfterOptimisticSend, errorAfterStreamEvent } from "./resend-notice"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
@@ -207,6 +209,11 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       holdApprovalResolved(sessionId, patch.heldResolved)
     }
     const error = errorAfterStreamEvent(get().error, event, patch.error)
+    // leo r3 M1：还稿不得整段覆盖用户之后打的字——与输入框当下全文合并（同 restoreComposerDraft）。
+    const composer =
+      patch.composer !== undefined
+        ? mergeComposerText(patch.composer, readComposerForMerge(get().composer))
+        : undefined
     set({
       messages: patch.messages,
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
@@ -218,8 +225,9 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
       ...(error !== undefined ? { error } : {}),
       ...(patch.notice !== undefined ? { notice: patch.notice } : {}),
-      ...(patch.composer !== undefined ? { composer: patch.composer } : {})
+      ...(composer !== undefined ? { composer } : {})
     })
+    if (composer !== undefined) writeComposerAfterMerge(composer)
     if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages)
   },
   appendUserMessage: (content, assets) => {

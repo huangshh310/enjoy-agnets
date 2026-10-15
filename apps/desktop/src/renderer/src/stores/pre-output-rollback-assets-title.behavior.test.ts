@@ -158,3 +158,33 @@ test("P2：发送被挡、撤掉乐观首句（failComposerSend dropOptimisticUs
   assert.deepEqual(useChatStore.getState().messages, [])
   assert.equal(useChatStore.getState().sessionTitle, "新对话")
 })
+
+test("leo r3 M1：发出后又打了字，出字前回滚：还回的稿并进去，不覆盖后打的字", () => {
+  seedFirstTurn("ses_typed", "run_typed")
+  useChatStore.setState({ composer: "我后来又补了一句" } as never)
+  useChatStore.getState().applyStreamEvent(preOutputError("run_typed"))
+  assert.equal(useChatStore.getState().composer, "我后来又补了一句\n帮我看看这张图里的报错")
+})
+
+test("leo r3 M1：输入框 DOM 比 store 新（写回锁中）：按 DOM 全文合并，并写回 DOM", async () => {
+  const { setComposerIo } = await import("./composer-io.ts")
+  const written: string[] = []
+  setComposerIo({ read: () => "DOM 里刚打的字", write: (text) => written.push(text) })
+  try {
+    seedFirstTurn("ses_dom", "run_dom")
+    useChatStore.setState({ composer: "DOM 里" } as never)
+    useChatStore.getState().applyStreamEvent(preOutputError("run_dom"))
+    assert.equal(useChatStore.getState().composer, "DOM 里刚打的字\n帮我看看这张图里的报错")
+    assert.deepEqual(written, ["DOM 里刚打的字\n帮我看看这张图里的报错"])
+  } finally {
+    setComposerIo(null)
+  }
+})
+
+test("leo r3 M1：queue-composer-send 载入即注册输入框读写（回滚合并读的是输入框当下全文）", async () => {
+  const { readComposerForMerge, setComposerIo } = await import("./composer-io.ts")
+  setComposerIo(null)
+  await import(`../hooks/queue-composer-send.ts?register=${Date.now()}`)
+  useChatStore.setState({ composer: "输入框当下" } as never)
+  assert.equal(readComposerForMerge("回落值"), "输入框当下", "无 DOM 时 readComposerDomText 回落 store，而不是没注册的回落值")
+})
