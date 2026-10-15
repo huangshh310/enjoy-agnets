@@ -247,7 +247,12 @@ function ChatThreadBody(props: {
             <div
               data-testid="chat-conversation"
               // 审批时对话列保底 13rem / 25% 主体（#144）；矮窗里消息区自身保 min-h-6（一行），不被卡挤成 0。
-              className={cx("flex min-h-14 min-w-0 flex-1 flex-col", pendingApproval && "min-h-[min(13rem,25cqh)]")}
+              // 审批卡上方挂着紧凑排队区时，那一行已经是「看得见的上下文」，消息区的 min-h-6 让出来给审批三钮（luna g158-42）。
+              className={cx(
+                "flex min-h-14 min-w-0 flex-1 flex-col",
+                pendingApproval && "min-h-[min(13rem,25cqh)]",
+                "[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0"
+              )}
             >
               {props.historyPending ? (
                 // 中性占位：保持空白，不画问候、不画示例；回灌完再出历史或空态。
