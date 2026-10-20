@@ -10,6 +10,7 @@ import { focusComposerEndAfterPaint } from "@renderer/hooks/composer-focus"
 import { useT } from "@renderer/i18n"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { cx } from "@/utils/cx"
+import { approvalOtherChatText, parseApprovalOtherChatNotice } from "@renderer/lib/approval-other-chat"
 
 export function ThreadNoticeBanner() {
   const t = useT()
@@ -24,7 +25,11 @@ export function ThreadNoticeBanner() {
   const restoreFamily = restoreMismatch || restoreInterrupted
   const catchUpTimeout = kind === "catch_up_timeout"
   const resume = kind === "resume_fallback"
-  const title = restoreFamily
+  // 审批属于别的对话（luna 定稿）：中性灰，一句话，没有按钮。
+  const otherChat = parseApprovalOtherChatNotice(notice)
+  const title = otherChat
+    ? approvalOtherChatText(t, otherChat.title)
+    : restoreFamily
     ? t("chat.restartAbandoned")
     : stopped
       ? t("chat.runStopped")
@@ -51,12 +56,13 @@ export function ThreadNoticeBanner() {
   return (
     <div
       data-testid="thread-notice-banner"
+      data-notice-kind={otherChat ? "approval_other_chat" : kind}
       className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:py-1"
     >
       <span
         className={cx(
           "mt-1 size-2 shrink-0 rounded-full",
-          stopped || restoreFamily || catchUpTimeout ? "bg-text-tertiary" : "bg-status-yellow-text"
+          stopped || restoreFamily || catchUpTimeout || otherChat ? "bg-text-tertiary" : "bg-status-yellow-text"
         )}
         aria-hidden
       />

@@ -36,6 +36,17 @@ const { decidePendingApproval } = await import("../../../hooks/decide-pending-ap
 const { abortComposerRun } = await import("../../../hooks/composer-run-control.ts")
 const { loadSession } = await import("../../../hooks/session-lifecycle.ts")
 const { queryClient } = await import("../../../lib/query-client.ts")
+const { decidePendingApprovalOrThrow } = await import("../../../hooks/decide-pending-approval.ts")
+const otherChat = await import("../../../lib/approval-other-chat.ts")
+const { zh } = await import("../../../i18n/catalogs/zh/index.ts")
+const { en } = await import("../../../i18n/catalogs/en/index.ts")
+const { translate } = await import("../../../i18n/lookup.ts")
+/** 提示条上实际画出来的那句（ThreadNoticeBanner 用同一个 approvalOtherChatText）。 */
+function shown(notice: string | null, messages: unknown): string {
+  const parsed = otherChat.parseApprovalOtherChatNotice(notice)
+  assert.ok(parsed, `不是「审批属于别的对话」提示：${notice}`)
+  return otherChat.approvalOtherChatText((path, vars) => translate(messages, path, vars), parsed.title)
+}
 const flush = async () => { for (let i = 0; i < 40; i++) await new Promise((r) => setTimeout(r, 0)) }
 
 afterEach(() => {
@@ -149,22 +160,48 @@ test("jojo P1：导入的会话里点「批准」/ 停止——不批 B 的审�
   assert.equal(decided[0].approvalId, "ap_B")
 })
 
-test("审批只能批它所在会话的轮：前台审批卡的 run 已知属于别的会话时拒绝", async () => {
-  useChatStore.setState({ sessionId: "ses_imp", running: true, runId: "run_B", pendingApproval: approvalB, error: null } as never)
+test("审批只能批它所在会话的轮：前台审批卡的 run 已知属于别的会话时拒绝，给中性提示（带那个对话的标题）", async () => {
+  useChatStore.setState({ sessionId: "ses_imp", running: true, runId: "run_B", pendingApproval: approvalB, error: null, notice: null, repositories: [{ id: "ses_B", name: "会话B" }] } as never)
   useAttentionStore.getState().rememberRun("run_B", "ses_B")
   calls.length = 0
   await decidePendingApproval("allow")
   assert.deepEqual(calls.filter((c) => c.path === ".agent.decide"), [], "卡挂错会话时不批")
-  assert.equal(useChatStore.getState().error, "这个审批属于另一个对话，请切回去处理。", "说清审批属于另一个对话，不说「没有等待中的审批」")
+  assert.equal(useChatStore.getState().error, null, "不是红卡")
+  const notice = useChatStore.getState().notice
+  assert.equal(otherChat.parseApprovalOtherChatNotice(notice)?.title, "会话B")
+  assert.equal(shown(notice, zh), "这个审批在另一个对话「会话B」里，切过去再处理。")
+  assert.equal(shown(notice, en), 'This approval is in another chat, "会话B". Switch to it to respond.')
+  // 「拒绝并归档」那条路（OrThrow）照样抛，消息按界面语言。
   queryClient.setQueryData(["settings"], { preferences: { language: "en" } })
-  useChatStore.setState({ error: null } as never)
-  await decidePendingApproval("allow")
-  assert.equal(useChatStore.getState().error, "This approval belongs to another chat. Switch back to handle it.")
+  await assert.rejects(decidePendingApprovalOrThrow("deny"), (error: Error) => error.message === 'This approval is in another chat, "会话B". Switch to it to respond.')
   queryClient.removeQueries({ queryKey: ["settings"] })
+  await assert.rejects(decidePendingApprovalOrThrow("deny"), (error: Error) => error.message === "这个审批在另一个对话「会话B」里，切过去再处理。")
   // 对照：卡和前台同一会话照常批。
-  useChatStore.setState({ sessionId: "ses_B", error: null } as never)
+  useChatStore.setState({ sessionId: "ses_B", error: null, notice: null } as never)
   await decidePendingApproval("allow")
   assert.equal(calls.filter((c) => c.path === ".agent.decide").length, 1)
+})
+
+test("审批属于别的对话：拿不到标题 / 占位题「新对话」时用不带标题的那句；长标题截到 20 个字加「…」", async () => {
+  for (const repositories of [[], [{ id: "ses_B", name: "新对话" }], [{ id: "ses_B", name: "   " }]]) {
+    useChatStore.setState({ sessionId: "ses_imp", runId: "run_B", pendingApproval: approvalB, error: null, notice: null, repositories } as never)
+    useAttentionStore.getState().rememberRun("run_B", "ses_B")
+    await decidePendingApproval("allow")
+    const notice = useChatStore.getState().notice
+    assert.equal(otherChat.parseApprovalOtherChatNotice(notice)?.title, null)
+    assert.equal(shown(notice, zh), "这个审批在另一个对话里，切过去再处理。")
+    assert.equal(shown(notice, en), "This approval is in another chat. Switch to it to respond.")
+  }
+  const long = "把登录页的表单校验改成实时提示并补上单元测试和截图"
+  useChatStore.setState({ sessionId: "ses_imp", runId: "run_B", pendingApproval: approvalB, notice: null, repositories: [{ id: "ses_B", name: long }] } as never)
+  await decidePendingApproval("allow")
+  const notice = useChatStore.getState().notice
+  assert.equal(otherChat.parseApprovalOtherChatNotice(notice)?.title, `${Array.from(long).slice(0, 20).join("")}…`)
+  assert.equal(shown(notice, zh), `这个审批在另一个对话「${Array.from(long).slice(0, 20).join("")}…」里，切过去再处理。`)
+  // 正好 20 个字不截；按码点截，不劈开 emoji。
+  assert.equal(otherChat.approvalOtherChatTitle("一二三四五六七八九十一二三四五六七八九十"), "一二三四五六七八九十一二三四五六七八九十")
+  assert.equal(otherChat.approvalOtherChatTitle("😀".repeat(21)), `${"😀".repeat(20)}…`)
+  assert.equal(otherChat.approvalOtherChatTitle("Fix  the\nlogin form"), "Fix the login form")
 })
 
 test("leo：导入的会话回灌还没回来时切到会话 X——回灌回来后不改 X 的引擎、不打导入会话的「已回灌」、X 的回灌态不变", async () => {
