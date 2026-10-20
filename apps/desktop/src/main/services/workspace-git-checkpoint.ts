@@ -2,11 +2,13 @@
  * 写盘后记 refs/enjoy/checkpoints/<stamp>。
  * 用临时 index + commit-tree，不改用户当前分支、不碰工作区 index。
  * 内部快照一律用 Enjoy 身份（env 覆盖，不写用户 git config）：没配 user.name/email 也能记，
- * 隐藏 ref 里也不带用户身份。失败带 git stderr 记日志并返回 null。
+ * 隐藏 ref 里也不带用户身份；--no-gpg-sign 防老版本 git 在 commit.gpgSign=true 时给内部记账弹 gpg / 失败。
+ * 失败带 git stderr 记日志并返回 null。
  */
 import { promises as fs } from "node:fs"
 import { isAbsolute, join, resolve, sep } from "node:path"
 import { runExecutable, runGit } from "./command.ts"
+import { logCheckpointFailure } from "./workspace-git-checkpoint-log.ts"
 import {
   formatCheckpointSubject,
   parseCheckpointSubject,
@@ -122,8 +124,8 @@ async function commitWorktreeSnapshot(
   const tree = written.stdout.trim()
   if (written.exitCode !== 0 || !tree) return { ok: false, step: "write-tree", stderr: written.stderr }
   const args = hasHead
-    ? ["commit-tree", tree, "-p", "HEAD", "-m", message]
-    : ["commit-tree", tree, "-m", message]
+    ? ["commit-tree", "--no-gpg-sign", tree, "-p", "HEAD", "-m", message]
+    : ["commit-tree", "--no-gpg-sign", tree, "-m", message]
   const committed = await runExecutable(workspaceRoot, "git", args, 30_000, {
     GIT_INDEX_FILE: indexFile,
     ...ENJOY_CHECKPOINT_IDENTITY_ENV
@@ -133,20 +135,20 @@ async function commitWorktreeSnapshot(
   return { ok: true, sha }
 }
 
-/** 记账失败不能静默：带 git stderr 打主进程日志；调用方仍按 null（无记录）走。 */
+/** 记账失败不能静默：带 git stderr（截断 + 限流）打主进程日志；调用方仍按 null（无记录）走。 */
 function logRecordFailure(
   workspaceRoot: string,
   meta: EnjoyCheckpointMeta | undefined,
   step: SnapshotStep,
   stderr: string
 ): null {
-  console.error("[checkpoint] record failed", {
+  logCheckpointFailure({
     workspaceRoot,
     step,
     kind: meta?.kind,
     sessionId: meta?.sessionId,
     runId: meta?.runId,
-    stderr: stderr.trim()
+    stderr
   })
   return null
 }
