@@ -951,3 +951,47 @@ test("P2④ 对比度：说明行灰字 / 次按钮 / 排队行标签用 neutral
   assert.match(turn, /data-testid="queued-row-label" className=\{cx\("shrink-0", QUEUE_MUTED_TEXT\)\}/)
   assert.match(turn, /data-testid="queued-row-label" className=\{QUEUE_MUTED_TEXT\}/)
 })
+
+// ---- luna #163（10-21 定）：排队行链接「马上发给它 / 退回输入框」≥ 4.5:1 ----
+test("排队行链接对比度：紧凑行 accent-600 / 悬停 accent-700，暗色 accent-400 / 悬停 accent-300；时间线泡（opacity-80）深一档；不再用 accent-500", () => {
+  const ch = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+  const mix = (a: string, b: string, k: number) => "#" + ch(a).map((v, i) => Math.round(v * k + ch(b)[i]! * (1 - k)).toString(16).padStart(2, "0")).join("")
+  const lum = (h: string) => {
+    const [r, g, b] = ch(h).map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+  }
+  const ratio = (a: string, b: string) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+    return (hi! + 0.05) / (lo! + 0.05)
+  }
+  // tailwind v4 blue（accent 默认）+ theme.css：亮 secondary #f7f7f7 / primary #fff / full #f7f7f7；暗 secondary #171717 / primary #262626 / full #121212。
+  const A: Record<string, string> = { 200: "#bedbff", 300: "#8ec5ff", 400: "#3392ff", 500: "#2b7fff", 600: "#155dfc", 700: "#1447e6", 800: "#193cb8", 900: "#1c398e" }
+  const hover = (bg: string) => mix(A[500]!, bg, 0.1)
+  const dockL = [mix("#f7f7f7", "#ffffff", 0.6), mix("#f7f7f7", "#f7f7f7", 0.6)]
+  const dockD = [mix("#171717", "#262626", 0.6), mix("#171717", "#121212", 0.6)]
+  for (const bg of dockL) {
+    assert.ok(ratio(A[600]!, bg) >= 4.5 && ratio(A[700]!, hover(bg)) >= 4.5, `亮 ${bg}`)
+    assert.ok(ratio(A[500]!, bg) < 4.5, "旧 accent-500 确实不够")
+  }
+  for (const bg of dockD) {
+    assert.ok(ratio(A[600]!, bg) < 4.5, "暗色 accent-600 不够，所以换 400")
+    assert.ok(ratio(A[400]!, bg) >= 4.5 && ratio(A[300]!, hover(bg)) >= 4.5, `暗 ${bg}`)
+  }
+  // 时间线泡：泡 = secondary/50 叠 primary，整体 80% 叠在 primary 上。
+  const bubble = (fg: string, sec: string, page: string, hov: boolean) => {
+    let bg = mix(sec, page, 0.5)
+    if (hov) bg = hover(bg)
+    return ratio(mix(fg, page, 0.8), mix(bg, page, 0.8))
+  }
+  assert.ok(bubble(A[600]!, "#f7f7f7", "#ffffff", false) < 4.5, "泡里 accent-600 不够")
+  assert.ok(bubble(A[800]!, "#f7f7f7", "#ffffff", false) >= 4.5 && bubble(A[900]!, "#f7f7f7", "#ffffff", true) >= 4.5)
+  assert.ok(bubble(A[400]!, "#171717", "#262626", false) < 4.5, "泡里暗色 accent-400 不够")
+  assert.ok(bubble(A[300]!, "#171717", "#262626", false) >= 4.5 && bubble(A[200]!, "#171717", "#262626", true) >= 4.5)
+
+  assert.equal(view.QUEUE_LINK_DOCK, "text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300")
+  assert.equal(view.QUEUE_LINK_BUBBLE, "text-accent-800 hover:text-accent-900 dark:text-accent-300 dark:hover:text-accent-200")
+  const turn = readSource("../components/ai-chat/thread/turns/queued-user-turn.tsx")
+  assert.match(turn, /const actionClass = `\$\{actionBaseClass\} \$\{compact \? QUEUE_LINK_DOCK : QUEUE_LINK_BUBBLE\}`/)
+  assert.equal((turn.match(/className=\{actionClass\}/g) ?? []).length, 2, "「马上发给它」「退回输入框」都用它")
+  assert.ok(!/text-accent-500/.test(turn), "排队行不再用 accent-500 当字色")
+})

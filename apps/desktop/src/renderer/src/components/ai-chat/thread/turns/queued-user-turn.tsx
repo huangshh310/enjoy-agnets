@@ -9,7 +9,7 @@ import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { queuedExtrasLabel } from "../../composer-count-labels"
-import { QUEUE_MUTED_TEXT, queuedRowLabelKey } from "../queue-paused-view"
+import { QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey } from "../queue-paused-view"
 
 export function QueuedUserTurn({
   item,
@@ -30,6 +30,8 @@ export function QueuedUserTurn({
   const running = useChatStore((state) => state.running)
   const preview = (item.draft ?? item.prompt).trim()
   const label = t(queuedRowLabelKey(paused))
+  // luna #163（10-21）：「马上发给它 / 退回输入框」≥ 4.5:1（亮 / 暗）。时间线泡整体 opacity-80，同一个色不够，单独用深一档的。
+  const actionClass = `${actionBaseClass} ${compact ? QUEUE_LINK_DOCK : QUEUE_LINK_BUBBLE}`
   const extraCount = (item.quotedContexts?.length ?? 0) + item.assets.length + (item.skillChips?.length ?? 0)
 
   const actions = (
@@ -136,8 +138,8 @@ export function QueuedUserTurn({
   )
 }
 
-const actionClass =
-  "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-accent-500 hover:bg-accent-500/10"
+const actionBaseClass =
+  "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-accent-500/10"
 
 const iconClass =
   "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary disabled:cursor-default disabled:opacity-30"

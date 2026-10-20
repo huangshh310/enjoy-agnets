@@ -19,6 +19,17 @@ export const QUEUE_CLEAR_UNDO_MS = ARCHIVE_UNDO_TOAST_MS
  */
 export const QUEUE_MUTED_TEXT = "text-neutral-600 dark:text-neutral-400"
 
+/**
+ * luna #163（10-21）：排队行「马上发给它 / 退回输入框」链接 ≥ 4.5:1，亮暗、常态和悬停都要（悬停底色 accent-500/10）。
+ * 紧凑行（bg-secondary/60）：亮 accent-600 4.90–5.03，悬停 accent-700 5.70–5.84；
+ *   暗 accent-600 只有 3.21–3.48，取最近能过的 accent-400 5.38–5.82，悬停往对比度高的方向走一档 accent-300 8.30–9.05。
+ * 时间线泡（整个泡 opacity-80）：accent-600 亮 3.66 / accent-400 暗 3.85 都不够，取最近能过的：
+ *   亮 accent-800 5.29，悬停 accent-900 5.27；暗 accent-300 6.32，悬停 accent-200 7.25。
+ * 脚本 /workspace/kai-e1-contrast/links.py、links2.py；全表见 kai-e1.md。
+ */
+export const QUEUE_LINK_DOCK = "text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
+export const QUEUE_LINK_BUBBLE = "text-accent-800 hover:text-accent-900 dark:text-accent-300 dark:hover:text-accent-200"
+
 export type QueuePausedView = {
   text: string
   showContinue: boolean
