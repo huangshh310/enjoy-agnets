@@ -62,7 +62,7 @@ export function AcpSessionImport({ runtimeId }: { runtimeId: string }) {
         title: row.title
       })
       await refreshAllWorkspaces()
-      openImportedAcpSession(created, runtimeId)
+      await openImportedAcpSession(created, runtimeId)
     } catch {
       setImportError(t("chat.importAcpFailed"))
     } finally {

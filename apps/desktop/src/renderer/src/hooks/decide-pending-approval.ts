@@ -9,6 +9,7 @@ import { en } from "../i18n/catalogs/en/index.ts"
 import { zh } from "../i18n/catalogs/zh/index.ts"
 import { resolveLocale, type LanguagePref } from "../i18n/locale.ts"
 import { translate } from "../i18n/lookup.ts"
+import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
 import { approvalDecideUiError } from "./approval-decide-failure"
 import { resolveApprovalRunId } from "./resolve-approval-run"
@@ -34,6 +35,9 @@ export async function decidePendingApprovalOrThrow(
   const pending = store.pendingApproval
   const runId = resolveApprovalRunId(pending, store.runId)
   if (!pending || !runId) throw new Error("没有等待中的审批。")
+  // jojo P1（ACP 导入）：这一轮已知属于别的会话（前台会话切过、卡没跟着走），绝不替那个会话批。
+  const owner = useAttentionStore.getState().sessionOfRun(runId)
+  if (owner && store.sessionId && owner !== store.sessionId) throw new Error("没有等待中的审批。")
   try {
     await getIde().agent.decide({
       runId,
