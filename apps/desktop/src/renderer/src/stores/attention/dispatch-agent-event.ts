@@ -5,6 +5,7 @@ import { noteFollowupRunEvent } from "../../hooks/followup-pause"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../chat-store"
 import { isLateEventOfStoppedRun } from "../stopped-runs"
+import { bumpsSessionTime, touchSessionUpdatedAt } from "../touch-session-time"
 import { generationKindOf, isNonAgentRunKind } from "../stream-run-scope"
 import { belongsToForeground } from "./foreground-event"
 import { eventRunId } from "./ingest-attention"
@@ -56,6 +57,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   // E1：出错 / 停止先停住这个会话的排队，再让 store / 停车放 running=false（自启看不到空档）。
   noteFollowupRunEvent(sessionId, event, isNonAgentRunKind(event, rememberedKind))
   if (sessionId && event.type === "run.start") clearSessionUsage(sessionId)
+  // #160 巡检 5：发出 / 一轮结束时侧栏时间跟着走（前台、后台会话都算）。
+  if (sessionId && bumpsSessionTime(event.type) && !isNonAgentRunKind(event, rememberedKind)) touchSessionUpdatedAt(sessionId)
   if (event.type === "usage.updated" && sessionId) {
     const chat = useChatStore.getState()
     rememberSessionUsage(sessionId, event, sessionId === chat.sessionId ? chat.runtimeId : undefined)
