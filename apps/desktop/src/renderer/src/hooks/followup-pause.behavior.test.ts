@@ -961,7 +961,8 @@ test("P2④ 对比度：说明行灰字 / 次按钮 / 紧凑行标签用 neutral
 })
 
 // ---- luna #163（10-21 定）：排队行链接「马上发给它 / 退回输入框」≥ 4.5:1 ----
-test("排队行链接对比度：紧凑行 accent-600 / 悬停 accent-700，暗色 accent-400 / 悬停 accent-300；时间线泡（opacity-80）深一档；不再用 accent-500", () => {
+test("排队行链接对比度（五种强调色 × 亮暗 × 紧凑行 / 时间线泡 × 常态 / 悬停）：亮 accent-800/900、泡 900/950，暗 accent-400/300、泡 300/200；都 ≥ 4.5", async () => {
+  const { THEME_ACCENTS } = await import("./use-theme-accent.ts")
   const ch = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
   const mix = (a: string, b: string, k: number) => "#" + ch(a).map((v, i) => Math.round(v * k + ch(b)[i]! * (1 - k)).toString(16).padStart(2, "0")).join("")
   const lum = (h: string) => {
@@ -972,36 +973,86 @@ test("排队行链接对比度：紧凑行 accent-600 / 悬停 accent-700，暗�
     const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
     return (hi! + 0.05) / (lo! + 0.05)
   }
-  // tailwind v4 blue（accent 默认）+ theme.css：亮 secondary #f7f7f7 / primary #fff / full #f7f7f7；暗 secondary #171717 / primary #262626 / full #121212。
-  const A: Record<string, string> = { 200: "#bedbff", 300: "#8ec5ff", 400: "#3392ff", 500: "#2b7fff", 600: "#155dfc", 700: "#1447e6", 800: "#193cb8", 900: "#1c398e" }
-  const hover = (bg: string) => mix(A[500]!, bg, 0.1)
-  const dockL = [mix("#f7f7f7", "#ffffff", 0.6), mix("#f7f7f7", "#f7f7f7", 0.6)]
-  const dockD = [mix("#171717", "#262626", 0.6), mix("#171717", "#121212", 0.6)]
-  for (const bg of dockL) {
-    assert.ok(ratio(A[600]!, bg) >= 4.5 && ratio(A[700]!, hover(bg)) >= 4.5, `亮 ${bg}`)
-    assert.ok(ratio(A[500]!, bg) < 4.5, "旧 accent-500 确实不够")
+  // tailwind v4 色板（theme.css 按 data-accent 映射：purple → violet）换成 sRGB；500 / 600 用 use-theme-accent.ts 的行内值。
+  const RAMP: Record<string, Record<number, string>> = {
+    blue: { 200: "#bedbff", 300: "#8ec5ff", 400: "#3392ff", 800: "#193cb8", 900: "#1c398e", 950: "#162456" },
+    emerald: { 200: "#a4f4cf", 300: "#5ee9b5", 400: "#00d492", 800: "#006045", 900: "#004f3b", 950: "#002c22" },
+    amber: { 200: "#fee685", 300: "#ffd230", 400: "#ffb900", 800: "#973c00", 900: "#7b3306", 950: "#461901" },
+    purple: { 200: "#ddd6ff", 300: "#c4b4ff", 400: "#a684ff", 800: "#5d0ec0", 900: "#4d179a", 950: "#2f0d68" },
+    slate: { 200: "#ebeff5", 300: "#cad5e2", 400: "#90a1b9", 800: "#1d293d", 900: "#0f172b", 950: "#020618" }
   }
-  for (const bg of dockD) {
-    assert.ok(ratio(A[600]!, bg) < 4.5, "暗色 accent-600 不够，所以换 400")
-    assert.ok(ratio(A[400]!, bg) >= 4.5 && ratio(A[300]!, hover(bg)) >= 4.5, `暗 ${bg}`)
+  const shades = (cls: string) => {
+    const m = /^text-accent-(\d+) hover:text-accent-(\d+) dark:text-accent-(\d+) dark:hover:text-accent-(\d+)$/.exec(cls)
+    assert.ok(m, cls)
+    return m.slice(1).map(Number) as [number, number, number, number]
   }
-  // 时间线泡：泡 = secondary/50 叠 primary，整体 80% 叠在 primary 上。
-  const bubble = (fg: string, sec: string, page: string, hov: boolean) => {
-    let bg = mix(sec, page, 0.5)
-    if (hov) bg = hover(bg)
-    return ratio(mix(fg, page, 0.8), mix(bg, page, 0.8))
+  const [dockL, dockLH, dockD, dockDH] = shades(view.QUEUE_LINK_DOCK)
+  const [bubL, bubLH, bubD, bubDH] = shades(view.QUEUE_LINK_BUBBLE)
+  // 经典皮肤：亮 secondary #f7f7f7 / primary #fff / full #f7f7f7；暗 secondary #171717 / primary #262626 / full #121212。玻璃皮肤见 kai-e1 笔记的表。
+  const surfaces = { L: { sec: "#f7f7f7", pages: ["#ffffff", "#f7f7f7"] }, D: { sec: "#171717", pages: ["#262626", "#121212"] } }
+  assert.equal(THEME_ACCENTS.length, Object.keys(RAMP).length)
+  for (const accent of THEME_ACCENTS) {
+    const A: Record<number, string> = { ...RAMP[accent.id]!, 500: accent.c500, 600: accent.c600 }
+    const hover = (bg: string) => mix(A[500]!, bg, 0.1)
+    for (const [mode, n, h, bn, bh] of [["L", dockL, dockLH, bubL, bubLH], ["D", dockD, dockDH, bubD, bubDH]] as const) {
+      const { sec, pages } = surfaces[mode]
+      for (const page of pages) {
+        const dock = mix(sec, page, 0.6)
+        assert.ok(ratio(A[n]!, dock) >= 4.5, `${accent.id} ${mode} 紧凑行 accent-${n}`)
+        assert.ok(ratio(A[h]!, hover(dock)) >= 4.5, `${accent.id} ${mode} 紧凑行悬停 accent-${h}`)
+      }
+      // 时间线泡：secondary/50 叠 primary，整体 80% 叠在 primary 上。
+      const page = pages[0]!
+      const bub = mix(sec, page, 0.5)
+      const inBubble = (fg: string, bg: string) => ratio(mix(fg, page, 0.8), mix(bg, page, 0.8))
+      assert.ok(inBubble(A[bn]!, bub) >= 4.5, `${accent.id} ${mode} 泡 accent-${bn}`)
+      assert.ok(inBubble(A[bh]!, hover(bub)) >= 4.5, `${accent.id} ${mode} 泡悬停 accent-${bh}`)
+    }
   }
-  assert.ok(bubble(A[600]!, "#f7f7f7", "#ffffff", false) < 4.5, "泡里 accent-600 不够")
-  assert.ok(bubble(A[800]!, "#f7f7f7", "#ffffff", false) >= 4.5 && bubble(A[900]!, "#f7f7f7", "#ffffff", true) >= 4.5)
-  assert.ok(bubble(A[400]!, "#171717", "#262626", false) < 4.5, "泡里暗色 accent-400 不够")
-  assert.ok(bubble(A[300]!, "#171717", "#262626", false) >= 4.5 && bubble(A[200]!, "#171717", "#262626", true) >= 4.5)
+  // 反例：旧方案亮色紧凑行 accent-600 在绿 / 琥珀下不够（h163 前只看了蓝）。
+  assert.ok(ratio("#d97706", mix("#f7f7f7", "#ffffff", 0.6)) < 4.5 && ratio("#059669", mix("#f7f7f7", "#ffffff", 0.6)) < 4.5)
 
-  assert.equal(view.QUEUE_LINK_DOCK, "text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300")
-  assert.equal(view.QUEUE_LINK_BUBBLE, "text-accent-800 hover:text-accent-900 dark:text-accent-300 dark:hover:text-accent-200")
   const turn = readSource("../components/ai-chat/thread/turns/queued-user-turn.tsx")
   assert.match(turn, /const actionClass = `\$\{actionBaseClass\} \$\{compact \? QUEUE_LINK_DOCK : QUEUE_LINK_BUBBLE\}`/)
   assert.equal((turn.match(/className=\{actionClass\}/g) ?? []).length, 2, "「马上发给它」「退回输入框」都用它")
   assert.ok(!/text-accent-500/.test(turn), "排队行不再用 accent-500 当字色")
+})
+
+// ---- luna #163 h163：非蓝强调色下排队行链接仍是蓝——强调色只改了 500 / 600。theme.css 按 data-accent 补整条 ramp ----
+test("强调色整条 ramp：每种可选强调色在 theme.css 里都定义 accent-50…950；源码里用到的每个 accent-* 色阶、排队行链接色阶都被覆盖", async () => {
+  const { THEME_ACCENTS } = await import("./use-theme-accent.ts")
+  const repo = new URL("../../../../../../", import.meta.url)
+  const theme = readFs(new URL("packages/ui/styles/theme.css", repo), "utf8")
+  // 色板：purple → violet（#8b5cf6 是 violet-500），其余同名；每一档都必须指向这个色板的同一档。
+  const PALETTE: Record<string, string> = { blue: "blue", emerald: "emerald", amber: "amber", purple: "violet", slate: "slate" }
+  const defined = (id: string) => {
+    const m = new RegExp(`:root\\[data-accent="${id}"\\] \\{([^}]*)\\}`).exec(theme)
+    assert.ok(m, `theme.css 缺 :root[data-accent="${id}"]`)
+    const pal = PALETTE[id]
+    assert.ok(pal, `新强调色 ${id} 要在测试里登记色板`)
+    const decls = [...m[1]!.matchAll(/--color-accent-(\d+):\s*var\(--color-([a-z]+)-(\d+)\)/g)]
+    for (const d of decls) assert.ok(d[2] === pal && d[3] === d[1], `${id} 的 accent-${d[1]} 指到了 ${d[2]}-${d[3]}`)
+    return new Set(decls.map((x) => Number(x[1])))
+  }
+  const FULL = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]
+  // 源码里实际用到的色阶（renderer + packages/ui）。
+  const used = new Set<number>()
+  const { readdirSync } = await import("node:fs")
+  for (const root of ["apps/desktop/src/renderer/src", "packages/ui"]) {
+    const base = new URL(`${root}/`, repo)
+    for (const rel of readdirSync(base, { recursive: true }) as string[]) {
+      if (!/\.(tsx?|css)$/.test(rel) || rel.includes("node_modules")) continue
+      for (const m of readFs(new URL(rel, base), "utf8").matchAll(/accent-(\d+)/g)) used.add(Number(m[1]))
+    }
+  }
+  assert.ok(used.has(800) && used.has(950), "扫描到了源码")
+  const linkShades = [view.QUEUE_LINK_DOCK, view.QUEUE_LINK_BUBBLE].flatMap((c) => [...c.matchAll(/accent-(\d+)/g)].map((m) => Number(m[1])))
+  for (const accent of THEME_ACCENTS) {
+    const have = defined(accent.id)
+    for (const n of FULL) assert.ok(have.has(n), `${accent.id} 缺 accent-${n}`)
+    for (const n of used) assert.ok(have.has(n), `${accent.id} 没覆盖源码里用到的 accent-${n}`)
+    for (const n of linkShades) assert.ok(have.has(n), `${accent.id} 没覆盖排队行链接的 accent-${n}`)
+  }
 })
 
 // ---- luna #163（10-21）中文空格规则（对称）：中文和拉丁字母 / 数字相邻留空格，前后各自判断；挨中文标点不留 ----

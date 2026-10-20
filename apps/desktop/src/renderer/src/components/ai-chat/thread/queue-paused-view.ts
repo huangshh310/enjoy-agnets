@@ -27,15 +27,14 @@ export const QUEUE_MUTED_TEXT = "text-neutral-600 dark:text-neutral-400"
 export const QUEUE_BUBBLE_LABEL_TEXT = "text-neutral-700 dark:text-neutral-400"
 
 /**
- * luna #163（10-21）：排队行「马上发给它 / 退回输入框」链接 ≥ 4.5:1，亮暗、常态和悬停都要（悬停底色 accent-500/10）。
- * 紧凑行（bg-secondary/60）：亮 accent-600 4.90–5.03，悬停 accent-700 5.70–5.84；
- *   暗 accent-600 只有 3.21–3.48，取最近能过的 accent-400 5.38–5.82，悬停往对比度高的方向走一档 accent-300 8.30–9.05。
- * 时间线泡（整个泡 opacity-80）：accent-600 亮 3.66 / accent-400 暗 3.85 都不够，取最近能过的：
- *   亮 accent-800 5.29，悬停 accent-900 5.27；暗 accent-300 6.32，悬停 accent-200 7.25。
- * 算法：紧凑行把 bg-secondary/60（悬停再叠 accent-500/10）合成实色再算；泡里前景、背景都按 80% 叠到页面底色。测试见 followup-pause.behavior.test.ts「排队行链接对比度」。
+ * 排队行「马上发给它 / 退回输入框」链接 ≥ 4.5:1：五种强调色（蓝 / 绿 / 琥珀 / 紫 / 石板）、亮暗、经典和玻璃皮肤、常态和悬停
+ * （悬停底色叠 accent-500/10）都要过线（luna #163 h163）。只用 accent-500/600 时绿、琥珀在亮色下不够，所以：
+ * 紧凑行（bg-secondary/60）：亮 accent-800，悬停 accent-900；暗 accent-400，悬停 accent-300。
+ * 时间线泡（整个泡 opacity-80，前景和背景都按 80% 叠到页面底色）：亮 accent-900，悬停 accent-950；暗 accent-300，悬停 accent-200。
+ * 这些色阶在 theme.css 里按 data-accent 整条覆盖，换强调色会跟着变。回归测试见 followup-pause.behavior.test.ts「排队行链接对比度」「强调色整条 ramp」。
  */
-export const QUEUE_LINK_DOCK = "text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
-export const QUEUE_LINK_BUBBLE = "text-accent-800 hover:text-accent-900 dark:text-accent-300 dark:hover:text-accent-200"
+export const QUEUE_LINK_DOCK = "text-accent-800 hover:text-accent-900 dark:text-accent-400 dark:hover:text-accent-300"
+export const QUEUE_LINK_BUBBLE = "text-accent-900 hover:text-accent-950 dark:text-accent-300 dark:hover:text-accent-200"
 
 export type QueuePausedView = {
   text: string
