@@ -67,3 +67,8 @@ export function clearQueuedWithUndo(
     action: { label: t("common.undo"), onClick: () => undoClearFollowups(cleared) }
   })
 }
+
+/** E1：窗口高 ≤600 且没点开时，暂停的排队区折成一行（放在纯 .ts 里，单测能直接测）。 */
+export function pausedCollapsed(shortWindow: boolean, expanded: boolean): boolean {
+  return shortWindow && !expanded
+}

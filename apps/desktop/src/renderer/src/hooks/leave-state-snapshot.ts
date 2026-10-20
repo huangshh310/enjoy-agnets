@@ -4,6 +4,7 @@ import { composerHasExtras } from "./composer-draft-extras"
 import { isNewSessionCreatePending } from "./new-session-create"
 import { hasQueuedComposerSend } from "./queue-composer-send"
 import type { LeaveState } from "./discard-empty-on-leave"
+import { listFollowups } from "./followup-queue"
 
 export function leaveStateSnapshot(): LeaveState {
   const s = useChatStore.getState()
@@ -17,6 +18,7 @@ export function leaveStateSnapshot(): LeaveState {
     preparingHint: s.preparingHint,
     preparingSessionId: s.preparingSessionId,
     createPending: isNewSessionCreatePending(),
-    queuedSend: hasQueuedComposerSend()
+    queuedSend: hasQueuedComposerSend(),
+    queuedFollowups: Boolean(s.sessionId) && listFollowups(s.sessionId).length > 0
   }
 }

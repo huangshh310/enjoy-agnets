@@ -25,6 +25,7 @@ import {
   SESSION_CREATE_TIMEOUT,
   SESSION_NOT_READY
 } from "./queue-composer-send-copy"
+import { pauseFollowupsAfterFailedStart } from "./followup-pause"
 
 export {
   PREVIOUS_STILL_PREPARING,
@@ -118,6 +119,8 @@ export function restoreComposerAfterFailedSend(
   assets?: QueuedComposerAsset[]
 ): void {
   const store = useChatStore.getState()
+  // leo BLOCK #163 ③：在放 running 之前停住排队（看门狗等所有还稿路径都经这里）。
+  pauseFollowupsAfterFailedStart(store.sessionId, reason)
   store.setRunning(false)
   const before = store.composer
   restoreComposerDraft(text, assets)

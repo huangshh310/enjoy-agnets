@@ -21,6 +21,14 @@ export function followupPauseReasonForFailure(message: string, code?: string | n
   return kind === "provider_billing" || kind === "credit" ? "quota" : "error"
 }
 
+/**
+ * leo BLOCK #163 ③：这一发没发出去（看门狗、闸拦、regenerate / 继续 Todo 起跑抛错）——排队的先停住，
+ * 不然 running 一落，排在后面的 B 抢在退回输入框的 A 前面发出去。原因按错误码分，认不出来一律当「出错」。
+ */
+export function pauseFollowupsAfterFailedStart(sessionId: string | null | undefined, reason?: string | null): void {
+  pauseFollowups(sessionId, followupPauseReasonForFailure(reason ?? ""))
+}
+
 /** run.error → 暂停原因；不该停（审批被拒未执行）为 null。 */
 export function followupPauseReasonForRunError(event: { message: string; code?: string }): FollowupPausedReason | null {
   if (isUserAbortEvent(event)) return "stopped"

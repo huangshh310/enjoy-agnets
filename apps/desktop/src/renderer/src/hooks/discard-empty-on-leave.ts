@@ -3,6 +3,7 @@
  * main 侧 onlyIfEmpty 再兜一次：有落库消息 / run / 草稿 / 心跳 / 标记 / 目标 / run 正在启动都不删。
  */
 import { getIde, hasIde } from "../lib/ide"
+import { listFollowups } from "./followup-queue"
 
 export type LeaveState = {
   sessionId: string | null
@@ -17,6 +18,8 @@ export type LeaveState = {
   preparingSessionId?: string | null
   createPending?: boolean
   queuedSend?: boolean
+  /** leo BLOCK #163 ①：这个会话还有排队的 followup（运行中排的，首字前失败回滚后会话又是空的）。 */
+  queuedFollowups?: boolean
 }
 
 export function emptySessionToDiscardOnLeave(state: LeaveState, nextSessionId: string | null): string | null {
@@ -26,6 +29,8 @@ export function emptySessionToDiscardOnLeave(state: LeaveState, nextSessionId: s
   if (state.composer.trim()) return null
   if (state.hasExtras) return null
   if (state.createPending || state.queuedSend) return null
+  // leo BLOCK #163 ①：还有排队的话（只在内存里）删了会话就把用户打的字一起丢了。快照没带上也再查一次队列。
+  if (state.queuedFollowups || listFollowups(id).length > 0) return null
   if (state.preparingHint && (state.preparingSessionId === null || state.preparingSessionId === id)) return null
   return id
 }

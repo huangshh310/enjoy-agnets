@@ -16,6 +16,7 @@ import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { prefixHostModeForSend } from "./runtime-interact/composer-draft"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
+import { pauseFollowupsAfterFailedStart } from "./followup-pause"
 
 export async function continueTodoTurn(): Promise<void> {
   const store = useChatStore.getState()
@@ -68,6 +69,8 @@ async function startContinueRun(
     const runId = requireAgentRunId(result)
     if (!claimComposerRun(sessionId, runId)) abortOrphanedRun(runId)
   } catch (error) {
+    // leo BLOCK #163 ③：起跑抛错，排队的先停住（running 落下前）。
+    pauseFollowupsAfterFailedStart(sessionId, error instanceof Error ? error.message : String(error))
     store.setRunning(false)
     store.setError(error instanceof Error ? error.message : String(error))
   }

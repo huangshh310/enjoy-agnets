@@ -9,11 +9,15 @@ import { afterEach, test } from "node:test"
 const memory = new Map<string, string>()
 ;(globalThis as any).localStorage = { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v), removeItem: (k: string) => void memory.delete(k) }
 let dbAssets: Record<string, Array<Record<string, unknown>>> = {}
+const ideCalls: string[] = []
+const throwOn = new Set<string>()
 function bridge(path: string): any {
   return new Proxy(() => undefined, {
     get: (_t, key) => (key === "then" ? undefined : bridge(`${path}.${String(key)}`)),
     apply: (_t, _th, args) => {
       if (/\.on[A-Z]\w*$/.test(path)) return () => undefined
+      ideCalls.push(path)
+      if (throwOn.has(path)) return Promise.reject(new Error("socket hang up"))
       if (path === ".session.drafts.loadSync") return {}
       if (path === ".session.drafts.loadAssetsSync") return JSON.parse(JSON.stringify(dbAssets))
       if (path === ".session.drafts.saveAssets") {
@@ -69,6 +73,9 @@ afterEach(async () => {
   storage.resetPersistedDraftAssetsForTest()
   dbAssets = {}
   sent.length = 0
+  ideCalls.length = 0
+  throwOn.clear()
+  delete (globalThis as any).document
 })
 test.after(() => {
   unsubscribe()
@@ -373,8 +380,9 @@ test("接线：说明行在排队区顶部（同一容器）；停止灰色、�
   const dock = readFileSync(new URL("../components/ai-chat/thread/queued-followups.tsx", import.meta.url), "utf8")
   const idx = (s: string) => row.indexOf(s)
   assert.ok(idx("queue-paused-clear") < idx("queue-paused-edit-first") && idx("queue-paused-edit-first") < idx("queue-paused-continue"))
-  assert.match(row, /text-status-yellow-text/)
-  assert.match(row, /isNeutralPause\(reason\) \? "text-text-tertiary"/)
+  // leo soft：颜色断言锚在说明文字那个 <p> 上（图标、文字各自都要分色）。
+  assert.match(row, /data-testid="queue-paused-reason"[\s\S]{0,160}isNeutralPause\(reason\) \? "text-text-secondary" : "text-status-yellow-text"/)
+  assert.match(row, /isNeutralPause\(reason\) \? "text-text-tertiary" : "text-status-yellow-text"/)
   assert.match(dock, /<QueuePausedRow/)
   assert.match(dock, /queue-paused-collapsed/)
   assert.equal(zhChat.queuePausedCollapsed, "已暂停 · 排队 {n} 条")
@@ -446,4 +454,199 @@ test("换助手文案（luna 定稿）：中英、N=1 单数、灰色中性、�
     assert.equal(holes(cat.queuePausedEngineSwitched), holes(cat.queuePausedStopped))
     assert.equal(holes(cat.queuePausedEngineSwitchedOne), holes(cat.queuePausedStoppedOne))
   }
+})
+
+// ---- leo BLOCK #163（2ce6eda5）五条 must ----
+const { emptySessionToDiscardOnLeave, discardEmptySessionOnLeave } = await import("./discard-empty-on-leave.ts")
+const { leaveStateSnapshot } = await import("./leave-state-snapshot.ts")
+const { restoreComposerAfterFailedSend, SEND_FAILED_RESTORE } = await import("./queue-composer-send.ts")
+const { continueTodoTurn } = await import("./continue-todo-turn.ts")
+const { regenerateUserTurn } = await import("./regenerate-turn.ts")
+const writeback = await import("./composer-writeback.ts")
+const followupActions = await import("./runtime-interact/followup-actions.ts")
+
+function emptySession(sessionId: string) {
+  useChatStore.setState({
+    workspaceId: "ws", sessionId, running: false, runId: null, composer: "", messages: [], error: null,
+    notice: null, pendingApproval: null, preparingHint: false, preparingSessionId: null
+  } as never)
+}
+/** 排队时前台在别的会话（不让测试里的自启先把它取走），再切到这个空会话。 */
+function queuedThenEmpty(sessionId: string, ...items: string[]) {
+  useChatStore.setState({ sessionId: "ses_view", running: true } as never)
+  enqueue(sessionId, ...items)
+  emptySession(sessionId)
+}
+/** 假输入框：DOM 里是 domText，store 落后（回写锁期间的样子）。 */
+function fakeComposerDom(domText: string) {
+  const el = { value: domText, getAttribute: (k: string) => (k === "data-testid" ? "composer-input" : null) }
+  ;(globalThis as any).document = { activeElement: el, querySelector: () => el }
+  return el
+}
+
+test("① 首字前失败回滚成空会话、但还有排队的 → 离开不删会话（P7）；排队清空后才删", async () => {
+  queuedThenEmpty("ses_leave", "排队的字")
+  const snap = leaveStateSnapshot()
+  assert.equal(snap.queuedFollowups, true)
+  assert.equal(emptySessionToDiscardOnLeave(snap, "ses_next"), null, "快照带上排队")
+  assert.equal(emptySessionToDiscardOnLeave({ ...snap, queuedFollowups: false }, "ses_next"), null, "快照漏了也再查一次队列")
+  discardEmptySessionOnLeave(snap, "ses_next", () => "ses_next")
+  await flush()
+  assert.ok(!ideCalls.includes(".session.delete"), "没调 session.delete")
+  assert.deepEqual(prompts("ses_leave"), ["排队的字"], "用户打的字还在")
+  queue.takeAllFollowups("ses_leave")
+  assert.equal(emptySessionToDiscardOnLeave(leaveStateSnapshot(), "ses_next"), "ses_leave", "对照：真空了照删")
+})
+
+test("② 停止后被停那一轮又报非用户停止的出错 / 额度，再来 run.end → 仍是 stopped、不自动发（P6）", async () => {
+  running("ses_p6")
+  enqueue("ses_p6", "一", "二")
+  await abortComposerRun()
+  dispatchAgentEvent({ type: "run.error", runId: "run_ses_p6", sessionId: "ses_p6", message: "provider_unreachable", code: "provider_unreachable" } as never)
+  assert.equal(queue.followupPausedReason("ses_p6"), "stopped")
+  dispatchAgentEvent({ type: "run.error", runId: "run_ses_p6", sessionId: "ses_p6", message: "billing", code: "provider_billing" } as never)
+  assert.equal(queue.followupPausedReason("ses_p6"), "stopped")
+  failComposerSend({ text: "x", reason: "provider_unreachable", sessionId: "ses_p6" })
+  assert.equal(queue.followupPausedReason("ses_p6"), "stopped")
+  dispatchAgentEvent({ type: "run.end", runId: "run_ses_p6", sessionId: "ses_p6" } as never)
+  assert.equal(queue.followupPausedReason("ses_p6"), "stopped", "run.end 不放开")
+  useChatStore.setState({ running: false, runId: null } as never)
+  kick()
+  await flush()
+  assert.deepEqual(sent, [], "一条都不自己发")
+})
+
+test("② 换助手同样不被之后的出错 / 额度改写", async () => {
+  running("ses_p6b")
+  enqueue("ses_p6b", "一")
+  await abortComposerRun({ pauseReason: "engineSwitched" })
+  queue.pauseFollowups("ses_p6b", "error")
+  queue.pauseFollowups("ses_p6b", "quota")
+  dispatchAgentEvent({ type: "run.end", runId: "run_x", sessionId: "ses_p6b" } as never)
+  assert.equal(queue.followupPausedReason("ses_p6b"), "engineSwitched")
+})
+
+test("③ 发送看门狗失败（restoreComposerAfterFailedSend）→ 先停住排队：B 不抢在退回输入框的 A 前面发出去", async () => {
+  running("ses_wd")
+  useChatStore.setState({ messages: [], runId: null } as never)
+  enqueue("ses_wd", "B")
+  restoreComposerAfterFailedSend("A", SEND_FAILED_RESTORE)
+  assert.equal(useChatStore.getState().running, false)
+  assert.equal(queue.followupPausedReason("ses_wd"), "error")
+  assert.equal(kick(), false)
+  await flush()
+  assert.deepEqual(sent, [], "B 没发")
+  assert.equal(useChatStore.getState().composer, "A", "A 回到输入框")
+  assert.deepEqual(prompts("ses_wd"), ["B"])
+})
+
+test("③ 继续 Todo 起跑抛错 → 停住排队，不自动发", async () => {
+  queuedThenEmpty("ses_todo", "排队的")
+  useChatStore.setState({ runtimeId: "claude", messages: [{ id: "u1", role: "user", content: "做事", createdAt: 1 }] } as never)
+  throwOn.add(".agent.run")
+  await continueTodoTurn()
+  assert.equal(useChatStore.getState().running, false)
+  assert.equal(queue.followupPausedReason("ses_todo"), "error")
+  kick()
+  await flush()
+  assert.deepEqual(sent, [])
+})
+
+test("③ 重新生成起跑抛错 → 停住排队，不自动发", async () => {
+  queuedThenEmpty("ses_regen", "排队的")
+  useChatStore.setState({
+    runtimeId: "claude",
+    messages: [
+      { id: "u1", role: "user", content: "问题", createdAt: 1 },
+      { id: "a1", role: "assistant", content: "旧答", createdAt: 2 }
+    ]
+  } as never)
+  throwOn.add(".agent.run")
+  await regenerateUserTurn("u1")
+  assert.equal(useChatStore.getState().running, false)
+  assert.equal(queue.followupPausedReason("ses_regen"), "error")
+  kick()
+  await flush()
+  assert.deepEqual(sent, [])
+})
+
+test("④ 改一下再发：输入框 DOM 里已有字、store 落后（回写锁）→ 不覆盖，第一条留在队里仍暂停（P5）", async () => {
+  running("ses_p5")
+  enqueue("ses_p5", "排队那条", "第二条")
+  await abortComposerRun()
+  const el = fakeComposerDom("我刚打的")
+  assert.equal(useChatStore.getState().composer, "", "store 落后")
+  assert.equal(actions.editFirstFollowup("ses_p5"), null)
+  assert.equal(el.value, "我刚打的")
+  assert.equal(useChatStore.getState().composer, "")
+  assert.deepEqual(prompts("ses_p5"), ["排队那条", "第二条"], "排队项原封不动")
+  assert.equal(queue.followupPausedReason("ses_p5"), "stopped")
+})
+
+test("④ 排队行「退回输入框」：DOM 里已有字 → 合并（现有在前），不冲掉", () => {
+  useChatStore.setState({ sessionId: "ses_view", running: true, composer: "" } as never)
+  const [item] = enqueue("ses_ret", "排队那条")
+  const el = fakeComposerDom("我刚打的")
+  assert.equal(followupActions.returnFollowupToComposer(item!), true)
+  assert.equal(el.value, "我刚打的\n排队那条")
+  assert.equal(useChatStore.getState().composer, "我刚打的\n排队那条")
+  assert.deepEqual(prompts("ses_ret"), [])
+})
+
+test("④ 共享工具 writeBackToComposer：refuse / merge / 空框直接写 / 图按 id 去重", () => {
+  useChatStore.setState({ composer: "" } as never)
+  fakeComposerDom("")
+  const img = { id: "ast_w", name: "w.png", mediaType: "image/png" }
+  assert.deepEqual(writeback.writeBackToComposer({ text: "回来的", assets: [img] }, { mode: "refuse", focus: false }), { ok: true, merged: false, text: "回来的" })
+  assert.equal(writeback.canWriteBackToComposer("refuse"), false, "有字有图就不能 refuse 写")
+  const refused = writeback.writeBackToComposer({ text: "再来" }, { mode: "refuse" })
+  assert.deepEqual(refused, { ok: false, reason: "composer-has-content", current: "回来的" })
+  const merged = writeback.writeBackToComposer({ text: "再来", assets: [img] }, { mode: "merge", focus: false })
+  assert.deepEqual(merged, { ok: true, merged: true, text: "回来的\n再来" })
+  assert.deepEqual(assets.listComposerAssets().map((a) => a.id), ["ast_w"], "同一张图不重复")
+  // 只有图没有字也算有内容
+  useChatStore.setState({ composer: "" } as never)
+  fakeComposerDom("  ")
+  assert.equal(writeback.composerHasLiveContent(), true)
+})
+
+test("⑤ 按会话隔离：A 停住时 B 照常自启；A 点继续不动 B 的暂停", async () => {
+  running("ses_A")
+  enqueue("ses_A", "A1")
+  await abortComposerRun()
+  assert.equal(queue.followupPausedReason("ses_A"), "stopped")
+  // 切到 B：B 没停，一轮跑完 → 自启发 B1。
+  running("ses_B")
+  enqueue("ses_B", "B1", "B2")
+  assert.equal(queue.followupPausedReason("ses_B"), null, "A 的暂停不外溢到 B")
+  dispatchAgentEvent({ type: "run.end", runId: "run_ses_B", sessionId: "ses_B" } as never)
+  useChatStore.setState({ running: false, runId: null } as never)
+  kick()
+  await flush()
+  assert.deepEqual(sent, ["B1"], "B 照常自启")
+  assert.deepEqual(prompts("ses_A"), ["A1"], "A 一条没动")
+  // B 也停住（出错），A 点继续：只解 A。
+  queue.pauseFollowups("ses_B", "error")
+  actions.continueFollowups("ses_A")
+  assert.equal(queue.followupPausedReason("ses_A"), null)
+  assert.equal(queue.followupPausedReason("ses_B"), "error", "B 仍停着")
+  await flush()
+  assert.deepEqual(sent, ["B1"], "前台 B 停着，没多发")
+})
+
+test("撤回连点两下不重复（M4c）", () => {
+  running("ses_undo2")
+  enqueue("ses_undo2", "一", "二")
+  queue.pauseFollowups("ses_undo2", "stopped")
+  const cleared = actions.clearAllFollowups("ses_undo2")!
+  actions.undoClearFollowups(cleared)
+  actions.undoClearFollowups(cleared)
+  assert.deepEqual(prompts("ses_undo2"), ["一", "二"])
+})
+
+test("pausedCollapsed：只有窗口矮且没点开时折叠", () => {
+  assert.equal(view.pausedCollapsed(true, false), true)
+  assert.equal(view.pausedCollapsed(true, true), false)
+  assert.equal(view.pausedCollapsed(false, false), false)
+  assert.equal(view.pausedCollapsed(false, true), false)
 })

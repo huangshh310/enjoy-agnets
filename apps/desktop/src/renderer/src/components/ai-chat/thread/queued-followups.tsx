@@ -26,6 +26,7 @@ import {
 } from "@renderer/hooks/followup-queue"
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
+import { pausedCollapsed } from "./queue-paused-view"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -96,11 +97,6 @@ function DockedFollowups({ items, paused }: { items: FollowupItem[]; paused: Fol
     )
   }
   return <DockedRows items={items} paused={paused} expanded={expanded} setExpanded={setExpanded} dockRef={ref} />
-}
-
-/** E1：窗口高 ≤600 且没点开时，暂停的排队区折成一行。 */
-export function pausedCollapsed(shortWindow: boolean, expanded: boolean): boolean {
-  return shortWindow && !expanded
 }
 
 function DockedRows({

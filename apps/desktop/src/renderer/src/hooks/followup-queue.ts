@@ -44,6 +44,9 @@ export function pauseFollowups(sessionId: string | null | undefined, reason: Fol
   if (current === reason) return true
   // 同一次失败常常两头都报（run.error 带额度码、发送链再按通用失败报一次）：通用的「出错」不盖掉「额度用完」。
   if (current === "quota" && reason === "error") return true
+  // leo BLOCK #163 ②：用户自己停的（停止 / 换助手）优先级最高——之后被停那一轮再报出错 / 额度，也不改成会自动解除的原因，
+  // 否则随后任一轮 run.end 就把它放开，排队的自己发出去。
+  if ((current === "stopped" || current === "engineSwitched") && (reason === "error" || reason === "quota")) return true
   // 换助手时先记 engineSwitched，随后被停那一轮的「用户停止」run.error 回来：不改回普通「停止」。
   if (current === "engineSwitched" && reason === "stopped") return true
   paused.set(sessionId, reason)

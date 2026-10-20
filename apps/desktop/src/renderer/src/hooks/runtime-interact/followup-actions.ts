@@ -1,10 +1,12 @@
 /**
  * 排队项动作：立即发送 / 退回输入框。时间线虚线泡与列表共用。
  */
-import { setComposerSkillChips } from "../../components/ai-chat/composer/mentions/composer-skill-chips.ts"
 import { useChatStore } from "../../stores/chat-store"
-import { queueComposerAsset } from "../composer-assets"
-import { focusComposerEnd } from "../composer-focus"
+import {
+  canWriteBackToComposer,
+  writeBackToComposer,
+  type ComposerWritebackMode
+} from "../composer-writeback"
 import {
   editQueuedMessage,
   elevateToSteer,
@@ -16,7 +18,6 @@ import {
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { releaseQueuedDraftAssets } from "../../lib/session-draft-storage"
 import type { SteerOutcome } from "./steer-composer"
-import { setQuotedContexts } from "../quoted-context"
 import { sendComposerMessage, steerPreparedText } from "../send-composer"
 
 /**
@@ -68,13 +69,26 @@ export function discardFollowup(item: FollowupItem) {
   releaseQueuedDraftAssets(taken.sessionId, taken.id)
 }
 
-export function returnFollowupToComposer(item: FollowupItem) {
+/**
+ * 排队项放回输入框。leo BLOCK #163 ④：不直接 setComposer（回写锁期间 store 落后 DOM，会冲掉刚打的字），
+ * 一律走 writeBackToComposer——
+ * - "merge"（排队行上的「退回输入框」）：和输入框已有的合并；
+ * - "refuse"（暂停条「改一下再发」）：输入框有东西就不动，这条留在队里，返回 false。
+ * 先问能不能写，再从队里取：拒绝时排队项原封不动。
+ */
+export function returnFollowupToComposer(item: FollowupItem, mode: ComposerWritebackMode = "merge"): boolean {
+  if (!canWriteBackToComposer(mode)) return false
   const taken = editQueuedMessage(item.id)
-  if (!taken) return
+  if (!taken) return false
   releaseQueuedDraftAssets(taken.sessionId, taken.id)
-  useChatStore.getState().setComposer(taken.draft ?? taken.prompt)
-  setQuotedContexts(taken.quotedContexts ?? [])
-  setComposerSkillChips(taken.skillChips ?? [])
-  for (const asset of taken.assets) queueComposerAsset(asset)
-  focusComposerEnd()
+  const result = writeBackToComposer(
+    {
+      text: taken.draft ?? taken.prompt,
+      assets: taken.assets,
+      quotedContexts: taken.quotedContexts,
+      skillChips: taken.skillChips
+    },
+    { mode }
+  )
+  return result.ok
 }

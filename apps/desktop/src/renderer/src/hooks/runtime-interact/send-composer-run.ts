@@ -13,6 +13,7 @@ import { codingAgentRunInput } from "../agent-run-payload"
 import { listComposerAssets, setComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
 import { takeComposerText } from "./composer-draft"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
+import { pauseFollowupsAfterFailedStart } from "../followup-pause"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
@@ -362,6 +363,8 @@ function armComposerWatchdog(typed: string): SendAttempt {
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
 function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): void {
+  // leo BLOCK #163 ③：闸拦也是没发出去，排队的先停住。
+  pauseFollowupsAfterFailedStart(store.sessionId, useChatStore.getState().error)
   store.setRunning(false)
   store.setPreparingHint(false)
   const blocked = useChatStore.getState().error
