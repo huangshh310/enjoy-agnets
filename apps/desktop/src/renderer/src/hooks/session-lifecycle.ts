@@ -110,7 +110,8 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   })
   const generation = bumpSessionHydrateGeneration()
   const parkedRunning = useAttentionStore.getState().parks[sessionId]?.running === true
-  const sessionRunning = (await sessionOwnActiveRunning(sessionId)) || parkedRunning
+  const mainRunning = await sessionOwnActiveRunning(sessionId)
+  const sessionRunning = mainRunning || parkedRunning
   if (!sameSession) {
     useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
@@ -144,7 +145,8 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     sameSession,
     generation,
     sessionId,
-    sessionRunning
+    sessionRunning,
+    mainRunning
   })
   await applyHydratedLivePending(sessionId)
   // jojo P1：库里有失败 run → 红卡 + 重试；活泵在跑不盖。

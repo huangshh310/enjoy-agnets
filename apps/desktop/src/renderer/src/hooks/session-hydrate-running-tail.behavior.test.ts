@@ -35,16 +35,18 @@ function rows() {
     { id: "a_b", role: "assistant" as const, content: "", createdAt: 4, parts: [toolPart] }
   ]
 }
-function hydrate(sessionId: string, opts: { sessionRunning?: boolean; parkRunning?: boolean }) {
-  useChatStore.setState({ sessionId, messages: [], running: false, notice: null, error: null } as never)
+function hydrate(sessionId: string, opts: { sessionRunning?: boolean; parkRunning?: boolean; storeRunning?: boolean }) {
+  // storeRunning：loadSession 里 restoreComposerForSession 已把停车档的 running/runId 搬进前台 store。
+  const live = opts.storeRunning ? { running: true, runId: "run_live" } : { running: false, runId: null }
+  useChatStore.setState({ sessionId, messages: [], ...live, notice: null, error: null } as never)
   if (opts.parkRunning) useAttentionStore.setState({ parks: { [sessionId]: { running: true } } } as never)
   const ok = applySessionHydrate({ dbRows: rows(), sameSession: false, generation: 0, sessionId, sessionRunning: opts.sessionRunning })
   assert.equal(ok, true)
   return useChatStore.getState().messages
 }
 
-test("切回还在跑的会话（main 说在跑）：最后一轮助手话是 streaming，思考行现在时，不说「已运行 1 个工具」", () => {
-  const messages = hydrate("ses_B", { sessionRunning: true })
+test("切回还在跑的会话（main 说在跑、前台 store 也在跑）：最后一轮助手话是 streaming，思考行现在时，不说「已运行 1 个工具」", () => {
+  const messages = hydrate("ses_B", { sessionRunning: true, storeRunning: true })
   const tail = messages.at(-1)!
   assert.equal(tail.role, "assistant")
   assert.equal(tail.streaming, true)
@@ -53,9 +55,32 @@ test("切回还在跑的会话（main 说在跑）：最后一轮助手话是 st
   assert.notEqual(headline, zhChat.ranToolsOne)
 })
 
-test("切回还在等审批的会话（停车档 running）：同样标 streaming", () => {
-  const messages = hydrate("ses_B2", { parkRunning: true })
+test("切回还在等审批的会话（main 说在跑 + 停车档 running）：同样标 streaming", () => {
+  const messages = hydrate("ses_B2", { sessionRunning: true, parkRunning: true })
   assert.equal(messages.at(-1)!.streaming, true)
+})
+
+test("main 说在跑，但此刻停车档 / 前台 store 都已空闲（一轮刚结束）：不标 streaming", () => {
+  const messages = hydrate("ses_B3", { sessionRunning: true })
+  assert.ok(!messages.at(-1)!.streaming)
+})
+
+test("main 说空闲、停车档还残留 running：信 main，不标 streaming（leo #164 P3）", () => {
+  const messages = hydrate("ses_B4", { sessionRunning: false, parkRunning: true })
+  assert.ok(!messages.at(-1)!.streaming)
+})
+
+test("mainRunning 单独给时以它为准：sessionRunning（含停车档）为 true、main 空闲 → 不标", () => {
+  useChatStore.setState({ sessionId: "ses_B5", messages: [], running: true, runId: "run_x" } as never)
+  useAttentionStore.setState({ parks: {} } as never)
+  applySessionHydrate({ dbRows: rows(), sameSession: false, generation: 0, sessionId: "ses_B5", sessionRunning: true, mainRunning: false })
+  assert.ok(!useChatStore.getState().messages.at(-1)!.streaming)
+})
+
+test("loadSession 把 main 的结论单独交给 applySessionHydrate（源码正则）", () => {
+  const src = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
+  assert.match(src, /const mainRunning = await sessionOwnActiveRunning\(sessionId\)/)
+  assert.match(src, /sessionRunning,\s*mainRunning\s*\}\)/)
 })
 
 test("会话不在跑：照旧按已结束显示（不标 streaming）", () => {
