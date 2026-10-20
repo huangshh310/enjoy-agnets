@@ -27,10 +27,9 @@ const META = { sessionId: "s1", runId: "r1", kind: "baseline" as const }
 test("无身份：记录存下、ref 存在、还原找得到、用户 config 不变", async (t) => {
   await withNoIdentityRepo(t, async (root) => {
     const configBefore = await readFile(join(root, ".git", "config"), "utf8")
-    // 前置：确认环境真的没有身份，普通 commit-tree 会失败（否则本测试空跑）。
-    const tree = (await runGit(root, ["write-tree"])).stdout.trim()
-    const plain = await runGit(root, ["commit-tree", tree, "-m", "probe"])
-    assert.notEqual(plain.exitCode, 0, "环境意外带了 git 身份")
+    // 前置探针：Linux / Windows CI 上普通 commit-tree 会失败；macOS 能从主机名猜出邮箱会成功，
+    // 那里「无身份必失败」由下一条 useConfigOnly 用例兜底，这里只记诊断。
+    if (await plainCommitTreeSucceeds(root)) t.diagnostic("host git auto-detects an identity")
 
     await writeFile(join(root, "note.txt"), "before\n", "utf8")
     const ref = await recordEnjoyCheckpoint(root, META)
@@ -58,6 +57,8 @@ test("无身份：记录存下、ref 存在、还原找得到、用户 config �
 test("user.useConfigOnly=true 且 HOME 无全局配置：仍能存下", async (t) => {
   await withNoIdentityRepo(t, async (root) => {
     assert.equal((await runGit(root, ["config", "user.useConfigOnly", "true"])).exitCode, 0)
+    // 各平台都不许猜身份 → 普通 commit-tree 必失败，证明本用例确实是「无身份」。
+    assert.equal(await plainCommitTreeSucceeds(root), false, "环境意外带了 git 身份")
     await writeFile(join(root, "note.txt"), "x\n", "utf8")
     const ref = await recordEnjoyCheckpoint(root, META)
     assert.ok(ref?.startsWith("refs/enjoy/checkpoints/"), `ref=${ref}`)
@@ -124,6 +125,11 @@ test("update-ref 失败：同样带 stderr 记日志并返回 null", async (t) =
     assert.ok(detail.stderr.length > 0, "日志必须带 git stderr")
   })
 })
+
+async function plainCommitTreeSucceeds(root: string): Promise<boolean> {
+  const tree = (await runGit(root, ["write-tree"])).stdout.trim()
+  return (await runGit(root, ["commit-tree", tree, "-m", "probe"])).exitCode === 0
+}
 
 async function withNoIdentityRepo(
   t: TestContext,
