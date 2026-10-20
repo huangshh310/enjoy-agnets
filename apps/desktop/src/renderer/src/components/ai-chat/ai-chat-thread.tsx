@@ -54,7 +54,7 @@ export function AiChatThread({
   const anchorId = noticeAnchorId(visible, notice)
 
   return (
-    <div className="relative flex min-h-6 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
+    <div data-thread-root="" className="relative flex min-h-6 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
       <ThreadFindBar open={findOpen} messages={visible} />
       <TranscriptSelectionAction />
       <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">

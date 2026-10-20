@@ -71,8 +71,11 @@ export function ChatStageHeader({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+      {/* 窄头部（768 宽、侧栏停靠时只剩 ~450）：「已完成」小签先藏，不然状态区把改动面板开关挤到 x≈781（窗外）。 */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <AttentionCompleteStatus />
+        <div className="hidden @[36rem]/header:contents">
+          <AttentionCompleteStatus />
+        </div>
         {onToggleEnvironment ? (
           <QuietIconButton
             icon={RiDashboard3Line}
@@ -108,6 +111,7 @@ export function ChatStageHeader({
         {reviewPhase ? <ReviewGateHeader phase={reviewPhase} /> : null}
         <QuietIconButton
           icon={RiLayoutRight2Line}
+          data-testid="right-pane-toggle"
           aria-label={rightPanelCollapsed ? t("chat.expandPane") : t("chat.collapsePane")}
           aria-pressed={!rightPanelCollapsed}
           onClick={onToggleRightPane}
