@@ -59,6 +59,36 @@ test("出错结束（run.error）也顶；标题精炼之类的旁路 completion
   assert.ok(at("ses_fg") >= now)
 })
 
+test("中途事件（text.delta / approval.required / usage.updated）不顶侧栏时间（leo #164 R5d 反向）", () => {
+  const now = Date.now()
+  tree(now)
+  const sid = "ses_bg"
+  dispatchAgentEvent({ type: "text.delta", runId: "run_mid", sessionId: sid, delta: "hi" } as never)
+  dispatchAgentEvent({
+    type: "approval.required",
+    runId: "run_mid",
+    sessionId: sid,
+    approvalId: "ap_mid",
+    toolCallId: "tc_mid",
+    name: "write_file",
+    args: { path: "a.txt" }
+  } as never)
+  dispatchAgentEvent({ type: "usage.updated", runId: "run_mid", sessionId: sid, usage: { inputTokens: 1, outputTokens: 1 } } as never)
+  assert.equal(at(sid), now - 2 * HOUR)
+  assert.equal(at("ses_fg"), now - 3 * HOUR)
+})
+
+test("恢复家族（重启补发 restore_interrupted_running / restart_cancelled / no_matching）不顶；普通 run.error 照顶", () => {
+  const now = Date.now()
+  tree(now)
+  for (const code of ["restore_interrupted_running", "restore_restart_cancelled", "restore_no_matching_approval"]) {
+    dispatchAgentEvent({ type: "run.error", runId: `run_${code}`, sessionId: "ses_bg", message: code, code } as never)
+  }
+  assert.equal(at("ses_bg"), now - 2 * HOUR, "重启恢复不算新动静")
+  dispatchAgentEvent({ type: "run.error", runId: "run_real", sessionId: "ses_bg", message: "boom" } as never)
+  assert.ok(at("ses_bg") >= now)
+})
+
 test("touchSessionUpdatedAt：只往后顶、不存在的会话不动、不改别的引用", () => {
   const now = Date.now()
   tree(now)
