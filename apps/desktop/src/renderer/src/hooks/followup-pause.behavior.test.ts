@@ -925,7 +925,7 @@ test("P3a 排队行标签：停着说「已暂停 / Paused」，没停「排队�
 })
 
 // ---- luna #163 真机门 P2④：对比度 ≥ 4.5:1（亮 / 暗）----
-test("P2④ 对比度：说明行灰字 / 次按钮 / 排队行标签用 neutral-600（亮）/ neutral-400（暗），「继续」白字落在 accent-600 上；全部 ≥ 4.5", () => {
+test("P2④ 对比度：说明行灰字 / 次按钮 / 紧凑行标签用 neutral-600（亮）/ neutral-400（暗），时间线泡标签亮色 neutral-700，「继续」白字落在 accent-600 上；全部 ≥ 4.5", () => {
   const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   const lum = (h: string) => {
     const [r, g, b] = hex(h).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))

@@ -15,14 +15,14 @@ export const QUEUE_CLEAR_UNDO_MS = ARCHIVE_UNDO_TOAST_MS
  * luna P2④ 对比度 ≥ 4.5:1（亮 / 暗都要）。text-text-secondary（neutral-500）在 bg-background-secondary-default 上
  * 亮 4.43 / 暗 3.78 不够，语义 token 里没有亮暗都过线的次要灰，所以用色板 token：
  * neutral-600 on #f7f7f7 = 7.29（亮），neutral-400 on #171717 = 6.94（暗）。说明行灰字、「全部清空」「改一下再发」、排队行「排队中 / 已暂停」都用它。
- * 算法和全表见 kai-e1.md。
+ * 比值按 WCAG 2 相对亮度算（行底是 bg-background-secondary-default 的实色）；回归测试见 followup-pause.behavior.test.ts「P2④ 对比度」。
  */
 export const QUEUE_MUTED_TEXT = "text-neutral-600 dark:text-neutral-400"
 
 /**
  * luna #163（10-21 定）：时间线泡的「排队中 / 已暂停」标签。泡整体 opacity-80（表示「还没发」，保留），
  * 亮色 neutral-600 只有 4.49，深一档 neutral-700 = 5.60；暗色 neutral-400 = 4.60 不变。紧凑行标签仍用 QUEUE_MUTED_TEXT。
- * 脚本 /workspace/kai-e1-contrast/label-bubble.py。
+ * 算法：前景、背景各按 80% 叠到页面底色后再算 WCAG 比值（同 followup-pause.behavior.test.ts 的 bubbleLabel）。
  */
 export const QUEUE_BUBBLE_LABEL_TEXT = "text-neutral-700 dark:text-neutral-400"
 
@@ -32,7 +32,7 @@ export const QUEUE_BUBBLE_LABEL_TEXT = "text-neutral-700 dark:text-neutral-400"
  *   暗 accent-600 只有 3.21–3.48，取最近能过的 accent-400 5.38–5.82，悬停往对比度高的方向走一档 accent-300 8.30–9.05。
  * 时间线泡（整个泡 opacity-80）：accent-600 亮 3.66 / accent-400 暗 3.85 都不够，取最近能过的：
  *   亮 accent-800 5.29，悬停 accent-900 5.27；暗 accent-300 6.32，悬停 accent-200 7.25。
- * 脚本 /workspace/kai-e1-contrast/links.py、links2.py；全表见 kai-e1.md。
+ * 算法：紧凑行把 bg-secondary/60（悬停再叠 accent-500/10）合成实色再算；泡里前景、背景都按 80% 叠到页面底色。测试见 followup-pause.behavior.test.ts「排队行链接对比度」。
  */
 export const QUEUE_LINK_DOCK = "text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
 export const QUEUE_LINK_BUBBLE = "text-accent-800 hover:text-accent-900 dark:text-accent-300 dark:hover:text-accent-200"
