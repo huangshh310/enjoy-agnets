@@ -57,3 +57,23 @@ export function acpListSpawnPlan(input: {
     env: input.custom.env
   }
 }
+
+/** listAcpRemoteSessions 的入参：和开跑时同一个 id / cwd / 覆盖 / env（leo #160：别只靠源码正则守）。 */
+export type AcpListRemoteArgs = {
+  id: string
+  cwd: string
+  override: { binaryPath?: string; extraArgs?: string[]; modelId?: string }
+  env?: Record<string, string>
+}
+
+export function acpListRemoteArgs(
+  runtimeId: string,
+  plan: Extract<AcpListSpawnPlan, { kind: "spawn" }>
+): AcpListRemoteArgs {
+  return {
+    id: runtimeId,
+    cwd: plan.cwd,
+    override: plan.override,
+    ...(plan.env && Object.keys(plan.env).length > 0 ? { env: plan.env } : {})
+  }
+}

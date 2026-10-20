@@ -7,7 +7,7 @@ import { readAgentToolOverrides, writeSessionRuntime } from "./agent-tools-vault
 import { createImportedAcpSession } from "./acp-session-import-create.ts"
 import { listBoundAcpSessionIds } from "./acp-session-bind.ts"
 import { projectListedAcpSessions } from "./acp-session-import-project.ts"
-import { acpListSpawnPlan } from "./acp-session-import-override.ts"
+import { acpListRemoteArgs, acpListSpawnPlan } from "./acp-session-import-override.ts"
 import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { getWorkspace } from "./workspace"
 
@@ -40,12 +40,7 @@ export async function listImportableAcpSessions(
   }
   let remote: Awaited<ReturnType<typeof listAcpRemoteSessions>>
   try {
-    remote = await listAcpRemoteSessions({
-      id: runtimeId,
-      cwd: plan.cwd,
-      override: plan.override,
-      ...(plan.env ? { env: plan.env } : {})
-    })
+    remote = await listAcpRemoteSessions(acpListRemoteArgs(runtimeId, plan))
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return { supported: true, sessions: [], error: message }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { acpListSpawnOverride, acpListSpawnPlan } from "./acp-session-import-override.ts"
+import { acpListRemoteArgs, acpListSpawnOverride, acpListSpawnPlan } from "./acp-session-import-override.ts"
 import { projectListedAcpSessions } from "./acp-session-import-project.ts"
 import { acpSessionListFailedCopy } from "../../renderer/src/components/ai-chat/agent-picker/acp-session-import-copy.ts"
 import { zhChat } from "../../renderer/src/i18n/catalogs/zh/chat.ts"
@@ -137,6 +137,37 @@ test("接线：listImportableAcpSessions 走 acpListSpawnPlan，自定义助手�
   assert.match(src, /isCustom \? getCustomAgent\(runtimeId\)/)
   assert.match(src, /resolveCustomCwd\(custom, workspace\.rootPath\)/)
   assert.match(src, /acpListSpawnPlan\(\{/)
-  assert.match(src, /cwd: plan\.cwd,\s+override: plan\.override/)
-  assert.match(src, /env: plan\.env/)
+  assert.match(src, /listAcpRemoteSessions\(acpListRemoteArgs\(runtimeId, plan\)\)/)
+})
+
+test("leo #160：自定义助手 spawn 计划 → listAcpRemoteSessions 入参：env / cwd / command / args 原样带上", () => {
+  const plan = acpListSpawnPlan({
+    runtimeId: "custom:fake",
+    isCustom: true,
+    custom: customRecord,
+    customCwd: "/custom/cwd",
+    workspaceRoot: "/ws",
+    workspaceIsSsh: false
+  })
+  assert.equal(plan.kind, "spawn")
+  if (plan.kind !== "spawn") return
+  assert.deepEqual(acpListRemoteArgs("custom:fake", plan), {
+    id: "custom:fake",
+    cwd: "/custom/cwd",
+    override: { binaryPath: customRecord.command, extraArgs: customRecord.args, ...(customRecord.modelId ? { modelId: customRecord.modelId } : {}) },
+    env: { FAKE_TOKEN: "t" }
+  })
+})
+
+test("leo #160：预置引擎 / 空 env 不带 env 键；cwd 是工作区根", () => {
+  const preset = acpListSpawnPlan({ runtimeId: "amp", isCustom: false, workspaceRoot: "/ws", workspaceIsSsh: false })
+  assert.equal(preset.kind, "spawn")
+  if (preset.kind !== "spawn") return
+  const args = acpListRemoteArgs("amp", preset)
+  assert.equal(args.cwd, "/ws")
+  assert.equal(args.id, "amp")
+  assert.ok(!("env" in args))
+  const empty = acpListSpawnPlan({ runtimeId: "custom:fake", isCustom: true, custom: { ...customRecord, env: {} }, workspaceRoot: "/ws", workspaceIsSsh: false })
+  if (empty.kind !== "spawn") return assert.fail("应能起进程")
+  assert.ok(!("env" in acpListRemoteArgs("custom:fake", empty)))
 })
