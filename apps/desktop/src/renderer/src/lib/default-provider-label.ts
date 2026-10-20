@@ -1,24 +1,35 @@
 /**
- * 当前默认路线的供应商显示名。快照 profileId 对不上列表时，只落到正在用（active）且有钥、未停用的档案。
+ * 当前默认路线的供应商。快照 profileId 对不上列表时，只落到正在用（active）且有钥、未停用的档案。
+ * 原来的 defaultProviderLabel（返回密钥档案名）已删：失败卡不许出现档案名（luna P2 定稿）。
  */
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { presetDisplayName } from "./credential/key-status.ts"
 
 export type ListedProvider = {
   id: string
   name?: string
+  /** 预设 kind（openai / deepseek / custom…）：供应商品牌名从这里来。 */
+  kind?: string
   active?: boolean
   hasKey?: boolean
   enabled?: boolean
 }
 
-export function defaultProviderLabel(
+/**
+ * 当前默认路线的**供应商品牌名**（OpenAI / DeepSeek…），按档案的预设 kind 取，和设置页供应商行、
+ * 向导「密钥被 {name} 拒绝」同源（presetDisplayName）。
+ * luna P2（定稿）：失败卡只说供应商 / 引擎名，**不出现密钥档案名**（「Work key A」「E2E Stub Key」），括号里也不要。
+ * 自定义端点（custom）没有品牌名，用 fallback（「当前供应商」），同样不拿档案名顶。
+ */
+export function defaultProviderBrand(
   readiness: ChatReadiness | undefined,
   providers: readonly ListedProvider[],
   fallback: string
 ): string {
   const id = resolveDefaultProviderId(readiness, providers)
-  const named = id ? providers.find((row) => row.id === id)?.name?.trim() : undefined
-  return named || fallback
+  const kind = id ? providers.find((row) => row.id === id)?.kind : undefined
+  // 自定义端点 / 未知预设 / 没有 kind 都回落成通用说法，绝不拿档案名顶。
+  return presetDisplayName(kind, fallback) || fallback
 }
 
 export function defaultProviderId(readiness: ChatReadiness | undefined): string | undefined {
