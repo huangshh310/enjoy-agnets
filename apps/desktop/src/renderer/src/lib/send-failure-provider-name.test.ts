@@ -88,7 +88,7 @@ test("luna P2：认不出也没地址 → 「模型服务」/ the model service�
   const { render } = await cards()
   const all = render({ name: "Work key A", kind: "mystery-preset", baseURL: "::not a url::" })
   const pick = (lang: string, key: string) => all.find((c) => c.lang === lang && c.key === key)!.text
-  assert.equal(pick("zh", "credentialNetworkNotice"), "连不上 模型服务，消息没发出去。检查网络后再试。")
+  assert.equal(pick("zh", "credentialNetworkNotice"), "连不上模型服务，消息没发出去。检查网络后再试。")
   assert.equal(pick("zh", "credentialInvalidNotice"), "密钥没通过：模型服务不认这把密钥，消息没发出去。")
   assert.equal(pick("en", "credentialNetworkNotice"), "Could not reach the model service. The message was not sent. Check the network and try again.")
   assert.equal(pick("en", "providerUnreachableNotice"), "Can't reach the model service. Check the network and try again.")

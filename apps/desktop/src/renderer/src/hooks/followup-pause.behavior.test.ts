@@ -1004,41 +1004,55 @@ test("排队行链接对比度：紧凑行 accent-600 / 悬停 accent-700，暗�
   assert.ok(!/text-accent-500/.test(turn), "排队行不再用 accent-500 当字色")
 })
 
-// ---- luna #163（10-21）中文空格规则：称呼以拉丁字母 / 数字结尾留空格，以中文结尾不留 ----
-test("中文空格规则：失败卡和排队行同一个函数（fillProviderFace → placeProviderName）；拉丁结尾 / 数字结尾 / 「…」截断留空格，中文结尾和「模型服务」不留；英文不变", async () => {
+// ---- luna #163（10-21）中文空格规则（对称）：中文和拉丁字母 / 数字相邻留空格，前后各自判断；挨中文标点不留 ----
+test("中文空格规则（对称）：失败卡和排队行同一个函数（fillProviderFace → placeProviderName）；称呼前后各自判断，挨中文标点不留，英文不变", async () => {
   const { fillProviderFace, providerNameEndsCjk, placeProviderName } = await import("../lib/provider-face.ts")
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
   const generic = { kind: "generic" as const }
-  const row = (provider: ReturnType<typeof named> | typeof generic, t = zh, retry = false) =>
+  type Face = ReturnType<typeof named> | typeof generic
+  const row = (provider: Face, t = zh, retry = false) =>
     view.queuePausedView({ reason: "quota", count: 2, composerHasContent: false, failureCardRetryShowing: retry, provider, t }).text
-  const card = (key: string, provider: ReturnType<typeof named> | typeof generic, t = zh) => fillProviderFace(t, `chat.${key}`, provider)
-  // 排队行（四个额度句都经同一个函数）
+  const card = (key: string, provider: Face, t = zh) => fillProviderFace(t, `chat.${key}`, provider)
+  const net = (provider: Face) => card("credentialNetworkNotice", provider).split("，")[0] + "，"
+  // 称呼在前（后面接中文）：排队行四个额度句
   assert.equal(row(named("OpenAI")), "OpenAI 额度用完了，排队的 2 条先不发。充值后点继续。")
   assert.equal(row(named("api.example.com")), "api.example.com 额度用完了，排队的 2 条先不发。充值后点继续。")
   assert.equal(row(named("Qwen3")), "Qwen3 额度用完了，排队的 2 条先不发。充值后点继续。", "数字结尾留空格")
   assert.equal(row(named("通义")), "通义额度用完了，排队的 2 条先不发。充值后点继续。")
   assert.equal(row(generic), "模型服务额度用完了，排队的 2 条先不发。充值后点继续。")
-  assert.equal(row(named("a-very-long-subdomain.inferen…")), "a-very-long-subdomain.inferen… 额度用完了，排队的 2 条先不发。充值后点继续。", "截断的「…」按非中文：留空格")
+  assert.equal(row(named("a-very-long-subdomain.inferen…")), "a-very-long-subdomain.inferen… 额度用完了，排队的 2 条先不发。充值后点继续。", "截断的「…」算西文：留空格")
+  assert.equal(row(named("智谱 GLM (Zhipu)")), "智谱 GLM (Zhipu) 额度用完了，排队的 2 条先不发。充值后点继续。", "预设名以「)」结尾算西文")
   assert.equal(row(named("通义"), zh, true), "通义额度用完了，排队的 2 条先不发。充值后先发上面这条，发出去后排队的会接着发。")
   assert.equal(view.queuePausedView({ reason: "quota", count: 1, composerHasContent: false, failureCardRetryShowing: false, provider: generic, t: zh }).text, "模型服务额度用完了，排队的 1 条先不发。充值后点继续。")
-  // 失败卡（{name} 后面紧跟中文的三句；「连不上 {name}，」后面是标点，本来就没空格）
-  assert.equal(card("credentialInvalidNotice", named("OpenAI")), "密钥没通过：OpenAI 不认这把密钥，消息没发出去。")
+  // 称呼在后（前面是中文，后面是中文标点）：连不上卡
+  assert.equal(net(generic), "连不上模型服务，")
+  assert.equal(net(named("通义")), "连不上通义，")
+  assert.equal(net(named("api.example.com")), "连不上 api.example.com，")
+  assert.equal(net(named("OpenAI")), "连不上 OpenAI，", "挨中文标点不留空格")
+  assert.equal(net(named("Qwen3")), "连不上 Qwen3，")
+  assert.equal(net(named("a-very-long-subdomain.inferen…")), "连不上 a-very-long-subdomain.inferen…，", "截断称呼：前面看第一个字，后面挨中文标点")
+  assert.equal(net(named("智谱 GLM (Zhipu)")), "连不上智谱 GLM (Zhipu)，", "前面看第一个字：中文开头不留")
+  assert.equal(card("credentialNetworkNotice", generic), "连不上模型服务，消息没发出去。检查网络后再试。")
+  // 称呼在中间（前后都是中文）：密钥没通过卡
+  assert.equal(card("credentialInvalidNotice", named("OpenAI")), "密钥没通过：OpenAI 不认这把密钥，消息没发出去。", "前面是「：」中文标点不留，后面接中文留")
   assert.equal(card("credentialInvalidNotice", generic), "密钥没通过：模型服务不认这把密钥，消息没发出去。")
   assert.equal(card("credentialBillingNotice", named("通义")), "通义说额度或账单有问题，消息没发出去。可以先换个模型，处理好后再试。")
   assert.equal(card("credentialBillingNotice", named("DeepSeek2")), "DeepSeek2 说额度或账单有问题，消息没发出去。可以先换个模型，处理好后再试。")
   assert.equal(card("credentialForbiddenNotice", generic), "模型服务拒绝了这次请求，消息没发出去。可以换个模型，或稍后再试。")
-  assert.equal(card("credentialNetworkNotice", generic), "连不上 模型服务，消息没发出去。检查网络后再试。")
+  // 纯函数：中文夹着称呼
+  assert.equal(placeProviderName("在 @ 里", "通义", "@"), "在通义里")
+  assert.equal(placeProviderName("在@里", "OpenAI", "@"), "在 OpenAI 里", "文案没写空格也补上")
+  assert.equal(placeProviderName("「@」", "OpenAI", "@"), "「OpenAI」")
+  assert.equal(placeProviderName("@ 说@ said", "通义", "@"), "通义说通义 said")
+  assert.equal(providerNameEndsCjk("模型服务"), true)
+  assert.equal(providerNameEndsCjk("glm4"), false)
+  assert.equal(providerNameEndsCjk("host…"), false)
   // 英文不变
   assert.equal(row(generic, en), "The model service is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
   assert.equal(row(named("通义"), en), "通义 is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
-  assert.equal(card("credentialInvalidNotice", named("通义"), en), "通义 rejected this key, so the message was not sent.")
-  // 纯函数
-  assert.equal(providerNameEndsCjk("模型服务"), true)
-  assert.equal(providerNameEndsCjk("OpenAI"), false)
-  assert.equal(providerNameEndsCjk("glm4"), false)
-  assert.equal(providerNameEndsCjk("host…"), false)
-  assert.equal(placeProviderName("@ 说@ said", "通义", "@"), "通义说通义 said")
+  assert.equal(card("credentialNetworkNotice", named("通义"), en), "Could not reach 通义. The message was not sent. Check the network and try again.")
+  assert.equal(card("credentialNetworkNotice", named("OpenAI"), en), "Could not reach OpenAI. The message was not sent. Check the network and try again.")
   // 接线：两个界面都只经 fillProviderFace 填称呼，不各自插值。
   const viewSrc = readSource("../components/ai-chat/thread/queue-paused-view.ts")
   assert.equal((viewSrc.match(/fillProviderFace\(/g) ?? []).length, 2, "排队行两处（原因句、额度重发句）都走 fillProviderFace")

@@ -41,30 +41,70 @@ export function providerFace(row: { kind?: string; baseURL?: string } | undefine
 
 type T = (key: string, vars?: Record<string, string | number>) => string
 
-/** 中日韩文字（含全角标点）。省略号「…」（U+2026）不算，截断的主机名按拉丁结尾处理。 */
-const CJK = /[\u2e80-\u303f\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]/u
+/** 中日韩文字（汉字 / 假名 / 谚文）。 */
+const CJK_TEXT = /[\u2e80-\u2fff\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]/u
+/** 中日韩标点和全角形式（「，」「。」「（」…）。挨着它们不留空格。 */
+const CJK_PUNCT = /[\u3000-\u303f\uff00-\uffef]/u
+const LATIN_ALNUM = /[A-Za-z0-9]/
 
-/** 称呼以中日韩文字结尾（「模型服务」「通义」）→ 后面直接接中文不留空格。 */
-export function providerNameEndsCjk(name: string): boolean {
-  const last = [...name.trimEnd()].at(-1)
-  return last != null && CJK.test(last)
+type Edge = "cjk" | "cjkPunct" | "west"
+/** 称呼边上的字：中文 / 中文标点 / 其它一律算西文（拉丁字母、数字、「…」「)」「.」都算）。 */
+function nameEdge(ch: string | undefined): Edge {
+  if (ch == null) return "west"
+  if (CJK_TEXT.test(ch)) return "cjk"
+  if (CJK_PUNCT.test(ch)) return "cjkPunct"
+  return "west"
 }
 
-/** 占位：先把称呼位置标出来，再按称呼结尾决定后面的空格。用不会出现在文案里的私用区字符。 */
+/**
+ * 称呼和旁边文案之间要不要空格。neighbor 是文案里紧挨称呼的那个字（跳过一个空格）。
+ * - 文案那边是中文标点 → 不留；
+ * - 一边中文、一边西文（称呼边上的拉丁 / 数字 / 「…」等，或文案里的拉丁字母 / 数字）→ 留；
+ * - 两边都是中文 → 不留；
+ * - 文案那边是西文标点、行首行尾，或两边都是西文 → 按文案原样（英文文案不动）。
+ */
+function boundarySpace(edge: Edge, neighbor: string | undefined): "space" | "none" | "keep" {
+  if (neighbor == null) return "keep"
+  if (CJK_PUNCT.test(neighbor)) return "none"
+  if (CJK_TEXT.test(neighbor)) return edge === "west" ? "space" : "none"
+  if (LATIN_ALNUM.test(neighbor)) return edge === "cjk" ? "space" : edge === "cjkPunct" ? "none" : "keep"
+  return "keep"
+}
+
+/** 称呼以中日韩文字结尾（「模型服务」「通义」）。 */
+export function providerNameEndsCjk(name: string): boolean {
+  return nameEdge([...name.trim()].at(-1)) === "cjk"
+}
+
+/** 占位：先把称呼位置标出来，再按两边的字决定空格。用不会出现在文案里的私用区字符。 */
 const SLOT = "\ue000provider\ue000"
 
 /**
- * luna #163（10-21）中文空格规则：称呼后面紧跟「空格 + 中文」时——
- * 称呼以拉丁字母 / 数字（或「…」）结尾 → 留空格（「OpenAI 额度用完了」「api.example.com 额度用完了」）；
- * 以中文结尾 → 去掉空格（「模型服务额度用完了」「通义额度用完了」）。英文文案后面跟的不是中文，不受影响。
- * 失败卡和排队暂停行都经 fillProviderFace 走这里，规则只此一处。
+ * luna #163（10-21）中文空格规则，前后两边各自判断：只有中文和拉丁字母 / 数字相邻时留一个空格，
+ * 挨着中文标点不留。「连不上模型服务，」「连不上通义，」「连不上 api.example.com，」「连不上 OpenAI，」
+ * 「OpenAI 额度用完了」「模型服务额度用完了」。截断称呼：末尾「…」算西文（后面留空格），前面看第一个字。
+ * 英文文案两边是西文，按原样。失败卡和排队暂停行都经 fillProviderFace 走这里，规则只此一处。
  */
 export function placeProviderName(template: string, name: string, slot = SLOT): string {
-  const tight = providerNameEndsCjk(name)
-  return template
-    .split(slot)
-    .map((part, index) => (index > 0 && tight && part.startsWith(" ") && CJK.test([...part][1] ?? "") ? part.slice(1) : part))
-    .join(name)
+  const chars = [...name.trim()]
+  const head = nameEdge(chars[0])
+  const tail = nameEdge(chars.at(-1))
+  const parts = template.split(slot)
+  for (let i = 0; i < parts.length - 1; i++) {
+    // 前一边：parts[i] 的结尾
+    const before = parts[i]!
+    const bSpaced = before.endsWith(" ")
+    const bCore = bSpaced ? before.slice(0, -1) : before
+    const bDecision = boundarySpace(head, [...bCore].at(-1))
+    if (bDecision !== "keep") parts[i] = bCore + (bDecision === "space" ? " " : "")
+    // 后一边：parts[i + 1] 的开头
+    const after = parts[i + 1]!
+    const aSpaced = after.startsWith(" ")
+    const aCore = aSpaced ? after.slice(1) : after
+    const aDecision = boundarySpace(tail, [...aCore][0])
+    if (aDecision !== "keep") parts[i + 1] = (aDecision === "space" ? " " : "") + aCore
+  }
+  return parts.join(name.trim())
 }
 
 /**
