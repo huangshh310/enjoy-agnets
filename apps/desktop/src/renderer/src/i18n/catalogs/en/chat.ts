@@ -678,6 +678,8 @@ export const enChat = {
   approvalDecideAskUserNoSession: "This question cannot be allowed for the whole session.",
   approvalDecideRunInactive: "This run has already ended, so it cannot be decided.",
   approvalDecideNoMatching: "No matching approval is waiting.",
+  approvalBelongsToOtherChat: "This approval is in another chat. Switch to it to respond.",
+  approvalBelongsToOtherChatTitled: "This approval is in another chat, \"{title}\". Switch to it to respond.",
   approvalDecideFailed: "That approval did not go through.",
   runFailed: "This run did not finish.",
   catchUpApprovalTimeout: "Catch-up waited for approval too long and did not run",

@@ -30,6 +30,14 @@ export function writeAcpSessionBind(
     .run(runtimeId, acpSessionId, sessionId)
 }
 
+/**
+ * 记下会话是从本机助手导入的（引擎 id）。和 ACP 绑定分开存：切引擎清绑定，这个不清。
+ * 有这个标记的会话即使在 Enjoy 里没有消息，离开时 / 启动时也不当空壳删。
+ */
+export function writeSessionImportedFrom(sessionId: string, runtimeId: string): void {
+  getDatabase().prepare("UPDATE sessions SET imported_from = ? WHERE id = ?").run(runtimeId, sessionId)
+}
+
 export function clearAcpSessionBind(sessionId: string): void {
   getDatabase()
     .prepare("UPDATE sessions SET acp_runtime_id = NULL, acp_session_id = NULL WHERE id = ?")

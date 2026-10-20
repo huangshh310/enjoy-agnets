@@ -12,3 +12,68 @@ export function acpListSpawnOverride(override?: {
     modelId: override?.modelId
   }
 }
+
+/** 自定义 ACP 助手入库的字段（和开跑时 openCustomAcpStream 用的一致）。 */
+export type CustomAcpListRecord = {
+  command: string
+  args: string[]
+  env: Record<string, string>
+  modelId?: string
+  enabled: boolean
+}
+
+export type AcpListSpawnPlan =
+  | { kind: "spawn"; cwd: string; override: { binaryPath?: string; extraArgs?: string[]; modelId?: string }; env?: Record<string, string> }
+  | { kind: "unsupported"; error?: string }
+
+/**
+ * 列本机 ACP 会话怎么起进程（luna -71）：
+ * 预置引擎读「引擎覆盖」；自定义助手（custom:*）读它自己入库的 command / args / env / cwd，
+ * 不能去读预置覆盖（那里永远没有自定义助手，结果什么都列不出来）。
+ */
+export function acpListSpawnPlan(input: {
+  runtimeId: string
+  isCustom: boolean
+  presetOverride?: { binaryPath?: string; extraArgs?: string[]; modelId?: string }
+  custom?: CustomAcpListRecord
+  /** 自定义助手的工作目录（已按 cwdMode 解析）；预置引擎用工作区根。 */
+  customCwd?: string
+  workspaceRoot: string
+  workspaceIsSsh: boolean
+}): AcpListSpawnPlan {
+  if (!input.isCustom) {
+    return { kind: "spawn", cwd: input.workspaceRoot, override: acpListSpawnOverride(input.presetOverride) }
+  }
+  if (!input.custom || !input.custom.enabled) return { kind: "unsupported" }
+  if (input.workspaceIsSsh) return { kind: "unsupported", error: "自定义助手暂不支持远程工作区" }
+  return {
+    kind: "spawn",
+    cwd: input.customCwd || input.workspaceRoot,
+    override: {
+      binaryPath: input.custom.command,
+      extraArgs: input.custom.args,
+      ...(input.custom.modelId ? { modelId: input.custom.modelId } : {})
+    },
+    env: input.custom.env
+  }
+}
+
+/** listAcpRemoteSessions 的入参：和开跑时同一个 id / cwd / 覆盖 / env（leo #160：别只靠源码正则守）。 */
+export type AcpListRemoteArgs = {
+  id: string
+  cwd: string
+  override: { binaryPath?: string; extraArgs?: string[]; modelId?: string }
+  env?: Record<string, string>
+}
+
+export function acpListRemoteArgs(
+  runtimeId: string,
+  plan: Extract<AcpListSpawnPlan, { kind: "spawn" }>
+): AcpListRemoteArgs {
+  return {
+    id: runtimeId,
+    cwd: plan.cwd,
+    override: plan.override,
+    ...(plan.env && Object.keys(plan.env).length > 0 ? { env: plan.env } : {})
+  }
+}

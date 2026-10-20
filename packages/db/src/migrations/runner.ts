@@ -21,6 +21,7 @@ import { mcpCuratedMigration } from "./mcp-curated.ts"
 import { misbackfilledFilePartsMigration } from "./misbackfilled-file-parts.ts"
 import { sessionReviewMigration } from "./session-review.ts"
 import { runDiscardedPreOutputMigration } from "./run-discarded-pre-output.ts"
+import { sessionImportedFromMigration } from "./session-imported-from.ts"
 import { ensureCuratedPresetIdColumn, repairClaimedV14, tableExists } from "./column-guard.ts"
 import type { Migration } from "./types.ts"
 
@@ -44,7 +45,8 @@ export const MIGRATIONS: Migration[] = [
   mcpCuratedMigration,
   misbackfilledFilePartsMigration,
   sessionReviewMigration,
-  runDiscardedPreOutputMigration
+  runDiscardedPreOutputMigration,
+  sessionImportedFromMigration
 ]
 
 function ensureMigrationTable(sqlite: DatabaseSync): void {

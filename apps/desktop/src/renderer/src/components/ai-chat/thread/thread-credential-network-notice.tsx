@@ -4,11 +4,9 @@
  */
 import { RiRefreshLine } from "@remixicon/react"
 import { retryKeptDraft, useRetryKeptDraftAvailable } from "@renderer/hooks/retry-kept-draft"
-import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
-import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
+import { useSendFailureProviderName } from "@renderer/hooks/use-send-failure-provider-name"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 import { retryCardView } from "./retry-card-view"
 import { useRestoredImagesDetail } from "./use-restored-images-detail"
@@ -30,9 +28,8 @@ export function ThreadCredentialNetworkNotice({
     restoredDetail,
     editThenSend: t("chat.sendFailedEditThenSend")
   })
-  const readiness = useChatReadiness().data
-  const providers = useSettingsSnapshot().data?.providers ?? []
-  const name = defaultProviderLabel(readiness, providers, t("chat.credentialProviderFallback"))
+  // 跟前台引擎走：Amp / 自定义助手失败说引擎名，不说聊天密钥档案名（luna m136b-62）。
+  const name = useSendFailureProviderName()
   return (
     <ThreadSendGateNotice
       testId="thread-credential-network-notice"

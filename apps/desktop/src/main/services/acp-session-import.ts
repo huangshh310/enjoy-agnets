@@ -2,28 +2,45 @@
  * 发现并导入 Agent 侧 ACP 会话到 Enjoy 侧栏。
  */
 import { listAcpRemoteSessions } from "@enjoy-agents/agent-harness"
-import type { ImportAcpSessionInput, ListAcpSessionsResult } from "@enjoy-agents/ipc-contract"
-import { readAgentToolOverrides } from "./agent-tools-vault"
-import { listBoundAcpSessionIds, writeAcpSessionBind } from "./acp-session-bind.ts"
+import { isCustomAgentId, type ImportAcpSessionInput, type ListAcpSessionsResult } from "@enjoy-agents/ipc-contract"
+import { readAgentToolOverrides, writeSessionRuntime } from "./agent-tools-vault"
+import { createImportedAcpSession } from "./acp-session-import-create.ts"
+import { listBoundAcpSessionIds } from "./acp-session-bind.ts"
 import { projectListedAcpSessions } from "./acp-session-import-project.ts"
-import { acpListSpawnOverride } from "./acp-session-import-override.ts"
-import { createSession } from "./session-queries"
+import { acpListRemoteArgs, acpListSpawnPlan } from "./acp-session-import-override.ts"
+import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { getWorkspace } from "./workspace"
-import { writeSessionRuntime } from "./agent-tools-vault"
 
 export async function listImportableAcpSessions(
   runtimeId: string,
   workspaceId: string
 ): Promise<ListAcpSessionsResult> {
   const workspace = await getWorkspace(workspaceId)
-  const override = readAgentToolOverrides()[runtimeId]
+  const isCustom = isCustomAgentId(runtimeId)
+  const custom = isCustom ? getCustomAgent(runtimeId) : undefined
+  let customCwd: string | undefined
+  if (custom) {
+    try {
+      customCwd = resolveCustomCwd(custom, workspace.rootPath)
+    } catch (error) {
+      return { supported: true, sessions: [], error: error instanceof Error ? error.message : String(error) }
+    }
+  }
+  const plan = acpListSpawnPlan({
+    runtimeId,
+    isCustom,
+    presetOverride: isCustom ? undefined : readAgentToolOverrides()[runtimeId],
+    custom,
+    customCwd,
+    workspaceRoot: workspace.rootPath,
+    workspaceIsSsh: workspace.kind === "ssh"
+  })
+  if (plan.kind === "unsupported") {
+    return plan.error ? { supported: true, sessions: [], error: plan.error } : { supported: false, sessions: [] }
+  }
   let remote: Awaited<ReturnType<typeof listAcpRemoteSessions>>
   try {
-    remote = await listAcpRemoteSessions({
-      id: runtimeId,
-      cwd: workspace.rootPath,
-      override: acpListSpawnOverride(override)
-    })
+    remote = await listAcpRemoteSessions(acpListRemoteArgs(runtimeId, plan))
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return { supported: true, sessions: [], error: message }
@@ -33,14 +50,12 @@ export async function listImportableAcpSessions(
     supported: remote.supported,
     sessions: remote.sessions,
     imported,
-    cwd: workspace.rootPath
+    cwd: plan.cwd
   })
 }
 
 export async function importAcpSession(input: ImportAcpSessionInput) {
-  const title = input.title?.trim() || "从本机助手导入"
-  const created = await createSession(input.workspaceId, title.slice(0, 80))
-  writeAcpSessionBind(created.id, input.runtimeId, input.acpSessionId)
+  const created = await createImportedAcpSession(input)
   writeSessionRuntime(created.id, input.runtimeId)
   return created
 }
