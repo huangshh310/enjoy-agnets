@@ -24,7 +24,7 @@ const listeners = new Set<() => void>()
 
 function notify() {
   // 队列空了：暂停跟着清掉。
-  for (const sessionId of [...paused.keys()]) {
+  for (const sessionId of paused.keys()) {
     if (!items.some((item) => item.sessionId === sessionId)) paused.delete(sessionId)
   }
   for (const listener of listeners) listener()
