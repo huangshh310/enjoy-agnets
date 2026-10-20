@@ -122,7 +122,7 @@ export const enChat = {
   rewindUnsupported: "This engine cannot rewind the conversation",
   rewindConfirmUntrackedTitle: "Also delete {n} new files?",
   rewindConfirmUntrackedTitleOne: "Also delete 1 new file?",
-  rewindConfirmUntrackedTitleUnknown: "Also delete the files that appeared after this turn started?",
+  rewindConfirmUntrackedTitleUnknown: "Also delete files that appeared after this turn started?",
   rewindConfirmUntrackedBody: "These files appeared after this turn started, including any you created yourself. Restoring will delete them, and they can't be recovered.",
   rewindConfirmUntrackedMore: "{n} more",
   rewindConfirmDelete: "Delete and restore",

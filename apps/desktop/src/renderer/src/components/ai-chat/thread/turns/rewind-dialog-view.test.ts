@@ -121,7 +121,7 @@ test("二次确认拿不到 N：标题不带数字", () => {
     const zh = rewindDialogView({ kind: "untracked", files: missing }, tFor("zh"))
     assert.equal(zh.title, "还要删掉这一轮开始后新出现的文件？")
     assert.deepEqual(zh.files, [])
-    assert.equal(rewindDialogView({ kind: "untracked", files: missing }, tFor("en")).title, "Also delete the files that appeared after this turn started?")
+    assert.equal(rewindDialogView({ kind: "untracked", files: missing }, tFor("en")).title, "Also delete files that appeared after this turn started?")
   }
 })
 

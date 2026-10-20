@@ -60,7 +60,7 @@ const COPY = {
       "This message and everything after it will be removed. Its text goes back into the input. This folder isn't tracked by Git, so file changes won't be undone.",
     notGitButtons: ["Cancel", "Start over"],
     untrackedTitle: (n: number) => (n === 1 ? "Also delete 1 new file?" : `Also delete ${n} new files?`),
-    untrackedUnknown: "Also delete the files that appeared after this turn started?",
+    untrackedUnknown: "Also delete files that appeared after this turn started?",
     untrackedBody:
       "These files appeared after this turn started, including any you created yourself. Restoring will delete them, and they can't be recovered.",
     more: (n: number) => `${n} more`,
