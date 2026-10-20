@@ -434,9 +434,9 @@ for (const lang of ["zh", "en"] as const) {
 // 旧提示「已交给下一步检查点…」挂在输入框帽檐里（Composer 此时 shrink-0），对话列被压掉一行，审批卡只剩「计划概览」标题，
 // 本会话总是允许 / 拒绝 / 批准 被帽檐盖住（elementFromPoint 命中提示文字），要点 × 才回来。
 // 修后：有审批卡时提示画在审批卡上方的紧凑区（同列、文档流），放不下就让位；帽檐里不画。
-const STEER_HINT = { zh: "已收到，下一步会按你的话调整。", en: "Got it. The next step will follow what you said." } as const
+const STEER_HINT = { zh: "已收到，它下一步就会看到。", en: "Got it. It'll see this at its next step." } as const
 const OLD_STEER_HINT = /已交给下一步检查点|Queued for the next safe checkpoint/
-const ANY_STEER_HINT = /已交给下一步检查点|Queued for the next safe checkpoint|已收到，下一步会按你的话调整|Got it\. The next step will follow/
+const ANY_STEER_HINT = /已交给下一步检查点|Queued for the next safe checkpoint|已收到，它下一步就会看到|Got it\. It'll see this at its next step/
 
 for (const lang of ["zh", "en"] as const) {
   test(`733x480 有审批卡时点「马上发」：提示不盖审批三钮，三钮在视口内、可点、未被遮挡（${lang}）`, async () => {
