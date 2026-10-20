@@ -4,6 +4,7 @@
 import { noteFollowupRunEvent } from "../../hooks/followup-pause"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../chat-store"
+import { isLateEventOfStoppedRun } from "../stopped-runs"
 import { generationKindOf, isNonAgentRunKind } from "../stream-run-scope"
 import { belongsToForeground } from "./foreground-event"
 import { eventRunId } from "./ingest-attention"
@@ -25,6 +26,8 @@ import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
 export { belongsToForeground } from "./foreground-event"
 
 export function dispatchAgentEvent(event: StreamEvent): void {
+  // #160 巡检 6：用户停掉的那一轮迟到的审批 / 出字，不进 Attention、不停车、不进前台（终态照常放行）。
+  if (isLateEventOfStoppedRun(event)) return
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
   const eventKind = generationKindOf(event)

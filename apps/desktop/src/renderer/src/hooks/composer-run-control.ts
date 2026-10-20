@@ -7,6 +7,7 @@ import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
+import { rememberStoppedRun } from "../stores/stopped-runs"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
@@ -53,6 +54,8 @@ export async function abortComposerRun(opts?: {
   // 把说明行改成琥珀色，用户手动发一条跑完后排队的就自己发给新助手了。
   const reason = opts?.pauseReason ?? "stopped"
   if (reason === "stopped" || composerRunInFlight(store)) pauseFollowups(sessionId, reason)
+  // #160 巡检 6：先记下被停的 run，abort 到达 main 之前它迟到的审批 / 出字一律丢掉，审批卡不再冒回来。
+  rememberStoppedRun(sessionId, runId)
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
