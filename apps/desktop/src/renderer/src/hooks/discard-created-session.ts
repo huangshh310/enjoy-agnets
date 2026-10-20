@@ -8,6 +8,7 @@ import { setQuotedContexts } from "./quoted-context"
 import { getIde } from "../lib/ide"
 import { idleComposerPatch } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
+import { listFollowups } from "./followup-queue"
 
 export async function discardCreatedSession(
   sessionId: string,
@@ -15,6 +16,8 @@ export async function discardCreatedSession(
   opts?: { keepComposer?: boolean; onlyIfEmpty?: boolean }
 ): Promise<boolean> {
   if (!stale?.()) return false
+  // leo soft（#163）：会话里还有排队的消息就不删（看门狗清会话 / 失败回滚都经这里），和离开时的规则（P7）一致。
+  if (listFollowups(sessionId).length > 0) return false
   if (useChatStore.getState().sessionId === sessionId) {
     clearDiscardedForeground(opts?.keepComposer === true)
   }

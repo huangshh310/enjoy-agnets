@@ -183,7 +183,7 @@ async function sendComposerOnce(
     : undefined)
   if (!prepared && store.composer !== typed) store.setComposer(typed)
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
-    restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+    restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets, prepared.sessionId)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
@@ -351,7 +351,7 @@ function armComposerWatchdog(typed: string): SendAttempt {
       // jojo P3：先在还稿前判（还稿会放掉 running）：running 被别的轮占着就不删。
       const otherHolds = self ? runningHeldByOther(self) : true
       state.setPreparingHint(false)
-      restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE)
+      restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE, undefined, before.sessionId ?? state.sessionId)
       rollbackComposerStartGate(before.sessionId)
       // jojo P3：这次 Enter 新建的空会话不留在侧栏（有在跑的 run / 待回助手 / 任何内容都不删）。
       const empty = emptySessionToDiscardAfterWatchdog(before.sessionId, useChatStore.getState(), otherHolds)

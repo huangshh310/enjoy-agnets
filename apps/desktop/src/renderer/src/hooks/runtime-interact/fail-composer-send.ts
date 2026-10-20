@@ -56,7 +56,7 @@ export function failComposerSend(input: {
     if (input.dropOptimisticUser) dropMatchingOptimisticUser(input.optimisticContent ?? input.text)
     if (input.sessionId) useAttentionStore.getState().takePark(input.sessionId)
     // 先还文 + notice，再删空会话。禁止等 session.delete 才出提示（会空几秒）。
-    restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
+    restoreComposerAfterFailedSend(input.text, input.reason, input.assets, input.sessionId)
   }
   if (input.chips) restoreComposerSendChips(input.chips)
   // leo S1：keepRunning = 会话里还有别的轮在跑（pending 助手 / 停车都保留），绝不能删会话。

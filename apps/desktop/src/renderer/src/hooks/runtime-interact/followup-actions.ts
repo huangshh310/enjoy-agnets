@@ -77,7 +77,8 @@ export function discardFollowup(item: FollowupItem) {
  * 先问能不能写，再从队里取：拒绝时排队项原封不动。
  */
 export function returnFollowupToComposer(item: FollowupItem, mode: ComposerWritebackMode = "merge"): boolean {
-  if (!canWriteBackToComposer(mode)) return false
+  // 排队行只在它所属会话的线程里出现：前台换了会话就不写（expectSessionId）。
+  if (!canWriteBackToComposer(mode, { expectSessionId: item.sessionId })) return false
   const taken = editQueuedMessage(item.id)
   if (!taken) return false
   releaseQueuedDraftAssets(taken.sessionId, taken.id)
@@ -88,7 +89,7 @@ export function returnFollowupToComposer(item: FollowupItem, mode: ComposerWrite
       quotedContexts: taken.quotedContexts,
       skillChips: taken.skillChips
     },
-    { mode }
+    { mode, expectSessionId: taken.sessionId }
   )
   return result.ok
 }

@@ -479,6 +479,12 @@ const { continueTodoTurn } = await import("./continue-todo-turn.ts")
 const { regenerateUserTurn } = await import("./regenerate-turn.ts")
 const writeback = await import("./composer-writeback.ts")
 const followupActions = await import("./runtime-interact/followup-actions.ts")
+const { sendComposerMessage } = await import("./runtime-interact/send-composer-run.ts")
+const { editAndResendUserTurn } = await import("./regenerate-turn.ts")
+const syncLock = await import("./composer-sync-lock.ts")
+const { discardCreatedSession } = await import("./discard-created-session.ts")
+const { readFileSync: readFs } = await import("node:fs")
+const readSource = (rel: string) => readFs(new URL(rel, import.meta.url), "utf8")
 
 function emptySession(sessionId: string) {
   useChatStore.setState({
@@ -585,6 +591,113 @@ test("③ 重新生成起跑抛错 → 停住排队，不自动发", async () =>
   assert.deepEqual(sent, [])
 })
 
+test("③ 闸拦发送（restoreDraftAfterSendGate，SSH 未连上）→ 先停住排队：B 不抢在退回输入框的 A 前面发出去（V3b）", async () => {
+  queuedThenEmpty("ses_gate", "B")
+  useChatStore.setState({ workspaceKind: "ssh", remoteStatus: "disconnected", runtimeId: "claude" } as never)
+  fakeComposerDom("A")
+  try {
+    await sendComposerMessage(undefined, "A")
+    assert.equal(useChatStore.getState().running, false)
+    assert.ok(useChatStore.getState().error, "闸拦的中性条在")
+    assert.equal(queue.followupPausedReason("ses_gate"), "error")
+    assert.equal(kick(), false)
+    await flush()
+    assert.deepEqual(sent, [], "B 没发")
+    assert.equal(useChatStore.getState().composer, "A", "A 回到输入框")
+    assert.deepEqual(prompts("ses_gate"), ["B"])
+  } finally {
+    useChatStore.setState({ workspaceKind: "local", remoteStatus: null } as never)
+  }
+})
+
+test("③ 编辑重发起跑抛错（editAndResendUserTurn）→ 停住排队，不自动发（V3d）", async () => {
+  queuedThenEmpty("ses_edit", "排队的")
+  useChatStore.setState({
+    runtimeId: "claude",
+    messages: [
+      { id: "u1", role: "user", content: "问题", createdAt: 1 },
+      { id: "a1", role: "assistant", content: "旧答", createdAt: 2 }
+    ]
+  } as never)
+  throwOn.add(".agent.run")
+  await editAndResendUserTurn("u1", "改过的问题")
+  assert.equal(useChatStore.getState().running, false)
+  assert.equal(queue.followupPausedReason("ses_edit"), "error")
+  kick()
+  await flush()
+  assert.deepEqual(sent, [])
+})
+
+test("leo soft：还稿时停住的是发出这一发的会话，不是此刻的前台", () => {
+  useChatStore.setState({ sessionId: "ses_fg", running: true, composer: "" } as never)
+  enqueue("ses_from", "从那边排的")
+  enqueue("ses_fg", "前台排的")
+  restoreComposerAfterFailedSend("A", SEND_FAILED_RESTORE, undefined, "ses_from")
+  assert.equal(queue.followupPausedReason("ses_from"), "error")
+  assert.equal(queue.followupPausedReason("ses_fg"), null, "前台会话不被误停")
+})
+
+test("leo soft（源码正则）：看门狗 / 会话对不上两处还稿都带上发出时的会话", () => {
+  const src = readSource("./runtime-interact/send-composer-run.ts")
+  assert.match(src, /restoreComposerAfterFailedSend\(text, SEND_FAILED_RESTORE, undefined, before\.sessionId \?\? state\.sessionId\)/)
+  assert.match(src, /restoreComposerAfterFailedSend\(prepared\.content, SEND_FAILED_RESTORE, prepared\.assets, prepared\.sessionId\)/)
+})
+
+test("leo soft：新建会话还有排队的 → discardCreatedSession 不删（看门狗清会话 / 失败回滚同一入口）；清空后才删", async () => {
+  useChatStore.setState({ sessionId: "ses_view", running: true } as never)
+  enqueue("ses_new", "排队的")
+  emptySession("ses_new")
+  assert.equal(await discardCreatedSession("ses_new", () => true, { keepComposer: true, onlyIfEmpty: true }), false)
+  assert.equal(useChatStore.getState().sessionId, "ses_new", "前台没被清")
+  assert.ok(!ideCalls.includes(".session.delete"), "没调删除")
+  queue.resetFollowupsForTest()
+  assert.equal(await discardCreatedSession("ses_new", () => true, { keepComposer: true, onlyIfEmpty: true }), true)
+  assert.ok(ideCalls.includes(".session.delete"))
+})
+
+test("写回 expectSessionId：前台已换会话（中间有 await，#159 F1）→ 不写、返回 session-changed；refuse 与 merge 都一样", () => {
+  useChatStore.setState({ sessionId: "ses_now", composer: "" } as never)
+  const el = fakeComposerDom("")
+  for (const mode of ["refuse", "merge"] as const) {
+    const r = writeback.writeBackToComposer({ text: "旧会话的稿" }, { mode, expectSessionId: "ses_before", focus: false })
+    assert.deepEqual(r, { ok: false, reason: "session-changed", current: "" })
+    assert.equal(writeback.canWriteBackToComposer(mode, { expectSessionId: "ses_before" }), false)
+  }
+  assert.equal(el.value, "")
+  assert.equal(useChatStore.getState().composer, "")
+  const ok = writeback.writeBackToComposer({ text: "本会话的稿" }, { mode: "refuse", expectSessionId: "ses_now", focus: false })
+  assert.deepEqual(ok, { ok: true, merged: false, text: "本会话的稿" })
+})
+
+test("排队行「退回输入框」：前台不是这条所属的会话 → 不写、这条留在队里", () => {
+  useChatStore.setState({ sessionId: "ses_other", running: true, composer: "" } as never)
+  const [item] = enqueue("ses_mine", "排队那条")
+  const el = fakeComposerDom("")
+  assert.equal(followupActions.returnFollowupToComposer(item!), false)
+  assert.equal(el.value, "")
+  assert.deepEqual(prompts("ses_mine"), ["排队那条"])
+})
+
+test("leo soft：merge 也守回写锁——锁住时不写（refuse 同样），排队项原封不动；放锁后照常合并", () => {
+  useChatStore.setState({ sessionId: "ses_lock", running: true, composer: "" } as never)
+  const [item] = enqueue("ses_lock", "排队那条")
+  const el = fakeComposerDom("我刚打的")
+  syncLock.setComposerWritebackHeld(true)
+  try {
+    const r = writeback.writeBackToComposer({ text: "排队那条" }, { mode: "merge", focus: false })
+    assert.deepEqual(r, { ok: false, reason: "writeback-held", current: "我刚打的" })
+    assert.equal(writeback.canWriteBackToComposer("merge"), false)
+    assert.equal(writeback.canWriteBackToComposer("refuse"), false)
+    assert.equal(followupActions.returnFollowupToComposer(item!), false)
+    assert.equal(el.value, "我刚打的", "DOM 没被改")
+    assert.deepEqual(prompts("ses_lock"), ["排队那条"], "排队项原封不动")
+  } finally {
+    syncLock.setComposerWritebackHeld(false)
+  }
+  assert.equal(followupActions.returnFollowupToComposer(item!), true)
+  assert.equal(el.value, "我刚打的\n排队那条")
+})
+
 test("④ 改一下再发：输入框 DOM 里已有字、store 落后（回写锁）→ 不覆盖，第一条留在队里仍暂停（P5）", async () => {
   running("ses_p5")
   enqueue("ses_p5", "排队那条", "第二条")
@@ -599,7 +712,7 @@ test("④ 改一下再发：输入框 DOM 里已有字、store 落后（回写�
 })
 
 test("④ 排队行「退回输入框」：DOM 里已有字 → 合并（现有在前），不冲掉", () => {
-  useChatStore.setState({ sessionId: "ses_view", running: true, composer: "" } as never)
+  useChatStore.setState({ sessionId: "ses_ret", running: true, composer: "" } as never)
   const [item] = enqueue("ses_ret", "排队那条")
   const el = fakeComposerDom("我刚打的")
   assert.equal(followupActions.returnFollowupToComposer(item!), true)
