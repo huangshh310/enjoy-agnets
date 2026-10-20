@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { useT, type TranslateFn } from "@renderer/i18n"
-import { listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { followupPausedReason, listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-styles"
 import { runtimeHintPlacement } from "./runtime-hint-placement"
@@ -17,16 +17,19 @@ export function ComposerFollowupRail() {
   const approvalPending = useChatStore((state) => state.pendingApproval != null)
   const [hint, setHint] = useState<RuntimeHintCode>(() => visibleRuntimeHint(sessionId))
   const [nextText, setNextText] = useState(() => nextQueuedText(sessionId))
+  const [paused, setPaused] = useState(() => followupPausedReason(sessionId) != null)
   useEffect(() => {
     const sync = () => {
       setHint(visibleRuntimeHint(sessionId))
       setNextText(nextQueuedText(sessionId))
+      setPaused(followupPausedReason(sessionId) != null)
     }
     sync()
     return subscribeFollowups(sync)
   }, [sessionId])
   if (!hint) return null
-  if (runtimeHintPlacement(hint, approvalPending, listFollowups(sessionId).length) !== "frame") return null
+  // E1：队列停着时排队区连同暂停说明行也在输入框上方，「将在当前任务完成后执行」既重复又不对（runtimeHintPlacement 的 paused）。
+  if (runtimeHintPlacement(hint, approvalPending, listFollowups(sessionId).length, paused) !== "frame") return null
 
   return (
     <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>

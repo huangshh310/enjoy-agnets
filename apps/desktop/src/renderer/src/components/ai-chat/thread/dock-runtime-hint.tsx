@@ -8,7 +8,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import { listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { followupPausedReason, listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { hintLabel, nextQueuedText } from "../composer/runtime-interact/composer-followup-rail"
@@ -23,15 +23,18 @@ export function DockRuntimeHint() {
   const approvalId = useChatStore((state) => state.pendingApproval?.approvalId ?? null)
   const [hint, setHint] = useState<RuntimeHintCode>(() => visibleRuntimeHint(sessionId))
   const [queuedCount, setQueuedCount] = useState(() => listFollowups(sessionId).length)
+  const [paused, setPaused] = useState(() => followupPausedReason(sessionId) != null)
   useEffect(() => {
     const sync = () => {
       setHint(visibleRuntimeHint(sessionId))
       setQueuedCount(listFollowups(sessionId).length)
+      setPaused(followupPausedReason(sessionId) != null)
     }
     sync()
     return subscribeFollowups(sync)
   }, [sessionId])
-  const placement = runtimeHintPlacement(hint, approvalId != null, queuedCount)
+  // E1：队列停着时排队类提示不画（暂停说明行已写明），「马上发」照常在审批卡上方。
+  const placement = runtimeHintPlacement(hint, approvalId != null, queuedCount, paused)
   const ref = useRef<HTMLDivElement>(null)
   const crowded = useCrowded(ref, placement === "dock", `${hint}:${approvalId}`)
   if (placement !== "dock") return null

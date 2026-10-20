@@ -4,7 +4,7 @@
  */
 import { DrainableQueue } from "@enjoy-agents/agent-core/drainable-queue"
 import type { FollowupItem } from "./followup-queue.ts"
-import { takeNextFollowup } from "./followup-queue.ts"
+import { followupPausedReason, takeNextFollowup } from "./followup-queue.ts"
 import { releaseQueuedDraftAssets } from "../lib/session-draft-storage.ts"
 
 type FollowupJob = {
@@ -29,7 +29,7 @@ export function drainFollowupAutostart(): Promise<void> {
   return queue.drain()
 }
 
-/** 尝试取出并发送下一项。已在跑、审批等待或正在发送则跳过。 */
+/** 尝试取出并发送下一项。已在跑、审批等待、正在发送，或队列因停止 / 出错 / 额度停着（E1）则跳过。 */
 export function tryStartNextFollowup(input: {
   sessionId: string | null | undefined
   running: boolean
@@ -38,6 +38,7 @@ export function tryStartNextFollowup(input: {
   send: (item: FollowupItem) => Promise<void>
 }): boolean {
   if (input.running || input.pendingApproval || !input.sessionId || queue.size > 0) return false
+  if (followupPausedReason(input.sessionId)) return false
   const next = takeNextFollowup(input.sessionId)
   if (!next) return false
   queue.enqueue({ item: next, send: input.send })

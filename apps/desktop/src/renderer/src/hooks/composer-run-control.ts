@@ -8,6 +8,7 @@ import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
+import { pauseFollowups } from "./followup-queue"
 
 /** IPC 返回后认领本轮；切走则写入停车快照，只有用户 Stop 才当孤儿 abort。 */
 export function claimComposerRun(startedSessionId: string | null, runId: string): boolean {
@@ -41,6 +42,8 @@ export async function abortComposerRun() {
   const store = useChatStore.getState()
   const runId = store.runId
   const sessionId = store.sessionId
+  // E1：用户停止——排队的先不发（在放 running 之前停住，自启看不到空档）。
+  pauseFollowups(sessionId, "stopped")
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)

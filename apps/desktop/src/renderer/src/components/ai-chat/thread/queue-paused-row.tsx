@@ -1,0 +1,113 @@
+/**
+ * E1 暂停说明行（luna 定稿）：排队区最上面一行，与排队行同宽、同容器，紧贴输入框上方。
+ * 左：暂停图标 + 原因；右：「全部清空 · 改一下再发 · 继续」（继续是主按钮，最右）。
+ * - 用户停止：整行中性灰；出错 / 额度用完：图标和文字琥珀色。无标题、不用红卡。
+ * - 「改一下再发」：输入框已有内容时隐藏（不置灰）。
+ * - 与 #136：出错 / 额度后失败卡上「再发一次 / 再试一次」显示时，隐藏「继续」「改一下再发」，原因后加
+ *   「先发上面这条，发出去后排队的会接着发。」——重发成功后队列自己接着发（followup-pause）。
+ */
+import { RiPauseCircleLine } from "@remixicon/react"
+import { cx } from "@/utils/cx"
+import type { FollowupPausedReason } from "@renderer/hooks/followup-queue"
+import { useComposerHasDraft } from "@renderer/hooks/runtime-interact/use-composer-has-draft"
+import { useRetryKeptDraftAvailable } from "@renderer/hooks/retry-kept-draft"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useT } from "@renderer/i18n"
+import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
+import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { useChatStore } from "@renderer/stores/chat-store"
+import { clearQueuedWithUndo, queuePausedView } from "./queue-paused-view"
+import { continueFollowups, editFirstFollowup } from "@renderer/hooks/runtime-interact/followup-pause-actions"
+
+export function QueuePausedIcon({ reason }: { reason: FollowupPausedReason }) {
+  return (
+    <RiPauseCircleLine
+      aria-hidden
+      className={cx("size-3.5 shrink-0", reason === "stopped" ? "text-text-tertiary" : "text-status-yellow-text")}
+    />
+  )
+}
+
+export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason; count: number }) {
+  const t = useT()
+  const sessionId = useChatStore((state) => state.sessionId)
+  const composer = useChatStore((state) => state.composer)
+  const error = useChatStore((state) => state.error)
+  const composerHasContent = useComposerHasDraft(composer)
+  const retryAvailable = useRetryKeptDraftAvailable()
+  const readiness = useChatReadiness().data
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const view = queuePausedView({
+    reason,
+    count,
+    composerHasContent,
+    failureCardRetryShowing: retryAvailable && failureCardOffersRetry(error),
+    provider: defaultProviderLabel(readiness, providers, t("chat.credentialProviderFallback")),
+    t
+  })
+  return (
+    <div
+      data-testid="queue-paused-row"
+      data-reason={reason}
+      className={cx(
+        "flex min-w-0 shrink-0 items-center gap-1.5 rounded-xl border border-border-button-default",
+        "bg-background-secondary-default py-1 pr-1 pl-3 text-caption-2-medium"
+      )}
+    >
+      <QueuePausedIcon reason={reason} />
+      <p
+        data-testid="queue-paused-reason"
+        className={cx(
+          "min-w-0 flex-1 text-caption-1-regular",
+          reason === "stopped" ? "text-text-secondary" : "text-status-yellow-text"
+        )}
+      >
+        {view.text}
+      </p>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          data-testid="queue-paused-clear"
+          className={secondaryClass}
+          onClick={() => clearQueuedWithUndo(sessionId, t)}
+        >
+          {t("chat.queuePausedClearAll")}
+        </button>
+        {view.showEditFirst ? (
+          <button
+            type="button"
+            data-testid="queue-paused-edit-first"
+            className={secondaryClass}
+            onClick={() => editFirstFollowup(sessionId)}
+          >
+            {t("chat.queuePausedEditFirst")}
+          </button>
+        ) : null}
+        {view.showContinue ? (
+          <button
+            type="button"
+            data-testid="queue-paused-continue"
+            className={primaryClass}
+            onClick={() => continueFollowups(sessionId)}
+          >
+            {t("chat.queuePausedContinue")}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+/** 带「再发一次 / 再试一次」的那几张首字前失败卡（#136：连不上 / 拒绝 / 额度）。 */
+function failureCardOffersRetry(error: string | null): boolean {
+  if (!error) return false
+  const kind = classifyThreadError(error)
+  return kind === "provider_unreachable" || kind === "provider_forbidden" || kind === "provider_billing"
+}
+
+const secondaryClass =
+  "inline-flex shrink-0 cursor-pointer items-center rounded-md px-1.5 py-0.5 text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+
+const primaryClass =
+  "inline-flex shrink-0 cursor-pointer items-center rounded-md bg-accent-500 px-2 py-0.5 text-white hover:bg-accent-600"
