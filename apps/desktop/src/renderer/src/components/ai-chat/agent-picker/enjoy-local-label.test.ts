@@ -23,5 +23,8 @@ test("其余入口：引擎脸 / 会话脸 / 能力矩阵 / 资料卡都不硬�
 test("助手泡底脚：enjoy-local 引擎名走 i18n，不用主进程中文工具名（luna P3）", async () => {
   const { readFileSync } = await import("node:fs")
   const src = readFileSync(new URL("../thread/turns/turn-model-label.tsx", import.meta.url), "utf8")
-  assert.match(src, /message\.runtimeId === "enjoy-local"\s*\?\s*t\("chat\.usage\.enjoyLocal"\)/)
+  assert.match(src, /enjoyLocalLabel: t\("chat\.usage\.enjoyLocal"\)/)
+  // 引擎名的取法挪到 lib/turn-model-text（底脚不露 cli: 占位）：enjoy-local 用调用方给的 i18n 名。
+  const lib = readFileSync(new URL("../../../lib/turn-model-text.ts", import.meta.url), "utf8")
+  assert.match(lib, /runtimeId === "enjoy-local"\s*\?\s*input\.enjoyLocalLabel/)
 })
