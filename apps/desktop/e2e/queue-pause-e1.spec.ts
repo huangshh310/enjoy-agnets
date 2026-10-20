@@ -136,6 +136,8 @@ for (const lang of ["zh", "en"] as const) {
       await expect(window.getByTestId("queued-user-turn")).toHaveCount(0)
       const toast = window.getByTestId("queue-cleared-toast")
       await expect(toast).toContainText(copy.cleared, { timeout: 5_000 })
+      // toast 有淡入动画：等它完全出来再截（第一版截图里几乎透明）。
+      await window.waitForTimeout(800)
       await shot(window, `e1-${lang}-5-cleared-toast`)
       await toast.getByRole("button", { name: copy.undo }).click()
       await expect(window.getByTestId("queued-user-turn")).toHaveCount(2, { timeout: 5_000 })
