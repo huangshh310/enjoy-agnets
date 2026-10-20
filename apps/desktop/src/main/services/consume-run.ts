@@ -61,5 +61,5 @@ function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type:
     sessionId: run.input.sessionId,
     runId,
     kind: "turn"
-  }).catch(() => undefined)
+  }).catch((error: unknown) => console.error("[checkpoint] record threw", error))
 }

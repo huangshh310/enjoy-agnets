@@ -314,7 +314,7 @@ async function beginAgentRun(
       sessionId: input.sessionId,
       runId,
       kind: "baseline"
-    }).catch(() => undefined)
+    }).catch((error: unknown) => console.error("[checkpoint] record threw", error))
   }
   void prepareAndPump(runId)
   return userMessageId ? { ok: true, runId, userMessageId } : { ok: true, runId }
