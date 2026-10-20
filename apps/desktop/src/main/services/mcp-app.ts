@@ -9,7 +9,8 @@ import { connectServerIfNeeded, listServers, readServerResource } from "./mcp-se
 
 export async function openMcpApp(serverId: string, resourceUri?: string): Promise<McpOpenAppResult> {
   const server = requireTrusted(serverId)
-  await ensureConnected(serverId)
+  // E2E stub 只给 demo 页，不读真 Server：别为它拉起真进程（CI 上 `npx -y` 现下包，慢时卡死「打开 App」）。
+  if (!isE2eStub()) await ensureConnected(serverId)
   const allowed = allowedUris(server.allowedResourceUris)
   const uri = resourceUri && allowed.includes(resourceUri) ? resourceUri : allowed.find((item) => item !== "mcp://app")
   stampAndBroadcast(
