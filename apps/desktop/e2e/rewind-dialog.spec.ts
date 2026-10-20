@@ -5,6 +5,7 @@
  *   点「删掉并还原」后：新文件真的删了、这条消息和之后的对话移除、原话回到输入框。
  * - 还原失败（本轮开始前的记录被删掉 / 列记录出错）：弹窗里灰色兜底句，聊天没动。
  * - 还原中途出错（restoreCheckpoint 抛带原文的错）：琥珀色一句 +「去审查」，界面上看不到原文；截断抛原文只显示通用句。
+ *   重试跑着的时候「去审查」置灰，硬点也不收窗（leo S1）。
  * - 取消 / Esc 后重开回到第一步；跑着的时候 Esc 不收窗。
  * - 非 Git 工作区：没有还原按钮，取消 · 从这里重来；点了只清对话，文件不动。
  * - 不知道是不是 Git（workspace.changes 不带 gitRepo）：同样隐藏还原按钮，中性正文。
@@ -406,6 +407,26 @@ for (const lang of ["zh", "en"] as const) {
       expect(shown).not.toMatch(/fatal|secret|remote method/i)
       await expectNoBanned(dialog, `${lang} partial`)
       expect(await page.locator('[data-testid="user-bubble"]').count(), `${lang} chat unchanged`).toBe(before)
+      // leo S1：重试跑着的时候「去审查」不能点，硬点也不收窗、不开右栏；结果回来（又抛原文）后恢复可点。
+      const rightPane = page.locator('[data-testid="right-pane-shell"]')
+      const paneBefore = await rightPane.isVisible()
+      await app.evaluate(({ ipcMain }, raw) => {
+        ipcMain.removeHandler("workspace.restoreCheckpoint")
+        ipcMain.handle("workspace.restoreCheckpoint", async () => {
+          await new Promise((resolve) => setTimeout(resolve, 2_500))
+          throw new Error(raw)
+        })
+      }, rawRestore)
+      await dialog.getByTestId("rewind-restore-files").click()
+      await expect(partial.getByTestId("rewind-go-review"), `${lang} retrying: go-review disabled`).toBeDisabled({ timeout: 2_000 })
+      await shots(page, `restore-partial-retrying-${lang}`)
+      await partial.getByTestId("rewind-go-review").click({ force: true })
+      await page.waitForTimeout(200)
+      await expect(dialog, `${lang} retrying: dialog stays`).toBeVisible()
+      expect(await rightPane.isVisible(), `${lang} retrying: right pane unchanged`).toBe(paneBefore)
+      await expect(partial.getByTestId("rewind-go-review"), `${lang} settled: go-review enabled`).toBeEnabled({ timeout: 10_000 })
+      await expect(partial).toHaveAttribute("data-failure-kind", "partial")
+      expect(await dialog.innerText()).not.toContain("RAW-RESTORE-ERROR")
       // 去审查：关窗、打开右栏审查。
       await partial.getByTestId("rewind-go-review").click()
       await expect(dialog).toBeHidden()
