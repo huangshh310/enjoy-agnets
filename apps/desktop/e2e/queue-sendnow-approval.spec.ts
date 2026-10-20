@@ -5,7 +5,7 @@
  * 不和 approval-session / deny / allow 相交，并用 elementFromPoint 确认按钮中心点到的是按钮本身。
  * 最后在 733x480 真实点一下「马上发给它 / Send right away」：排队项被发走，审批卡还在（没误点到审批按钮）。
  * luna g158（e40edfb0 FAIL）：
- *   - 733x480 排队 1 条 / 2 条 / 输入框带图：审批三钮（本会话总是允许 / 拒绝 / 批准）都在视口内、elementFromPoint 命中、
+ *   - 733x480 排队 1 条 / 2 条 / 2 条 + 输入框带图 / 3 条 + 输入框带图：审批三钮（本会话总是允许 / 拒绝 / 批准）都在视口内、elementFromPoint 命中、
  *     不带 force 真点得到；1 条时计划卡正文露出文件名（g158-05 回归）；放不下时排队区折叠成「排队 N 条」，点开展开；
  *   - 有排队行时不再挂「下一句」条；3 条及以上只画 2 行 +「还有 N 条」，点开看全部（1024x733）；
  *   - 1024x733 长对话：排队行 × 不被对话目录条盖住，点 × 删掉这条、不打开目录预览。
@@ -308,9 +308,18 @@ for (const lang of ["zh", "en"] as const) {
       await shot("2-queued")
       await expectApprovalReachable(page, `${lang} 2 queued`, size)
 
-      // 3 条 + 输入框带图（托盘把对话列再压一截）：排队区折叠成一行「排队 3 条」，三钮仍可点。
+      // 2 条 + 输入框带图（托盘把对话列再压一截）：三钮仍可点（放不下就先折叠排队区）。
+      const attach = () =>
+        page.locator('[data-testid="composer-attach"]').setInputFiles({ name: "tray.png", mimeType: "image/png", buffer: PNG })
+      await attach()
+      await expect(page.locator('[data-testid="composer-asset-chip"]')).toHaveCount(1, { timeout: 8_000 })
+      await page.waitForTimeout(400)
+      await shot("2-queued-image-tray")
+      await expectApprovalReachable(page, `${lang} 2 queued + image`, size)
+
+      // 3 条（输入框里的图跟着第 3 条走）+ 再放一张图：排队区折叠成一行「排队 3 条」，三钮仍可点。
       await enqueue(page, composer, `${copy.queued} 3`, 3)
-      await page.locator('[data-testid="composer-attach"]').setInputFiles({ name: "tray.png", mimeType: "image/png", buffer: PNG })
+      await attach()
       await expect(page.locator('[data-testid="composer-asset-chip"]')).toHaveCount(1, { timeout: 8_000 })
       await page.waitForTimeout(400)
       await shot("3-queued-image-tray")
