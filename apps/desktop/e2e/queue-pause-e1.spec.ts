@@ -21,6 +21,10 @@ const COPY = {
     errorHas: "排队的 1 条先不发，免得顺序乱。",
     quotaHas: "额度用完了",
     resendFirst: "先发上面这条，发出去后排队的会接着发。",
+    // luna #163 P2③：失败卡「再发一次」在时额度句不叫人「点继续」（继续是藏着的）。
+    quotaResend: "充值后先发上面这条，发出去后排队的会接着发。",
+    quotaPlain: "充值后点继续。",
+    pressContinue: "点继续",
     collapsed: "已暂停 · 排队 2 条",
     cleared: "已清空 2 条排队",
     undo: "撤销"
@@ -31,6 +35,9 @@ const COPY = {
     errorHas: "so 1 queued message is on hold to keep it in order.",
     quotaHas: "is out of credit, so 1 queued message is on hold.",
     resendFirst: "Send the one above first. The queue will continue after it goes through.",
+    quotaResend: "Top up, then send the one above. The queue continues after it goes through.",
+    quotaPlain: "Top up, then press Continue.",
+    pressContinue: "press Continue",
     collapsed: "Paused · 2 queued",
     cleared: "Cleared 2 queued messages",
     undo: "Undo"
@@ -177,7 +184,10 @@ for (const lang of ["zh", "en"] as const) {
         await expect(reason).toContainText(kind === "billing" ? copy.quotaHas : copy.errorHas)
         // #136 联动：失败那句回到输入框、卡上有「再发一次」→ 继续 / 改一下再发隐藏，句尾提示先发上面这条。
         await expect(window.getByTestId("composer-input")).toHaveValue("第一句会失败")
-        await expect(reason).toContainText(copy.resendFirst)
+        await expect(reason).toContainText(kind === "billing" ? copy.quotaResend : copy.resendFirst)
+        if (kind === "billing") await expect(reason).not.toContainText(copy.pressContinue)
+        // luna #163 P2①：说供应商（品牌名 / 主机名 / 「模型服务」），从不说密钥档案名。
+        await expect(reason).not.toContainText("E2E Stub Key")
         await expect(window.getByTestId("queue-paused-continue")).toHaveCount(0)
         await expect(window.getByTestId("queue-paused-edit-first")).toHaveCount(0)
         await expect(window.getByTestId("queue-paused-clear")).toBeVisible()
@@ -201,7 +211,8 @@ for (const lang of ["zh", "en"] as const) {
           await window.getByTestId("composer-input").fill("")
           await expect(window.getByTestId("queue-paused-continue")).toBeVisible({ timeout: 5_000 })
           await expect(window.getByTestId("queue-paused-edit-first")).toBeVisible()
-          await expect(reason).not.toContainText(copy.resendFirst)
+          await expect(reason).not.toContainText(kind === "billing" ? copy.quotaResend : copy.resendFirst)
+          if (kind === "billing") await expect(reason).toContainText(copy.quotaPlain)
           await shot(window, `e1-${lang}-${kind === "billing" ? "3-quota" : "2-error"}-plain`)
           // 改一下再发：第一条进输入框，队列仍停着（这里只有 1 条，取走后队列空）。
           await window.getByTestId("queue-paused-edit-first").click()

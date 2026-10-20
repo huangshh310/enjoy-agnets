@@ -16,7 +16,7 @@ import { useSendFailureProviderName } from "@renderer/hooks/use-send-failure-pro
 import { isNeutralPause } from "@renderer/hooks/followup-pause"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { clearQueuedWithUndo, queuePausedView } from "./queue-paused-view"
+import { clearQueuedWithUndo, queuePausedView, QUEUE_MUTED_TEXT } from "./queue-paused-view"
 import { continueFollowups, editFirstFollowup } from "@renderer/hooks/runtime-interact/followup-pause-actions"
 
 export function QueuePausedIcon({ reason }: { reason: FollowupPausedReason }) {
@@ -35,7 +35,7 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
   const error = useChatStore((state) => state.error)
   const composerHasContent = useComposerHasDraft(composer)
   const retryAvailable = useRetryKeptDraftAvailable()
-  // #160：和失败卡同一个名字——ACP / CLI 引擎说引擎名，Enjoy 本地才说密钥档案名。
+  // 和失败卡同一个称呼（luna P2 锁定链）：ACP / CLI 引擎说引擎名；Enjoy 本地说品牌名 → 端点主机名 → 「模型服务」，从不说密钥档案名。
   const provider = useSendFailureProviderName()
   const view = queuePausedView({
     reason,
@@ -59,7 +59,7 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
         data-testid="queue-paused-reason"
         className={cx(
           "min-w-0 flex-1 text-caption-1-regular",
-          isNeutralPause(reason) ? "text-text-secondary" : "text-status-yellow-text"
+          isNeutralPause(reason) ? QUEUE_MUTED_TEXT : "text-status-yellow-text"
         )}
       >
         {view.text}
@@ -105,8 +105,8 @@ function failureCardOffersRetry(error: string | null): boolean {
   return kind === "provider_unreachable" || kind === "provider_forbidden" || kind === "provider_billing"
 }
 
-const secondaryClass =
-  "inline-flex shrink-0 cursor-pointer items-center rounded-md px-1.5 py-0.5 text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+const secondaryClass = `inline-flex shrink-0 cursor-pointer items-center rounded-md px-1.5 py-0.5 ${QUEUE_MUTED_TEXT} hover:bg-background-secondary-hover hover:text-text-primary`
 
+/** 白字在 accent-500 上只有 3.76；accent-600 = 5.25，悬停 accent-700 = 6.83（默认蓝色强调色，亮暗同值）。 */
 const primaryClass =
-  "inline-flex shrink-0 cursor-pointer items-center rounded-md bg-accent-500 px-2 py-0.5 text-white hover:bg-accent-600"
+  "inline-flex shrink-0 cursor-pointer items-center rounded-md bg-accent-600 px-2 py-0.5 text-white hover:bg-accent-700"

@@ -315,13 +315,14 @@ test("全部清空只剩 1 条的 toast 用单数", () => {
   assert.deepEqual(msgs, ["Cleared 1 queued message"])
 })
 
+const named = (name: string) => ({ kind: "named" as const, name })
 const tr = (cat: Record<string, string>) => (path: string, vars?: Record<string, string | number>) =>
   String(cat[path.replace(/^chat\./, "")] ?? path).replace(/\{(\w+)\}/g, (_m, k) => String(vars?.[k] ?? ""))
 
 test("说明行文案（luna 定稿）：三种原因 × 中英 × N=1 单数；不出现 检查点/HEAD/commit/快照/checkpoint/ref", () => {
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
-  const base = { composerHasContent: false, failureCardRetryShowing: false, provider: "DeepSeek" }
+  const base = { composerHasContent: false, failureCardRetryShowing: false, provider: named("DeepSeek") }
   const cases = [
     view.queuePausedView({ ...base, reason: "stopped", count: 2, t: zh }).text,
     view.queuePausedView({ ...base, reason: "error", count: 2, t: zh }).text,
@@ -342,24 +343,48 @@ test("说明行文案（luna 定稿）：三种原因 × 中英 × N=1 单数；
   }
 })
 
-test("额度句的服务商名和失败卡同源（#160 sendFailureProviderName）：Amp 会话说 Amp，Enjoy 本地说密钥档案名；说明行接的是同一个 hook", async () => {
+test("额度句的服务商名和失败卡同源（useSendFailureProviderName → luna P2① 锁定链）：Amp 会话说 Amp；Enjoy 本地说品牌名 → 端点主机名 → 「模型服务」，从不说密钥档案名", async () => {
   const { sendFailureProviderName } = await import("../lib/send-failure-provider-name.ts")
+  const { defaultProviderFace } = await import("../lib/default-provider-label.ts")
   const { readFileSync } = await import("node:fs")
   const tools = [{ id: "amp", label: "Amp" }]
   const zh = tr(zhChat as never)
-  const base = { reason: "quota" as const, count: 2, composerHasContent: false, failureCardRetryShowing: false, t: zh }
-  const amp = sendFailureProviderName({ runtimeId: "amp", tools, displayNames: {}, keyProfileName: "DeepSeek" })
-  assert.equal(view.queuePausedView({ ...base, provider: amp }).text, "Amp 额度用完了，排队的 2 条先不发。充值后点继续。")
-  const local = sendFailureProviderName({ runtimeId: "enjoy-local", tools, displayNames: {}, keyProfileName: "DeepSeek" })
-  assert.match(view.queuePausedView({ ...base, provider: local }).text, /^DeepSeek 额度用完了/)
+  const en = tr(enChat as never)
+  const base = { reason: "quota" as const, count: 2, composerHasContent: false, failureCardRetryShowing: false }
+  const readiness = { defaultRoute: { runtimeId: "enjoy-local", profileId: "e2e" }, apiKeys: [] } as never
+  const local = (row: { name?: string; kind?: string; baseURL?: string } | null) =>
+    sendFailureProviderName({
+      runtimeId: "enjoy-local",
+      tools,
+      displayNames: {},
+      provider: defaultProviderFace(readiness, row ? [{ id: "e2e", active: true, hasKey: true, ...row }] : [])
+    })
+  const amp = sendFailureProviderName({ runtimeId: "amp", tools, displayNames: {}, provider: named("DeepSeek") })
+  assert.equal(view.queuePausedView({ ...base, provider: amp, t: zh }).text, "Amp 额度用完了，排队的 2 条先不发。充值后点继续。")
+  // 预设品牌名（档案名叫 E2E Stub Key 也不说）。
+  const preset = view.queuePausedView({ ...base, provider: local({ name: "E2E Stub Key", kind: "deepseek" }), t: zh }).text
+  assert.equal(preset, "DeepSeek 额度用完了，排队的 2 条先不发。充值后点继续。")
+  // 自定义端点：只说主机名（不带协议 / 路径），超 30 字截断加「…」。
+  const host = view.queuePausedView({ ...base, provider: local({ name: "E2E Stub Key", kind: "custom", baseURL: "https://llm.example.com:8443/v1?key=x" }), t: en }).text
+  assert.equal(host, "llm.example.com is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
+  const long = view.queuePausedView({ ...base, provider: local({ name: "k", kind: "custom", baseURL: "https://a-very-long-subdomain.inference.example.org/v1" }), t: zh }).text
+  assert.match(long, /^a-very-long-subdomain\.inferen… 额度用完了/)
+  // 都没有 → 「模型服务」；英文句首大写。
+  assert.equal(view.queuePausedView({ ...base, provider: local(null), t: zh }).text, "模型服务 额度用完了，排队的 2 条先不发。充值后点继续。")
+  assert.equal(view.queuePausedView({ ...base, count: 1, provider: local({ name: "E2E Stub Key" }), t: en }).text, "The model service is out of credit, so 1 queued message is on hold. Top up, then press Continue.")
+  for (const text of [preset, host, long]) assert.doesNotMatch(text, /E2E Stub Key|https?:|\/v1|deepseek\b|custom/)
   const row = readFileSync(new URL("../components/ai-chat/thread/queue-paused-row.tsx", import.meta.url), "utf8").replace(/\/\/.*$/gm, "")
   assert.match(row, /const provider = useSendFailureProviderName\(\)/)
-  assert.ok(!/defaultProviderLabel/.test(row), "说明行不再自己拿密钥档案名")
+  assert.ok(!/defaultProviderLabel|credentialProviderFallback/.test(row), "说明行不再自己拿密钥档案名")
+  assert.equal((zhChat as any).credentialProviderFallback, undefined, "「当前供应商」已删（P2②）")
+  assert.equal((enChat as any).credentialProviderFallback, undefined)
+  assert.equal((zhChat as any).credentialProviderGeneric, "模型服务")
+  assert.equal((enChat as any).credentialProviderGeneric, "the model service")
 })
 
 test("按钮显隐：默认三个都在；输入框有内容 → 「改一下再发」隐藏（不是置灰）；停止时失败卡不影响", () => {
   const t = tr(zhChat as never)
-  const base = { reason: "error" as const, count: 2, provider: "P", t }
+  const base = { reason: "error" as const, count: 2, provider: named("P"), t }
   assert.deepEqual(
     pick(view.queuePausedView({ ...base, composerHasContent: false, failureCardRetryShowing: false })),
     { showContinue: true, showEditFirst: true }
@@ -374,15 +399,29 @@ test("按钮显隐：默认三个都在；输入框有内容 → 「改一下再
   )
 })
 
-test("#136 联动显隐：出错 / 额度且失败卡露着「再发一次」→ 继续、改一下再发都隐藏，句尾接「先发上面这条…」", () => {
-  for (const reason of ["error", "quota"] as const) {
-    const zhView = view.queuePausedView({ reason, count: 2, composerHasContent: false, failureCardRetryShowing: true, provider: "P", t: tr(zhChat as never) })
-    assert.deepEqual(pick(zhView), { showContinue: false, showEditFirst: false })
-    assert.ok(zhView.text.endsWith("。先发上面这条，发出去后排队的会接着发。"), zhView.text)
-    const enView = view.queuePausedView({ reason, count: 2, composerHasContent: false, failureCardRetryShowing: true, provider: "P", t: tr(enChat as never) })
-    assert.ok(enView.text.endsWith(` ${(enChat as any).queuePausedResendFirst}`), enView.text)
-    assert.doesNotMatch(enView.text, /\. {2}/)
-  }
+test("#136 联动显隐：出错 / 额度且失败卡露着「再发一次」→ 继续、改一下再发都隐藏；出错句尾接「先发上面这条…」；额度整句换成「充值后先发上面这条…」（P2③）", () => {
+  const zh = tr(zhChat as never)
+  const en = tr(enChat as never)
+  const zhError = view.queuePausedView({ reason: "error", count: 2, composerHasContent: false, failureCardRetryShowing: true, provider: named("P"), t: zh })
+  assert.deepEqual(pick(zhError), { showContinue: false, showEditFirst: false })
+  assert.equal(zhError.text, "上一条没发出去，排队的 2 条先不发，免得顺序乱。先发上面这条，发出去后排队的会接着发。")
+  const enError = view.queuePausedView({ reason: "error", count: 2, composerHasContent: false, failureCardRetryShowing: true, provider: named("P"), t: en })
+  assert.ok(enError.text.endsWith(` ${(enChat as any).queuePausedResendFirst}`), enError.text)
+  assert.doesNotMatch(enError.text, /\. {2}/)
+  const quota = (count: number, t: typeof zh, retry: boolean, provider: ReturnType<typeof named> | { kind: "generic" } = named("OpenAI")) =>
+    view.queuePausedView({ reason: "quota", count, composerHasContent: false, failureCardRetryShowing: retry, provider, t })
+  assert.deepEqual(pick(quota(2, zh, true)), { showContinue: false, showEditFirst: false })
+  assert.equal(quota(2, zh, true).text, "OpenAI 额度用完了，排队的 2 条先不发。充值后先发上面这条，发出去后排队的会接着发。")
+  assert.equal(quota(1, zh, true).text, "OpenAI 额度用完了，排队的 1 条先不发。充值后先发上面这条，发出去后排队的会接着发。")
+  assert.equal(quota(3, en, true).text, "OpenAI is out of credit, so 3 queued messages are on hold. Top up, then send the one above. The queue continues after it goes through.")
+  assert.equal(quota(1, en, true).text, "OpenAI is out of credit, so 1 queued message is on hold. Top up, then send the one above. The queue continues after it goes through.")
+  assert.equal(quota(2, en, true, { kind: "generic" }).text.slice(0, 33), "The model service is out of credi")
+  // 「继续」藏着时不许叫人「点继续」。
+  for (const t of [zh, en]) for (const n of [1, 2]) assert.doesNotMatch(quota(n, t, true).text, /点继续|press Continue/)
+  // 失败卡收掉后（「继续」又出来）：句尾回到「充值后点继续。」
+  assert.deepEqual(pick(quota(2, zh, false)), { showContinue: true, showEditFirst: true })
+  assert.equal(quota(2, zh, false).text, "OpenAI 额度用完了，排队的 2 条先不发。充值后点继续。")
+  assert.equal(quota(2, en, false).text, "OpenAI is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
 })
 
 function pick(v: { showContinue: boolean; showEditFirst: boolean }) {
@@ -396,7 +435,7 @@ test("接线：说明行在排队区顶部（同一容器）；停止灰色、�
   const idx = (s: string) => row.indexOf(s)
   assert.ok(idx("queue-paused-clear") < idx("queue-paused-edit-first") && idx("queue-paused-edit-first") < idx("queue-paused-continue"))
   // leo soft：颜色断言锚在说明文字那个 <p> 上（图标、文字各自都要分色）。
-  assert.match(row, /data-testid="queue-paused-reason"[\s\S]{0,160}isNeutralPause\(reason\) \? "text-text-secondary" : "text-status-yellow-text"/)
+  assert.match(row, /data-testid="queue-paused-reason"[\s\S]{0,160}isNeutralPause\(reason\) \? QUEUE_MUTED_TEXT : "text-status-yellow-text"/)
   assert.match(row, /isNeutralPause\(reason\) \? "text-text-tertiary" : "text-status-yellow-text"/)
   assert.match(dock, /<QueuePausedRow/)
   assert.match(dock, /queue-paused-collapsed/)
@@ -453,7 +492,7 @@ test("用户点停止仍是 stopped（换助手的原因不外溢）；之后再
 test("换助手文案（luna 定稿）：中英、N=1 单数、灰色中性、不接「先发上面这条」；占位符与停止一致", () => {
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
-  const base = { reason: "engineSwitched" as const, composerHasContent: false, failureCardRetryShowing: true, provider: "P" }
+  const base = { reason: "engineSwitched" as const, composerHasContent: false, failureCardRetryShowing: true, provider: named("P") }
   const zh2 = view.queuePausedView({ ...base, count: 2, t: zh })
   assert.equal(zh2.text, "你换了助手，上一轮停了，排队的 2 条先不发。")
   assert.deepEqual(pick(zh2), { showContinue: true, showEditFirst: true })
@@ -777,4 +816,49 @@ test("pausedCollapsed：只有窗口矮且没点开时折叠", () => {
   assert.equal(view.pausedCollapsed(true, true), false)
   assert.equal(view.pausedCollapsed(false, false), false)
   assert.equal(view.pausedCollapsed(false, true), false)
+})
+
+// ---- luna #163 真机门 P3a：审批卡在、队列停着 → 排队行标签说「已暂停」，不说「排队中」----
+test("P3a 排队行标签：停着说「已暂停 / Paused」，没停「排队中 / Queued」；审批卡在时说明行让位，但标签仍按停着画", () => {
+  assert.equal(view.queuedRowLabelKey(true), "chat.queuePausedLabel")
+  assert.equal(view.queuedRowLabelKey(false), "chat.runtimeQueuedBubble")
+  assert.equal((zhChat as any).queuePausedLabel, "已暂停")
+  assert.equal((enChat as any).queuePausedLabel, "Paused")
+  assert.equal((zhChat as any).runtimeQueuedBubble, "排队中")
+  const dock = readSource("../components/ai-chat/thread/queued-followups.tsx").replace(/\/\/.*$/gm, "")
+  // 说明行仍让位给审批（approvalPending ? null : paused），但 queuePaused 不看审批。
+  assert.match(dock, /paused=\{approvalPending \? null : paused\} queuePaused=\{paused != null\}/)
+  assert.match(dock, /compact\s+paused=\{queuePaused\}/)
+  const turn = readSource("../components/ai-chat/thread/turns/queued-user-turn.tsx")
+  assert.match(turn, /const label = t\(queuedRowLabelKey\(paused\)\)/)
+  assert.equal((turn.match(/\{label\}/g) ?? []).length, 2, "紧凑行和时间线泡两处标签都走 label")
+  assert.ok(!/t\("chat\.runtimeQueuedBubble"\)/.test(turn), "不再写死「排队中」")
+})
+
+// ---- luna #163 真机门 P2④：对比度 ≥ 4.5:1（亮 / 暗）----
+test("P2④ 对比度：说明行灰字 / 次按钮 / 排队行标签用 neutral-600（亮）/ neutral-400（暗），「继续」白字落在 accent-600 上；全部 ≥ 4.5", () => {
+  const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+  const lum = (h: string) => {
+    const [r, g, b] = hex(h).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+  }
+  const ratio = (a: string, b: string) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+    return (hi! + 0.05) / (lo! + 0.05)
+  }
+  // packages/ui/styles/theme.css + tailwind v4 色板（oklch 换算成 sRGB）：
+  // bg-background-secondary-default 亮 neutral-100 #f7f7f7 / 暗 neutral-900 #171717；accent-* 默认 = blue-*。
+  const T = { n100: "#f7f7f7", n900: "#171717", n600: "#525252", n500: "#737373", n400: "#a1a1a1", blue500: "#2b7fff", blue600: "#155dfc", blue700: "#1447e6", white: "#ffffff" }
+  assert.ok(ratio(T.n600, T.n100) >= 4.5 && ratio(T.n400, T.n900) >= 4.5)
+  assert.ok(ratio(T.white, T.blue600) >= 4.5 && ratio(T.white, T.blue700) >= 4.5)
+  // 反例（luna 量的旧值）：确实不够。
+  assert.ok(ratio(T.n500, T.n100) < 4.5 && ratio(T.n500, T.n900) < 4.5 && ratio(T.white, T.blue500) < 4.5 && ratio(T.n400, T.white) < 4.5)
+  assert.equal(view.QUEUE_MUTED_TEXT, "text-neutral-600 dark:text-neutral-400")
+  const row = readSource("../components/ai-chat/thread/queue-paused-row.tsx")
+  assert.match(row, /const secondaryClass = `[^`]*\$\{QUEUE_MUTED_TEXT\}/)
+  assert.match(row, /const primaryClass =\s+"[^"]*bg-accent-600 [^"]*text-white hover:bg-accent-700"/)
+  assert.ok(!/text-text-secondary|bg-accent-500/.test(row.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")), "说明行不再用 4.43 / 3.76 的旧色")
+  const turn = readSource("../components/ai-chat/thread/turns/queued-user-turn.tsx")
+  assert.match(turn, /data-testid="queued-row-label" className=\{cx\("shrink-0", QUEUE_MUTED_TEXT\)\}/)
+  assert.match(turn, /data-testid="queued-row-label" className=\{QUEUE_MUTED_TEXT\}/)
 })

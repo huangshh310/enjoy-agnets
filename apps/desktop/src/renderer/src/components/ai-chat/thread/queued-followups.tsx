@@ -52,7 +52,11 @@ export function QueuedFollowups({ placement = "thread" }: { placement?: "thread"
   if (items.length === 0) return null
   if (shouldDockQueuedFollowups(approvalPending, paused) !== (placement === "dock")) return null
 
-  if (placement === "dock") return <DockedFollowups items={items} paused={approvalPending ? null : paused} />
+  // 审批卡在时说明行让位（审批按钮优先），但排队行的标签仍按「停着」说「已暂停」（luna P3a）：
+  // 不能一边停着一边说「排队中」，像是审批完就会自动发。
+  if (placement === "dock") {
+    return <DockedFollowups items={items} paused={approvalPending ? null : paused} queuePaused={paused != null} />
+  }
 
   return (
     <div id="queued-followups" className="flex flex-col gap-4">
@@ -68,7 +72,17 @@ export function QueuedFollowups({ placement = "thread" }: { placement?: "thread"
   )
 }
 
-function DockedFollowups({ items, paused }: { items: FollowupItem[]; paused: FollowupPausedReason | null }) {
+function DockedFollowups({
+  items,
+  paused,
+  queuePaused
+}: {
+  items: FollowupItem[]
+  /** 要画说明行的暂停原因（审批卡在时为 null）。 */
+  paused: FollowupPausedReason | null
+  /** 队列实际停着（不管说明行画不画）：排队行标签说「已暂停」。 */
+  queuePaused: boolean
+}) {
   const t = useT()
   const approvalId = useChatStore((state) => state.pendingApproval?.approvalId ?? null)
   const ref = useRef<HTMLDivElement>(null)
@@ -96,18 +110,29 @@ function DockedFollowups({ items, paused }: { items: FollowupItem[]; paused: Fol
       </div>
     )
   }
-  return <DockedRows items={items} paused={paused} expanded={expanded} setExpanded={setExpanded} dockRef={ref} />
+  return (
+    <DockedRows
+      items={items}
+      paused={paused}
+      queuePaused={queuePaused}
+      expanded={expanded}
+      setExpanded={setExpanded}
+      dockRef={ref}
+    />
+  )
 }
 
 function DockedRows({
   items,
   paused,
+  queuePaused,
   expanded,
   setExpanded,
   dockRef: ref
 }: {
   items: FollowupItem[]
   paused: FollowupPausedReason | null
+  queuePaused: boolean
   expanded: boolean
   setExpanded: (value: boolean) => void
   dockRef: RefObject<HTMLDivElement | null>
@@ -145,6 +170,7 @@ function DockedRows({
               canMoveUp={index > 0}
               canMoveDown={index < items.length - 1}
               compact
+              paused={queuePaused}
             />
           ))}
           {mode === "more" ? (
