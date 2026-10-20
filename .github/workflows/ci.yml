@@ -81,6 +81,7 @@ jobs:
           path: |
             apps/desktop/test-results/queue-pause-e1/
             apps/desktop/test-results/pre-output-rollback-images/e1-p2-*.png
+            apps/desktop/test-results/pre-output-rollback-images/r5-*-2-hidden-edited.png
           if-no-files-found: ignore
       - name: Upload first-send screenshots
         if: always()

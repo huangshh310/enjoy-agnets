@@ -108,9 +108,11 @@ test("②③ 有字有图出字前失败：字和图都回来；重启后草稿�
   }
 })
 
-test("jojo P2（E1）：失败后又打了新字、贴了新图 → 「再发一次」隐藏、第二行「改好后点发送就行…」；什么都不自动发；回到原样立刻恢复", async () => {
+for (const lang of ["zh", "en"] as const) {
+test(`jojo P2（E1，${lang}）：失败后又打了新字、贴了新图 → 「再发一次」隐藏、第二行「改好后点发送就行…」；什么都不自动发；回到原样立刻恢复`, async () => {
+  const copy = R5[lang]
   test.setTimeout(180_000)
-  const { app, window } = await boot({ ...dirs(), ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_ONCE: "1" })
+  const { app, window } = await boot({ ...dirs(), ENJOY_E2E_LANG: lang, ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_ONCE: "1" })
   try {
     const composer = window.getByTestId("composer-input")
     const chip = window.getByTestId("composer-asset-chip")
@@ -118,23 +120,23 @@ test("jojo P2（E1）：失败后又打了新字、贴了新图 → 「再发一
     const detail = window.getByTestId("thread-credential-network-notice-detail")
     await window.getByTestId("composer-attach").setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG })
     await expect(chip).toHaveCount(1, { timeout: 8_000 })
-    await composer.fill("看看这张图")
+    await composer.fill(copy.sentence)
     await composer.press("Enter")
     await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 15_000 })
-    await expect(composer).toHaveValue("看看这张图")
+    await expect(composer).toHaveValue(copy.sentence)
     await expect(action).toBeVisible()
     // 用户接着写：新字 + 新图（与还回来的那一句同框）→ 已不是原样。
-    await composer.fill("看看这张图\n下一条：再看看这张")
+    await composer.fill(`${copy.sentence}\n下一条：再看看这张`)
     await window.getByTestId("composer-attach").setInputFiles({ name: "b.png", mimeType: "image/png", buffer: PNG })
     await expect(chip).toHaveCount(2, { timeout: 8_000 })
     await expect(action).toHaveCount(0)
-    await expect(detail).toHaveText("改好后点发送就行，不会自动发出。")
-    await window.screenshot({ path: join(shots, "e1-p2-1-hidden.png") })
+    await expect(detail).toHaveText(copy.editThenSend)
+    await window.screenshot({ path: join(shots, `e1-p2-${lang}-1-hidden.png`) })
     const stage = window.locator('[data-chat-stage="true"]')
     await window.waitForTimeout(1_500)
     await expect(stage).not.toContainText("attached:")
     // 只多一张图（字回到原样）也算改过。
-    await composer.fill("看看这张图")
+    await composer.fill(copy.sentence)
     await expect(action).toHaveCount(0)
     // 删掉新图 → 正好原样 → 按钮回来，点了只发那一句 + 它的图。
     await window.locator('[data-testid="composer-asset-chip"] button[aria-label*="b.png"]').click({ force: true })
@@ -144,11 +146,12 @@ test("jojo P2（E1）：失败后又打了新字、贴了新图 → 「再发一
     await expect(stage).toContainText("attached:a.png", { timeout: 20_000 })
     await expect(stage).not.toContainText("attached:b.png")
     await expect(composer).toHaveValue("")
-    await window.screenshot({ path: join(shots, "e1-p2-2-exact-resent.png") })
+    await window.screenshot({ path: join(shots, `e1-p2-${lang}-2-exact-resent.png`) })
   } finally {
     await closeForRelaunch(app)
   }
 })
+}
 
 const R5 = {
   zh: {
