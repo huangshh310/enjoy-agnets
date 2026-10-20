@@ -2,7 +2,7 @@
  * 启动 / 唤醒必须钉住 scanFromAt：滴答会把 lastAlive 写成现在。
  */
 import assert from "node:assert/strict"
-import { test } from "node:test"
+import { afterEach, beforeEach, mock, test } from "node:test"
 import { reconcileMissedAutomations } from "./automations-missed-reconcile.ts"
 import {
   lookbackAliveAt,
@@ -21,6 +21,15 @@ const TZ = "Asia/Shanghai"
 const now = Date.parse("2026-10-09T02:00:00.000Z")
 const lastAlive = Date.parse("2026-10-08T16:00:00.000Z")
 const eight = Date.parse("2026-10-09T00:00:00.000Z")
+
+// 固定时钟到夹具的「现在」：writeAliveState 用 Date.now() - MISSED_LOOKBACK_MS 裁掉过期睡眠窗，
+// 不固定的话，真实日期一过回看期，夹具里的睡眠窗就被裁掉，测试随日期推移必挂。
+beforeEach(() => {
+  mock.timers.enable({ apis: ["Date"], now })
+})
+afterEach(() => {
+  mock.timers.reset()
+})
 
 const item = {
   id: "auto_1",
