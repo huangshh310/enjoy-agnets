@@ -53,7 +53,8 @@ jobs:
   e2e-window:
     # xvfb + Electron：agent-stub（含本会话允许跨轮）+ 回挂审批 + 知识库芯片 + 新对话/重启首发清稿。禁止 -g / only。
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # E1 加了 queue-pause-e1.spec.ts（约 7 条真机用例），原 30 分钟已用到 ~20 分钟。
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -72,6 +73,15 @@ jobs:
       - name: Playwright window e2e
         working-directory: apps/desktop
         run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts approval-restart.spec.ts knowledge-source-chip.spec.ts first-send-bubble.spec.ts first-send-composer-clear.spec.ts first-send-preparing-ab.spec.ts first-send-watchdog-forced.spec.ts first-send-prepare-fail.spec.ts first-send-leave-empty.spec.ts first-send-attach-session-bind.spec.ts first-send-image-only.spec.ts draft-image-preview-return.spec.ts first-send-prep-images.spec.ts queued-image-send-now.spec.ts rewind-dialog.spec.ts composer-dock-attachment-tray.spec.ts thread-rail-click-through.spec.ts luna-155-patrol-fixes.spec.ts queue-sendnow-approval.spec.ts narrow-right-pane.spec.ts key-invalid-status.spec.ts setup-guide-reopen-overlay.spec.ts pre-output-rollback-gate2.spec.ts pre-output-rollback-r3.spec.ts pre-output-rollback-images.spec.ts base-p0-1-credential.spec.ts acp-import-isolation.spec.ts queue-pause-e1.spec.ts
+      - name: Upload queue-pause screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: queue-pause-e1-shots
+          path: |
+            apps/desktop/test-results/queue-pause-e1/
+            apps/desktop/test-results/pre-output-rollback-images/e1-p2-*.png
+          if-no-files-found: ignore
       - name: Upload first-send screenshots
         if: always()
         uses: actions/upload-artifact@v4
