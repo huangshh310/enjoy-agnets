@@ -9,6 +9,8 @@ import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 import { pauseFollowups } from "./followup-queue"
+import { followupSendInFlight } from "./followup-autostart"
+import { hasQueuedComposerSend } from "./queue-composer-send"
 
 /** IPC 返回后认领本轮；切走则写入停车快照，只有用户 Stop 才当孤儿 abort。 */
 export function claimComposerRun(startedSessionId: string | null, runId: string): boolean {
@@ -47,8 +49,10 @@ export async function abortComposerRun(opts?: {
   const sessionId = store.sessionId
   // E1：用户停止——排队的先不发（在放 running 之前停住，自启看不到空档）。
   // 换助手时这一轮没在跑：队列若停着（出错 / 额度）保留原因，不改成「你换了助手」。
+  // luna #163 P2⑤：「刚开始发、还没出字」也算在跑（见 composerRunInFlight），否则随后那一发作废报的「出错」
+  // 把说明行改成琥珀色，用户手动发一条跑完后排队的就自己发给新助手了。
   const reason = opts?.pauseReason ?? "stopped"
-  if (reason === "stopped" || store.running) pauseFollowups(sessionId, reason)
+  if (reason === "stopped" || composerRunInFlight(store)) pauseFollowups(sessionId, reason)
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
@@ -59,6 +63,22 @@ export async function abortComposerRun(opts?: {
     useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
   }
   if (runId) abortOrphanedRun(runId)
+}
+
+/**
+ * 这一轮在跑，或正处在起跑窗口（runId 还没认领、还没出字）：
+ * - store.running / runId；
+ * - 自启取出的那一条 send 还没返回（followupSendInFlight）；
+ * - 建会话窗里排着一发（hasQueuedComposerSend）；
+ * - 末尾挂着还没字的乐观助手轮（发出后、首字前；出字前失败会先把它摘掉）；
+ * - 本会话的「正在准备…」。
+ * 起跑窗口里 running 可能已被上一轮迟到的收尾事件放下，单看 store.running 会漏（luna #163 g163-e733-4）。
+ */
+export function composerRunInFlight(store: ReturnType<typeof useChatStore.getState>): boolean {
+  if (store.running || store.runId) return true
+  if (followupSendInFlight() || hasQueuedComposerSend()) return true
+  if (isEmptyStreamingAssistant(store.messages.at(-1))) return true
+  return Boolean(store.preparingHint && store.preparingSessionId === store.sessionId)
 }
 
 /** 启动失败时丢掉还没字的乐观助手轮。 */

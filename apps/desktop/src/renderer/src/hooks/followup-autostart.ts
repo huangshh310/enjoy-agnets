@@ -32,6 +32,14 @@ export function resetFollowupAutostart() {
   starting = false
 }
 
+/**
+ * 自启取出的那一条还在「开始发」阶段（send 没返回：agent.run 还没回执、还没出字）。
+ * luna #163 P2⑤：这时换助手也算停了一轮——abortComposerRun 靠它补上 store.running 看不到的起跑窗口。
+ */
+export function followupSendInFlight(): boolean {
+  return queue.size > 0
+}
+
 export function drainFollowupAutostart(): Promise<void> {
   return queue.drain()
 }

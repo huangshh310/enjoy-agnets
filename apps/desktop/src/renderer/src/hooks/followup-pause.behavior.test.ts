@@ -818,6 +818,95 @@ test("pausedCollapsed：只有窗口矮且没点开时折叠", () => {
   assert.equal(view.pausedCollapsed(false, true), false)
 })
 
+// ---- luna #163 真机门 P2⑤：换助手落在起跑窗口（排队那条刚开始发、还没出字）----
+function idleAfterRun(sessionId: string) {
+  running(sessionId)
+  // 上一轮已收尾：running / runId 都放下，末尾助手轮已定稿。
+  useChatStore.setState({
+    running: false,
+    runId: null,
+    preparingHint: false,
+    preparingSessionId: null,
+    messages: [
+      { id: "u1", role: "user", content: "先做这个", createdAt: 1 },
+      { id: "a1", role: "assistant", content: "做完了", createdAt: 2, streaming: false }
+    ]
+  } as never)
+}
+
+test("P2⑤ 换助手落在自启起跑窗口（send 没返回、running 被上一轮迟到收尾放下）→ engineSwitched 灰色；作废那一发报出错也不改；手动发一条跑完，其余不自动发给新助手", async () => {
+  running("ses_sw4")
+  enqueue("ses_sw4", "s1", "s2")
+  idleAfterRun("ses_sw4")
+  let finishSend!: () => void
+  const started = tryStartNextFollowup({
+    sessionId: "ses_sw4",
+    running: false,
+    send: (item) => {
+      sent.push(item.prompt)
+      // 起跑窗口：running 先占上，又被上一轮迟到的收尾放下；runId 还没认领、还没出字。
+      useChatStore.setState({ running: false, runId: null } as never)
+      return new Promise<void>((resolve) => (finishSend = resolve))
+    }
+  })
+  assert.equal(started, true)
+  await new Promise((r) => setTimeout(r, 0))
+  assert.deepEqual(sent, ["s1"])
+  assert.equal(useChatStore.getState().running, false)
+  pendingHandoff()
+  assert.equal(await confirmEngineHandoff(), true)
+  assert.equal(queue.followupPausedReason("ses_sw4"), "engineSwitched")
+  // agent.run 回执迟到 → 认领不到（孤儿）→ failComposerSend 报通用失败：不把灰色改成琥珀色。
+  failComposerSend({ text: "s1", reason: SEND_FAILED_RESTORE, sessionId: "ses_sw4" })
+  assert.equal(queue.followupPausedReason("ses_sw4"), "engineSwitched")
+  finishSend()
+  await flush()
+  const zh = tr(zhChat as never)
+  const v = view.queuePausedView({ reason: queue.followupPausedReason("ses_sw4")!, count: 1, composerHasContent: true, failureCardRetryShowing: true, provider: { kind: "generic" }, t: zh })
+  assert.equal(v.text, "你换了助手，上一轮停了，排队的 1 条先不发。")
+  assert.equal(pause.isNeutralPause(queue.followupPausedReason("ses_sw4")), true)
+  // 用户手动把 s1 发出去并跑完（run.end）：engineSwitched 不自动解除，s2 不自己发。
+  dispatchAgentEvent({ type: "run.end", runId: "run_manual_s1", sessionId: "ses_sw4" } as never)
+  useChatStore.setState({ running: false, runId: null } as never)
+  await flush()
+  assert.equal(queue.followupPausedReason("ses_sw4"), "engineSwitched")
+  assert.deepEqual(sent, ["s1"])
+  assert.deepEqual(prompts("ses_sw4"), ["s2"])
+})
+
+test("P2⑤ 换助手落在手动发送的首字前（末尾挂着没字的乐观助手轮，runId 还没认领）→ engineSwitched", async () => {
+  running("ses_sw5")
+  enqueue("ses_sw5", "s2")
+  useChatStore.setState({
+    running: false,
+    runId: null,
+    messages: [
+      { id: "u1", role: "user", content: "s1", createdAt: 1 },
+      { id: "msg_pending_1", role: "assistant", content: "", createdAt: 2, streaming: true, reasoning: "", tools: [] }
+    ]
+  } as never)
+  pendingHandoff()
+  assert.equal(await confirmEngineHandoff(), true)
+  assert.equal(queue.followupPausedReason("ses_sw5"), "engineSwitched")
+})
+
+test("P2⑤ 换助手落在本会话「正在准备…」（首发 agent.run 还没回）→ engineSwitched；别的会话的「正在准备…」不算", async () => {
+  running("ses_sw6")
+  enqueue("ses_sw6", "s2")
+  queue.pauseFollowups("ses_sw6", "error")
+  idleAfterRun("ses_sw6")
+  useChatStore.setState({ preparingHint: true, preparingSessionId: "ses_other" } as never)
+  pendingHandoff()
+  await confirmEngineHandoff()
+  assert.equal(queue.followupPausedReason("ses_sw6"), "error", "别的会话在准备：这一轮不算在跑，保留 error")
+  useChatStore.setState({ preparingHint: true, preparingSessionId: "ses_sw6" } as never)
+  pendingHandoff()
+  await confirmEngineHandoff()
+  // error 被用户自己的 engineSwitched 覆盖（起跑窗口里换助手）。
+  assert.equal(queue.followupPausedReason("ses_sw6"), "engineSwitched")
+  useChatStore.setState({ preparingHint: false, preparingSessionId: null } as never)
+})
+
 // ---- luna #163 真机门 P3a：审批卡在、队列停着 → 排队行标签说「已暂停」，不说「排队中」----
 test("P3a 排队行标签：停着说「已暂停 / Paused」，没停「排队中 / Queued」；审批卡在时说明行让位，但标签仍按停着画", () => {
   assert.equal(view.queuedRowLabelKey(true), "chat.queuePausedLabel")
