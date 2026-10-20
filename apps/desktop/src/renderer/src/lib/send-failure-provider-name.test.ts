@@ -20,8 +20,14 @@ test("引擎起了显示名就用显示名；空 / 「未命名」回退品牌�
   assert.deepEqual(sendFailureProviderName({ runtimeId: "amp", tools, displayNames: { amp: "未命名" }, provider: DS }), named("Amp"))
 })
 
-test("引擎不在列表里也不拿密钥档案顶名，用 runtimeId", () => {
-  assert.deepEqual(sendFailureProviderName({ runtimeId: "codex", tools, displayNames: {}, provider: DS }), named("codex"))
+test("引擎不在列表里：不拿密钥档案 / 供应商 / 原始 runtimeId 顶名，退到「模型服务」", () => {
+  assert.deepEqual(sendFailureProviderName({ runtimeId: "codex", tools, displayNames: {}, provider: DS }), { kind: "generic" })
+  assert.deepEqual(
+    sendFailureProviderName({ runtimeId: "custom:acp_7f3a", tools, displayNames: {}, provider: DS }),
+    { kind: "generic" }
+  )
+  // 用户给它起的名字仍然算
+  assert.deepEqual(sendFailureProviderName({ runtimeId: "codex", tools, displayNames: { codex: "小码" }, provider: DS }), named("小码"))
 })
 
 test("Enjoy 本地 / 还没定引擎：说供应商（调用方传 defaultProviderFace 的结果）", () => {

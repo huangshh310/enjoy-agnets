@@ -18,6 +18,8 @@ export function turnModelText(input: {
   modelId?: string | null
   modelLabel?: string | null
   enjoyLocalLabel: string
+  /** 引擎认不出来时的称呼（「模型服务」/ "The model service"），不显示原始 runtimeId。 */
+  unknownEngineLabel: string
   catalog: ModelRow[]
   tools: ToolRow[]
   rememberedToolLabel?: (runtimeId: string) => string | undefined
@@ -28,7 +30,7 @@ export function turnModelText(input: {
     runtimeId === "enjoy-local"
       ? input.enjoyLocalLabel
       : runtimeId
-      ? (tool?.label ?? input.rememberedToolLabel?.(runtimeId) ?? runtimeId)
+      ? (tool?.label?.trim() || input.rememberedToolLabel?.(runtimeId)?.trim() || input.unknownEngineLabel)
       : undefined
   const stampedLabel = input.modelLabel?.trim()
   const label = stampedLabel && !isCliPlaceholderModelId(stampedLabel) ? stampedLabel : ""

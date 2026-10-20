@@ -18,6 +18,7 @@ export function TurnModelLabel({ message }: { message: ThreadMessage }) {
     modelId: message.modelId,
     modelLabel: message.modelLabel,
     enjoyLocalLabel: t("chat.usage.enjoyLocal"),
+    unknownEngineLabel: t("chat.credentialProviderGenericStart"),
     catalog,
     tools,
     rememberedToolLabel: (id) => rememberedAgentTool(id)?.label

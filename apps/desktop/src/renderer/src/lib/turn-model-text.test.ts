@@ -7,7 +7,7 @@ const tools = [
   { id: "amp", label: "Amp", models: [] },
   { id: "claude", label: "Claude Code", models: [{ id: "sonnet", label: "Sonnet 4.5" }] }
 ]
-const base = { enjoyLocalLabel: "Enjoy 本地", catalog: [{ id: "gpt-x", label: "GPT X" }], tools }
+const base = { enjoyLocalLabel: "Enjoy 本地", unknownEngineLabel: "模型服务", catalog: [{ id: "gpt-x", label: "GPT X" }], tools }
 
 test("luna P3：没选模型的 Amp 回复（modelId=cli:amp），底脚只显示「Amp」，不露 cli:amp", () => {
   const text = turnModelText({ ...base, runtimeId: "amp", modelId: "cli:amp" })
@@ -46,4 +46,13 @@ test("底脚组件走 turnModelText（源码正则）", () => {
   const src = readFileSync(new URL("../components/ai-chat/thread/turns/turn-model-label.tsx", import.meta.url), "utf8")
   assert.match(src, /turnModelText\(/)
   assert.ok(!/message\.modelId\)\s*$/m.test(src))
+})
+
+test("引擎认不出来（不在列表、也没记住）：底脚写「模型服务」，不露原始 runtimeId（leo #164 软 c）", () => {
+  assert.equal(turnModelText({ ...base, runtimeId: "custom:acp_7f3a", modelId: "cli:x" }), "模型服务")
+  assert.equal(turnModelText({ ...base, runtimeId: "custom:acp_7f3a", modelId: "gpt-x" }), "模型服务 · GPT X")
+  assert.equal(
+    turnModelText({ ...base, runtimeId: "custom:acp_7f3a", modelId: "cli:x", rememberedToolLabel: () => "老助手" }),
+    "老助手"
+  )
 })
