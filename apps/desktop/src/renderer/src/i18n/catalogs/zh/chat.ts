@@ -672,6 +672,7 @@ export const zhChat = {
   approvalDecideAskUserNoSession: "这个提问不能设为整段会话都允许。",
   approvalDecideRunInactive: "这一轮已经结束，不能再批。",
   approvalDecideNoMatching: "没有匹配的待审批。",
+  approvalBelongsToOtherChat: "这个审批属于另一个对话，请切回去处理。",
   approvalDecideFailed: "这次没批成。",
   runFailed: "这一轮没有执行完。",
   catchUpApprovalTimeout: "补跑等待确认超时，未运行",

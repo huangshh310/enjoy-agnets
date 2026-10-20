@@ -4,6 +4,14 @@ import { afterEach, test } from "node:test"
 const memory = new Map<string, string>()
 ;(globalThis as any).localStorage = { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v), removeItem: (k: string) => void memory.delete(k) }
 const calls: Array<{ path: string; args: any[] }> = []
+/** 某会话的 session.messages 先挂住，测试里手动放行（模拟回灌还没回来）。 */
+const heldMessages = new Map<string, { promise: Promise<unknown[]>; release: () => void }>()
+function holdMessages(sessionId: string): () => void {
+  let release!: () => void
+  const promise = new Promise<unknown[]>((resolve) => { release = () => resolve([]) })
+  heldMessages.set(sessionId, { promise, release })
+  return () => { heldMessages.delete(sessionId); release() }
+}
 function bridge(path: string): any {
   return new Proxy(() => undefined, {
     get: (_t, key) => (key === "then" ? undefined : bridge(`${path}.${String(key)}`)),
@@ -12,7 +20,8 @@ function bridge(path: string): any {
       if (/\.on[A-Z]\w*$/.test(path)) return () => undefined
       if (path === ".session.drafts.loadSync") return {}
       if (path === ".session.drafts.loadAssetsSync") return {}
-      if (path === ".session.messages" || path.endsWith(".list")) return Promise.resolve([])
+      if (path === ".session.messages") return heldMessages.get(args[0]?.sessionId)?.promise ?? Promise.resolve([])
+      if (path.endsWith(".list")) return Promise.resolve([])
       return Promise.resolve(undefined)
     }
   })
@@ -26,6 +35,7 @@ const { openImportedAcpSession } = await import("./acp-session-import-open.ts")
 const { decidePendingApproval } = await import("../../../hooks/decide-pending-approval.ts")
 const { abortComposerRun } = await import("../../../hooks/composer-run-control.ts")
 const { loadSession } = await import("../../../hooks/session-lifecycle.ts")
+const { queryClient } = await import("../../../lib/query-client.ts")
 const flush = async () => { for (let i = 0; i < 40; i++) await new Promise((r) => setTimeout(r, 0)) }
 
 afterEach(() => {
@@ -145,9 +155,51 @@ test("审批只能批它所在会话的轮：前台审批卡的 run 已知属于
   calls.length = 0
   await decidePendingApproval("allow")
   assert.deepEqual(calls.filter((c) => c.path === ".agent.decide"), [], "卡挂错会话时不批")
-  assert.ok(useChatStore.getState().error, "给出没有等待中审批的提示")
+  assert.equal(useChatStore.getState().error, "这个审批属于另一个对话，请切回去处理。", "说清审批属于另一个对话，不说「没有等待中的审批」")
+  queryClient.setQueryData(["settings"], { preferences: { language: "en" } })
+  useChatStore.setState({ error: null } as never)
+  await decidePendingApproval("allow")
+  assert.equal(useChatStore.getState().error, "This approval belongs to another chat. Switch back to handle it.")
+  queryClient.removeQueries({ queryKey: ["settings"] })
   // 对照：卡和前台同一会话照常批。
   useChatStore.setState({ sessionId: "ses_B", error: null } as never)
   await decidePendingApproval("allow")
   assert.equal(calls.filter((c) => c.path === ".agent.decide").length, 1)
+})
+
+test("leo：导入的会话回灌还没回来时切到会话 X——回灌回来后不改 X 的引擎、不打导入会话的「已回灌」、X 的回灌态不变", async () => {
+  useChatStore.setState({ workspaceId: "ws", sessionId: "ses_prev", sessionTitle: "上一个", messages: [{ id: "u0", role: "user", content: "hi", createdAt: 1 }], running: false, runId: null, pendingApproval: null, composer: "" } as never)
+  useChatStore.getState().setSessionRuntimes({ ses_X: "enjoy-local" })
+  const releaseImp = holdMessages("ses_imp_slow")
+  const releaseX = holdMessages("ses_X")
+  const opening = openImportedAcpSession({ id: "ses_imp_slow", title: "导入的会话" }, "amp")
+  await flush()
+  assert.equal(useChatStore.getState().sessionId, "ses_imp_slow")
+  // 回灌还挂着，用户点侧栏切到 X（X 的回灌也还没回来）。
+  const toX = loadSession("ses_X", "会话X")
+  await flush()
+  assert.equal(useChatStore.getState().sessionId, "ses_X")
+  const xRuntime = useChatStore.getState().runtimeId
+  const xHydrated = pending.isSessionHistoryHydrated("ses_X")
+  releaseImp()
+  await opening
+  await flush()
+  const s = useChatStore.getState()
+  assert.equal(s.sessionId, "ses_X", "前台还在 X")
+  assert.equal(s.runtimeId, xRuntime, "X 的引擎没被改成导入的 amp")
+  assert.notEqual(s.runtimeId, "amp")
+  assert.equal(pending.isSessionHistoryHydrated("ses_X"), xHydrated, "X 的回灌态没被改")
+  assert.equal(pending.isSessionHistoryHydrated("ses_imp_slow"), false, "不在 X 上给导入的会话打「已回灌」")
+  releaseX()
+  await toX
+})
+
+test("luna C1：从刚点开的空「新对话」导入——那条空新对话按离开即删（onlyIfEmpty）处理，侧栏不多出一条", async () => {
+  useChatStore.setState({ workspaceId: "ws", sessionId: "ses_new_empty", sessionTitle: "新对话", messages: [], running: false, runId: null, lastRunId: null, pendingApproval: null, composer: "", error: null, notice: null } as never)
+  calls.length = 0
+  await openImportedAcpSession({ id: "ses_imp_c1", title: "导入的会话" }, "amp")
+  await flush()
+  assert.equal(useChatStore.getState().sessionId, "ses_imp_c1")
+  const deletes = calls.filter((c) => c.path === ".session.delete").map((c) => c.args[0])
+  assert.deepEqual(deletes, [{ sessionId: "ses_new_empty", onlyIfEmpty: true }], "离开空新对话时删掉它")
 })
