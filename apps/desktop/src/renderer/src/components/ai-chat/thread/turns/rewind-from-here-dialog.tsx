@@ -1,8 +1,9 @@
 /**
- * 从这条用户消息重来。异步结束前不关窗；失败码留在对话框里。
- * 文案 / 按钮按 luna 定稿（rewind-dialog-view.ts）：Git 工作区三钮、非 Git 两钮、删新文件二次确认、还原失败灰字兜底。
+ * 从这条用户消息重来。异步结束前不关窗（Esc / 遮罩 / 取消都不收）；结果回来、取消、Esc 都清回第一步。
+ * 文案 / 按钮按 luna 定稿（rewind-dialog-view.ts）：Git 工作区三钮、非 Git / 不知道 / 引擎不支持两钮、删新文件二次确认、
+ * 还原失败分灰色兜底（什么都没改）和琥珀色 +「去审查」（只还原了一部分）。结果 → 状态走 rewindOutcome，界面不出原始错误。
  */
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { RiHistoryLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { MessageAction } from "@/components/ai-elements/message"
@@ -17,7 +18,13 @@ import {
 import { rewindFromUserTurn } from "@renderer/hooks/rewind-from-here"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { isRewindRestoreFailure, rewindDialogView, type RewindButtonId } from "./rewind-dialog-view"
+import { revealRightPane } from "../../right-pane/open-pane"
+import {
+  rewindDialogView,
+  rewindOutcome,
+  type RewindButtonId,
+  type RewindFailure
+} from "./rewind-dialog-view"
 
 export function RewindFromHereAction({
   messageId,
@@ -62,46 +69,56 @@ export function RewindFromHereDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useT()
-  // 审查面板同一份：workspace.changes 回来的 gitRepo；false = 这个文件夹没用 Git 管理。
+  // 审查面板同一份：workspace.changes 回来的 gitRepo；false = 明确没用 Git，null = 还不知道。
   const gitRepo = useChatStore((state) => state.gitRepo)
   const [busy, setBusy] = useState(false)
+  const busyRef = useRef(false)
   const [untracked, setUntracked] = useState<string[] | null | undefined>(undefined)
-  const [restoreFailed, setRestoreFailed] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [failure, setFailure] = useState<RewindFailure | null>(null)
+  const [errorKey, setErrorKey] = useState<string | null>(null)
 
   function reset() {
     setUntracked(undefined)
-    setRestoreFailed(false)
-    setError(null)
+    setFailure(null)
+    setErrorKey(null)
+  }
+
+  /** 取消 / Esc / 遮罩 / 去审查 / 成功：都清回第一步再关。跑着的时候不收窗。 */
+  function close() {
+    if (busyRef.current) return
+    reset()
+    onOpenChange(false)
   }
 
   async function run(restoreFiles: boolean, confirmDeleteUntracked?: boolean) {
-    if (busy) return
+    if (busyRef.current) return
+    busyRef.current = true
     setBusy(true)
-    setError(null)
+    setErrorKey(null)
     try {
       const result = await rewindFromUserTurn({
         userMessageId: messageId,
         restoreFiles,
         confirmDeleteUntracked
       })
-      if (!result.ok && result.code === "CHECKPOINT_CONFIRM_REQUIRED") {
-        // 拿不到名单时 N 未知：标题换成不带数字的说法。
-        setUntracked(result.untrackedToDelete && result.untrackedToDelete.length > 0 ? result.untrackedToDelete : null)
-        return
+      if (!result.ok && result.code !== "CHECKPOINT_CONFIRM_REQUIRED") {
+        // 只打 code，原始错误不进界面。
+        console.warn(`[rewind] failed: ${result.code}`)
       }
-      if (!result.ok && restoreFiles && isRewindRestoreFailure(result.code)) {
+      const outcome = rewindOutcome(result, restoreFiles)
+      if (outcome.kind === "close") {
+        busyRef.current = false
+        close()
+      } else if (outcome.kind === "untracked") {
+        setUntracked(outcome.files)
+      } else if (outcome.kind === "failure") {
         setUntracked(undefined)
-        setRestoreFailed(true)
-        return
+        setFailure(outcome.failure)
+      } else {
+        setErrorKey(outcome.messageKey)
       }
-      if (!result.ok) {
-        setError(rewindErrorMessage(result.code, t))
-        return
-      }
-      onOpenChange(false)
-      reset()
     } finally {
+      busyRef.current = false
       setBusy(false)
     }
   }
@@ -109,23 +126,28 @@ export function RewindFromHereDialog({
   const view = rewindDialogView(
     untracked !== undefined
       ? { kind: "untracked", files: untracked }
-      : { kind: "confirm", canRestoreFiles, gitRepo, restoreFailed },
+      : { kind: "confirm", canRestoreFiles, gitRepo, failure },
     t
   )
 
   function onButton(id: RewindButtonId) {
-    if (id === "cancel") onOpenChange(false)
+    if (id === "cancel") close()
     else if (id === "restore-files") void run(true)
     else if (id === "delete-and-restore") void run(true, true)
     else void run(false)
+  }
+
+  function goReview() {
+    close()
+    revealRightPane("review")
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) reset()
-        onOpenChange(next)
+        if (next) onOpenChange(true)
+        else close()
       }}
     >
       <DialogContent
@@ -160,12 +182,41 @@ export function RewindFromHereDialog({
             ) : null}
           </ul>
         ) : null}
-        {view.failure ? (
-          <p data-testid="rewind-failure" className="mt-1 text-caption-1-regular text-text-tertiary">
-            {view.failure}
+        {view.failure?.kind === "missing" ? (
+          // 灰色兜底：什么都没改。和正文下的提示灰字拉开——带底色的小块、次级字色。
+          <p
+            data-testid="rewind-failure"
+            data-failure-kind="missing"
+            role="status"
+            className="mt-1 rounded-xl bg-background-secondary-default px-3 py-2 text-caption-1-medium text-text-secondary"
+          >
+            {view.failure.text}
           </p>
         ) : null}
-        {error ? <p className="mt-2 text-caption-1-medium text-text-error-primary">{error}</p> : null}
+        {view.failure?.kind === "partial" ? (
+          // 琥珀色：文件可能只还原了一部分，后面跟文字按钮「去审查」。
+          <div
+            data-testid="rewind-failure"
+            data-failure-kind="partial"
+            role="alert"
+            className="mt-1 rounded-xl border border-status-yellow-text/25 bg-status-yellow-background/10 px-3 py-2 text-caption-1-medium text-status-yellow-text"
+          >
+            <span>{view.failure.text}</span>{" "}
+            <button
+              type="button"
+              data-testid="rewind-go-review"
+              className="font-semibold underline underline-offset-2 hover:opacity-80"
+              onClick={goReview}
+            >
+              {view.failure.reviewLabel}
+            </button>
+          </div>
+        ) : null}
+        {errorKey ? (
+          <p data-testid="rewind-error" className="mt-2 text-caption-1-medium text-text-error-primary">
+            {t(errorKey)}
+          </p>
+        ) : null}
         <DialogFooter className="mt-2">
           {view.buttons.map((button) => (
             <Button
@@ -183,15 +234,4 @@ export function RewindFromHereDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function rewindErrorMessage(code: string, t: (key: string) => string): string {
-  if (code.includes("REWIND_BUSY")) return t("chat.rewindBusy")
-  if (code.includes("REWIND_PROVIDER_UNSUPPORTED")) return t("chat.rewindUnsupported")
-  if (code.includes("TRUNCATE_MESSAGE_NOT_FOUND")) return t("chat.rewindTruncateMissing")
-  if (code.includes("TRUNCATE_STALE_SNAPSHOT")) return t("chat.truncateStaleSnapshot")
-  if (code.includes("TRUNCATE_TAIL_CHANGED")) return t("chat.truncateTailChanged")
-  if (code.includes("TRUNCATE_RUN_ACTIVE")) return t("chat.truncateRunActive")
-  if (isRewindRestoreFailure(code)) return t("chat.rewindNoCheckpoint")
-  return t("chat.rewindFailed")
 }
