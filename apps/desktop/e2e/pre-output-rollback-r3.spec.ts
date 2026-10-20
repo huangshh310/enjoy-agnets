@@ -81,7 +81,8 @@ test("M2：第一轮出字后从这里重来再发，出字前失败不回滚已
     const userTurn = window.getByText("整理一下发布清单").first()
     await userTurn.hover()
     await window.getByRole("button", { name: "从这里重来" }).first().click()
-    await window.getByRole("button", { name: "只改聊天" }).click()
+    // 临时目录不是 Git 仓库：#159 定稿后弹窗只有「取消 · 从这里重来」（不给还原按钮），点它就是只改聊天。
+    await window.getByRole("dialog").getByRole("button", { name: "从这里重来", exact: true }).click()
     await expect(composer).toHaveValue(/整理一下发布清单/, { timeout: 8_000 })
     await composer.press("Enter")
     await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 20_000 })

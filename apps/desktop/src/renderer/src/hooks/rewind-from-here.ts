@@ -94,14 +94,21 @@ async function restoreTurnFiles(
 ): Promise<RewindResult> {
   const store = useChatStore.getState()
   if (!store.workspaceId || !store.sessionId) return { ok: false, code: "REWIND_NO_WORKSPACE" }
-  const listed = ListCheckpointsResult.parse(
-    await getIde().workspace.listCheckpoints({ workspaceId: store.workspaceId })
-  )
-  const baseline = pickTurnBaseline(listed.checkpoints, {
-    sessionId: store.sessionId,
-    from,
-    until: nextUserCreatedAt(messages, index)
-  })
+  let baseline: ListCheckpointsResult["checkpoints"][number] | null | undefined
+  try {
+    const listed = ListCheckpointsResult.parse(
+      await getIde().workspace.listCheckpoints({ workspaceId: store.workspaceId })
+    )
+    baseline = pickTurnBaseline(listed.checkpoints, {
+      sessionId: store.sessionId,
+      from,
+      until: nextUserCreatedAt(messages, index)
+    })
+  } catch (error) {
+    // 列记录出错时还没碰文件：按「找不到记录」灰字兜底；原始错误只进日志。
+    console.warn("[rewind] REWIND_LIST_FAILED", error)
+    return { ok: false, code: "REWIND_LIST_FAILED" }
+  }
   if (!baseline) return { ok: false, code: "REWIND_NO_CHECKPOINT" }
   try {
     const restored = RestoreCheckpointResult.parse(
@@ -115,7 +122,9 @@ async function restoreTurnFiles(
       return { ok: false, code: restored.code, untrackedToDelete: restored.untrackedToDelete }
     }
   } catch (error) {
-    return { ok: false, code: error instanceof Error ? error.message : "CHECKPOINT_RESTORE_FAILED" }
+    // 原始错误不进弹窗：统一成 REWIND_RESTORE_FAILED，弹窗用琥珀色提示 +「去审查」（luna ①）；原文只进日志。
+    console.warn("[rewind] REWIND_RESTORE_FAILED", error)
+    return { ok: false, code: "REWIND_RESTORE_FAILED" }
   }
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["changes", store.workspaceId] }),
