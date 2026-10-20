@@ -9,6 +9,8 @@ import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { closeForRelaunch, firstWindow, mainEntry, relaunchElectron } from "./approval-restart-helpers"
 
+/** stub 每词 0.4s、约 9s，不弹审批（「very slow」会停一张写盘审批卡，审批优先级高于暂停说明行）。 */
+const SLOW = "slow a b c d e f g h i j k l m n o p q r s t u"
 const shots = process.env.ENJOY_E2E_SHOTS_DIR ?? join(process.cwd(), "test-results/queue-pause-e1")
 const made: string[] = []
 
@@ -95,7 +97,7 @@ for (const lang of ["zh", "en"] as const) {
     const copy = COPY[lang]
     const { app, window } = await boot(lang)
     try {
-      await sendText(window, "very slow 甲在跑")
+      await sendText(window, SLOW)
       await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
       await queueText(window, "排队一")
       await queueText(window, "排队二")
@@ -216,7 +218,7 @@ test("改一下再发（zh）：输入框有字时隐藏；空了才露出；点
   test.setTimeout(180_000)
   const { app, window } = await boot("zh")
   try {
-    await sendText(window, "very slow 甲在跑")
+    await sendText(window, SLOW)
     await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
     await queueText(window, "排队一")
     await queueText(window, "排队二")
