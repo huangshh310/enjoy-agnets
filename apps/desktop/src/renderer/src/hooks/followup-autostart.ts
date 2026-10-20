@@ -13,6 +13,12 @@ type FollowupJob = {
 }
 
 let queue = new DrainableQueue<FollowupJob>(runJob)
+/**
+ * 取下一项时 takeNextFollowup 会同步 notify，订阅它的自启（useFollowupAutostart 的 kick）会重入进来：
+ * 那时这一项还没进 queue（size 仍为 0），重入的一次会把**第二条**先取走先发——排队顺序颠倒（E1 实测）。
+ * 取项到入队之间不许重入。
+ */
+let starting = false
 
 async function runJob(job: FollowupJob) {
   // 发送链接手这几张图（发出即由 main 清库；失败还回输入框当普通草稿），排队标记先摘掉。
@@ -23,6 +29,7 @@ async function runJob(job: FollowupJob) {
 /** 测试用：换一条空队列。 */
 export function resetFollowupAutostart() {
   queue = new DrainableQueue<FollowupJob>(runJob)
+  starting = false
 }
 
 export function drainFollowupAutostart(): Promise<void> {
@@ -38,9 +45,14 @@ export function tryStartNextFollowup(input: {
   send: (item: FollowupItem) => Promise<void>
 }): boolean {
   if (input.running || input.pendingApproval || !input.sessionId || queue.size > 0) return false
-  if (followupPausedReason(input.sessionId)) return false
-  const next = takeNextFollowup(input.sessionId)
-  if (!next) return false
-  queue.enqueue({ item: next, send: input.send })
-  return true
+  if (followupPausedReason(input.sessionId) || starting) return false
+  starting = true
+  try {
+    const next = takeNextFollowup(input.sessionId)
+    if (!next) return false
+    queue.enqueue({ item: next, send: input.send })
+    return true
+  } finally {
+    starting = false
+  }
 }
