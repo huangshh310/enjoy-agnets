@@ -429,3 +429,101 @@ for (const lang of ["zh", "en"] as const) {
     }
   })
 }
+
+// #158 gate P1（pr158-gate-09 / 10-733x480 / 11）：733x480 有审批卡时点「马上发给它」，
+// 旧提示「已交给下一步检查点…」挂在输入框帽檐里（Composer 此时 shrink-0），对话列被压掉一行，审批卡只剩「计划概览」标题，
+// 本会话总是允许 / 拒绝 / 批准 被帽檐盖住（elementFromPoint 命中提示文字），要点 × 才回来。
+// 修后：有审批卡时提示画在审批卡上方的紧凑区（同列、文档流），放不下就让位；帽檐里不画。
+const STEER_HINT = { zh: "已收到，下一步会按你的话调整。", en: "Got it. The next step will follow what you said." } as const
+const OLD_STEER_HINT = /已交给下一步检查点|Queued for the next safe checkpoint/
+const ANY_STEER_HINT = /已交给下一步检查点|Queued for the next safe checkpoint|已收到，下一步会按你的话调整|Got it\. The next step will follow/
+
+for (const lang of ["zh", "en"] as const) {
+  test(`733x480 有审批卡时点「马上发」：提示不盖审批三钮，三钮在视口内、可点、未被遮挡（${lang}）`, async () => {
+    test.setTimeout(240_000)
+    const copy = COPY[lang]
+    const { app, page, composer, queued, dock } = await launchApproval(lang, { vision: true })
+    try {
+      const size = { width: 733, height: 480 }
+      await page.setViewportSize(size)
+      await page.waitForTimeout(400)
+      const shot = async (name: string) => {
+        if (shotsDir) await page.screenshot({ path: join(shotsDir, `${shotTag}-p1-${lang}-733x480-${name}.png`) })
+      }
+
+      // gate 复现：排队 2 条 + 输入框带图（对话列最挤的一档）。
+      await enqueue(page, composer, `${copy.queued} 1`, 1)
+      await enqueue(page, composer, `${copy.queued} 2`, 2)
+      await composer.click()
+      await page.keyboard.type("typing")
+      await page.locator('[data-testid="composer-attach"]').setInputFiles({ name: "tray.png", mimeType: "image/png", buffer: PNG })
+      await expect(page.locator('[data-testid="composer-asset-chip"]')).toHaveCount(1, { timeout: 8_000 })
+      await page.waitForTimeout(400)
+      // 放不下时排队区折叠成「排队 2 条」：点开再点行上的「马上发给它」（gate 同一路径）。
+      const collapsed = page.locator('[data-testid="queued-collapsed"]')
+      if (await collapsed.isVisible()) {
+        await collapsed.click()
+        await expect(dock).toHaveAttribute("data-mode", "all")
+      }
+      await expect(queued).toHaveCount(2)
+      await shot("before")
+
+      const sendNow = queued.first().getByRole("button", { name: copy.sendNow, exact: true })
+      await expect(sendNow).toBeInViewport()
+      const sb = await sendNow.boundingBox()
+      expect(sb).not.toBeNull()
+      await page.mouse.click(sb!.x + sb!.width / 2, sb!.y + sb!.height / 2)
+      await expect(queued).toHaveCount(1, { timeout: 5_000 })
+      await expect(queued.first()).toContainText(`${copy.queued} 2`)
+      // 等插话落地、提示挂出来（旧代码在帽檐里，新代码在紧凑区；让位时也留着占位节点）。
+      await expect(page.getByText(ANY_STEER_HINT).first()).toBeAttached({ timeout: 10_000 })
+      await page.waitForTimeout(400)
+      await shot("after-send-now")
+
+      // 文案：不再出现「检查点 / Agent」那版。
+      await expect(page.getByText(OLD_STEER_HINT)).toHaveCount(0)
+      // 有审批卡时帽檐（输入框上方）里不挂这条提示。
+      await expect(page.locator("form[data-composer]").locator("..").getByText(STEER_HINT[lang])).toHaveCount(0)
+
+      // 三钮：可见、在视口内、可用、中心点命中自己、试点（trial）过 actionability（含「没被别的元素接走指针」）。
+      const approvalBoxes: Box[] = []
+      for (const id of ["approval-session", "approval-deny", "approval-allow"]) {
+        const button = page.locator(`[data-testid="${id}"]`)
+        await expect(button, `${lang} ${id} visible`).toBeVisible()
+        await expect(button, `${lang} ${id} in viewport`).toBeInViewport({ ratio: 1 })
+        await expect(button, `${lang} ${id} enabled`).toBeEnabled()
+        const box = await button.boundingBox()
+        expect(box, `${lang} ${id} box`).not.toBeNull()
+        approvalBoxes.push(box!)
+        expect(box!.x).toBeGreaterThanOrEqual(0)
+        expect(box!.y).toBeGreaterThanOrEqual(0)
+        expect(box!.x + box!.width).toBeLessThanOrEqual(size.width)
+        expect(box!.y + box!.height).toBeLessThanOrEqual(size.height)
+        const hit = await button.evaluate(
+          (el, p) => {
+            const at = document.elementFromPoint(p.x, p.y)
+            return { ok: Boolean(at && (at === el || el.contains(at))), what: at ? `${at.tagName} ${(at.textContent ?? "").slice(0, 40)}` : "null" }
+          },
+          { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 }
+        )
+        expect(hit.ok, `${lang} ${id} elementFromPoint hits itself (got ${hit.what})`).toBe(true)
+        await button.click({ trial: true, timeout: 3_000 })
+      }
+
+      // 提示若画出来了：整条在视口内、不和任何审批按钮相交。
+      const hint = page.locator('[data-testid="dock-runtime-hint"]')
+      if (await hint.isVisible()) {
+        await expect(hint).toHaveText(STEER_HINT[lang])
+        const hb = (await hint.boundingBox())!
+        for (const a of approvalBoxes) expect(intersects(hb, a), `${lang} hint vs approval ${JSON.stringify(a)}`).toBe(false)
+      }
+
+      // 真点「批准」（不带 force）：审批被处理，没误点到别处。
+      await page.locator('[data-testid="approval-allow"]').click({ timeout: 5_000 })
+      await expect(page.locator('[data-testid="approval-allow"]')).toHaveCount(0, { timeout: 10_000 })
+      await shot("approved")
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}

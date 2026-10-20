@@ -1,5 +1,7 @@
 /**
  * 排队一次性提示。列表在对话末尾虚线泡，这里不再重复计数。
+ * 画在哪由 runtimeHintPlacement 定：有审批卡时这里（输入框帽檐）一条都不画，
+ * 「马上发」类提示改由 DockRuntimeHint 画在审批卡上方（#158 gate P1）。
  */
 import { useEffect, useState } from "react"
 import { RiCloseLine } from "@remixicon/react"
@@ -7,6 +9,7 @@ import { useT, type TranslateFn } from "@renderer/i18n"
 import { listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-styles"
+import { runtimeHintPlacement } from "./runtime-hint-placement"
 
 export function ComposerFollowupRail() {
   const t = useT()
@@ -23,10 +26,7 @@ export function ComposerFollowupRail() {
     return subscribeFollowups(sync)
   }, [sessionId])
   if (!hint) return null
-  // 队列已空时不再挂「将在当前任务完成后执行」（jojo 巡检）。
-  if ((hint === "queued" || hint === "chipQueued") && listFollowups(sessionId).length === 0) return null
-  // 有审批卡时排队项已经挂在审批卡上方的紧凑行里，再挂「下一句 / 将在当前任务完成后执行」是重复，还多占 34px（luna g158-03、36）。
-  if (hideQueuedHintForDock(hint, approvalPending)) return null
+  if (runtimeHintPlacement(hint, approvalPending, listFollowups(sessionId).length) !== "frame") return null
 
   return (
     <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>
@@ -45,18 +45,13 @@ export function ComposerFollowupRail() {
   )
 }
 
-/** 紧凑排队行（shouldDockQueuedFollowups）在的时候，排队类提示不再单独占一条。 */
-export function hideQueuedHintForDock(hint: RuntimeHintCode, approvalPending: boolean): boolean {
-  return approvalPending && (hint === "queued" || hint === "chipQueued")
-}
-
-function nextQueuedText(sessionId: string | null): string {
+export function nextQueuedText(sessionId: string | null): string {
   const item = listFollowups(sessionId)[0]
   const raw = item?.draft || item?.prompt || ""
   return raw.replace(/\s+/g, " ").trim().slice(0, 80)
 }
 
-function hintLabel(hint: RuntimeHintCode, t: TranslateFn, nextText: string) {
+export function hintLabel(hint: RuntimeHintCode, t: TranslateFn, nextText: string) {
   if (hint === "chipQueued" || hint === "queued") {
     return nextText ? t("chat.runtimeQueuedNext", { text: nextText }) : t("chat.runtimeQueuedHint")
   }

@@ -157,7 +157,8 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
         }
         return
       }
-      const missing = approvalOverflow(column) + (count > 1 ? approvalBodySqueeze(column) : 0)
+      // 「马上发」提示（DockRuntimeHint）挤到审批卡时它自己先让位，这里不为它折叠排队行。
+      const missing = approvalOverflow(column) + (count > 1 ? approvalBodySqueeze(column) : 0) - dockHintHeight(column)
       if (missing > 1) {
         restoreAtRef.current = columnHeight + missing + 2
         setTight(true)
@@ -172,8 +173,14 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
   return enabled && tight
 }
 
+/** 审批卡上方「马上发」提示占的高度；没画 / 已让位（display:none）为 0。 */
+function dockHintHeight(column: HTMLElement): number {
+  const hint = column.querySelector<HTMLElement>(':scope > [data-testid="dock-runtime-hint"]')
+  return hint ? hint.getBoundingClientRect().height : 0
+}
+
 /** 审批卡底栏（三钮）超出对话列底边多少 px；没超出 / 没有审批卡为 0。 */
-function approvalOverflow(column: HTMLElement): number {
+export function approvalOverflow(column: HTMLElement): number {
   const footer = column.querySelector('[data-testid="permission-dock"] article > footer')
   if (!footer) return 0
   return Math.max(0, footer.getBoundingClientRect().bottom - column.getBoundingClientRect().bottom)
@@ -181,7 +188,7 @@ function approvalOverflow(column: HTMLElement): number {
 
 /** 卡内正文只剩一条缝（< 40px 且内容更多）时还差多少 px：计划卡至少要露出文件名那一行（luna g158-05）。 */
 const APPROVAL_BODY_MIN_PX = 40
-function approvalBodySqueeze(column: HTMLElement): number {
+export function approvalBodySqueeze(column: HTMLElement): number {
   const body = column.querySelector<HTMLElement>('[data-testid="permission-dock"] [data-testid="approval-card-body"]')
   if (!body) return 0
   return Math.max(0, Math.min(body.scrollHeight, APPROVAL_BODY_MIN_PX) - body.clientHeight)

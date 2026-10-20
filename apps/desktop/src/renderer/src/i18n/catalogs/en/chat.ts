@@ -91,7 +91,7 @@ export const enChat = {
   presetName: "Name",
   presetNote: "When to use",
   presetRemove: "Remove",
-  runtimeSteeredHint: "Queued for the next safe checkpoint so the agent can adjust",
+  runtimeSteeredHint: "Got it. The next step will follow what you said.",
   runtimeImageSteerQueuedHint: "This agent can't take images mid-run; this message (with images) will go out next turn",
   runtimeRemoveFollowup: "Remove queued follow-up",
   runtimeSteerItem: "Send right away",

@@ -5,6 +5,7 @@
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
 import { QueuedFollowups } from "@renderer/components/ai-chat/thread/queued-followups"
+import { DockRuntimeHint } from "@renderer/components/ai-chat/thread/dock-runtime-hint"
 import { sessionScopedCount, useSessionChanges } from "@renderer/hooks/session-changes"
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
@@ -253,7 +254,8 @@ function ChatThreadBody(props: {
               className={cx(
                 "flex min-h-14 min-w-0 flex-1 flex-col",
                 pendingApproval && "min-h-[min(13rem,25cqh)]",
-                "[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0"
+                "[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0",
+                "[&:has(>[data-testid=dock-runtime-hint]:not([hidden]))>[data-thread-root]]:min-h-0"
               )}
             >
               {props.historyPending ? (
@@ -269,6 +271,8 @@ function ChatThreadBody(props: {
               )}
               {/* 有审批卡时排队项挂在审批卡正上方、不随消息滚，按钮不被页头挡、不和审批按钮叠（pr157-gate-52/53）。 */}
               <QueuedFollowups placement="dock" />
+              {/* 有审批卡时「马上发」提示画在这里（同列、文档流），不进输入框帽檐，不把三钮挤到帽檐底下（#158 gate P1）。 */}
+              <DockRuntimeHint />
               <PermissionDock />
             </div>
             <EnvironmentPanel open={environmentOpen} />

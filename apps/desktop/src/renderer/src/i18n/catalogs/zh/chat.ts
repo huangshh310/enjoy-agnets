@@ -90,7 +90,7 @@ export const zhChat = {
   presetName: "名称",
   presetNote: "何时使用",
   presetRemove: "删除",
-  runtimeSteeredHint: "已交给下一步检查点，Agent 会按你的插话调整",
+  runtimeSteeredHint: "已收到，下一步会按你的话调整。",
   runtimeImageSteerQueuedHint: "这个 Agent 运行中收不了图，带图的这条排在下一轮发出",
   runtimeRemoveFollowup: "移除排队任务",
   runtimeSteerItem: "马上发给它",
