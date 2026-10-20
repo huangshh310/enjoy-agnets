@@ -7,6 +7,7 @@ import { takeHeldApprovalResolved } from "../stores/held-approval-resolved"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
 import { hydrateSessionRunning } from "./hydrate-session-running"
+import { markRunningTail } from "./mark-running-tail"
 import { applyFinishedHydrate } from "./session-hydrate-finish"
 import { noticeAfterRestartHydrate } from "./hydrate-restart-notice"
 import { shouldClearErrorOnSwitch } from "./session-switch-error"
@@ -29,7 +30,8 @@ export function applySessionHydrate(input: {
       generation: input.generation,
       sessionId: input.sessionId,
       currentSessionId: latest.sessionId,
-      dbMessages: threadFromRows(input.dbRows, { sealAbandoned: !running }),
+      // 还在跑：最后一条用户话之后的助手话标成 streaming（思考行现在时、不提前出结束态按钮）。
+      dbMessages: markRunningTail(threadFromRows(input.dbRows, { sealAbandoned: !running }), running),
       liveMessages: latest.messages,
       sameSession: input.sameSession,
       running
