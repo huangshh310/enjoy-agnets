@@ -3,33 +3,30 @@
  * 原来的 defaultProviderLabel（返回密钥档案名）已删：失败卡不许出现档案名（luna P2 定稿）。
  */
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { presetDisplayName } from "./credential/key-status.ts"
+import { providerFace, type ProviderFace } from "./provider-face.ts"
 
 export type ListedProvider = {
   id: string
   name?: string
   /** 预设 kind（openai / deepseek / custom…）：供应商品牌名从这里来。 */
   kind?: string
+  /** 端点地址：自定义端点只取主机名。 */
+  baseURL?: string
   active?: boolean
   hasKey?: boolean
   enabled?: boolean
 }
 
 /**
- * 当前默认路线的**供应商品牌名**（OpenAI / DeepSeek…），按档案的预设 kind 取，和设置页供应商行、
- * 向导「密钥被 {name} 拒绝」同源（presetDisplayName）。
+ * 当前默认路线该怎么称呼（见 provider-face：品牌名 → 端点主机名 → 「模型服务」）。
  * luna P2（定稿）：失败卡只说供应商 / 引擎名，**不出现密钥档案名**（「Work key A」「E2E Stub Key」），括号里也不要。
- * 自定义端点（custom）没有品牌名，用 fallback（「当前供应商」），同样不拿档案名顶。
  */
-export function defaultProviderBrand(
+export function defaultProviderFace(
   readiness: ChatReadiness | undefined,
-  providers: readonly ListedProvider[],
-  fallback: string
-): string {
+  providers: readonly ListedProvider[]
+): ProviderFace {
   const id = resolveDefaultProviderId(readiness, providers)
-  const kind = id ? providers.find((row) => row.id === id)?.kind : undefined
-  // 自定义端点 / 未知预设 / 没有 kind 都回落成通用说法，绝不拿档案名顶。
-  return presetDisplayName(kind, fallback) || fallback
+  return providerFace(id ? providers.find((row) => row.id === id) : undefined)
 }
 
 export function defaultProviderId(readiness: ChatReadiness | undefined): string | undefined {

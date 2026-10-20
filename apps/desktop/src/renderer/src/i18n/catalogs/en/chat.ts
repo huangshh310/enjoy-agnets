@@ -492,7 +492,8 @@ export const enChat = {
   // luna 锁定（#136 r5）：「再发一次」/「再试一次」隐藏时替换第二行（重试卡）或接在原因下（受限卡）。
   sendFailedEditThenSend: "Press Send when you're ready. Nothing goes out on its own.",
   resendingDraft: "Sending…",
-  credentialProviderFallback: "this provider",
+  credentialProviderGeneric: "the model service",
+  credentialProviderGenericStart: "The model service",
   agentOpenSettings: "Open path settings",
   agentInstall: "Install",
   agentInstalling: "Installing…",
