@@ -1,6 +1,8 @@
 /**
  * 写盘后记 refs/enjoy/checkpoints/<stamp>。
  * 用临时 index + commit-tree，不改用户当前分支、不碰工作区 index。
+ * 内部快照一律用 Enjoy 身份（env 覆盖，不写用户 git config）：没配 user.name/email 也能记，
+ * 隐藏 ref 里也不带用户身份。失败带 git stderr 记日志并返回 null。
  */
 import { promises as fs } from "node:fs"
 import { isAbsolute, join, resolve, sep } from "node:path"
@@ -21,6 +23,17 @@ export type EnjoyCheckpointRecord = {
   runId?: string
   kind?: EnjoyCheckpointMeta["kind"]
 }
+
+/** 内部检查点提交的固定身份；env 优先级高于任何 config（含 user.useConfigOnly）。 */
+export const ENJOY_CHECKPOINT_IDENTITY_ENV: Readonly<Record<string, string>> = Object.freeze({
+  GIT_AUTHOR_NAME: "Enjoy",
+  GIT_AUTHOR_EMAIL: "enjoy@local",
+  GIT_COMMITTER_NAME: "Enjoy",
+  GIT_COMMITTER_EMAIL: "enjoy@local"
+})
+
+type SnapshotStep = "read-tree" | "add" | "write-tree" | "commit-tree" | "update-ref"
+type SnapshotOutcome = { ok: true; sha: string } | { ok: false; step: SnapshotStep; stderr: string }
 
 export function enjoyCheckpointRef(stamp: number): string {
   return `refs/enjoy/checkpoints/${stamp}`
@@ -52,11 +65,12 @@ export async function recordEnjoyCheckpoint(
   if (!gitAbs) return null
   const indexFile = enjoyTempIndexPath(gitAbs, "record")
   try {
-    const sha = await commitWorktreeSnapshot(workspaceRoot, indexFile, formatCheckpointSubject(meta))
-    if (!sha) return null
+    const snap = await commitWorktreeSnapshot(workspaceRoot, indexFile, formatCheckpointSubject(meta))
+    if (!snap.ok) return logRecordFailure(workspaceRoot, meta, snap.step, snap.stderr)
     const ref = enjoyCheckpointRef(Date.now())
-    const updated = await runGit(workspaceRoot, ["update-ref", ref, sha])
-    return updated.exitCode === 0 ? ref : null
+    const updated = await runGit(workspaceRoot, ["update-ref", ref, snap.sha])
+    if (updated.exitCode !== 0) return logRecordFailure(workspaceRoot, meta, "update-ref", updated.stderr)
+    return ref
   } finally {
     await fs.unlink(indexFile).catch(() => undefined)
   }
@@ -96,20 +110,45 @@ async function commitWorktreeSnapshot(
   workspaceRoot: string,
   indexFile: string,
   message: string
-): Promise<string | null> {
+): Promise<SnapshotOutcome> {
   const hasHead = (await runGit(workspaceRoot, ["rev-parse", "--verify", "HEAD"])).exitCode === 0
   if (hasHead) {
     const read = await runGitIndex(workspaceRoot, ["read-tree", "HEAD"], indexFile)
-    if (read.exitCode !== 0) return null
+    if (read.exitCode !== 0) return { ok: false, step: "read-tree", stderr: read.stderr }
   }
-  if ((await runGitIndex(workspaceRoot, ["add", "-A"], indexFile)).exitCode !== 0) return null
-  const tree = (await runGitIndex(workspaceRoot, ["write-tree"], indexFile)).stdout.trim()
-  if (!tree) return null
+  const added = await runGitIndex(workspaceRoot, ["add", "-A"], indexFile)
+  if (added.exitCode !== 0) return { ok: false, step: "add", stderr: added.stderr }
+  const written = await runGitIndex(workspaceRoot, ["write-tree"], indexFile)
+  const tree = written.stdout.trim()
+  if (written.exitCode !== 0 || !tree) return { ok: false, step: "write-tree", stderr: written.stderr }
   const args = hasHead
     ? ["commit-tree", tree, "-p", "HEAD", "-m", message]
     : ["commit-tree", tree, "-m", message]
-  const sha = (await runGitIndex(workspaceRoot, args, indexFile)).stdout.trim()
-  return sha || null
+  const committed = await runExecutable(workspaceRoot, "git", args, 30_000, {
+    GIT_INDEX_FILE: indexFile,
+    ...ENJOY_CHECKPOINT_IDENTITY_ENV
+  })
+  const sha = committed.stdout.trim()
+  if (committed.exitCode !== 0 || !sha) return { ok: false, step: "commit-tree", stderr: committed.stderr }
+  return { ok: true, sha }
+}
+
+/** 记账失败不能静默：带 git stderr 打主进程日志；调用方仍按 null（无记录）走。 */
+function logRecordFailure(
+  workspaceRoot: string,
+  meta: EnjoyCheckpointMeta | undefined,
+  step: SnapshotStep,
+  stderr: string
+): null {
+  console.error("[checkpoint] record failed", {
+    workspaceRoot,
+    step,
+    kind: meta?.kind,
+    sessionId: meta?.sessionId,
+    runId: meta?.runId,
+    stderr: stderr.trim()
+  })
+  return null
 }
 
 /** 记账 / 还原共用临时 index，禁止写用户 `.git/index`。 */
