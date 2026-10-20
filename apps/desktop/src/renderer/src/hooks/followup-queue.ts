@@ -16,7 +16,8 @@ let items: FollowupItem[] = []
  * 按 sessionId 记在模块里，前台 / 后台停车都是同一份：后台那轮出错，切回来也不会自己发。
  * 队列空了就清掉（停着没意义，也不能拦住以后新排的）。
  */
-export type FollowupPausedReason = "stopped" | "error" | "quota"
+/** engineSwitched：运行中换了助手（handoff 停了上一轮）；文案与「停止」不同，行为一样（只认「继续」）。 */
+export type FollowupPausedReason = "stopped" | "engineSwitched" | "error" | "quota"
 const paused = new Map<string, FollowupPausedReason>()
 let hint: RuntimeHintCode = null
 let hintSessionId: string | null = null
@@ -43,6 +44,8 @@ export function pauseFollowups(sessionId: string | null | undefined, reason: Fol
   if (current === reason) return true
   // 同一次失败常常两头都报（run.error 带额度码、发送链再按通用失败报一次）：通用的「出错」不盖掉「额度用完」。
   if (current === "quota" && reason === "error") return true
+  // 换助手时先记 engineSwitched，随后被停那一轮的「用户停止」run.error 回来：不改回普通「停止」。
+  if (current === "engineSwitched" && reason === "stopped") return true
   paused.set(sessionId, reason)
   notify()
   return true

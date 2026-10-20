@@ -38,12 +38,17 @@ export function abortOrphanedRun(runId: string) {
  * 立刻停 UI。不要等 abort IPC，也不要求已经有 runId。
  * 空的 pending 助手直接丢掉，避免留下「Thinking / No reasoning trace」。
  */
-export async function abortComposerRun() {
+export async function abortComposerRun(opts?: {
+  /** 为什么停：默认用户点停止；切换助手（handoff）传 engineSwitched，排队说明行换成「你换了助手…」。 */
+  pauseReason?: "stopped" | "engineSwitched"
+}) {
   const store = useChatStore.getState()
   const runId = store.runId
   const sessionId = store.sessionId
   // E1：用户停止——排队的先不发（在放 running 之前停住，自启看不到空档）。
-  pauseFollowups(sessionId, "stopped")
+  // 换助手时这一轮没在跑：队列若停着（出错 / 额度）保留原因，不改成「你换了助手」。
+  const reason = opts?.pauseReason ?? "stopped"
+  if (reason === "stopped" || store.running) pauseFollowups(sessionId, reason)
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)

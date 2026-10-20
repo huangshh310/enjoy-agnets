@@ -28,6 +28,11 @@ export function followupPauseReasonForRunError(event: { message: string; code?: 
   return followupPauseReasonForFailure(event.message, event.code)
 }
 
+/** 中性（灰色）的暂停：用户自己停的（点停止 / 换助手）。出错、额度用完是琥珀色。 */
+export function isNeutralPause(reason: FollowupPausedReason | null): boolean {
+  return reason === "stopped" || reason === "engineSwitched"
+}
+
 /** 这种暂停在同会话一轮正常跑完后自动解除吗。 */
 export function autoResumesAfterSuccess(reason: FollowupPausedReason | null): boolean {
   return reason === "error" || reason === "quota"

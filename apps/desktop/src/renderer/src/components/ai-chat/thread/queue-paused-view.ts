@@ -2,6 +2,7 @@
  * E1 暂停说明行的纯判定：原因文案（英文 N=1 单数）、哪些按钮露出，以及「全部清空」的 toast + 撤回。
  */
 import type { FollowupPausedReason } from "@renderer/hooks/followup-queue"
+import { isNeutralPause } from "@renderer/hooks/followup-pause"
 import { clearAllFollowups, undoClearFollowups } from "@renderer/hooks/runtime-interact/followup-pause-actions"
 import { showAppToast, ARCHIVE_UNDO_TOAST_MS } from "@renderer/lib/app-toast"
 
@@ -17,6 +18,7 @@ export type QueuePausedView = {
 
 const REASON_KEY: Record<FollowupPausedReason, string> = {
   stopped: "chat.queuePausedStopped",
+  engineSwitched: "chat.queuePausedEngineSwitched",
   error: "chat.queuePausedError",
   quota: "chat.queuePausedQuota"
 }
@@ -36,7 +38,7 @@ export function queuePausedView(input: {
   t: Translate
 }): QueuePausedView {
   const reasonText = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
-  const resendFirst = input.reason !== "stopped" && input.failureCardRetryShowing
+  const resendFirst = !isNeutralPause(input.reason) && input.failureCardRetryShowing
   return {
     text: resendFirst ? `${reasonText}${joiner(reasonText)}${input.t("chat.queuePausedResendFirst")}` : reasonText,
     showContinue: !resendFirst,

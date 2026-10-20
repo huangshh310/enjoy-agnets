@@ -15,6 +15,7 @@ import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
+import { isNeutralPause } from "@renderer/hooks/followup-pause"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { clearQueuedWithUndo, queuePausedView } from "./queue-paused-view"
@@ -24,7 +25,7 @@ export function QueuePausedIcon({ reason }: { reason: FollowupPausedReason }) {
   return (
     <RiPauseCircleLine
       aria-hidden
-      className={cx("size-3.5 shrink-0", reason === "stopped" ? "text-text-tertiary" : "text-status-yellow-text")}
+      className={cx("size-3.5 shrink-0", isNeutralPause(reason) ? "text-text-tertiary" : "text-status-yellow-text")}
     />
   )
 }
@@ -60,7 +61,7 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
         data-testid="queue-paused-reason"
         className={cx(
           "min-w-0 flex-1 text-caption-1-regular",
-          reason === "stopped" ? "text-text-secondary" : "text-status-yellow-text"
+          isNeutralPause(reason) ? "text-text-secondary" : "text-status-yellow-text"
         )}
       >
         {view.text}

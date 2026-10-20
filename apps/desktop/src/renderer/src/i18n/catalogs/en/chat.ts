@@ -102,6 +102,8 @@ export const enChat = {
   runtimeQueueMore: "{n} more",
   queuePausedStopped: "You stopped the last turn, so {n} queued messages are on hold.",
   queuePausedStoppedOne: "You stopped the last turn, so 1 queued message is on hold.",
+  queuePausedEngineSwitched: "You switched assistants, so the last turn stopped and {n} queued messages are on hold.",
+  queuePausedEngineSwitchedOne: "You switched assistants, so the last turn stopped and 1 queued message is on hold.",
   queuePausedError: "Your last message didn't go through, so {n} queued messages are on hold to keep them in order.",
   queuePausedErrorOne: "Your last message didn't go through, so 1 queued message is on hold to keep it in order.",
   queuePausedQuota: "{provider} is out of credit, so {n} queued messages are on hold. Top up, then press Continue.",

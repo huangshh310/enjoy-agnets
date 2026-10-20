@@ -374,11 +374,76 @@ test("接线：说明行在排队区顶部（同一容器）；停止灰色、�
   const idx = (s: string) => row.indexOf(s)
   assert.ok(idx("queue-paused-clear") < idx("queue-paused-edit-first") && idx("queue-paused-edit-first") < idx("queue-paused-continue"))
   assert.match(row, /text-status-yellow-text/)
-  assert.match(row, /reason === "stopped"/)
+  assert.match(row, /isNeutralPause\(reason\) \? "text-text-tertiary"/)
   assert.match(dock, /<QueuePausedRow/)
   assert.match(dock, /queue-paused-collapsed/)
   assert.equal(zhChat.queuePausedCollapsed, "已暂停 · 排队 {n} 条")
   assert.equal(zhChat.queuePausedClearAll, "全部清空")
   assert.equal(zhChat.queuePausedEditFirst, "改一下再发")
   assert.equal(zhChat.queuePausedContinue, "继续")
+})
+
+// ---- luna 定稿补充：运行中换了助手（engine handoff 停了上一轮）----
+const { confirmEngineHandoff, useEngineHandoffStore } = await import("../components/ai-chat/agent-picker/handoff/engine-handoff-store.ts")
+
+function pendingHandoff() {
+  useEngineHandoffStore.setState({ phase: "handoff_pending", fromRuntimeId: "claude", toRuntimeId: "amp", draftSummary: "", filePaths: [], banner: null, pendingPreset: null } as never)
+}
+
+test("换助手（真走 confirmEngineHandoff）：运行中有排队 → engineSwitched；被停那一轮的「用户停止」回来不改回 stopped；一轮跑完不自动解除；点继续才发", async () => {
+  running("ses_switch")
+  enqueue("ses_switch", "第一条", "第二条")
+  pendingHandoff()
+  assert.equal(await confirmEngineHandoff(), true)
+  assert.equal(queue.followupPausedReason("ses_switch"), "engineSwitched")
+  dispatchAgentEvent({ type: "run.error", runId: "run_ses_switch", sessionId: "ses_switch", message: "aborted by user" } as never)
+  assert.equal(queue.followupPausedReason("ses_switch"), "engineSwitched")
+  dispatchAgentEvent({ type: "run.end", runId: "run_other", sessionId: "ses_switch" } as never)
+  assert.equal(queue.followupPausedReason("ses_switch"), "engineSwitched")
+  useChatStore.setState({ running: false } as never)
+  await flush()
+  assert.deepEqual(sent, [])
+  actions.continueFollowups("ses_switch")
+  await flush()
+  assert.deepEqual(sent, ["第一条"])
+})
+
+test("换助手时这一轮没在跑（队列已因出错停着）→ 原因保留 error，不改成「你换了助手」", async () => {
+  running("ses_switch2")
+  enqueue("ses_switch2", "第一条")
+  dispatchAgentEvent({ type: "run.error", runId: "run_ses_switch2", sessionId: "ses_switch2", message: "provider_unreachable", code: "provider_unreachable" } as never)
+  useChatStore.setState({ running: false } as never)
+  pendingHandoff()
+  await confirmEngineHandoff()
+  assert.equal(queue.followupPausedReason("ses_switch2"), "error")
+})
+
+test("用户点停止仍是 stopped（换助手的原因不外溢）；之后再记 engineSwitched 会覆盖 stopped", async () => {
+  running("ses_switch3")
+  enqueue("ses_switch3", "第一条")
+  await abortComposerRun()
+  assert.equal(queue.followupPausedReason("ses_switch3"), "stopped")
+  queue.pauseFollowups("ses_switch3", "engineSwitched")
+  assert.equal(queue.followupPausedReason("ses_switch3"), "engineSwitched")
+})
+
+test("换助手文案（luna 定稿）：中英、N=1 单数、灰色中性、不接「先发上面这条」；占位符与停止一致", () => {
+  const zh = tr(zhChat as never)
+  const en = tr(enChat as never)
+  const base = { reason: "engineSwitched" as const, composerHasContent: false, failureCardRetryShowing: true, provider: "P" }
+  const zh2 = view.queuePausedView({ ...base, count: 2, t: zh })
+  assert.equal(zh2.text, "你换了助手，上一轮停了，排队的 2 条先不发。")
+  assert.deepEqual(pick(zh2), { showContinue: true, showEditFirst: true })
+  assert.equal(view.queuePausedView({ ...base, count: 3, t: en }).text, "You switched assistants, so the last turn stopped and 3 queued messages are on hold.")
+  assert.equal(view.queuePausedView({ ...base, count: 1, t: en }).text, "You switched assistants, so the last turn stopped and 1 queued message is on hold.")
+  assert.equal(view.queuePausedView({ ...base, count: 1, t: zh }).text, "你换了助手，上一轮停了，排队的 1 条先不发。")
+  assert.equal(pause.isNeutralPause("engineSwitched"), true)
+  assert.equal(pause.isNeutralPause("stopped"), true)
+  assert.equal(pause.isNeutralPause("error"), false)
+  assert.equal(pause.autoResumesAfterSuccess("engineSwitched"), false)
+  const holes = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",")
+  for (const cat of [zhChat, enChat] as any[]) {
+    assert.equal(holes(cat.queuePausedEngineSwitched), holes(cat.queuePausedStopped))
+    assert.equal(holes(cat.queuePausedEngineSwitchedOne), holes(cat.queuePausedStoppedOne))
+  }
 })

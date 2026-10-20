@@ -101,6 +101,8 @@ export const zhChat = {
   runtimeQueueMore: "还有 {n} 条",
   queuePausedStopped: "你停止了上一轮，排队的 {n} 条先不发。",
   queuePausedStoppedOne: "你停止了上一轮，排队的 1 条先不发。",
+  queuePausedEngineSwitched: "你换了助手，上一轮停了，排队的 {n} 条先不发。",
+  queuePausedEngineSwitchedOne: "你换了助手，上一轮停了，排队的 1 条先不发。",
   queuePausedError: "上一条没发出去，排队的 {n} 条先不发，免得顺序乱。",
   queuePausedErrorOne: "上一条没发出去，排队的 1 条先不发，免得顺序乱。",
   queuePausedQuota: "{provider} 额度用完了，排队的 {n} 条先不发。充值后点继续。",
