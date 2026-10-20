@@ -5,8 +5,11 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   inspectorDrawerWidth,
+  inspectorOpenSize,
+  inspectorRestorePercent,
   inspectorUsesDrawer,
   needsInspectorDefaultSize,
+  preferredInspectorPercent,
   sanitizeSplitLayout
 } from "./inspector-panel-size.ts"
 
@@ -44,4 +47,29 @@ test("抽屉宽最多 420、左边留 24，再窄也不为负", () => {
   assert.equal(inspectorDrawerWidth(648), 420)
   assert.equal(inspectorDrawerWidth(400), 376)
   assert.equal(inspectorDrawerWidth(10), 0)
+})
+
+test("拖完 / 点完按钮后的宽度才记成用户宽度；被压扁、收起不记", () => {
+  assert.equal(preferredInspectorPercent({ asPercentage: 52, inPixels: 583 }), 52)
+  assert.equal(preferredInspectorPercent({ asPercentage: 20, inPixels: 224 }), null)
+  assert.equal(preferredInspectorPercent({ asPercentage: 0, inPixels: 0 }), null)
+})
+
+test("放宽后比用户上次的百分比窄、或被压成 0 就回到那个百分比，不是固定 38%", () => {
+  assert.equal(inspectorRestorePercent({ asPercentage: 45, inPixels: 397 }, 52), 52)
+  assert.equal(inspectorRestorePercent({ asPercentage: 0, inPixels: 0 }, 52), 52)
+  // 已经不比它窄（含加宽按钮 58%）：不动。
+  assert.equal(inspectorRestorePercent({ asPercentage: 52, inPixels: 583 }, 52), null)
+  assert.equal(inspectorRestorePercent({ asPercentage: 58, inPixels: 650 }, 52), null)
+  // 没有记录：按默认 38%。
+  assert.equal(inspectorRestorePercent({ asPercentage: 0, inPixels: 0 }, null), 38)
+  assert.equal(inspectorRestorePercent({ asPercentage: 38, inPixels: 426 }, null), null)
+})
+
+test("百分比在窄分栏里不到 280px 时按 280px 打开", () => {
+  assert.equal(inspectorOpenSize(38, 1122), "38%")
+  assert.equal(inspectorOpenSize(38, 682), "280px")
+  assert.equal(inspectorOpenSize(52, 682), "52%")
+  // 没量到分栏宽：照百分比。
+  assert.equal(inspectorOpenSize(38, 0), "38%")
 })

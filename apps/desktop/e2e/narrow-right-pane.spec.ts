@@ -4,7 +4,7 @@
  * 中英文 × 768x654 / 733x480（窄窗：覆盖式抽屉，Esc 和按钮都能关）+ 1024x670 / 1440x900（宽窗：照旧并排，按钮关）。
  * 断言：面板宽度 > 0（≥ 240）且完全在视口内；关闭后面板不再占视口、主区宽度复原。
  * 另两条（luna / jojo main157-patrol-08~15、m157-20/21：窄窗把面板压成 0 后放宽也回不来，「去审查」要点两次开关才找回）：
- *   ① 1440 打开 → 拖窄到 800 → 放宽回 1440：面板宽 > 0 且可见；
+ *   ① 1440 打开、把分隔条拖到自己的宽度 → 拖窄到 800（抽屉）→ 放宽回 1440：面板回到拖窄前用户自己的宽度（±4px，不是固定 38%）；
  *   ② 800 打开 → 放宽到 1024 → 关闭 → 点一次「去审查」就打开；
  *   ③ 1024 开着时把分隔条拖到窗外、面板被压成 0（开关仍是「开」），不先关，直接点一次「去审查」宽度就恢复（leo e40edfb0 BLOCK）。
  * 窄窗抽屉开着时来了审批：抽屉自动收起，审批卡按钮露出、点得到；审批期间手动再开抽屉不被收回。
@@ -209,7 +209,7 @@ async function shot(page: Page, name: string) {
 }
 
 for (const lang of ["zh", "en"] as const) {
-  test(`1440 打开 → 拖窄到 800 → 放宽回 1440，面板自动回到可用宽度（${lang}）`, async () => {
+  test(`1440 打开 → 拖窄到 800 → 放宽回 1440，面板自动回到拖窄前的宽度（${lang}）`, async () => {
     test.setTimeout(180_000)
     const { app, page, expand, collapse } = await launchWithChange(lang)
     try {
@@ -219,21 +219,46 @@ for (const lang of ["zh", "en"] as const) {
       await clickToggle(page, expand, `${lang} 1440 open`, wide)
       await expect(collapse).toHaveCount(1)
       await expectPaneUsable(page, `${lang} 1440 opened`, wide)
+      // 先把分隔条往左拖 160px，审查栏变成用户自己的宽度（不是默认 38%）：放宽回来要回到这个宽度。
+      const defaultWidth = await inspectorPanelWidth(page)
+      const sep = await inspectorSeparatorBox(page)
+      expect(sep, `${lang} separator present`).not.toBeNull()
+      const sy = sep!.y + sep!.height / 2
+      await page.mouse.move(sep!.x + sep!.width / 2, sy)
+      await page.mouse.down()
+      await page.mouse.move(sep!.x + sep!.width / 2 - 160, sy, { steps: 12 })
+      await page.mouse.up()
+      await page.waitForTimeout(400)
+      const userWidth = await inspectorPanelWidth(page)
+      // 前提：拖出来的宽度和默认 38% 明显不同，否则测不出「回到的是固定 38%」。
+      expect(Math.abs(userWidth - defaultWidth), `${lang} dragged ${defaultWidth}→${userWidth}`).toBeGreaterThan(80)
       await shot(page, `patrol1-${lang}-1440-open`)
       for (const w of [1200, 1000, 900, 800]) {
         await page.setViewportSize({ width: w, height: 654 })
         await page.waitForTimeout(150)
       }
       await page.waitForTimeout(400)
+      // 前提：800 时确实进了抽屉模式（分栏里的 Panel 收起、审查栏画成抽屉）。
+      await expect(page.locator('[data-testid="inspector-host"]'), `${lang} 800 drawer`).toHaveAttribute("data-drawer", "open")
       await shot(page, `patrol1-${lang}-800-dragged`)
       for (const w of [900, 1000, 1200, 1440]) {
-        await page.setViewportSize({ width: w, height: w === 1440 ? 900 : 654 })
+        const step = { width: w, height: w === 1440 ? 900 : 654 }
+        await page.setViewportSize(step)
         await page.waitForTimeout(150)
+        // 一离开抽屉（1000 起并排放得下）面板就要有可用宽度，不能「开着」却是 0、一直等到 1440 才出来。
+        if (w >= 1000) await expectPaneUsable(page, `${lang} widen step ${w}`, step)
       }
       await page.waitForTimeout(500)
       await shot(page, `patrol1-${lang}-1440-widened`)
       await expect(collapse, `${lang} still open`).toHaveCount(1)
       await expectPaneUsable(page, `${lang} 1440 widened`, wide)
+      // 放宽回 1440：回到拖窄前用户自己的宽度（库按收起前的百分比 expand），不是固定 38%。
+      await expect
+        .poll(async () => Math.round(Math.abs((await inspectorPanelWidth(page)) - userWidth)), {
+          message: `${lang} widened back to user width ${userWidth} (default ${defaultWidth})`,
+          timeout: 3_000
+        })
+        .toBeLessThanOrEqual(4)
     } finally {
       await closeForRelaunch(app)
     }

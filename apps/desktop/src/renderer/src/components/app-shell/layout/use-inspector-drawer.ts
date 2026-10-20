@@ -18,9 +18,11 @@ export type InspectorDrawer = {
   right: number
   bottom: number
   width: number
+  /** 分栏总宽（量到的 px，抽屉 / 并排都有）：变宽时审查栏回到用户上次的宽度。 */
+  groupWidth: number
 }
 
-const DOCKED: InspectorDrawer = { active: false, top: 0, right: 0, bottom: 0, width: 0 }
+const DOCKED: InspectorDrawer = { active: false, top: 0, right: 0, bottom: 0, width: 0, groupWidth: 0 }
 
 export function useInspectorDrawer(splitRef: RefObject<HTMLElement | null>): InspectorDrawer {
   const [drawer, setDrawer] = useState<InspectorDrawer>(DOCKED)
@@ -30,15 +32,17 @@ export function useInspectorDrawer(splitRef: RefObject<HTMLElement | null>): Ins
     if (!el) return
     const measure = () => {
       const rect = el.getBoundingClientRect()
+      const groupWidth = Math.round(rect.width)
       const next = inspectorUsesDrawer(rect.width)
         ? {
             active: true,
             top: Math.round(rect.top + INSPECTOR_DRAWER_TOP_INSET_PX),
             right: Math.max(0, Math.round(window.innerWidth - rect.right)),
             bottom: Math.max(0, Math.round(window.innerHeight - rect.bottom)),
-            width: Math.round(inspectorDrawerWidth(rect.width))
+            width: Math.round(inspectorDrawerWidth(rect.width)),
+            groupWidth
           }
-        : DOCKED
+        : { ...DOCKED, groupWidth }
       setDrawer((prev) => (sameDrawer(prev, next) ? prev : next))
     }
     measure()
@@ -77,7 +81,14 @@ export function useInspectorDrawer(splitRef: RefObject<HTMLElement | null>): Ins
 }
 
 function sameDrawer(a: InspectorDrawer, b: InspectorDrawer): boolean {
-  return a.active === b.active && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.width === b.width
+  return (
+    a.active === b.active &&
+    a.top === b.top &&
+    a.right === b.right &&
+    a.bottom === b.bottom &&
+    a.width === b.width &&
+    a.groupWidth === b.groupWidth
+  )
 }
 
 /** 只认没人处理过的 Esc，焦点在菜单 / 列表框 / 弹窗里时让给它们。 */

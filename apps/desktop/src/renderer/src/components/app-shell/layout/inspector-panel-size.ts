@@ -54,3 +54,27 @@ export function inspectorUsesDrawer(groupWidthPx: number): boolean {
 export function inspectorDrawerWidth(groupWidthPx: number): number {
   return Math.max(0, Math.min(INSPECTOR_DRAWER_MAX_PX, groupWidthPx - INSPECTOR_DRAWER_GUTTER_PX))
 }
+
+export type InspectorPanelSize = { asPercentage: number; inPixels: number }
+
+/** 用户拖完分隔条 / 点完加宽、复原后记下的宽度（百分比）；不足最小栏宽（被压扁 / 收起）不记。 */
+export function preferredInspectorPercent(size: InspectorPanelSize): number | null {
+  if (size.inPixels < INSPECTOR_MIN_PX || !(size.asPercentage > 0)) return null
+  return size.asPercentage
+}
+
+/**
+ * 分栏变宽（含从抽屉回到并排）后审查栏要不要拉回：比用户上次的百分比窄、或不足最小栏宽（被压成 0）就拉回，
+ * 目标是用户上次的百分比，没有记录用默认 38%。不用拉回时为 null。
+ */
+export function inspectorRestorePercent(size: InspectorPanelSize, preferredPercent: number | null): number | null {
+  const target = preferredPercent != null && preferredPercent > 0 ? preferredPercent : INSPECTOR_DEFAULT_PERCENT
+  if (size.inPixels < INSPECTOR_MIN_PX) return target
+  return size.asPercentage < target - 0.5 ? target : null
+}
+
+/** 按百分比打开；这个百分比在当前分栏里不到最小栏宽（1000 宽分栏约 682，38% ≈ 259px，库会吸成 0）时按 280px 打开。 */
+export function inspectorOpenSize(targetPercent: number, groupPx: number): string {
+  if (groupPx > 0 && (targetPercent / 100) * groupPx < INSPECTOR_MIN_PX + 1) return `${INSPECTOR_MIN_PX}px`
+  return `${targetPercent}%`
+}
