@@ -20,6 +20,13 @@ export const QUEUE_CLEAR_UNDO_MS = ARCHIVE_UNDO_TOAST_MS
 export const QUEUE_MUTED_TEXT = "text-neutral-600 dark:text-neutral-400"
 
 /**
+ * luna #163（10-21 定）：时间线泡的「排队中 / 已暂停」标签。泡整体 opacity-80（表示「还没发」，保留），
+ * 亮色 neutral-600 只有 4.49，深一档 neutral-700 = 5.60；暗色 neutral-400 = 4.60 不变。紧凑行标签仍用 QUEUE_MUTED_TEXT。
+ * 脚本 /workspace/kai-e1-contrast/label-bubble.py。
+ */
+export const QUEUE_BUBBLE_LABEL_TEXT = "text-neutral-700 dark:text-neutral-400"
+
+/**
  * luna #163（10-21）：排队行「马上发给它 / 退回输入框」链接 ≥ 4.5:1，亮暗、常态和悬停都要（悬停底色 accent-500/10）。
  * 紧凑行（bg-secondary/60）：亮 accent-600 4.90–5.03，悬停 accent-700 5.70–5.84；
  *   暗 accent-600 只有 3.21–3.48，取最近能过的 accent-400 5.38–5.82，悬停往对比度高的方向走一档 accent-300 8.30–9.05。

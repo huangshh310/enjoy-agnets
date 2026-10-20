@@ -949,7 +949,15 @@ test("P2④ 对比度：说明行灰字 / 次按钮 / 排队行标签用 neutral
   assert.ok(!/text-text-secondary|bg-accent-500/.test(row.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")), "说明行不再用 4.43 / 3.76 的旧色")
   const turn = readSource("../components/ai-chat/thread/turns/queued-user-turn.tsx")
   assert.match(turn, /data-testid="queued-row-label" className=\{cx\("shrink-0", QUEUE_MUTED_TEXT\)\}/)
-  assert.match(turn, /data-testid="queued-row-label" className=\{QUEUE_MUTED_TEXT\}/)
+  assert.match(turn, /data-testid="queued-row-label" className=\{QUEUE_BUBBLE_LABEL_TEXT\}/)
+  // 时间线泡（整体 opacity-80，叠在白底）：亮色 neutral-600 = 4.49 不够，neutral-700 = 5.60；暗色 neutral-400（叠 #262626）= 4.60。
+  const mix = (a: string, b: string, k: number) =>
+    "#" + hex(a).map((v, i) => Math.round((v * k + hex(b)[i]! * (1 - k)) * 255).toString(16).padStart(2, "0")).join("")
+  const bubbleLabel = (fg: string, sec: string, page: string) => ratio(mix(fg, page, 0.8), mix(mix(sec, page, 0.5), page, 0.8))
+  assert.ok(bubbleLabel(T.n600, T.n100, T.white) < 4.5, "泡里亮色 neutral-600 确实不够")
+  assert.ok(bubbleLabel("#404040", T.n100, T.white) >= 4.5, "泡里亮色 neutral-700")
+  assert.ok(bubbleLabel(T.n400, T.n900, "#262626") >= 4.5, "泡里暗色 neutral-400")
+  assert.equal(view.QUEUE_BUBBLE_LABEL_TEXT, "text-neutral-700 dark:text-neutral-400")
 })
 
 // ---- luna #163（10-21 定）：排队行链接「马上发给它 / 退回输入框」≥ 4.5:1 ----

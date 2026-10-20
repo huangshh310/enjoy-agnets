@@ -9,7 +9,7 @@ import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { queuedExtrasLabel } from "../../composer-count-labels"
-import { QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey } from "../queue-paused-view"
+import { QUEUE_BUBBLE_LABEL_TEXT, QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey } from "../queue-paused-view"
 
 export function QueuedUserTurn({
   item,
@@ -128,7 +128,8 @@ export function QueuedUserTurn({
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-caption-2-medium">
-          <span data-testid="queued-row-label" className={QUEUE_MUTED_TEXT}>
+          {/* luna（10-21）：泡整体 opacity-80，neutral-600 只有 4.49，亮色深一档 neutral-700（5.60）；暗色仍 neutral-400（4.60）。 */}
+          <span data-testid="queued-row-label" className={QUEUE_BUBBLE_LABEL_TEXT}>
             {label}
           </span>
           {actions}
