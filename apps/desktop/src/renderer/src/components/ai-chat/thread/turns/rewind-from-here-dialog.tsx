@@ -22,6 +22,7 @@ import { revealRightPane } from "../../right-pane/open-pane"
 import {
   rewindDialogView,
   rewindOutcome,
+  settleRewind,
   type RewindButtonId,
   type RewindFailure
 } from "./rewind-dialog-view"
@@ -96,11 +97,14 @@ export function RewindFromHereDialog({
     setBusy(true)
     setErrorKey(null)
     try {
-      const result = await rewindFromUserTurn({
-        userMessageId: messageId,
-        restoreFiles,
-        confirmDeleteUntracked
-      })
+      // 抛错也收成通用失败（REWIND_THREW → 「从这里重来失败」），不留未处理的 rejection，原始错误不进界面。
+      const result = await settleRewind(() =>
+        rewindFromUserTurn({
+          userMessageId: messageId,
+          restoreFiles,
+          confirmDeleteUntracked
+        })
+      )
       if (!result.ok && result.code !== "CHECKPOINT_CONFIRM_REQUIRED") {
         // 只打 code，原始错误不进界面。
         console.warn(`[rewind] failed: ${result.code}`)
@@ -127,7 +131,8 @@ export function RewindFromHereDialog({
     untracked !== undefined
       ? { kind: "untracked", files: untracked }
       : { kind: "confirm", canRestoreFiles, gitRepo, failure },
-    t
+    t,
+    busy
   )
 
   function onButton(id: RewindButtonId) {
@@ -138,6 +143,8 @@ export function RewindFromHereDialog({
   }
 
   function goReview() {
+    // 重试跑着的时候不去审查：close() 不收窗，右栏会在弹窗背后打开（leo S1）。
+    if (busyRef.current) return
     close()
     revealRightPane("review")
   }
@@ -205,7 +212,8 @@ export function RewindFromHereDialog({
             <button
               type="button"
               data-testid="rewind-go-review"
-              className="font-semibold underline underline-offset-2 hover:opacity-80"
+              className="font-semibold underline underline-offset-2 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={view.failure.reviewDisabled}
               onClick={goReview}
             >
               {view.failure.reviewLabel}

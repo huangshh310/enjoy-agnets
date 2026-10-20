@@ -128,7 +128,7 @@ export const enChat = {
   rewindConfirmDelete: "Delete and restore",
   rewindBusy: "Stop the current run before editing from here",
   rewindNoCheckpoint: "Couldn't restore files: there's no record of how they looked before this turn. The chat wasn't changed.",
-  rewindRestorePartial: "Files were only partly restored. Some may have changed back and some may not. The chat wasn't changed. Check Review to see where things stand.",
+  rewindRestorePartial: "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand.",
   rewindGoReview: "Go to Review",
   rewindTruncateMissing: "This message is not persisted yet, so the thread cannot be truncated",
   rewindFailed: "Could not rewind from here",

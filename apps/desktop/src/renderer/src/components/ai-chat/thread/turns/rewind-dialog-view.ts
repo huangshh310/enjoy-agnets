@@ -41,6 +41,8 @@ export type RewindFailureView = {
   text: string
   /** partial 才有：跟在琥珀色提示后面的文字按钮「去审查」。 */
   reviewLabel: string | null
+  /** 重试跑着的时候「去审查」不能点（leo S1：否则会在弹窗背后打开右栏）。 */
+  reviewDisabled: boolean
 }
 
 export type RewindDialogView = {
@@ -62,7 +64,7 @@ export function rewindCanRestoreFiles(canRestoreFiles: boolean, gitRepo: boolean
   return canRestoreFiles && gitRepo === true
 }
 
-export function rewindDialogView(state: RewindDialogState, t: Translate): RewindDialogView {
+export function rewindDialogView(state: RewindDialogState, t: Translate, busy = false): RewindDialogView {
   const cancel: RewindButton = { id: "cancel", label: t("common.cancel"), variant: "outline" }
   if (state.kind === "untracked") {
     const files = state.files ?? []
@@ -86,9 +88,14 @@ export function rewindDialogView(state: RewindDialogState, t: Translate): Rewind
   }
   const failure: RewindFailureView | null =
     state.failure === "partial"
-      ? { kind: "partial", text: t("chat.rewindRestorePartial"), reviewLabel: t("chat.rewindGoReview") }
+      ? {
+          kind: "partial",
+          text: t("chat.rewindRestorePartial"),
+          reviewLabel: t("chat.rewindGoReview"),
+          reviewDisabled: busy
+        }
       : state.failure === "missing"
-        ? { kind: "missing", text: t("chat.rewindNoCheckpoint"), reviewLabel: null }
+        ? { kind: "missing", text: t("chat.rewindNoCheckpoint"), reviewLabel: null, reviewDisabled: busy }
         : null
   if (rewindCanRestoreFiles(state.canRestoreFiles, state.gitRepo)) {
     return {
@@ -151,6 +158,19 @@ export type RewindOutcome =
   | { kind: "untracked"; files: string[] | null }
   | { kind: "failure"; failure: RewindFailure }
   | { kind: "error"; messageKey: string }
+
+/** rewindFromUserTurn 抛错（不是返回 ok:false）时用的 code：走通用失败句，原始错误只进日志（leo S7）。 */
+export const REWIND_THREW = "REWIND_THREW"
+
+/** 跑一次重来，抛错也收成 { ok:false, code: REWIND_THREW }，不留未处理的 rejection。 */
+export async function settleRewind(run: () => Promise<RewindRunResult>): Promise<RewindRunResult> {
+  try {
+    return await run()
+  } catch (error) {
+    console.warn(`[rewind] failed: ${REWIND_THREW}`, error)
+    return { ok: false, code: REWIND_THREW }
+  }
+}
 
 export function rewindOutcome(result: RewindRunResult, restoreFiles: boolean): RewindOutcome {
   if (result.ok) return { kind: "close" }

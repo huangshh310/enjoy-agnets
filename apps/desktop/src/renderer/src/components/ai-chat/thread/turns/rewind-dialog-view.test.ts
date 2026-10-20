@@ -13,6 +13,8 @@ import {
   rewindErrorKey,
   rewindFailureKind,
   rewindOutcome,
+  settleRewind,
+  REWIND_THREW,
   type RewindDialogState,
   type RewindDialogView
 } from "./rewind-dialog-view.ts"
@@ -34,9 +36,8 @@ const notGit: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitR
 const unknownGit: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo: null, failure: null }
 const NEUTRAL_ZH = "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。"
 const NEUTRAL_EN = "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone."
-const PARTIAL_ZH = "文件只还原了一部分，有的可能已经改回去，有的还没有。聊天没有改动，请到「审查」里核对。"
-const PARTIAL_EN =
-  "Files were only partly restored. Some may have changed back and some may not. The chat wasn't changed. Check Review to see where things stand."
+const PARTIAL_ZH = "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。"
+const PARTIAL_EN = "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand."
 const MISSING_ZH = "没能还原文件：找不到这一轮开始前的记录。聊天没有改动。"
 const MISSING_EN = "Couldn't restore files: there's no record of how they looked before this turn. The chat wasn't changed."
 const files = (n: number) => Array.from({ length: n }, (_, i) => `new-${i + 1}.txt`)
@@ -127,16 +128,16 @@ test("二次确认拿不到 N：标题不带数字", () => {
 
 test("找不到记录（什么都没改）：灰色兜底句，没有「去审查」", () => {
   const zh = rewindDialogView({ ...git, failure: "missing" }, tFor("zh"))
-  assert.deepEqual(zh.failure, { kind: "missing", text: MISSING_ZH, reviewLabel: null })
+  assert.deepEqual(zh.failure, { kind: "missing", text: MISSING_ZH, reviewLabel: null, reviewDisabled: false })
   const en = rewindDialogView({ ...git, failure: "missing" }, tFor("en"))
-  assert.deepEqual(en.failure, { kind: "missing", text: MISSING_EN, reviewLabel: null })
+  assert.deepEqual(en.failure, { kind: "missing", text: MISSING_EN, reviewLabel: null, reviewDisabled: false })
 })
 
 test("还原中途出错（REWIND_RESTORE_FAILED）：琥珀色单独一句 +「去审查」，和「找不到记录」不共用（luna ①）", () => {
   const zh = rewindDialogView({ ...git, failure: "partial" }, tFor("zh"))
-  assert.deepEqual(zh.failure, { kind: "partial", text: PARTIAL_ZH, reviewLabel: "去审查" })
+  assert.deepEqual(zh.failure, { kind: "partial", text: PARTIAL_ZH, reviewLabel: "去审查", reviewDisabled: false })
   const en = rewindDialogView({ ...git, failure: "partial" }, tFor("en"))
-  assert.deepEqual(en.failure, { kind: "partial", text: PARTIAL_EN, reviewLabel: "Go to Review" })
+  assert.deepEqual(en.failure, { kind: "partial", text: PARTIAL_EN, reviewLabel: "Go to Review", reviewDisabled: false })
   assert.notEqual(zh.failure?.text, MISSING_ZH)
   assert.equal(rewindFailureKind("REWIND_RESTORE_FAILED"), "partial")
   for (const code of ["REWIND_NO_CHECKPOINT", "REWIND_NO_WORKSPACE", "REWIND_LIST_FAILED", "CHECKPOINT_RESTORE_FAILED"]) {
@@ -211,6 +212,81 @@ test("中英文所有状态都不出现 检查点 / HEAD / commit / 快照 / che
     for (const [key, value] of Object.entries(catalogs[lang].chat)) {
       if (!key.startsWith("rewind") || typeof value !== "string") continue
       assert.doesNotMatch(value, BANNED, `${lang} chat.${key}`)
+    }
+  }
+})
+
+test("S4 琥珀色提示按 luna 定稿：「文件可能只还原了一部分…」+「去审查」（中英文逐字）", () => {
+  const zh = rewindDialogView({ ...git, failure: "partial" }, tFor("zh"))
+  assert.equal(zh.failure?.text, "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。")
+  assert.equal(zh.failure?.reviewLabel, "去审查")
+  const en = rewindDialogView({ ...git, failure: "partial" }, tFor("en"))
+  assert.equal(en.failure?.text, "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand.")
+  assert.equal(en.failure?.reviewLabel, "Go to Review")
+})
+
+test("S1 重试跑着的时候「去审查」不能点；没在跑时可以点", () => {
+  for (const lang of ["zh", "en"] as const) {
+    const busy = rewindDialogView({ ...git, failure: "partial" }, tFor(lang), true)
+    assert.equal(busy.failure?.kind, "partial", lang)
+    assert.equal(busy.failure?.reviewDisabled, true, `${lang} busy`)
+    const idle = rewindDialogView({ ...git, failure: "partial" }, tFor(lang), false)
+    assert.equal(idle.failure?.reviewDisabled, false, `${lang} idle`)
+    assert.equal(rewindDialogView({ ...git, failure: "partial" }, tFor(lang)).failure?.reviewDisabled, false, `${lang} default`)
+  }
+})
+
+test("S7 rewindFromUserTurn 抛错：不留未处理 rejection，走通用失败句，原始错误不进界面", async () => {
+  const secret = "EACCES: permission denied, open '/Users/me/secret/.git/index'"
+  const warn = console.warn
+  console.warn = () => undefined
+  try {
+    for (const restoreFiles of [true, false]) {
+      const result = await settleRewind(() => Promise.reject(new Error(secret)))
+      assert.deepEqual(result, { ok: false, code: REWIND_THREW })
+      const outcome = rewindOutcome(result, restoreFiles)
+      assert.deepEqual(outcome, { kind: "error", messageKey: "chat.rewindFailed" }, String(restoreFiles))
+      assert.equal(tFor("zh")(outcome.kind === "error" ? outcome.messageKey : ""), "从这里重来失败")
+      assert.equal(tFor("en")(outcome.kind === "error" ? outcome.messageKey : ""), "Could not rewind from here")
+    }
+    // 同步 throw 也一样收住
+    const sync = await settleRewind(() => {
+      throw new Error(secret)
+    })
+    assert.deepEqual(sync, { ok: false, code: REWIND_THREW })
+  } finally {
+    console.warn = warn
+  }
+  // 正常结果原样透传
+  assert.deepEqual(await settleRewind(async () => ({ ok: true })), { ok: true })
+  assert.deepEqual(await settleRewind(async () => ({ ok: false, code: "REWIND_RESTORE_FAILED" })), {
+    ok: false,
+    code: "REWIND_RESTORE_FAILED"
+  })
+})
+
+test("引擎不支持回滚：没有还原按钮（不是置灰）、没有任何提示灰字、正文逐字是中性句，按钮只有 取消 · 从这里重来", () => {
+  for (const gitRepo of [true, false, null] as const) {
+    for (const failure of [null] as const) {
+      const state: RewindDialogState = { kind: "confirm", canRestoreFiles: false, gitRepo, failure }
+      const zh = rewindDialogView(state, tFor("zh"))
+      assert.ok(!zh.buttons.some((b) => b.id === "restore-files" || b.id === "chat-only"), `${gitRepo} no restore`)
+      assert.ok(zh.buttons.every((b) => !("disabled" in b)), `${gitRepo} no greyed button`)
+      assert.equal(zh.hint, null, `${gitRepo} no hint`)
+      assert.equal(zh.failure, null, `${gitRepo} no failure line`)
+      assert.ok(!text(zh).includes("当前引擎不能回滚对话"), `${gitRepo} no unsupported hint`)
+      assert.deepEqual(zh.buttons.map((b) => b.label), ["取消", "从这里重来"], `${gitRepo} buttons`)
+      if (gitRepo !== false) {
+        assert.equal(zh.body, "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。", `${gitRepo} body`)
+        const en = rewindDialogView(state, tFor("en"))
+        assert.equal(
+          en.body,
+          "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone.",
+          `${gitRepo} en body`
+        )
+        assert.equal(en.hint, null)
+        assert.deepEqual(en.buttons.map((b) => b.label), ["Cancel", "Start over"])
+      }
     }
   }
 })

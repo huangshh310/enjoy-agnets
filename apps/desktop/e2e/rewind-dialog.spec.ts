@@ -41,7 +41,7 @@ const COPY = {
     more: (n: number) => `还有 ${n} 个`,
     untrackedButtons: ["取消", "删掉并还原"],
     failure: "没能还原文件：找不到这一轮开始前的记录。聊天没有改动。",
-    partial: "文件只还原了一部分，有的可能已经改回去，有的还没有。聊天没有改动，请到「审查」里核对。",
+    partial: "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。",
     goReview: "去审查",
     neutralBody: "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。",
     genericError: "从这里重来失败",
@@ -66,8 +66,7 @@ const COPY = {
     more: (n: number) => `${n} more`,
     untrackedButtons: ["Cancel", "Delete and restore"],
     failure: "Couldn't restore files: there's no record of how they looked before this turn. The chat wasn't changed.",
-    partial:
-      "Files were only partly restored. Some may have changed back and some may not. The chat wasn't changed. Check Review to see where things stand.",
+    partial: "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand.",
     goReview: "Go to Review",
     neutralBody:
       "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone.",

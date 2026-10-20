@@ -127,7 +127,7 @@ export const zhChat = {
   rewindConfirmDelete: "删掉并还原",
   rewindBusy: "请先停掉当前任务再重来",
   rewindNoCheckpoint: "没能还原文件：找不到这一轮开始前的记录。聊天没有改动。",
-  rewindRestorePartial: "文件只还原了一部分，有的可能已经改回去，有的还没有。聊天没有改动，请到「审查」里核对。",
+  rewindRestorePartial: "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。",
   rewindGoReview: "去审查",
   rewindTruncateMissing: "这条消息还没落库，无法截断对话",
   rewindFailed: "从这里重来失败",
