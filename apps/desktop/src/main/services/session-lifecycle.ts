@@ -129,13 +129,15 @@ function deleteIfTable(db: ReturnType<typeof getDatabase>, sql: string, sessionI
   }
 }
 
-/** 心跳（哪怕从没跑过）、flagged、设了目标：都不是空壳。查不了一律当有（fail-closed）。 */
+/** 心跳（哪怕从没跑过）、flagged、设了目标、从本机助手导入：都不是空壳。查不了一律当有（fail-closed）。 */
 function sessionHasKeepers(db: ReturnType<typeof getDatabase>, sessionId: string): boolean {
   try {
-    const row = db.prepare("SELECT flagged, goal FROM sessions WHERE id = ?").get(sessionId) as
-      | { flagged?: number | null; goal?: string | null }
+    const row = db.prepare("SELECT flagged, goal, imported_from FROM sessions WHERE id = ?").get(sessionId) as
+      | { flagged?: number | null; goal?: string | null; imported_from?: string | null }
       | undefined
     if (row && (Number(row.flagged) === 1 || Boolean(row.goal?.trim()))) return true
+    // luna g157b：导入的 ACP 会话在 Enjoy 里没有消息，但它不是空「新对话」。
+    if (row?.imported_from?.trim()) return true
   } catch {
     return true
   }

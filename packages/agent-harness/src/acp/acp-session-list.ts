@@ -10,11 +10,14 @@ export async function listAcpRemoteSessions(input: {
   id: string
   cwd: string
   override?: SpawnOverride
+  /** 自定义 ACP 助手入库的 env（和开跑时一致）。 */
+  env?: Record<string, string>
 }): Promise<{ supported: boolean; sessions: AcpListedSession[] }> {
   const spawned = spawnAcpProcess({
     id: input.id,
     cwd: input.cwd,
-    override: input.override
+    override: input.override,
+    ...(input.env ? { env: input.env } : {})
   })
   const client = new AcpClient(spawned.child)
   try {
