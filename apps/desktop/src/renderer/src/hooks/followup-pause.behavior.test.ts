@@ -342,6 +342,21 @@ test("说明行文案（luna 定稿）：三种原因 × 中英 × N=1 单数；
   }
 })
 
+test("额度句的服务商名和失败卡同源（#160 sendFailureProviderName）：Amp 会话说 Amp，Enjoy 本地说密钥档案名；说明行接的是同一个 hook", async () => {
+  const { sendFailureProviderName } = await import("../lib/send-failure-provider-name.ts")
+  const { readFileSync } = await import("node:fs")
+  const tools = [{ id: "amp", label: "Amp" }]
+  const zh = tr(zhChat as never)
+  const base = { reason: "quota" as const, count: 2, composerHasContent: false, failureCardRetryShowing: false, t: zh }
+  const amp = sendFailureProviderName({ runtimeId: "amp", tools, displayNames: {}, keyProfileName: "DeepSeek" })
+  assert.equal(view.queuePausedView({ ...base, provider: amp }).text, "Amp 额度用完了，排队的 2 条先不发。充值后点继续。")
+  const local = sendFailureProviderName({ runtimeId: "enjoy-local", tools, displayNames: {}, keyProfileName: "DeepSeek" })
+  assert.match(view.queuePausedView({ ...base, provider: local }).text, /^DeepSeek 额度用完了/)
+  const row = readFileSync(new URL("../components/ai-chat/thread/queue-paused-row.tsx", import.meta.url), "utf8").replace(/\/\/.*$/gm, "")
+  assert.match(row, /const provider = useSendFailureProviderName\(\)/)
+  assert.ok(!/defaultProviderLabel/.test(row), "说明行不再自己拿密钥档案名")
+})
+
 test("按钮显隐：默认三个都在；输入框有内容 → 「改一下再发」隐藏（不是置灰）；停止时失败卡不影响", () => {
   const t = tr(zhChat as never)
   const base = { reason: "error" as const, count: 2, provider: "P", t }

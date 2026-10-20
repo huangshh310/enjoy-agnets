@@ -11,10 +11,8 @@ import { cx } from "@/utils/cx"
 import type { FollowupPausedReason } from "@renderer/hooks/followup-queue"
 import { useComposerHasDraft } from "@renderer/hooks/runtime-interact/use-composer-has-draft"
 import { useRetryKeptDraftAvailable } from "@renderer/hooks/retry-kept-draft"
-import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
-import { defaultProviderLabel } from "@renderer/lib/default-provider-label"
+import { useSendFailureProviderName } from "@renderer/hooks/use-send-failure-provider-name"
 import { isNeutralPause } from "@renderer/hooks/followup-pause"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -37,14 +35,14 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
   const error = useChatStore((state) => state.error)
   const composerHasContent = useComposerHasDraft(composer)
   const retryAvailable = useRetryKeptDraftAvailable()
-  const readiness = useChatReadiness().data
-  const providers = useSettingsSnapshot().data?.providers ?? []
+  // #160：和失败卡同一个名字——ACP / CLI 引擎说引擎名，Enjoy 本地才说密钥档案名。
+  const provider = useSendFailureProviderName()
   const view = queuePausedView({
     reason,
     count,
     composerHasContent,
     failureCardRetryShowing: retryAvailable && failureCardOffersRetry(error),
-    provider: defaultProviderLabel(readiness, providers, t("chat.credentialProviderFallback")),
+    provider,
     t
   })
   return (
