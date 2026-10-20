@@ -3,6 +3,7 @@
  * 文案 / 按钮按 luna 定稿（rewind-dialog-view.ts）：Git 工作区三钮、非 Git / 不知道 / 引擎不支持两钮、删新文件二次确认、
  * 还原失败分灰色兜底（什么都没改）和琥珀色 +「去审查」（只还原了一部分）。
  * 跑 / 去审查 / 按钮的 disabled 与 onClick 都来自 rewind-dialog-controller.ts（node --test 直接测接线），这里只负责摆出来。
+ * 引擎不支持回滚时，消息上的入口整个不出（luna：不是置灰、没有提示）。
  */
 import { useState, useSyncExternalStore } from "react"
 import { RiHistoryLine } from "@remixicon/react"
@@ -20,7 +21,7 @@ import { rewindFromUserTurn } from "@renderer/hooks/rewind-from-here"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { revealRightPane } from "../../right-pane/open-pane"
-import { createRewindDialogController, type RewindDialogDeps } from "./rewind-dialog-controller"
+import { createRewindDialogController, rewindEntryAction, type RewindDialogDeps } from "./rewind-dialog-controller"
 
 export function RewindFromHereAction({
   messageId,
@@ -33,13 +34,15 @@ export function RewindFromHereAction({
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
+  const entry = rewindEntryAction({ canRewind, disabled, t })
+  if (!entry) return null
   return (
     <>
       <MessageAction
-        tooltip={canRewind ? t("chat.rewindTitle") : t("chat.rewindUnsupported")}
-        label={t("chat.rewindTitle")}
-        disabled={disabled || !canRewind}
-        onClick={() => canRewind && setOpen(true)}
+        tooltip={entry.tooltip}
+        label={entry.label}
+        disabled={entry.disabled}
+        onClick={() => setOpen(true)}
       >
         <RiHistoryLine className="size-3.5" />
       </MessageAction>

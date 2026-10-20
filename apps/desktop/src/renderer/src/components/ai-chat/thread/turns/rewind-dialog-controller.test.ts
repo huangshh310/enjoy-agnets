@@ -2,6 +2,7 @@
  * 「从这里重来」弹窗接线（leo MUST-FIX）：组件的按钮 disabled / onClick、错误句都从 controller 出，这里直接驱动 controller。
  * - 重试跑着的时候：「去审查」disabled，且直接调 goReview / 点它都什么都不做（S1b / S1c / S1d）。
  * - 重来抛错：界面只有通用句「从这里重来失败」，原始错误不出现在任何渲染内容里，只进一次日志（S7a + 不重复打日志）。
+ * - 引擎不支持回滚：消息上的入口整个不出，不是置灰、没有提示（luna）。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -12,7 +13,11 @@ import { zhCommon } from "../../../../i18n/catalogs/zh/common.ts"
 import { enCommon } from "../../../../i18n/catalogs/en/common.ts"
 import { translate } from "../../../../i18n/lookup.ts"
 import type { RewindRunResult } from "./rewind-dialog-view.ts"
-import { createRewindDialogController, type RewindDialogModel } from "./rewind-dialog-controller.ts"
+import {
+  createRewindDialogController,
+  rewindEntryAction,
+  type RewindDialogModel
+} from "./rewind-dialog-controller.ts"
 
 const catalogs = {
   zh: { chat: zhChat, common: zhCommon },
@@ -186,7 +191,20 @@ test("成功：清回第一步并收窗；取消在跑的时候不收窗", async
   assert.deepEqual(controller.getSnapshot(), { busy: false, untracked: undefined, failure: null, errorKey: null })
 })
 
-test("组件接线：按钮的 disabled / onClick 来自 controller", () => {
+test("引擎不支持回滚：消息上的「从这里重来」入口不出（不是置灰、没有提示）；支持时出且可点", () => {
+  for (const lang of ["zh", "en"] as const) {
+    const t = tFor(lang)
+    assert.equal(rewindEntryAction({ canRewind: false, disabled: false, t }), null, `${lang} unsupported: hidden`)
+    assert.equal(rewindEntryAction({ canRewind: false, disabled: true, t }), null, `${lang} unsupported+disabled: hidden`)
+    const entry = rewindEntryAction({ canRewind: true, disabled: false, t })
+    assert.ok(entry, `${lang} supported: visible`)
+    assert.equal(entry.disabled, false)
+    assert.equal(entry.label, t("chat.rewindTitle"))
+    assert.equal(entry.tooltip, t("chat.rewindTitle"))
+  }
+})
+
+test("组件接线：按钮的 disabled / onClick 来自 controller，入口按 rewindEntryAction 决定出不出", () => {
   const src = readFileSync(new URL("./rewind-from-here-dialog.tsx", import.meta.url), "utf8")
   // 弹窗只照 controller.model 摆，不自己拼 disabled / onClick / 错误句。
   assert.match(src, /createRewindDialogController\(/)
@@ -196,4 +214,7 @@ test("组件接线：按钮的 disabled / onClick 来自 controller", () => {
   assert.match(src, /\{view\.error\}/)
   assert.doesNotMatch(src, /settleRewind|rewindDialogView|rewindOutcome|busyRef/, "run logic lives in the controller")
   assert.doesNotMatch(src, /disabled=\{busy\}|onClick=\{goReview\}/)
+  // 入口：不支持就 return null，不再有「当前引擎不能回滚对话」的置灰提示。
+  assert.match(src, /const entry = rewindEntryAction\(\{ canRewind, disabled, t \}\)\s*\n\s*if \(!entry\) return null/)
+  assert.doesNotMatch(src, /rewindUnsupported/)
 })

@@ -183,3 +183,16 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
   }
 }
 
+/**
+ * 消息上的「从这里重来」入口：引擎不支持回滚就整个不出（不是置灰、没有提示，luna）。
+ * 返回 null = 不渲染；否则是入口按钮要的属性。
+ */
+export function rewindEntryAction(input: {
+  canRewind: boolean
+  disabled: boolean
+  t: Translate
+}): { tooltip: string; label: string; disabled: boolean } | null {
+  if (!input.canRewind) return null
+  const label = input.t("chat.rewindTitle")
+  return { tooltip: label, label, disabled: input.disabled }
+}
