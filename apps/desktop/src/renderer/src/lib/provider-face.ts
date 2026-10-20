@@ -41,9 +41,36 @@ export function providerFace(row: { kind?: string; baseURL?: string } | undefine
 
 type T = (key: string, vars?: Record<string, string | number>) => string
 
+/** 中日韩文字（含全角标点）。省略号「…」（U+2026）不算，截断的主机名按拉丁结尾处理。 */
+const CJK = /[\u2e80-\u303f\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]/u
+
+/** 称呼以中日韩文字结尾（「模型服务」「通义」）→ 后面直接接中文不留空格。 */
+export function providerNameEndsCjk(name: string): boolean {
+  const last = [...name.trimEnd()].at(-1)
+  return last != null && CJK.test(last)
+}
+
+/** 占位：先把称呼位置标出来，再按称呼结尾决定后面的空格。用不会出现在文案里的私用区字符。 */
+const SLOT = "\ue000provider\ue000"
+
+/**
+ * luna #163（10-21）中文空格规则：称呼后面紧跟「空格 + 中文」时——
+ * 称呼以拉丁字母 / 数字（或「…」）结尾 → 留空格（「OpenAI 额度用完了」「api.example.com 额度用完了」）；
+ * 以中文结尾 → 去掉空格（「模型服务额度用完了」「通义额度用完了」）。英文文案后面跟的不是中文，不受影响。
+ * 失败卡和排队暂停行都经 fillProviderFace 走这里，规则只此一处。
+ */
+export function placeProviderName(template: string, name: string, slot = SLOT): string {
+  const tight = providerNameEndsCjk(name)
+  return template
+    .split(slot)
+    .map((part, index) => (index > 0 && tight && part.startsWith(" ") && CJK.test([...part][1] ?? "") ? part.slice(1) : part))
+    .join(name)
+}
+
 /**
  * 把 face 填进文案。通用说法按位置挑：句首用 credentialProviderGenericStart（"The model service"），
  * 句中用 credentialProviderGeneric（"the model service"）；中文两者都是「模型服务」。
+ * 称呼后面的空格按 placeProviderName 的中文规则处理。
  */
 export function fillProviderFace(
   t: T,
@@ -52,8 +79,12 @@ export function fillProviderFace(
   options: { varName?: string; vars?: Record<string, string | number> } = {}
 ): string {
   const varName = options.varName ?? "name"
-  if (face.kind === "named") return t(key, { ...options.vars, [varName]: face.name })
-  const generic = t("chat.credentialProviderGeneric")
-  const text = t(key, { ...options.vars, [varName]: generic })
-  return text.startsWith(generic) ? t("chat.credentialProviderGenericStart") + text.slice(generic.length) : text
+  const template = t(key, { ...options.vars, [varName]: SLOT })
+  const name =
+    face.kind === "named"
+      ? face.name
+      : template.startsWith(SLOT)
+        ? t("chat.credentialProviderGenericStart")
+        : t("chat.credentialProviderGeneric")
+  return placeProviderName(template, name)
 }
