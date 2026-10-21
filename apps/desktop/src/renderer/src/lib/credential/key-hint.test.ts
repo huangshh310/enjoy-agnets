@@ -214,13 +214,16 @@ test("luna #164 S1：代理档案的密钥状态（被拒）和向导第 4 步 /
   assert.equal(text(renderKeyHint(got.hint, got.provider, zhT, { onEdit() {}, onOpenUrl() {} })), "gw.example.com 账户余额不足，充值后再试。")
 })
 
-test("keyHolderFace：官方 / 空 → 显示名；代理 → 主机名；解析不了 → 通用；custom 档案带地址也说主机名", () => {
+test("keyHolderFace：官方 / 空 → 显示名；代理 → 主机名；解析不了 → 通用；custom 档案说档案名（luna #164 第 3 轮）", () => {
   assert.deepEqual(keyHolderFace("deepseek", "mine"), { kind: "named", name: "DeepSeek" })
   assert.deepEqual(keyHolderFace("deepseek", "mine", "https://api.deepseek.com/v1"), { kind: "named", name: "DeepSeek" })
   assert.deepEqual(keyHolderFace("deepseek", "mine", "https://relay.example.cn/v1"), { kind: "named", name: "relay.example.cn" })
   assert.deepEqual(keyHolderFace("deepseek", "mine", "relay"), { kind: "generic" })
-  assert.deepEqual(keyHolderFace("custom", "My Relay", "https://relay.example.cn/v1"), { kind: "named", name: "relay.example.cn" })
-  assert.deepEqual(keyHolderFace("custom", "My Relay"), { kind: "named", name: "My Relay" })
+  assert.deepEqual(keyHolderFace("custom", "My Relay", "https://relay.example.cn/v1"), { kind: "named", name: "My Relay" })
+  assert.deepEqual(keyHolderFace("custom", "  My Relay  "), { kind: "named", name: "My Relay" })
+  assert.deepEqual(keyHolderFace("custom", "   ", "https://relay.example.cn:8443/v1"), { kind: "named", name: "relay.example.cn" })
+  assert.deepEqual(keyHolderFace("custom", "", "relay"), { kind: "generic" })
+  assert.deepEqual(keyHolderFace("custom", ""), { kind: "generic" }, "不说预设 id custom")
   assert.deepEqual(keyHolderFace("ollama", "", "http://0.0.0.0:11434/v1"), { kind: "named", name: "Ollama" })
 })
 
@@ -236,4 +239,61 @@ test("leo S2：充值链接换第二家预设（OpenAI）同样只在官方地�
   // 第三家：z.ai 只认 api.z.ai，用户 space 子域不给链接
   assert.equal(keyHintOf(billing, "zai", "https://abc-deploy.space.z.ai/v1")?.kind, "billing")
   assert.equal((keyHintOf(billing, "zai", "https://abc-deploy.space.z.ai/v1") as { url?: string }).url, undefined)
+})
+
+import { KEY_HOLDER_GENERIC_KEYS, fillKeyHolderText } from "./key-status.ts"
+test("luna #164 第 3 轮 1：只有带「密钥」的引导文案（第 4 步行提示、完成页标题 / 摘要）回落「供应商」/ the provider，别处都是「模型服务」", () => {
+  const keyed = ["settings.setupGuide.connectApiKeyInvalidHint", "settings.setupGuide.readyKeyInvalidTitle", "settings.setupGuide.readyKeyInvalidHint"]
+  for (const key of keyed) {
+    assert.match(zhT(key), /密钥/, key)
+    assert.match(enT(key), /\bkey\b/, key)
+  }
+  // 回落：中文「供应商」两边不留空格；英文句首 The provider、句中 the provider
+  assert.deepEqual(keyed.map((key) => fillKeyHolderText(zhT, key, undefined)), ["密钥被供应商拒绝了，换一个再试", "密钥被供应商拒绝了", "换一个供应商密钥再试，改好就能开始"])
+  assert.deepEqual(keyed.map((key) => fillKeyHolderText(enT, key, undefined)), ["The provider rejected this key. Try another one", "The provider rejected your key", "Use a different the provider key and you're ready to go"])
+  // 有名字：拉丁留空格、中文不留
+  assert.deepEqual(keyed.map((key) => fillKeyHolderText(zhT, key, "OpenAI")), ["密钥被 OpenAI 拒绝了，换一个再试", "密钥被 OpenAI 拒绝了", "换一个 OpenAI 密钥再试，改好就能开始"])
+  assert.deepEqual(keyed.map((key) => fillKeyHolderText(zhT, key, "我的网关")), ["密钥被我的网关拒绝了，换一个再试", "密钥被我的网关拒绝了", "换一个我的网关密钥再试，改好就能开始"])
+  assert.equal(fillKeyHolderText(zhT, "settings.setupGuide.readyTitle", undefined), zhT("settings.setupGuide.readyTitle"), "没名字槽的标题原样")
+  assert.deepEqual(KEY_HOLDER_GENERIC_KEYS, { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallbackMid" })
+  // 别处（设置行、失败卡）照旧「模型服务」
+  const p = { kind: "openai", name: "mine", requiresKey: true, hasKey: true, credentialCheck: { state: "invalid" as const }, baseURL: "gw.example.com/v1" }
+  assert.match(text(renderProviderKeyStatus(p, zhT, () => undefined)), /^密钥被模型服务拒绝了/)
+  assert.match(text(renderProviderKeyStatus(p, enT, () => undefined)), /^The model service rejected this key/)
+  // 接线：引导三处都走 fillKeyHolderText，不再自己拼 providerFallback；别的文件不用「供应商」回落
+  const src = (rel: string) => readFileSync(join(dir, rel), "utf8").replace(/\/\/.*$/gm, "")
+  const step = src("../../components/setup-guide/connect-model-step.tsx")
+  assert.match(step, /fillKeyHolderText\(t as [^,]+, key, option\.providerName\)/)
+  assert.match(src("../../components/setup-guide/ready-summary.tsx"), /fillKeyHolderText\([^)]*"settings\.setupGuide\.readyKeyInvalidHint", keyStatus\.providerName\)/)
+  const dialog = src("../../components/setup-guide/setup-guide-dialog.tsx")
+  assert.match(dialog, /title=\{\s*step === "ready" && keyStatus\s*\? fillKeyHolderText\(/)
+  assert.match(src("../../components/setup-guide/setup-guide-header.tsx"), /\{title \?\? t\(titleKey \?\? face\.title\)\}/, "标题优先用填好名字的 title")
+  for (const file of [step, dialog, src("../../components/setup-guide/ready-summary.tsx"), src("../../components/settings/providers/provider-key-status-text.ts")]) {
+    assert.ok(!/t\("settings\.setupGuide\.providerFallback"\)/.test(file), "不再直接拿回落词塞进 {name}")
+  }
+  assert.ok(!/providerFallback/.test(src("../../components/settings/providers/provider-key-status-text.ts")))
+})
+
+test("luna #164 第 3 轮 2：自定义档案在设置行 / 余额提示 / 向导都说档案名（去空白、≤30 字）；名字空 → 主机名 → 通用", () => {
+  const actions = { onEdit() {}, onOpenUrl() {} }
+  const billing = { state: "unverified" as const, code: "billing" as const }
+  const invalid = { state: "invalid" as const }
+  const c = (name: string, baseURL?: string, check: object = billing) => ({ kind: "custom", name, requiresKey: true, hasKey: true, credentialCheck: check, ...(baseURL ? { baseURL } : {}) })
+  assert.equal(text(renderProviderKeyHint(c(" Team Relay ", "https://relay.example.cn/v1"), zhT, actions)), "Team Relay 账户余额不足，充值后再试。")
+  assert.equal(text(renderProviderKeyHint(c("我的网关", "relay"), enT, actions)), "Your 我的网关 account is out of credit. Top up and try again.")
+  assert.equal(text(renderProviderKeyHint(c("", "https://relay.example.cn:8443/v1"), zhT, actions)), "relay.example.cn 账户余额不足，充值后再试。")
+  assert.equal(text(renderProviderKeyHint(c(" ", "relay"), zhT, actions)), "模型服务账户余额不足，充值后再试。")
+  assert.match(text(renderProviderKeyStatus(c("我的网关", "https://relay.example.cn/v1", invalid), zhT, () => undefined)), /^密钥被我的网关拒绝了，换一个再试/)
+  assert.match(text(renderProviderKeyStatus(c("", "https://relay.example.cn/v1", invalid), zhT, () => undefined)), /^密钥被 relay\.example\.cn 拒绝了/)
+  const long = "abcdefghijklmnopqrstuvwxyz0123456789"
+  assert.match(text(renderProviderKeyStatus(c(long, undefined, invalid), zhT, () => undefined)), /^密钥被 abcdefghijklmnopqrstuvwxyz012… 拒绝了/)
+  // 向导：providerName 给档案名；名字空看主机名；都没有 → undefined（调用方说「供应商」，不说预设 id custom）
+  const readiness = { apiKeys: [{ providerId: "p1", presetId: "custom" }], defaultRoute: { profileId: "p1" }, credentialCheck: invalid } as unknown as Parameters<typeof guideStatus>[0]
+  assert.equal(guideStatus(readiness, [{ id: "p1", kind: "custom", name: " 我的网关 ", baseURL: "https://relay.example.cn/v1" }])?.providerName, "我的网关")
+  assert.equal(guideStatus(readiness, [{ id: "p1", kind: "custom", name: "", baseURL: "https://relay.example.cn/v1" }])?.providerName, "relay.example.cn")
+  assert.equal(guideStatus(readiness, [{ id: "p1", kind: "custom", name: "", baseURL: "relay" }])?.providerName, undefined)
+  assert.equal(guideStatus(readiness, [])?.providerName, undefined, "档案对不上也不说 custom")
+  assert.equal(fillKeyHolderText(zhT, "settings.setupGuide.readyKeyInvalidTitle", guideStatus(readiness, [])?.providerName), "密钥被供应商拒绝了")
+  // 预设档案的档案名照旧不出现
+  assert.equal(guideStatus({ ...readiness, apiKeys: [{ providerId: "p1", presetId: "openai" }] } as typeof readiness, [{ id: "p1", kind: "openai", name: "我的网关", baseURL: "https://gw.example.com/v1" }])?.providerName, "gw.example.com")
 })

@@ -5,7 +5,7 @@
  */
 import type { ChatReadiness, CredentialCheck } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
-import { endpointIsOfficial, providerFace, type ProviderFace } from "../provider-face.ts"
+import { CUSTOM_PROFILE_KIND, endpointIsOfficial, fillProviderFace, providerFace, type ProviderFace } from "../provider-face.ts"
 
 /** 密钥三态。ok=已验证（绿）；unverified=暂时没法确认（中性灰）；invalid=被供应商拒绝（红）。 */
 export type KeyStatus = "ok" | "unverified" | "invalid"
@@ -52,8 +52,11 @@ export function presetDisplayName(presetId: string | undefined, fallback: string
 /**
  * 余额 / 密钥提示里说谁（luna #164 S1）：档案端点指到代理 / 中转（不是这家官方地址）时和失败卡同一规则——
  * 说主机名，解析不了说「模型服务」，不说预设品牌；端点没填或是官方地址时照旧说显示名（presetDisplayName）。
+ * 自定义档案（kind 为 custom）说档案名（去空白、≤30 字），名字空才说主机名，再不行「模型服务」。
  */
 export function keyHolderFace(kind: string | undefined, fallbackName: string, baseURL?: string): ProviderFace {
+  // 自定义档案：档案名 → 主机名 → 「模型服务」（luna #164 第 3 轮，和失败卡同一条）
+  if (kind === CUSTOM_PROFILE_KIND) return providerFace({ kind, name: fallbackName, baseURL })
   if (baseURL?.trim() && !endpointIsOfficial(kind, baseURL)) return providerFace({ kind, baseURL })
   const name = kind ? presetDisplayName(kind, fallbackName) : fallbackName
   return name ? { kind: "named", name } : { kind: "generic" }
@@ -62,6 +65,23 @@ export function keyHolderFace(kind: string | undefined, fallbackName: string, ba
 /** ProviderFace → 现有 providerName 字段：通用说法给 undefined，调用方用自己的回落词。 */
 export function faceName(face: ProviderFace): string | undefined {
   return face.kind === "named" ? face.name : undefined
+}
+
+/** 带「密钥」的引导文案（第 4 步行提示、完成页标题 / 摘要）的通用说法：「供应商」/ the provider（句首 The provider）。 */
+export const KEY_HOLDER_GENERIC_KEYS = { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallbackMid" } as const
+
+/**
+ * 把 providerName 填进带「密钥」的引导文案（luna #164 第 3 轮 1）：没名字说「供应商」/ the provider，别处的「模型服务」不用在这里。
+ * 空格走 placeProviderName：「密钥被供应商拒绝了」「密钥被 OpenAI 拒绝了」「密钥被我的网关拒绝了」。
+ */
+export function fillKeyHolderText(
+  t: Parameters<typeof fillProviderFace>[0],
+  key: string,
+  providerName: string | undefined,
+  vars?: Record<string, string | number>
+): string {
+  const face: ProviderFace = providerName ? { kind: "named", name: providerName } : { kind: "generic" }
+  return fillProviderFace(t, key, face, { vars, genericKeys: KEY_HOLDER_GENERIC_KEYS })
 }
 
 export type KeyProviderRow = {
@@ -105,7 +125,7 @@ export function guideKeyStatus(
     return {
       status: keyStatusOf(check ?? profile?.credentialCheck),
       profileId: key.providerId,
-      providerName: faceName(keyHolderFace(key.presetId, profile?.name ?? key.presetId, profile?.baseURL))
+      providerName: faceName(keyHolderFace(key.presetId, profile?.name ?? "", profile?.baseURL))
     }
   }
   if (routeProfile) {

@@ -15,13 +15,14 @@ export function SetupGuideHeader({
   step,
   summary,
   titleKey,
-  titleVars,
+  title,
   readyMark
 }: {
   step: SetupGuideStep
   summary?: ReactNode
   titleKey?: string
-  titleVars?: Record<string, string>
+  /** 已经填好名字的标题（完成页带「密钥」的标题走 fillKeyHolderText）；有就不再用 titleKey 渲染。 */
+  title?: string
   readyMark?: ReadyMarkKind
 }) {
   const t = useT()
@@ -38,7 +39,7 @@ export function SetupGuideHeader({
         </p>
       )}
       <DialogTitle className="text-title-1-medium font-medium text-text-primary">
-        {t(titleKey ?? face.title, titleVars)}
+        {title ?? t(titleKey ?? face.title)}
       </DialogTitle>
       {summary ?? (body ? (
         <DialogDescription className="max-w-[560px] text-headline-regular leading-normal text-text-secondary">

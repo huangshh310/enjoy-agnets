@@ -22,7 +22,7 @@ import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 import { renderApiKeyBadge } from "./api-key-badge"
 import { guideKeyHint } from "@renderer/lib/credential/key-hint"
 import { renderKeyHint } from "@renderer/lib/credential/key-hint-view"
-import { guideKeyStatus } from "@renderer/lib/credential/key-status"
+import { fillKeyHolderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { requestOpenExternalQuiet } from "@renderer/components/ai-chat/right-pane/views/terminal/attach-xterm-addons"
 
 export function ConnectModelStep({
@@ -60,7 +60,7 @@ export function ConnectModelStep({
               else onPick(option.id)
             }}
             title={rowTitle(option, t)}
-            hint={t(connectModelRowHintKey(option), hintVars(option, t("settings.setupGuide.providerFallback")))}
+            hint={connectModelRowHint(option, t)}
             unverifiedLabel={t("settings.setupGuide.connectLocalUnverified")}
           />
           {option.kind === "api_key" && option.connected && keyHint
@@ -197,8 +197,10 @@ function rowTitle(option: ConnectModelOption, t: (path: string, vars?: Record<st
   return t("settings.setupGuide.connectLater")
 }
 
-function hintVars(option: ConnectModelOption, fallbackName: string): Record<string, string> | undefined {
-  if (option.kind === "engine") return { name: option.name }
-  if (option.kind === "api_key") return { name: option.providerName ?? fallbackName }
-  return undefined
+/** 行提示；密钥行的名字走 fillKeyHolderText（没名字说「供应商」，空格按 placeProviderName）。 */
+function connectModelRowHint(option: ConnectModelOption, t: (key: string, vars?: Record<string, string | number>) => string): string {
+  const key = connectModelRowHintKey(option)
+  if (option.kind === "api_key") return fillKeyHolderText(t as Parameters<typeof fillKeyHolderText>[0], key, option.providerName)
+  if (option.kind === "engine") return t(key, { name: option.name })
+  return t(key)
 }

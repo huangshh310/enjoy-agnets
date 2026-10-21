@@ -95,6 +95,7 @@ export const enSettings = {
     connectApiKeyInvalidHint: "{name} rejected this key. Try another one",
     fixKey: "Change key",
     providerFallback: "The provider",
+    providerFallbackMid: "the provider",
     readyKeyInvalidTitle: "{name} rejected your key",
     readyKeyInvalidHint: "Use a different {name} key and you're ready to go",
     connectLater: "Connect later",

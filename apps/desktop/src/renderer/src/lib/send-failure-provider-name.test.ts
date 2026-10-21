@@ -79,12 +79,35 @@ test("luna P2：Enjoy 本地五种失败文案中英都说品牌名，不出现�
   assert.equal(zh.find((c) => c.lang === "zh" && c.key === "credentialNetworkNotice")!.text, "连不上 OpenAI，消息没发出去。检查网络后再试。")
 })
 
-test("luna P2：自定义端点只说主机名——不带协议 / 端口 / 路径 / 查询 / 账号，不出现档案名", async () => {
+test("luna #164 第 3 轮：自定义档案说档案名，每张失败卡都一样，空格走 placeProviderName；不露地址任何部分", async () => {
   const { render } = await cards()
-  const all = render({ name: "我的网关", kind: "custom", baseURL: "https://bob:s3cret@api.example.com:8443/v1/chat?team=x" })
+  const all = render({ name: "  我的网关 ", kind: "custom", baseURL: "https://bob:s3cret@api.example.com:8443/v1/chat?team=x" })
+  for (const { key, lang, text } of all) {
+    assert.ok(text.includes("我的网关"), `${key}: ${text}`)
+    if (lang === "zh") assert.ok(!/ 我的网关|我的网关 /.test(text), `${key} 中文挨着留了空格：${text}`)
+    for (const bad of ["api.example.com", "custom", "https", "8443", "/v1", "team=x", "bob", "s3cret", "  我的网关"]) {
+      assert.ok(!text.includes(bad), `${key} 露出了「${bad}」：${text}`)
+    }
+  }
+  const pick = (lang: string, key: string) => all.find((c) => c.lang === lang && c.key === key)!.text
+  assert.equal(pick("zh", "credentialNetworkNotice"), "连不上我的网关，消息没发出去。检查网络后再试。")
+  assert.equal(pick("zh", "credentialInvalidNotice"), "密钥没通过：我的网关不认这把密钥，消息没发出去。")
+  const latin = render({ name: "Team Relay 2", kind: "custom", baseURL: "not a url" })
+  assert.equal(latin.find((c) => c.lang === "zh" && c.key === "credentialNetworkNotice")!.text, "连不上 Team Relay 2，消息没发出去。检查网络后再试。")
+  assert.equal(latin.find((c) => c.lang === "en" && c.key === "credentialNetworkNotice")!.text, "Could not reach Team Relay 2. The message was not sent. Check the network and try again.")
+  const long = render({ name: "一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十多", kind: "custom" })
+  assert.equal(long.find((c) => c.lang === "zh" && c.key === "credentialNetworkNotice")!.text, "连不上一二三四五六七八九十一二三四五六七八九十一二三四五六七八九…，消息没发出去。检查网络后再试。")
+  // 预设档案的档案名照旧不说
+  const preset = render({ name: "我的网关", kind: "openai", baseURL: "https://proxy.example.com/v1" })
+  for (const { key, text } of preset) assert.ok(!text.includes("我的网关") && text.includes("proxy.example.com"), `${key}: ${text}`)
+})
+
+test("luna P2：自定义档案名字空 → 只说主机名——不带协议 / 端口 / 路径 / 查询 / 账号", async () => {
+  const { render } = await cards()
+  const all = render({ name: "   ", kind: "custom", baseURL: "https://bob:s3cret@api.example.com:8443/v1/chat?team=x" })
   for (const { key, text } of all) {
     assert.ok(text.includes("api.example.com"), `${key}: ${text}`)
-    for (const bad of ["我的网关", "custom", "https", "://", "8443", "/v1", "team=x", "bob", "s3cret"]) {
+    for (const bad of ["custom", "https", "://", "8443", "/v1", "team=x", "bob", "s3cret"]) {
       assert.ok(!text.includes(bad), `${key} 露出了「${bad}」：${text}`)
     }
   }
