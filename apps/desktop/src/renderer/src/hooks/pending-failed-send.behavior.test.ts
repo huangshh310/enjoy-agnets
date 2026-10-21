@@ -556,6 +556,46 @@ test("luna P2：从落地页发（建会话窗续发）被密钥闸拦下、空�
   assert.equal(nudge.credentialSendBlocked(null), false)
 })
 
+test("luna P2 #3（p54a-1d）：落地页密钥被拒后再按 Enter（真走建会话窗续发）——3s 后仍是同一张密钥卡，不出通用「这次没发出去」，字只一份，卡上有「先改好密钥再发。」", async () => {
+  const create = await import("./new-session-create.ts")
+  const qcs = await import("./queue-composer-send.ts")
+  create.resetNewSessionCreateForTest()
+  qcs.resetQueuedComposerSendForTest()
+  // 第一次已被拒：落地页上挂着具名密钥卡，「hi」在输入框里。
+  useChatStore.setState({
+    workspaceId: "ws", sessionId: null, running: false, runId: null, composer: "hi", error: "credential_invalid",
+    notice: null, pendingApproval: null, hasKey: true, pendingStreamEvents: [], preparingHint: false, preparingSessionId: null,
+    messages: [], runtimeId: "enjoy-local", modelId: "gpt"
+  } as never)
+  keyReadiness("invalid")
+  const first = useChatStore.getState().error
+  const clock = fakeClock()
+  try {
+    const { token } = create.beginNewSessionCreate()
+    fakeComposerDom("hi")
+    const sending = sendComposerMessage(undefined, "hi")
+    await flush()
+    useChatStore.setState({ sessionId: "ses_land3" } as never)
+    create.finishNewSessionCreate(token, "ses_land3")
+    await sending
+    await flush()
+    // 被拦下的空会话删掉、回到落地页（discardCreatedSession 是异步的，这里直接落到结果）。
+    useChatStore.setState({ sessionId: null } as never)
+    fakeComposerDom(useChatStore.getState().composer)
+    clock.pass(4_000)
+    await flush()
+    const st = useChatStore.getState()
+    assert.equal(st.error, first, "和第一次同一张密钥卡（credential_invalid：服务商名 + 改密钥）")
+    assert.notEqual(st.error, "SEND_FAILED_RESTORE")
+    assert.equal(st.composer, "hi", "输入框只有一份字")
+    assert.equal(nudge.credentialSendBlocked(st.sessionId), true, "卡上补「先改好密钥再发。」")
+  } finally {
+    clock.done()
+    create.resetNewSessionCreateForTest()
+    qcs.resetQueuedComposerSendForTest()
+  }
+})
+
 test("luna P2 卡接线（源码）：落地页按空名认提醒", () => {
   const src = readFileSync(new URL("../components/ai-chat/thread/thread-credential-invalid-notice.tsx", import.meta.url), "utf8")
   assert.match(src, /blockedAll\.has\(credentialNudgeKey\(sessionId\)\)/)
