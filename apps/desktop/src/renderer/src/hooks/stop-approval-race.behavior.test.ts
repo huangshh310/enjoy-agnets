@@ -206,3 +206,25 @@ test("对照：起步窗口停过、之后正常认领的新一轮，空闲时�
   dispatchAgentEvent(approval(next, sessionId))
   assert.equal(useChatStore.getState().pendingApproval?.runId, next)
 })
+
+/** luna m211-50：起步窗口里停止后，main 迟到的 run.start（kind=agent）把 running 认领回来，随后认领成功、整段跑完。 */
+test("起步窗口里停止后迟到的 run.start：停止按钮 /「正在写」不回来，那一轮被 abort，认领失败，后续出字不进前台", async () => {
+  const { sessionId, runId } = running("late_start", { unclaimed: true })
+  await abortComposerRun()
+  dispatchAgentEvent({ type: "run.start", runId, sessionId, kind: "agent", prompt: "very slow" } as never)
+  assert.equal(useChatStore.getState().running, false, "停止按钮 /「正在写」不回来")
+  assert.equal(useChatStore.getState().runId, null)
+  assert.ok(calls.some((c) => c.path === ".ai.abort" && c.arg === runId), "那一轮在 main 里被 abort")
+  assert.equal(claimComposerRun(sessionId, runId), false, "agent.run 回执到了也认领不上")
+  dispatchAgentEvent({ type: "text.delta", runId, sessionId, text: "three " } as never)
+  assert.equal(useChatStore.getState().running, false)
+  assert.ok(!useChatStore.getState().messages.some((m) => m.content.includes("three")), "被停那一轮的字不再长")
+})
+
+test("对照：起步窗口没停时 run.start 照常认领前台", async () => {
+  const { sessionId, runId } = running("start_ok", { unclaimed: true })
+  useChatStore.setState({ running: false } as never)
+  dispatchAgentEvent({ type: "run.start", runId, sessionId, kind: "agent", prompt: "very slow" } as never)
+  assert.equal(useChatStore.getState().running, true)
+  assert.equal(useChatStore.getState().runId, runId)
+})
