@@ -79,7 +79,7 @@ test("mainRunning 单独给时以它为准：sessionRunning（含停车档）为
 
 test("loadSession 把 main 的结论单独交给 applySessionHydrate（源码正则）", () => {
   const src = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
-  assert.match(src, /const mainRunning = await sessionOwnActiveRunning\(sessionId\)/)
+  assert.match(src, /const mainRunning = mainSays === true/)
   assert.match(src, /sessionRunning,\s*mainRunning\s*\}\)/)
 })
 

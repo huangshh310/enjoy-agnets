@@ -47,6 +47,8 @@ test("P1b 后台会话 run.error（停止 / 其它失败）同样 → 切回不�
   useChatStore.setState({ sessionId: "ses_A", running: false, runId: null, messages: [] } as never)
   useAttentionStore.setState({ parks: { ses_B: park("ses_B", "run_b") } } as never)
   dispatchAgentEvent({ type: "run.error", runId: "run_b", sessionId: "ses_B", message: "boom" } as never)
+  // leo #164 S1：停车档本身也收掉 running（杀 M5b：只记错误不清 running）
+  assert.equal(useAttentionStore.getState().parks["ses_B"]?.running ?? false, false)
   useChatStore.setState({ sessionId: "ses_B", messages: [] } as never)
   applySessionHydrate({ dbRows: rows(), sameSession: false, generation: 0, sessionId: "ses_B", sessionRunning: false })
   assert.ok(!useChatStore.getState().messages.at(-1)!.streaming)
