@@ -6,6 +6,7 @@
  * 任何情况都不出现密钥档案名、预设 id、完整 URL。ACP / CLI 引擎说引擎名（send-failure-provider-name）。
  */
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
+import { isOfficialDomain, normalizeHost } from "./provider-official-domains.ts"
 
 /** 主机名最多显示的字数（含末尾「…」）。 */
 export const ENDPOINT_HOST_MAX = 30
@@ -23,7 +24,7 @@ export function endpointHostLabel(baseURL: string | null | undefined, max = ENDP
     return undefined
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return undefined
-  const host = url.hostname.replace(/^\[|\]$/g, "")
+  const host = normalizeHost(url.hostname)
   if (!host) return undefined
   return host.length > max ? `${host.slice(0, max - 1)}…` : host
 }
@@ -38,13 +39,13 @@ function urlHost(raw: string | null | undefined): string | undefined {
   const value = raw?.trim()
   if (!value) return undefined
   try {
-    return new URL(value).hostname.replace(/^\[|\]$/g, "").toLowerCase() || undefined
+    return normalizeHost(new URL(value).hostname)
   } catch {
     return undefined
   }
 }
 
-/** 预设自带的官方端点主机名（各协议 + 各区域）。 */
+/** 预设自带的端点主机名（各协议 + 各区域），精确匹配；本地预设（127.0.0.1）靠这条。 */
 function presetHosts(kind: string): Set<string> {
   const preset = PROVIDER_PRESETS.find((item) => item.kind === kind)
   const hosts = new Set<string>()
@@ -63,11 +64,13 @@ function presetHosts(kind: string): Set<string> {
 /**
  * leo #164 S5：预设品牌只在端点还是这家官方地址（或没填）时用。用户把 OpenAI 预设改到自己的地址
  * （代理、中转、自建）时，连不上的是那个地址，不是 OpenAI：说主机名。
+ * 「官方」= 主机落在这家官方域名白名单里（后缀匹配，标签边界，见 provider-official-domains），
+ * 或就是预设自带的端点主机（本地预设）。
  */
 export function providerFace(row: { kind?: string; baseURL?: string } | undefined): ProviderFace {
   const brand = presetBrand(row?.kind)
   const host = urlHost(row?.baseURL)
-  const official = !host || !row?.kind || presetHosts(row.kind).has(host)
+  const official = !host || !row?.kind || isOfficialDomain(row.kind, host) || presetHosts(row.kind).has(host)
   const name = (brand && official ? brand : undefined) ?? endpointHostLabel(row?.baseURL) ?? brand
   return name ? { kind: "named", name } : { kind: "generic" }
 }
