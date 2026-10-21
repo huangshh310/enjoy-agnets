@@ -3,6 +3,7 @@
  * ① 组字中重来 → 等写回；组字结束后写回落地，光标停在用户打的字末尾（原话在下一行），不跳到原话末尾。
  * ② 组字中重来 → 切走（原话并进原会话草稿）→ 切回（组字还没结束，框里是旧组字稿）→ 组字结束把旧组字稿写进 store
  *    → 恢复的原话不能没了。
+ * ③ leo r7 S1：停放的会话回到前台，恢复输入框之后立刻判定（不等轮询）；用户紧接着改了那行 / 清空了 → 不追加、不复活。
  * 页面是 rewind-ime-harness.tsx 现打包，headless Chrome 跑（不启动 Electron）；找不到 Chrome 就跳过。
  */
 import { existsSync, readFileSync } from "node:fs"
@@ -133,3 +134,49 @@ test("必修 ②（清单 11 / 14）：组字中切走再切回，组字结束�
     await close()
   }
 })
+
+for (const action of ["edit", "clear"] as const) {
+  test(`leo r7 S1：停放的会话切回后立刻判定，用户下一拍前${action === "edit" ? "改了原话那行 → 不再追加" : "清空了 → 原话不复活"}`, async () => {
+    test.setTimeout(90_000)
+    const { page, close } = await openHarness()
+    try {
+      const r = await page.evaluate(
+        async ({ orig, action }) => {
+          const { useChatStore, pending, switchSession } = (window as any).__rewind
+          const el = document.querySelector("textarea") as HTMLTextAreaElement
+          const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
+          const log: string[] = []
+          // s1 不在前台时记一条 → 轮询把原话并进 s1 的草稿、记录停放。
+          useChatStore.setState({ sessionId: "s2", composer: "" })
+          await sleep(30)
+          pending.recordPendingRewind("s1", orig, [])
+          pending.ensurePendingRewindLoop()
+          await sleep(150)
+          log.push(`parked: ${JSON.stringify(pending.readPendingRewind("s1"))}`)
+          const t0 = performance.now()
+          switchSession("s1")
+          // 用户最早能动输入框的时候：React 把恢复的稿画进 DOM 之后。远早于 50ms 的轮询。
+          while (el.value !== orig && performance.now() - t0 < 40) await sleep(0)
+          const shownAt = Math.round(performance.now() - t0)
+          log.push(`after switch ${shownAt}ms: record=${JSON.stringify(pending.readPendingRewind("s1") ?? null)} dom=${JSON.stringify(el.value)}`)
+          el.focus()
+          const next = action === "edit" ? `${el.value} more` : ""
+          // 走 React 认的改值方式（原生 setter + input 事件），onChange 照常触发。
+          Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(el, next)
+          el.dispatchEvent(new InputEvent("input", { bubbles: true, data: action === "edit" ? " more" : null }))
+          await sleep(400)
+          return { shownAt, value: el.value, store: useChatStore.getState().composer, log, left: pending.listPendingRewindSessions() }
+        },
+        { orig: ORIG, action }
+      )
+      console.log(`[rewind-ime ③ ${action}]`, JSON.stringify(r))
+      expect(r.shownAt, "改动发生在第一拍轮询（50ms）之前").toBeLessThan(40)
+      const expected = action === "edit" ? `${ORIG} more` : ""
+      expect(r.value).toBe(expected)
+      expect(r.store).toBe(expected)
+      expect(r.left).toEqual([])
+    } finally {
+      await close()
+    }
+  })
+}
