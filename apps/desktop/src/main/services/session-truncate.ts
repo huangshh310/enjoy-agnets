@@ -5,8 +5,10 @@
 import { deleteMessageParts } from "@enjoy-agents/db"
 import {
   TRUNCATE_MESSAGE_NOT_FOUND,
+  TRUNCATE_ROLLBACK_UNSUPPORTED,
   TRUNCATE_RUN_ACTIVE,
   TRUNCATE_STALE_SNAPSHOT,
+  type SessionTruncateFromResult,
   type SessionTruncateResult
 } from "@enjoy-agents/ipc-contract/session-truncate"
 import { listActiveRuns } from "./agent-run-state.ts"
@@ -15,6 +17,7 @@ import { advanceSessionAllowWatermark } from "./conversation-session-allow-histo
 import { getDatabase } from "./database.ts"
 import { clearInspectPromptSnapshot } from "./inspect-prompt-snapshot.ts"
 import { recomputeReviewAfterTruncate } from "./review-after-truncate.ts"
+import { sessionSupportsRollback } from "./session-rollback-capability.ts"
 import { persistUserTurnOutcome } from "./persist-user-attachments.ts"
 import type { PersistedMessage } from "./persist-session.ts"
 import { clearSessionCompaction } from "./session-compaction-store.ts"
@@ -22,6 +25,7 @@ import type { UserFileAsset } from "./user-attachment-parts.ts"
 
 export {
   TRUNCATE_MESSAGE_NOT_FOUND,
+  TRUNCATE_ROLLBACK_UNSUPPORTED,
   TRUNCATE_RUN_ACTIVE,
   TRUNCATE_STALE_SNAPSHOT
 }
@@ -168,7 +172,9 @@ export async function truncateSessionFrom(
   messageId: string,
   expectedTailIds: string[],
   opts?: { dryRun?: boolean }
-): Promise<SessionTruncateResult> {
+): Promise<SessionTruncateFromResult> {
+  // 引擎不支持回滚：预检和真截断都拒，什么都不删。
+  if (!sessionSupportsRollback(sessionId)) return { ok: false, code: TRUNCATE_ROLLBACK_UNSUPPORTED }
   return applyExplicitSessionTruncate({
     sessionId,
     fromMessageId: messageId,
