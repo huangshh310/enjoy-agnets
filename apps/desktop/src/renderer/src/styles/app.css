@@ -1,4 +1,6 @@
 @import "@/styles/globals.css";
+/* 弹窗局部对比度 token（进同一次 Tailwind 编译，引用到的色阶变量才会输出）。 */
+@import "../components/ai-chat/thread/turns/rewind-dialog.css";
 
 @source "../**/*.{ts,tsx}";
 
