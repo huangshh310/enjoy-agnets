@@ -92,7 +92,9 @@ export const enChat = {
   presetNote: "When to use",
   presetRemove: "Remove",
   runtimeSteeredHint: "Got it. It'll see this at its next step.",
-  runtimeImageSteerQueuedHint: "This agent can't take images mid-run; this message (with images) will go out next turn",
+  // luna 定稿：ACP / 模型看不了图同一句；按图数选单复数（runtimeImageSteerQueuedHintKey）。
+  runtimeImageSteerQueuedHint: "It can't take images while running, so this message and its images will be sent next turn.",
+  runtimeImageSteerQueuedHintOne: "It can't take images while running, so this message and its image will be sent next turn.",
   runtimeRemoveFollowup: "Remove queued follow-up",
   runtimeSteerItem: "Send right away",
   runtimeEditFollowup: "Edit",

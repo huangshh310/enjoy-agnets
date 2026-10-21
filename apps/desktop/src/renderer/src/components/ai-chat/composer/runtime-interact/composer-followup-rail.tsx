@@ -5,11 +5,20 @@
  */
 import { useEffect, useState } from "react"
 import { RiCloseLine } from "@remixicon/react"
-import { useT, type TranslateFn } from "@renderer/i18n"
-import { followupPausedReason, listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { useT } from "@renderer/i18n"
+import {
+  followupPausedReason,
+  listFollowups,
+  runtimeHintImageCount,
+  setRuntimeHint,
+  subscribeFollowups,
+  visibleRuntimeHint,
+  type RuntimeHintCode
+} from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-styles"
 import { runtimeHintPlacement } from "./runtime-hint-placement"
+import { hintLabel } from "./runtime-hint-label"
 
 export function ComposerFollowupRail() {
   const t = useT()
@@ -18,11 +27,13 @@ export function ComposerFollowupRail() {
   const [hint, setHint] = useState<RuntimeHintCode>(() => visibleRuntimeHint(sessionId))
   const [nextText, setNextText] = useState(() => nextQueuedText(sessionId))
   const [paused, setPaused] = useState(() => followupPausedReason(sessionId) != null)
+  const [imageCount, setImageCount] = useState(() => runtimeHintImageCount())
   useEffect(() => {
     const sync = () => {
       setHint(visibleRuntimeHint(sessionId))
       setNextText(nextQueuedText(sessionId))
       setPaused(followupPausedReason(sessionId) != null)
+      setImageCount(runtimeHintImageCount())
     }
     sync()
     return subscribeFollowups(sync)
@@ -34,7 +45,7 @@ export function ComposerFollowupRail() {
   return (
     <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>
       <p className="min-w-0 flex-1 truncate text-caption-2-regular text-text-secondary">
-        {hintLabel(hint, t, nextText)}
+        {hintLabel(hint, t, nextText, imageCount)}
       </p>
       <button
         type="button"
@@ -52,13 +63,4 @@ export function nextQueuedText(sessionId: string | null): string {
   const item = listFollowups(sessionId)[0]
   const raw = item?.draft || item?.prompt || ""
   return raw.replace(/\s+/g, " ").trim().slice(0, 80)
-}
-
-export function hintLabel(hint: RuntimeHintCode, t: TranslateFn, nextText: string) {
-  if (hint === "chipQueued" || hint === "queued") {
-    return nextText ? t("chat.runtimeQueuedNext", { text: nextText }) : t("chat.runtimeQueuedHint")
-  }
-  if (hint === "steered") return t("chat.runtimeSteeredHint")
-  if (hint === "imageSteerQueued") return t("chat.runtimeImageSteerQueuedHint")
-  return ""
 }

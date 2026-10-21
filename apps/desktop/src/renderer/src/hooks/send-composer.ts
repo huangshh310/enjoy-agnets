@@ -105,7 +105,7 @@ function queueComposerSubmission(
   // 输入框与切回恢复不认带标记的图（jojo P2）。
   markDraftAssetsQueued(sessionId, queuedItem.id, snapshot.draft || content, queuedItem.assets)
   clearComposerDraft()
-  setRuntimeHint(hint, sessionId)
+  setRuntimeHint(hint, sessionId, assets.length)
 }
 
 export async function attachComposerFile(file: File) {

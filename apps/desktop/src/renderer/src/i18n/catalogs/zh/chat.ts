@@ -91,7 +91,9 @@ export const zhChat = {
   presetNote: "何时使用",
   presetRemove: "删除",
   runtimeSteeredHint: "已收到，它下一步就会看到。",
-  runtimeImageSteerQueuedHint: "这个 Agent 运行中收不了图，带图的这条排在下一轮发出",
+  // luna 定稿：ACP / 模型看不了图同一句；zh 不分单复数，两键同文。
+  runtimeImageSteerQueuedHint: "它运行中收不了图，这条连图一起排到下一轮发。",
+  runtimeImageSteerQueuedHintOne: "它运行中收不了图，这条连图一起排到下一轮发。",
   runtimeRemoveFollowup: "移除排队任务",
   runtimeSteerItem: "马上发给它",
   runtimeEditFollowup: "编辑",

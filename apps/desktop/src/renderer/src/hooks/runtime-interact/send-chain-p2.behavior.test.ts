@@ -91,6 +91,12 @@ const fq = await import("../followup-queue.ts")
 const { tryStartNextFollowup, drainFollowupAutostart, resetFollowupAutostart } = await import("../followup-autostart.ts")
 const assets = await import("../composer-assets.ts")
 const storage = await import("../../lib/session-draft-storage.ts")
+const { hintLabel } = await import("../../components/ai-chat/composer/runtime-interact/runtime-hint-label.ts")
+const { zh: zhCatalog } = await import("../../i18n/catalogs/zh/index.ts")
+const { en: enCatalog } = await import("../../i18n/catalogs/en/index.ts")
+const { translate } = await import("../../i18n/lookup.ts")
+const tZh = (path: string, vars?: Record<string, string | number>) => translate(zhCatalog, path, vars)
+const tEn = (path: string, vars?: Record<string, string | number>) => translate(enCatalog, path, vars)
 
 storage.installSessionDraftPersistence()
 
@@ -150,6 +156,7 @@ afterEach(async () => {
 // ───────────────────────── A：带图插话 ─────────────────────────
 
 const IMG = { id: "ast_orange", name: "orange.png", mediaType: "image/png" }
+const IMG2 = { id: "ast_blue", name: "blue.png", mediaType: "image/png" }
 const rows = (sid: string) => (dbAssets[sid] ?? []) as Array<{ id: string; queued?: { itemId: string } }>
 
 /** 「very slow 插图测试」跑着；输入框贴图（落草稿附件）+ 打字。 */
@@ -200,7 +207,24 @@ test("A：运行中收不了图（STEER_IMAGES_UNSUPPORTED）——字和图整�
   assert.deepEqual(assets.listComposerAssets(), [])
   assert.equal(useChatStore.getState().composer, "", "输入框清空（这条在队列里）")
   assert.equal(fq.getRuntimeHint(), "imageSteerQueued", "提示：运行中收不了图，排到下一轮")
+  assert.equal(fq.runtimeHintImageCount(), 1, "提示按 1 张图选单数")
+  assert.equal(hintLabel(fq.getRuntimeHint(), tEn, "", fq.runtimeHintImageCount()), "It can't take images while running, so this message and its image will be sent next turn.")
+  assert.equal(hintLabel(fq.getRuntimeHint(), tZh, "", fq.runtimeHintImageCount()), "它运行中收不了图，这条连图一起排到下一轮发。")
   assert.equal(useChatStore.getState().messages.at(-1)?.content, "very slow 插图测试", "没有冒充已发出的气泡")
+})
+
+test("A：收不了图、托盘里 2 张——整条带 2 张排队，en 提示用复数", async () => {
+  runningWithImageDraft("ses_a2b", "两张一起看", "claude")
+  assets.queueComposerAsset({ ...IMG2 })
+  steerImpl = () => {
+    throw new Error(STEER_IMAGES_UNSUPPORTED)
+  }
+  await submitComposer("steer")
+  const [item] = fq.listFollowups("ses_a2b")
+  assert.deepEqual(item?.assets.map((a) => a.id), [IMG.id, IMG2.id])
+  assert.equal(fq.runtimeHintImageCount(), 2)
+  assert.equal(hintLabel(fq.getRuntimeHint(), tEn, "", fq.runtimeHintImageCount()), "It can't take images while running, so this message and its images will be sent next turn.")
+  assert.equal(hintLabel(fq.getRuntimeHint(), tZh, "", fq.runtimeHintImageCount()), "它运行中收不了图，这条连图一起排到下一轮发。")
 })
 
 test("A：插话失败——图回托盘、字留在输入框，不提示已收到", async () => {
