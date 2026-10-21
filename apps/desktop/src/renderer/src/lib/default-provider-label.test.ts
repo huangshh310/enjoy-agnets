@@ -55,5 +55,7 @@ test("luna P2 定稿：自定义端点说主机名；未知预设有地址也说
   assert.deepEqual(defaultProviderFace(readiness, row({ kind: "custom", baseURL: "not a url" })), { kind: "generic" })
   assert.deepEqual(defaultProviderFace(readiness, row({ kind: "mystery-preset" })), { kind: "generic" })
   assert.deepEqual(defaultProviderFace(readiness, row({})), { kind: "generic" })
-  assert.deepEqual(defaultProviderFace(readiness, row({ kind: "openai", baseURL: "https://proxy.example.com/v1" })), { kind: "named", name: "OpenAI" }, "已知预设优先品牌名")
+  assert.deepEqual(defaultProviderFace(readiness, row({ kind: "openai", baseURL: "https://api.openai.com/v1" })), { kind: "named", name: "OpenAI" }, "已知预设 + 官方地址说品牌名")
+  // leo #164 S5：预设被改到别的地址 → 说那个地址的主机名，不说品牌
+  assert.deepEqual(defaultProviderFace(readiness, row({ kind: "openai", baseURL: "https://proxy.example.com/v1" })), { kind: "named", name: "proxy.example.com" })
 })

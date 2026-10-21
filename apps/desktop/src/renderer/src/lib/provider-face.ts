@@ -34,8 +34,41 @@ export function presetBrand(kind: string | null | undefined): string | undefined
   return PROVIDER_PRESETS.find((preset) => preset.kind === kind)?.name?.trim() || undefined
 }
 
+function urlHost(raw: string | null | undefined): string | undefined {
+  const value = raw?.trim()
+  if (!value) return undefined
+  try {
+    return new URL(value).hostname.replace(/^\[|\]$/g, "").toLowerCase() || undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** 预设自带的官方端点主机名（各协议 + 各区域）。 */
+function presetHosts(kind: string): Set<string> {
+  const preset = PROVIDER_PRESETS.find((item) => item.kind === kind)
+  const hosts = new Set<string>()
+  if (!preset) return hosts
+  const add = (endpoints: Record<string, string | undefined> | undefined) => {
+    for (const url of Object.values(endpoints ?? {})) {
+      const host = urlHost(url)
+      if (host) hosts.add(host)
+    }
+  }
+  add(preset.endpoints as Record<string, string | undefined>)
+  for (const region of preset.regions ?? []) add(region.endpoints as Record<string, string | undefined>)
+  return hosts
+}
+
+/**
+ * leo #164 S5：预设品牌只在端点还是这家官方地址（或没填）时用。用户把 OpenAI 预设改到自己的地址
+ * （代理、中转、自建）时，连不上的是那个地址，不是 OpenAI：说主机名。
+ */
 export function providerFace(row: { kind?: string; baseURL?: string } | undefined): ProviderFace {
-  const name = presetBrand(row?.kind) ?? endpointHostLabel(row?.baseURL)
+  const brand = presetBrand(row?.kind)
+  const host = urlHost(row?.baseURL)
+  const official = !host || !row?.kind || presetHosts(row.kind).has(host)
+  const name = (brand && official ? brand : undefined) ?? endpointHostLabel(row?.baseURL) ?? brand
   return name ? { kind: "named", name } : { kind: "generic" }
 }
 

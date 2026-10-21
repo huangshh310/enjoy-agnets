@@ -64,8 +64,10 @@ async function cards() {
 
 test("luna P2：Enjoy 本地五种失败文案中英都说品牌名，不出现档案名 / 预设 id / 括号", async () => {
   const { render } = await cards()
+  // 端点用各家官方地址（改到别的地址会说主机名，见 provider-face S5）
+  const official = { openai: "https://api.openai.com/v1", deepseek: "https://api.deepseek.com/v1" } as const
   for (const [profile, kind, brand] of [["Work key A", "openai", "OpenAI"], ["E2E Stub Key", "openai", "OpenAI"], ["我的 DS 钥匙", "deepseek", "DeepSeek"]] as const) {
-    for (const { key, text } of render({ name: profile, kind, baseURL: "https://api.openai.com/v1" })) {
+    for (const { key, text } of render({ name: profile, kind, baseURL: official[kind] })) {
       assert.ok(text.includes(brand), `${key}: ${text}`)
       assert.ok(!text.includes(profile), `${key} 出现了档案名：${text}`)
       assert.ok(!text.includes(kind === "openai" ? "openai" : kind), `${key} 出现了预设 id：${text}`)
