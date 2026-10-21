@@ -10,6 +10,8 @@
  * - 非 Git 工作区：没有还原按钮，取消 · 从这里重来；点了只清对话，文件不动。
  * - 不知道是不是 Git（workspace.changes 不带 gitRepo）：同样隐藏还原按钮，中性正文。
  * - setComposer 与 #136 按会话保存草稿：重来后原话在输入框，切到新对话是空的，切回来原话还在。
+ * - 跑着的时候：点的那颗按钮转圈 +「正在还原…」，置灰的「取消」看得出置灰（#159 F1 / luna g159 ⑪）。
+ * - ACP 会话（会话绑 Amp）：消息上没有「从这里重来」入口，也没有置灰的（#159 F1 / leo soft 8）。
  * 中英文都断言不出现 检查点 / HEAD / commit / 快照 / checkpoint。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘（1440x900 与 733x480），文件名前缀 ENJOY_E2E_SHOT_TAG（默认 after）。
  */
@@ -46,13 +48,14 @@ const COPY = {
     goReview: "去审查",
     neutralBody: "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。",
     genericError: "从这里重来失败",
+    restoring: "正在还原…",
     review: "审查",
     // 修前（main）的按钮名，只用来在修前截图时走到同一个状态。
     oldRestore: "连文件一起还原",
     oldChatOnly: "只改聊天"
   },
   en: {
-    action: "Edit from here",
+    action: "Start over from here",
     title: "Start over from this message?",
     gitBody: "This message and everything after it will be removed. Its text goes back into the input so you can edit and resend.",
     gitHint: "You can also restore files to how they were before this turn.",
@@ -72,6 +75,7 @@ const COPY = {
     neutralBody:
       "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone.",
     genericError: "Could not rewind from here",
+    restoring: "Restoring…",
     review: "Review",
     oldRestore: "Revert files too",
     oldChatOnly: "Revert chat only"
@@ -370,6 +374,15 @@ for (const lang of ["zh", "en"] as const) {
       dialog = await openDialog(page, lang)
       await dialog.getByTestId("rewind-restore-files").click()
       await page.waitForTimeout(300)
+      // luna g159 ⑪：点的那颗转圈 +「正在还原…」；置灰的「取消」看得出置灰（半透明）。
+      const restoring = dialog.getByTestId("rewind-restore-files")
+      await expect.soft(restoring, `${lang} busy button`).toHaveAttribute("data-busy", "true")
+      await expect.soft(restoring, `${lang} busy label`).toHaveText(c.restoring)
+      await expect.soft(restoring.getByTestId("rewind-spinner"), `${lang} spinner`).toBeVisible()
+      const cancel = dialog.getByTestId("rewind-cancel")
+      await expect.soft(cancel, `${lang} cancel disabled`).toBeDisabled()
+      expect.soft(Number(await cancel.evaluate((el) => getComputedStyle(el).opacity)), `${lang} cancel looks disabled`).toBeLessThan(0.8)
+      await shots(page, `restoring-${lang}`)
       await page.keyboard.press("Escape")
       await page.waitForTimeout(300)
       await expect(dialog, `${lang} esc while busy keeps dialog`).toBeVisible()
@@ -537,6 +550,65 @@ test("重来写回输入框 × #136 按会话保存草稿：切到新对话是�
     await expect(composer).toContainText("please write a note")
     await expect(page.locator('[data-testid="user-bubble"]')).toHaveCount(0)
     await shots(page, "set-composer-draft-switch-back-zh")
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
+
+test("ACP 会话（绑 Amp）：消息上没有「从这里重来」入口，也没有置灰的；Enjoy 本地会话有（zh）", async () => {
+  test.setTimeout(240_000)
+  const ws = makeWorkspace(true)
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-rwd-acp-ud-"))
+  const env = {
+    ...process.env,
+    ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_LANG: "zh",
+    ENJOY_E2E_CHAT_READY: "key",
+    ENJOY_E2E_WORKSPACE: ws,
+    ENJOY_E2E_USERDATA: userData
+  }
+  let app = await relaunchElectron(env)
+  let page = await firstWindow(app)
+  let sessionId: string | null = null
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await writeTurn(page)
+    sessionId = await page.locator('[data-testid="sidebar-session-row"][data-active="true"]').first().getAttribute("data-session-id")
+    expect(sessionId).toBeTruthy()
+    // 对照：Enjoy 本地会话的消息上有入口。
+    await page.locator('[data-testid="user-bubble"]').first().hover()
+    await expect(page.getByRole("button", { name: COPY.zh.action, exact: true }).first()).toBeVisible()
+    // 把这条会话绑到 Amp（ACP），走正式 IPC；重启后按会话绑定取引擎。
+    await page.evaluate(
+      (sid) =>
+        (globalThis as { ide?: { agentTools?: { setSessionRuntime?: (input: unknown) => Promise<unknown> } } }).ide?.agentTools?.setSessionRuntime?.({
+          sessionId: sid,
+          runtimeId: "amp"
+        }),
+      sessionId
+    )
+  } finally {
+    await closeForRelaunch(app)
+  }
+  app = await relaunchElectron(env)
+  page = await firstWindow(app)
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const row = page.locator(`[data-testid="sidebar-session-row"][data-session-id="${sessionId}"]`).first()
+    await row.click()
+    await expect(row).toHaveAttribute("data-active", "true", { timeout: 10_000 })
+    await expect
+      .poll(async () => page.evaluate(() => window.__enjoyE2e?.getComposerGate?.().runtimeId ?? null), { timeout: 15_000 })
+      .toBe("amp")
+    const bubble = page.locator('[data-testid="user-bubble"]').first()
+    await expect(bubble).toBeVisible({ timeout: 15_000 })
+    await bubble.hover()
+    await page.waitForTimeout(300)
+    // 「编辑消息」还在（不是死路），「从这里重来」整个不出（不是置灰）。
+    await expect(page.getByRole("button", { name: "编辑消息", exact: true }).first()).toBeVisible()
+    await expect(page.getByRole("button", { name: COPY.zh.action, exact: true })).toHaveCount(0)
+    await expect(page.getByRole("dialog")).toHaveCount(0)
+    await shots(page, "acp-no-rewind-zh")
   } finally {
     await closeForRelaunch(app)
   }

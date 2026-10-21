@@ -78,7 +78,8 @@ export function rewindDialogView(state: RewindDialogState, t: Translate, busy = 
     const shown = files.slice(0, REWIND_FILES_SHOWN)
     return {
       title,
-      body: t("chat.rewindConfirmUntrackedBody"),
+      // 英文单个文件用单数句（luna 定稿）；中文同一句。
+      body: n === 1 ? t("chat.rewindConfirmUntrackedBodyOne") : t("chat.rewindConfirmUntrackedBody"),
       hint: null,
       failure: null,
       files: shown,
@@ -138,10 +139,12 @@ export function rewindFailureKind(code: string): RewindFailure | null {
   return null
 }
 
-/** 其它失败 → 固定文案键。不认识的 code（包括被当成 code 传上来的原始错误文本）一律用通用句。 */
+/**
+ * 其它失败 → 固定文案键。不认识的 code（包括被当成 code 传上来的原始错误文本）一律用通用句。
+ * REWIND_PROVIDER_UNSUPPORTED 也走通用句：入口在不支持的引擎上整个不出，到这里只可能是竞态（luna g159 ⑭）。
+ */
 export function rewindErrorKey(code: string): string {
   if (code.includes("REWIND_BUSY")) return "chat.rewindBusy"
-  if (code.includes("REWIND_PROVIDER_UNSUPPORTED")) return "chat.rewindUnsupported"
   if (code.includes("TRUNCATE_MESSAGE_NOT_FOUND")) return "chat.rewindTruncateMissing"
   if (code.includes("TRUNCATE_STALE_SNAPSHOT")) return "chat.truncateStaleSnapshot"
   if (code.includes("TRUNCATE_TAIL_CHANGED")) return "chat.truncateTailChanged"

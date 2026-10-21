@@ -22,7 +22,9 @@ const {
   persistMessage,
   setTruncateThrowAfterFirstDeleteForTest,
   snapshotConversationSessionAllow,
-  truncateSessionFrom
+  setSetting,
+  truncateSessionFrom,
+  TRUNCATE_ROLLBACK_UNSUPPORTED
 } = await import("./session-truncate.behavior.load.ts")
 
 function seedSession(sessionId: string): void {
@@ -423,4 +425,38 @@ test("leo 小修 2：agent-run-start 开跑前预检、挂 run 与落用户句�
   assert.match(src, /const held = holdRunThenPersistUser\(/)
   assert.match(src, /if \(!held\.ok\) return held/)
   assert.doesNotMatch(src, /\bholdAgentRun\(/)
+})
+
+test("#159 F1（leo soft 9）：会话绑的引擎不支持回滚 → truncateFrom（含 dryRun）拒绝，一条都不删；Enjoy 本地 / 没绑过照常", async () => {
+  const ids = (sid: string) => {
+    seedSession(sid)
+    insertMessage(sid, `${sid}_u1`, "user", 1)
+    insertMessage(sid, `${sid}_a1`, "assistant", 2)
+    return [`${sid}_u1`, `${sid}_a1`]
+  }
+  const acp = ids("ses_rb_amp")
+  const sandbox = ids("ses_rb_sbx")
+  const local = ids("ses_rb_local")
+  const legacy = ids("ses_rb_legacy")
+  const bound = ids("ses_rb_bound")
+  setSetting(
+    "session.runtimes",
+    JSON.stringify({ ses_rb_amp: "amp", ses_rb_sbx: "sandbox-harness", ses_rb_local: "enjoy-local" })
+  )
+  // 没绑 session.runtimes、但挂着 ACP 会话绑定（acp_runtime_id）的也拒。
+  getDatabase().prepare("UPDATE sessions SET acp_runtime_id = ?, acp_session_id = ? WHERE id = ?").run("claude", "acp-1", "ses_rb_bound")
+  for (const [sid, tail] of [["ses_rb_amp", acp], ["ses_rb_sbx", sandbox], ["ses_rb_bound", bound]] as const) {
+    for (const dryRun of [true, false]) {
+      assert.deepEqual(
+        await truncateSessionFrom(sid, tail[0]!, [...tail], { dryRun }),
+        { ok: false, code: TRUNCATE_ROLLBACK_UNSUPPORTED },
+        `${sid} dryRun=${dryRun}`
+      )
+      assert.deepEqual(messageIds(sid), tail, `${sid}: nothing deleted`)
+    }
+  }
+  assert.deepEqual(await truncateSessionFrom("ses_rb_local", local[0]!, [...local]), { ok: true, deleted: 2 })
+  assert.deepEqual(messageIds("ses_rb_local"), [])
+  assert.deepEqual(await truncateSessionFrom("ses_rb_legacy", legacy[1]!, [legacy[1]!]), { ok: true, deleted: 1 })
+  assert.deepEqual(messageIds("ses_rb_legacy"), [legacy[0]])
 })
