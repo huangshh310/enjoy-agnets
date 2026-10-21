@@ -128,11 +128,11 @@ test("luna #170 r-luna ③：简易表单的自定义端点，名称 → 接口�
   // 和 editorMissingFields 的顺序对得上（名称在地址前面）。
   const empty = customEditor({ name: "", endpoints: {}, keys: [], modelId: "" })
   assert.deepEqual(simpleFormMissingHints("custom", editorMissingFields(empty, true)), ["name"])
-  // 文案（luna）：名称沿用现有句；地址「填上地址才能保存。」/「Add the address to save.」。
+  // 文案（luna）：名称沿用现有句；地址「填上地址才能保存。」/「Add an address to save.」。
   assert.equal(zhSettings.providers.missingNameHint, "起个名字才能保存。")
   assert.equal(zhSettings.providers.missingEndpointHint, "填上地址才能保存。")
   assert.equal(enSettings.providers.missingNameHint, "Add a name to save.")
-  assert.equal(enSettings.providers.missingEndpointHint, "Add the address to save.")
+  assert.equal(enSettings.providers.missingEndpointHint, "Add an address to save.")
 
   const read = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8")
   const simple = read("./provider-simple-fields.tsx")

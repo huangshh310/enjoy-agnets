@@ -1133,7 +1133,7 @@ export const enSettings = {
     missingJoiner: ", ",
     missingOnTab: "{field} (on the {tab} tab)",
     missingNameHint: "Add a name to save.",
-    missingEndpointHint: "Add the address to save.",
+    missingEndpointHint: "Add an address to save.",
     missingKeyHint: "Paste an API key to save.",
     missingModelHint: "Add a model ID to save.",
     missingTabAria: "Something on this tab still needs filling in",
