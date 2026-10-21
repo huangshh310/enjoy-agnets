@@ -67,7 +67,7 @@ test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thre
   assert.ok(!stage.includes("[data-keep-thread=true])>[data-thread-root]]:min-h-[4.5rem]"))
 })
 
-test("leo soft-5：「还有 N 条」单独一行要 64px（padding 8 + 一行 28 + 间距 4 + 胶囊 24），够就画在下面，不够才贴在区底", () => {
+test("leo soft-5：「还有 N 条」单独一行要 64px（padding 8 + 一行 28 + 间距 4 + 胶囊 24），够就画在下面，不够就不画（luna 01d，不再贴区底）", () => {
   assert.equal(PILL_BELOW_MIN_DOCK_PX, 64)
   assert.equal(pillFitsBelow(152), true) // max-h-[9.5rem]
   assert.equal(pillFitsBelow(64), true)
