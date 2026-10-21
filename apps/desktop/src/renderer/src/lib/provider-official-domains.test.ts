@@ -4,7 +4,7 @@ import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
 import { zhChat } from "../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../i18n/catalogs/en/chat.ts"
 import { endpointHostLabel, fillProviderFace, presetBrand, providerFace } from "./provider-face.ts"
-import { LOCAL_PRESET_KINDS, PROVIDER_OFFICIAL_DOMAINS, hostHasDomainSuffix, isOfficialDomain, isOfficialEndpointHost, normalizeHost } from "./provider-official-domains.ts"
+import { LOCAL_PRESET_KINDS, PROVIDER_OFFICIAL_DOMAINS, PROVIDER_OFFICIAL_HOSTS, isThisMachineHost, hostHasDomainSuffix, isOfficialDomain, isOfficialEndpointHost, normalizeHost } from "./provider-official-domains.ts"
 
 const brand = (kind: string) => ({ kind: "named", name: presetBrand(kind)! })
 const named = (name: string) => ({ kind: "named", name })
@@ -21,9 +21,11 @@ test("后缀匹配：只在标签边界上（luna #164 S5a 要求 1）", () => {
   assert.equal(hostHasDomainSuffix("penai.com", "openai.com"), false)
   assert.equal(hostHasDomainSuffix("", "openai.com"), false)
   assert.equal(hostHasDomainSuffix("openai.com", ""), false, "空后缀不能认一切")
-  assert.equal(hostHasDomainSuffix(".openai.com", "openai.com"), true)
+  assert.equal(hostHasDomainSuffix(".openai.com", "openai.com"), false, "空标签不算（leo S3）")
+  assert.equal(hostHasDomainSuffix("api..openai.com", "openai.com"), false, "空标签不算（leo S3）")
   assert.equal(normalizeHost(" [::1] "), "::1")
-  assert.equal(normalizeHost("api.openai.com.."), "api.openai.com")
+  assert.equal(normalizeHost("api.openai.com.."), "api.openai.com..", "末尾两个点不动，算空标签")
+  assert.equal(normalizeHost(normalizeHost("api.openai.com..")), "api.openai.com..", "规整两次不变")
   assert.equal(isOfficialDomain("constructor", "api.openai.com"), false, "原型上的键不是预设")
   assert.equal(isOfficialDomain("custom", "api.openai.com"), false)
 })
@@ -71,7 +73,9 @@ test("预设列表里每一家、每个默认端点（含各区域 / 套餐）�
   const local = new Set(["ollama", "lmstudio"])
   for (const preset of PROVIDER_PRESETS) {
     if (preset.kind === "custom") continue
-    if (!local.has(preset.kind)) assert.ok(PROVIDER_OFFICIAL_DOMAINS[preset.kind]?.length, `${preset.kind} 没登记官方域名`)
+    if (!local.has(preset.kind)) {
+      assert.ok(PROVIDER_OFFICIAL_DOMAINS[preset.kind]?.length || PROVIDER_OFFICIAL_HOSTS[preset.kind]?.length, `${preset.kind} 没登记官方地址`)
+    }
     const urls = [
       ...Object.values(preset.endpoints ?? {}),
       ...(preset.regions ?? []).flatMap((region) => Object.values(region.endpoints ?? {}))
@@ -83,7 +87,7 @@ test("预设列表里每一家、每个默认端点（含各区域 / 套餐）�
     }
   }
   const kinds = new Set(PROVIDER_PRESETS.map((preset) => preset.kind as string))
-  for (const kind of Object.keys(PROVIDER_OFFICIAL_DOMAINS)) assert.ok(kinds.has(kind), `白名单里的 ${kind} 不是预设`)
+  for (const kind of [...Object.keys(PROVIDER_OFFICIAL_DOMAINS), ...Object.keys(PROVIDER_OFFICIAL_HOSTS)]) assert.ok(kinds.has(kind), `白名单里的 ${kind} 不是预设`)
 })
 
 test("后缀边界反例：仿冒 / 拼接 / 别家域名 → 主机名，不说品牌", () => {
@@ -212,4 +216,116 @@ test("leo rv164c：仿冒子域 / 账号部分 @ 两个方向 / 反斜杠 / 编�
   // openai.com 的子域都归 OpenAI 管（luna 要求 1：foo.openai.com 认 openai.com），所以 evilapi.openai.com 也说品牌
   assert.deepEqual(face("https://evilapi.openai.com/v1"), brand("openai"))
   assert.deepEqual(face("https://my-resource.openai.azure.com/openai"), named("my-resource.openai.azure.com"), "Azure OpenAI 不是 openai.com")
+})
+
+test("leo rv164d M1：z.ai / MiniMax / 火山方舟 / BytePlus 只认精确主机，用户可占的 space.* / TOS 桶说主机名", () => {
+  const ok: Array<[string, string]> = [
+    ["zai", "api.z.ai"],
+    ["minimax", "api.minimax.io"],
+    ["minimax", "api.minimaxi.com"],
+    ["minimax", "api.minimax.chat"],
+    ["doubao", "ark.cn-beijing.volces.com"],
+    ["doubao", "ark.cn-shanghai.volces.com"],
+    ["doubao", "ark.cn-guangzhou.volces.com"],
+    ["doubao", "ark.ap-southeast.bytepluses.com"],
+    ["doubao", "ark.eu-west.bytepluses.com"]
+  ]
+  for (const [kind, host] of ok) assert.deepEqual(providerFace({ kind, baseURL: `https://${host}/v1` }), brand(kind), host)
+  const bad: Array<[string, string]> = [
+    ["zai", "abc123-deploy.space.z.ai"],
+    ["zai", "z.ai"],
+    ["zai", "open.z.ai"],
+    ["minimax", "abc.space.minimax.io"],
+    ["minimax", "abc.space.minimaxi.com"],
+    ["minimax", "minimax.io"],
+    ["minimax", "foo.minimax.chat"],
+    ["doubao", "mybucket.tos-cn-beijing.volces.com"],
+    ["doubao", "relay.tos-cn-shanghai.volces.com"],
+    ["doubao", "mybucket.tos-ap-southeast-1.bytepluses.com"],
+    ["doubao", "volces.com"],
+    ["doubao", "ark.cn-hangzhou.volces.com"]
+  ]
+  for (const [kind, host] of bad) {
+    assert.deepEqual(providerFace({ kind, baseURL: `https://${host}/v1` }), named(endpointHostLabel(`https://${host}/v1`)!), `${kind} @ ${host}`)
+    assert.equal(isOfficialDomain(kind, host), false, `${kind} @ ${host}`)
+  }
+})
+
+test("luna 边界规则：没确认无用户子域的厂商只认精确主机（智谱 / 阶跃 / 小米 / 讯飞 / fal / 聚合 / 媒体…）", () => {
+  // 官方主机照认
+  const ok: Array<[string, string]> = [
+    ["zhipu", "open.bigmodel.cn"], ["stepfun", "api.stepfun.com"], ["stepfun", "api.stepfun.ai"],
+    ["xiaomi", "api.xiaomimimo.com"], ["xiaomi", "token-plan-sgp.xiaomimimo.com"], ["spark", "spark-api-open.xf-yun.com"],
+    ["fal", "fal.run"], ["fal", "queue.fal.run"], ["xai", "api.x.ai"], ["groq", "api.groq.com"], ["mistral", "codestral.mistral.ai"],
+    ["openrouter", "openrouter.ai"], ["siliconflow", "api.siliconflow.com"], ["zeroone", "api.01.ai"], ["cohere", "api.cohere.ai"],
+    ["hunyuan", "hunyuan.tencentcloudapi.com"], ["wenxin", "qianfan.baidubce.com"], ["qwen", "token-plan.maas.qianwenaiapi.com"]
+  ]
+  for (const [kind, host] of ok) assert.equal(isOfficialDomain(kind, host), true, `${kind} @ ${host}`)
+  // 同域的其它子域一律说主机名
+  const bad: Array<[string, string]> = [
+    ["zhipu", "foo.bigmodel.cn"], ["zhipu", "bigmodel.cn"], ["stepfun", "x.stepfun.com"], ["xiaomi", "foo.xiaomimimo.com"],
+    ["spark", "foo.xf-yun.com"], ["fal", "myapp.fal.run"], ["fal", "fal.ai"], ["xai", "foo.x.ai"], ["groq", "console.groq.com"],
+    ["mistral", "foo.mistral.ai"], ["perplexity", "foo.perplexity.ai"], ["openrouter", "foo.openrouter.ai"],
+    ["siliconflow", "foo.siliconflow.cn"], ["together", "foo.together.xyz"], ["modelscope", "foo.modelscope.cn"],
+    ["aihubmix", "foo.aihubmix.com"], ["replicate", "foo.replicate.com"], ["elevenlabs", "foo.elevenlabs.io"],
+    ["deepgram", "foo.deepgram.com"], ["cohere", "foo.cohere.com"], ["zeroone", "foo.lingyiwanwu.com"],
+    ["baichuan", "foo.baichuan-ai.com"], ["hunyuan", "foo.hunyuan.cloud.tencent.com"], ["wenxin", "foo.qianfan.baidubce.com"],
+    ["qwen", "foo.qianwenaiapi.com"]
+  ]
+  for (const [kind, host] of bad) {
+    assert.equal(isOfficialDomain(kind, host), false, `${kind} @ ${host}`)
+    assert.deepEqual(providerFace({ kind, baseURL: `https://${host}/v1` }), named(endpointHostLabel(`https://${host}/v1`)!), `${kind} @ ${host}`)
+  }
+  // 后缀表只剩确认过的几家
+  assert.deepEqual(Object.keys(PROVIDER_OFFICIAL_DOMAINS).sort(), ["anthropic", "deepseek", "kimi", "openai", "qwen"])
+})
+
+test("leo S2：共享云 / 本机地址的反例（googleapis.com、vercel.app、*.localhost、0.0.0.0 对云端预设）", () => {
+  const cases: Array<[string, string]> = [
+    ["google", "storage.googleapis.com"],
+    ["google", "googleapis.com"],
+    ["google", "foo.generativelanguage.googleapis.com"],
+    ["gateway", "my-proxy.vercel.app"],
+    ["gateway", "foo.vercel.sh"],
+    ["gateway", "vercel.sh"],
+    ["gateway", "foo.ai-gateway.vercel.sh"],
+    ["openai", "openai.localhost"],
+    ["openai", "api.openai.com.localhost"],
+    ["openai", "0.0.0.0"],
+    ["anthropic", "127.0.0.2"],
+    ["deepseek", "[::]"],
+    ["kimi", "localhost"]
+  ]
+  for (const [kind, host] of cases) {
+    const url = `http://${host}:8080/v1`
+    assert.deepEqual(providerFace({ kind, baseURL: url }), named(endpointHostLabel(url)!), `${kind} @ ${host}`)
+  }
+})
+
+test("leo S3：空标签（api..openai.com、.openai.com、末尾两个点）永远不算品牌", () => {
+  for (const url of ["https://api..openai.com/v1", "https://.openai.com/v1", "https://api.openai.com../v1", "https://ark..cn-beijing.volces.com/api/v3"]) {
+    const kind = url.includes("volces") ? "doubao" : "openai"
+    const face = providerFace({ kind, baseURL: url }) as { kind: string; name?: string }
+    assert.notDeepEqual(face, brand(kind), url)
+    assert.equal(face.kind, "named", url)
+  }
+  assert.equal(isOfficialDomain("doubao", "ark.cn-beijing.volces.com."), true, "一个根点照认")
+})
+
+test("luna S4：本地预设认本机地址（0.0.0.0、127.0.0.0/8、::1、::，任意端口）；局域网说主机名；云端预设不认", () => {
+  const thisMachine = ["http://0.0.0.0:11434/v1", "http://127.0.0.1:1/v1", "http://127.0.0.2:11434/v1", "http://127.255.255.254/v1", "http://127.1:11434/v1", "http://0x7f.0.0.1/v1", "http://[::1]:1234/v1", "http://[::]:11434/v1", "http://[0:0:0:0:0:0:0:1]/v1", "http://localhost:1/v1"]
+  for (const kind of LOCAL_PRESET_KINDS) {
+    for (const url of thisMachine) assert.deepEqual(providerFace({ kind, baseURL: url }), brand(kind), `${kind} ${url}`)
+    for (const url of ["http://192.168.1.5:11434/v1", "http://10.0.0.2/v1", "http://128.0.0.1/v1", "http://126.0.0.1/v1", "http://[::2]/v1", "http://foo.localhost/v1", "http://127.0.0.1.nip.io/v1"]) {
+      assert.deepEqual(providerFace({ kind, baseURL: url }), named(endpointHostLabel(url)!), `${kind} ${url}`)
+    }
+  }
+  assert.equal(isThisMachineHost("127.0.0.256"), false)
+  assert.equal(isThisMachineHost("127.0.0"), false)
+  for (const kind of ["openai", "deepseek", "zai", "doubao", "custom"]) {
+    for (const url of thisMachine) {
+      const face = providerFace({ kind, baseURL: url })
+      assert.deepEqual(face, named(endpointHostLabel(url)!), `${kind} ${url}`)
+    }
+  }
 })
