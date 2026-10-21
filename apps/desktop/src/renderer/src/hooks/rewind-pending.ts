@@ -15,6 +15,9 @@
  *   - 停放的记录等这个会话回到前台：输入框里已经有这一整段（和图）就删记录；没有（实机 11 / 14：切走前在组字，
  *     切回来组字结束时把旧的组字稿写进 store，盖掉了刚恢复的草稿）就按行并回输入框——恢复好的原话不会被盖没。
  *     停放的后台记录不占轮询（只在它回到前台时才动）。
+ *     回到前台那一下就判（leo r7 S1）：切会话订阅排一个微任务，loadSession 恢复完输入框、用户还没法动它之前对一遍，
+ *     不等下一拍轮询——否则用户在轮询前改了那行会被再追加一遍、清空了的会复活。到达时正在组字才等 compositionend。
+ * - 会话被删（forgetPendingRewinds，leo r7 S3）：记录一起删，pagehide / 启动不再给已删的会话写孤儿草稿。
  * - 关窗 / 刷新（pagehide / beforeunload）：每条记录按行并进它的草稿并立刻送到 main——前台会话以输入框当下的字为底，
  *   不用可能过期的内存草稿。记录不删（下次启动再对一遍，按行去重不会重复）。
  * - 同会话等待中：把「输入框当下的字 + 原话」按行写进它的草稿并立刻送到 main（被输入框盖掉就下一拍再补），
@@ -22,7 +25,8 @@
  * - 截断一成功（persistPendingRewindNow）：原话按行并进它的草稿并立刻送到 main，不等输入框防抖——
  *   截断后马上被强杀，重启时 main 的空会话清理也看得到草稿，不会把会话连同原话删掉。
  * - 启动时（本模块加载）把上次留下的记录读回来继续放：没打开的会话直接并进草稿；前台的在轮询里写输入框。
- * - 切会话那一下（store 订阅）只处理**离开的**会话（并进它的草稿），不碰新前台——它的输入框要等 loadSession 恢复完。
+ * - 切会话那一下（store 订阅）同步只处理**离开的**会话（并进它的草稿），不碰新前台——它的输入框要等 loadSession 恢复完；
+ *   新前台有停放的记录时排一个微任务（恢复完之后）立刻判定（leo r7 S1，见 settleParkedOnReturn）。
  */
 import { useChatStore } from "../stores/chat-store"
 import {
@@ -32,8 +36,16 @@ import {
   writePersistedDraft,
   writePersistedDraftAssets
 } from "../lib/session-draft-storage"
-import { liveComposerText, mergeWritebackText, textContainsBlock, writeBackToComposer } from "./composer-writeback"
-import { composerInputEl } from "./composer-dom"
+import {
+  canWriteBackToComposer,
+  liveComposerText,
+  mergeWritebackText,
+  textContainsBlock,
+  writeBackToComposer
+} from "./composer-writeback"
+import { composerInputEl, syncComposerDom } from "./composer-dom"
+import { isComposerComposing } from "./composer-ime"
+import { listComposerAssets, queueComposerAsset } from "./composer-assets"
 import { restoreRewindDraft, type RewindDraftAsset } from "./rewind-draft-fallback"
 
 /** parked：已经并进原会话草稿（切走了），等它回到前台、确认输入框里有这一段才删。 */
@@ -124,6 +136,23 @@ function clearPendingRewind(sessionId: string): void {
   if (!(sessionId in map)) return
   delete map[sessionId]
   save()
+}
+
+/**
+ * 这些会话被删了（leo r7 S3）：它们的待放回记录（停放的、还在等的）和落地钩子一起删。
+ * 不删的话记录永远留着，每次 pagehide / 启动都会给已删的会话往 main 写一行孤儿草稿。删会话的调用方（workspace-lifecycle）调。
+ */
+export function forgetPendingRewinds(sessionIds: readonly string[]): void {
+  const map = load()
+  let changed = false
+  for (const sessionId of sessionIds) {
+    landedHooks.delete(sessionId)
+    if (compositionWait?.sessionId === sessionId) stopCompositionWait()
+    if (!(sessionId in map)) continue
+    delete map[sessionId]
+    changed = true
+  }
+  if (changed) save()
 }
 
 /** 这个会话的草稿（内存草稿优先，和打开会话时的取法一致）里有没有这一整段，图是不是都在。 */
@@ -289,7 +318,13 @@ export function resetPendingRewindsForTest(next?: { pollMs?: number } | null): v
     records = null
     landedHooks.clear()
     warned = false
+    stopCompositionWait()
   }
+}
+
+/** 测试用：轮询退到慢拍（warned）了没有。 */
+export function pendingRewindWarnedForTest(): boolean {
+  return warned
 }
 
 /** 测试用：轮询是否在跑。 */
@@ -316,6 +351,7 @@ function runHook(sessionId: string, outcome: "composer" | "draft"): void {
 /**
  * 处理所有记录一遍。onlyBackground：只处理不在前台的会话（切会话那一下用：新前台的输入框要等 loadSession 恢复）。
  * 前台会话只在轮询里写（setTimeout 一拍之后）：loadSession 里换会话和恢复输入框在同一段同步代码里，轮询不会插进中间。
+ * （停放的会话回到前台另由切会话订阅的微任务立刻判，不等这一拍；轮询只兜底组字中 / 回写锁中写不了的情况。）
  */
 function drain(opts: { onlyBackground?: boolean } = {}): void {
   const fg = useChatStore.getState().sessionId
@@ -372,6 +408,88 @@ export function flushPendingRewindsOnHide(): void {
   flushPersistedDrafts()
 }
 
+/**
+ * 停放的会话回到前台（leo r7 S1）：在切会话订阅排的微任务里跑。loadSession 换会话（setSession）和恢复输入框
+ * （restoreComposerForSession）在同一段同步代码里，微任务跑时 store 里已是恢复好的稿，用户还没法动输入框。
+ * - 正在组字：不判，等 compositionend（组字结束可能把切走前的旧组字稿写进 store，实机 11 / 14），之后照常放回。
+ * - 恢复的稿里已有这一整段（和图）：删记录，什么都不写。之后用户改了那行 / 清空了，都是用户的意思，不再追加、不复活。
+ * - 没有（重启后恢复的稿丢了原话等）：按行并进去再删记录。只看 store：React 可能还没把新会话的稿画进 DOM，
+ *   DOM 里可能还是上一个会话的字，不能拿它合并；DOM 已经是恢复的稿时才顺手同步 DOM。回写锁 / 建会话中写不了就交给轮询。
+ * 失败只记日志，记录不动，轮询兜底。
+ */
+function settleParkedOnReturn(sessionId: string): void {
+  try {
+    const rec = readPendingRewind(sessionId)
+    if (!rec?.parked) return
+    const store = useChatStore.getState()
+    if (store.sessionId !== sessionId) return
+    if (isComposerComposing()) {
+      waitForCompositionEnd(sessionId)
+      return
+    }
+    const restored = store.composer
+    const tray = new Set(listComposerAssets().map((asset) => asset.id))
+    const missing = rec.assets.filter((asset) => asset?.id && !tray.has(asset.id))
+    if (!textContainsBlock(restored, rec.text) || missing.length > 0) {
+      if (!canWriteBackToComposer("merge", { expectSessionId: sessionId })) return
+      const merged = mergeWritebackText(rec.text, restored)
+      const domShowsRestored = composerInputEl()?.value === restored
+      if (merged !== restored) store.setComposer(merged)
+      if (domShowsRestored) syncComposerDom(merged, true)
+      for (const asset of missing) queueComposerAsset(asset)
+      flushPersistedDrafts()
+    }
+    clearPendingRewind(sessionId)
+    runHook(sessionId, "composer")
+  } catch (error) {
+    console.warn("[rewind] settle parked text on return failed (will retry)", error)
+  }
+}
+
+/** 到达时在组字：等这次组字结束（document 上冒泡，晚于 React 根上的 onCompositionEnd，store 已是组字结束后的稿）。 */
+let compositionWait: { sessionId: string; off: () => void } | null = null
+
+function stopCompositionWait(): void {
+  compositionWait?.off()
+  compositionWait = null
+}
+
+function waitForCompositionEnd(sessionId: string): void {
+  stopCompositionWait()
+  const doc = (globalThis as { document?: Pick<EventTarget, "addEventListener" | "removeEventListener"> }).document
+  if (typeof doc?.addEventListener !== "function") return
+  const onEnd = () => {
+    stopCompositionWait()
+    queueMicrotask(() => settleForegroundNow(sessionId))
+  }
+  doc.addEventListener("compositionend", onEnd)
+  compositionWait = { sessionId, off: () => doc.removeEventListener?.("compositionend", onEnd) }
+}
+
+/** 组字刚结束：前台还是它、没在组字就立刻放一次（输入框此时是这个会话的，按 DOM 合并），不等轮询。 */
+function settleForegroundNow(sessionId: string): void {
+  if (useChatStore.getState().sessionId !== sessionId || isComposerComposing()) return
+  try {
+    const outcome = settlePendingRewind(sessionId)
+    if (outcome === "composer" || outcome === "draft") runHook(sessionId, outcome)
+  } catch (error) {
+    console.warn("[rewind] put back pending text after composition failed (will retry)", error)
+  }
+}
+
+/** 切会话那一下：新前台有停放的记录 → 重置 warned（轮询回到平时的间隔），微任务里立刻判。 */
+function onForegroundSession(sessionId: string | null): void {
+  if (compositionWait && compositionWait.sessionId !== sessionId) stopCompositionWait()
+  if (!sessionId || !readPendingRewind(sessionId)?.parked) return
+  if (warned) {
+    warned = false
+    // 正挂着的那一拍是 1000ms 的慢拍：重新排，组字结束后按平时的间隔接上。
+    if (timer) clearTimeout(timer)
+    timer = null
+  }
+  queueMicrotask(() => settleParkedOnReturn(sessionId))
+}
+
 let installed = false
 
 /** 装一次：关窗 / 刷新时落草稿；切会话时把离开的会话并进草稿；读回上次留下的记录继续放。 */
@@ -384,6 +502,7 @@ export function installPendingRewinds(): void {
     if (state.sessionId === prev.sessionId) return
     if (listPendingRewindSessions().length === 0) return
     drain({ onlyBackground: true })
+    onForegroundSession(state.sessionId)
     ensurePendingRewindLoop()
   })
   ensurePendingRewindLoop()

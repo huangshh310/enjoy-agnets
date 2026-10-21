@@ -22,6 +22,7 @@ import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
 import type { WorkspaceRow } from "./workspace-row"
 import { readDeniedApprovals } from "./session-archive-result"
+import { forgetPendingRewinds } from "./rewind-pending"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
@@ -64,6 +65,8 @@ export async function unarchiveSession(sessionId: string) {
 export async function deleteArchivedSession(sessionId: string) {
   if (!hasIde()) return
   await getIde().session.delete({ sessionId })
+  // leo r7 S3：删了会话，它的「从这里重来」待放回记录一起删，不然 pagehide 会给已删的会话写孤儿草稿。
+  forgetPendingRewinds([sessionId])
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
   await releaseHistoryPages([historySessionId(sessionId)])
@@ -73,6 +76,7 @@ export async function deleteAllArchivedSessions() {
   if (!hasIde()) return
   const rows = (await getIde().session.listArchived()) as Array<{ id: string }>
   await getIde().session.deleteArchived()
+  forgetPendingRewinds(rows.map((row) => row.id))
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
   await releaseHistoryPages(rows.map((row) => historySessionId(row.id)))
@@ -87,8 +91,13 @@ export async function removeProject(workspaceId: string) {
       const store = useChatStore.getState()
       if (store.pinnedWorkspaceIds.includes(id)) store.togglePinWorkspace(id)
     },
-    remove: async (id) =>
-      (await getIde().workspace.remove({ workspaceId: id })) as RemovedWorkspace,
+    remove: async (id) => {
+      // main 移除项目时连它的会话（含已归档的）一起删：先记下这些会话，删完把它们的待放回记录也删掉（leo r7 S3）。
+      const sessionIds = await sessionIdsOfWorkspace(id)
+      const removed = (await getIde().workspace.remove({ workspaceId: id })) as RemovedWorkspace
+      forgetPendingRewinds(sessionIds)
+      return removed
+    },
     refreshWorkspaces: refreshAllWorkspaces,
     listWorkspaces: async () => (await getIde().workspace.list()) as WorkspaceRow[],
     setWorkspacesCache: (rows) => {
@@ -106,4 +115,23 @@ export async function removeProject(workspaceId: string) {
     clearForegroundChat: showEmptyHistoryChat,
     notifySwitched: notifySwitchedProject
   })
+}
+
+/** 这个项目下的会话 id：侧栏里的 + 已归档的（列归档失败就只用侧栏的）。 */
+async function sessionIdsOfWorkspace(workspaceId: string): Promise<string[]> {
+  const ids = useChatStore
+    .getState()
+    .repositories.filter(
+      (node) =>
+        node.kind === "session" &&
+        ((node as { workspaceId?: string }).workspaceId ?? (node as { parentId?: string }).parentId) === workspaceId
+    )
+    .map((node) => node.id)
+  try {
+    const archived = (await getIde().session.listArchived()) as Array<{ id: string; workspaceId?: string }>
+    for (const row of archived) if (row.workspaceId === workspaceId) ids.push(row.id)
+  } catch {
+    // 侧栏的照删
+  }
+  return ids
 }

@@ -23,12 +23,19 @@ const ideCalls: string[] = []
 let onTruncate: (() => void) | null = null
 /** 非 dryRun 的 truncateFrom 回什么（测 zod 校验）。 */
 let truncateResult: unknown = { ok: true, deleted: 2 }
+/** renderer 往 main 送的草稿（sessionId → 每次 save 的正文）。 */
+const draftSaves: Array<{ sessionId: string; text: string }> = []
+/** session.listArchived 回什么（测删会话）。 */
+let archivedRows: Array<{ id: string; workspaceId: string }> = []
 function bridge(path: string): any {
   return new Proxy(() => undefined, {
     get: (_t, key) => (key === "then" ? undefined : bridge(`${path}.${String(key)}`)),
     apply: (_t, _th, args) => {
       if (/\.on[A-Z]\w*$/.test(path)) return () => undefined
       ideCalls.push(path)
+      if (path === ".session.drafts.save") draftSaves.push({ ...(args[0] as { sessionId: string; text: string }) })
+      if (path === ".session.listArchived") return Promise.resolve(archivedRows.map((row) => ({ ...row })))
+      if (path === ".workspace.remove") return Promise.resolve({ id: (args[0] as { workspaceId: string }).workspaceId })
       if (path === ".session.drafts.loadSync") return {}
       if (path === ".session.drafts.loadAssetsSync") return JSON.parse(JSON.stringify(dbAssets))
       if (path === ".session.drafts.saveAssets") {
@@ -60,6 +67,9 @@ const assets = await import("./composer-assets.ts")
 const storage = await import("../lib/session-draft-storage.ts")
 const { registerComposerFocus } = await import("./composer-focus.ts")
 const { emptySessionToDiscardOnLeave } = await import("./discard-empty-on-leave.ts")
+// 删会话的真入口（leo r7 S3）。要在任何测试装假 document 之前加载：sonner 加载时往 document 里插 CSS，没有 document 就跳过。
+const lifecycle = await import("./workspace-lifecycle.ts")
+const { queryClient } = await import("../lib/query-client.ts")
 const off = storage.installSessionDraftPersistence()
 
 const IMG_A = { assetId: "ast_a", name: "a.png", mediaType: "image/png" }
@@ -116,6 +126,8 @@ afterEach(() => {
   memory.clear()
   dbAssets = {}
   ideCalls.length = 0
+  draftSaves.length = 0
+  archivedRows = []
   onTruncate = null
   truncateResult = { ok: true, deleted: 2 }
   setComposerComposing(false)
@@ -814,7 +826,12 @@ test("必修 ②：停放的会话回到前台、输入框里已经有原话 →
   assert.equal(pendingMod.settlePendingRewind("ses_r"), "parked")
   ideCalls.length = 0
   await tick(40)
-  assert.deepEqual(ideCalls, [], "停放在后台：轮询停了，不反复写草稿 / 送 main")
+  // 只看草稿相关的调用：截断时 void 掉的 refreshAllWorkspaces 链在慢机器（CI windows）上可能这会儿才走到 inbox 等别的 IPC。
+  assert.deepEqual(
+    ideCalls.filter((path) => path.startsWith(".session.drafts.")),
+    [],
+    "停放在后台：轮询停了，不反复写草稿 / 送 main"
+  )
   assert.equal(pendingMod.pendingRewindLoopRunningForTest(), false, "停放在后台：轮询不跑")
   // 回到 ses_r：草稿恢复进输入框（含原话）。
   const back = useChatStore.getState().getSessionDraft("ses_r")?.text ?? ""
@@ -828,4 +845,195 @@ test("必修 ②：停放的会话回到前台、输入框里已经有原话 →
   assert.equal(el.value, back, "输入框一个字没动")
   assert.equal(el.caret, null, "光标没动")
   assert.equal(pendingMod.pendingRewindLoopRunningForTest(), false)
+})
+
+/**
+ * leo r7 S1：停放的会话回到前台要在恢复输入框之后**立刻**判（微任务），不等下一拍轮询（平时 50ms，warned 时 1000ms）。
+ * 之前：用户在那一拍之前改了原话那行 → 被再追加一遍；清空了 → 原话复活。
+ * 这里轮询故意调得很慢（80ms / warned 1000ms），用户的操作放在微任务之后、下一拍之前（真实时序：loadSession 的同步段里插不进按键）。
+ */
+async function parkSesR(pollMs: number) {
+  pendingMod.resetPendingRewindsForTest({ pollMs })
+  seedSession()
+  fakeComposerDom("")
+  onTruncate = () => setComposerComposing(true)
+  assert.deepEqual(await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false }), { ok: true, writebackPending: true })
+  setComposerComposing(false)
+  leaveTo("ses_other")
+  assert.equal(pendingMod.readPendingRewind("ses_r")?.parked, true)
+  assert.equal(useChatStore.getState().getSessionDraft("ses_r")?.text, TEXT)
+}
+
+/** 让轮询退到慢拍：前台 ses_other 有一条写输入框就抛错的记录（drain 抓到 → warned，下一拍 1000ms）。 */
+async function makeWarned() {
+  const domOpts = { throwOnWrite: true }
+  fakeComposerDom("", domOpts)
+  quiet()
+  pendingMod.recordPendingRewind("ses_other", "other text", [])
+  pendingMod.ensurePendingRewindLoop()
+  for (let i = 0; i < 100 && !pendingMod.pendingRewindWarnedForTest(); i++) await tick(2)
+  assert.equal(pendingMod.pendingRewindWarnedForTest(), true, "setup：轮询已退到 1000ms 慢拍")
+  assert.equal(pendingMod.pendingRewindLoopRunningForTest(), true)
+  domOpts.throwOnWrite = false
+}
+
+/** 模拟 loadSession 切回 ses_r 的同步段：换会话 + 把草稿恢复进 store；输入框（DOM）显示 dom（默认就是恢复的稿）。 */
+function comeBackToSesR(dom?: string) {
+  const back = useChatStore.getState().getSessionDraft("ses_r")?.text ?? ""
+  useChatStore.setState({ sessionId: "ses_r", messages: [], composer: back } as never)
+  return { el: fakeComposerDom(dom ?? back), back }
+}
+
+/** 等到微任务跑完（切回那一下排的立即判定），用户还来不及有任何输入。 */
+const microtasks = async () => {
+  for (let i = 0; i < 5; i++) await Promise.resolve()
+}
+
+for (const warnedFirst of [false, true]) {
+  const tag = warnedFirst ? "（warned：轮询 1000ms 慢拍）" : "（平时轮询）"
+  test(`leo r7 S1${tag}：停放的会话回到前台、用户在下一拍之前改了原话那行 → 不再追加原话`, async () => {
+    await parkSesR(80)
+    if (warnedFirst) await makeWarned()
+    const { el, back } = comeBackToSesR()
+    assert.equal(back, TEXT)
+    await microtasks()
+    assert.equal(pendingMod.readPendingRewind("ses_r"), undefined, "切回那一下就判定落地，记录删了")
+    if (warnedFirst) assert.equal(pendingMod.pendingRewindWarnedForTest(), false, "warned 重置")
+    // 用户在下一拍轮询之前改了那一行（同一行接着打）。
+    el.value = `${TEXT} more`
+    useChatStore.getState().setComposer(`${TEXT} more`)
+    await tick(warnedFirst ? 1100 : 200)
+    assert.equal(el.value, `${TEXT} more`, "原话没被再追加一遍")
+    assert.equal(useChatStore.getState().composer, `${TEXT} more`)
+    pendingMod.flushPendingRewindsOnHide()
+    assert.equal(storage.readPersistedDraft("ses_r"), `${TEXT} more`, "关窗也不再并回原话")
+  })
+
+  test(`leo r7 S1${tag}：停放的会话回到前台、用户在下一拍之前清空了输入框 → 原话不复活`, async () => {
+    await parkSesR(80)
+    if (warnedFirst) await makeWarned()
+    const { el } = comeBackToSesR()
+    await microtasks()
+    assert.equal(pendingMod.readPendingRewind("ses_r"), undefined)
+    el.value = ""
+    useChatStore.getState().setComposer("")
+    await tick(warnedFirst ? 1100 : 200)
+    assert.equal(el.value, "", "清空的输入框没被写回原话")
+    assert.equal(useChatStore.getState().composer, "")
+    draftSaves.length = 0
+    pendingMod.flushPendingRewindsOnHide()
+    assert.ok(!draftSaves.some((d) => d.sessionId === "ses_r" && d.text.includes(TEXT)), "关窗没把原话送回 main")
+  })
+}
+
+test("leo r7 S1：停放的会话回到前台时恢复的稿里没有原话（重启后丢了）→ 立刻按行并进去（不等轮询），只一次", async () => {
+  await parkSesR(100_000)
+  // 恢复的稿只剩用户的字（原话丢了）。
+  useChatStore.getState().saveSessionDraft("ses_r", { text: "only typed", assets: [] })
+  const { el } = comeBackToSesR()
+  await microtasks()
+  assert.equal(pendingMod.readPendingRewind("ses_r"), undefined)
+  assert.equal(useChatStore.getState().composer, `only typed\n${TEXT}`)
+  assert.equal(el.value, `only typed\n${TEXT}`, "DOM 已是恢复的稿 → 顺手同步")
+  assert.deepEqual(trayIds(), ["ast_a", "ast_b"], "图补进托盘")
+})
+
+test("leo r7 S1：切回那一下 DOM 里还是上一个会话的字（React 没画）→ 只按 store 合并，不把别的会话的字并进来", async () => {
+  await parkSesR(100_000)
+  useChatStore.getState().saveSessionDraft("ses_r", { text: "only typed", assets: [] })
+  const { el } = comeBackToSesR("other session text")
+  await microtasks()
+  assert.equal(useChatStore.getState().composer, `only typed\n${TEXT}`)
+  assert.equal(el.value, "other session text", "不往画着别的会话的 DOM 里写")
+  assert.ok(!useChatStore.getState().composer.includes("other session text"))
+})
+
+test("leo r7 S1（warned）：到达时正在组字 → 等组字结束；warned 已重置，组字结束后按平时间隔落地，不等 1000ms", async () => {
+  await parkSesR(5)
+  await makeWarned()
+  setComposerComposing(true)
+  const { el } = comeBackToSesR("打的字")
+  assert.equal(pendingMod.pendingRewindWarnedForTest(), false, "回到前台那一下 warned 重置")
+  await tick(30)
+  assert.ok(pendingMod.readPendingRewind("ses_r"), "组字中：记录还在，等")
+  setComposerComposing(false)
+  useChatStore.getState().setComposer("打的字") // onCompositionEnd 把旧组字稿写进 store
+  const started = Date.now()
+  for (let i = 0; i < 100 && pendingMod.readPendingRewind("ses_r"); i++) await tick(3)
+  assert.equal(pendingMod.readPendingRewind("ses_r"), undefined, `组字结束后 ${Date.now() - started}ms 内落地`)
+  assert.ok(Date.now() - started < 500, `没等 1000ms 慢拍（${Date.now() - started}ms）`)
+  assert.equal(el.value, `打的字\n${TEXT}`)
+})
+
+test("leo r7 S1：到达时正在组字 → compositionend 一到就判（不等轮询）", async () => {
+  await parkSesR(100_000)
+  setComposerComposing(true)
+  const { el } = comeBackToSesR("打的字")
+  const listeners = new Map<string, Set<() => void>>()
+  Object.assign((globalThis as any).document, {
+    addEventListener: (type: string, fn: () => void) => void (listeners.get(type) ?? listeners.set(type, new Set()).get(type)!).add(fn),
+    removeEventListener: (type: string, fn: () => void) => void listeners.get(type)?.delete(fn)
+  })
+  await microtasks()
+  assert.ok(pendingMod.readPendingRewind("ses_r"), "组字中不判")
+  assert.equal(listeners.get("compositionend")?.size, 1)
+  // React 根上的 onCompositionEnd 先跑（组字结束、旧组字稿进 store），再冒泡到 document。
+  setComposerComposing(false)
+  useChatStore.getState().setComposer("打的字")
+  for (const fn of listeners.get("compositionend") ?? []) fn()
+  await microtasks()
+  assert.equal(pendingMod.readPendingRewind("ses_r"), undefined)
+  assert.equal(el.value, `打的字\n${TEXT}`)
+  assert.equal(listeners.get("compositionend")?.size, 0, "监听摘掉了")
+})
+
+/** leo r7 S3：删会话时清掉它的待放回记录，否则 pagehide / 重启会给已删的会话往 main 写孤儿草稿。 */
+
+async function assertNoOrphan(sessionId: string) {
+  assert.equal(pendingMod.readPendingRewind(sessionId), undefined, "记录删了")
+  assert.ok(!(JSON.parse(memory.get("enjoy-agents-pending-rewinds") ?? "{}") as Record<string, unknown>)[sessionId], "localStorage 里也没了")
+  draftSaves.length = 0
+  pendingMod.flushPendingRewindsOnHide()
+  assert.ok(!draftSaves.some((d) => d.sessionId === sessionId && d.text.includes(TEXT)), "pagehide 没给已删的会话写草稿")
+  pendingMod.forgetPendingRewindCacheForTest()
+  assert.equal(pendingMod.readPendingRewind(sessionId), undefined, "重启读回也没有")
+}
+
+test("leo r7 S3：删除已归档会话（停放的记录）→ 记录一起删，pagehide 不写孤儿草稿", async () => {
+  await parkSesR(100_000)
+  await lifecycle.deleteArchivedSession("ses_r")
+  assert.ok(ideCalls.includes(".session.delete"))
+  await assertNoOrphan("ses_r")
+})
+
+test("leo r7 S3：清空全部已归档 → 这些会话的记录都删，别的会话的记录留着", async () => {
+  await parkSesR(100_000)
+  pendingMod.recordPendingRewind("ses_keep", "keep me", [])
+  archivedRows = [{ id: "ses_r", workspaceId: "ws" }]
+  await lifecycle.deleteAllArchivedSessions()
+  await assertNoOrphan("ses_r")
+  assert.equal(pendingMod.readPendingRewind("ses_keep")?.text, "keep me")
+})
+
+test("leo r7 S3：移除项目（main 连它的会话一起删）→ 侧栏里的和已归档的会话记录都删，别的项目的留着", async () => {
+  await parkSesR(100_000)
+  pendingMod.recordPendingRewind("ses_arch", TEXT, [])
+  pendingMod.recordPendingRewind("ses_keep", "keep me", [])
+  useChatStore.setState({
+    repositories: [
+      { id: "ws2", name: "p2", kind: "workspace" },
+      { id: "ses_r", name: "r", kind: "session", parentId: "ws2" },
+      { id: "ses_keep", name: "k", kind: "session", parentId: "ws" }
+    ]
+  } as never)
+  archivedRows = [{ id: "ses_arch", workspaceId: "ws2" }]
+  try {
+    await lifecycle.removeProject("ws2")
+  } finally {
+    queryClient.clear() // setWorkspacesCache 建的查询带 5 分钟 gc 定时器，不清进程退不了
+  }
+  assert.ok(ideCalls.includes(".workspace.remove"))
+  await assertNoOrphan("ses_r")
+  await assertNoOrphan("ses_arch")
+  assert.equal(pendingMod.readPendingRewind("ses_keep")?.text, "keep me")
 })
