@@ -128,8 +128,13 @@ async function finishAfterTruncate(input: {
   index: number
 }): Promise<RewindResult> {
   const { sessionId } = input
-  const cutIds = new Set(input.messages.slice(input.index).map((message) => message.id))
-  cutIds.add(input.userMessageId)
+  // 截断时那段尾巴的 id：本地 id 和库 id（persistedId）都记下——会话重读后界面上是库 id（leo r4 L13）。
+  const cutIds = new Set<string>([input.userMessageId])
+  for (const message of input.messages.slice(input.index)) {
+    cutIds.add(message.id)
+    const persistedId = (message as { persistedId?: string }).persistedId
+    if (persistedId) cutIds.add(persistedId)
+  }
   let restored: { text: string; assets: QueuedComposerAsset[] } = {
     text: visibleUserText(input.target.content) || input.target.content,
     assets: rewindAssets(input.target)
