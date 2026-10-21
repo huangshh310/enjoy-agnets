@@ -1,7 +1,10 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { DEEPSEEK_RETIRED_MODEL_IDS, isOfficialDeepseekEndpointUrl } from "./deepseek-retired-models.ts"
+import {
+  DEEPSEEK_RETIRED_MODEL_IDS,
+  isOfficialDeepseekEndpointUrl,
+  remapRetiredDeepseekModels
+} from "./deepseek-retired-models.ts"
 import { presetFor } from "./presets.ts"
 import { estimateRunCost } from "./pricing/estimate.ts"
 import { PRICE_SNAPSHOT } from "./pricing/snapshot.ts"
@@ -125,7 +128,7 @@ test("官方端点：选中的是用户自己的模型时不动", () => {
   assert.deepEqual(ids(profile), ["my-finetune"])
 })
 
-test("官方端点：已有 deepseek-flash（关着）时合并停用项，不重复，开着的状态带过来", () => {
+test("官方端点：已有非手动的 deepseek-flash（关着）时保留行赢，停用项丢掉，开着的状态带过来", () => {
   const { profile } = migrateStoredProfile(
     stored({
       models: [
@@ -165,7 +168,6 @@ const UNTOUCHED: Record<string, Partial<LooseProfile>> = {
   "带用户名密码": { endpoints: { openai: "https://u:p@api.deepseek.com/v1" } },
   "中转地址": { endpoints: { openai: "https://relay.example.cn/v1" } },
   "官方 + 中转混合": { endpoints: { openai: "https://api.deepseek.com/v1", anthropic: "https://relay.example.cn/anthropic" } },
-  "没有端点": { endpoints: {} },
   "custom kind 指向官方地址": { kind: "custom" }
 }
 
@@ -206,7 +208,115 @@ test("normalizeVault：官方档案迁移、中转档案不动，第二次读档
   assert.deepEqual(second.vault, first.vault)
 })
 
-test("读档入口接上了迁移（源码守卫）", () => {
-  const src = readFileSync(new URL("./profile-migrate.ts", import.meta.url), "utf8")
-  assert.match(src, /const retired = migrateRetiredDeepseekProfile\(stored, kind, endpoints, labelFor\)\r?\n\s*const raw = retired\.raw\r?\n/)
+const labelFor = (id: string) => presetFor("deepseek").models.find((m) => m.id === id)?.label
+
+test("空端点：没填任何端点的 deepseek 档案按官方处理，也会迁移", () => {
+  const { profile, changed } = migrateStoredProfile(stored({ endpoints: {}, fastModelId: "deepseek-chat" }))
+  assert.equal(changed, true)
+  assert.deepEqual(ids(profile), ["deepseek-flash", "deepseek-v4-pro"])
+  assert.equal(profile.modelId, "deepseek-flash")
+  assert.equal(profile.fastModelId, "deepseek-flash")
+  const cost = estimateRunCost({
+    usage: { inputTokens: 1000, outputTokens: 1000 },
+    providerKind: profile.kind,
+    modelId: profile.modelId,
+    baseURL: profile.baseURL
+  })
+  assert.equal(cost.status, "estimated")
+})
+
+test("空端点：老档案没有 endpoints 也没有 baseURL，同样迁移，第二次读档没有变化", () => {
+  const { first, second } = twice({ id: "prv_empty", name: "e", kind: "deepseek", apiKey: "sk", modelId: "deepseek-reasoner" })
+  assert.equal(first.profile.modelId, "deepseek-flash")
+  assert.equal(second.changed, false)
+})
+
+test("空端点：custom kind 没填端点不迁移", () => {
+  const { profile } = migrateStoredProfile(stored({ kind: "custom", endpoints: {} }))
+  assert.equal(profile.modelId, "deepseek-chat")
+  assert.ok(ids(profile)?.includes("deepseek-chat"))
+})
+
+test("手动保留行：关着的手动 deepseek-flash 仍然关着，停用项丢掉", () => {
+  const { profile } = migrateStoredProfile(
+    stored({
+      models: [
+        { id: "deepseek-chat", label: "DeepSeek Chat (legacy)", enabled: true, source: "preset" },
+        { id: "deepseek-flash", label: "my flash", enabled: false, source: "manual", inputPricePerMillion: 9, contextWindow: 4096 },
+        { id: "deepseek-reasoner", label: "DeepSeek Reasoner", enabled: true, source: "remote" }
+      ]
+    })
+  )
+  assert.deepEqual(profile.models, [
+    { id: "deepseek-flash", label: "my flash", enabled: false, source: "manual", contextWindow: 4096, maxOutputTokens: undefined, inputPricePerMillion: 9 }
+  ])
+})
+
+test("手动保留行：迁移函数原样返回同一个对象，一个字段都不改", () => {
+  const manual = { id: "deepseek-flash", label: "my flash", enabled: false, source: "manual", note: "x", contextWindow: 4096 }
+  const snapshot = JSON.stringify(manual)
+  for (const models of [
+    [{ id: "deepseek-chat", enabled: true, source: "preset" }, manual],
+    [manual, { id: "deepseek-chat", enabled: true, source: "preset" }]
+  ]) {
+    const out = remapRetiredDeepseekModels(models, {}, labelFor)
+    assert.equal(out.models?.length, 1)
+    assert.equal(out.models?.[0], manual)
+  }
+  assert.equal(JSON.stringify(manual), snapshot)
+})
+
+test("保留行赢：deepseek-flash 排在停用行前面或后面，结果都是保留行本身", () => {
+  const keeper = { id: "deepseek-flash", label: "Remote Flash", enabled: true, source: "remote", contextWindow: 1_048_576 }
+  const retired = { id: "deepseek-chat", label: "c", enabled: true, source: "preset", inputPricePerMillion: 0.27, contextWindow: 64_000 }
+  const before = remapRetiredDeepseekModels([keeper, retired], {}, labelFor).models
+  const after = remapRetiredDeepseekModels([retired, keeper], {}, labelFor).models
+  assert.deepEqual(before, [keeper])
+  assert.deepEqual(after, [keeper])
+  assert.equal(before?.[0], keeper)
+  assert.equal(after?.[0], keeper)
+})
+
+test("纯改名：旧行的单价、上下文窗口、输出上限都不带到 deepseek-flash，按快照价算", () => {
+  const { profile } = migrateStoredProfile(
+    stored({
+      models: [
+        {
+          id: "deepseek-chat",
+          label: "DeepSeek Chat (legacy)",
+          enabled: true,
+          source: "remote",
+          contextWindow: 64_000,
+          maxOutputTokens: 8_000,
+          inputPricePerMillion: 0.27,
+          outputPricePerMillion: 1.1,
+          cacheReadPricePerMillion: 0.07,
+          cacheWritePricePerMillion: 0.27,
+          reasoningPricePerMillion: 2.19
+        }
+      ]
+    })
+  )
+  assert.deepEqual(profile.models, [
+    { id: "deepseek-flash", label: "DeepSeek Flash", enabled: true, source: "preset", contextWindow: undefined, maxOutputTokens: undefined }
+  ])
+  const cost = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 0 },
+    providerKind: profile.kind,
+    modelId: profile.modelId,
+    baseURL: profile.baseURL,
+    snapshot: PRICE_SNAPSHOT
+  })
+  assert.equal(cost.status, "estimated")
+  assert.ok(cost.status === "estimated" && Math.abs(cost.usd - 0.15) < 1e-9, JSON.stringify(cost))
+})
+
+test("纯改名：chat 和 reasoner 都带单价、开关不同时，结果和先后顺序无关", () => {
+  const chat = { id: "deepseek-chat", label: "c", enabled: false, source: "preset", inputPricePerMillion: 1 }
+  const reasoner = { id: "deepseek-reasoner", label: "r", enabled: true, source: "remote", inputPricePerMillion: 2 }
+  const ab = remapRetiredDeepseekModels([chat, reasoner], {}, labelFor).models
+  const ba = remapRetiredDeepseekModels([reasoner, chat], {}, labelFor).models
+  const expected = [{ id: "deepseek-flash", label: "DeepSeek Flash", enabled: true, source: "preset" }]
+  assert.deepEqual(ab, expected)
+  assert.deepEqual(ba, expected)
 })

@@ -33,11 +33,14 @@ export function isOfficialDeepseekEndpointUrl(value: string | undefined): boolea
   return url.port === "" && !url.username && !url.password
 }
 
-/** 档案的每一条已填端点都必须是官方地址；一条都没有也不算。 */
+/**
+ * 档案的每一条已填端点都必须是官方地址。一条都没填时按官方算：
+ * 请求会回落到预设 https://api.deepseek.com/v1（config.ts resolvedBaseURL），计价也把空地址当官方。
+ */
 export function isOfficialDeepseekProfile(kind: string, endpoints: Record<string, string | undefined>): boolean {
   if (kind !== "deepseek") return false
   const urls = Object.values(endpoints).filter((value): value is string => Boolean(value?.trim()))
-  return urls.length > 0 && urls.every((value) => isOfficialDeepseekEndpointUrl(value))
+  return urls.every((value) => isOfficialDeepseekEndpointUrl(value))
 }
 
 function replacementFor(id: string | undefined, manualIds: ReadonlySet<string>): string | undefined {
@@ -48,7 +51,7 @@ function replacementFor(id: string | undefined, manualIds: ReadonlySet<string>):
 
 /**
  * 改写目录里的停用名，并去重。用户手动加的（source=manual）原样保留，同名的选中项也不动。
- * 被合并掉的停用项原来开着、保留项关着时，把保留项打开，用户不会因为迁移少一个能用的模型。
+ * 合并规则见 remapList。
  */
 export function remapRetiredDeepseekModels<M extends RetiredModel, S extends RetiredSelection>(
   models: M[] | undefined,
@@ -68,39 +71,51 @@ export function remapRetiredDeepseekModels<M extends RetiredModel, S extends Ret
   return { models: nextModels, selection: changed ? nextSelection : selection, changed }
 }
 
-/** 改名后同 id 只留一条：优先留原本就是新名的那条；被合并的停用项开着时把保留项打开。没改动就返回原数组。 */
+/**
+ * 改名后同 id 只留一条，结果与停用项的先后顺序无关：
+ * - 列表里本来就有新名那一行（保留行）时，停用行全部丢掉，保留行赢。
+ *   保留行是 manual 时一个字节都不改；不是 manual 时，只在它关着、而停用行有开着的情况下把 enabled 打开。
+ * - 没有保留行时，在第一条停用行的位置放一条全新的新名行，只带 id / label / enabled / source。
+ *   旧行的单价、上下文窗口、输出上限都属于旧模型，不带过来，让快照价生效。
+ */
 function remapList<M extends RetiredModel>(
   models: M[],
   manualIds: ReadonlySet<string>,
   labelFor: (id: string) => string | undefined
 ): M[] {
-  const renamed = new Set<M>()
-  const mapped = models.map((model) => {
-    const target = replacementFor(model.id, manualIds)
-    if (!target) return model
-    const next = { ...model, id: target, label: labelFor(target) ?? target }
-    renamed.add(next)
-    return next
-  })
-  if (renamed.size === 0) return models
+  const targets = models.map((model) => replacementFor(model.id, manualIds))
+  if (targets.every((target) => !target)) return models
+  const enabledTargets = new Set(
+    models.flatMap((model, i) => {
+      const target = targets[i]
+      return target && model.enabled !== false ? [target] : []
+    })
+  )
   const out: M[] = []
-  for (const model of mapped) {
-    const id = model.id?.trim() ?? ""
-    const keeperIndex = out.findIndex((m) => (m.id?.trim() ?? "") === id && (renamed.has(m) || renamed.has(model)))
-    if (keeperIndex < 0) {
-      out.push(model)
-      continue
+  const placed = new Set<string>()
+  models.forEach((model, i) => {
+    const target = targets[i]
+    if (!target) {
+      out.push(keeperRow(model, enabledTargets))
+      return
     }
-    const keeper = out[keeperIndex]!
-    const original = renamed.has(keeper) && !renamed.has(model) ? model : keeper
-    const dropped = original === model ? keeper : model
-    out[keeperIndex] = dropped.enabled !== false && original.enabled === false ? { ...original, enabled: true } : original
-  }
+    const hasKeeper = models.some((other, j) => !targets[j] && other.id?.trim() === target)
+    if (hasKeeper || placed.has(target)) return
+    placed.add(target)
+    const label = labelFor(target) ?? target
+    out.push({ id: target, label, enabled: enabledTargets.has(target), source: "preset" } as M)
+  })
   return out
 }
 
+/** 保留行：manual 原样；其它只在需要时打开 enabled。 */
+function keeperRow<M extends RetiredModel>(model: M, enabledTargets: ReadonlySet<string>): M {
+  if (model.source === "manual" || model.enabled !== false) return model
+  return enabledTargets.has(model.id?.trim() ?? "") ? { ...model, enabled: true } : model
+}
+
 /**
- * 读档迁移入口：只在 kind=deepseek 且所有端点都是官方地址时改写目录与选中模型。
+ * 读档迁移入口：只在 kind=deepseek 且所有已填端点都是官方地址（一条没填也算）时改写目录与选中模型。
  * 中转、代理、自定义地址、http、子域原样返回同一个对象。
  */
 export function migrateRetiredDeepseekProfile<P extends RetiredSelection & { models?: RetiredModel[] }>(
