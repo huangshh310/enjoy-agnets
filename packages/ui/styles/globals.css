@@ -904,7 +904,7 @@ input[type="search"]::-webkit-search-cancel-button {
   --card-foreground: var(--color-text-primary);
   --popover: var(--color-background-primary-default);
   --popover-foreground: var(--color-text-primary);
-  --primary: var(--color-accent-500);
+  --primary: var(--color-accent-700); /* 配白字（primary-foreground），500 在琥珀 / 绿只有 2.15 / 2.54 */
   --primary-foreground: var(--color-text-white);
   --secondary: var(--color-background-secondary-default);
   --secondary-foreground: var(--color-text-primary);

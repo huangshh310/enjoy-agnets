@@ -392,6 +392,9 @@
   --color-cta:            var(--color-accent-700);
   --color-cta-hover:      var(--color-accent-800);
   --color-cta-foreground: var(--color-white);
+  /* 亮的强调色（暗色下的 accent-400/500）上放的深色图形：开关开态滑块、发送按钮图标。
+   * 白色放在 500 上琥珀 / 绿只有 2.15 / 2.54；这个近黑在五色 500 上 ≥ 3.7。 */
+  --color-on-accent-bright: var(--color-neutral-950);
 
   --gradient-button-danger-default:   linear-gradient(180deg, var(--color-red-500) 0%, var(--color-red-600) 100%);
   --gradient-button-danger-hover:     linear-gradient(180deg, var(--color-red-400) 0%, var(--color-red-500) 100%);
@@ -836,6 +839,7 @@
   --color-cta:            var(--color-cta);
   --color-cta-hover:      var(--color-cta-hover);
   --color-cta-foreground: var(--color-cta-foreground);
+  --color-on-accent-bright: var(--color-on-accent-bright);
   --color-heat-1: var(--color-heat-1);
   --color-heat-2: var(--color-heat-2);
   --color-heat-3: var(--color-heat-3);

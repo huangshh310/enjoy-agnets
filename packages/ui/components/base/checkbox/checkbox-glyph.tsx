@@ -44,7 +44,8 @@ export function CheckboxGlyph({
         isMarked
           ? cx(
               "bg-linear-to-b shadow-checkbox-selected",
-              hover ? "from-accent-400 to-accent-500" : "from-accent-500 to-accent-600",
+              // 白色对勾：700 起（五色最低琥珀 5.05），悬停再深一档；原来 500→600 琥珀只有 2.15
+              hover ? "from-accent-800 to-accent-900" : "from-accent-700 to-accent-800",
             )
           : cx(
               "border bg-background-primary-default shadow-xs",

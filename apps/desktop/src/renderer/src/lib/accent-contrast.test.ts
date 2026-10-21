@@ -52,7 +52,16 @@ const column = (ctx: Ctx) => (ctx.cta === "ink" ? `${ctx.accent.id}·ink` : ctx.
 const NO_GPU = 'html[data-skin="glass"]:not([data-gpu-compositing="on"])'
 const NO_GPU_DARK = 'html.dark[data-skin="glass"]:not([data-gpu-compositing="on"])'
 
+const scopeCache = new Map<string, Map<string, string>>()
 function scope(ctx: Ctx, area: Area): Map<string, string> {
+  const key = `${ctx.accent.id}|${ctx.mode}|${ctx.skin}|${ctx.cta}|${area}`
+  const hit = scopeCache.get(key)
+  if (hit) return hit
+  const built = buildScope(ctx, area)
+  scopeCache.set(key, built)
+  return built
+}
+function buildScope(ctx: Ctx, area: Area): Map<string, string> {
   const dark = ctx.mode === "dark"
   const glass = ctx.skin === "glass"
   const sels = ["@theme default", "@theme", ":root"]
@@ -78,7 +87,7 @@ function scope(ctx: Ctx, area: Area): Map<string, string> {
 /** 类名里的颜色片段 → 表达式。shadcn 别名（primary / input）是不带 --color- 前缀的变量。 */
 const expr = (token: string) => {
   const [name, alpha] = token.split("/")
-  if (name === "primary" || name === "input") return twColor(`var(--${name})${alpha ? `/${alpha}` : ""}`)
+  if (["primary", "primary-foreground", "input", "background", "foreground"].includes(name!)) return twColor(`var(--${name})${alpha ? `/${alpha}` : ""}`)
   return twColor(token)
 }
 const col = (ctx: Ctx, area: Area, token: string) => resolveColor(expr(token), scope(ctx, area))
@@ -104,7 +113,7 @@ const card = (ctx: Ctx) =>
     ? over(resolveColor("var(--skin-frost-tile)", scope(ctx, "main")), surface(ctx, "main"))
     : surface(ctx, "main")
 
-type Check = { item: string; label: string; min: number | null; fg: Rgba; bg: Rgba }
+type Check = { item: string; label: string; min: number | null; fg: Rgba; bg: Rgba; ratio?: number }
 const TEXT = 4.5
 const GRAPHIC = 3
 const HEAT_STEP = 1.3
@@ -122,34 +131,139 @@ const lightDark = (cls: string, prop: string) => {
   return { light: l[1]!, dark: (d ?? l)[1]! }
 }
 
-// ---------- 源码扫描：白字落在实心强调色上的地方 ----------
-function whiteOnAccentShades(): Map<string, Set<string>> {
-  const found = new Map<string, Set<string>>()
-  for (const root of ["apps/desktop/src/renderer/src", "packages/ui"]) {
+// ---------- 源码扫描：浅色字落在实心强调色上的地方 ----------
+// 单元 = 一个元素的类名：cx()/cn()/clsx()/twMerge() 整个调用（跨行、多个字符串合在一起算），其余每个字符串字面量各算一个。
+// 一个单元里同时有「浅色字」和「实心强调色底」就把每个底色解析成真实颜色（按每种强调色 × 亮暗 × 皮肤 × 琥珀变体），要求 ≥ 4.5。
+// 浅色字：text-white / text-text-white / text-primary-foreground / text-cta-foreground
+// 强调色底：bg-/from-/via-/to- + accent-N | primary | cta | cta-hover | button-primary（含它内置的悬停 / 按下渐变）| (--color-accent-N) | [var(--color-accent-N)]
+// 任意前缀（hover: / group-hover: / data-[…]: …）都算；带 dark: 的只在暗色里算。带 /透明度 的底不算实心，不扫。
+/** next：同一文件里紧接着（2 行内）的下一个单元——白色图标常写在实心底的子元素上。 */
+type ClassUnit = { where: string; line: number; text: string; next?: ClassUnit }
+const SCAN_ROOTS = ["apps/desktop/src/renderer/src", "packages/ui"]
+const VARIANTS = String.raw`((?:[\w-]*(?:\[[^\]\s]*\])?(?:\/[\w-]+)?:)*)`
+const SOLID_ACCENT_BG = new RegExp(
+  String.raw`(?<![\w-])${VARIANTS}(bg|from|via|to)-(accent-\d+|primary|cta|cta-hover|button-primary|\(--color-accent-\d+\)|\[var\(--color-accent-\d+\)\])(?![\w/-])`,
+  "g"
+)
+const LIGHT_FG = new RegExp(String.raw`(?<![\w-])${VARIANTS}text-(white|text-white|primary-foreground|cta-foreground)(?![\w/-])`, "g")
+const LIGHT_FG_NAMES = new Set(["white", "text-white", "primary-foreground", "cta-foreground"])
+/** 任意 text-* 片段（只用来判 dark: 覆盖：暗色里同前缀槽位有 dark:text-… 就不再算不带 dark: 的浅色字）。 */
+const ANY_FG = new RegExp(String.raw`(?<![\w-])${VARIANTS}text-([a-z][\w-]*)(?![\w/-])`, "g")
+
+function classUnits(code: string, file: string): ClassUnit[] {
+  const lits: { start: number; end: number; text: string }[] = []
+  for (let i = 0; i < code.length; i++) {
+    const ch = code[i]
+    if (ch === "/" && code[i + 1] === "/") {
+      const nl = code.indexOf("\n", i)
+      i = nl < 0 ? code.length : nl
+    } else if (ch === "/" && code[i + 1] === "*") {
+      const e = code.indexOf("*/", i + 2)
+      i = e < 0 ? code.length : e + 1
+    } else if (ch === '"' || ch === "'" || ch === "`") {
+      let j = i + 1
+      while (j < code.length && code[j] !== ch && (ch === "`" || code[j] !== "\n")) j += code[j] === "\\" ? 2 : 1
+      lits.push({ start: i, end: j, text: code.slice(i + 1, j) })
+      i = j
+    }
+  }
+  const inLit = (pos: number) => lits.some((l) => pos > l.start && pos < l.end)
+  const regions: [number, number][] = []
+  // cva() 的各个变体是互斥的，不合并（每个字符串各算一个单元）。
+  for (const m of code.matchAll(/\b(?:cx|cn|clsx|twMerge)\(/g)) {
+    const open = m.index! + m[0].length - 1
+    if (inLit(open) || regions.some(([a, b]) => open > a && open < b)) continue
+    let depth = 0
+    let k = open
+    for (; k < code.length; k++) {
+      const lit = lits.find((l) => l.start === k)
+      if (lit) {
+        k = lit.end
+        continue
+      }
+      if (code[k] === "(") depth++
+      else if (code[k] === ")" && --depth === 0) break
+    }
+    regions.push([open, k])
+  }
+  const lineOf = (pos: number) => code.slice(0, pos).split("\n").length
+  const units: ClassUnit[] = regions.map(([a, b]) => ({
+    where: `${file}:${lineOf(a)}`,
+    line: lineOf(a),
+    text: lits.filter((l) => l.start > a && l.end < b).map((l) => l.text).join(" ")
+  }))
+  for (const l of lits) {
+    if (!regions.some(([a, b]) => l.start > a && l.end < b)) units.push({ where: `${file}:${lineOf(l.start)}`, line: lineOf(l.start), text: l.text })
+  }
+  units.sort((x, y) => x.line - y.line)
+  units.forEach((u, i) => {
+    const n = units[i + 1]
+    if (n && n.line - u.line <= 2) u.next = n
+  })
+  return units
+}
+
+let unitCache: ClassUnit[] | null = null
+function allClassUnits(): ClassUnit[] {
+  if (unitCache) return unitCache
+  unitCache = []
+  for (const root of SCAN_ROOTS) {
     const base = new URL(`${root}/`, repo)
     for (const rel of readdirSync(base, { recursive: true }) as string[]) {
       if (!/\.tsx?$/.test(rel) || rel.includes("node_modules") || rel.endsWith(".test.ts")) continue
-      const lines = readFileSync(new URL(rel, base), "utf8").split("\n")
-      lines.forEach((line, i) => {
-        // 同一行有白字，或者是白色图标外面那层（下一行是白字图标）
-        const white = /text-(?:text-)?white\b/.test(line) || /text-(?:text-)?white\b/.test(lines[i + 1] ?? "")
-        if (!white) return
-        for (const m of line.matchAll(/(?<![\w-])(?:hover:)?bg-accent-(\d+)(?![\d/])/g)) {
-          const key = m[0]
-          const set = found.get(key) ?? new Set<string>()
-          set.add(`${root}/${rel}:${i + 1}`)
-          found.set(key, set)
-        }
-      })
+      unitCache.push(...classUnits(readFileSync(new URL(rel, base), "utf8"), `${root}/${rel}`))
     }
   }
-  return found
+  return unitCache
+}
+
+type Tok = { variants: string; name: string; full: string }
+const toks = (text: string, re: RegExp, nameAt: number): Tok[] =>
+  [...text.matchAll(re)].map((m) => ({ variants: m[1] ?? "", name: m[nameAt]!, full: m[0] }))
+const isDark = (t: Tok) => /(?:^|:)dark:/.test(t.variants)
+const slot = (t: Tok, kind: string) => `${kind}|${t.variants.replace(/(^|:)dark:/, "$1")}`
+/** 这个状态下生效的片段：亮色去掉 dark:；暗色里同一槽位（同属性、同其它前缀）有 dark: 的，就盖掉不带 dark: 的。 */
+function effective(list: Tok[], ctx: Ctx, kind: (t: Tok) => string): Tok[] {
+  if (ctx.mode === "light") return list.filter((t) => !isDark(t))
+  const darkSlots = new Set(list.filter(isDark).map((t) => slot(t, kind(t))))
+  return list.filter((t) => isDark(t) || !darkSlots.has(slot(t, kind(t))))
+}
+const bgKind = (t: Tok) => (/^(?:from|via|to)-/.test(t.full.replace(/^.*:/, "")) ? t.full.replace(/^.*:/, "").split("-")[0]! : "bg")
+
+/** 一个底色类名片段 → 可能出现的实心颜色（渐变取每个色标）。 */
+function solidColors(ctx: Ctx, name: string): Rgba[] {
+  if (name === "button-primary") {
+    return (["default", "hover", "active"] as const).flatMap((st) => gradientStops(`var(--gradient-button-primary-${st})`, scope(ctx, "main")))
+  }
+  const v = /--color-(accent-\d+)/.exec(name)
+  return [col(ctx, "main", v ? v[1]! : name)]
+}
+
+type LightOnAccent = { where: string; bg: string; fg: string; ratio: number }
+/** 所有「浅色字 × 实心强调色底」组合在这个状态下的对比度。 */
+function lightOnAccent(ctx: Ctx): LightOnAccent[] {
+  const out: LightOnAccent[] = []
+  for (const u of allClassUnits()) {
+    // 底色要和「所有」底色片段一起判覆盖（dark:bg-accent-500 盖掉 bg-cta）；字色同理（dark:text-neutral-950 盖掉 text-cta-foreground）。
+    const bgs = effective(toks(u.text, SOLID_ACCENT_BG, 3), ctx, bgKind).filter((t) => SOLID_ACCENT_BG.source && t)
+    const fgAll = (text: string) => effective(toks(text, ANY_FG, 2), ctx, () => "text").filter((t) => LIGHT_FG_NAMES.has(t.name))
+    let fgs = fgAll(u.text)
+    if (fgs.length === 0 && bgs.length > 0 && u.next) fgs = fgAll(u.next.text)
+    if (fgs.length === 0) continue
+    for (const bg of bgs) {
+      for (const fg of fgs) {
+        const fgColor = col(ctx, "main", fg.name)
+        for (const c of solidColors(ctx, bg.name)) out.push({ where: u.where, bg: bg.full, fg: fg.full, ratio: contrast(fgColor, c) })
+      }
+    }
+  }
+  return out
 }
 
 function checks(ctx: Ctx): Check[] {
   const out: Check[] = []
   const dark = ctx.mode === "dark"
-  const add = (item: string, label: string, min: number | null, fg: Rgba, bg: Rgba) => out.push({ item, label, min, fg, bg })
+  const add = (item: string, label: string, min: number | null, fg: Rgba, bg: Rgba, ratio?: number) => out.push({ item, label, min, fg, bg, ratio })
 
   // P2-1 主按钮：渐变两端 + 实心主按钮（bg-cta / hover:bg-cta-hover），字色是 cta-foreground（默认白、琥珀 ink 变体墨色）
   const main = scope(ctx, "main")
@@ -162,9 +276,23 @@ function checks(ctx: Ctx): Check[] {
   }
   add("P2-1", "实心主按钮 bg-cta（含「继续」）", TEXT, ctaFg, col(ctx, "main", "cta"))
   add("P2-1", "实心主按钮 hover:bg-cta-hover", TEXT, ctaFg, col(ctx, "main", "cta-hover"))
-  // 还直接写白字 + bg-accent-* 的地方（理应没有；有的话也必须过）
-  for (const key of [...whiteOnAccentShades().keys()].sort()) {
-    add("P2-1", `白字实心按钮 ${key}`, TEXT, WHITE, col(ctx, "main", key.replace(/^(?:hover:)?bg-/, "")))
+  // 源码扫描到的所有「浅色字 × 实心强调色底」，按底色类名汇总（取最差的字色）
+  const byBg = new Map<string, LightOnAccent>()
+  for (const hit of lightOnAccent(ctx)) {
+    const key = hit.bg.replace(/^.*:(?=(?:bg|from|via|to)-)/, (v) => (/(?:^|:)dark:/.test(v) ? "dark:" : /(?:^|:)(?:group-)?hover:/.test(v) ? "hover:" : ""))
+    const prev = byBg.get(key)
+    if (!prev || hit.ratio < prev.ratio) byBg.set(key, hit)
+  }
+  for (const [key, hit] of [...byBg].sort(([a], [b]) => a.localeCompare(b))) {
+    add("P2-1", `源码扫描·浅色字 on ${key}`, TEXT, WHITE, WHITE, hit.ratio)
+  }
+
+  // 复选框（base/checkbox）：选中时白色对勾画在 from-/to- 渐变上，图形 ≥ 3
+  const glyph = read("packages/ui/components/base/checkbox/checkbox-glyph.tsx")
+  assert.match(glyph, /stroke="var\(--color-white\)"/, "复选框对勾还是白色")
+  const [, h1, h2, s1, s2] = pick(glyph, /hover \? "from-accent-(\d+) to-accent-(\d+)" : "from-accent-(\d+) to-accent-(\d+)"/, "复选框选中渐变")
+  for (const [n, name] of [[s1, "常态·顶"], [s2, "常态·底"], [h1, "悬停·顶"], [h2, "悬停·底"]] as const) {
+    add("P2-1", `复选框·白色对勾 ${name}（accent-${n}）`, GRAPHIC, WHITE, col(ctx, "main", `accent-${n}`))
   }
 
   // P2-2 热力图：最浅一档对卡片 ≥ 3；相邻两档 ≥ 1.25（看得出差别）
@@ -200,7 +328,12 @@ function checks(ctx: Ctx): Check[] {
   add("P2-4", "开关·关态轨道边界", GRAPHIC, offBorder ? col(ctx, "drawer", offBorder[1]!) : offTrack, drawerCard)
   const on = /dark:data-\[state=checked\]:bg-([\w-]+)/.exec(sw)
   const onLight = pick(sw, /(?<!:)data-\[state=checked\]:bg-([\w-]+)/, "开关开态")[1]!
-  add("P2-4", "开关·开态轨道", GRAPHIC, col(ctx, "drawer", dark && on ? on[1]! : onLight), drawerCard)
+  const onTrack = col(ctx, "drawer", dark && on ? on[1]! : onLight)
+  add("P2-4", "开关·开态轨道", GRAPHIC, onTrack, drawerCard)
+  // 开态滑块 vs 轨道：亮色白滑块（bg-background）配 700；暗色轨道是 500，白滑块在琥珀 / 绿只有 2.15 / 2.54，所以暗色滑块用 on-accent-bright（近黑）。
+  const thumb = pick(read("packages/ui/components/ui/switch.tsx"), /SwitchPrimitive\.Thumb[\s\S]*?className=\{cn\(\s*"([^"]*)"/, "开关滑块类名")[1]!
+  const thumbOn = dark ? pick(thumb, /dark:data-\[state=checked\]:bg-([\w-]+)/, "暗色开态滑块")[1]! : pick(thumb, /(?:^|\s)bg-([\w-]+)/, "滑块")[1]!
+  add("P2-4", "开关·开态滑块 vs 轨道", GRAPHIC, col(ctx, "main", thumbOn), onTrack)
 
   // P2-5 侧栏选中行 / 搜索框（glass 暗色回退出过 #f7f7f7 底）
   const row = src("components/ai-chat/sidebar/sidebar-session-row.tsx")
@@ -236,6 +369,23 @@ function checks(ctx: Ctx): Check[] {
     ctx.skin === "glass"
       ? over(resolveColor("var(--skin-frost-chip)", main), surface(ctx, "main"))
       : stack(ctx, "main", surface(ctx, "main"), "background-primary-default")
+  // 发送按钮（bg-cta，图标走 text-cta-foreground，已在源码扫描里）本身对输入框底：亮色要 ≥ 3；
+  // 暗色输入框是深底、700 也偏深（蓝 / 紫 ≈ 2），按钮靠图标识别，只记录；琥珀 ink 变体是 500 底，亮色对白底 2.15，也只记录（luna 选变体时参考）。
+  const send = src("components/ai-chat/composer/runtime-interact/composer-send-split.tsx")
+  const sendCls = pick(send, /const sendClassName =\s*"([^"]*)"/, "发送按钮")[1]!
+  const sendTok = (re: RegExp, what: string) => pick(sendCls, re, `发送按钮 ${what}`)[1]!
+  // 暗色没写 dark: 的就沿用亮色那个
+  const darkOr = (re: RegExp, fallback: RegExp, what: string) => (dark && re.exec(sendCls)?.[1]) || sendTok(fallback, what)
+  const sendBg = darkOr(/dark:bg-([\w-]+)/, /(?:^|\s)bg-([\w-]+)/, "底")
+  const sendHover = darkOr(/dark:hover:bg-([\w-]+)/, /(?:^|\s)hover:bg-([\w-]+)/, "悬停（hover:bg-…）")
+  const sendIcon = darkOr(/dark:text-([\w-]+)/, /(?:^|\s)text-((?:text-)?white|cta-foreground)(?![\w-])/, "图标")
+  assert.ok(!/brightness/.test(sendCls), "发送按钮不要用 brightness 提亮（白图标会掉到 500 的对比度）")
+  const sendGate = dark || ctx.cta === "default" ? GRAPHIC : null
+  const sendTag = dark ? "暗" : ctx.cta === "ink" ? "亮·ink 仅记录" : "亮"
+  add("P2-1", `发送按钮图标（${dark ? "暗" : "亮"}）`, GRAPHIC, col(ctx, "main", sendIcon), col(ctx, "main", sendBg))
+  add("P2-1", `发送按钮图标·悬停（${dark ? "暗" : "亮"}）`, GRAPHIC, col(ctx, "main", sendIcon), col(ctx, "main", sendHover))
+  add("P2-1", `发送按钮 vs 输入框底（${sendTag}）`, sendGate, col(ctx, "main", sendBg), composer)
+  add("P2-1", `发送按钮悬停 vs 输入框底（${sendTag}）`, sendGate, col(ctx, "main", sendHover), composer)
   add("P2-7", "输入框·探索/执行未选中", TEXT, col(ctx, "main", pick(tog, /!active && "text-([\w-]+)"/, "探索未选中")[1]!), composer)
   add("P2-7", "输入框·探索/执行未选中（悬停）", TEXT, col(ctx, "main", pick(tog, /!active && !disabled && "hover:text-([\w-]+)"/, "探索悬停")[1]!), composer)
   const explore = lightDark(pick(tog, /"(bg-accent-500\/15 font-medium text-accent-\d+ dark:text-accent-\d+[^"]*)"/, "探索选中")[1]!, "text")
@@ -261,7 +411,7 @@ function checks(ctx: Ctx): Check[] {
 
 type Row = { item: string; label: string; min: number | null; ctx: Ctx; ratio: number }
 function allRows(): Row[] {
-  return CONTEXTS.flatMap((ctx) => checks(ctx).map((c) => ({ item: c.item, label: c.label, min: c.min, ctx, ratio: contrast(c.fg, c.bg) })))
+  return CONTEXTS.flatMap((ctx) => checks(ctx).map((c) => ({ item: c.item, label: c.label, min: c.min, ctx, ratio: c.ratio ?? contrast(c.fg, c.bg) })))
 }
 
 function report(rows: Row[]): string {
@@ -273,12 +423,13 @@ function report(rows: Row[]): string {
     const rs = rows.filter((r) => `${r.item}|${r.label}` === key)
     const cells = ids.map((id) => {
       const mine = rs.filter((r) => column(r.ctx) === id)
+      if (mine.length === 0) return "—"
       const worst = mine.reduce((a, b) => (b.ratio < a.ratio ? b : a))
       const where = `${worst.ctx.mode === "light" ? "亮" : "暗"}${worst.ctx.skin === "glass" ? "·glass" : ""}`
       const flag = worst.min !== null && worst.ratio < worst.min ? " ❌" : ""
       return `${worst.ratio.toFixed(2)}（${where}）${flag}`
     })
-    lines.push(`| ${item} | ${label} | ${rs[0]!.min ?? "—"} | ${cells.join(" | ")} |`)
+    lines.push(`| ${item} | ${label} | ${rs.find((r) => r.min !== null)?.min ?? "—"} | ${cells.join(" | ")} |`)
   }
   return lines.join("\n")
 }
@@ -296,28 +447,77 @@ test("P2 / P3：每种强调色 × 亮暗 × 经典 / glass 回退，字 ≥ 4.5
   assert.deepEqual(bad, [])
 })
 
-test("P2-1：主按钮只走 cta token（bg-cta / bg-button-primary 配 text-cta-foreground，不写死白字）；白字落在实心强调色上只能 700+（hover 800+）", () => {
-  let ctaLines = 0
-  for (const root of ["apps/desktop/src/renderer/src", "packages/ui"]) {
-    const base = new URL(`${root}/`, repo)
-    for (const rel of readdirSync(base, { recursive: true }) as string[]) {
-      if (!/\.tsx?$/.test(rel) || rel.includes("node_modules") || rel.endsWith(".test.ts")) continue
-      const lines = readFileSync(new URL(rel, base), "utf8").split("\n")
-      lines.forEach((line, i) => {
-        if (!/(?<![\w:-])bg-(?:cta|button-primary)(?![\w-])/.test(line)) return
-        ctaLines++
-        const near = `${line}\n${lines[i + 1] ?? ""}`
-        assert.ok(!/(?<![\w:-])text-(?:text-)?white\b/.test(near), `${root}/${rel}:${i + 1} 主按钮写死了白字，琥珀 ink 变体切不过去`)
-        assert.ok(/text-cta-foreground/.test(near), `${root}/${rel}:${i + 1} 主按钮缺 text-cta-foreground`)
-      })
+test("P2-1 源码扫描：每个「浅色字 × 实心强调色底」单元在每种强调色 × 亮暗 × 皮肤 × 琥珀变体下 ≥ 4.5（带文件位置）", () => {
+  const bad = new Set<string>()
+  let pairs = 0
+  for (const ctx of CONTEXTS) {
+    for (const hit of lightOnAccent(ctx)) {
+      pairs++
+      if (hit.ratio < TEXT) bad.add(`${hit.where} ${hit.fg} on ${hit.bg} [${column(ctx)} ${ctx.mode} ${ctx.skin}] = ${hit.ratio.toFixed(2)}`)
     }
   }
-  assert.ok(ctaLines >= 30, `扫到的主按钮太少：${ctaLines}`)
-  const shades = whiteOnAccentShades()
-  for (const [key, where] of shades) {
-    const n = Number(/(\d+)$/.exec(key)![1])
-    assert.ok(n >= (key.startsWith("hover:") ? 800 : 700), `${key} 上放白字：${[...where].join(", ")}`)
+  assert.ok(pairs > 40 * CONTEXTS.length, `扫到的组合太少：${pairs}`)
+  assert.deepEqual([...bad], [])
+})
+
+test("P2-1：主按钮只走 cta token（bg-cta / bg-button-primary 所在单元配 text-cta-foreground，不写死白字）", () => {
+  let n = 0
+  for (const u of allClassUnits()) {
+    if (!/(?<![\w-])(?:[\w-]*(?:\[[^\]\s]*\])?:)*bg-(?:cta|button-primary)(?![\w/-])/.test(u.text)) continue
+    n++
+    const own = /text-cta-foreground/.test(u.text)
+    const text = own ? u.text : `${u.text} ${u.next?.text ?? ""}`
+    assert.ok(!/(?<![\w-])(?:[\w-]*:)*text-(?:text-)?white(?![\w/-])/.test(text), `${u.where} 主按钮写死了白字，琥珀 ink 变体切不过去`)
+    assert.match(text, /text-cta-foreground/, `${u.where} 主按钮缺 text-cta-foreground`)
   }
+  assert.ok(n >= 30, `扫到的主按钮太少：${n}`)
+})
+
+test("扫描器自检：跨行 cx()、渐变、bg-primary、任意值变量、cta token 都能认出来", () => {
+  const code = [
+    'const a = cx(',
+    '  "rounded bg-accent-500",',
+    '  active && "text-white"',
+    ')',
+    'const b = "bg-linear-to-b from-accent-500 to-accent-600 text-text-white"',
+    'const c = "bg-primary text-primary-foreground"',
+    'const d = "bg-(--color-accent-500) text-white"',
+    'const e = "bg-[var(--color-accent-500)] text-white"',
+    'const f = "bg-cta hover:bg-cta-hover text-cta-foreground"',
+    '// const g = "bg-accent-500 text-white"',
+    'const h = "bg-accent-500/10 text-white"'
+  ].join("\n")
+  const units = classUnits(code, "x.tsx").filter((u) => u.text.includes(" ") || u.text.includes("-"))
+  const got = units.map((u) => ({ where: u.where, bg: toks(u.text, SOLID_ACCENT_BG, 3).map((t) => t.full), fg: toks(u.text, LIGHT_FG, 2).map((t) => t.full) }))
+  assert.deepEqual(got, [
+    { where: "x.tsx:1", bg: ["bg-accent-500"], fg: ["text-white"] },
+    { where: "x.tsx:5", bg: ["from-accent-500", "to-accent-600"], fg: ["text-text-white"] },
+    { where: "x.tsx:6", bg: ["bg-primary"], fg: ["text-primary-foreground"] },
+    { where: "x.tsx:7", bg: ["bg-(--color-accent-500)"], fg: ["text-white"] },
+    { where: "x.tsx:8", bg: ["bg-[var(--color-accent-500)]"], fg: ["text-white"] },
+    { where: "x.tsx:9", bg: ["bg-cta", "hover:bg-cta-hover"], fg: ["text-cta-foreground"] },
+    { where: "x.tsx:11", bg: [], fg: ["text-white"] }
+  ])
+  const amber: Ctx = { accent: THEME_ACCENTS.find((a) => a.id === "amber")!, mode: "light", skin: "classic", cta: "default" }
+  assert.equal(contrast(WHITE, solidColors(amber, "(--color-accent-500)")[0]!).toFixed(2), "2.15")
+  assert.equal(solidColors(amber, "button-primary").length, 6, "bg-button-primary 自带常态 / 悬停 / 按下三段渐变")
+})
+
+test("use-theme-accent 行内 500 / 600 生效；反向对照：旧方案（白字 on 琥珀 500 / 600、绿 500）在门槛下", () => {
+  for (const accent of THEME_ACCENTS) {
+    const ctx: Ctx = { accent, mode: "light", skin: "classic", cta: "default" }
+    assert.equal(toHex(col(ctx, "main", "accent-500")), accent.c500.toLowerCase(), `${accent.id} 500 用的是行内 hex`)
+    assert.equal(toHex(col(ctx, "main", "accent-600")), accent.c600.toLowerCase(), `${accent.id} 600 用的是行内 hex`)
+  }
+  const at = (id: string): Ctx => ({ accent: THEME_ACCENTS.find((a) => a.id === id)!, mode: "light", skin: "classic", cta: "default" })
+  assert.equal(contrast(WHITE, col(at("amber"), "main", "accent-500")).toFixed(2), "2.15")
+  assert.equal(contrast(WHITE, col(at("amber"), "main", "accent-600")).toFixed(2), "3.19")
+  assert.equal(contrast(WHITE, col(at("emerald"), "main", "accent-500")).toFixed(2), "2.54")
+  assert.equal(TEXT, 4.5)
+  assert.equal(HEAT_STEP, 1.3)
+  assert.equal(GRAPHIC, 3)
+  assert.ok(contrast(WHITE, col(at("amber"), "main", "accent-600")) < TEXT, "旧的 600 白字必须判不过")
+  assert.ok(contrast(WHITE, col(at("amber"), "main", "accent-500")) < GRAPHIC, "旧的 500 白色图标必须判不过")
 })
 
 test("P3-8：glass 亮色的次级字 / 三级字 / 占位符 / 次级图标是中性灰（OKLCH 色度 < 0.01），不再掺强调色", () => {
