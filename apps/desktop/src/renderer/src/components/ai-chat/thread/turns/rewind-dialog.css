@@ -4,10 +4,12 @@
  * 主按钮渐变 / 字色走全站（#166 已合入：700 起、琥珀 500 底墨色字 cta-foreground），这里不再覆盖。
  * 数值由 rewind-dialog-must3-contrast.test.ts 按 theme.css + skins/*.css + Tailwind 色板现算（四皮肤 × 亮暗 × 五强调色）。
  * 由 styles/app.css @import 进 Tailwind 同一次编译：这里引用的色阶变量（如 red-800）才会被输出。
+ * 弹窗底色：弹窗挂 data-pane-shell-deco="off"，globals.css 用 !important 把它在所有皮肤（含 classic）都铺成实底——
+ * 亮色 #fff、暗色 neutral-900（不是 background-primary 的 800）。下面的对比度都按这个底算。
  */
 
 [data-rewind-dialog] {
-  /* 「从这里重来失败」：浅色 red-700（原 red-500 对白 3.81）；深色见下 red-400。 */
+  /* 「从这里重来失败」：浅色 red-700（原 red-500 对白 3.81，现 6.42）；深色见下 red-400（对 neutral-900 底 6.19）。 */
   --color-text-error-primary: var(--color-red-700);
 
   /* 「删掉并还原」白字：原 500→600（4.1–4.6），悬停 400→500。同一套往深走，常态 / 悬停 / 按下 / 转圈都 ≥ 4.5。 */
@@ -16,7 +18,8 @@
   --gradient-button-danger-active: linear-gradient(180deg, var(--color-red-800) 0%, var(--color-red-900) 100%);
 
   /* 「取消」「连文件一起还原」描边 + 弹窗外沿：原 neutral-200（浅 1.19）/ 700（深 1.46，对遮罩 1.91）。
-   * 常态用 #166 的边线 token --color-switch-off-border（neutral-500：对白 4.75、对 neutral-800 3.18、对遮罩 ≥ 3.9）；
+   * 常态用 #166 的边线 token --color-switch-off-border（neutral-500：对白底 4.73、对暗色弹窗底 neutral-900 3.79、
+   * 对暗色按钮底 neutral-800 3.19、对遮罩 ≥ 3.8）；
    * 悬停用 #166 的焦点 token --color-focus-ring（亮 accent-700 / 暗 accent-400，手绘墨色），往对比更高的方向走。
    * glass 的描边走 --skin-frost-line（白 55% / 14%），sketch 把描边设成 transparent：在这只弹窗里一并拉回。 */
   --color-border-button-default: var(--color-switch-off-border);
