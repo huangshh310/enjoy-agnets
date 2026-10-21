@@ -383,9 +383,10 @@ test("消息上的入口（leo E5）：user-turn 按当前会话引擎的能力�
   assert.doesNotMatch(src, /const canRewind = (true|!0)/)
 })
 
+// r3（leo）：写回抛错时原话还在「待放回」记录里、不在草稿里——toast 不能说「原话在草稿里」。
 const FINISH_TOAST = {
-  zh: "已回到这里，但没能放回输入框，原话在草稿里。",
-  en: "Rewound to here, but couldn't put your message back in the composer. It's saved in your draft."
+  zh: "已回到这里，但还没能放回输入框。原话已保存，会放回这个对话的输入框或草稿。",
+  en: "Rewound to here, but your message isn't back in the composer yet. It's saved and will go back into this chat's composer or draft."
 } as const
 
 /** 接上 rewindDialogDeps（真实接线），toast 记下来。 */
@@ -486,4 +487,17 @@ test("#167：超时后第一次没回来前点取消能关窗", async () => {
     hang.resolve({ ok: true })
     await new Promise((r) => setImmediate(r))
   })
+})
+
+test("#167 r3：同会话正在输入、原话稍后放回（writebackPending）→ 立刻收窗 + 中性 toast，不显示失败句", async () => {
+  for (const [lang, copy] of [
+    ["zh", "已回到这里，原话稍后放回输入框。"],
+    ["en", "Rewound to here. Your message will go back into the composer in a moment."]
+  ] as const) {
+    const { controller, calls } = wiredHarness(async () => ({ ok: true, writebackPending: true }), lang)
+    await controller.run(false, undefined, "chat-only")
+    assert.equal(calls.close, 1, `${lang}: closed`)
+    assert.deepEqual(calls.toasts, [copy])
+    assert.equal(controller.model({ canRestoreFiles: true, gitRepo: true, t: tFor(lang) }).error, null)
+  }
 })

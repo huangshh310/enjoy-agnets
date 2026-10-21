@@ -134,6 +134,13 @@ export function mergeWritebackText(incoming: string, current: string): string {
   return `${current.replace(/\s+$/, "")}\n${incoming.replace(/^(?:[ \t]*\n)+/, "")}`
 }
 
+/** current 里有没有 incoming 这一整段（按行比，逐行去首尾空白、忽略空行，连续相同）。空的 incoming 算有。 */
+export function textContainsBlock(current: string, incoming: string): boolean {
+  const back = meaningfulLines(incoming)
+  if (back.length === 0) return true
+  return containsBlock(meaningfulLines(current), back)
+}
+
 function meaningfulLines(text: string): string[] {
   return text
     .split(/\r?\n/)
