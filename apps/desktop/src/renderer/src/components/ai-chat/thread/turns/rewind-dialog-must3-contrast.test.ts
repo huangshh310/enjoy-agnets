@@ -4,6 +4,7 @@
  *   「取消」「连文件一起还原」描边（对弹窗底和按钮底）、深色弹窗外沿（对遮罩）。
  * 四皮肤（classic / glass / ink / sketch）× 亮暗 × theme.css 里的每个 data-accent 全算。
  * 色值按 Tailwind 色板（tailwindcss/theme.css）+ packages/ui/styles/theme.css + skins/*.css + rewind-dialog.css 叠出来现算，不靠截图取色。
+ * 弹窗底色按 globals.css 里 [data-pane-shell-deco="off"] 的 !important 实底算（所有皮肤：亮 #fff / 暗 neutral-900），从 globals.css 现读。
  * 算法同 #166 的 lib/css-contrast.ts（还没合并，这里先内联一份；#166 合并后换成 import 那份）。
  */
 import assert from "node:assert/strict"
@@ -17,6 +18,7 @@ const tsx = here("./rewind-from-here-dialog.tsx")
 const dialogCss = here("./rewind-dialog.css")
 const appCss = here("../../../../styles/app.css")
 const themeCss = here(`${STYLES}theme.css`)
+const globalsCss = here(`${STYLES}globals.css`)
 const skinCss: Record<Skin, string> = {
   classic: here(`${STYLES}skins/classic.css`),
   glass: here(`${STYLES}skins/glass.css`),
@@ -284,29 +286,28 @@ function dialogScope(ctx: Ctx, busy = false): Map<string, string> {
   return out
 }
 
-const skinProps = Object.fromEntries(SKINS.map((s) => [s, parseCss(skinCss[s], true)])) as Record<Skin, DeclTable>
 const N925 = () => resolveColor("var(--color-neutral-925)", rootScope({ skin: "classic", mode: "dark", accent: "blue" }))
 const WHITE: Rgba = { r: 1, g: 1, b: 1, a: 1 }
 
 /**
- * 弹窗底色。弹窗挂 data-pane-shell-deco="off"（下面有断言）：glass 走 deco-off 的实心底，ink / sketch 走 deco-off 的
- * background-primary-default（不再是天空 / 网纹），classic 就是 bg-background-primary-default。
+ * 弹窗底色。弹窗挂 data-pane-shell-deco="off"（下面有断言）：globals.css 对 [data-pane-shell-deco="off"] 用 !important
+ * 把底色强制成实底——亮色 #fff、暗色 html.dark 下 neutral-900，所有皮肤都一样（包括 classic：深色不是 background-primary
+ * 的 800，而是 900）。皮肤自己的 deco-off 规则（glass 的 #fff / 900，ink / sketch 的 background-primary-default）都没有
+ * !important，盖不过它。这里直接从 globals.css 读这两条（leo r7 S4），不按皮肤底色建模。
  * withDeco=false：改之前（没挂 deco-off）——ink 是天空渐变、sketch 是纸、glass 是半透明叠在遮罩上（这里取遮罩上的合成色）。
  */
+const globalsProps = parseCss(globalsCss, true)
+function decoOffBackground(mode: Mode): string {
+  const sel = mode === "dark" ? 'html.dark [data-pane-shell-deco="off"]' : '[data-pane-shell-deco="off"]'
+  const raw = globalsProps.get(sel)?.get("background-color")
+  assert.ok(raw, `globals.css 里找不到 ${sel} 的 background-color`)
+  assert.match(raw, /!important$/, `${sel} 的底色不再是 !important：${raw}（皮肤规则可能会盖过它，按皮肤重新建模）`)
+  return raw.replace(/\s*!important$/, "")
+}
+
 function dialogSurface(ctx: Ctx, withDeco = ctx.withDialog): Rgba {
   const scope = dialogScope(ctx)
-  const opaque = (c: Rgba) => (c.a < 1 ? over(c, ctx.mode === "dark" ? N925() : WHITE) : c)
-  if (withDeco) {
-    if (ctx.skin === "glass") {
-      const sel = ctx.mode === "dark" ? 'html.dark[data-skin="glass"] [data-pane-shell-deco="off"]' : 'html[data-skin="glass"] [data-pane-shell-deco="off"]'
-      return opaque(resolveColor(skinProps.glass.get(sel)!.get("background-color")!, scope))
-    }
-    if (ctx.skin !== "classic") {
-      const sel = `html[data-skin="${ctx.skin}"] [data-pane-shell-deco="off"].rounded-3xl.shadow-card`
-      return opaque(resolveColor(skinProps[ctx.skin].get(sel)!.get("background-color")!, scope))
-    }
-    return opaque(resolveColor("var(--color-background-primary-default)", scope))
-  }
+  if (withDeco) return over(resolveColor(decoOffBackground(ctx.mode), scope), ctx.mode === "dark" ? N925() : WHITE)
   if (ctx.skin === "ink") return resolveColor("var(--skin-ink-sky-bot)", scope)
   if (ctx.skin === "sketch") return resolveColor("var(--skin-sketch-sheet)", scope)
   const bg = resolveColor("var(--color-background-primary-default)", scope)
