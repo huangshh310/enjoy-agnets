@@ -45,6 +45,26 @@ async function openAppearance(window: Page): Promise<void> {
     location.hash = "#/settings/appearance"
   })
   await window.locator('[role="radio"][data-accent-option]').first().waitFor({ timeout: 15_000 })
+  // 首启闸可能在切到设置页之后才把向导从介绍页再打开（CI 上 da4eb00e 就是被它盖住点不到）：等一下再收掉，同 key-invalid-status。
+  const skip = window.getByRole("button", { name: "跳过设置" })
+  await skip.waitFor({ timeout: 3_000 }).catch(() => undefined)
+  await skipGuideIfOpen(window)
+  await hideOverlays(window)
+  await expect(skip).toHaveCount(0, { timeout: 8_000 })
+}
+
+/** 点强调色；向导晚到盖住了就再收一次重点（最多 5 次），不靠 force 点穿。 */
+async function clickAccent(window: Page): Promise<void> {
+  for (let i = 0; i < 5; i++) {
+    try {
+      await amberRadio(window).click({ timeout: 4_000 })
+      return
+    } catch {
+      await skipGuideIfOpen(window)
+      await hideOverlays(window)
+    }
+  }
+  await amberRadio(window).click()
 }
 
 // 用 data-accent-option，不依赖界面语言
@@ -59,7 +79,7 @@ test("强调色：选琥珀 → 刷新后界面仍是琥珀；再点当前已选
   const { app, window } = await launchEnjoy({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "none" })
   try {
     await openAppearance(window)
-    await amberRadio(window).click()
+    await clickAccent(window)
     await expect(amberRadio(window)).toHaveAttribute("aria-checked", "true")
     await expect.poll(() => appliedAccent(window)).toEqual(AMBER)
 
@@ -80,7 +100,7 @@ test("强调色：选琥珀 → 刷新后界面仍是琥珀；再点当前已选
       document.documentElement.removeAttribute("data-accent")
       document.documentElement.style.removeProperty("--color-accent-500")
     })
-    await amberRadio(window).click()
+    await clickAccent(window)
     await expect.poll(() => appliedAccent(window)).toEqual(AMBER)
   } finally {
     await app.close()
