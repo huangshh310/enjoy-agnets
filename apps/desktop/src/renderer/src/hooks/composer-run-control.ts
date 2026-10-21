@@ -34,7 +34,13 @@ export function claimComposerRun(startedSessionId: string | null, runId: string)
 /** 主进程已经开工但 UI 已停 / 已切会话时，把那一轮 abort 掉。 */
 export function abortOrphanedRun(runId: string) {
   if (!hasIde()) return
-  void getIde().ai.abort(runId).catch(() => undefined)
+  // leo #164 S5：abort IPC 失败不再静默吞掉——main 那边这一轮可能还在跑，记一条日志便于排查。
+  // 界面照旧立刻停（不等 IPC），迟到事件仍按 stopped-runs 丢弃。
+  void getIde()
+    .ai.abort(runId)
+    .catch((error: unknown) => {
+      console.warn("[run] ABORT_IPC_FAILED", runId, error)
+    })
 }
 
 /**
