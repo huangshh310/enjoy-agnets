@@ -100,12 +100,13 @@ export function ThreadSendGateNotice({
         data-app-region="no-drag"
         onClick={onDismiss}
         title={t("chat.dismissError")}
+        aria-label={t("chat.dismissError")}
         className={cx(
           "cursor-pointer text-text-tertiary hover:text-text-primary",
           APP_REGION_NO_DRAG_CLASS
         )}
       >
-        <RiCloseLine className="size-4" />
+        <RiCloseLine className="size-4" aria-hidden />
       </button>
     </div>
   )

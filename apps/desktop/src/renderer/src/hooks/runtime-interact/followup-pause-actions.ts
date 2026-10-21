@@ -19,6 +19,7 @@ import { listComposerAssets } from "../composer-assets"
 import { useChatStore } from "../../stores/chat-store"
 import { readComposerForMerge } from "../../stores/composer-io"
 import { clearPendingFailedSend, failedSendAbandoned, pendingFailedSendFor } from "../pending-failed-send"
+import { markQueueResumedByUser } from "../../components/ai-chat/thread/scroll-on-send.ts"
 
 /**
  * luna P1（m211）：失败的那一条还没发出去（卡上 / 输入框里）时，「继续」「改一下再发」都不该有——按钮本就隐藏，
@@ -37,6 +38,12 @@ export function failedSendStillPending(sessionId: string | null | undefined): bo
 
 export function continueFollowups(sessionId: string | null | undefined): void {
   if (failedSendStillPending(sessionId)) return
+  // 没停着（双击「继续」的第二下、按钮还没收起时又点）：resume 本来就是空操作，也不打贴底记号——
+  // 否则这个记号留到 10 秒内下一条排队自启，把不是用户刚点的那一发也拽到底（leo #170 N2）。
+  if (!followupPausedReason(sessionId)) return
+  // 「继续」是用户点的：接着发出的第一条要贴底（先记再解除——解除会同步 kick 自启）（luna #170 r-luna ②）。
+  // 记在 #169 的「失败那条还没发」闸之后：被拦下的「继续」什么都没解除，不能留一个 10 秒内的一次性贴底标记。
+  markQueueResumedByUser(sessionId)
   resumeFollowups(sessionId)
 }
 

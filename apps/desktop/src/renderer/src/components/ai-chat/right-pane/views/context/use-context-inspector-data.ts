@@ -8,7 +8,6 @@ import {
   subscribeSessionContextChips
 } from "@renderer/hooks/session-context-chips"
 import { inspectorContextModel } from "./inspector-context-model"
-import { useEngineHandoffStore } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { publishedContextWindow } from "@enjoy-agents/providers/context-window"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import {
@@ -121,12 +120,8 @@ function inspectorSnapshot(input: {
 }
 
 function useInspectorFace(slice: ReturnType<typeof useInspectorChatSlice>) {
-  const phase = useEngineHandoffStore((state) => state.phase)
-  const toRuntimeId = useEngineHandoffStore((state) => state.toRuntimeId)
   const snapshot = useSettingsSnapshot()
   return inspectorContextModel({
-    phase,
-    toRuntimeId,
     runtimeId: slice.runtimeId,
     catalogId: slice.modelId,
     catalogLabel: slice.modelLabel,
@@ -135,7 +130,7 @@ function useInspectorFace(slice: ReturnType<typeof useInspectorChatSlice>) {
   })
 }
 
-/** 只信报出这次窗口的那台引擎。交接中看目标引擎，不用上一台留下的 size。 */
+/** 只信报出这次窗口的那台引擎（换助手确认前仍是原来那台，见 inspectorContextModel），不用别的引擎留下的 size。 */
 function resolveInspectorWindow(
   models: ReturnType<typeof useInspectorChatSlice>["models"],
   modelId: string,

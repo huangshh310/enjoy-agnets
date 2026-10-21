@@ -10,7 +10,8 @@ import { EditorDrawerFooter, EditorDrawerHeader } from "./provider-editor-drawer
 import { ProviderEditorFields } from "./provider-editor-fields"
 import { ProviderSimpleFields } from "./provider-simple-fields"
 import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
-import type { EditorState, ProbeState } from "./providers.types"
+import { editorMissingFields, type EditorState, type ProbeState } from "./providers.types"
+import { missingSummaryText } from "./provider-missing-copy"
 
 export function ProviderEditorDrawer({
   editor,
@@ -136,6 +137,9 @@ function EditorDrawerForm({
   simple?: boolean
   focusKey?: boolean
 }) {
+  const t = useT()
+  // 「保存并启用」灰着时说缺什么（mike P3）：缺的那栏下面一行、页签小圆点、底栏一句「还差：…」。
+  const missing = editorMissingFields(editor, preset.requiresKey ?? true)
   return (
     <form
       onSubmit={(event) => {
@@ -156,6 +160,7 @@ function EditorDrawerForm({
             onChange={onChange}
             onDetect={onDetect}
             focusKey={focusKey}
+            missing={missing}
           />
         ) : (
           <ProviderEditorFields
@@ -167,6 +172,7 @@ function EditorDrawerForm({
             onChange={onChange}
             onFetchModels={onFetchModels}
             onDetect={onDetect}
+            missing={missing}
           />
         )}
       </div>
@@ -177,6 +183,7 @@ function EditorDrawerForm({
         saveLabel={saveLabel}
         saveError={secretBlocked ? null : saveError}
         secretBlocked={secretBlocked}
+        missingHint={saving ? "" : missingSummaryText(missing, t, !simple)}
         onClose={onClose}
       />
     </form>

@@ -38,6 +38,11 @@ export const QUEUE_LINK_BUBBLE = "text-accent-900 hover:text-accent-950 dark:tex
 
 export type QueuePausedView = {
   text: string
+  /**
+   * 窄（说明行 < 35rem）时显示的句子（luna #170 锁）：去掉「排队的 {n} 条先不发 / so {n} queued messages are on hold」
+   * 这一句（排队行自己写着条数），只留原因 + 句尾；句尾和全句同一套（不另写长短两种说法）。全文仍在 title 里，仍 line-clamp-2 兜底。
+   */
+  shortText: string
   showContinue: boolean
   showEditFirst: boolean
 }
@@ -48,6 +53,12 @@ const REASON_KEY: Record<FollowupPausedReason, string> = {
   held: "chat.queuePausedHeld",
   error: "chat.queuePausedError",
   quota: "chat.queuePausedQuota"
+}
+
+/** 有定稿窄句的句尾（luna #170 / P2）；不在表里的句尾窄时照说全句。 */
+const SHORT_TAIL_KEY: Record<string, string> = {
+  "chat.queuePausedResendFirst": "chat.queuePausedResendFirstShort",
+  "chat.queuePausedComposerFirst": "chat.queuePausedComposerFirstShort"
 }
 
 /** 一条用 …One（英文单数），其余用复数句（项目里的复数约定：同一个 key 加 One 后缀）。 */
@@ -66,6 +77,20 @@ export function queuePausedReasonText(
   provider: ProviderFace
 ): string {
   return fillProviderFace(t, pluralKey(REASON_KEY[reason], count), provider, { varName: "provider", vars: { n: count } })
+}
+
+/**
+ * 窄句的原因部分：不带条数，所以没有 …One 单复数之分（每个原因 key 一个 …Short）。
+ * held（#169）整句就是「排队的 {n} 条先不发。」——正好是窄句要去掉的那一句，去掉就没字了，所以窄时仍说全句（不另编短句）。
+ */
+export function queuePausedReasonShortText(
+  t: Translate,
+  reason: FollowupPausedReason,
+  count: number,
+  provider: ProviderFace
+): string {
+  if (reason === "held") return queuePausedReasonText(t, reason, count, provider)
+  return fillProviderFace(t, `${REASON_KEY[reason]}Short`, provider, { varName: "provider" })
 }
 
 /**
@@ -90,9 +115,18 @@ export function queuePausedView(input: {
   const fill = (key: string) =>
     fillProviderFace(input.t, pluralKey(key, input.count), input.provider, { varName: "provider", vars: { n: input.count } })
   let text: string
+  let shortText: string
   if (place && input.reason === "quota") {
     // luna P2③：「继续」藏起来时额度句不能说「充值后点继续」，整句换成「充值后先发上面 / 输入框里这条…」。
     text = fill(place === "card" ? "chat.queuePausedQuotaResend" : "chat.queuePausedQuotaComposer")
+    // 窄句（luna #170 / P2 定稿）：卡上「…充值后先发上面这条。」、输入框里「…充值后先发输入框里这条。」，
+    // 都不带条数（没有 …One 之分），称呼同走 fillProviderFace。全句仍在 title 里，仍 line-clamp-2 兜底。
+    shortText = fillProviderFace(
+      input.t,
+      place === "card" ? "chat.queuePausedQuotaResendShort" : "chat.queuePausedQuotaComposerShort",
+      input.provider,
+      { varName: "provider" }
+    )
   } else if (place) {
     const reasonText = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
     const tailKey = isNeutralPause(input.reason)
@@ -103,11 +137,18 @@ export function queuePausedView(input: {
         ? "chat.queuePausedResendFirst"
         : "chat.queuePausedComposerFirst"
     text = `${reasonText}${joiner(reasonText)}${input.t(tailKey)}`
+    // 窄句句尾（出错 / 额度）：卡上「先发上面这条。」、输入框里「先发输入框里这条。」（P2，按 #169 的长句去掉「发出去后…」）。
+    // 中性暂停（停止 / 换助手 / held）的「…发出去后再点继续。」是下一步，窄时照说全句，不删。
+    const shortTailKey = SHORT_TAIL_KEY[tailKey] ?? tailKey
+    const reasonShort = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
+    shortText = `${reasonShort}${joiner(reasonShort)}${input.t(shortTailKey)}`
   } else {
     text = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
+    shortText = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
   }
   return {
     text,
+    shortText,
     showContinue: !place,
     showEditFirst: !place && !input.composerHasContent
   }
@@ -138,6 +179,12 @@ export function clearQueuedWithUndo(
 /** 排队行的标签：队列停着说「已暂停」，否则「排队中」（luna P3a：审批卡在、说明行让位时也不能说「排队中」）。 */
 export function queuedRowLabelKey(paused: boolean): string {
   return paused ? "chat.queuePausedLabel" : "chat.runtimeQueuedBubble"
+}
+
+/** 排队行「发」按钮：没在跑 → 立即发送；在跑 → 马上发给它；在跑但队列停着（暂停中来审批）→ 单独发这条，不和「已暂停」打架（mike P3）。 */
+export function queuedSendNowKey(running: boolean, paused: boolean): string {
+  if (!running) return "chat.runtimeSendNow"
+  return paused ? "chat.runtimeSteerItemPaused" : "chat.runtimeSteerItem"
 }
 
 /** E1：窗口高 ≤600 且没点开时，暂停的排队区折成一行（放在纯 .ts 里，单测能直接测）。 */

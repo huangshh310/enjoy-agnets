@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import {
   composerActiveModelId,
@@ -93,16 +94,25 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     agent: { label: "Grok Build", models: [] }
   })
   assert.equal(fallback, "Grok Build")
+  // 换助手等确认时 runtimeId 还是原来那台；inspectorContextModel 不收交接阶段 / 目标引擎（leo soft-4）。
   const pending = inspectorContextModel({
-    phase: "handoff_pending",
-    toRuntimeId: "claude",
     runtimeId: "enjoy-local",
     catalogId: "deepseek-flash",
     catalogLabel: "deepseek-flash",
     agents: [{ id: "claude", label: "Claude Code", selectedModel: "claude-sonnet-4-5" }]
   })
-  assert.equal(pending.id, "claude-sonnet-4-5")
-  assert.equal(pending.label, "claude-sonnet-4-5")
+  // mike P3：换助手还没确认时底栏 / 检查器仍是原来那台（Enjoy 本地的档案模型），确认后 runtimeId 换过去才跟上。
+  assert.equal(pending.id, "deepseek-flash")
+  assert.equal(pending.label, "deepseek-flash")
+  assert.equal(pending.runtimeId, "enjoy-local")
+  const confirmed = inspectorContextModel({
+    runtimeId: "claude",
+    catalogId: "deepseek-flash",
+    catalogLabel: "deepseek-flash",
+    agents: [{ id: "claude", label: "Claude Code", selectedModel: "claude-sonnet-4-5" }]
+  })
+  assert.equal(confirmed.id, "claude-sonnet-4-5")
+  assert.equal(confirmed.runtimeId, "claude")
 })
 
 test("上一引擎的 deepseek 覆盖不会粘到没有这个 id 的 Claude", () => {
@@ -188,4 +198,12 @@ test("绑定档案时模型用 vault 所选，档案名只进 title", () => {
   })
   assert.equal(composerChipText(parts), "Codex CLI · hy3")
   assert.equal(parts.title, "Codex CLI · lucky0625 · hy3")
+})
+
+test("leo soft-4：inspectorContextModel 不再收没用的 phase / toRuntimeId，调用处也不再从交接 store 取", () => {
+  const model = readFileSync(new URL("../right-pane/views/context/inspector-context-model.ts", import.meta.url), "utf8")
+  const sig = model.slice(model.indexOf("export function inspectorContextModel"), model.indexOf("}): {"))
+  assert.doesNotMatch(sig, /\bphase\b|toRuntimeId/)
+  const data = readFileSync(new URL("../right-pane/views/context/use-context-inspector-data.ts", import.meta.url), "utf8")
+  assert.doesNotMatch(data, /useEngineHandoffStore/)
 })

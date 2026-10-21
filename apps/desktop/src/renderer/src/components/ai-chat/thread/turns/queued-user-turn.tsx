@@ -9,7 +9,7 @@ import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { queuedExtrasLabel } from "../../composer-count-labels"
-import { QUEUE_BUBBLE_LABEL_TEXT, QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey } from "../queue-paused-view"
+import { QUEUE_BUBBLE_LABEL_TEXT, QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey, queuedSendNowKey } from "../queue-paused-view"
 
 export function QueuedUserTurn({
   item,
@@ -51,7 +51,8 @@ export function QueuedUserTurn({
         onClick={() => void sendFollowupNow(item)}
       >
         <RiSendPlaneLine className="size-3.5" aria-hidden />
-        {running ? t("chat.runtimeSteerItem") : t("chat.runtimeSendNow")}
+        {/* 队列停着又在跑（暂停中来审批）：「马上发给它」听着像继续整队，换成只发这一条（mike P3）。 */}
+        {t(queuedSendNowKey(running, paused))}
       </button>
       <button
         type="button"

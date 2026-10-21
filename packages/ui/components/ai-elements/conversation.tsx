@@ -43,6 +43,21 @@ export const ConversationViewportStick = () => {
   return null;
 };
 
+/**
+ * trigger 变了就滚到底（首帧不滚）。放进 <Conversation> 里，调用方决定什么时候该变——
+ * 桌面端用它做「发出一句后贴底」：用户往上翻过、↓ 已经出现时，发送也要回到最新（mike P3）。
+ */
+export const ConversationScrollOnChange = ({ trigger }: { trigger: string | number | null }) => {
+  const { scrollToBottom } = useStickToBottomContext();
+  const last = useRef(trigger);
+  useEffect(() => {
+    if (last.current === trigger) return;
+    last.current = trigger;
+    if (trigger != null) void scrollToBottom("smooth");
+  }, [trigger, scrollToBottom]);
+  return null;
+};
+
 export type ConversationContentProps = ComponentProps<
   typeof StickToBottom.Content
 >;

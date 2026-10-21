@@ -13,8 +13,15 @@
  *
  * E1（luna 定稿）：队列因停止 / 出错 / 额度停着时，同样画在输入框正上方的紧凑区，最上面加一行说明（QueuePausedRow），
  * 排队行本身不变；窗口高 ≤600 时整区折成一行「已暂停 · 排队 N 条」，点开展开。
+ *
+ * mike P3（#163 巡检）：
+ * - 点开后区内滚（滚动条是隐藏的）：底下还藏着排队行时，滚动区下面单独一行「还有 N 条」，点一下滚到底；区被挤到放不下这一行（<64px）时不画，不盖行；
+ * - 点开着、够高过，又被挤到 <64px（底下还藏着行）：折回一行（foldOnSqueeze，luna #170 r-luna ①）；空间回来不自己展开，只有用户点；
+ *   一轮只自动折一次：折过之后用户再点开就一直开着（autoFolded，换审批 / 暂停原因、窗口变矮收起、切会话、排队清空时清）；
+ * - 点开过，窗口再被拉到 ≤600 高：重新折成一行（refoldOnShort，m211-33）；
+ * - 停着且对话里挂着失败卡：给对话区留 data-keep-thread，chat-stage 据此给对话区保底高度，「再发一次」整颗露出。
  */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { RiArrowDownSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import {
@@ -27,6 +34,7 @@ import {
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
 import { pausedCollapsed } from "./queue-paused-view"
+import { foldOnSqueeze, keepThreadForFailureCard, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -87,10 +95,40 @@ function DockedFollowups({
   const approvalId = useChatStore((state) => state.pendingApproval?.approvalId ?? null)
   const ref = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
+  // 点开着被挤到 <64px 时折回的一行：空间回来也不自己展开，只有用户点（luna #170 r-luna ①）。
+  const [squeezed, setSqueezed] = useState(false)
+  // 这一轮已经自动折过一次：用户再点开就一直开着，不再被挤折（luna #170 r-luna ① 补充）。只在下面三处（换审批 / 暂停原因、窗口变矮收起、切会话）清；排队清空时整块卸掉。
+  const [autoFolded, setAutoFolded] = useState(false)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const expand = useCallback(() => {
+    setSqueezed(false)
+    setExpanded(true)
+  }, [])
+  const foldSqueezed = useCallback(() => {
+    setExpanded(false)
+    setSqueezed(true)
+    setAutoFolded(true)
+  }, [])
   const short = useShortWindow()
-  // 换了一张审批卡 / 暂停原因变了：回到默认（不展开）。
-  useEffect(() => setExpanded(false), [approvalId, paused])
-  if (paused && pausedCollapsed(short, expanded)) {
+  // 换了一张审批卡 / 暂停原因变了：回到默认（不展开），这一轮结束。
+  useEffect(() => {
+    setExpanded(false)
+    setAutoFolded(false)
+  }, [approvalId, paused])
+  // 切会话：这一轮结束。
+  useEffect(() => setAutoFolded(false), [sessionId])
+  // 点开过，窗口再被拉矮到 ≤600：重新折起（m211-33），这一轮结束。
+  const wasShort = useRef(short)
+  useEffect(() => {
+    if (refoldOnShort(wasShort.current, short)) {
+      setExpanded(false)
+      setAutoFolded(false)
+    }
+    wasShort.current = short
+  }, [short])
+  // 停着 + 对话里挂着失败卡：对话区保底高度（chat-stage 按 data-keep-thread 加 min-h），失败卡按钮整颗露出。
+  const keepThread = useChatStore((state) => keepThreadForFailureCard(paused != null, state.error))
+  if (paused && (pausedCollapsed(short, expanded) || squeezed)) {
     return (
       <div
         ref={ref}
@@ -99,13 +137,14 @@ function DockedFollowups({
         data-mode="paused-collapsed"
         data-paused={paused}
         data-count={items.length}
+        data-keep-thread={keepThread ? "true" : undefined}
         className="relative z-30 mx-6 flex shrink-0 flex-col py-0.5"
       >
         <DockSummaryButton
           testId="queue-paused-collapsed"
           label={t("chat.queuePausedCollapsed", { n: items.length })}
           icon={<QueuePausedIcon reason={paused} />}
-          onClick={() => setExpanded(true)}
+          onClick={expand}
         />
       </div>
     )
@@ -116,8 +155,12 @@ function DockedFollowups({
       paused={paused}
       queuePaused={queuePaused}
       expanded={expanded}
-      setExpanded={setExpanded}
+      squeezed={squeezed}
+      autoFolded={autoFolded}
+      expand={expand}
+      foldSqueezed={foldSqueezed}
       dockRef={ref}
+      keepThread={keepThread}
     />
   )
 }
@@ -127,19 +170,41 @@ function DockedRows({
   paused,
   queuePaused,
   expanded,
-  setExpanded,
-  dockRef: ref
+  squeezed,
+  autoFolded,
+  expand,
+  foldSqueezed,
+  dockRef: ref,
+  keepThread
 }: {
   items: FollowupItem[]
   paused: FollowupPausedReason | null
   queuePaused: boolean
   expanded: boolean
-  setExpanded: (value: boolean) => void
+  squeezed: boolean
+  autoFolded: boolean
+  expand: () => void
+  foldSqueezed: () => void
   dockRef: RefObject<HTMLDivElement | null>
+  keepThread: boolean
 }) {
   const t = useT()
   const tight = useDockTight(ref, !expanded, items.length)
-  const mode = dockMode(items.length, tight, expanded)
+  const mode = dockMode(items.length, tight, expanded, squeezed)
+  // 区内滚的是里面这层；「还有 N 条」放得下就画在它下面、不进滚动区，不盖任何一行（leo #170 soft-5）。
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
+  const dockHeight = useDockHeight(ref, expanded || hiddenBelow > 0)
+  useFoldOnSqueeze(expanded, dockHeight, hiddenBelow, autoFolded, foldSqueezed)
+  // 放不下单独一行（审批卡 + 733×480 挤到一行高）就不画，不再贴区底盖住那一行的字（luna #170 01d）。
+  const pill = showHiddenBelowPill(hiddenBelow, dockHeight) ? (
+    <DockSummaryButton
+      testId="queued-hidden-below"
+      label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
+      className="mt-1 w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5"
+      onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })}
+    />
+  ) : null
 
   const visible = mode === "more" ? items.slice(0, DOCK_VISIBLE_ROWS) : items
   return (
@@ -150,38 +215,53 @@ function DockedRows({
       data-mode={mode}
       data-paused={paused ?? undefined}
       data-count={items.length}
+      data-keep-thread={keepThread ? "true" : undefined}
+      data-hidden-below={hiddenBelow > 0 ? hiddenBelow : undefined}
       // 默认整行画（shrink-0）；用户点开后才让位：shrink 远大于审批卡（PermissionDock 是 shrink 1），最少留一行、区内滚。
       // relative z-30：盖过对话目录条（z-20），× 点得到。
       className={cx(
-        "relative z-30 mx-6 flex flex-col gap-1 overflow-y-auto [scrollbar-width:none]",
+        "relative z-30 mx-6 flex flex-col overflow-hidden",
         expanded ? "max-h-[9.5rem] min-h-9 shrink-[1000] py-1" : "shrink-0",
         !expanded && (mode === "collapsed" ? "py-0.5" : "py-1")
       )}
     >
-      {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
-      {mode === "collapsed" ? (
-        <DockSummaryButton testId="queued-collapsed" label={t("chat.runtimeQueueCount", { n: items.length })} onClick={() => setExpanded(true)} />
-      ) : (
-        <>
-          {visible.map((item, index) => (
-            <QueuedUserTurn
-              key={item.id}
-              item={item}
-              canMoveUp={index > 0}
-              canMoveDown={index < items.length - 1}
-              compact
-              paused={queuePaused}
-            />
-          ))}
-          {mode === "more" ? (
-            <DockSummaryButton
-              testId="queued-more"
-              label={t("chat.runtimeQueueMore", { n: items.length - DOCK_VISIBLE_ROWS })}
-              onClick={() => setExpanded(true)}
-            />
-          ) : null}
-        </>
-      )}
+      <div
+        ref={scrollRef}
+        data-testid="queued-followups-scroll"
+        className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto [scrollbar-width:none]"
+      >
+        {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
+        {mode === "collapsed" ? (
+          <DockSummaryButton
+            testId="queued-collapsed"
+            // 队列停着（审批时说明行让位）也说「已暂停 · 排队 N 条」，和不审批时折起来的那一行同一句（luna #170 r-luna ①）。
+            label={t(queuePaused ? "chat.queuePausedCollapsed" : "chat.runtimeQueueCount", { n: items.length })}
+            onClick={expand}
+          />
+        ) : (
+          <>
+            {visible.map((item, index) => (
+              <QueuedUserTurn
+                key={item.id}
+                item={item}
+                canMoveUp={index > 0}
+                canMoveDown={index < items.length - 1}
+                compact
+                paused={queuePaused}
+              />
+            ))}
+            {mode === "more" ? (
+              <DockSummaryButton
+                testId="queued-more"
+                label={t("chat.runtimeQueueMore", { n: items.length - DOCK_VISIBLE_ROWS })}
+                onClick={expand}
+              />
+            ) : null}
+          </>
+        )}
+      </div>
+      {/* 区内滚、滚动条隐藏：底下还有行时，滚动区下面单独一行左对齐「还有 N 条」，点一下滚到底；不盖任何一行。 */}
+      {pill}
     </div>
   )
 }
@@ -190,11 +270,13 @@ function DockSummaryButton({
   testId,
   label,
   icon,
+  className,
   onClick
 }: {
   testId: string
   label: string
   icon?: ReactNode
+  className?: string
   onClick: () => void
 }) {
   return (
@@ -205,7 +287,8 @@ function DockSummaryButton({
       onClick={onClick}
       className={cx(
         "flex min-h-6 w-full shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-border-button-default",
-        "bg-background-secondary-default/60 py-0.5 pr-2 pl-3 text-left text-caption-2-medium text-text-secondary hover:text-text-primary"
+        "bg-background-secondary-default/60 py-0.5 pr-2 pl-3 text-left text-caption-2-medium text-text-secondary hover:text-text-primary",
+        className
       )}
     >
       {icon}
@@ -217,10 +300,13 @@ function DockSummaryButton({
 
 export type DockMode = "collapsed" | "more" | "all"
 
-/** 紧凑区画法：放不下 → 一行「排队 N 条」；3 条及以上 → 2 行 +「还有 N 条」；用户点开后全部（区内滚）。 */
-export function dockMode(count: number, tight: boolean, expanded: boolean): DockMode {
+/**
+ * 紧凑区画法：放不下 → 一行「排队 N 条」；3 条及以上 → 2 行 +「还有 N 条」；用户点开后全部（区内滚）。
+ * squeezed：点开着被挤到 <64px 折回来的（luna #170 r-luna ①），用户再点开之前一直是一行，空间回来也不展开。
+ */
+export function dockMode(count: number, tight: boolean, expanded: boolean, squeezed = false): DockMode {
   if (expanded) return "all"
-  if (tight && count > 0) return "collapsed"
+  if ((tight || squeezed) && count > 0) return "collapsed"
   if (count > DOCK_VISIBLE_ROWS) return "more"
   return "all"
 }
@@ -265,6 +351,82 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
     return () => observer.disconnect()
   }, [ref, enabled, count])
   return enabled && tight
+}
+
+/**
+ * 点开着：这次点开后够高过（≥64px），又被挤到不够、底下还藏着行 → 折回一行（foldOnSqueeze）。
+ * 每次点开重新记「够高过」：本来就挤时用户点开不受影响；这一轮自动折过（autoFolded）之后再点开，不再折。
+ */
+function useFoldOnSqueeze(expanded: boolean, dockHeight: number, hiddenBelow: number, autoFolded: boolean, fold: () => void): void {
+  const seenRoomy = useRef(false)
+  useLayoutEffect(() => {
+    if (!expanded) {
+      seenRoomy.current = false
+      return
+    }
+    if (!Number.isFinite(dockHeight)) return
+    if (foldOnSqueeze(seenRoomy.current, dockHeight, hiddenBelow, autoFolded)) {
+      seenRoomy.current = false
+      fold()
+      return
+    }
+    if (pillFitsBelow(dockHeight)) seenRoomy.current = true
+  }, [expanded, dockHeight, hiddenBelow, autoFolded, fold])
+}
+
+/** 排队区外层高度（px）：给 showHiddenBelowPill 判「还有 N 条」放不放得下单独一行、给 useFoldOnSqueeze 判挤没挤。不量时是 Infinity。 */
+function useDockHeight(ref: RefObject<HTMLDivElement | null>, enabled: boolean): number {
+  const [height, setHeight] = useState(Number.POSITIVE_INFINITY)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!enabled || !el) {
+      // 不量了就忘掉旧值：下次点开时不拿上一回的高度当「够高过」。
+      setHeight(Number.POSITIVE_INFINITY)
+      return
+    }
+    const measure = () => setHeight(el.clientHeight)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref, enabled])
+  return height
+}
+
+/**
+ * 点开后（区内滚）量一下：可视区底边以下还藏着几条排队行。滚动、区 / 行尺寸变化时重量。
+ * 「还有 N 条」画在滚动区外面，不参与计数（只数滚动区里的 queued-user-turn）。
+ */
+function useRowsHiddenBelow(ref: RefObject<HTMLDivElement | null>, enabled: boolean, count: number): number {
+  const [hidden, setHidden] = useState(0)
+  const measure = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-testid="queued-user-turn"]'))
+    const next = rowsHiddenBelow(
+      rows.map((row) => row.getBoundingClientRect().bottom),
+      el.getBoundingClientRect().bottom
+    )
+    setHidden((prev) => (prev === next ? prev : next))
+  }, [ref])
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setHidden(0)
+      return
+    }
+    const el = ref.current
+    if (!el) return
+    measure()
+    el.addEventListener("scroll", measure, { passive: true })
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    for (const child of Array.from(el.children)) observer.observe(child)
+    return () => {
+      el.removeEventListener("scroll", measure)
+      observer.disconnect()
+    }
+  }, [ref, enabled, count, measure])
+  return enabled ? hidden : 0
 }
 
 /** 审批卡上方「马上发」提示占的高度；没画 / 已让位（display:none）为 0。 */
