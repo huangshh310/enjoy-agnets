@@ -300,3 +300,55 @@ test("lateStoppedEvent 认出起步窗口停掉的那一发时自己记下 runId
   )
   assert.equal(lateStoppedEvent(runStart("run_unit2", "ses_other", "crid_unit", "x")), null, "别的会话同 id 不认")
 })
+
+// ---- leo #169 PASS 附带的 soft 测试（L1 / L5 / L6） ----
+
+test("L6：A 起步窗口停止后切到正在跑的 B，A 的回执是 ok:false——A 的乐观 workflow 还原（B 在跑不算 A 在跑），B 不受影响", async () => {
+  const { sessionId: A } = idle("l6")
+  const p1 = sendComposerMessage(undefined, "A text", att("A text"))
+  await untilRuns(1)
+  assert.equal(wf(A), "in_progress", "发出时乐观标了执行中")
+  await abortComposerRun()
+  const B = `ses_B_l6_${seq}`
+  await loadSession(B, "B")
+  useChatStore.setState({
+    running: true,
+    runId: "run_B_live_l6",
+    repositories: [...(useChatStore.getState().repositories as any[]).filter((n) => n.id !== B), { id: B, workflowStatus: "in_progress" }]
+  } as never)
+  runs[0].resolve({ ok: false, code: "NEED_MODEL" } as never)
+  await p1
+  await flush()
+  assert.equal(wf(A), "done", "A 没开跑：workflow 退回发送前（不能因为 B 在跑就留成执行中）")
+  assert.equal(wf(B), "in_progress", "B 的 workflow 不动")
+  const st = useChatStore.getState()
+  assert.equal(st.running, true, "B 的停止按钮还在")
+  assert.equal(st.runId, "run_B_live_l6")
+  assert.equal(st.error, null, "不出红卡")
+})
+
+test("L1：落地页（没有会话）停的那一发记在空名下；挂到新会话的同 id 认出，别的 id、别的会话的空名查询不误认", () => {
+  noteRequestStopped(null, "cr_land_l1")
+  assert.equal(isRequestStopped("ses_new_l1", "cr_land_l1"), true, "建会话窗里停的，拿到会话后照样认")
+  assert.equal(isRequestStopped(null, "cr_land_l1"), true)
+  assert.equal(isRequestStopped("ses_new_l1", "cr_other_l1"), false, "别的 id 不认")
+  noteRequestStopped("ses_only_l1", "cr_sess_l1")
+  assert.equal(isRequestStopped("ses_else_l1", "cr_sess_l1"), false, "记在会话名下的不外溢到别的会话")
+  assert.equal(isRequestStopped(null, "cr_sess_l1"), false)
+  const late = lateStoppedEvent(runStart("run_land_l1", "ses_new_l1", "cr_land_l1", "落地页那一句"))
+  assert.equal(late, "beforeClaim", "落地页停掉那一发的 run.start（带上新会话）被认出")
+})
+
+test("L5：停止记录到 200 条上限时淘汰最早的、留下最新的（clientRequestId 与 runId 都是）", async () => {
+  const { noteRunStopped, isRunStopped } = await import("../stopped-runs.ts")
+  for (let i = 0; i < 201; i++) {
+    noteRequestStopped("ses_cap_l5", `cr_cap_${i}`)
+    noteRunStopped(`run_cap_${i}`)
+  }
+  assert.equal(isRequestStopped("ses_cap_l5", "cr_cap_0"), false, "第 201 条进来时最早那条被淘汰")
+  assert.equal(isRequestStopped("ses_cap_l5", "cr_cap_1"), true)
+  assert.equal(isRequestStopped("ses_cap_l5", "cr_cap_200"), true, "最新那条在")
+  assert.equal(isRunStopped("run_cap_0"), false)
+  assert.equal(isRunStopped("run_cap_1"), true)
+  assert.equal(isRunStopped("run_cap_200"), true)
+})

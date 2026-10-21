@@ -601,6 +601,48 @@ test("luna P2 卡接线（源码）：落地页按空名认提醒", () => {
   assert.match(src, /blockedAll\.has\(credentialNudgeKey\(sessionId\)\)/)
 })
 
+test("L3（leo K-c 转正）：闸放行后看门狗仍在岗——发送卡在取稿前过了 3s：照样出「这次没发出去」、字还回一份，迟到的那一发不再发 agent.run", async () => {
+  inFlightTurn("ses_l3", "x")
+  useChatStore.setState({ runtimeId: "enjoy-local", modelId: "gpt", running: false, runId: null, error: null, messages: [] } as never)
+  keyReadiness("ok")
+  // e2e 同款卡点：闸放行之后、取稿之前睡 SEND_WATCHDOG_MS + 1.5s（holdPastSendWatchdogForE2e）。
+  ;(globalThis as any).window.enjoyE2eSendWatchdog = true
+  mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] })
+  try {
+    fakeComposerDom("卡住的一句")
+    useChatStore.setState({ composer: "卡住的一句" } as never)
+    const p = sendComposerMessage(undefined, "卡住的一句")
+    for (let i = 0; i < 10; i++) await Promise.resolve()
+    for (let t = 0; t < 5_000; t += 250) {
+      mock.timers.tick(250)
+      for (let i = 0; i < 5; i++) await Promise.resolve()
+    }
+    mock.timers.reset()
+    await p.catch(() => undefined)
+    await flush()
+    const st = useChatStore.getState()
+    assert.equal(st.error, "SEND_FAILED_RESTORE", "闸放行后发送卡住：看门狗照样判失败、出提示（不静默）")
+    assert.equal(st.composer, "卡住的一句", "字还回且只一份")
+    assert.equal(ideCalls.filter((c) => c === ".agent.run").length, 0, "看门狗判了失败：迟到的那一发作废，不再发 agent.run")
+  } finally {
+    mock.timers.reset()
+    delete (globalThis as any).window.enjoyE2eSendWatchdog
+  }
+})
+
+test("L7：会话里「再发一次」（预备发送不带会话）被密钥闸拦下——只记在这个会话名下，不记到落地页", async () => {
+  useChatStore.setState({
+    workspaceId: "ws", sessionId: "ses_l7", running: false, runId: null, composer: "", error: "credential_invalid",
+    notice: null, pendingApproval: null, hasKey: true, pendingStreamEvents: [], preparingHint: false, preparingSessionId: null,
+    messages: [], runtimeId: "enjoy-local", modelId: "gpt"
+  } as never)
+  keyReadiness("invalid")
+  await sendComposerMessage({ content: "再发一次的那句", assets: [] })
+  assert.equal(useChatStore.getState().error, "credential_invalid")
+  assert.equal(nudge.credentialSendBlocked("ses_l7"), true, "这个会话的卡上有「先改好密钥再发。」")
+  assert.equal(nudge.credentialSendBlocked(null), false, "落地页的卡不被会话里的拦截带上提醒")
+})
+
 // ---------------- P3 ----------------
 
 test("P3 停止后「改一下再发」发出去跑完 → 说明行「排队的 N 条先不发。」（中英、单数）；仍不自动发、继续还在", async () => {

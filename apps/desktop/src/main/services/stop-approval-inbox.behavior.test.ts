@@ -315,6 +315,33 @@ test("审批已落库、卡还在 IPC 上，徽标恰好先拉到 1，再点停�
   assertCleanAfterStop(sessionId, [{ runId, approvalId }])
 })
 
+test("N3：审批卡已到渲染端、角标 1，再点停止：Attention 先收、main 后结清——迟到的 approval.resolved / 安静的 run.error 也敲节拍，角标实时落到 0", async () => {
+  const sessionId = seedSession("card-up")
+  const { runId, run, approvalPart, approvalId } = startRun(sessionId, true)
+  async function* stream() {
+    yield approvalPart
+  }
+  await main.consumeRun(runId, run, stream())
+  pumpTail(run, runId)
+  await flushToRenderer()
+  assert.ok(useChatStore.getState().pendingApproval, "对照：卡挂出来了")
+  assert.equal(liveBadge(), 1, "停止前角标是这条未决")
+  // 只看停止之后渲染端收到的事件：结清 / 收尾都只来自 main，不再有 approval.required。
+  delivered.length = 0
+  await abortComposerRun()
+  await flushToRenderer()
+  assert.deepEqual(
+    delivered.map((event) => event.type).filter((type) => type === "approval.required"),
+    [],
+    "停止之后没有新的 approval.required 来敲节拍"
+  )
+  assert.ok(
+    delivered.some((event) => event.type === "approval.resolved" && event.decision === "cancelled"),
+    "main 把未决结清成 cancelled 并推了出来"
+  )
+  assertCleanAfterStop(sessionId, [{ runId, approvalId }])
+})
+
 test("起步窗口（回执没回、runId 没认领）点停止，审批已在 main 落库：开跑带回的 id 被认出、abort，结清后角标落到 0", async () => {
   const sessionId = seedSession("before-claim")
   const { runId, run, approvalPart, approvalId, clientRequestId } = startRun(sessionId, false)

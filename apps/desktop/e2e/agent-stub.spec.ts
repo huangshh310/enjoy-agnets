@@ -292,9 +292,15 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     // 4) 审批轮在中间（后面还有命令轮）：确认删 1 轮，重跑写文件这一轮，命令轮不再出现。
     const writeRegen = regen.nth(1)
     // 上一轮 run.end 落下前按钮是 disabled，force 点下去什么也不发生（CI 39551224529 偶发）。
-    await expect(writeRegen).toBeEnabled()
-    await writeRegen.click({ force: true })
-    await expect(dialog).toContainText("1 轮")
+    // CI 39563073071：第 3 步重跑的命令轮操作条还没落定时只有 2 个按钮，nth(1) 落到最后一条（不弹确认、直接重跑）。
+    // 先等三条回复的按钮都在、都可点；点了没弹确认（按钮刚重挂）就再点，弹出来为止。
+    await expect(regen).toHaveCount(3, { timeout: 20_000 })
+    for (let i = 0; i < 3; i += 1) await expect(regen.nth(i)).toBeEnabled({ timeout: 20_000 })
+    await expect(async () => {
+      await expect(regen).toHaveCount(3, { timeout: 1_000 })
+      if (!(await dialog.isVisible())) await writeRegen.click({ force: true })
+      await expect(dialog).toContainText("1 轮", { timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
     await window.locator('[data-testid="regenerate-confirm"]').click()
     await expect(allowOnce).toBeVisible({ timeout: 20_000 })
     await allowOnce.click({ timeout: 8_000, force: true })
