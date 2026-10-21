@@ -264,3 +264,16 @@ test("对照：真在等审批（内存里有这一轮）照样挡，库不动",
     resetRestoreWaitingOnceForTests()
   }
 })
+
+test("对照：workflow 父行（本来就没有 ActiveRun）的 waiting_review 不被当残留结清", () => {
+  markRestoreWaitingSettled()
+  try {
+    const { runId, sessionId, u1, a1 } = seedStaleWaiting("wf")
+    deleteActiveRun(runId)
+    getDatabase().prepare("UPDATE runs SET kind = 'workflow' WHERE id = ?").run(runId)
+    assert.deepEqual(rewindPrecheck(sessionId, u1, a1), { ok: false, code: "TRUNCATE_RUN_ACTIVE" })
+    assert.equal(getRun(getDatabase(), runId)?.status, "waiting_review")
+  } finally {
+    resetRestoreWaitingOnceForTests()
+  }
+})

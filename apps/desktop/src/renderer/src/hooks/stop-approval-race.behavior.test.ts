@@ -228,3 +228,33 @@ test("对照：起步窗口没停时 run.start 照常认领前台", async () => 
   assert.equal(useChatStore.getState().running, true)
   assert.equal(useChatStore.getState().runId, runId)
 })
+
+test("起步窗口里停止、回执先到（认领失败已 abort）、审批卡后到：照样丢掉", async () => {
+  const { sessionId, runId } = running("claim_then_card", { unclaimed: true })
+  await abortComposerRun()
+  assert.equal(claimComposerRun(sessionId, runId), false)
+  const { abortOrphanedRun } = await import("./composer-run-control.ts")
+  abortOrphanedRun(runId)
+  dispatchAgentEvent(approval(runId, sessionId))
+  assertStoppedUi(sessionId, "认领失败后迟到的卡")
+})
+
+test("对照：起步窗口停过、旧回执还没到就又发了一句（running 已起）：新一轮的 run.start 照常进前台", async () => {
+  const { sessionId } = running("resend", { unclaimed: true })
+  await abortComposerRun()
+  useChatStore.setState({ running: true, runId: null } as never)
+  const next = `run_resend_next_${seq}`
+  dispatchAgentEvent({ type: "run.start", runId: next, sessionId, kind: "agent", prompt: "再来一句" } as never)
+  const st = useChatStore.getState()
+  // 认领前的事件先进 pendingStreamEvents，认领后回放：只要没被丢、没被 abort 就对。
+  assert.ok(st.runId === next || st.pendingStreamEvents.some((e: any) => e.runId === next), "新一轮的开跑没被丢")
+  assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === next), "新一轮不被 abort")
+})
+
+test("对照：起步窗口停过，同会话的标题之类非对话开跑不被丢、不被 abort", async () => {
+  const { sessionId } = running("title", { unclaimed: true })
+  await abortComposerRun()
+  const title = `run_title_${seq}`
+  dispatchAgentEvent({ type: "run.start", runId: title, sessionId, kind: "completion" } as never)
+  assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === title))
+})

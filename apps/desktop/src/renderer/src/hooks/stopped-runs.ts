@@ -46,7 +46,6 @@ export function lateStoppedEvent(
   if (isRunStopped(event.runId)) return "stopped"
   if (event.type === "run.start" && !isComposerRunStart(event)) return null
   if (!sessionId || !stoppedBeforeClaim.has(sessionId)) return null
-  if (event.runId === composer.runId) return null
   if (composer.sessionId === sessionId && composer.running) return null
   noteRunStopped(event.runId)
   return "beforeClaim"
