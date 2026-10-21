@@ -44,12 +44,12 @@ function resolveQuickPreset(toolId: string, toolLabel: string): QuickPresetMeta 
     return {
       kind: "deepseek",
       apiStyle: "openai",
-      defaultBaseURL: "https://api.deepseek.com",
-      defaultModel: "deepseek-chat",
+      defaultBaseURL: "https://api.deepseek.com/v1",
+      defaultModel: "deepseek-flash",
       defaultName: "DeepSeek 官方 API",
       models: [
-        { id: "deepseek-chat", label: "DeepSeek-V3 (Chat)" },
-        { id: "deepseek-reasoner", label: "DeepSeek-R1 (Reasoner)" }
+        { id: "deepseek-flash", label: "DeepSeek Flash" },
+        { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro" }
       ]
     }
   }
