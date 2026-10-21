@@ -21,12 +21,20 @@ import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 import { noteTurnSettled } from "../turn-settled"
 import { noteBackgroundPreOutputRollback } from "../after-pre-output-rollback"
 import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
+import { lateStoppedApproval } from "@renderer/hooks/stopped-runs"
+import { abortOrphanedRun } from "@renderer/hooks/composer-run-control"
 
 export { belongsToForeground } from "./foreground-event"
 
 export function dispatchAgentEvent(event: StreamEvent): void {
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
+  // 用户已停止的一轮：迟到的审批卡整条丢掉（不进 Inbox、不进前台、不停车）。起步窗口停的那一轮顺手 abort。
+  const late = lateStoppedApproval(event, sessionId, useChatStore.getState())
+  if (late) {
+    if (late === "beforeClaim" && runId) abortOrphanedRun(runId)
+    return
+  }
   const eventKind = generationKindOf(event)
   if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId, eventKind)
   const rememberedKind = runId ? useAttentionStore.getState().kindOfRun(runId) : undefined

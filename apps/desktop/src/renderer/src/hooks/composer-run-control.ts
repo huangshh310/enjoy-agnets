@@ -11,9 +11,12 @@ import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-p
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
 import { hasQueuedComposerSend } from "./queue-composer-send"
+import { clearStoppedBeforeClaim, noteRunStopped, noteStoppedBeforeClaim } from "./stopped-runs"
 
 /** IPC 返回后认领本轮；切走则写入停车快照，只有用户 Stop 才当孤儿 abort。 */
 export function claimComposerRun(startedSessionId: string | null, runId: string): boolean {
+  // 起步窗口那一发回来了：之后它的审批卡按 runId 认（停过的 abortOrphanedRun 会记下）。
+  clearStoppedBeforeClaim(startedSessionId)
   const store = useChatStore.getState()
   if (canClaimComposerRun({
     running: store.running,
@@ -32,6 +35,7 @@ export function claimComposerRun(startedSessionId: string | null, runId: string)
 
 /** 主进程已经开工但 UI 已停 / 已切会话时，把那一轮 abort 掉。 */
 export function abortOrphanedRun(runId: string) {
+  noteRunStopped(runId)
   if (!hasIde()) return
   void getIde().ai.abort(runId).catch(() => undefined)
 }
@@ -52,7 +56,11 @@ export async function abortComposerRun(opts?: {
   // luna #163 P2⑤：「刚开始发、还没出字」也算在跑（见 composerRunInFlight），否则随后那一发作废报的「出错」
   // 把说明行改成琥珀色，用户手动发一条跑完后排队的就自己发给新助手了。
   const reason = opts?.pauseReason ?? "stopped"
-  if (reason === "stopped" || composerRunInFlight(store)) pauseFollowups(sessionId, reason)
+  const inFlight = composerRunInFlight(store)
+  if (reason === "stopped" || inFlight) pauseFollowups(sessionId, reason)
+  // 停止后 main 迟到的审批卡不得把卡 / 停止按钮 / 执行中挂回来（jojo 211e3bbb 1c）。
+  if (runId) noteRunStopped(runId)
+  else if (inFlight) noteStoppedBeforeClaim(sessionId)
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
