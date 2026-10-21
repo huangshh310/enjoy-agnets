@@ -1,20 +1,24 @@
 /**
- * 失败卡（连不上 / 密钥没通过 / 拒绝 / 额度）和排队暂停行里「{name}」该说谁（luna P2 定稿）：
- * 1. 已知预设 → 品牌名（OpenAI / DeepSeek…），和设置页供应商行、计费卡 {服务商} 同源；
- * 2. 用户自定义端点（或未知预设）→ 端点**主机名**：不带协议、端口、路径、查询、账号；超过 30 字截断加「…」；
- * 3. 都没有（URL 解析不了 / 没 kind 没地址）→ 通用说法「模型服务」/ "the model service"（句首大写）。
+ * 失败卡（连不上 / 密钥没通过 / 拒绝 / 额度）和排队暂停行里「{name}」该说谁（luna P2 定稿 + #164 S5a）：
+ * 1. 预设品牌名（OpenAI / DeepSeek…）只在端点**没填**，或端点主机是这家的**官方地址**时用：
+ *    云端预设 = 主机落在这家官方域名白名单里（后缀匹配、标签边界，见 provider-official-domains）；
+ *    本地预设（Ollama / LM Studio）= 本机回环 localhost / 127.0.0.1 / ::1，任意端口。
+ * 2. 端点填了、能解析、但不是官方地址（代理、中转、自建、局域网机器，或 custom / 未知预设）→ 端点**主机名**：
+ *    不带协议、端口、路径、查询、账号；超过 30 字截断加「…」。
+ * 3. 端点填了但没有协议 / 解析不了 / 不是 http(s)，或者没 kind 也没地址 → 通用说法「模型服务」/ "the model service"
+ *    （句首大写）。不回落品牌：填错的地址连不上，不是这家的问题。
  * 任何情况都不出现密钥档案名、预设 id、完整 URL。ACP / CLI 引擎说引擎名（send-failure-provider-name）。
  */
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
-import { isOfficialDomain, normalizeHost } from "./provider-official-domains.ts"
+import { isOfficialEndpointHost, normalizeHost } from "./provider-official-domains.ts"
 
 /** 主机名最多显示的字数（含末尾「…」）。 */
 export const ENDPOINT_HOST_MAX = 30
 
 export type ProviderFace = { kind: "named"; name: string } | { kind: "generic" }
 
-/** 端点地址 → 主机名；解析不了 / 不是 http(s) / 没主机名 → undefined。 */
-export function endpointHostLabel(baseURL: string | null | undefined, max = ENDPOINT_HOST_MAX): string | undefined {
+/** 端点地址 → 规整后的主机名（WHATWG URL）；解析不了 / 不是 http(s) / 没主机名 → undefined。 */
+export function endpointHost(baseURL: string | null | undefined): string | undefined {
   const raw = baseURL?.trim()
   if (!raw) return undefined
   let url: URL
@@ -24,7 +28,12 @@ export function endpointHostLabel(baseURL: string | null | undefined, max = ENDP
     return undefined
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return undefined
-  const host = normalizeHost(url.hostname)
+  return normalizeHost(url.hostname)
+}
+
+/** 端点地址 → 显示用主机名（不带协议 / 端口 / 路径，超过 max 截断加「…」）；解析不了 → undefined。 */
+export function endpointHostLabel(baseURL: string | null | undefined, max = ENDPOINT_HOST_MAX): string | undefined {
+  const host = endpointHost(baseURL)
   if (!host) return undefined
   return host.length > max ? `${host.slice(0, max - 1)}…` : host
 }
@@ -35,44 +44,29 @@ export function presetBrand(kind: string | null | undefined): string | undefined
   return PROVIDER_PRESETS.find((preset) => preset.kind === kind)?.name?.trim() || undefined
 }
 
-function urlHost(raw: string | null | undefined): string | undefined {
-  const value = raw?.trim()
-  if (!value) return undefined
-  try {
-    return normalizeHost(new URL(value).hostname)
-  } catch {
-    return undefined
-  }
-}
-
-/** 预设自带的端点主机名（各协议 + 各区域），精确匹配；本地预设（127.0.0.1）靠这条。 */
-function presetHosts(kind: string): Set<string> {
-  const preset = PROVIDER_PRESETS.find((item) => item.kind === kind)
-  const hosts = new Set<string>()
-  if (!preset) return hosts
-  const add = (endpoints: Record<string, string | undefined> | undefined) => {
-    for (const url of Object.values(endpoints ?? {})) {
-      const host = urlHost(url)
-      if (host) hosts.add(host)
-    }
-  }
-  add(preset.endpoints as Record<string, string | undefined>)
-  for (const region of preset.regions ?? []) add(region.endpoints as Record<string, string | undefined>)
-  return hosts
-}
-
 /**
- * leo #164 S5：预设品牌只在端点还是这家官方地址（或没填）时用。用户把 OpenAI 预设改到自己的地址
- * （代理、中转、自建）时，连不上的是那个地址，不是 OpenAI：说主机名。
- * 「官方」= 主机落在这家官方域名白名单里（后缀匹配，标签边界，见 provider-official-domains），
- * 或就是预设自带的端点主机（本地预设）。
+ * leo #164 S5 / luna #164 ①②：预设品牌只在端点没填，或主机是这家官方地址时用。
+ * 用户把 OpenAI 预设改到自己的地址（代理、中转、自建）时，连不上的是那个地址，不是 OpenAI：说主机名。
+ * 地址填了但解析不了（没协议、不是 http(s)）→「模型服务」，不回落品牌。
+ * 主机按 WHATWG URL 解析（`https://api.openai.com@evil.com` 的主机是 evil.com，账号部分不算）。
  */
 export function providerFace(row: { kind?: string; baseURL?: string } | undefined): ProviderFace {
   const brand = presetBrand(row?.kind)
-  const host = urlHost(row?.baseURL)
-  const official = !host || !row?.kind || isOfficialDomain(row.kind, host) || presetHosts(row.kind).has(host)
-  const name = (brand && official ? brand : undefined) ?? endpointHostLabel(row?.baseURL) ?? brand
-  return name ? { kind: "named", name } : { kind: "generic" }
+  if (!row?.baseURL?.trim()) return brand ? { kind: "named", name: brand } : { kind: "generic" }
+  const host = endpointHost(row.baseURL)
+  if (!host) return { kind: "generic" }
+  if (brand && row.kind && isOfficialEndpointHost(row.kind, host)) return { kind: "named", name: brand }
+  return { kind: "named", name: endpointHostLabel(row.baseURL)! }
+}
+
+/**
+ * 端点是不是这家预设的官方地址：没填算是（用预设默认地址）；填了但解析不了、或主机不是官方地址都不算。
+ * 充值 / 控制台链接只在官方地址时给（代理的额度不在这家控制台里充，luna #164）。
+ */
+export function endpointIsOfficial(kind: string | null | undefined, baseURL: string | null | undefined): boolean {
+  if (!baseURL?.trim()) return true
+  const host = endpointHost(baseURL)
+  return Boolean(kind && host && isOfficialEndpointHost(kind, host))
 }
 
 type T = (key: string, vars?: Record<string, string | number>) => string

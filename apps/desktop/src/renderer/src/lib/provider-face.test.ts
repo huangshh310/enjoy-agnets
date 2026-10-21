@@ -70,8 +70,8 @@ test("预设品牌 + 改过的端点（代理 / 中转 / 自建）：说主机�
   // 预设的其它区域 / 套餐官方地址（Kimi 国际站 api.moonshot.ai、编程套餐 api.kimi.com）也算这家
   assert.deepEqual(providerFace({ kind: "kimi", baseURL: "https://api.moonshot.ai/v1" }), { kind: "named", name: presetBrand("kimi")! })
   assert.deepEqual(providerFace({ kind: "kimi", baseURL: "https://api.kimi.com/coding/v1" }), { kind: "named", name: presetBrand("kimi")! })
-  // 地址解析不了：不知道改没改，按品牌
-  assert.deepEqual(providerFace({ kind: "openai", baseURL: "not a url" }), { kind: "named", name: "OpenAI" })
+  // 地址填了但解析不了：luna #164 ① 说「模型服务」，不回落品牌
+  assert.deepEqual(providerFace({ kind: "openai", baseURL: "not a url" }), { kind: "generic" })
   // 长主机名照样截断；不出现协议、路径、预设 id
   const long = providerFace({ kind: "openai", baseURL: "https://a-very-long-subdomain.internal-gateway.example.com/v1" })
   assert.equal(long.kind, "named")

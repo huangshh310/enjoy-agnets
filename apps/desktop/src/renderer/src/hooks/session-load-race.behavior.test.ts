@@ -100,3 +100,49 @@ test("S4 对照：main 查询失败（不知道）→ 不当成空闲，照旧�
   assert.equal(s.running, true)
   assert.equal(s.runId, "run_s")
 })
+
+// leo rv164c 软项 N1：停车档过期（main 说空闲）时 sessionRunning 必须是 false——库里没收尾的工具要封口，库里的失败红卡要还原。
+// 变异「sessionRunning = mainRunning || parkedRunning」（不看 parkIsStale）原来存活。
+test("N1 停车档过期 + main 空闲：没收尾的工具封口（不转圈），库里的失败红卡还原", async () => {
+  freshRenderer()
+  useChatStore.setState({ sessionId: "ses_A", running: false } as never)
+  parkS("run_s")
+  mainSays("ses_S", null)
+  over[".session.messages"] = () => [
+    { id: "u1", role: "user", content: "写个文件", createdAt: 3 },
+    {
+      id: "a1",
+      role: "assistant",
+      content: "partial",
+      createdAt: 4,
+      parts: [{ type: "tool", toolCallId: "tc1", name: "write_file", args: { path: "a.txt" }, state: "input-available" }]
+    }
+  ]
+  over[".session.lastError"] = (i: any) => (i.sessionId === "ses_S" ? { runId: "run_s", message: "上游 502" } : null)
+  await loadSession("ses_S", "S", () => false)
+  const s = useChatStore.getState()
+  const tool = (tail()?.tools ?? [])[0]
+  assert.ok(tool, "库里那个工具回灌出来了")
+  assert.equal(tool.state, "output-error", "封口，不停在 input-available 转圈")
+  assert.equal(s.error, "上游 502", "库里的失败红卡还原")
+  assert.equal(s.running, false)
+})
+
+// leo rv164c 软项 N5：main 回包里 running 不是布尔（缺字段 / 字符串）= 不知道，不能当成空闲去收停车档。
+for (const [label, reply] of [
+  ["缺 running 字段", { runId: null }],
+  ["running 是字符串", { running: "false", runId: null }],
+  ["回包是 null", null]
+] as const) {
+  test(`N5 main 回包不是布尔（${label}）→ 不当成空闲，照旧恢复停车档`, async () => {
+    freshRenderer()
+    useChatStore.setState({ sessionId: "ses_A", running: false } as never)
+    parkS("run_s")
+    mainSays("ses_S", null)
+    over[".agent.sessionActive"] = () => reply
+    await loadSession("ses_S", "S", () => false)
+    const s = useChatStore.getState()
+    assert.equal(s.running, true)
+    assert.equal(s.runId, "run_s")
+  })
+}

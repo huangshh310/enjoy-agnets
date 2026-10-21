@@ -11,8 +11,11 @@
  * 不收 `aliyuncs.com`（函数计算 `*.fc.aliyuncs.com` 上能架代理）；百度只收 `qianfan.baidubce.com`；
  * 腾讯只收混元的两个主机；Google 只收 `generativelanguage.googleapis.com`；Vercel 只收 `ai-gateway.vercel.sh`。
  * 火山方舟的数据面是 `ark.<区域>.volces.com`，区域在中间，只能收 `volces.com`（火山引擎自己的服务域名）。
- * 本地预设（Ollama / LM Studio）没有官方域名：只认预设自带的 127.0.0.1（provider-face 里按预设主机精确匹配）。
+ * 本地预设（预设列表里 group 为 local 的，目前是 Ollama / LM Studio；custom 除外）没有官方域名：
+ * 本机回环地址 localhost / 127.0.0.1 / ::1（任意端口）算它的官方地址（luna #164 ②）；指到局域网别的机器说主机名。
+ * 回环地址对云端预设不算官方（OpenAI 预设指到 localhost:8080 说 localhost）。
  */
+import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
 
 export const PROVIDER_OFFICIAL_DOMAINS: Readonly<Record<string, readonly string[]>> = {
   // 国际厂商
@@ -84,4 +87,21 @@ export function hostHasDomainSuffix(host: string, suffix: string): boolean {
 export function isOfficialDomain(kind: string, host: string): boolean {
   if (!Object.hasOwn(PROVIDER_OFFICIAL_DOMAINS, kind)) return false
   return PROVIDER_OFFICIAL_DOMAINS[kind]!.some((suffix) => hostHasDomainSuffix(host, suffix))
+}
+
+/** 本机回环地址（规整后）：算本地预设的官方地址。 */
+export const LOOPBACK_HOSTS: readonly string[] = ["localhost", "127.0.0.1", "::1"]
+
+/** 本地预设：预设列表里 group 为 local 的（custom 除外）。 */
+export const LOCAL_PRESET_KINDS: readonly string[] = PROVIDER_PRESETS.filter(
+  (preset) => preset.group === "local" && preset.kind !== "custom"
+).map((preset) => preset.kind)
+
+/** 端点主机算不算这个预设的官方地址：云端预设看官方域名白名单，本地预设看回环地址。 */
+export function isOfficialEndpointHost(kind: string, host: string): boolean {
+  if (LOCAL_PRESET_KINDS.includes(kind)) {
+    const h = normalizeHost(host)
+    return h != null && LOOPBACK_HOSTS.includes(h)
+  }
+  return isOfficialDomain(kind, host)
 }

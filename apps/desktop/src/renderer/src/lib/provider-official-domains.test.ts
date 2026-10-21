@@ -4,7 +4,7 @@ import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
 import { zhChat } from "../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../i18n/catalogs/en/chat.ts"
 import { endpointHostLabel, fillProviderFace, presetBrand, providerFace } from "./provider-face.ts"
-import { PROVIDER_OFFICIAL_DOMAINS, hostHasDomainSuffix, isOfficialDomain, normalizeHost } from "./provider-official-domains.ts"
+import { LOCAL_PRESET_KINDS, PROVIDER_OFFICIAL_DOMAINS, hostHasDomainSuffix, isOfficialDomain, isOfficialEndpointHost, normalizeHost } from "./provider-official-domains.ts"
 
 const brand = (kind: string) => ({ kind: "named", name: presetBrand(kind)! })
 const named = (name: string) => ({ kind: "named", name })
@@ -146,4 +146,70 @@ test("代理主机名填进中文 / 英文文案：中文和拉丁之间留空�
   const qwen = providerFace({ kind: "qwen", baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1" })
   assert.equal(fillProviderFace(zh, "chat.credentialNetworkNotice", qwen), "连不上通义千问 (Qwen / DashScope)，消息没发出去。检查网络后再试。")
   assert.equal(fillProviderFace(en, "chat.credentialNetworkNotice", proxy), "Could not reach proxy.example.com. The message was not sent. Check the network and try again.")
+})
+
+test("luna #164 ①：端点填了但没协议 / 解析不了 / 不是 http(s) →「模型服务」；空端点仍说品牌", () => {
+  for (const bad of ["api.openai.com/v1", "proxy.example.com/v1", "not a url", "localhost:11434", "ftp://proxy.example.com", "https://", "http://exa mple.com"]) {
+    assert.deepEqual(providerFace({ kind: "openai", baseURL: bad }), { kind: "generic" }, bad)
+    assert.deepEqual(providerFace({ kind: "custom", baseURL: bad }), { kind: "generic" }, `custom ${bad}`)
+  }
+  for (const empty of [undefined, "", "   "]) {
+    assert.deepEqual(providerFace({ kind: "openai", baseURL: empty }), brand("openai"), String(empty))
+    assert.deepEqual(providerFace({ kind: "ollama", baseURL: empty }), brand("ollama"), `ollama ${String(empty)}`)
+  }
+  assert.deepEqual(providerFace({ kind: "custom", baseURL: "" }), { kind: "generic" })
+  const t = (cat: Record<string, string>) => (path: string, vars?: Record<string, string | number>) =>
+    String(cat[path.replace(/^chat\./, "")] ?? path).replace(/\{(\w+)\}/g, (_m, k) => String(vars?.[k] ?? ""))
+  const face = providerFace({ kind: "openai", baseURL: "api.openai.com/v1" })
+  assert.equal(fillProviderFace(t(zhChat as never), "chat.credentialNetworkNotice", face), "连不上模型服务，消息没发出去。检查网络后再试。")
+  assert.equal(fillProviderFace(t(enChat as never), "chat.credentialNetworkNotice", face), "Could not reach the model service. The message was not sent. Check the network and try again.")
+  assert.equal(
+    fillProviderFace(t(enChat as never), "chat.credentialForbiddenNotice", face).startsWith("The model service "),
+    true,
+    "句首大写"
+  )
+})
+
+test("luna #164 ②：本地预设认 localhost / 127.0.0.1 / ::1 任意端口；局域网机器说主机名；云端预设不认回环", () => {
+  assert.deepEqual([...LOCAL_PRESET_KINDS].sort(), ["lmstudio", "ollama"], "本地预设 = 预设列表里 group local 的（custom 除外）")
+  for (const kind of LOCAL_PRESET_KINDS) {
+    for (const url of ["http://localhost:11434/v1", "http://LOCALHOST:1234/v1", "http://127.0.0.1:9999/v1", "http://127.0.0.1/v1", "http://[::1]:11434/v1", "https://localhost./v1"]) {
+      assert.deepEqual(providerFace({ kind, baseURL: url }), brand(kind), `${kind} ${url}`)
+    }
+    assert.deepEqual(providerFace({ kind, baseURL: "http://192.168.1.5:11434/v1" }), named("192.168.1.5"), kind)
+    assert.deepEqual(providerFace({ kind, baseURL: "http://gpu-box.lan:11434/v1" }), named("gpu-box.lan"), kind)
+    assert.deepEqual(providerFace({ kind, baseURL: "http://localhost.evil.com:11434/v1" }), named("localhost.evil.com"), kind)
+    assert.equal(isOfficialEndpointHost(kind, "[::1]"), true)
+  }
+  for (const kind of ["openai", "anthropic", "deepseek", "qwen", "doubao", "kimi"]) {
+    for (const [url, host] of [["http://localhost:8080/v1", "localhost"], ["http://127.0.0.1:8080/v1", "127.0.0.1"], ["http://[::1]:8080/v1", "::1"]]) {
+      assert.deepEqual(providerFace({ kind, baseURL: url }), named(host!), `${kind} ${url}`)
+    }
+  }
+  const t = (path: string, vars?: Record<string, string | number>) =>
+    String((zhChat as any)[path.replace(/^chat\./, "")] ?? path).replace(/\{(\w+)\}/g, (_m, k) => String(vars?.[k] ?? ""))
+  assert.equal(fillProviderFace(t, "chat.providerUnreachableNotice", providerFace({ kind: "ollama", baseURL: "http://localhost:11434/v1" })), "连不上 Ollama，检查网络后再试")
+  assert.equal(fillProviderFace(t, "chat.providerUnreachableNotice", providerFace({ kind: "ollama", baseURL: "http://192.168.1.5:11434/v1" })), "连不上 192.168.1.5，检查网络后再试")
+})
+
+test("leo rv164c：仿冒子域 / 账号部分 @ 两个方向 / 反斜杠 / 编码点，按 WHATWG URL 的主机判断", () => {
+  const face = (url: string) => providerFace({ kind: "openai", baseURL: url })
+  assert.deepEqual(face("https://api.openai.com.evil.com/v1"), named("api.openai.com.evil.com"))
+  assert.deepEqual(face("https://evilapi.com/v1"), named("evilapi.com"))
+  assert.deepEqual(face("https://evilopenai.com/v1"), named("evilopenai.com"))
+  // 账号部分不算主机：主机是 @ 后面那段
+  assert.deepEqual(face("https://api.openai.com@evil.com/v1"), named("evil.com"))
+  assert.deepEqual(face("https://api.openai.com:sk-x@evil.com/v1"), named("evil.com"))
+  assert.deepEqual(face("https://evil.com@api.openai.com/v1"), brand("openai"), "主机真是 api.openai.com")
+  // 路径 / 查询 / 片段里出现官方域名不算
+  assert.deepEqual(face("https://evil.com/api.openai.com"), named("evil.com"))
+  assert.deepEqual(face("https://evil.com/?h=api.openai.com"), named("evil.com"))
+  assert.deepEqual(face("https://evil.com#api.openai.com"), named("evil.com"))
+  // WHATWG：特殊协议里「\\」等于「/」，主机是 api.openai.com；%2e 解码成点 → api.openai.com.evil.com
+  assert.equal(new URL("https://api.openai.com\\@evil.com").hostname, "api.openai.com")
+  assert.deepEqual(face("https://api.openai.com\\@evil.com"), brand("openai"))
+  assert.deepEqual(face("https://api.openai.com%2eevil.com"), named("api.openai.com.evil.com"))
+  // openai.com 的子域都归 OpenAI 管（luna 要求 1：foo.openai.com 认 openai.com），所以 evilapi.openai.com 也说品牌
+  assert.deepEqual(face("https://evilapi.openai.com/v1"), brand("openai"))
+  assert.deepEqual(face("https://my-resource.openai.azure.com/openai"), named("my-resource.openai.azure.com"), "Azure OpenAI 不是 openai.com")
 })
