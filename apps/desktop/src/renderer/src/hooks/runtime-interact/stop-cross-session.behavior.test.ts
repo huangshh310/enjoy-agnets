@@ -184,6 +184,8 @@ test("RV169B-FA：起步窗口停止、不再发，S1 回执 ok 到——不认�
   const p1 = sendComposerMessage(undefined, "S1 text", att("S1 text"))
   await untilRuns(1)
   await abortComposerRun()
+  // 空稿补发走 300ms 防抖：慢机（Windows CI）上 flush 本身可能超过 300ms，计时器先触发——从回执前开始看，不在中途清 calls。
+  const sinceReceipt = calls.length
   runs[0].resolve({ ok: true, runId: s1, userMessageId: "u_s1" })
   await p1
   await flush()
@@ -195,10 +197,9 @@ test("RV169B-FA：起步窗口停止、不再发，S1 回执 ok 到——不认�
   assert.equal(userTurns("S1 text"), 1)
   assert.ok(aborted(s1))
   assert.equal(pending.pendingFailedSendFor(sessionId), null)
-  calls.length = 0
   flushPersistedDrafts()
   assert.ok(
-    calls.some((c) => c.path === ".session.drafts.save" && c.arg?.sessionId === sessionId && c.arg?.text === ""),
+    calls.slice(sinceReceipt).some((c) => c.path === ".session.drafts.save" && c.arg?.sessionId === sessionId && c.arg?.text === ""),
     "R3：停掉那一发回执带 userMessageId → 发送收尾按「已交给 main」补发空稿"
   )
 })
