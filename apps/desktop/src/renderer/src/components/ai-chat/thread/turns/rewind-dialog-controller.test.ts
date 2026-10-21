@@ -194,7 +194,7 @@ test("成功：清回第一步并收窗；取消在跑的时候不收窗", async
   pending.resolve({ ok: true })
   await run
   assert.equal(calls.close, 1)
-  assert.deepEqual(controller.getSnapshot(), { busy: false, busyButton: null, untracked: undefined, failure: null, errorKey: null })
+  assert.deepEqual(controller.getSnapshot(), { busy: false, busyButton: null, pending: false, untracked: undefined, failure: null, errorKey: null })
 })
 
 test("引擎不支持回滚：消息上的「从这里重来」入口不出（不是置灰、没有提示）；支持时出且可点", () => {
@@ -330,7 +330,7 @@ test("跑着的时候：点的那颗按钮转圈 +「正在还原…」/ Restori
   for (const b of m.buttons) assert.equal(b.busy, false)
 })
 
-test("重来的 IPC 卡住不回：超时后 busy 放开、显示通用失败句、按钮可点、弹窗能关；晚到的失败不改界面", async () => {
+test("重来的 IPC 卡住不回：超时后 busy 放开、显示通用失败句、弹窗能关；第一次没回来前只有「取消」能点（leo #167），晚到的失败不改界面、之后按钮恢复", async () => {
   assert.ok(REWIND_HANG_TIMEOUT_MS >= 10_000 && REWIND_HANG_TIMEOUT_MS <= 60_000, "default timeout sensible")
   await quietly(async (warns) => {
     const hang = deferred<RewindRunResult>()
@@ -343,13 +343,18 @@ test("重来的 IPC 卡住不回：超时后 busy 放开、显示通用失败句
     assert.equal(controller.getSnapshot().busy, false, "busy reset after timeout")
     let m = gitModel(controller)
     assert.equal(m.error, GENERIC.zh)
-    for (const b of m.buttons) assert.equal(b.buttonProps.disabled, false, `${b.id} enabled after timeout`)
+    assert.equal(controller.getSnapshot().pending, true, "first call still in flight")
+    for (const b of m.buttons) {
+      assert.equal(b.buttonProps.disabled, b.id !== "cancel", `${b.id}: only cancel clickable while first call runs`)
+    }
     assert.deepEqual(warns, [["[rewind] failed: REWIND_TIMEOUT"]])
-    // 晚到的失败：不改界面。
+    // 晚到的失败：不改界面；之后按钮恢复。
     hang.resolve({ ok: false, code: "TRUNCATE_RUN_ACTIVE" })
     await new Promise((r) => setImmediate(r))
     m = gitModel(controller)
     assert.equal(m.error, GENERIC.zh)
+    assert.equal(controller.getSnapshot().pending, false)
+    for (const b of m.buttons) assert.equal(b.buttonProps.disabled, false, `${b.id} enabled after first call settled`)
     controller.close()
     assert.equal(calls.close, 1, "dialog can close")
   })
@@ -376,4 +381,109 @@ test("消息上的入口（leo E5）：user-turn 按当前会话引擎的能力�
   assert.match(entries[0]!, /canRewind=\{canRewind\}/)
   assert.doesNotMatch(src, /canRewind=\{(true|!0|1)\}|canRewind\s*\/?>|canRewind=\{[^}]*\|\|/, "no hard-coded / defaulted canRewind")
   assert.doesNotMatch(src, /const canRewind = (true|!0)/)
+})
+
+const FINISH_TOAST = {
+  zh: "已回到这里，但没能放回输入框，原话在草稿里。",
+  en: "Rewound to here, but couldn't put your message back in the composer. It's saved in your draft."
+} as const
+
+/** 接上 rewindDialogDeps（真实接线），toast 记下来。 */
+function wiredHarness(rewind: () => Promise<RewindRunResult>, lang: "zh" | "en", timeoutMs?: number) {
+  const calls = { close: 0, rewind: 0, review: 0, toasts: [] as string[] }
+  const deps = rewindDialogDeps({
+    messageId: "u2",
+    rewindFromUserTurn: () => {
+      calls.rewind += 1
+      return rewind()
+    },
+    onOpenChange: (open) => {
+      if (!open) calls.close += 1
+    },
+    revealReview: () => {
+      calls.review += 1
+    },
+    toast: (message) => void calls.toasts.push(message),
+    t: tFor(lang)
+  })
+  const controller = createRewindDialogController({ ...deps, ...(timeoutMs !== undefined ? { timeoutMs } : {}) })
+  return { controller, calls }
+}
+
+test("#167 ③：截断成功但原话没放回输入框（REWIND_FINISH_FAILED）→ 收窗 + toast（中英定稿），不显示「从这里重来失败」", async () => {
+  for (const lang of ["zh", "en"] as const) {
+    await quietly(async () => {
+      const { controller, calls } = wiredHarness(async () => ({ ok: false, code: "REWIND_FINISH_FAILED" }), lang)
+      await controller.run(false, undefined, "chat-only")
+      assert.equal(calls.close, 1, `${lang}: dialog closed`)
+      assert.deepEqual(calls.toasts, [FINISH_TOAST[lang]], `${lang}: toast copy`)
+      const m = controller.model({ canRestoreFiles: true, gitRepo: true, t: tFor(lang) })
+      assert.equal(m.error, null, `${lang}: no generic failure line`)
+      assert.notEqual(m.error, GENERIC[lang])
+    })
+  }
+})
+
+test("#167 ③：超时之后晚到的 REWIND_FINISH_FAILED 也收窗 + toast", async () => {
+  await quietly(async () => {
+    const hang = deferred<RewindRunResult>()
+    const { controller, calls } = wiredHarness(() => hang.promise, "zh", 10)
+    await controller.run(false)
+    assert.equal(calls.close, 0)
+    hang.resolve({ ok: false, code: "REWIND_FINISH_FAILED" })
+    await new Promise((r) => setImmediate(r))
+    assert.equal(calls.close, 1)
+    assert.deepEqual(calls.toasts, [FINISH_TOAST.zh])
+  })
+})
+
+test("#167：原话进了原来那个对话的草稿（draftSessionId）→ 收窗 + 小 toast；普通成功不弹", async () => {
+  const a = wiredHarness(async () => ({ ok: true, draftSessionId: "ses_a" }), "zh")
+  await a.controller.run(false)
+  assert.equal(a.calls.close, 1)
+  assert.deepEqual(a.calls.toasts, ["原话放回了原来那个对话的草稿里。"])
+  const b = wiredHarness(async () => ({ ok: true }), "en")
+  await b.controller.run(false)
+  assert.equal(b.calls.close, 1)
+  assert.deepEqual(b.calls.toasts, [])
+})
+
+test("#167：超时后第一次调用没回来前，再点「连文件一起还原」/「删掉并还原」/「只改聊天」/ 去审查都不会再跑（不并发还原）；只有取消能关", async () => {
+  await quietly(async () => {
+    const hang = deferred<RewindRunResult>()
+    const { controller, calls } = harness(() => hang.promise, 10)
+    await controller.run(true, undefined, "restore-files")
+    assert.equal(calls.rewind, 1)
+    for (const id of ["restore-files", "chat-only", "delete-and-restore", "start-over"] as const) controller.onButton(id)
+    await controller.run(true, true, "delete-and-restore")
+    controller.goReview()
+    await new Promise((r) => setImmediate(r))
+    assert.equal(calls.rewind, 1, "no second rewind while the first is in flight")
+    assert.equal(calls.review, 0, "review blocked while the first is in flight")
+    const m = gitModel(controller)
+    assert.deepEqual(
+      m.buttons.map((b) => [b.id, b.buttonProps.disabled]),
+      [["cancel", false], ["restore-files", true], ["chat-only", true]]
+    )
+    // 第一次回来之后才能再跑。
+    hang.resolve({ ok: false, code: "TRUNCATE_RUN_ACTIVE" })
+    await new Promise((r) => setImmediate(r))
+    const again = controller.run(false, undefined, "chat-only")
+    assert.equal(calls.rewind, 2)
+    await again
+    controller.onButton("cancel")
+    assert.equal(calls.close, 1)
+  })
+})
+
+test("#167：超时后第一次没回来前点取消能关窗", async () => {
+  await quietly(async () => {
+    const hang = deferred<RewindRunResult>()
+    const { controller, calls } = harness(() => hang.promise, 10)
+    await controller.run(false, undefined, "chat-only")
+    controller.onButton("cancel")
+    assert.equal(calls.close, 1)
+    hang.resolve({ ok: true })
+    await new Promise((r) => setImmediate(r))
+  })
 })

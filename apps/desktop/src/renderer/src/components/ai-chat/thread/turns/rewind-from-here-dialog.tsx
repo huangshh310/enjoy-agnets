@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { rewindFromUserTurn } from "@renderer/hooks/rewind-from-here"
 import { useT } from "@renderer/i18n"
+import { showAppToast } from "@renderer/lib/app-toast"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { revealRightPane } from "../../right-pane/open-pane"
 import { createRewindDialogController, rewindDialogDeps, rewindEntryAction } from "./rewind-dialog-controller"
@@ -77,7 +78,9 @@ export function RewindFromHereDialog({
     messageId,
     rewindFromUserTurn,
     onOpenChange,
-    revealReview: () => revealRightPane("review")
+    revealReview: () => revealRightPane("review"),
+    toast: (message) => showAppToast(message),
+    t
   })
   const [controller] = useState(() => createRewindDialogController(deps))
   controller.setDeps(deps)

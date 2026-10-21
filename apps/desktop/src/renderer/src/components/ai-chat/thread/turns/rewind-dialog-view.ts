@@ -153,11 +153,22 @@ export function rewindErrorKey(code: string): string {
   return "chat.rewindFailed"
 }
 
-export type RewindRunResult = { ok: true } | { ok: false; code: string; untrackedToDelete?: string[] }
+export type RewindRunResult =
+  | { ok: true; draftSessionId?: string }
+  | { ok: false; code: string; untrackedToDelete?: string[]; keepThread?: boolean }
+
+/**
+ * 截断已成功、原话没能放回输入框（与 rewind-from-here.ts 的 REWIND_FINISH_FAILED 同值）：
+ * 不再显示「从这里重来失败」——弹窗收掉，toast「已回到这里，但没能放回输入框，原话在草稿里。」（leo #167 ③）。
+ */
+export const REWIND_FINISH_FAILED_CODE = "REWIND_FINISH_FAILED"
 
 /** 一次重来的结果 → 弹窗下一步。弹窗只照这个改状态，不直接碰 code 文本。 */
 export type RewindOutcome =
-  | { kind: "close" }
+  /** draftToast：原话进了原来那个会话的草稿（前台已换会话），收窗时提示一句。 */
+  | { kind: "close"; draftToast?: boolean }
+  /** 截断已成功、原话在草稿里：收窗 + toast（不显示失败句）。 */
+  | { kind: "rewound-not-restored" }
   | { kind: "untracked"; files: string[] | null }
   | { kind: "failure"; failure: RewindFailure }
   | { kind: "error"; messageKey: string }
@@ -176,7 +187,8 @@ export async function settleRewind(run: () => Promise<RewindRunResult>): Promise
 }
 
 export function rewindOutcome(result: RewindRunResult, restoreFiles: boolean): RewindOutcome {
-  if (result.ok) return { kind: "close" }
+  if (result.ok) return result.draftSessionId ? { kind: "close", draftToast: true } : { kind: "close" }
+  if (result.code === REWIND_FINISH_FAILED_CODE) return { kind: "rewound-not-restored" }
   if (result.code === "CHECKPOINT_CONFIRM_REQUIRED") {
     // 拿不到名单时 N 未知：标题换成不带数字的说法。
     const files = result.untrackedToDelete && result.untrackedToDelete.length > 0 ? result.untrackedToDelete : null
