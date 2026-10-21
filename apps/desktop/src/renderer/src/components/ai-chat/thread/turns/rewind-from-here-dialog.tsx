@@ -7,6 +7,8 @@
  * 对比度（luna g159 ⑩，≥4.5:1，只用语义 token）：正文 / 提示灰字 / 文件名单浅色 text-secondary（4.73）、
  * 深色 text-primary/60（6.2）；「找不到记录」灰块 text-primary/60（浅 5.1 / 深 6.8）。rewind-dialog-contrast.test.ts 按 theme.css 现算。
  * 中文正文末行不留孤字（text-pretty，不改文案）。跑着的按钮转圈 +「正在还原…」，置灰的按钮看得出是置灰的。
+ * 实机 CONDITIONAL 必修 ③（WCAG 文字 ≥ 4.5、描边 ≥ 3）：失败句浅 red-700 / 深 red-400、「只改聊天」「删掉并还原」渐变 700 起
+ * （转圈时保持常态色）、「取消」「连文件一起还原」描边与弹窗外沿 neutral-500——都在 rewind-dialog.css 里按 [data-rewind-dialog] 局部覆盖。
  */
 import { useState, useSyncExternalStore } from "react"
 import { RiHistoryLine, RiLoader4Line } from "@remixicon/react"
@@ -98,6 +100,10 @@ export function RewindFromHereDialog({
       <DialogContent
         data-testid="rewind-dialog"
         data-state-kind={view.stateKind}
+        // 实机必修 ③：弹窗里的失败句 / 主按钮 / 危险按钮 / 描边 token 在 rewind-dialog.css 里局部加深（四皮肤 × 亮暗）。
+        data-rewind-dialog=""
+        // 实心底、不画皮肤装饰（ink 天空底 / sketch 网纹 / glass 半透明）：否则红字和描边的底色随皮肤漂，对比度保不住。
+        data-pane-shell-deco="off"
         className="max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
       >
         <DialogHeader>
