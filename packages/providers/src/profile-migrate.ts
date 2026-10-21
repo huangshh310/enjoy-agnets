@@ -4,6 +4,7 @@
  */
 import type { ApiStyle } from "./api-styles.ts"
 import { isApiStyle } from "./api-styles.ts"
+import { migrateRetiredDeepseekProfile } from "./deepseek-retired-models.ts"
 import {
   cleanEndpoints,
   derivedApiKey,
@@ -114,15 +115,20 @@ export type ProfileUpsertInput = Omit<LooseProfile, "contextWindow"> & {
 
 const FAMILIES: readonly ReasoningFamilyName[] = ["auto", "minimax", "glm", "kimi", "deepseek", "default"]
 
-export function migrateStoredProfile(raw: LooseProfile): { profile: NormalizedProfile; changed: boolean } {
-  const rawKind = raw.kind ?? ""
+export function migrateStoredProfile(stored: LooseProfile): { profile: NormalizedProfile; changed: boolean } {
+  const rawKind = stored.kind ?? ""
   const kind = isProviderKind(rawKind) ? rawKind : "custom"
   const preset = presetFor(kind)
-  const style = pickApiStyle(raw.apiStyle, preset.apiStyle)
-  let changed = !isProviderKind(raw.kind ?? "")
-  const endpoints = endpointsFromLegacy(raw, preset, style, () => {
+  const style = pickApiStyle(stored.apiStyle, preset.apiStyle)
+  let changed = !isProviderKind(stored.kind ?? "")
+  const endpoints = endpointsFromLegacy(stored, preset, style, () => {
     changed = true
   })
+  // DeepSeek 官方端点上的停用模型名换成当前名；中转 / 自定义地址原样。
+  const labelFor = (id: string) => preset.models.find((m) => m.id === id)?.label
+  const retired = migrateRetiredDeepseekProfile(stored, kind, endpoints, labelFor)
+  const raw = retired.raw
+  if (retired.changed) changed = true
   const baseAPI = pickApiStyle(raw.baseAPI, style)
   if (!isApiStyle(raw.baseAPI)) changed = true
   const keys = keysFromLegacy(raw, () => {
