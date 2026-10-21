@@ -8,7 +8,10 @@ import {
   dropSkipSendScroll,
   lastUserChanged,
   lastUserMessageId,
+  markQueuedAutoSend,
+  markQueueResumedByUser,
   resetSkipSendScrollForTest,
+  runQueuedAutoSend,
   shouldScrollOnSend,
   skipNextSendScroll,
   SKIP_SCROLL_WINDOW_MS,
@@ -20,7 +23,8 @@ const changed = (s: string, a: string | null, b: string) => [{ sessionId: s, las
 
 test("host #170 默认贴底：同一会话里最后一条用户消息换了就滚——用户的各种发送都不用登记", () => {
   resetSkipSendScrollForTest()
-  // 普通发送 / 插话 / 动作 chip / 执行计划 / 斜杠命令 / 再发一次 / 改了再发 / 设计 · diff 评论插话：都只是「最后一条用户消息换了」。
+  // 普通发送 / 插话 / 动作 chip / 执行计划 / 斜杠命令 / 设计 · diff 评论插话：都只是「最后一条用户消息换了」。
+  // （「再发一次」/ 重新生成沿用原来那条用户消息的 id，不在这条规则里，见 scroll-on-send.ts 头注释。）
   for (const [prev, next] of [changed("s1", "u1", "u2"), changed("s1", null, "u1")]) {
     assert.equal(shouldScrollOnSend(prev, next, () => takeSkipSendScroll("s1")), true)
   }
@@ -65,6 +69,42 @@ test("leo soft（原 soft-2 反过来）：排队那条被拦下没发出去，�
   assert.equal(takeSkipSendScroll("s1"), true, "后来的记号还在")
 })
 
+test("luna #170 r-luna ②：点了「继续」后排队自启发出的那一条照常贴底（不打记号）；只管一次、同会话、10 秒内", () => {
+  resetSkipSendScrollForTest()
+  const t0 = Date.now()
+  const take = () => takeSkipSendScroll("s1", t0 + 5_000)
+  // 没点继续：排队自启打「这次别滚」。
+  assert.notEqual(markQueuedAutoSend("s1", t0 + 1_000), null)
+  assert.equal(shouldScrollOnSend(...changed("s1", "u1", "u2"), take), false)
+  // 点了继续：接着自启发的第一条贴底。
+  markQueueResumedByUser("s1", t0 + 2_000)
+  assert.equal(markQueuedAutoSend("s1", t0 + 2_100), null)
+  assert.equal(shouldScrollOnSend(...changed("s1", "u2", "u3"), take), true)
+  // 一次性：下一条排队自启（上一条跑完后）又不滚。
+  assert.notEqual(markQueuedAutoSend("s1", t0 + 2_200), null)
+  assert.equal(shouldScrollOnSend(...changed("s1", "u3", "u4"), take), false)
+  // 别的会话 / 过期的「继续」不算。
+  markQueueResumedByUser("s2", t0 + 3_000)
+  assert.notEqual(markQueuedAutoSend("s1", t0 + 3_001), null)
+  takeSkipSendScroll("s1")
+  markQueueResumedByUser("s1", t0 + 4_000)
+  assert.notEqual(markQueuedAutoSend("s1", t0 + 4_000 + SKIP_SCROLL_WINDOW_MS + 1), null)
+})
+
+test("runQueuedAutoSend：发出去了记号留给对话区取；没发出去（用户消息没换）撤掉自己的记号；点过「继续」压根不打", async () => {
+  resetSkipSendScrollForTest()
+  let last: string | null = "u1"
+  await runQueuedAutoSend("s1", () => last, async () => void (last = "u2"))
+  assert.equal(takeSkipSendScroll("s1"), true, "发出去了：记号还在，对话区取到 → 不滚")
+  await runQueuedAutoSend("s1", () => last, async () => undefined)
+  assert.equal(takeSkipSendScroll("s1"), false, "被拦下：记号撤了")
+  await assert.rejects(runQueuedAutoSend("s1", () => last, async () => Promise.reject(new Error("boom"))))
+  assert.equal(takeSkipSendScroll("s1"), false, "抛错也撤")
+  markQueueResumedByUser("s1")
+  await runQueuedAutoSend("s1", () => last, async () => void (last = "u3"))
+  assert.equal(takeSkipSendScroll("s1"), false, "点了继续：没打记号 → 贴底")
+})
+
 test("助手出字 / 工具卡更新（用户消息没变）、切会话、清空都不滚", () => {
   assert.equal(lastUserChanged({ sessionId: "s1", lastUserId: "u1" }, { sessionId: "s1", lastUserId: "u1" }), false)
   assert.equal(lastUserChanged({ sessionId: "s1", lastUserId: "u1" }, { sessionId: "s2", lastUserId: "u9" }), false)
@@ -92,9 +132,12 @@ test("接线：对话里挂 ConversationScrollOnChange；只有排队自启和�
   assert.match(thread, /useSendScrollTick\(sessionId, lastUserMessageId\(visible\)\)/)
   assert.match(thread, /shouldScrollOnSend\(markRef\.current, next, \(\) => takeSkipSendScroll\(sessionId\)\)/)
   // 排队自启：发之前打记号；发完用户消息没换（被拦下）就撤自己那枚。
+  // 用户刚点了「继续」时不打记号（luna #170 r-luna ②）；runQueuedAutoSend 的行为见上面和 hooks/queue-continue-scroll.behavior.test.ts。
   const autostart = read("../../../hooks/use-followup-autostart.ts")
-  assert.match(autostart, /const mark = skipNextSendScroll\(item\.sessionId\)\s+return sendComposerMessage\(/)
-  assert.match(autostart, /\.finally\(\(\) => \{\s+if \(lastUserMessageId\(useChatStore\.getState\(\)\.messages\) === before\) dropSkipSendScroll\(mark\)/)
+  assert.match(autostart, /send: \(item\) =>\s+runQueuedAutoSend\(\s+item\.sessionId,\s+\(\) => lastUserMessageId\(useChatStore\.getState\(\)\.messages\),\s+\(\) => sendComposerMessage\(/)
+  // 「继续」：先记「用户刚点了继续」，再解除暂停（解除会同步 kick 自启）。
+  const pauseActions = read("../../../hooks/runtime-interact/followup-pause-actions.ts")
+  assert.match(pauseActions, /markQueueResumedByUser\(sessionId\)\s+resumeFollowups\(sessionId\)/)
   // 重来：截断前打记号（一条用户消息都不剩时不打）。
   const rewind = read("../../../hooks/rewind-from-here.ts")
   assert.match(rewind, /if \(lastUserMessageId\(kept\)\) skipNextSendScroll\(sessionId\)\s+latest\.setMessages\(kept\)/)
@@ -105,12 +148,13 @@ test("接线：对话里挂 ConversationScrollOnChange；只有排队自启和�
   // 不靠外部 rg（CI 机器上没有）：自己走一遍 renderer 源码。
   const { readdirSync } = await import("node:fs")
   const root = new URL("../../../", import.meta.url)
-  const users = (readdirSync(root, { recursive: true }) as string[])
+  const sources = (readdirSync(root, { recursive: true }) as string[])
     .map((path) => path.split("\\").join("/"))
     .filter((path) => /\.tsx?$/.test(path) && !path.endsWith(".test.ts"))
-    .filter((path) => /skipNextSendScroll\(/.test(readFileSync(new URL(path, root), "utf8")))
-    .sort()
-  assert.deepEqual(users, ["components/ai-chat/thread/scroll-on-send.ts", "hooks/rewind-from-here.ts", "hooks/use-followup-autostart.ts"])
+  const callers = (pattern: RegExp) => sources.filter((path) => pattern.test(readFileSync(new URL(path, root), "utf8"))).sort()
+  assert.deepEqual(callers(/skipNextSendScroll\(/), ["components/ai-chat/thread/scroll-on-send.ts", "hooks/rewind-from-here.ts"])
+  assert.deepEqual(callers(/runQueuedAutoSend\(/), ["components/ai-chat/thread/scroll-on-send.ts", "hooks/use-followup-autostart.ts"])
+  assert.deepEqual(callers(/markQueueResumedByUser\(/), ["components/ai-chat/thread/scroll-on-send.ts", "hooks/runtime-interact/followup-pause-actions.ts"])
   const ui = read("../../../../../../../../packages/ui/components/ai-elements/conversation.tsx")
   assert.match(ui, /export const ConversationScrollOnChange/)
   assert.match(ui, /if \(last\.current === trigger\) return;/)
