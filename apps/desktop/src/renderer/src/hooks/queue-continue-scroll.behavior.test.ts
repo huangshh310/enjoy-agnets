@@ -25,6 +25,7 @@ const queue = await import("./followup-queue.ts")
 const { tryStartNextFollowup, resetFollowupAutostart, drainFollowupAutostart } = await import("./followup-autostart.ts")
 const actions = await import("./runtime-interact/followup-pause-actions.ts")
 const scroll = await import("../components/ai-chat/thread/scroll-on-send.ts")
+const pfs = await import("./pending-failed-send.ts")
 
 let seq = 0
 /** 假发送：像真发送一样冒出一条新的用户消息、置上 running。 */
@@ -81,6 +82,7 @@ afterEach(async () => {
   queue.resetFollowupsForTest()
   resetFollowupAutostart()
   scroll.resetSkipSendScrollForTest()
+  pfs.resetPendingFailedSendForTest()
   scrolls.length = 0
 })
 test.after(() => {
@@ -125,4 +127,57 @@ test("别的会话点的「继续」不让这个会话的自启贴底", async ()
   kick()
   await flush()
   assert.deepEqual(scrolls, [false])
+})
+
+/** 跑着时排了两条、停住（reason），回到空闲。 */
+function pausedWithTwo(sid: string, reason: "stopped" | "error") {
+  idle(sid)
+  useChatStore.setState({ running: true } as never)
+  queue.enqueueFollowup({ sessionId: sid, prompt: "Q1", assets: [] })
+  queue.enqueueFollowup({ sessionId: sid, prompt: "Q2", assets: [] })
+  assert.equal(queue.pauseFollowups(sid, reason), true)
+  useChatStore.setState({ running: false } as never)
+}
+
+test("N1：失败那条还没发（#169 failedSendStillPending）时被拦下的「继续」什么都不发，也不留贴底记号", async () => {
+  pausedWithTwo("ses_pb", "error")
+  pfs.notePendingFailedSend("ses_pb", { where: "thread", text: "failed one" })
+  assert.equal(actions.failedSendStillPending("ses_pb"), true)
+  actions.continueFollowups("ses_pb")
+  await flush()
+  assert.deepEqual(scrolls, [], "一条都没发")
+  assert.equal(queue.listFollowups("ses_pb").length, 2, "两条都还在队里")
+  assert.equal(queue.followupPausedReason("ses_pb"), "error", "仍停着")
+  // 没有留下「用户刚点了继续」：下一次排队自启照常打「这次别滚」（返回记号而不是 null）。
+  assert.notEqual(scroll.markQueuedAutoSend("ses_pb"), null, "被拦的继续不留贴底记号")
+})
+
+test("N1：失败那条在别的会话上还没发、当前在另一个会话时点「继续」也被拦，不留记号", async () => {
+  pausedWithTwo("ses_A1", "error")
+  pfs.notePendingFailedSend("ses_A1", { where: "composer", text: "x" })
+  useChatStore.setState({ sessionId: "ses_B1" } as never)
+  actions.continueFollowups("ses_A1")
+  await flush()
+  assert.equal(queue.listFollowups("ses_A1").length, 2)
+  assert.notEqual(scroll.markQueuedAutoSend("ses_A1"), null)
+})
+
+test("N2：双击「继续」——第二下时已不停着，不再打记号；第一条贴底，它跑完后自启的第二条仍不拽", async () => {
+  pausedWithTwo("ses_dbl", "stopped")
+  actions.continueFollowups("ses_dbl")
+  await flush()
+  assert.deepEqual(scrolls, [true], "第一下：自启第一条贴底")
+  assert.equal(queue.followupPausedReason("ses_dbl"), null)
+  actions.continueFollowups("ses_dbl") // 第二下（按钮还没收起）
+  useChatStore.setState({ running: false } as never)
+  kick()
+  await flush()
+  assert.deepEqual(scrolls, [true, false], "第二下没留记号：第二条不是用户刚点的，不拽")
+})
+
+test("N2：没停着时点「继续」（空操作）不打贴底记号", () => {
+  idle("ses_np")
+  assert.equal(queue.followupPausedReason("ses_np"), null)
+  actions.continueFollowups("ses_np")
+  assert.notEqual(scroll.markQueuedAutoSend("ses_np"), null, "没停着的继续不留贴底记号")
 })
