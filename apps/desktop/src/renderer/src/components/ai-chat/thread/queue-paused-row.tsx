@@ -69,7 +69,7 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
     t
   })
   return (
-    // 窄（行宽 < 35rem，如 768 带侧栏、英文出错句）：原因放不下时按钮折到第二行靠右，原因占满一行、最多 2 行，全文在 title 里。
+    // 窄（行宽 < 35rem，如 768 带侧栏、英文出错句）：原因换窄句（不说条数），放不下时按钮折到第二行靠右，原因最多 2 行，全文在 title 里。
     // 宽时和原来一样一行排开、不截断（mike P3，jojo 巡检 768 en 出错句折 4 行）。
     <div data-testid="queue-paused-row" data-reason={reason} className="@container min-w-0 shrink-0">
       <div
@@ -81,15 +81,27 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
         {/* 图标和原因一组、按内容宽排：短句（「已停止 · 排队 2 条」）窄时也和按钮同一行，长句放不下才把按钮挤到下一行。 */}
         <div className="flex min-w-0 flex-auto items-center gap-1.5 @[35rem]:flex-1">
           <QueuePausedIcon reason={reason} />
+          {/* 宽：全句一行排开不截断。窄（< 35rem）：换成去掉条数那句的窄句（luna #170），仍最多 2 行、全文在 title 里。
+              两个 <p> 用容器查询二选一（display:none 那个读屏也不读），不量宽度、不加 JS。 */}
           <p
             data-testid="queue-paused-reason"
             className={cx(
-              "line-clamp-2 min-w-0 flex-1 text-caption-1-regular @[35rem]:line-clamp-none",
+              "hidden min-w-0 flex-1 text-caption-1-regular @[35rem]:block",
               isNeutralPause(reason) ? QUEUE_MUTED_TEXT : "text-status-yellow-text"
             )}
             title={view.text}
           >
             {view.text}
+          </p>
+          <p
+            data-testid="queue-paused-reason-short"
+            className={cx(
+              "line-clamp-2 min-w-0 flex-1 text-caption-1-regular @[35rem]:hidden",
+              isNeutralPause(reason) ? QUEUE_MUTED_TEXT : "text-status-yellow-text"
+            )}
+            title={view.text}
+          >
+            {view.shortText}
           </p>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-0.5">

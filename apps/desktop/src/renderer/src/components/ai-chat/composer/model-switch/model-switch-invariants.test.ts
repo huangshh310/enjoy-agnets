@@ -33,7 +33,12 @@ test("I1 源码不含换引擎 / 交接成功句", () => {
 test("I1 中文短句贴预览", () => {
   assert.equal(zhChat.modelSwitch.badge, "已切换")
   assert.equal(zhChat.modelSwitch.toast, "已切换到 {model}")
-  assert.equal(zhChat.modelSwitch.footnote, "同一助手，不换引擎")
+  assert.equal(zhChat.modelSwitch.footnote, "同一个助手，只换模型")
+  // luna #170：「引擎」清理——副标题、提示、额度说明都不再说「引擎」。
+  assert.equal(zhChat.modelSwitch.menuSubtitle, "{engine} 官方列出的模型 · 同一个助手，只换模型")
+  assert.equal(enChat.modelSwitch.menuSubtitle, "{engine} · Listed models · same assistant, only the model changes")
+  for (const text of [zhChat.modelSwitch.hint, zhChat.modelSwitch.footnote, zhChat.modelSwitch.footnoteSession, zhChat.modelSwitch.menuSubtitle, zhChat.usage.creditDesc]) assert.doesNotMatch(text, /引擎/)
+  for (const text of [enChat.modelSwitch.hint, enChat.modelSwitch.footnote, enChat.modelSwitch.footnoteSession, enChat.usage.creditDesc]) assert.doesNotMatch(text, /engine/i)
   // mike P3：去掉「引擎 / 导轨」工程词（luna 待锁）。
   assert.equal(zhChat.modelSwitch.unsupported, "这个助手不支持中途换模型。")
   assert.equal(zhChat.modelSwitch.notLoggedIn, "还没登录这个助手，换不了模型")

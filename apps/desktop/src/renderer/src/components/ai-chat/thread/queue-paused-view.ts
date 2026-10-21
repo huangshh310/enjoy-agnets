@@ -38,6 +38,11 @@ export const QUEUE_LINK_BUBBLE = "text-accent-900 hover:text-accent-950 dark:tex
 
 export type QueuePausedView = {
   text: string
+  /**
+   * 窄（说明行 < 35rem）时显示的句子（luna #170 锁）：去掉「排队的 {n} 条先不发 / so {n} queued messages are on hold」
+   * 这一句（排队行自己写着条数），只留原因 + 句尾；句尾和全句同一套（不另写长短两种说法）。全文仍在 title 里，仍 line-clamp-2 兜底。
+   */
+  shortText: string
   showContinue: boolean
   showEditFirst: boolean
 }
@@ -69,6 +74,20 @@ export function queuePausedReasonText(
 }
 
 /**
+ * 窄句的原因部分：不带条数，所以没有 …One 单复数之分（每个原因 key 一个 …Short）。
+ * held（#169）整句就是「排队的 {n} 条先不发。」——正好是窄句要去掉的那一句，去掉就没字了，所以窄时仍说全句（不另编短句）。
+ */
+export function queuePausedReasonShortText(
+  t: Translate,
+  reason: FollowupPausedReason,
+  count: number,
+  provider: ProviderFace
+): string {
+  if (reason === "held") return queuePausedReasonText(t, reason, count, provider)
+  return fillProviderFace(t, `${REASON_KEY[reason]}Short`, provider, { varName: "provider" })
+}
+
+/**
  * luna P1（m211）锁定：失败的那一条还没发出去（pendingFailed 非空：还在卡上 / 已写回输入框）时，暂停行停在「先发这一条」：
  * 不给「继续」、不给「改一下再发」，不管暂停原因是什么。
  * - "card"：失败卡上「再发一次 / 再试一次」露着（或用户句留在线程里）→「先发上面这条…」；
@@ -90,9 +109,15 @@ export function queuePausedView(input: {
   const fill = (key: string) =>
     fillProviderFace(input.t, pluralKey(key, input.count), input.provider, { varName: "provider", vars: { n: input.count } })
   let text: string
+  let shortText: string
   if (place && input.reason === "quota") {
     // luna P2③：「继续」藏起来时额度句不能说「充值后点继续」，整句换成「充值后先发上面 / 输入框里这条…」。
     text = fill(place === "card" ? "chat.queuePausedQuotaResend" : "chat.queuePausedQuotaComposer")
+    // 窄句（luna #170）：卡上那版有定稿短句；输入框那版还没有短句，窄时仍说全句（line-clamp-2 + title 兜底）。
+    shortText =
+      place === "card"
+        ? fillProviderFace(input.t, "chat.queuePausedQuotaResendShort", input.provider, { varName: "provider" })
+        : text
   } else if (place) {
     const reasonText = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
     const tailKey = isNeutralPause(input.reason)
@@ -103,11 +128,17 @@ export function queuePausedView(input: {
         ? "chat.queuePausedResendFirst"
         : "chat.queuePausedComposerFirst"
     text = `${reasonText}${joiner(reasonText)}${input.t(tailKey)}`
+    // 窄句句尾：只有「先发上面这条」（出错 / 额度、卡上）有定稿短句；其余句尾窄时照说全句（中性暂停的「…再点继续」是下一步，不能删）。
+    const shortTailKey = tailKey === "chat.queuePausedResendFirst" ? "chat.queuePausedResendFirstShort" : tailKey
+    const reasonShort = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
+    shortText = `${reasonShort}${joiner(reasonShort)}${input.t(shortTailKey)}`
   } else {
     text = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
+    shortText = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
   }
   return {
     text,
+    shortText,
     showContinue: !place,
     showEditFirst: !place && !input.composerHasContent
   }

@@ -42,6 +42,8 @@ test("4：暂停行按容器宽排——窄（<35rem）时 wrap、原因最多 2
   assert.match(row, /flex min-w-0 flex-wrap items-center [^"]*@\[35rem\]:flex-nowrap/)
   assert.match(row, /className="flex min-w-0 flex-auto items-center gap-1\.5 @\[35rem\]:flex-1"/)
   assert.match(row, /title=\{view\.text\}/)
-  assert.match(row, /"line-clamp-2 min-w-0 flex-1 text-caption-1-regular @\[35rem\]:line-clamp-none"/)
+  // luna #170：窄时换窄句（不说条数），仍 line-clamp-2 + title 全文兜底；宽时全句不截断。
+  assert.match(row, /"hidden min-w-0 flex-1 text-caption-1-regular @\[35rem\]:block"/)
+  assert.match(row, /"line-clamp-2 min-w-0 flex-1 text-caption-1-regular @\[35rem\]:hidden"/)
   assert.match(row, /className="ml-auto flex shrink-0 items-center gap-0\.5"/)
 })
