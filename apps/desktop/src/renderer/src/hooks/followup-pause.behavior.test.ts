@@ -45,6 +45,7 @@ const storage = await import("../lib/session-draft-storage.ts")
 const assets = await import("./composer-assets.ts")
 const { zhChat } = await import("../i18n/catalogs/zh/chat.ts")
 const { enChat } = await import("../i18n/catalogs/en/chat.ts")
+const pending = await import("./pending-failed-send.ts")
 const off = storage.installSessionDraftPersistence()
 
 const sent: string[] = []
@@ -68,6 +69,7 @@ const unsubscribe = queue.subscribeFollowups(() => void kick())
 afterEach(async () => {
   await drainFollowupAutostart()
   queue.resetFollowupsForTest()
+  pending.resetPendingFailedSendForTest()
   resetFollowupAutostart()
   assets.clearComposerAssets()
   storage.resetPersistedDraftAssetsForTest()
@@ -322,7 +324,7 @@ const tr = (cat: Record<string, string>) => (path: string, vars?: Record<string,
 test("说明行文案（luna 定稿）：三种原因 × 中英 × N=1 单数；不出现 检查点/HEAD/commit/快照/checkpoint/ref", () => {
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
-  const base = { composerHasContent: false, failureCardRetryShowing: false, provider: named("DeepSeek") }
+  const base = { composerHasContent: false, pendingFailed: null, provider: named("DeepSeek") }
   const cases = [
     view.queuePausedView({ ...base, reason: "stopped", count: 2, t: zh }).text,
     view.queuePausedView({ ...base, reason: "error", count: 2, t: zh }).text,
@@ -350,7 +352,7 @@ test("额度句的服务商名和失败卡同源（useSendFailureProviderName �
   const tools = [{ id: "amp", label: "Amp" }]
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
-  const base = { reason: "quota" as const, count: 2, composerHasContent: false, failureCardRetryShowing: false }
+  const base = { reason: "quota" as const, count: 2, composerHasContent: false, pendingFailed: null }
   const readiness = { defaultRoute: { runtimeId: "enjoy-local", profileId: "e2e" }, apiKeys: [] } as never
   const local = (row: { name?: string; kind?: string; baseURL?: string } | null) =>
     sendFailureProviderName({
@@ -384,34 +386,35 @@ test("额度句的服务商名和失败卡同源（useSendFailureProviderName �
   assert.equal((enChat as any).credentialProviderGeneric, "the model service")
 })
 
-test("按钮显隐：默认三个都在；输入框有内容 → 「改一下再发」隐藏（不是置灰）；停止时失败卡不影响", () => {
+test("按钮显隐：默认三个都在；输入框有内容 → 「改一下再发」隐藏（不是置灰）；失败那条还没发出去时停止也不给继续", () => {
   const t = tr(zhChat as never)
   const base = { reason: "error" as const, count: 2, provider: named("P"), t }
   assert.deepEqual(
-    pick(view.queuePausedView({ ...base, composerHasContent: false, failureCardRetryShowing: false })),
+    pick(view.queuePausedView({ ...base, composerHasContent: false, pendingFailed: null })),
     { showContinue: true, showEditFirst: true }
   )
   assert.deepEqual(
-    pick(view.queuePausedView({ ...base, composerHasContent: true, failureCardRetryShowing: false })),
+    pick(view.queuePausedView({ ...base, composerHasContent: true, pendingFailed: null })),
     { showContinue: true, showEditFirst: false }
   )
+  // luna P1（m211）：失败那条还没发出去时，停止也不给「继续」（不然排队的抢在它前面）。
   assert.deepEqual(
-    pick(view.queuePausedView({ ...base, reason: "stopped", composerHasContent: false, failureCardRetryShowing: true })),
-    { showContinue: true, showEditFirst: true }
+    pick(view.queuePausedView({ ...base, reason: "stopped", composerHasContent: false, pendingFailed: "card" as const })),
+    { showContinue: false, showEditFirst: false }
   )
 })
 
 test("#136 联动显隐：出错 / 额度且失败卡露着「再发一次」→ 继续、改一下再发都隐藏；出错句尾接「先发上面这条…」；额度整句换成「充值后先发上面这条…」（P2③）", () => {
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
-  const zhError = view.queuePausedView({ reason: "error", count: 2, composerHasContent: false, failureCardRetryShowing: true, provider: named("P"), t: zh })
+  const zhError = view.queuePausedView({ reason: "error", count: 2, composerHasContent: false, pendingFailed: "card" as const, provider: named("P"), t: zh })
   assert.deepEqual(pick(zhError), { showContinue: false, showEditFirst: false })
   assert.equal(zhError.text, "上一条没发出去，排队的 2 条先不发，免得顺序乱。先发上面这条，发出去后排队的会接着发。")
-  const enError = view.queuePausedView({ reason: "error", count: 2, composerHasContent: false, failureCardRetryShowing: true, provider: named("P"), t: en })
+  const enError = view.queuePausedView({ reason: "error", count: 2, composerHasContent: false, pendingFailed: "card" as const, provider: named("P"), t: en })
   assert.ok(enError.text.endsWith(` ${(enChat as any).queuePausedResendFirst}`), enError.text)
   assert.doesNotMatch(enError.text, /\. {2}/)
   const quota = (count: number, t: typeof zh, retry: boolean, provider: ReturnType<typeof named> | { kind: "generic" } = named("OpenAI")) =>
-    view.queuePausedView({ reason: "quota", count, composerHasContent: false, failureCardRetryShowing: retry, provider, t })
+    view.queuePausedView({ reason: "quota", count, composerHasContent: false, pendingFailed: retry ? ("card" as const) : null, provider, t })
   assert.deepEqual(pick(quota(2, zh, true)), { showContinue: false, showEditFirst: false })
   assert.equal(quota(2, zh, true).text, "OpenAI 额度用完了，排队的 2 条先不发。充值后先发上面这条，发出去后排队的会接着发。")
   assert.equal(quota(1, zh, true).text, "OpenAI 额度用完了，排队的 1 条先不发。充值后先发上面这条，发出去后排队的会接着发。")
@@ -494,7 +497,7 @@ test("用户点停止仍是 stopped（换助手的原因不外溢）；之后再
 test("换助手文案（luna 定稿）：中英、N=1 单数、灰色中性、不接「先发上面这条」；占位符与停止一致", () => {
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
-  const base = { reason: "engineSwitched" as const, composerHasContent: false, failureCardRetryShowing: true, provider: named("P") }
+  const base = { reason: "engineSwitched" as const, composerHasContent: false, pendingFailed: null, provider: named("P") }
   const zh2 = view.queuePausedView({ ...base, count: 2, t: zh })
   assert.equal(zh2.text, "你换了助手，上一轮停了，排队的 2 条先不发。")
   assert.deepEqual(pick(zh2), { showContinue: true, showEditFirst: true })
@@ -864,8 +867,13 @@ test("P2⑤ 换助手落在自启起跑窗口（send 没返回、running 被上�
   finishSend()
   await flush()
   const zh = tr(zhChat as never)
-  const v = view.queuePausedView({ reason: queue.followupPausedReason("ses_sw4")!, count: 1, composerHasContent: true, failureCardRetryShowing: true, provider: { kind: "generic" }, t: zh })
-  assert.equal(v.text, "你换了助手，上一轮停了，排队的 1 条先不发。")
+  // luna P1（m211）：s1 回到输入框、还没发出去 → 不给「继续」，句尾「先发输入框里这条。」（换助手不会自动接着发，不许诺）。
+  const { pendingFailedSendFor, pendingFailedSendPlace } = await import("./pending-failed-send.ts")
+  const place = pendingFailedSendPlace(pendingFailedSendFor("ses_sw4"), { composerText: "s1", composerAssetIds: [], failureCardRetryShowing: false })
+  assert.equal(place, "composer")
+  const v = view.queuePausedView({ reason: queue.followupPausedReason("ses_sw4")!, count: 1, composerHasContent: true, pendingFailed: place, provider: { kind: "generic" }, t: zh })
+  assert.equal(v.text, "你换了助手，上一轮停了，排队的 1 条先不发。先发输入框里这条。")
+  assert.equal(v.showContinue, false)
   assert.equal(pause.isNeutralPause(queue.followupPausedReason("ses_sw4")), true)
   // 用户手动把 s1 发出去并跑完（run.end）：engineSwitched 不自动解除，s2 不自己发。
   dispatchAgentEvent({ type: "run.end", runId: "run_manual_s1", sessionId: "ses_sw4" } as never)
@@ -1065,7 +1073,7 @@ test("中文空格规则（对称）：失败卡和排队行同一个函数（fi
   const generic = { kind: "generic" as const }
   type Face = ReturnType<typeof named> | typeof generic
   const row = (provider: Face, t = zh, retry = false) =>
-    view.queuePausedView({ reason: "quota", count: 2, composerHasContent: false, failureCardRetryShowing: retry, provider, t }).text
+    view.queuePausedView({ reason: "quota", count: 2, composerHasContent: false, pendingFailed: retry ? ("card" as const) : null, provider, t }).text
   const card = (key: string, provider: Face, t = zh) => fillProviderFace(t, `chat.${key}`, provider)
   const net = (provider: Face) => card("credentialNetworkNotice", provider).split("，")[0] + "，"
   // 称呼在前（后面接中文）：排队行四个额度句
@@ -1077,7 +1085,7 @@ test("中文空格规则（对称）：失败卡和排队行同一个函数（fi
   assert.equal(row(named("a-very-long-subdomain.inferen…")), "a-very-long-subdomain.inferen… 额度用完了，排队的 2 条先不发。充值后点继续。", "截断的「…」算西文：留空格")
   assert.equal(row(named("智谱 GLM (Zhipu)")), "智谱 GLM (Zhipu) 额度用完了，排队的 2 条先不发。充值后点继续。", "预设名以「)」结尾算西文")
   assert.equal(row(named("通义"), zh, true), "通义额度用完了，排队的 2 条先不发。充值后先发上面这条，发出去后排队的会接着发。")
-  assert.equal(view.queuePausedView({ reason: "quota", count: 1, composerHasContent: false, failureCardRetryShowing: false, provider: generic, t: zh }).text, "模型服务额度用完了，排队的 1 条先不发。充值后点继续。")
+  assert.equal(view.queuePausedView({ reason: "quota", count: 1, composerHasContent: false, pendingFailed: null, provider: generic, t: zh }).text, "模型服务额度用完了，排队的 1 条先不发。充值后点继续。")
   // 称呼在后（前面是中文，后面是中文标点）：连不上卡
   assert.equal(net(generic), "连不上模型服务，")
   assert.equal(net(named("通义")), "连不上通义，")

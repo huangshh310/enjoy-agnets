@@ -24,6 +24,9 @@ const COPY = {
     // luna #163 P2③：失败卡「再发一次」在时额度句不叫人「点继续」（继续是藏着的）。
     quotaResend: "充值后先发上面这条，发出去后排队的会接着发。",
     quotaPlain: "充值后点继续。",
+    // luna #163 合并后 P1（m211）：卡关了 / 换了模型 / 卡上没有重发，失败那句还在输入框 → 先发它。
+    composerFirst: "先发输入框里这条，发出去后排队的会接着发。",
+    quotaComposer: "充值后先发输入框里这条，发出去后排队的会接着发。",
     pressContinue: "点继续",
     collapsed: "已暂停 · 排队 2 条",
     cleared: "已清空 2 条排队",
@@ -37,6 +40,8 @@ const COPY = {
     resendFirst: "Send the one above first. The queue will continue after it goes through.",
     quotaResend: "Top up, then send the one above. The queue continues after it goes through.",
     quotaPlain: "Top up, then press Continue.",
+    composerFirst: "Send the message in the box first. The queue continues after it goes through.",
+    quotaComposer: "Top up, then send the message in the box. The queue continues after it goes through.",
     pressContinue: "press Continue",
     collapsed: "Paused · 2 queued",
     cleared: "Cleared 2 queued messages",
@@ -221,6 +226,40 @@ for (const lang of ["zh", "en"] as const) {
           await window.waitForTimeout(2_000)
           await expect(stage(window).getByText("stub-ok 排队那句")).toHaveCount(0)
         }
+      } finally {
+        await closeForRelaunch(app)
+      }
+    })
+  }
+
+  // luna #163 合并后 P1（m211）：失败那句还没发出去（卡关了 / 卡上没有重发按钮），「继续」不出，句子叫人先发输入框里这条；
+  // 输入框清空才算放弃 → 继续回来。
+  for (const kind of ["billing", "forbidden", "rejected"] as const) {
+    test(`失败那句没发出去（${lang}，${kind}${kind === "rejected" ? "，卡还在" : "，关掉卡"}）：不出继续，先发输入框里这条；清空输入框才给继续`, async () => {
+      test.setTimeout(180_000)
+      const copy = COPY[lang]
+      const card = kind === "rejected" ? "thread-credential-invalid-notice" : "thread-credential-restricted-notice"
+      const { app, window } = await boot(lang, { ENJOY_E2E_SEND: kind, ENJOY_E2E_SEND_DELAY_MS: "6000", ENJOY_E2E_SEND_ONCE: "1" })
+      try {
+        await sendText(window, "第一句会失败")
+        await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+        await queueText(window, "排队那句")
+        await expect(row(window)).toBeVisible({ timeout: 20_000 })
+        await expect(window.getByTestId("composer-input")).toHaveValue("第一句会失败")
+        await expect(window.getByTestId(card)).toBeVisible({ timeout: 10_000 })
+        if (kind !== "rejected") await window.getByTestId(`${card}-dismiss`).click()
+        await expect(window.getByTestId(card)).toHaveCount(kind === "rejected" ? 1 : 0)
+        const reason = window.getByTestId("queue-paused-reason")
+        await expect(reason).toContainText(kind === "billing" ? copy.quotaComposer : copy.composerFirst)
+        await expect(reason).not.toContainText(copy.pressContinue)
+        await expect(window.getByTestId("queue-paused-continue")).toHaveCount(0)
+        await expect(window.getByTestId("queue-paused-edit-first")).toHaveCount(0)
+        await expectNotAutoSent(window, "排队那句")
+        await shot(window, `e1-order-${lang}-${kind}-composer-first`)
+        await window.getByTestId("composer-input").fill("")
+        await expect(window.getByTestId("queue-paused-continue")).toBeVisible({ timeout: 5_000 })
+        await expect(reason).not.toContainText(kind === "billing" ? copy.quotaComposer : copy.composerFirst)
+        if (kind === "billing") await expect(reason).toContainText(copy.quotaPlain)
       } finally {
         await closeForRelaunch(app)
       }

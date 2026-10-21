@@ -26,6 +26,7 @@ import {
   SESSION_NOT_READY
 } from "./queue-composer-send-copy"
 import { pauseFollowupsAfterFailedStart } from "./followup-pause"
+import { notePendingFailedSend } from "./pending-failed-send"
 
 export {
   PREVIOUS_STILL_PREPARING,
@@ -124,6 +125,12 @@ export function restoreComposerAfterFailedSend(
   // leo BLOCK #163 ③：在放 running 之前停住排队（看门狗等所有还稿路径都经这里）。
   // leo soft：停的是发出这一发的会话，不是此刻的前台（看门狗 3s 后触发时用户可能已切走）。
   pauseFollowupsAfterFailedStart(sentFromSessionId ?? store.sessionId, reason)
+  // luna P1（m211）：这一发没发出去、稿回到输入框——还没发出去，排队暂停行不给「继续」。
+  notePendingFailedSend(sentFromSessionId ?? store.sessionId, {
+    where: "composer",
+    text,
+    assetIds: (assets ?? []).map((asset) => asset.id)
+  })
   store.setRunning(false)
   const before = store.composer
   restoreComposerDraft(text, assets)

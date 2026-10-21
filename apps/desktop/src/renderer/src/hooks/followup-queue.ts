@@ -16,9 +16,15 @@ let items: FollowupItem[] = []
  * 按 sessionId 记在模块里，前台 / 后台停车都是同一份：后台那轮出错，切回来也不会自己发。
  * 队列空了就清掉（停着没意义，也不能拦住以后新排的）。
  */
-/** engineSwitched：运行中换了助手（handoff 停了上一轮）；文案与「停止」不同，行为一样（只认「继续」）。 */
-export type FollowupPausedReason = "stopped" | "engineSwitched" | "error" | "quota"
+/**
+ * engineSwitched：运行中换了助手（handoff 停了上一轮）；文案与「停止」不同，行为一样（只认「继续」）。
+ * held：停止 / 换助手之后同会话又有一轮正常跑完（比如「改一下再发」发出去了）——「你停止了上一轮」已经过时，
+ * 只说「排队的 N 条先不发」；行为同停止（只认「继续」，luna P3 m211-14）。
+ */
+export type FollowupPausedReason = "stopped" | "engineSwitched" | "held" | "error" | "quota"
 const paused = new Map<string, FollowupPausedReason>()
+/** 暂停之后这个会话开跑过新的一轮（run.start）。被停的那一轮迟到的 run.end 不算（luna P3：只有之后真发过一轮才改说 held）。 */
+const startedSincePause = new Set<string>()
 let hint: RuntimeHintCode = null
 let hintSessionId: string | null = null
 const listeners = new Set<() => void>()
@@ -46,18 +52,35 @@ export function pauseFollowups(sessionId: string | null | undefined, reason: Fol
   if (current === "quota" && reason === "error") return true
   // leo BLOCK #163 ②：用户自己停的（停止 / 换助手）优先级最高——之后被停那一轮再报出错 / 额度，也不改成会自动解除的原因，
   // 否则随后任一轮 run.end 就把它放开，排队的自己发出去。
-  if ((current === "stopped" || current === "engineSwitched") && (reason === "error" || reason === "quota")) return true
+  if ((current === "stopped" || current === "engineSwitched" || current === "held") && (reason === "error" || reason === "quota")) return true
   // 换助手时先记 engineSwitched，随后被停那一轮的「用户停止」run.error 回来：不改回普通「停止」。
   if (current === "engineSwitched" && reason === "stopped") return true
   paused.set(sessionId, reason)
+  startedSincePause.delete(sessionId)
   notify()
   return true
+}
+
+/** 停止 / 换助手的暂停在一轮正常跑完后改说「排队的 N 条先不发」（held）；别的原因不动。 */
+export function settleNeutralPause(sessionId: string | null | undefined): void {
+  if (!sessionId) return
+  const current = paused.get(sessionId)
+  if (current !== "stopped" && current !== "engineSwitched") return
+  if (!startedSincePause.has(sessionId)) return
+  paused.set(sessionId, "held")
+  notify()
+}
+
+/** 这个会话开跑了一轮（run.start）：暂停中才记。 */
+export function noteFollowupSessionRunStarted(sessionId: string | null | undefined): void {
+  if (sessionId && paused.has(sessionId)) startedSincePause.add(sessionId)
 }
 
 /** 解除暂停（「继续」、重发成功）。订阅方（自启）随 notify 再试一次。 */
 export function resumeFollowups(sessionId: string | null | undefined): void {
   if (!sessionId || !paused.has(sessionId)) return
   paused.delete(sessionId)
+  startedSincePause.delete(sessionId)
   notify()
 }
 
@@ -65,6 +88,7 @@ export function resumeFollowups(sessionId: string | null | undefined): void {
 export function resetFollowupsForTest(): void {
   items = []
   paused.clear()
+  startedSincePause.clear()
   hint = null
   hintSessionId = null
   notify()
@@ -107,7 +131,10 @@ export function restoreFollowups(list: readonly FollowupItem[], pausedReason?: F
   if (fresh.length === 0) return
   items = [...fresh.map((item) => ({ ...item, status: "pending" as const })), ...items]
   const sessionId = fresh[0]?.sessionId
-  if (pausedReason && sessionId) paused.set(sessionId, pausedReason)
+  if (pausedReason && sessionId) {
+    paused.set(sessionId, pausedReason)
+    startedSincePause.delete(sessionId)
+  }
   notify()
 }
 

@@ -16,6 +16,7 @@ import {
   subscribeRestoredImages
 } from "@renderer/stores/restored-images-snapshot"
 import { composerWithoutKept, retryKeptDraftPlan, type RetryKeptDraftPlan } from "./retry-kept-draft-plan"
+import { markPendingFailedSendInFlight } from "./pending-failed-send"
 
 function keptFor(sessionId: string | null) {
   return restoredImagesFor(sessionId)?.kept ?? null
@@ -49,11 +50,16 @@ export function retryKeptDraft(): void {
       writeComposerAfterMerge(next)
     }
     for (const asset of kept.assets) removeComposerAsset(asset.id)
+    // luna P1（m211）：卡上「再发一次」= 把还没发出去的失败那条发出去；跑完排队才接着发。
+    markPendingFailedSendInFlight(state.sessionId)
     void sendComposerMessage({ content: kept.text, assets: kept.assets })
     return
   }
   const last = state.messages.at(-1)
-  if (plan === "retry-turn" && last?.role === "user") void retryFailedUserTurn(last)
+  if (plan === "retry-turn" && last?.role === "user") {
+    markPendingFailedSendInFlight(state.sessionId)
+    void retryFailedUserTurn(last)
+  }
   // none：fail closed，绝不自动发输入框。
 }
 

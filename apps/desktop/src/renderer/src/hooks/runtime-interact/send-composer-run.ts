@@ -14,6 +14,8 @@ import { listComposerAssets, setComposerAssets, takeComposerAssetDetails, type Q
 import { takeComposerText } from "./composer-draft"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
 import { pauseFollowupsAfterFailedStart } from "../followup-pause"
+import { markPendingFailedSendInFlight, notePendingFailedSend } from "../pending-failed-send"
+import { clearCredentialSendBlocked, noteCredentialSendBlocked } from "../credential-send-nudge"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
@@ -218,6 +220,8 @@ async function sendComposerOnce(
   // luna 锁定文案 + leo r5 MUST 2：发起新一发，本会话上一次的还稿快照作废（闸拦这一发时白卡不带「…已放回」，
   // 也不再给「再发一次」）；别的会话的快照不动。
   clearRestoredImages(store.sessionId)
+  // luna P1（m211）：从输入框发出 = 把还没发出去的失败那条（可能改过）发出去了；这一轮跑完才清记录、排队才接着发。
+  if (!prepared) markPendingFailedSendInFlight(store.sessionId)
   // running 归属：迟到作废时只放掉自己占的。
   const runningToken: object = attempt ?? {}
   claimComposerRunning(runningToken)
@@ -229,6 +233,7 @@ async function sendComposerOnce(
     const blocked = useChatStore.getState().error
     traceSend("send:gate", { blocked })
     if (prepared) {
+      if (blocked === CREDENTIAL_INVALID) noteCredentialSendBlocked(store.sessionId)
       failComposerSend({
         text: prepared.content,
         reason: blocked || SEND_FAILED_RESTORE,
@@ -242,6 +247,7 @@ async function sendComposerOnce(
     restoreDraftAfterSendGate(store, prepared)
     return
   }
+  clearCredentialSendBlocked(store.sessionId)
   syncReviewGateOnComposerStart(store.sessionId)
   // 取稿前拍快照：失败时还原文 + 引用 / 技能 / 知识 Chip + 附件，不还拼好的 content。
   const snapshot = prepared
@@ -370,6 +376,10 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   const blocked = useChatStore.getState().error
   const draft = prepared?.content || readComposerDomText() || store.composer
   if (draft) restoreComposerDraft(draft, prepared?.assets)
+  // luna P1（m211）：闸拦住也是没发出去；稿在输入框里，排队暂停行照样不给「继续」。
+  if (draft) notePendingFailedSend(store.sessionId, { where: "composer", text: draft, assetIds: (prepared?.assets ?? []).map((a) => a.id) })
+  // luna P2（m211-29c/d）：密钥还没改好就按发送——卡上说「先改好密钥再发。」，绝不静默。
+  if (blocked === CREDENTIAL_INVALID) noteCredentialSendBlocked(store.sessionId)
   if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL || blocked === CREDENTIAL_INVALID) return
   if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)

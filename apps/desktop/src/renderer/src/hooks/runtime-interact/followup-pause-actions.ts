@@ -15,12 +15,33 @@ import {
   type FollowupPausedReason
 } from "../followup-queue"
 import { returnFollowupToComposer } from "./followup-actions"
+import { listComposerAssets } from "../composer-assets"
+import { useChatStore } from "../../stores/chat-store"
+import { readComposerForMerge } from "../../stores/composer-io"
+import { clearPendingFailedSend, failedSendAbandoned, pendingFailedSendFor } from "../pending-failed-send"
+
+/**
+ * luna P1（m211）：失败的那一条还没发出去（卡上 / 输入框里）时，「继续」「改一下再发」都不该有——按钮本就隐藏，
+ * 这里再兜一次（fail closed）。用户已经把它从输入框整条清掉 = 放弃，顺手清掉记录，返回 false。
+ */
+export function failedSendStillPending(sessionId: string | null | undefined): boolean {
+  const entry = pendingFailedSendFor(sessionId)
+  if (!entry) return false
+  const store = useChatStore.getState()
+  if (store.sessionId !== entry.sessionId) return true
+  const composer = { text: readComposerForMerge(store.composer), assetIds: listComposerAssets().map((a) => a.id) }
+  if (!failedSendAbandoned(entry, composer)) return true
+  clearPendingFailedSend(sessionId)
+  return false
+}
 
 export function continueFollowups(sessionId: string | null | undefined): void {
+  if (failedSendStillPending(sessionId)) return
   resumeFollowups(sessionId)
 }
 
 export function editFirstFollowup(sessionId: string | null | undefined): FollowupItem | null {
+  if (failedSendStillPending(sessionId)) return null
   const first = sessionId ? listFollowups(sessionId)[0] : undefined
   if (!first) return null
   // leo BLOCK #163 ④：输入框（以 DOM 为准）已有东西就不动，这条留在队里、仍暂停。

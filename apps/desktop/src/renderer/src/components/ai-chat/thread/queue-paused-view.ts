@@ -45,6 +45,7 @@ export type QueuePausedView = {
 const REASON_KEY: Record<FollowupPausedReason, string> = {
   stopped: "chat.queuePausedStopped",
   engineSwitched: "chat.queuePausedEngineSwitched",
+  held: "chat.queuePausedHeld",
   error: "chat.queuePausedError",
   quota: "chat.queuePausedQuota"
 }
@@ -67,31 +68,47 @@ export function queuePausedReasonText(
   return fillProviderFace(t, pluralKey(REASON_KEY[reason], count), provider, { varName: "provider", vars: { n: count } })
 }
 
+/**
+ * luna P1（m211）锁定：失败的那一条还没发出去（pendingFailed 非空：还在卡上 / 已写回输入框）时，暂停行停在「先发这一条」：
+ * 不给「继续」、不给「改一下再发」，不管暂停原因是什么。
+ * - "card"：失败卡上「再发一次 / 再试一次」露着（或用户句留在线程里）→「先发上面这条…」；
+ * - "composer"：卡关了 / 换了模型 / 卡上没有重发按钮（密钥没通过），稿在输入框里 →「先发输入框里这条…」。
+ * 出错 / 额度：发出去后排队的自己接着发（句子这么说）；停止 / 换助手 / held 不会自动接着发，只说「先发…这条。」，发出去后再给「继续」。
+ * 用户把它从输入框整条清掉（放弃）之后 pendingFailed 为 null，才回到「…点继续」并给「继续」。
+ */
 export function queuePausedView(input: {
   reason: FollowupPausedReason
   count: number
   composerHasContent: boolean
-  /** 失败卡上的「再发一次 / 再试一次」此刻露着（#136）。 */
-  failureCardRetryShowing: boolean
+  /** 还没发出去的失败消息在哪（pending-failed-send 的 pendingFailedSendPlace）；没有为 null。 */
+  pendingFailed: "card" | "composer" | null
   provider: ProviderFace
   t: Translate
 }): QueuePausedView {
-  const resendFirst = !isNeutralPause(input.reason) && input.failureCardRetryShowing
+  const place = input.pendingFailed
+  const fill = (key: string) =>
+    fillProviderFace(input.t, pluralKey(key, input.count), input.provider, { varName: "provider", vars: { n: input.count } })
   let text: string
-  if (resendFirst && input.reason === "quota") {
-    // luna P2③：失败卡露着时「继续」是藏起来的，额度句不能再说「充值后点继续」，整句换成「充值后先发上面这条…」。
-    text = fillProviderFace(input.t, pluralKey("chat.queuePausedQuotaResend", input.count), input.provider, {
-      varName: "provider",
-      vars: { n: input.count }
-    })
-  } else {
+  if (place && input.reason === "quota") {
+    // luna P2③：「继续」藏起来时额度句不能说「充值后点继续」，整句换成「充值后先发上面 / 输入框里这条…」。
+    text = fill(place === "card" ? "chat.queuePausedQuotaResend" : "chat.queuePausedQuotaComposer")
+  } else if (place) {
     const reasonText = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
-    text = resendFirst ? `${reasonText}${joiner(reasonText)}${input.t("chat.queuePausedResendFirst")}` : reasonText
+    const tailKey = isNeutralPause(input.reason)
+      ? place === "card"
+        ? "chat.queuePausedResendFirstHeld"
+        : "chat.queuePausedComposerFirstHeld"
+      : place === "card"
+        ? "chat.queuePausedResendFirst"
+        : "chat.queuePausedComposerFirst"
+    text = `${reasonText}${joiner(reasonText)}${input.t(tailKey)}`
+  } else {
+    text = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
   }
   return {
     text,
-    showContinue: !resendFirst,
-    showEditFirst: !resendFirst && !input.composerHasContent
+    showContinue: !place,
+    showEditFirst: !place && !input.composerHasContent
   }
 }
 

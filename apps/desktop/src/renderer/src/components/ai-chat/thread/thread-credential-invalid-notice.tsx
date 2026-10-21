@@ -1,6 +1,8 @@
 /**
  * 发送被 credential_invalid 挡住：白卡片 + 红点 + 改密钥，打开本档案密钥框；解析不出档案时打开添加密钥。
+ * luna P2（m211）：密钥没改好又按了发送（被闸拦下）→ 第二行补「先改好密钥再发。」，不静默。
  */
+import { useSyncExternalStore } from "react"
 import { RiKey2Line } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
@@ -12,6 +14,13 @@ import { resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
 import { goFixKey } from "./credential-fix-key-nav"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 import { useRestoredImagesDetail } from "./use-restored-images-detail"
+import { useChatStore } from "@renderer/stores/chat-store"
+import {
+  clearCredentialSendBlocked,
+  credentialInvalidDetail,
+  getCredentialSendBlocked,
+  subscribeCredentialSendBlocked
+} from "@renderer/hooks/credential-send-nudge"
 
 export function ThreadCredentialInvalidNotice({
   onDismiss,
@@ -22,6 +31,9 @@ export function ThreadCredentialInvalidNotice({
 }) {
   const t = useT()
   const restoredDetail = useRestoredImagesDetail()
+  const sessionId = useChatStore((state) => state.sessionId)
+  const blockedAll = useSyncExternalStore(subscribeCredentialSendBlocked, getCredentialSendBlocked)
+  const nudge = sessionId && blockedAll.has(sessionId) ? t("chat.credentialFixKeyFirst") : null
   const navigate = useNavigate()
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
@@ -34,11 +46,15 @@ export function ThreadCredentialInvalidNotice({
       kind="credential_invalid"
       tone="danger"
       message={fillProviderFace(t, "chat.credentialInvalidNotice", face)}
-      detail={restoredDetail}
+      detail={credentialInvalidDetail(nudge, restoredDetail)}
       actionLabel={t("chat.goFixKey")}
       actionIcon={<RiKey2Line className="size-3" />}
       onAction={() => goFixKey(navigate as never, providerId)}
-      onDismiss={onDismiss}
+      onDismiss={() => {
+        // 卡关掉就不再提醒；下次再被拦下会重新记。
+        clearCredentialSendBlocked(sessionId)
+        onDismiss()
+      }}
       className={className}
     />
   )

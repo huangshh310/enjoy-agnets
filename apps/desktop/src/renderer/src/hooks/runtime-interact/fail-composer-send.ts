@@ -10,6 +10,7 @@ import { emitPreOutputRolledBack } from "../../stores/pre-output-rollback-listen
 import { discardCreatedSession } from "../discard-created-session"
 import { pauseFollowups } from "../followup-queue"
 import { followupPauseReasonForFailure } from "../followup-pause"
+import { notePendingFailedSend } from "../pending-failed-send"
 import { dropEmptyPendingAssistant } from "../composer-run-control"
 import {
   mergeComposerText,
@@ -36,6 +37,12 @@ export function failComposerSend(input: {
 }): void {
   // E1：这一发没发出去，排队的先停住（失败那句回到输入框，不能让排在后面的抢先发出去）。
   pauseFollowups(input.sessionId, followupPauseReasonForFailure(input.reason))
+  // luna P1（m211）：稿还回发出的那个会话（前台输入框或它的草稿）——还没发出去。
+  notePendingFailedSend(input.sessionId, {
+    where: "composer",
+    text: input.text,
+    assetIds: (input.assets ?? []).map((asset) => asset.id)
+  })
   // jojo P2：main 没接手，发送前乐观标的「执行中」还原（已通过的会话不留蓝圈、不重现改动条）。
   rollbackComposerStartGate(input.sessionId)
   // jojo r5 P1：用户已切到别的会话——稿还回发出的那个会话的草稿；当前输入框 / running / 红卡 / 线程都不动。
