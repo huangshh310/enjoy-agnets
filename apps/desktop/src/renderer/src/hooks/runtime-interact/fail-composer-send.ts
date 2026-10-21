@@ -8,6 +8,8 @@ import { useChatStore } from "../../stores/chat-store"
 import { messageHasBody } from "./composer-can-send"
 import { emitPreOutputRolledBack } from "../../stores/pre-output-rollback-listeners"
 import { discardCreatedSession } from "../discard-created-session"
+import { pauseFollowups } from "../followup-queue"
+import { followupPauseReasonForFailure } from "../followup-pause"
 import { dropEmptyPendingAssistant } from "../composer-run-control"
 import {
   mergeComposerText,
@@ -32,6 +34,8 @@ export function failComposerSend(input: {
   /** running 属于别的在跑轮次（排队首发等不到空闲）：不动 running、不清 pending 助手与停车。 */
   keepRunning?: boolean
 }): void {
+  // E1：这一发没发出去，排队的先停住（失败那句回到输入框，不能让排在后面的抢先发出去）。
+  pauseFollowups(input.sessionId, followupPauseReasonForFailure(input.reason))
   // jojo P2：main 没接手，发送前乐观标的「执行中」还原（已通过的会话不留蓝圈、不重现改动条）。
   rollbackComposerStartGate(input.sessionId)
   // jojo r5 P1：用户已切到别的会话——稿还回发出的那个会话的草稿；当前输入框 / running / 红卡 / 线程都不动。
@@ -52,7 +56,7 @@ export function failComposerSend(input: {
     if (input.dropOptimisticUser) dropMatchingOptimisticUser(input.optimisticContent ?? input.text)
     if (input.sessionId) useAttentionStore.getState().takePark(input.sessionId)
     // 先还文 + notice，再删空会话。禁止等 session.delete 才出提示（会空几秒）。
-    restoreComposerAfterFailedSend(input.text, input.reason, input.assets)
+    restoreComposerAfterFailedSend(input.text, input.reason, input.assets, input.sessionId)
   }
   if (input.chips) restoreComposerSendChips(input.chips)
   // leo S1：keepRunning = 会话里还有别的轮在跑（pending 助手 / 停车都保留），绝不能删会话。

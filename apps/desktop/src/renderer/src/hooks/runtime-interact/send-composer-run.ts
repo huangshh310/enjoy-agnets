@@ -13,6 +13,7 @@ import { codingAgentRunInput } from "../agent-run-payload"
 import { listComposerAssets, setComposerAssets, takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
 import { takeComposerText } from "./composer-draft"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
+import { pauseFollowupsAfterFailedStart } from "../followup-pause"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
@@ -182,7 +183,7 @@ async function sendComposerOnce(
     : undefined)
   if (!prepared && store.composer !== typed) store.setComposer(typed)
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
-    restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
+    restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets, prepared.sessionId)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
@@ -350,7 +351,7 @@ function armComposerWatchdog(typed: string): SendAttempt {
       // jojo P3：先在还稿前判（还稿会放掉 running）：running 被别的轮占着就不删。
       const otherHolds = self ? runningHeldByOther(self) : true
       state.setPreparingHint(false)
-      restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE)
+      restoreComposerAfterFailedSend(text, SEND_FAILED_RESTORE, undefined, before.sessionId ?? state.sessionId)
       rollbackComposerStartGate(before.sessionId)
       // jojo P3：这次 Enter 新建的空会话不留在侧栏（有在跑的 run / 待回助手 / 任何内容都不删）。
       const empty = emptySessionToDiscardAfterWatchdog(before.sessionId, useChatStore.getState(), otherHolds)
@@ -362,6 +363,8 @@ function armComposerWatchdog(typed: string): SendAttempt {
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
 function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): void {
+  // leo BLOCK #163 ③：闸拦也是没发出去，排队的先停住。
+  pauseFollowupsAfterFailedStart(store.sessionId, useChatStore.getState().error)
   store.setRunning(false)
   store.setPreparingHint(false)
   const blocked = useChatStore.getState().error

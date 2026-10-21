@@ -45,3 +45,26 @@ test("三钮被挤出对话列 / 卡内正文被压成缝：提示让位", () =>
   assert.equal(dockHintCrowded({ approvalOverflowPx: 0, approvalBodySqueezePx: 12 }), true)
   assert.equal(dockHintCrowded({ approvalOverflowPx: 1, approvalBodySqueezePx: 1 }), true)
 })
+
+test("E1 队列停着：排队类提示帽檐 / 紧凑区都不画（暂停说明行已写明「先不发」）", () => {
+  assert.equal(runtimeHintPlacement("queued", false, 2, true), null)
+  assert.equal(runtimeHintPlacement("chipQueued", false, 1, true), null)
+  assert.equal(runtimeHintPlacement("queued", true, 2, true), null)
+  assert.equal(runtimeHintPlacement("queued", false, 2, false), "frame", "没停着照旧")
+})
+
+test("E1 队列停着：「马上发 / 图片插话退回」不受影响——没审批卡在帽檐，有审批卡在审批卡上方紧凑区", () => {
+  assert.equal(runtimeHintPlacement("steered", false, 1, true), "frame")
+  assert.equal(runtimeHintPlacement("imageSteerQueued", false, 1, true), "frame")
+  assert.equal(runtimeHintPlacement("steered", true, 1, true), "dock")
+  assert.equal(runtimeHintPlacement("imageSteerQueued", true, 1, true), "dock")
+})
+
+test("接线：帽檐和审批卡上方紧凑区都把 paused 交给 runtimeHintPlacement（源码正则）", async () => {
+  const { readFileSync } = await import("node:fs")
+  const rail = readFileSync(new URL("./composer-followup-rail.tsx", import.meta.url), "utf8")
+  const dock = readFileSync(new URL("../../thread/dock-runtime-hint.tsx", import.meta.url), "utf8")
+  assert.match(rail, /runtimeHintPlacement\(hint, approvalPending, listFollowups\(sessionId\)\.length, paused\)/)
+  assert.match(dock, /runtimeHintPlacement\(hint, approvalId != null, queuedCount, paused\)/)
+  assert.match(dock, /setPaused\(followupPausedReason\(sessionId\) != null\)/)
+})

@@ -7,6 +7,7 @@ import { retryKeptDraft, useRetryKeptDraftAvailable } from "@renderer/hooks/retr
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { useSendFailureProviderName } from "@renderer/hooks/use-send-failure-provider-name"
+import { fillProviderFace } from "@renderer/lib/provider-face"
 import { isProviderBilling } from "@renderer/lib/send-gate-codes"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 import { retryCardView } from "./retry-card-view"
@@ -32,14 +33,14 @@ export function ThreadCredentialRestrictedNotice({
     editThenSend: t("chat.sendFailedEditThenSend")
   })
   // 跟前台引擎走：Amp / 自定义助手失败说引擎名，不说聊天密钥档案名（luna m136b-62）。
-  const name = useSendFailureProviderName()
+  const face = useSendFailureProviderName()
   const billing = isProviderBilling(code)
   return (
     <ThreadSendGateNotice
       testId="thread-credential-restricted-notice"
       kind={billing ? "provider_billing" : "provider_forbidden"}
       tone="warning"
-      message={t(billing ? "chat.credentialBillingNotice" : "chat.credentialForbiddenNotice", { name })}
+      message={fillProviderFace(t, billing ? "chat.credentialBillingNotice" : "chat.credentialForbiddenNotice", face)}
       detail={view.detail}
       actionLabel={t("chat.switchModel")}
       actionIcon={<RiCpuLine className="size-3" />}

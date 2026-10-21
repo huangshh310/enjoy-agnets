@@ -38,7 +38,7 @@ test("看门狗失败路径也还原（不经 failComposerSend）", () => {
   gate.rollbackComposerStartGate("ses_e")
   assert.equal(wf(), "done")
   const src = readFileSync(new URL("./send-composer-run.ts", import.meta.url), "utf8")
-  assert.match(src, /restoreComposerAfterFailedSend\(text, SEND_FAILED_RESTORE\)\s*\n\s*rollbackComposerStartGate\(before\.sessionId\)/)
+  assert.match(src, /restoreComposerAfterFailedSend\(text, SEND_FAILED_RESTORE[^)\n]*\)\s*\n\s*rollbackComposerStartGate\(before\.sessionId\)/)
 })
 
 test("之后有更新的改动 / main 已接手：不还原", () => {

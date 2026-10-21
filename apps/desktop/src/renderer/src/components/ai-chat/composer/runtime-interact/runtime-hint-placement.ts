@@ -7,6 +7,8 @@
  *   所以「马上发」类提示改画在对话列里、审批卡正上方的紧凑区（dock），和排队行同一列、正常文档流，
  *   不浮层、不压审批卡；放不下时它先让位（不画），审批三钮永远优先。
  * - 有审批卡时排队类提示（下一句 / 将在当前任务完成后执行）本来就不画：紧凑排队行已经在。
+ * - E1 队列停着（paused）：排队类提示哪儿都不画——暂停说明行已经写明「排队的 N 条先不发」，
+ *   再说「将在当前任务完成后执行」既重复又不对。「马上发 / 图片插话退回」不受影响，照常按审批卡在不在画在帽檐或紧凑区。
  */
 import type { RuntimeHintCode } from "@renderer/hooks/followup-queue"
 
@@ -15,12 +17,15 @@ export type RuntimeHintPlacement = "frame" | "dock" | null
 export function runtimeHintPlacement(
   hint: RuntimeHintCode,
   approvalPending: boolean,
-  queuedCount: number
+  queuedCount: number,
+  /** E1：这个会话的排队停着（followupPausedReason 非空）。 */
+  paused = false
 ): RuntimeHintPlacement {
   if (!hint) return null
   const queuedKind = hint === "queued" || hint === "chipQueued"
   // 队列已空时不再挂「将在当前任务完成后执行」（jojo 巡检）。
   if (queuedKind && queuedCount === 0) return null
+  if (queuedKind && paused) return null
   if (!approvalPending) return "frame"
   // 有审批卡时排队项已经挂在审批卡上方的紧凑行里，再挂一条是重复（luna g158-03、36）。
   if (queuedKind) return null

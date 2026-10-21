@@ -10,11 +10,23 @@
  * - 点开后排队区自己让位（flex-shrink 远大于审批卡，最少留一行、区内滚），审批三钮仍露出；
  * - 3 条及以上：最多画 2 行，第 3 行换成「还有 N 条」，点开看全部；
  * - 层级高于对话目录条（thread-preview-rail，z-20），× 不会点到目录刻度上（g158-39）。
+ *
+ * E1（luna 定稿）：队列因停止 / 出错 / 额度停着时，同样画在输入框正上方的紧凑区，最上面加一行说明（QueuePausedRow），
+ * 排队行本身不变；窗口高 ≤600 时整区折成一行「已暂停 · 排队 N 条」，点开展开。
  */
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { RiArrowDownSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import { listFollowups, subscribeFollowups, type FollowupItem } from "@renderer/hooks/followup-queue"
+import {
+  followupPausedReason,
+  listFollowups,
+  subscribeFollowups,
+  type FollowupItem,
+  type FollowupPausedReason
+} from "@renderer/hooks/followup-queue"
+import { useShortWindow } from "@renderer/hooks/use-short-window"
+import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
+import { pausedCollapsed } from "./queue-paused-view"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -26,16 +38,25 @@ export function QueuedFollowups({ placement = "thread" }: { placement?: "thread"
   const sessionId = useChatStore((state) => state.sessionId)
   const approvalPending = useChatStore((state) => state.pendingApproval != null)
   const [items, setItems] = useState<FollowupItem[]>(() => listFollowups(sessionId))
+  const [paused, setPaused] = useState<FollowupPausedReason | null>(() => followupPausedReason(sessionId))
 
   useEffect(() => {
-    setItems(listFollowups(sessionId))
-    return subscribeFollowups(() => setItems(listFollowups(sessionId)))
+    const sync = () => {
+      setItems(listFollowups(sessionId))
+      setPaused(followupPausedReason(sessionId))
+    }
+    sync()
+    return subscribeFollowups(sync)
   }, [sessionId])
 
   if (items.length === 0) return null
-  if (shouldDockQueuedFollowups(approvalPending) !== (placement === "dock")) return null
+  if (shouldDockQueuedFollowups(approvalPending, paused) !== (placement === "dock")) return null
 
-  if (placement === "dock") return <DockedFollowups items={items} />
+  // 审批卡在时说明行让位（审批按钮优先），但排队行的标签仍按「停着」说「已暂停」（luna P3a）：
+  // 不能一边停着一边说「排队中」，像是审批完就会自动发。
+  if (placement === "dock") {
+    return <DockedFollowups items={items} paused={approvalPending ? null : paused} queuePaused={paused != null} />
+  }
 
   return (
     <div id="queued-followups" className="flex flex-col gap-4">
@@ -51,13 +72,72 @@ export function QueuedFollowups({ placement = "thread" }: { placement?: "thread"
   )
 }
 
-function DockedFollowups({ items }: { items: FollowupItem[] }) {
+function DockedFollowups({
+  items,
+  paused,
+  queuePaused
+}: {
+  items: FollowupItem[]
+  /** 要画说明行的暂停原因（审批卡在时为 null）。 */
+  paused: FollowupPausedReason | null
+  /** 队列实际停着（不管说明行画不画）：排队行标签说「已暂停」。 */
+  queuePaused: boolean
+}) {
   const t = useT()
   const approvalId = useChatStore((state) => state.pendingApproval?.approvalId ?? null)
   const ref = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
-  // 换了一张审批卡：回到默认（不展开）。
-  useEffect(() => setExpanded(false), [approvalId])
+  const short = useShortWindow()
+  // 换了一张审批卡 / 暂停原因变了：回到默认（不展开）。
+  useEffect(() => setExpanded(false), [approvalId, paused])
+  if (paused && pausedCollapsed(short, expanded)) {
+    return (
+      <div
+        ref={ref}
+        id="queued-followups"
+        data-testid="queued-followups-docked"
+        data-mode="paused-collapsed"
+        data-paused={paused}
+        data-count={items.length}
+        className="relative z-30 mx-6 flex shrink-0 flex-col py-0.5"
+      >
+        <DockSummaryButton
+          testId="queue-paused-collapsed"
+          label={t("chat.queuePausedCollapsed", { n: items.length })}
+          icon={<QueuePausedIcon reason={paused} />}
+          onClick={() => setExpanded(true)}
+        />
+      </div>
+    )
+  }
+  return (
+    <DockedRows
+      items={items}
+      paused={paused}
+      queuePaused={queuePaused}
+      expanded={expanded}
+      setExpanded={setExpanded}
+      dockRef={ref}
+    />
+  )
+}
+
+function DockedRows({
+  items,
+  paused,
+  queuePaused,
+  expanded,
+  setExpanded,
+  dockRef: ref
+}: {
+  items: FollowupItem[]
+  paused: FollowupPausedReason | null
+  queuePaused: boolean
+  expanded: boolean
+  setExpanded: (value: boolean) => void
+  dockRef: RefObject<HTMLDivElement | null>
+}) {
+  const t = useT()
   const tight = useDockTight(ref, !expanded, items.length)
   const mode = dockMode(items.length, tight, expanded)
 
@@ -68,6 +148,7 @@ function DockedFollowups({ items }: { items: FollowupItem[] }) {
       id="queued-followups"
       data-testid="queued-followups-docked"
       data-mode={mode}
+      data-paused={paused ?? undefined}
       data-count={items.length}
       // 默认整行画（shrink-0）；用户点开后才让位：shrink 远大于审批卡（PermissionDock 是 shrink 1），最少留一行、区内滚。
       // relative z-30：盖过对话目录条（z-20），× 点得到。
@@ -77,6 +158,7 @@ function DockedFollowups({ items }: { items: FollowupItem[] }) {
         !expanded && (mode === "collapsed" ? "py-0.5" : "py-1")
       )}
     >
+      {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
       {mode === "collapsed" ? (
         <DockSummaryButton testId="queued-collapsed" label={t("chat.runtimeQueueCount", { n: items.length })} onClick={() => setExpanded(true)} />
       ) : (
@@ -88,6 +170,7 @@ function DockedFollowups({ items }: { items: FollowupItem[] }) {
               canMoveUp={index > 0}
               canMoveDown={index < items.length - 1}
               compact
+              paused={queuePaused}
             />
           ))}
           {mode === "more" ? (
@@ -103,7 +186,17 @@ function DockedFollowups({ items }: { items: FollowupItem[] }) {
   )
 }
 
-function DockSummaryButton({ testId, label, onClick }: { testId: string; label: string; onClick: () => void }) {
+function DockSummaryButton({
+  testId,
+  label,
+  icon,
+  onClick
+}: {
+  testId: string
+  label: string
+  icon?: ReactNode
+  onClick: () => void
+}) {
   return (
     <button
       type="button"
@@ -115,6 +208,7 @@ function DockSummaryButton({ testId, label, onClick }: { testId: string; label: 
         "bg-background-secondary-default/60 py-0.5 pr-2 pl-3 text-left text-caption-2-medium text-text-secondary hover:text-text-primary"
       )}
     >
+      {icon}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       <RiArrowDownSLine className="size-3.5 shrink-0" aria-hidden />
     </button>
@@ -194,7 +288,7 @@ export function approvalBodySqueeze(column: HTMLElement): number {
   return Math.max(0, Math.min(body.scrollHeight, APPROVAL_BODY_MIN_PX) - body.clientHeight)
 }
 
-/** 有审批卡时排队项挂到审批卡上方（不在时间线里）。 */
-export function shouldDockQueuedFollowups(approvalPending: boolean): boolean {
-  return approvalPending
+/** 有审批卡时排队项挂到审批卡上方；队列停着时（E1）挂到输入框正上方。都不在时间线里。 */
+export function shouldDockQueuedFollowups(approvalPending: boolean, paused: FollowupPausedReason | null = null): boolean {
+  return approvalPending || paused != null
 }

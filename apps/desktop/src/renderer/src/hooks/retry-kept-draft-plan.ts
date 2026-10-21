@@ -5,7 +5,10 @@
  * 且它的附件 chip 一个不少；被改过（「看看这张图片吧」）、被并进别的句子（「继续之前先跑一下测试」）、
  * 图被删掉——都不重发，也绝不自动发输入框：按钮隐藏，卡上改说「内容还在输入框里，改好后点发送」。
  * leo r5 MUST 2：没有还稿快照（不是这次回滚还回来的）同样不给按钮。
- * - resend-kept：重发那一句；输入框去掉那几整行和它的 chip，其余原样；
+ * jojo P2（E1 PR）：输入框必须**正好**是被留下的那一句——同样的字（只容忍行首行尾空白）、同一组图，一张不多一张不少。
+ * 失败后又加了图 / 加了字（之前把它当「下一条草稿」）：点了会发出「原句 + 图 A」、图 B 留在框里，
+ * 不是用户以为的那一发（jojo pr136r6-gate-16/20/21）。这时也隐藏按钮，卡上说「改好后点发送就行，不会自动发出。」。
+ * - resend-kept：重发那一句（输入框里就只有它，发完清空）；
  * - retry-turn：用户句还在线程里（keptUserMessage），原地重跑，不碰输入框；
  * - none：不给按钮。
  */
@@ -46,10 +49,17 @@ export function retryKeptDraftPlan(input: {
 }): RetryKeptDraftPlan {
   const kept = input.kept
   if (kept && (kept.text.trim() || kept.assetIds.length > 0)) {
-    const have = new Set(input.composerAssetIds)
-    const chipsIntact = kept.assetIds.every((id) => have.has(id))
-    return chipsIntact && composerWithoutKept(input.composer, kept.text) !== null ? "resend-kept" : "none"
+    return composerEqualsKept(input.composer, input.composerAssetIds, kept) ? "resend-kept" : "none"
   }
   if (input.lastUserPending) return "retry-turn"
   return "none"
+}
+
+/** 输入框是不是正好就是被留下的那一句：字一样（行首行尾空白不算）、图是同一组（不多不少）。 */
+export function composerEqualsKept(composer: string, composerAssetIds: readonly string[], kept: KeptForPlan): boolean {
+  const have = new Set(composerAssetIds)
+  const want = new Set(kept.assetIds)
+  if (have.size !== want.size || [...want].some((id) => !have.has(id))) return false
+  if (!kept.text.trim()) return !composer.trim()
+  return composerWithoutKept(composer, kept.text) === ""
 }

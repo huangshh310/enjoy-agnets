@@ -22,6 +22,7 @@ import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { translateTruncateNotice } from "./truncate-notice"
 import { isBlockedStart, startWithTruncateRetry, type RetryHistoryEntry } from "./truncate-retry"
 import { composerCanSend } from "./runtime-interact/composer-can-send"
+import { pauseFollowupsAfterFailedStart } from "./followup-pause"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -133,6 +134,8 @@ async function regenerateFromUserIndex(store: ChatStore, userIndex: number): Pro
     if (agentRunBlockedCode(started) || isBlockedStart(started)) return true
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
+    // leo BLOCK #163 ③：起跑抛错，排队的先停住（running 落下前）。
+    pauseFollowupsAfterFailedStart(sessionId, err instanceof Error ? err.message : null)
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
     store.setRunning(false)
     await resyncAfterStartThrow(sessionId)
@@ -225,6 +228,8 @@ export async function editAndResendUserTurn(
     if (agentRunBlockedCode(started) || isBlockedStart(started)) return
     await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
+    // leo BLOCK #163 ③：起跑抛错，排队的先停住（running 落下前）。
+    pauseFollowupsAfterFailedStart(sessionId, err instanceof Error ? err.message : null)
     store.setError(err instanceof Error ? err.message : "Execution failed.")
     store.setRunning(false)
     await resyncAfterStartThrow(sessionId)

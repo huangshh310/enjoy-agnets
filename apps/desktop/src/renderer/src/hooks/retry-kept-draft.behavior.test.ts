@@ -86,39 +86,6 @@ function rolledBackTurn(sessionId: string) {
 const runText = (input: any) => String(((input?.messages ?? []) as any[]).filter((m) => m.role === "user").at(-1)?.content ?? "")
 const runAttachments = (input: any) => (input?.attachments ?? []) as string[]
 
-test("jojo P2：回滚后又打了字、贴了新图 → 再发一次只发那一句 + 它自己的图；新字新图原样留在输入框", async () => {
-  rolledBackTurn("ses_retry")
-  // 用户接着写下一条：新字 + 新图。
-  useChatStore.getState().setComposer("看看这张图\n下一条草稿")
-  assets.queueComposerAsset("ast_new", "new.png", "image/png")
-
-  retryKeptDraft()
-  await flush()
-
-  assert.equal(runs.length, 1, "恰好一条消息")
-  assert.match(runText(runs[0]), /看看这张图/)
-  assert.doesNotMatch(runText(runs[0]), /下一条草稿/, "新字不并进重发")
-  assert.deepEqual(runAttachments(runs[0]), ["ast_kept"], "只带它自己的图，不带新图")
-  const userBubbles = useChatStore.getState().messages.filter((m) => m.role === "user")
-  assert.equal(userBubbles.length, 1)
-  assert.equal(userBubbles[0]!.content, "看看这张图")
-  assert.deepEqual(userBubbles[0]!.assets?.map((a) => a.assetId), ["ast_kept"])
-  assert.equal(useChatStore.getState().composer, "下一条草稿", "新字留在输入框")
-  assert.deepEqual(assets.listComposerAssets().map((a) => a.id), ["ast_new"], "新图留在输入框")
-})
-
-test("jojo P2：只贴了新图（没打字）→ 同样只重发那一句，新图不被当成一条发出去", async () => {
-  rolledBackTurn("ses_retry2")
-  assets.queueComposerAsset("ast_new2", "new2.png", "image/png")
-  retryKeptDraft()
-  await flush()
-  assert.equal(runs.length, 1)
-  assert.deepEqual(runAttachments(runs[0]), ["ast_kept"])
-  assert.equal(useChatStore.getState().composer, "")
-  assert.deepEqual(assets.listComposerAssets().map((a) => a.id), ["ast_new2"])
-})
-
-
 const plan = () => currentRetryKeptDraftPlan(useChatStore.getState())
 const chipIds = () => assets.listComposerAssets().map((a) => a.id)
 
@@ -131,6 +98,45 @@ async function assertFailClosed(composer: string, chips: string[]) {
   assert.equal(useChatStore.getState().composer, composer, "输入框一字不截")
   assert.deepEqual(chipIds(), chips)
 }
+
+test("jojo P2（E1）：回滚后又打了字、贴了新图 → 输入框已不是原样，按钮隐藏；点了也不发，新字新图原样留着", async () => {
+  rolledBackTurn("ses_retry")
+  useChatStore.getState().setComposer("看看这张图\n下一条草稿")
+  assets.queueComposerAsset("ast_new", "new.png", "image/png")
+  await assertFailClosed("看看这张图\n下一条草稿", ["ast_kept", "ast_new"])
+})
+
+test("jojo P2（E1）：只贴了新图（没打字）→ 多一张图也算改过：隐藏、不发", async () => {
+  rolledBackTurn("ses_retry2")
+  assets.queueComposerAsset("ast_new2", "new2.png", "image/png")
+  await assertFailClosed("看看这张图", ["ast_kept", "ast_new2"])
+})
+
+test("jojo P2（E1）：只多打了一行字（图没动）→ 隐藏、不发；删掉那行 → 立刻恢复，点了只发那一句、输入框清空", async () => {
+  rolledBackTurn("ses_retry3")
+  useChatStore.getState().setComposer("看看这张图\n还有")
+  assert.equal(plan(), "none")
+  useChatStore.getState().setComposer("看看这张图")
+  assert.equal(plan(), "resend-kept")
+  retryKeptDraft()
+  await flush()
+  assert.equal(runs.length, 1, "恰好一条")
+  assert.equal(runText(runs[0]), "看看这张图")
+  assert.deepEqual(runAttachments(runs[0]), ["ast_kept"])
+  assert.equal(useChatStore.getState().composer, "")
+  assert.deepEqual(chipIds(), [])
+})
+
+test("jojo P2（E1）：卡片在隐藏时第二行换成「改好后点发送就行，不会自动发出。」/ en「Press Send when you're ready. Nothing goes out on its own.」", async () => {
+  const { zhChat } = await import("../i18n/catalogs/zh/chat.ts")
+  const { enChat } = await import("../i18n/catalogs/en/chat.ts")
+  assert.equal(zhChat.sendFailedEditThenSend, "改好后点发送就行，不会自动发出。")
+  assert.equal(enChat.sendFailedEditThenSend, "Press Send when you're ready. Nothing goes out on its own.")
+  rolledBackTurn("ses_retry4")
+  assets.queueComposerAsset("ast_more", "more.png", "image/png")
+  const view = retryCardView({ canRetry: plan() !== "none", running: false, restoredDetail: "已放回", editThenSend: zhChat.sendFailedEditThenSend })
+  assert.deepEqual(view, { showRetry: false, detail: "改好后点发送就行，不会自动发出。" })
+})
 
 test("leo r5 (a)：那一句被改成「看看这张图片吧」→ 不重发旧句、不剩「片吧」；按钮隐藏", async () => {
   rolledBackTurn("ses_edit")
@@ -160,12 +166,15 @@ test("leo r5 (c)：用户删了那张图的 chip → 不再把图发出去", asy
 
 test("leo r5 (c-2)：只空白不同（行首行尾）算原样；行内改动（加空格）算改过", async () => {
   rolledBackTurn("ses_ws")
-  useChatStore.getState().setComposer("  看看这张图  \n下一条")
+  useChatStore.getState().setComposer("  看看这张图  \n")
   assert.equal(plan(), "resend-kept")
+  useChatStore.getState().setComposer("看看 这张图")
+  assert.equal(plan(), "none")
+  useChatStore.getState().setComposer("  看看这张图  ")
   retryKeptDraft()
   await flush()
   assert.equal(runs.length, 1)
-  assert.equal(useChatStore.getState().composer, "下一条")
+  assert.equal(useChatStore.getState().composer, "")
   assert.equal(composerWithoutKept("看看 这张图", "看看这张图"), null)
   assert.equal(composerWithoutKept("前一行\n看看这张图\n后一行", "看看这张图"), "前一行\n后一行")
   assert.equal(composerWithoutKept("看看这张图吧\n看看这张图", "看看这张图"), "看看这张图吧", "只摘整行那一处")
@@ -280,7 +289,13 @@ test("卡片接线：两张卡都按 retryCardView + useRetryKeptDraftAvailable 
 test("纯判定：kept 优先；用户句还在线程走 retry-turn；其余 none（不再有 send）", () => {
   assert.equal(retryKeptDraftPlan({ kept: null, lastUserPending: true, composer: "x", composerAssetIds: ["n"] }), "retry-turn")
   assert.equal(retryKeptDraftPlan({ kept: null, lastUserPending: false, composer: "x", composerAssetIds: ["n"] }), "none")
-  assert.equal(retryKeptDraftPlan({ kept: { text: "", assetIds: ["k"] }, lastUserPending: false, composer: "新字", composerAssetIds: ["k", "n"] }), "resend-kept")
+  // jojo P2（E1）：必须正好相等——多字、多图、少图都不给。
+  assert.equal(retryKeptDraftPlan({ kept: { text: "", assetIds: ["k"] }, lastUserPending: false, composer: "新字", composerAssetIds: ["k", "n"] }), "none")
+  assert.equal(retryKeptDraftPlan({ kept: { text: "", assetIds: ["k"] }, lastUserPending: false, composer: "", composerAssetIds: ["k", "n"] }), "none")
+  assert.equal(retryKeptDraftPlan({ kept: { text: "", assetIds: ["k"] }, lastUserPending: false, composer: "新字", composerAssetIds: ["k"] }), "none")
+  assert.equal(retryKeptDraftPlan({ kept: { text: "", assetIds: ["k"] }, lastUserPending: false, composer: " ", composerAssetIds: ["k"] }), "resend-kept")
+  assert.equal(retryKeptDraftPlan({ kept: { text: "a", assetIds: ["k", "j"] }, lastUserPending: false, composer: "a", composerAssetIds: ["j", "k"] }), "resend-kept", "图的顺序不算")
+  assert.equal(retryKeptDraftPlan({ kept: { text: "a", assetIds: [] }, lastUserPending: false, composer: "a\nb", composerAssetIds: [] }), "none")
   assert.equal(retryKeptDraftPlan({ kept: { text: "", assetIds: ["k"] }, lastUserPending: false, composer: "", composerAssetIds: ["n"] }), "none")
 })
 

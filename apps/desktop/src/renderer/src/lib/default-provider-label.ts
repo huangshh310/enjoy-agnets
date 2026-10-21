@@ -1,24 +1,32 @@
 /**
- * 当前默认路线的供应商显示名。快照 profileId 对不上列表时，只落到正在用（active）且有钥、未停用的档案。
+ * 当前默认路线的供应商。快照 profileId 对不上列表时，只落到正在用（active）且有钥、未停用的档案。
+ * 原来的 defaultProviderLabel（返回密钥档案名）已删：失败卡不许出现档案名（luna P2 定稿）。
  */
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { providerFace, type ProviderFace } from "./provider-face.ts"
 
 export type ListedProvider = {
   id: string
   name?: string
+  /** 预设 kind（openai / deepseek / custom…）：供应商品牌名从这里来。 */
+  kind?: string
+  /** 端点地址：自定义端点只取主机名。 */
+  baseURL?: string
   active?: boolean
   hasKey?: boolean
   enabled?: boolean
 }
 
-export function defaultProviderLabel(
+/**
+ * 当前默认路线该怎么称呼（见 provider-face：品牌名 → 端点主机名 → 「模型服务」）。
+ * luna P2（定稿）：失败卡只说供应商 / 引擎名，**不出现密钥档案名**（「Work key A」「E2E Stub Key」），括号里也不要。
+ */
+export function defaultProviderFace(
   readiness: ChatReadiness | undefined,
-  providers: readonly ListedProvider[],
-  fallback: string
-): string {
+  providers: readonly ListedProvider[]
+): ProviderFace {
   const id = resolveDefaultProviderId(readiness, providers)
-  const named = id ? providers.find((row) => row.id === id)?.name?.trim() : undefined
-  return named || fallback
+  return providerFace(id ? providers.find((row) => row.id === id) : undefined)
 }
 
 export function defaultProviderId(readiness: ChatReadiness | undefined): string | undefined {

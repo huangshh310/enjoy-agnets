@@ -97,7 +97,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
   if (!isAgentToolId(state.toRuntimeId) || !isAgentToolId(state.fromRuntimeId)) return false
   useEngineHandoffStore.setState({ phase: "disposing" })
   try {
-    await abortComposerRun()
+    await abortComposerRun({ pauseReason: "engineSwitched" })
     if (hasIde()) {
       await getIde().agentTools.disposeSession({ sessionId })
       await getIde().agentTools.setHandoff({

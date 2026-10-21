@@ -234,6 +234,13 @@ function ChatThreadBody(props: {
             data-testid="empty-start-upper"
             className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-6 pt-8 [@media(max-height:560px)]:pt-3"
           >
+            {/* E1：首字前失败回滚后会话又是空的（落地页），排队区连同暂停说明行也要紧贴输入框上方（col-reverse 的第一个子元素在最下面）。
+                -mx-6 抵掉本列的 px-6，与下面 max-w-3xl 的输入框同宽。 */}
+            <div className="-mx-6 flex justify-center">
+              <div className="w-full max-w-3xl">
+                <QueuedFollowups placement="dock" />
+              </div>
+            </div>
             <div className="flex w-full flex-col items-center">
             <EmptySessionStart
               workspaceName={props.workspaceName}

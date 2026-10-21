@@ -9,22 +9,29 @@ import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { queuedExtrasLabel } from "../../composer-count-labels"
+import { QUEUE_BUBBLE_LABEL_TEXT, QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey } from "../queue-paused-view"
 
 export function QueuedUserTurn({
   item,
   canMoveUp,
   canMoveDown,
-  compact = false
+  compact = false,
+  paused = false
 }: {
   item: FollowupItem
   canMoveUp: boolean
   canMoveDown: boolean
   /** 审批卡上方的单行紧凑版：预览截断，按钮整行露出。 */
   compact?: boolean
+  /** E1：队列停着（含审批卡在、说明行让位时）→ 标签说「已暂停」，不说「排队中」（luna P3a）。 */
+  paused?: boolean
 }) {
   const t = useT()
   const running = useChatStore((state) => state.running)
   const preview = (item.draft ?? item.prompt).trim()
+  const label = t(queuedRowLabelKey(paused))
+  // luna #163（10-21）：「马上发给它 / 退回输入框」≥ 4.5:1（亮 / 暗）。时间线泡整体 opacity-80，同一个色不够，单独用深一档的。
+  const actionClass = `${actionBaseClass} ${compact ? QUEUE_LINK_DOCK : QUEUE_LINK_BUBBLE}`
   const extraCount = (item.quotedContexts?.length ?? 0) + item.assets.length + (item.skillChips?.length ?? 0)
 
   const actions = (
@@ -77,7 +84,10 @@ export function QueuedUserTurn({
           "bg-background-secondary-default/60 py-0.5 pr-1 pl-3 text-caption-2-medium text-text-secondary"
         )}
       >
-        <span className="shrink-0 text-text-tertiary">{t("chat.runtimeQueuedBubble")}</span>
+        {/* luna P2④：text-tertiary（#a1a1a1）只有 ~2.5:1；和说明行同一个灰（亮 7.49 / 暗 6.52）。 */}
+        <span data-testid="queued-row-label" className={cx("shrink-0", QUEUE_MUTED_TEXT)}>
+          {label}
+        </span>
         <p className="min-w-0 flex-1 truncate text-caption-1-regular" title={preview}>
           {preview || queuedExtrasLabel(t, extraCount)}
         </p>
@@ -118,7 +128,10 @@ export function QueuedUserTurn({
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-caption-2-medium">
-          <span className="text-text-tertiary">{t("chat.runtimeQueuedBubble")}</span>
+          {/* luna（10-21）：泡整体 opacity-80，neutral-600 只有 4.49，亮色深一档 neutral-700（5.60）；暗色仍 neutral-400（4.60）。 */}
+          <span data-testid="queued-row-label" className={QUEUE_BUBBLE_LABEL_TEXT}>
+            {label}
+          </span>
           {actions}
         </div>
       </div>
@@ -126,8 +139,8 @@ export function QueuedUserTurn({
   )
 }
 
-const actionClass =
-  "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-accent-500 hover:bg-accent-500/10"
+const actionBaseClass =
+  "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-accent-500/10"
 
 const iconClass =
   "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary disabled:cursor-default disabled:opacity-30"

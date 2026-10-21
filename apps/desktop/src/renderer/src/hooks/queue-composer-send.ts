@@ -25,6 +25,7 @@ import {
   SESSION_CREATE_TIMEOUT,
   SESSION_NOT_READY
 } from "./queue-composer-send-copy"
+import { pauseFollowupsAfterFailedStart } from "./followup-pause"
 
 export {
   PREVIOUS_STILL_PREPARING,
@@ -115,9 +116,14 @@ export function restoreComposerDraft(text: string, assets?: QueuedComposerAsset[
 export function restoreComposerAfterFailedSend(
   text: string,
   reason: string,
-  assets?: QueuedComposerAsset[]
+  assets?: QueuedComposerAsset[],
+  /** 这一发是从哪个会话发出的（停住它的排队）；不给就用前台会话。 */
+  sentFromSessionId?: string | null
 ): void {
   const store = useChatStore.getState()
+  // leo BLOCK #163 ③：在放 running 之前停住排队（看门狗等所有还稿路径都经这里）。
+  // leo soft：停的是发出这一发的会话，不是此刻的前台（看门狗 3s 后触发时用户可能已切走）。
+  pauseFollowupsAfterFailedStart(sentFromSessionId ?? store.sessionId, reason)
   store.setRunning(false)
   const before = store.composer
   restoreComposerDraft(text, assets)

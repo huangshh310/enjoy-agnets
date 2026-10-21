@@ -1,6 +1,7 @@
 /**
  * 所有 agent.event 先归 Attention，再决定写前台线程还是停车。
  */
+import { noteFollowupRunEvent } from "../../hooks/followup-pause"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../chat-store"
 import { generationKindOf, isNonAgentRunKind } from "../stream-run-scope"
@@ -49,6 +50,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
     })
   }
 
+  // E1：出错 / 停止先停住这个会话的排队，再让 store / 停车放 running=false（自启看不到空档）。
+  noteFollowupRunEvent(sessionId, event, isNonAgentRunKind(event, rememberedKind))
   if (sessionId && event.type === "run.start") clearSessionUsage(sessionId)
   if (event.type === "usage.updated" && sessionId) {
     const chat = useChatStore.getState()

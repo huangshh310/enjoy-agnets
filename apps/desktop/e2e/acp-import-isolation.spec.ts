@@ -6,7 +6,7 @@
  * 假助手只在「入库的 env（FAKE_ACP_TOKEN）到了、进程 cwd 和 session/list 的 cwd 都是入库的自定义目录」时才列会话，
  * 守住自定义助手 env / cwd 一路传到 spawn（leo #160）。
  * 末段（luna C1 / C2）：重启后从刚点开的空「新对话」导入另一条——侧栏不多出空「新对话」；
- * 在导入的会话里发送失败，卡上说「连不上 假本机助手」，不说聊天密钥档案名（E2E Stub Key）。
+ * 在导入的会话里发送失败，卡上说「连不上假本机助手」，不说聊天密钥档案名（E2E Stub Key）。
  */
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -201,7 +201,7 @@ test("B 等审批时导入本机 ACP 会话：导入的会话空闲、不挂 B �
     await composer2.press("Enter")
     const card = window.getByTestId("thread-credential-network-notice")
     await expect(card).toBeVisible({ timeout: 30_000 })
-    await expect(card).toContainText("连不上 假本机助手")
+    await expect(card).toContainText("连不上假本机助手")
     await expect(card).not.toContainText("E2E Stub Key")
     await shot(window, "acp-8-failure-card-names-engine")
   } finally {

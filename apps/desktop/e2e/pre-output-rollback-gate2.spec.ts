@@ -84,13 +84,14 @@ test("P2：默认路线解析不出档案时「改密钥」打开添加 API 密�
     await composer.press("Enter")
     const notice = window.getByTestId("thread-credential-invalid-notice")
     await expect(notice).toBeVisible({ timeout: 15_000 })
-    await expect(notice).toContainText("当前供应商")
+    // luna P2 定稿：认不出供应商、也没有端点地址时说通用的「模型服务」，不说档案名。
+    await expect(notice).toContainText("密钥没通过：模型服务不认这把密钥")
     await window.waitForTimeout(3_000)
     await expect(window.getByTestId("sidebar-session-row").filter({ hasText: "stub-title" })).toHaveCount(0)
     await window.screenshot({ path: join(shots, "04-rejected-notice.png") })
     await notice.getByTestId("thread-credential-invalid-notice-action").click()
     await window.waitForFunction(
-      // 默认 ollama 桩路线解析不出档案（卡上写「当前供应商」）：必须退回添加 API 密钥。
+      // 默认 ollama 桩路线解析不出档案（卡上写「模型服务」）：必须退回添加 API 密钥。
       () => location.hash.includes("settings/providers") && location.hash.includes("create=official"),
       undefined,
       { timeout: 8_000 }

@@ -7,6 +7,7 @@ import { retryKeptDraft, useRetryKeptDraftAvailable } from "@renderer/hooks/retr
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { useSendFailureProviderName } from "@renderer/hooks/use-send-failure-provider-name"
+import { fillProviderFace } from "@renderer/lib/provider-face"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 import { retryCardView } from "./retry-card-view"
 import { useRestoredImagesDetail } from "./use-restored-images-detail"
@@ -29,13 +30,13 @@ export function ThreadCredentialNetworkNotice({
     editThenSend: t("chat.sendFailedEditThenSend")
   })
   // 跟前台引擎走：Amp / 自定义助手失败说引擎名，不说聊天密钥档案名（luna m136b-62）。
-  const name = useSendFailureProviderName()
+  const face = useSendFailureProviderName()
   return (
     <ThreadSendGateNotice
       testId="thread-credential-network-notice"
       kind="provider_unreachable"
       tone="neutral"
-      message={t("chat.credentialNetworkNotice", { name })}
+      message={fillProviderFace(t, "chat.credentialNetworkNotice", face)}
       detail={view.detail}
       actionLabel={view.showRetry ? (running ? t("chat.resendingDraft") : t("chat.resendDraft")) : undefined}
       actionIcon={<RiRefreshLine className="size-3" />}

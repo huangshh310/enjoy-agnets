@@ -4,7 +4,7 @@
  */
 import { DrainableQueue } from "@enjoy-agents/agent-core/drainable-queue"
 import type { FollowupItem } from "./followup-queue.ts"
-import { takeNextFollowup } from "./followup-queue.ts"
+import { followupPausedReason, takeNextFollowup } from "./followup-queue.ts"
 import { releaseQueuedDraftAssets } from "../lib/session-draft-storage.ts"
 
 type FollowupJob = {
@@ -13,6 +13,12 @@ type FollowupJob = {
 }
 
 let queue = new DrainableQueue<FollowupJob>(runJob)
+/**
+ * 取下一项时 takeNextFollowup 会同步 notify，订阅它的自启（useFollowupAutostart 的 kick）会重入进来：
+ * 那时这一项还没进 queue（size 仍为 0），重入的一次会把**第二条**先取走先发——排队顺序颠倒（E1 实测）。
+ * 取项到入队之间不许重入。
+ */
+let starting = false
 
 async function runJob(job: FollowupJob) {
   // 发送链接手这几张图（发出即由 main 清库；失败还回输入框当普通草稿），排队标记先摘掉。
@@ -23,13 +29,22 @@ async function runJob(job: FollowupJob) {
 /** 测试用：换一条空队列。 */
 export function resetFollowupAutostart() {
   queue = new DrainableQueue<FollowupJob>(runJob)
+  starting = false
+}
+
+/**
+ * 自启取出的那一条还在「开始发」阶段（send 没返回：agent.run 还没回执、还没出字）。
+ * luna #163 P2⑤：这时换助手也算停了一轮——abortComposerRun 靠它补上 store.running 看不到的起跑窗口。
+ */
+export function followupSendInFlight(): boolean {
+  return queue.size > 0
 }
 
 export function drainFollowupAutostart(): Promise<void> {
   return queue.drain()
 }
 
-/** 尝试取出并发送下一项。已在跑、审批等待或正在发送则跳过。 */
+/** 尝试取出并发送下一项。已在跑、审批等待、正在发送，或队列因停止 / 出错 / 额度停着（E1）则跳过。 */
 export function tryStartNextFollowup(input: {
   sessionId: string | null | undefined
   running: boolean
@@ -38,8 +53,14 @@ export function tryStartNextFollowup(input: {
   send: (item: FollowupItem) => Promise<void>
 }): boolean {
   if (input.running || input.pendingApproval || !input.sessionId || queue.size > 0) return false
-  const next = takeNextFollowup(input.sessionId)
-  if (!next) return false
-  queue.enqueue({ item: next, send: input.send })
-  return true
+  if (followupPausedReason(input.sessionId) || starting) return false
+  starting = true
+  try {
+    const next = takeNextFollowup(input.sessionId)
+    if (!next) return false
+    queue.enqueue({ item: next, send: input.send })
+    return true
+  } finally {
+    starting = false
+  }
 }

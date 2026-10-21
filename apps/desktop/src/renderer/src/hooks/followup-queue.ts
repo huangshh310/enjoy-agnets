@@ -11,12 +11,63 @@ import type {
 export type { EnqueueFollowupInput, FollowupItem, FollowupStatus, RuntimeHintCode } from "./runtime-interact/followup-queue.types"
 
 let items: FollowupItem[] = []
+/**
+ * E1：按会话记队列为什么停着（停止 / 出错 / 额度用完）。停着时不自启，等用户点「继续」。
+ * 按 sessionId 记在模块里，前台 / 后台停车都是同一份：后台那轮出错，切回来也不会自己发。
+ * 队列空了就清掉（停着没意义，也不能拦住以后新排的）。
+ */
+/** engineSwitched：运行中换了助手（handoff 停了上一轮）；文案与「停止」不同，行为一样（只认「继续」）。 */
+export type FollowupPausedReason = "stopped" | "engineSwitched" | "error" | "quota"
+const paused = new Map<string, FollowupPausedReason>()
 let hint: RuntimeHintCode = null
 let hintSessionId: string | null = null
 const listeners = new Set<() => void>()
 
 function notify() {
+  // 队列空了：暂停跟着清掉。
+  for (const sessionId of paused.keys()) {
+    if (!items.some((item) => item.sessionId === sessionId)) paused.delete(sessionId)
+  }
   for (const listener of listeners) listener()
+}
+
+/** 这个会话的队列为什么停着；没停为 null。 */
+export function followupPausedReason(sessionId: string | null | undefined): FollowupPausedReason | null {
+  if (!sessionId) return null
+  return paused.get(sessionId) ?? null
+}
+
+/** 停住这个会话的队列。队列是空的就不记（没什么可停的）。返回是否停住。 */
+export function pauseFollowups(sessionId: string | null | undefined, reason: FollowupPausedReason): boolean {
+  if (!sessionId || !items.some((item) => item.sessionId === sessionId)) return false
+  const current = paused.get(sessionId)
+  if (current === reason) return true
+  // 同一次失败常常两头都报（run.error 带额度码、发送链再按通用失败报一次）：通用的「出错」不盖掉「额度用完」。
+  if (current === "quota" && reason === "error") return true
+  // leo BLOCK #163 ②：用户自己停的（停止 / 换助手）优先级最高——之后被停那一轮再报出错 / 额度，也不改成会自动解除的原因，
+  // 否则随后任一轮 run.end 就把它放开，排队的自己发出去。
+  if ((current === "stopped" || current === "engineSwitched") && (reason === "error" || reason === "quota")) return true
+  // 换助手时先记 engineSwitched，随后被停那一轮的「用户停止」run.error 回来：不改回普通「停止」。
+  if (current === "engineSwitched" && reason === "stopped") return true
+  paused.set(sessionId, reason)
+  notify()
+  return true
+}
+
+/** 解除暂停（「继续」、重发成功）。订阅方（自启）随 notify 再试一次。 */
+export function resumeFollowups(sessionId: string | null | undefined): void {
+  if (!sessionId || !paused.has(sessionId)) return
+  paused.delete(sessionId)
+  notify()
+}
+
+/** 测试用。 */
+export function resetFollowupsForTest(): void {
+  items = []
+  paused.clear()
+  hint = null
+  hintSessionId = null
+  notify()
 }
 
 export function listFollowups(sessionId?: string | null): FollowupItem[] {
@@ -45,6 +96,28 @@ export function restoreFollowup(item: FollowupItem) {
   if (items.some((row) => row.id === item.id)) return
   items = [{ ...item, status: "pending" }, ...items]
   notify()
+}
+
+/**
+ * E1「全部清空」撤回：按原顺序放回队首（已在队里的跳过）。
+ * pausedReason：放回的同时就停住（同一次 notify 里），自启不会抢在暂停前把第一条发出去。
+ */
+export function restoreFollowups(list: readonly FollowupItem[], pausedReason?: FollowupPausedReason) {
+  const fresh = list.filter((item) => !items.some((row) => row.id === item.id))
+  if (fresh.length === 0) return
+  items = [...fresh.map((item) => ({ ...item, status: "pending" as const })), ...items]
+  const sessionId = fresh[0]?.sessionId
+  if (pausedReason && sessionId) paused.set(sessionId, pausedReason)
+  notify()
+}
+
+/** E1「全部清空」：一次取走这个会话的全部排队项（原顺序）。 */
+export function takeAllFollowups(sessionId: string): FollowupItem[] {
+  const taken = items.filter((item) => item.sessionId === sessionId)
+  if (taken.length === 0) return []
+  items = items.filter((item) => item.sessionId !== sessionId)
+  notify()
+  return taken
 }
 
 export function removeFollowup(id: string) {

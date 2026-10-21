@@ -108,7 +108,9 @@ test("密钥被拒：红点条 + 改密钥打开本档案密钥框，草稿留�
     await expect(notice).toBeVisible({ timeout: 12_000 })
     await expect(notice).toHaveAttribute("data-kind", "credential_invalid")
     await expect(notice).toContainText("密钥没通过")
-    await expect(notice).toContainText("E2E Stub Key")
+    // luna P2 定稿：只说供应商名（种子档案是 openai 预设），密钥档案名不出现。
+    await expect(notice).toContainText("OpenAI")
+    await expect(notice).not.toContainText("E2E Stub Key")
     await expect(notice).toContainText(/不认这把密钥/)
     // luna 锁定文案：闸拦 / 失败卡只说原因 + 按钮，不说「草稿会留着」；没还图就没有「…已放回」行。
     await expect(notice).not.toContainText("草稿会留着")
@@ -152,7 +154,9 @@ test("连不上：中性点 + 再发一次，发送中改正在发送，态不�
     const notice = window.getByTestId("thread-credential-network-notice")
     await expect(notice).toBeVisible({ timeout: 12_000 })
     await expect(notice).toHaveAttribute("data-kind", "provider_unreachable")
-    await expect(notice).toContainText("E2E Stub Key")
+    // luna P2 定稿：只说供应商名（种子档案是 openai 预设），密钥档案名不出现。
+    await expect(notice).toContainText("OpenAI")
+    await expect(notice).not.toContainText("E2E Stub Key")
     await expect(notice).toContainText(/连不上 .+，消息没发出去/)
     await expect(notice).toContainText("消息没发出去。检查网络后再试。")
     await expect(notice).not.toContainText("草稿会留着")
@@ -364,7 +368,8 @@ for (const code of ["forbidden", "billing"] as const) {
       await expect(notice).toBeVisible({ timeout: 12_000 })
       await expect(notice).toHaveAttribute("data-kind", fixture.kind)
       await expect(notice).toHaveAttribute("data-tone", "warning")
-      await expect(notice).toContainText(fixture.notice.replace("{name}", "E2E Stub Key"))
+      await expect(notice).toContainText(fixture.notice.replace("{name}", "OpenAI"))
+      await expect(notice).not.toContainText("E2E Stub Key")
       await expect(notice).not.toContainText(/401|402|403|Forbidden|Payment Required|ECONNREFUSED/i)
       await expect(notice.getByTestId("thread-credential-restricted-notice-action")).toHaveText("换个模型")
       await expect(notice.getByTestId("thread-credential-restricted-notice-retry")).toHaveText("再试一次")
