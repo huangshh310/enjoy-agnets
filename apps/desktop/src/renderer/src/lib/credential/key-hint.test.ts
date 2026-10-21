@@ -129,3 +129,26 @@ test("设置行与向导行都接上提示，链接走现有 window.openExternal
   assert.match(step, /renderKeyHint\(/)
   assert.match(step, /guideKeyHint\(readiness, providers, guideKeyStatus\(readiness, providers\)\)/)
 })
+
+test("billing：档案指到代理 / 中转（不是这家官方地址）→ 不给「去充值」链接，只给文案（luna #164）", () => {
+  const billing = { state: "unverified" as const, code: "billing" as const }
+  const official = new URL(presetFor("deepseek").billingURL!).toString()
+  // 没填端点 / 官方地址（含子域、端口）照旧给链接
+  for (const baseURL of [undefined, "", "https://api.deepseek.com/v1", "https://foo.deepseek.com:8443/anthropic"]) {
+    assert.deepEqual(keyHintOf(billing, "deepseek", baseURL), { kind: "billing", url: official }, String(baseURL))
+  }
+  // 代理 / 仿冒 / 解析不了 → 只给文案
+  for (const baseURL of ["https://proxy.example.com/v1", "https://deepseek.com.evil.com/v1", "https://api.deepseek.com@evil.com/v1", "api.deepseek.com/v1"]) {
+    assert.deepEqual(keyHintOf(billing, "deepseek", baseURL), { kind: "billing" }, baseURL)
+  }
+  // 向导行同样按档案的端点判断
+  const readiness = {
+    apiKeys: [{ providerId: "p1", presetId: "deepseek" }],
+    defaultRoute: { profileId: "p1" },
+    credentialCheck: billing
+  } as unknown as Parameters<typeof guideKeyStatus>[0]
+  const proxied = [{ id: "p1", kind: "deepseek", name: "ds", baseURL: "https://relay.example.cn/v1" }]
+  assert.deepEqual(guideKeyHint(readiness, proxied, guideKeyStatus(readiness, proxied))?.hint, { kind: "billing" })
+  const direct = [{ id: "p1", kind: "deepseek", name: "ds", baseURL: "https://api.deepseek.com/v1" }]
+  assert.deepEqual(guideKeyHint(readiness, direct, guideKeyStatus(readiness, direct))?.hint, { kind: "billing", url: official })
+})

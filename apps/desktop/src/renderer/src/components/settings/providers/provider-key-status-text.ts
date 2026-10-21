@@ -45,13 +45,13 @@ export function renderProviderKeyStatus(
 
 /** 设置页供应商行：密钥「暂时没法确认」且原始码是 forbidden / billing 时的提示条；其余返回 null。 */
 export function renderProviderKeyHint(
-  profile: ProviderKeyStatusProfile & { credentialCheck?: Parameters<typeof keyHintOf>[0] },
+  profile: ProviderKeyStatusProfile & { credentialCheck?: Parameters<typeof keyHintOf>[0]; baseURL?: string },
   t: (key: string, vars?: Record<string, string>) => string,
   actions: { onEdit: () => void; onOpenUrl: (url: string) => void }
 ): ReactElement | null {
   if (!providerKeyView(profile)) return null
   return renderKeyHint(
-    keyHintOf(profile.credentialCheck, profile.kind),
+    keyHintOf(profile.credentialCheck, profile.kind, profile.baseURL),
     presetDisplayName(profile.kind, profile.name),
     t,
     actions,
