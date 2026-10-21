@@ -18,6 +18,7 @@ import {
   ensurePendingRewindLoop,
   installPendingRewinds,
   onPendingRewindLanded,
+  persistPendingRewindNow,
   recordPendingRewind,
   settlePendingRewind
 } from "./rewind-pending"
@@ -109,7 +110,8 @@ const waitingCutIds = new Map<string, Set<string>>()
 
 /**
  * 截断已成功：先保住原话，再改消息列表（leo #159 F1 / #167 r2 / r3 BLOCK）。
- * - 截断一成功就记「待放回」（rewind-pending：内存 + 自己的 localStorage 键，输入框不会盖掉它）。
+ * - 截断一成功就记「待放回」（rewind-pending：内存 + 自己的 localStorage 键，输入框不会盖掉它），
+ *   并立刻把原话按行并进这个会话的草稿送到 main（persistPendingRewindNow，强杀后启动清理不会把会话删掉）。
  * - 立刻试一次：
  *   - 前台还是这个会话且写得进 → 进输入框（merge），删记录，再把截掉的尾巴从界面拿掉（按截断时记下的 id）。
  *   - 前台已换会话 → 按行并进原会话草稿（这时输入框不再拥有它），返回 draftSessionId。
@@ -151,6 +153,8 @@ async function finishAfterTruncate(input: {
   }
   // ⓪ 先有持久副本，再做别的。
   recordPendingRewind(sessionId, restored.text, restored.assets)
+  // ⓪' 再立刻按行并进这个会话的草稿并送到 main（不等防抖）：截断后马上被强杀，重启清空会话时 main 也看得到原话。
+  persistPendingRewindNow(sessionId)
   // 同会话上一次重来还在等：两次截掉的 id 一起拿掉（记录本身已按行合并成一条）。
   for (const id of waitingCutIds.get(sessionId) ?? []) cutIds.add(id)
   waitingCutIds.set(sessionId, cutIds)

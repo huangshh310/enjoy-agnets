@@ -16,6 +16,8 @@
  *   不用可能过期的内存草稿。记录不删（下次启动再对一遍，按行去重不会重复）。
  * - 同会话等待中：把「输入框当下的字 + 原话」按行写进它的草稿并立刻送到 main（被输入框盖掉就下一拍再补），
  *   等待中被强杀也不只靠 localStorage；main 看到有草稿，离开时也不会把它当空会话删掉。
+ * - 截断一成功（persistPendingRewindNow）：原话按行并进它的草稿并立刻送到 main，不等输入框防抖——
+ *   截断后马上被强杀，重启时 main 的空会话清理也看得到草稿，不会把会话连同原话删掉。
  * - 启动时（本模块加载）把上次留下的记录读回来继续放：没打开的会话直接并进草稿；前台的在轮询里写输入框。
  * - 切会话那一下（store 订阅）只处理**离开的**会话（并进它的草稿），不碰新前台——它的输入框要等 loadSession 恢复完。
  */
@@ -130,6 +132,27 @@ function mirrorIntoLiveDraft(sessionId: string, rec: PendingRewind): void {
     changed = true
   }
   if (changed) flushPersistedDrafts()
+}
+
+/**
+ * 截断一成功就把原话按行并进这个会话的草稿，并**立刻**送到 main（不等输入框的防抖落盘；host F1）。
+ * 为什么：main 启动时的 pruneEmptySessions 看不到 renderer 的「待放回」记录（localStorage）。截断成功后、
+ * 原话到 main 之前被强杀（kill -9），重启时 main 会把这个「空」会话（尤其首条就被重来的新对话）删掉，原话跟着没了。
+ * - 前台还是这个会话：走等待中的同一条路（mirrorIntoLiveDraft：输入框当下的字 + 原话按行合并，图按 id 去重）。
+ *   之后写回输入框算出的是同一段（mergeWritebackText 同样的两边），草稿订阅写进来相同就不动，不会叠两遍。
+ * - 前台已换会话：按行并进原会话草稿（restoreRewindDraft），之后 settle 再并一次按行去重，不重复。
+ * - 失败只记日志：记录还在，后面的放回 / 关窗 / 启动照常兜底，不影响重来本身。
+ */
+export function persistPendingRewindNow(sessionId: string): void {
+  try {
+    const rec = readPendingRewind(sessionId)
+    if (!rec) return
+    if (useChatStore.getState().sessionId === sessionId) mirrorIntoLiveDraft(sessionId, rec)
+    else restoreRewindDraft(sessionId, rec.text, rec.assets)
+    flushPersistedDrafts()
+  } catch (error) {
+    console.warn("[rewind] persist original text to main right after truncate failed", error)
+  }
 }
 
 /**
