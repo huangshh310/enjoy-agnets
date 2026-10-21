@@ -6,6 +6,7 @@ import { getIde, hasIde } from "../../lib/ide"
 import { useChatStore } from "../../stores/chat-store"
 import { steerFallbackWhenNoRun } from "../composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
+import { markDraftAssetsQueued } from "../../lib/session-draft-storage"
 import { clearComposerDraft, prefixHostModeForSend } from "./composer-draft"
 import { sendComposerMessage } from "./send-composer-run"
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
@@ -85,7 +86,9 @@ async function fallbackSteerWithoutRun(content: string, opts: SteerOptions): Pro
   }
   // 排队项：原样放回（同一 id，草稿里的排队标记还对得上），不另起新项。
   if (opts.fromQueue) return "requeue"
-  enqueueFollowup({ sessionId: store.sessionId ?? "", prompt: content, assets })
+  const item = enqueueFollowup({ sessionId: store.sessionId ?? "", prompt: content, assets })
+  // kai send-p2 A：输入框插话带的图随这条排队走——草稿附件改打排队标记（同输入框排队），切回不冒、马上发失败找得回。
+  if (store.sessionId && item.assets?.length) markDraftAssetsQueued(store.sessionId, item.id, content, item.assets)
   if (!opts.fromQueue) clearComposerDraft()
   setRuntimeHint("queued", store.sessionId)
   return "requeue"

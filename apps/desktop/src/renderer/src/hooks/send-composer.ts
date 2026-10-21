@@ -4,15 +4,27 @@
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
-import { listComposerAssets, queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import {
+  listComposerAssets,
+  queueComposerAsset,
+  restoreComposerAssets,
+  takeComposerAssetDetails,
+  type QueuedComposerAsset
+} from "./composer-assets"
 import { composerCanSend } from "./runtime-interact/composer-can-send"
 import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
-import { markDraftAssetsQueued } from "../lib/session-draft-storage"
+import type { RuntimeHintCode } from "./runtime-interact/followup-queue.types"
+import { forgetPersistedDraftAssets, markDraftAssetsQueued } from "../lib/session-draft-storage"
 import { useChatStore } from "../stores/chat-store"
 import { traceSend } from "./send-debug"
 import { queueComposerFocus } from "./composer-focus"
-import { clearComposerDraft, snapshotComposerDraft, takeComposerText } from "./runtime-interact/composer-draft"
+import {
+  clearComposerDraft,
+  snapshotComposerDraft,
+  takeComposerText,
+  type ComposerDraftSnapshot
+} from "./runtime-interact/composer-draft"
 import { takeComposerEnter } from "./composer-dom"
 import { SESSION_NOT_READY } from "./queue-composer-send-copy"
 import { sendComposerMessage } from "./runtime-interact/send-composer-run"
@@ -46,23 +58,54 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
       store.setError(SESSION_NOT_READY)
       return
     }
-    const queuedItem = enqueueFollowup({
-      sessionId: store.sessionId,
-      prompt: content,
-      draft,
-      quotedContexts: quotes,
-      skillChips: skills,
-      assets: takeComposerAssetDetails()
-    })
-    // leo MUST 1（#155）：图在草稿库里改打排队标记（不删）——马上发失败 / 崩溃都找得回；
-    // 输入框与切回恢复不认带标记的图（jojo P2）。
-    markDraftAssetsQueued(store.sessionId, queuedItem.id, draft || content, queuedItem.assets)
-    clearComposerDraft()
-    setRuntimeHint("queued", store.sessionId)
+    queueComposerSubmission(store.sessionId, content, { quotes, skills, draft }, takeComposerAssetDetails(), "queued")
     return
   }
   if (!content) return
-  await steerPreparedText(content)
+  // kai send-p2 A（jojo 巡检 46–52）：Ctrl+Enter 插话把托盘里的图一起交给当前 run——和排队行「马上发给它」
+  // 同一条路（steerPreparedText 带 assets → agent.steer attachments，main 编进这条 user 消息并清草稿附件）。
+  // 运行中收不了图（ACP / 模型看不了图，main 回 STEER_IMAGES_UNSUPPORTED）→ 字和图整条老实排到下一轮，
+  // 提示「运行中收不了图…」，绝不出「已收到」；插话失败 → 图回托盘（字本来就还在输入框）。
+  const steerAssets = takeComposerAssetDetails()
+  const outcome = await steerPreparedText(content, steerAssets.length ? { assets: steerAssets } : {})
+  if (steerAssets.length === 0) return
+  if (outcome === "steered") {
+    // main 已在落库事务里清了这几张草稿附件；renderer 缓存也丢掉，切走再切回不冒旧图。
+    forgetPersistedDraftAssets(store.sessionId)
+    return
+  }
+  if (outcome === "images_unsupported" && store.sessionId) {
+    queueComposerSubmission(store.sessionId, content, { quotes, skills, draft }, steerAssets, "imageSteerQueued")
+    return
+  }
+  if (outcome === "failed" || outcome === "images_unsupported") restoreComposerAssets(steerAssets)
+  // sent / requeue：图已随新一轮 / 排队项走（发送链、排队各自负责失败还稿）。
+}
+
+/**
+ * 输入框这一条（字 + Chip + 图）排进运行中队列：图在草稿库里改打排队标记（不删），清输入框，给提示。
+ * hint：普通排队「queued」；插话收不了图改排队「imageSteerQueued」（说清是排到下一轮，不说已收到）。
+ */
+function queueComposerSubmission(
+  sessionId: string,
+  content: string,
+  snapshot: ComposerDraftSnapshot,
+  assets: QueuedComposerAsset[],
+  hint: Extract<RuntimeHintCode, "queued" | "imageSteerQueued">
+): void {
+  const queuedItem = enqueueFollowup({
+    sessionId,
+    prompt: content,
+    draft: snapshot.draft,
+    quotedContexts: snapshot.quotes,
+    skillChips: snapshot.skills,
+    assets
+  })
+  // leo MUST 1（#155）：图在草稿库里改打排队标记（不删）——马上发失败 / 崩溃都找得回；
+  // 输入框与切回恢复不认带标记的图（jojo P2）。
+  markDraftAssetsQueued(sessionId, queuedItem.id, snapshot.draft || content, queuedItem.assets)
+  clearComposerDraft()
+  setRuntimeHint(hint, sessionId)
 }
 
 export async function attachComposerFile(file: File) {
