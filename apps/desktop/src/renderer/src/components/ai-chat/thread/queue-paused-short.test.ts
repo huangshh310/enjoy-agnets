@@ -70,7 +70,7 @@ test("句尾不改：窄句的句尾和宽句的句尾是同一句（luna 锁定
 })
 
 test("每个带条数的 queuePaused 原因 key 都有一个 …Short（中英），且不带 {n}", () => {
-  const reasonKeys = ["Stopped", "EngineSwitched", "Error", "Quota", "ResendFirst", "QuotaResend"]
+  const reasonKeys = ["Stopped", "EngineSwitched", "Error", "Quota", "ResendFirst", "ComposerFirst", "QuotaResend"]
   for (const cat of [zhChat, enChat] as Record<string, unknown>[]) {
     for (const k of reasonKeys) {
       const short = cat[`queuePaused${k}Short`]
@@ -79,6 +79,50 @@ test("每个带条数的 queuePaused 原因 key 都有一个 …Short（中英�
     }
   }
   assert.ok(!/[\u4e00-\u9fff]/.test(reasonKeys.map((k) => (enChat as any)[`queuePaused${k}Short`]).join("")))
+})
+
+// P2（#169 rebase 后）：失败那条在输入框里（pendingFailed "composer"）时的窄句。
+const vc = (t: typeof zh, reason: "stopped" | "engineSwitched" | "held" | "error" | "quota", count: number) =>
+  view.queuePausedView({ reason, count, composerHasContent: true, pendingFailed: "composer", provider, t })
+
+test("P2 窄句：失败那条在输入框里——出错句后接「先发输入框里这条。」（中英），不说条数、不给继续", () => {
+  assert.equal(zhChat.queuePausedComposerFirstShort, "先发输入框里这条。")
+  assert.equal(enChat.queuePausedComposerFirstShort, "Send the message in the box first.")
+  for (const n of [1, 3]) {
+    const z = vc(zh, "error", n)
+    const e = vc(en, "error", n)
+    assert.equal(z.shortText, "上一条没发出去。先发输入框里这条。")
+    assert.equal(e.shortText, "Your last message didn't go through. Send the message in the box first.")
+    // 宽句仍是 #169 的全句（带条数 + 「发出去后排队的会接着发」）。
+    assert.ok(z.text.endsWith("先发输入框里这条，发出去后排队的会接着发。"), z.text)
+    assert.ok(e.text.endsWith("Send the message in the box first. The queue continues after it goes through."), e.text)
+    assert.match(z.text, new RegExp(String(n)))
+    assert.equal(z.showContinue, false)
+    assert.equal(z.showEditFirst, false)
+  }
+  // 卡上那版不受影响。
+  assert.equal(v(zh, "error", 2, true).shortText, "上一条没发出去。先发上面这条。")
+})
+
+test("P2 窄句：额度 × 输入框那版没有定稿短句（等 luna），窄时照说 #169 全句，不自己编", () => {
+  assert.equal((zhChat as Record<string, unknown>).queuePausedQuotaComposerShort, undefined)
+  assert.equal((enChat as Record<string, unknown>).queuePausedQuotaComposerShort, undefined)
+  const z = vc(zh, "quota", 2)
+  const e = vc(en, "quota", 2)
+  assert.equal(z.shortText, z.text)
+  assert.equal(e.shortText, e.text)
+  assert.equal(z.text, "DeepSeek 额度用完了，排队的 2 条先不发。充值后先发输入框里这条，发出去后排队的会接着发。")
+  assert.equal(e.text, "DeepSeek is out of credit, so 2 queued messages are on hold. Top up, then send the message in the box. The queue continues after it goes through.")
+})
+
+test("P2 窄句：中性暂停（停止 / 换助手 / held）在输入框那版照说「…发出去后再点继续。」（下一步不删）", () => {
+  assert.equal(vc(zh, "stopped", 2).shortText, "你停止了上一轮。先发输入框里这条，发出去后再点继续。")
+  assert.equal(vc(en, "engineSwitched", 2).shortText, "You switched assistants, so the last turn stopped. Send the message in the box first, then press Continue.")
+  // held 全句就是「排队的 N 条先不发。」——没有可去掉后还剩的原因，窄时说全句。
+  assert.equal(vc(zh, "held", 2).shortText, "排队的 2 条先不发。先发输入框里这条，发出去后再点继续。")
+  const heldPlain = view.queuePausedView({ reason: "held", count: 1, composerHasContent: false, pendingFailed: null, provider, t: en })
+  assert.equal(heldPlain.shortText, "1 queued message is on hold.")
+  assert.equal(heldPlain.shortText, heldPlain.text)
 })
 
 test("接线：宽（≥35rem）显示全句、窄显示窄句；窄句仍 line-clamp-2，两个都带 title 全文", () => {

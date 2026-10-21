@@ -55,6 +55,12 @@ const REASON_KEY: Record<FollowupPausedReason, string> = {
   quota: "chat.queuePausedQuota"
 }
 
+/** 有定稿窄句的句尾（luna #170 / P2）；不在表里的句尾窄时照说全句。 */
+const SHORT_TAIL_KEY: Record<string, string> = {
+  "chat.queuePausedResendFirst": "chat.queuePausedResendFirstShort",
+  "chat.queuePausedComposerFirst": "chat.queuePausedComposerFirstShort"
+}
+
 /** 一条用 …One（英文单数），其余用复数句（项目里的复数约定：同一个 key 加 One 后缀）。 */
 function pluralKey(key: string, count: number): string {
   return count === 1 ? `${key}One` : key
@@ -113,7 +119,8 @@ export function queuePausedView(input: {
   if (place && input.reason === "quota") {
     // luna P2③：「继续」藏起来时额度句不能说「充值后点继续」，整句换成「充值后先发上面 / 输入框里这条…」。
     text = fill(place === "card" ? "chat.queuePausedQuotaResend" : "chat.queuePausedQuotaComposer")
-    // 窄句（luna #170）：卡上那版有定稿短句；输入框那版还没有短句，窄时仍说全句（line-clamp-2 + title 兜底）。
+    // 窄句（luna #170）：卡上那版有定稿短句；输入框那版（#169 queuePausedQuotaComposer）还没有定稿短句（等 luna），
+    // 窄时仍说全句（line-clamp-2 + title 兜底），不自己编。
     shortText =
       place === "card"
         ? fillProviderFace(input.t, "chat.queuePausedQuotaResendShort", input.provider, { varName: "provider" })
@@ -128,8 +135,9 @@ export function queuePausedView(input: {
         ? "chat.queuePausedResendFirst"
         : "chat.queuePausedComposerFirst"
     text = `${reasonText}${joiner(reasonText)}${input.t(tailKey)}`
-    // 窄句句尾：只有「先发上面这条」（出错 / 额度、卡上）有定稿短句；其余句尾窄时照说全句（中性暂停的「…再点继续」是下一步，不能删）。
-    const shortTailKey = tailKey === "chat.queuePausedResendFirst" ? "chat.queuePausedResendFirstShort" : tailKey
+    // 窄句句尾（出错 / 额度）：卡上「先发上面这条。」、输入框里「先发输入框里这条。」（P2，按 #169 的长句去掉「发出去后…」）。
+    // 中性暂停（停止 / 换助手 / held）的「…发出去后再点继续。」是下一步，窄时照说全句，不删。
+    const shortTailKey = SHORT_TAIL_KEY[tailKey] ?? tailKey
     const reasonShort = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
     shortText = `${reasonShort}${joiner(reasonShort)}${input.t(shortTailKey)}`
   } else {

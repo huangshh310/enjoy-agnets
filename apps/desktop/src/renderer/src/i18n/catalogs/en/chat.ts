@@ -126,6 +126,7 @@ export const enChat = {
   queuePausedErrorShort: "Your last message didn't go through.",
   queuePausedQuotaShort: "{provider} is out of credit. Top up, then press Continue.",
   queuePausedResendFirstShort: "Send the one above first.",
+  queuePausedComposerFirstShort: "Send the message in the box first.",
   queuePausedQuotaResendShort: "{provider} is out of credit. Top up, then send the one above.",
   queuePausedCollapsed: "Paused · {n} queued",
   queuePausedLabel: "Paused",
