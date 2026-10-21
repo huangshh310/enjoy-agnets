@@ -127,6 +127,7 @@ export const zhChat = {
   queuePausedResendFirstShort: "先发上面这条。",
   queuePausedComposerFirstShort: "先发输入框里这条。",
   queuePausedQuotaResendShort: "{provider} 额度用完了。充值后先发上面这条。",
+  queuePausedQuotaComposerShort: "{provider} 额度用完了。充值后先发输入框里这条。",
   queuePausedCollapsed: "已暂停 · 排队 {n} 条",
   queuePausedLabel: "已暂停",
   queuePausedClearAll: "全部清空",

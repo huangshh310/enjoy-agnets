@@ -119,12 +119,14 @@ export function queuePausedView(input: {
   if (place && input.reason === "quota") {
     // luna P2③：「继续」藏起来时额度句不能说「充值后点继续」，整句换成「充值后先发上面 / 输入框里这条…」。
     text = fill(place === "card" ? "chat.queuePausedQuotaResend" : "chat.queuePausedQuotaComposer")
-    // 窄句（luna #170）：卡上那版有定稿短句；输入框那版（#169 queuePausedQuotaComposer）还没有定稿短句（等 luna），
-    // 窄时仍说全句（line-clamp-2 + title 兜底），不自己编。
-    shortText =
-      place === "card"
-        ? fillProviderFace(input.t, "chat.queuePausedQuotaResendShort", input.provider, { varName: "provider" })
-        : text
+    // 窄句（luna #170 / P2 定稿）：卡上「…充值后先发上面这条。」、输入框里「…充值后先发输入框里这条。」，
+    // 都不带条数（没有 …One 之分），称呼同走 fillProviderFace。全句仍在 title 里，仍 line-clamp-2 兜底。
+    shortText = fillProviderFace(
+      input.t,
+      place === "card" ? "chat.queuePausedQuotaResendShort" : "chat.queuePausedQuotaComposerShort",
+      input.provider,
+      { varName: "provider" }
+    )
   } else if (place) {
     const reasonText = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
     const tailKey = isNeutralPause(input.reason)

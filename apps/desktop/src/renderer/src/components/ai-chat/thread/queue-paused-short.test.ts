@@ -70,7 +70,7 @@ test("句尾不改：窄句的句尾和宽句的句尾是同一句（luna 锁定
 })
 
 test("每个带条数的 queuePaused 原因 key 都有一个 …Short（中英），且不带 {n}", () => {
-  const reasonKeys = ["Stopped", "EngineSwitched", "Error", "Quota", "ResendFirst", "ComposerFirst", "QuotaResend"]
+  const reasonKeys = ["Stopped", "EngineSwitched", "Error", "Quota", "ResendFirst", "ComposerFirst", "QuotaResend", "QuotaComposer"]
   for (const cat of [zhChat, enChat] as Record<string, unknown>[]) {
     for (const k of reasonKeys) {
       const short = cat[`queuePaused${k}Short`]
@@ -104,15 +104,29 @@ test("P2 窄句：失败那条在输入框里——出错句后接「先发输�
   assert.equal(v(zh, "error", 2, true).shortText, "上一条没发出去。先发上面这条。")
 })
 
-test("P2 窄句：额度 × 输入框那版没有定稿短句（等 luna），窄时照说 #169 全句，不自己编", () => {
-  assert.equal((zhChat as Record<string, unknown>).queuePausedQuotaComposerShort, undefined)
-  assert.equal((enChat as Record<string, unknown>).queuePausedQuotaComposerShort, undefined)
+test("P2 窄句：额度 × 输入框那版用 luna 定稿短句「…充值后先发输入框里这条。」（中英），不说条数；宽句仍是 #169 全句", () => {
+  assert.equal(zhChat.queuePausedQuotaComposerShort, "{provider} 额度用完了。充值后先发输入框里这条。")
+  assert.equal(enChat.queuePausedQuotaComposerShort, "{provider} is out of credit. Top up, then send the message in the box.")
+  for (const n of [1, 3]) {
+    const z = vc(zh, "quota", n)
+    const e = vc(en, "quota", n)
+    assert.equal(z.shortText, "DeepSeek 额度用完了。充值后先发输入框里这条。")
+    assert.equal(e.shortText, "DeepSeek is out of credit. Top up, then send the message in the box.")
+    assert.doesNotMatch(z.shortText + e.shortText, /\d|排队的|queued|on hold|\{/)
+    assert.equal(z.showContinue, false)
+    assert.equal(z.showEditFirst, false)
+  }
   const z = vc(zh, "quota", 2)
   const e = vc(en, "quota", 2)
-  assert.equal(z.shortText, z.text)
-  assert.equal(e.shortText, e.text)
   assert.equal(z.text, "DeepSeek 额度用完了，排队的 2 条先不发。充值后先发输入框里这条，发出去后排队的会接着发。")
   assert.equal(e.text, "DeepSeek is out of credit, so 2 queued messages are on hold. Top up, then send the message in the box. The queue continues after it goes through.")
+  // 和卡上版 queuePausedQuotaResendShort 同型：没有名字时「模型服务」贴中文不留空格，英文句首大写。
+  const g = (t: typeof zh, place: "card" | "composer") =>
+    view.queuePausedView({ reason: "quota", count: 2, composerHasContent: true, pendingFailed: place, provider: { kind: "generic" } as never, t }).shortText
+  assert.equal(g(zh, "composer"), "模型服务额度用完了。充值后先发输入框里这条。")
+  assert.equal(g(zh, "card"), "模型服务额度用完了。充值后先发上面这条。")
+  assert.match(g(en, "composer"), /^[A-Z].* is out of credit\. Top up, then send the message in the box\.$/)
+  assert.equal(g(en, "composer").replace("the message in the box", "the one above"), g(en, "card"))
 })
 
 test("P2 窄句：中性暂停（停止 / 换助手 / held）在输入框那版照说「…发出去后再点继续。」（下一步不删）", () => {
