@@ -56,3 +56,13 @@ test("引擎认不出来（不在列表、也没记住）：底脚写「模型�
     "老助手"
   )
 })
+
+test("底脚组件把「认不出的引擎」接到 credentialProviderGenericStart（源码正则，leo #164 S3）；中英文案都有这把键", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("../components/ai-chat/thread/turns/turn-model-label.tsx", import.meta.url), "utf8")
+  assert.match(src, /turnModelText\(\{[\s\S]*unknownEngineLabel: t\("chat\.credentialProviderGenericStart"\)[\s\S]*\}\)/)
+  const { zhChat } = await import("../i18n/catalogs/zh/chat.ts")
+  const { enChat } = await import("../i18n/catalogs/en/chat.ts")
+  assert.equal((zhChat as Record<string, string>).credentialProviderGenericStart, "模型服务")
+  assert.equal((enChat as Record<string, string>).credentialProviderGenericStart, "The model service")
+})
