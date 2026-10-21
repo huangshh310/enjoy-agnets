@@ -316,7 +316,7 @@ test("luna S4：本地预设认本机地址（0.0.0.0、127.0.0.0/8、::1、::�
   const thisMachine = ["http://0.0.0.0:11434/v1", "http://127.0.0.1:1/v1", "http://127.0.0.2:11434/v1", "http://127.255.255.254/v1", "http://127.1:11434/v1", "http://0x7f.0.0.1/v1", "http://[::1]:1234/v1", "http://[::]:11434/v1", "http://[0:0:0:0:0:0:0:1]/v1", "http://localhost:1/v1"]
   for (const kind of LOCAL_PRESET_KINDS) {
     for (const url of thisMachine) assert.deepEqual(providerFace({ kind, baseURL: url }), brand(kind), `${kind} ${url}`)
-    for (const url of ["http://192.168.1.5:11434/v1", "http://10.0.0.2/v1", "http://128.0.0.1/v1", "http://126.0.0.1/v1", "http://[::2]/v1", "http://foo.localhost/v1", "http://127.0.0.1.nip.io/v1"]) {
+    for (const url of ["http://192.168.1.5:11434/v1", "http://10.0.0.2/v1", "http://128.0.0.1/v1", "http://126.0.0.1/v1", "http://[::2]/v1", "http://localhost.evil.com/v1", "http://127.0.0.1.nip.io/v1"]) {
       assert.deepEqual(providerFace({ kind, baseURL: url }), named(endpointHostLabel(url)!), `${kind} ${url}`)
     }
   }
@@ -328,4 +328,26 @@ test("luna S4：本地预设认本机地址（0.0.0.0、127.0.0.0/8、::1、::�
       assert.deepEqual(face, named(endpointHostLabel(url)!), `${kind} ${url}`)
     }
   }
+})
+
+test("luna #164 第 3 轮：本地预设认 *.localhost（ollama.localhost:11434 → Ollama）；云端预设照说主机名", () => {
+  const sub = ["http://ollama.localhost:11434/v1", "http://foo.localhost/v1", "http://a.b.localhost:1234/v1", "http://OLLAMA.LOCALHOST./v1"]
+  for (const kind of LOCAL_PRESET_KINDS) {
+    for (const url of sub) assert.deepEqual(providerFace({ kind, baseURL: url }), brand(kind), `${kind} ${url}`)
+    // 只是长得像：localhost 不在末尾、标签不在点上、空标签
+    for (const url of ["http://localhost.evil.com/v1", "http://evillocalhost/v1", "http://ollama.localhost.evil.com/v1", "http://ollama-localhost/v1"]) {
+      assert.deepEqual(providerFace({ kind, baseURL: url }), named(endpointHostLabel(url)!), `${kind} ${url}`)
+    }
+  }
+  assert.equal(isThisMachineHost("ollama.localhost"), true)
+  assert.equal(isThisMachineHost("evillocalhost"), false)
+  assert.equal(isThisMachineHost("a..localhost"), false)
+  assert.equal(isThisMachineHost(".localhost"), false)
+  for (const kind of ["openai", "deepseek", "kimi", "doubao"]) {
+    assert.deepEqual(providerFace({ kind, baseURL: "http://ollama.localhost:11434/v1" }), named("ollama.localhost"), kind)
+  }
+  const t = (path: string, vars?: Record<string, string | number>) =>
+    String((zhChat as any)[path.replace(/^chat\./, "")] ?? path).replace(/\{(\w+)\}/g, (_m, k) => String(vars?.[k] ?? ""))
+  assert.equal(fillProviderFace(t, "chat.providerUnreachableNotice", providerFace({ kind: "ollama", baseURL: "http://ollama.localhost:11434/v1" })), "连不上 Ollama，检查网络后再试")
+  assert.equal(fillProviderFace(t, "chat.providerUnreachableNotice", providerFace({ kind: "openai", baseURL: "http://ollama.localhost:11434/v1" })), "连不上 ollama.localhost，检查网络后再试")
 })

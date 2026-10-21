@@ -15,8 +15,8 @@
  * 都算自家官方地址，新增预设没登记会直接挂测试。
  *
  * 本地预设（预设列表里 group 为 local 的，目前是 Ollama / LM Studio；custom 除外）没有官方域名：本机地址算官方
- * （luna #164 ② / S4）：localhost、0.0.0.0、127.0.0.0/8 整段、::1、::（任意端口）。局域网别的机器说主机名。
- * 这些本机地址对云端预设一律不算官方（OpenAI 预设指到 localhost:8080 说 localhost）。
+ * （luna #164 ② / S4 / 第 3 轮）：localhost、*.localhost、0.0.0.0、127.0.0.0/8 整段、::1、::（任意端口）。局域网别的机器说主机名。
+ * 这些本机地址对云端预设一律不算官方（OpenAI 预设指到 localhost:8080 说 localhost，指到 ollama.localhost 说 ollama.localhost）。
  */
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
 
@@ -108,10 +108,11 @@ export function isOfficialDomain(kind: string, host: string): boolean {
   return ownList(PROVIDER_OFFICIAL_DOMAINS, kind).some((suffix) => hostHasDomainSuffix(h, suffix))
 }
 
-/** 本机地址（规整后）：localhost、0.0.0.0、127.0.0.0/8、::1、::。只对本地预设算官方。 */
+/** 本机地址（规整后）：localhost、*.localhost（RFC 6761，解析到本机）、0.0.0.0、127.0.0.0/8、::1、::。只对本地预设算官方。 */
 export function isThisMachineHost(host: string | null | undefined): boolean {
   const h = normalizeHost(host)
-  if (!h) return false
+  if (!h || hasEmptyLabel(h)) return false
+  if (h.endsWith(".localhost")) return true
   if (h === "localhost" || h === "0.0.0.0" || h === "::1" || h === "::") return true
   // WHATWG URL 已把 IPv4 规整成十进制四段（127.1、0x7f.0.0.1 → 127.0.0.1），这里只认四段十进制
   const m = /^127\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h)
