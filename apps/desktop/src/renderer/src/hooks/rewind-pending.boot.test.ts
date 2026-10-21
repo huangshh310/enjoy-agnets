@@ -45,12 +45,12 @@ const pendingMod = await import("./rewind-pending.ts")
 
 const tick = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-test("BOOT：上次留下的记录在模块加载时自己放进那个会话的草稿（不用任何操作），送到 main，记录删掉", async () => {
+test("BOOT：上次留下的记录在模块加载时自己放进那个会话的草稿（不用任何操作），送到 main，记录停放", async () => {
   await tick(300)
   assert.equal(storage.readPersistedDraft("ses_boot"), "typed\nplease write a note")
   assert.ok(saved.some((s) => s.sessionId === "ses_boot" && s.text === "typed\nplease write a note"), "送到了 main")
   assert.ok(savedAssets.some((s) => s.sessionId === "ses_boot" && s.assets.some((a) => a.id === "ast_a")), "图也送到了 main")
-  assert.equal(memory.get(KEY) ?? null, null, "记录删了")
+  assert.equal(JSON.parse(String(memory.get(KEY))).ses_boot.parked, true, "记录停放：等这个会话回到前台再对一遍输入框")
 })
 
 test("PAGEHIDE：派发真的 pagehide 事件（带事件参数）→ 等待中的原话按行并进前台会话草稿并送到 main；beforeunload 也装了", async () => {

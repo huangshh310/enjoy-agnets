@@ -11,7 +11,10 @@
  * - 放回规则（settlePendingRewind）：
  *   - 前台就是这个会话 → 只往输入框写（writeBackToComposer merge）；写不进就**一直等**（轮询），从不在同会话里退回草稿。
  *   - 前台已不是这个会话（切走了 / 重启后还没打开它）→ 这时输入框不再拥有它的草稿，按行合并进它的草稿
- *     （restoreRewindDraft），确认草稿里有这一整段、把草稿送到 main 之后才删记录。
+ *     （restoreRewindDraft），确认草稿里有这一整段、把草稿送到 main 之后把记录**停放**（parked），不删。
+ *   - 停放的记录等这个会话回到前台：输入框里已经有这一整段（和图）就删记录；没有（实机 11 / 14：切走前在组字，
+ *     切回来组字结束时把旧的组字稿写进 store，盖掉了刚恢复的草稿）就按行并回输入框——恢复好的原话不会被盖没。
+ *     停放的后台记录不占轮询（只在它回到前台时才动）。
  * - 关窗 / 刷新（pagehide / beforeunload）：每条记录按行并进它的草稿并立刻送到 main——前台会话以输入框当下的字为底，
  *   不用可能过期的内存草稿。记录不删（下次启动再对一遍，按行去重不会重复）。
  * - 同会话等待中：把「输入框当下的字 + 原话」按行写进它的草稿并立刻送到 main（被输入框盖掉就下一拍再补），
@@ -33,7 +36,8 @@ import { liveComposerText, mergeWritebackText, textContainsBlock, writeBackToCom
 import { composerInputEl } from "./composer-dom"
 import { restoreRewindDraft, type RewindDraftAsset } from "./rewind-draft-fallback"
 
-export type PendingRewind = { text: string; assets: RewindDraftAsset[] }
+/** parked：已经并进原会话草稿（切走了），等它回到前台、确认输入框里有这一段才删。 */
+export type PendingRewind = { text: string; assets: RewindDraftAsset[]; parked?: boolean }
 
 const STORAGE_KEY = "enjoy-agents-pending-rewinds"
 
@@ -50,7 +54,11 @@ function load(): Record<string, PendingRewind> {
       for (const [sessionId, value] of Object.entries(parsed as Record<string, unknown>)) {
         const rec = value as Partial<PendingRewind> | null
         if (!sessionId || !rec || typeof rec.text !== "string") continue
-        records[sessionId] = { text: rec.text, assets: Array.isArray(rec.assets) ? rec.assets.filter((a) => a && typeof a.id === "string") : [] }
+        records[sessionId] = {
+          text: rec.text,
+          assets: Array.isArray(rec.assets) ? rec.assets.filter((a) => a && typeof a.id === "string") : [],
+          ...(rec.parked === true ? { parked: true } : {})
+        }
       }
     }
   } catch {
@@ -91,8 +99,24 @@ export function recordPendingRewind(sessionId: string, text: string, assets: rea
     seen.add(asset.id)
     merged.push({ id: asset.id, name: asset.name, mediaType: asset.mediaType, ...(asset.size !== undefined ? { size: asset.size } : {}) })
   }
+  // 新的一段还没落地：不再算停放。
   map[sessionId] = { text: prev ? mergeWritebackText(text, prev.text) : text, assets: merged }
   save()
+}
+
+/** 已并进原会话草稿：停放，等它回到前台再对一遍输入框。 */
+function parkPendingRewind(sessionId: string): void {
+  const rec = load()[sessionId]
+  if (!rec || rec.parked) return
+  rec.parked = true
+  save()
+}
+
+/** 需要轮询的会话：没停放的，加上停放了但现在在前台的。 */
+function activePendingRewindSessions(): string[] {
+  const fg = useChatStore.getState().sessionId
+  const map = load()
+  return Object.keys(map).filter((sessionId) => !map[sessionId]!.parked || sessionId === fg)
 }
 
 function clearPendingRewind(sessionId: string): void {
@@ -155,21 +179,63 @@ export function persistPendingRewindNow(sessionId: string): void {
   }
 }
 
+/** 写回之后最多跟几帧去放光标（React 把受控 value 落定通常 1–2 帧）。 */
+const CARET_FRAMES = 10
+
+function nextFrame(fn: () => void): void {
+  const raf = (globalThis as { requestAnimationFrame?: (cb: () => void) => unknown }).requestAnimationFrame
+  if (typeof raf === "function") raf(fn)
+  else (setTimeout(fn, 16) as { unref?: () => void }).unref?.()
+}
+
 /**
  * 写回之后光标放在用户自己打的字末尾（原话接在下一行），而不是跳到最后——用户可能正打着字（组字刚结束）。
  * 只在输入框正有焦点时动；拿不到元素 / 不支持 setSelectionRange 就不管（写回本身已按约定把光标留在末尾）。
+ *
+ * 实机 10（光标跳到原话末尾）：输入框是受控 textarea，显示的是 useComposerIme 的本地 shown；写回只改了 store + DOM。
+ * 接下来 React 先按旧的 shown 提交一次（DOM 被改回 typed），effect 再 setShown(merged) 提交第二次（DOM 改成 merged）——
+ * 程序化改 value，光标都落到末尾，写回当下放好的光标就被冲掉了。所以放一次之后再跟几帧：DOM 落定成 merged 且光标被
+ * 冲到末尾就再放回去；连续两帧都在 typed 末尾就停。用户这期间改了字 / 挪了光标 / 选了字 / 焦点走了，立刻停，不跟用户抢。
  */
 function keepCaretAfterTyped(typed: string, merged: string): void {
   const el = composerInputEl() as (HTMLTextAreaElement & { setSelectionRange?: (a: number, b: number) => void }) | null
   if (!el || typeof el.setSelectionRange !== "function") return
-  const active = (globalThis as { document?: { activeElement?: unknown } }).document?.activeElement
-  if (active !== el) return
+  const focused = () => (globalThis as { document?: { activeElement?: unknown } }).document?.activeElement === el
+  if (!focused()) return
   const head = typed.replace(/\s+$/, "")
-  if (!head || !merged.startsWith(head)) return
-  el.setSelectionRange(head.length, head.length)
+  if (!head || head.length >= merged.length || !merged.startsWith(head)) return
+  const at = head.length
+  el.setSelectionRange(at, at)
+  let frames = 0
+  let stable = 0
+  const tick = () => {
+    frames += 1
+    if (!focused()) return
+    const value = el.value
+    if (value === merged) {
+      const start = el.selectionStart
+      const end = el.selectionEnd
+      if (start === at && end === at) {
+        stable += 1
+        if (stable >= 2) return
+      } else if (start === end && start === merged.length) {
+        // React 重设 value 把光标冲到了末尾
+        el.setSelectionRange(at, at)
+        stable = 0
+      } else {
+        return
+      }
+    } else if (value !== typed) {
+      // 不是 React 那一下回退（回退时 DOM 正好是 typed）：用户改了字
+      return
+    }
+    if (frames < CARET_FRAMES) nextFrame(tick)
+  }
+  nextFrame(tick)
 }
 
-export type SettleOutcome = "composer" | "draft" | "waiting" | "none"
+/** parked：停放在原会话草稿里、会话不在前台，这一拍什么都不做。 */
+export type SettleOutcome = "composer" | "draft" | "waiting" | "parked" | "none"
 
 /**
  * 试着放一次。composer = 进了前台输入框；draft = 会话不在前台，并进了它的草稿；waiting = 前台但现在写不进。
@@ -179,10 +245,12 @@ export function settlePendingRewind(sessionId: string): SettleOutcome {
   const rec = readPendingRewind(sessionId)
   if (!rec) return "none"
   if (useChatStore.getState().sessionId !== sessionId) {
+    if (rec.parked) return "parked"
     restoreRewindDraft(sessionId, rec.text, rec.assets)
     flushPersistedDrafts()
     if (!draftHas(sessionId, rec)) return "waiting"
-    clearPendingRewind(sessionId)
+    // 不删：回到前台时输入框可能被切走前没结束的组字盖掉（实机 11 / 14），那时还要并回去。
+    parkPendingRewind(sessionId)
     return "draft"
   }
   const typed = liveComposerText()
@@ -191,6 +259,7 @@ export function settlePendingRewind(sessionId: string): SettleOutcome {
     mirrorIntoLiveDraft(sessionId, rec)
     return "waiting"
   }
+  // 输入框里本来就有这段（停放的回到前台、切回时草稿已恢复）时字没变，keepCaretAfterTyped 自己不动光标。
   if (written.merged) keepCaretAfterTyped(typed, written.text)
   flushPersistedDrafts()
   clearPendingRewind(sessionId)
@@ -221,6 +290,11 @@ export function resetPendingRewindsForTest(next?: { pollMs?: number } | null): v
     landedHooks.clear()
     warned = false
   }
+}
+
+/** 测试用：轮询是否在跑。 */
+export function pendingRewindLoopRunningForTest(): boolean {
+  return timer !== null
 }
 
 /** 测试用：丢掉进程内记录（不动 localStorage），模拟重启后读回。 */
@@ -257,13 +331,13 @@ function drain(opts: { onlyBackground?: boolean } = {}): void {
   }
 }
 
-/** 有记录就轮询到全部落地为止（同会话写不进就一直等，不设上限）。 */
+/** 有要动的记录就轮询到全部落地为止（同会话写不进就一直等，不设上限）；停放在后台的不算，回到前台时由切会话订阅再拉起。 */
 export function ensurePendingRewindLoop(): void {
-  if (timer || listPendingRewindSessions().length === 0) return
+  if (timer || activePendingRewindSessions().length === 0) return
   const tick = () => {
     timer = null
     drain()
-    if (listPendingRewindSessions().length > 0) {
+    if (activePendingRewindSessions().length > 0) {
       timer = setTimeout(tick, warned ? Math.max(poll.ms, 1000) : poll.ms)
       ;(timer as { unref?: () => void }).unref?.()
     }
