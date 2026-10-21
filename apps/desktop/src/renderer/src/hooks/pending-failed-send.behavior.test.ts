@@ -295,7 +295,7 @@ test("源码钉：输入框手势发送在闸前标记在发；闸放行清掉�
   const src = readFileSync(new URL("./runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
   assert.match(src, /if \(!prepared\) markPendingFailedSendInFlight\(store\.sessionId\)/)
   assert.ok(src.indexOf("markPendingFailedSendInFlight(store.sessionId)") < src.indexOf("if (!guardComposerSend(store))"))
-  assert.match(src, /\n  clearCredentialSendBlocked\(store\.sessionId\)\n  syncReviewGateOnComposerStart/)
+  assert.match(src, /\r?\n  clearCredentialSendBlocked\(store\.sessionId\)\r?\n  syncReviewGateOnComposerStart/)
 })
 
 test("停止 / 换助手仍不自动放行：失败那条发出去跑完也只是清掉记录，不解除暂停", async () => {
