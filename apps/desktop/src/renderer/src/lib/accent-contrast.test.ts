@@ -110,6 +110,18 @@ const card = (ctx: Ctx) =>
     ? over(resolveColor("var(--skin-frost-tile)", scope(ctx, "main")), surface(ctx, "main"))
     : surface(ctx, "main")
 
+/** 阴影 token 里 1px 实线圈的颜色：outer = `0 0 0 1px <色>`（画在元素外），inset = `inset 0 0 0 1px <色>`。没有就 null。 */
+function ringColor(ctx: Ctx, token: string, kind: "outer" | "inset"): Rgba | null {
+  if (token === "none") return null
+  const raw = scope(ctx, "main").get(`--shadow-${token}`)
+  assert.ok(raw, `找不到 --shadow-${token}`)
+  const v = raw.replace(/\s+/g, " ")
+  const color = String.raw`(var\([^)]*\)|#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)|transparent)`
+  const re = kind === "inset" ? new RegExp(String.raw`inset 0 0 0 1px ${color}`) : new RegExp(String.raw`(?<!inset )(?:^|,) ?0 0 0 1px ${color}`)
+  const m = re.exec(v)
+  return m ? resolveColor(m[1]!, scope(ctx, "main")) : null
+}
+
 type Check = { item: string; label: string; min: number | null; fg: Rgba; bg: Rgba; ratio?: number }
 const TEXT = 4.5
 const GRAPHIC = 3
@@ -293,6 +305,18 @@ function checks(ctx: Ctx): Check[] {
     add("P2-1", `复选框·对勾（${stroke}）on ${cbRest}`, GRAPHIC, col(ctx, "main", stroke), col(ctx, "main", cbRest!))
     add("P2-1", `复选框·对勾（${stroke}）on ${cbHover}（悬停）`, GRAPHIC, col(ctx, "main", stroke), col(ctx, "main", cbHover!))
   }
+  // 选中态没有 border：最外圈是 shadow-checkbox-selected 的 1px 内描边（叠在填充上）。对页面底色 ≥ 3（亮：白卡 / neutral-100；暗：neutral-800 / 900），常态和悬停都算。
+  const cbShadow = pick(glyph, /"(?:[^"]*\s)?shadow-([\w-]+)(?:\s[^"]*)?",\s*\/\/[^\n]*\n\s*hover \?/, "复选框选中阴影")[1]!
+  const rim = ringColor(ctx, cbShadow, "inset")
+  assert.ok(rim, `shadow-${cbShadow} 要有 1px 内描边`)
+  const pageBgs: [string, Rgba][] = dark
+    ? [["neutral-800", col(ctx, "main", "neutral-800")], ["neutral-900", col(ctx, "main", "neutral-900")]]
+    : [["白", WHITE], ["neutral-100", col(ctx, "main", "neutral-100")]]
+  for (const [bgName, bg] of pageBgs) {
+    for (const [fill, state] of [[cbRest!, "常态"], [cbHover!, "悬停"]] as const) {
+      add("P2-1", `复选框·选中外圈 vs ${dark ? "暗" : "亮"}·${bgName}（${state}）`, GRAPHIC, over(rim, over(col(ctx, "main", fill), bg)), bg)
+    }
+  }
 
   // P2-2 热力图：最浅一档对卡片 ≥ 3；相邻两档 ≥ 1.25（看得出差别）
   const levels = ([1, 2, 3, 4] as const).map((n) => {
@@ -366,10 +390,13 @@ function checks(ctx: Ctx): Check[] {
   const mode = src("components/automations/components/mode-pills.tsx")
   add("P2-7", "自动化·模式未选中", TEXT, col(ctx, "drawer", pick(mode, /text-cta-foreground" : "text-([\w-]+)"/, "模式未选中")[1]!), pillBg)
   const tog = src("components/ai-chat/composer/explore-execute/explore-execute-toggle.tsx")
+  // 输入框底：经典读 ai-chat-composer.tsx 的 bg-… dark:bg-…（亮色 secondary = neutral-100 #f7f7f7，不是白）；glass 是 frost chip。
+  const composerSrc = src("components/ai-chat/ai-chat-composer.tsx")
+  const [, composerBg, composerBgDark] = pick(composerSrc, /border border-border-button-default bg-([\w-]+) dark:bg-([\w-]+)/, "输入框底色")
   const composer =
     ctx.skin === "glass"
       ? over(resolveColor("var(--skin-frost-chip)", main), surface(ctx, "main"))
-      : stack(ctx, "main", surface(ctx, "main"), "background-primary-default")
+      : stack(ctx, "main", surface(ctx, "main"), dark ? composerBgDark! : composerBg!)
   // 发送按钮（亮色 bg-cta，图标 text-cta-foreground；暗色 500 底近黑图标）本身对输入框底 ≥ 3。
   // 亮色有 1px border-cta-edge：琥珀 500 底对白只有 2.15，靠 700 描边（5.05）给出边界；其它色描边 = 800。
   const send = src("components/ai-chat/composer/runtime-interact/composer-send-split.tsx")
@@ -382,11 +409,16 @@ function checks(ctx: Ctx): Check[] {
   const sendIcon = darkOr(/dark:text-([\w-]+)/, /(?:^|\s)text-((?:text-)?white|cta-foreground)(?![\w-])/, "图标")
   assert.ok(!/brightness/.test(sendCls), "发送按钮不要用 brightness 提亮（白图标会掉到 500 的对比度）")
   const sendTag = dark ? "暗" : "亮"
-  // 亮色看描边（border-cta-edge），暗色 dark:border-transparent 看底色
-  const edge = dark ? sendBg : sendTok(/(?:^|\s)border-(cta-edge)(?![\w-])/, "描边")
+  // 最外圈：有 1px 外圈阴影（shadow-nav-selected = 0 0 0 1px accent-500）就是它；没有就是 border；border 透明就是底色。
+  const sendShadow = darkOr(/dark:shadow-([\w-]+)/, /(?:^|\s)shadow-([\w-]+)/, "阴影（shadow-…）")
+  const sendBorder = darkOr(/dark:border-([a-z][\w-]*)/, /(?:^|\s)border-([a-z][\w-]*)/, "描边（border-…）")
+  const outerRing = ringColor(ctx, sendShadow, "outer")
+  const edgeColor = outerRing ?? (sendBorder === "transparent" ? col(ctx, "main", sendBg) : col(ctx, "main", sendBorder))
+  const edgeName = outerRing ? `外圈 shadow-${sendShadow}` : sendBorder === "transparent" ? `底 ${sendBg}` : `border-${sendBorder}`
   add("P2-1", `发送按钮图标（${dark ? "暗" : "亮"}）`, GRAPHIC, col(ctx, "main", sendIcon), col(ctx, "main", sendBg))
   add("P2-1", `发送按钮图标·悬停（${dark ? "暗" : "亮"}）`, GRAPHIC, col(ctx, "main", sendIcon), col(ctx, "main", sendHover))
-  add("P2-1", `发送按钮边界 vs 输入框底（${sendTag}）`, GRAPHIC, col(ctx, "main", edge), composer)
+  add("P2-1", `发送按钮最外圈 vs 输入框底（${sendTag}）`, GRAPHIC, over(edgeColor, composer), composer)
+  void edgeName
   if (dark) add("P2-1", "发送按钮悬停 vs 输入框底（暗）", GRAPHIC, col(ctx, "main", sendHover), composer)
   add("P2-7", "输入框·探索/执行未选中", TEXT, col(ctx, "main", pick(tog, /!active && "text-([\w-]+)"/, "探索未选中")[1]!), composer)
   add("P2-7", "输入框·探索/执行未选中（悬停）", TEXT, col(ctx, "main", pick(tog, /!active && !disabled && "hover:text-([\w-]+)"/, "探索悬停")[1]!), composer)

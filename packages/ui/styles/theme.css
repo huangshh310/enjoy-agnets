@@ -95,10 +95,12 @@
     inset 0 1px 0 0 rgb(255 255 255 / 0.251);
 
   /* Checkbox checked/indeterminate surface (from the Figma Checkbox component):
-   * inner top highlight + 1px inner blue edge over the primary gradient. */
+   * inner top highlight + 1px inner edge over the primary fill.
+   * 选中态没有 border，这条 1px 内描边就是复选框最外圈：颜色走 --color-checkbox-rim（亮色 = cta-edge，暗色 = accent-500），
+   * 原来固定 accent-500，亮色对白底琥珀 2.15 / 绿 2.54。 */
   --shadow-checkbox-selected:
     inset 0 2px 0 0 rgb(255 255 255 / 0.25),
-    inset 0 0 0 1px var(--color-accent-500);
+    inset 0 0 0 1px var(--color-checkbox-rim);
 
   /* 1px contact shadow used on white cards/dropdown triggers sitting on the
    * secondary background (Figma drop shadow 0 1 1 5%). */
@@ -394,6 +396,8 @@
   --color-cta-foreground: var(--color-white);
   /* 主按钮的 1px 描边：默认比底深一档（800）；琥珀 500 底时用 700，让按钮对白底也有 ≥ 3 的边界。 */
   --color-cta-edge:       var(--color-cta-hover);
+  /* 复选框选中态最外圈（见 --shadow-checkbox-selected）：亮色跟 cta 描边（默认 800、琥珀 700，对白 / neutral-100 ≥ 3）。 */
+  --color-checkbox-rim:   var(--color-cta-edge);
   /* 亮的强调色（暗色下的 accent-400/500）上放的深色图形：开关开态滑块、发送按钮图标。
    * 白色放在 500 上琥珀 / 绿只有 2.15 / 2.54；这个近黑在五色 500 上 ≥ 3.7。 */
   --color-on-accent-bright: var(--color-neutral-950);
@@ -405,6 +409,8 @@
 }
 
 .dark {
+  /* 暗色复选框：700 填充对 neutral-800 只有 1.46–2.82，靠 500 内描边（3.18–7.04）撑住轮廓。 */
+  --color-checkbox-rim: var(--color-accent-500);
   /* Foreground */
   --color-foreground-full:            var(--color-neutral-700);
   --color-foreground-icon-primary:    var(--color-neutral-50);

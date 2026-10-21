@@ -20,6 +20,7 @@ export function AppearanceAccentPicker() {
             key={item.id}
             type="button"
             role="radio"
+            data-accent-option={item.id}
             aria-checked={isSelected}
             onClick={() => applyThemeAccent(item.id)}
             className={cx(
