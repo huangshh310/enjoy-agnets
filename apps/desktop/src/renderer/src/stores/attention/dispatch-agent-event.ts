@@ -23,7 +23,7 @@ import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 import { noteTurnSettled } from "../turn-settled"
 import { noteBackgroundPreOutputRollback } from "../after-pre-output-rollback"
 import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
-import { lateStoppedApproval } from "@renderer/hooks/stopped-runs"
+import { lateStoppedEvent } from "@renderer/hooks/stopped-runs"
 import { abortOrphanedRun } from "@renderer/hooks/composer-run-control"
 
 export { belongsToForeground } from "./foreground-event"
@@ -33,8 +33,9 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   if (isLateEventOfStoppedRun(event)) return
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
-  // 用户已停止的一轮：迟到的审批卡整条丢掉（不进 Inbox、不进前台、不停车）。起步窗口停的那一轮顺手 abort。
-  const late = lateStoppedApproval(event, sessionId, useChatStore.getState())
+  // 用户已停止的一轮：迟到的审批卡 / 开跑整条丢掉（不进 Inbox、不进前台、不停车），
+  // 否则卡、停止按钮、「执行中 / 正在写」又挂回来。起步窗口停的那一轮顺手 abort。
+  const late = lateStoppedEvent(event, sessionId, useChatStore.getState())
   if (late) {
     if (late === "beforeClaim" && runId) abortOrphanedRun(runId)
     return
