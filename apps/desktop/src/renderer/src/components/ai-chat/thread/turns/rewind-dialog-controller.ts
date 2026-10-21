@@ -8,7 +8,8 @@
  *   REWIND_TIMEOUT（通用失败句），按钮恢复、弹窗能关；晚到的结果若是成功就顺手收窗，失败则不再改界面。
  *   超时之后、第一次调用真正回来之前（pending）：只有「取消」能点——不能再点一次重来 / 去审查，
  *   免得两次文件还原并发（leo #167）。
- * - REWIND_FINISH_FAILED（截断已成功、原话没放回输入框）：收窗 + toast「已回到这里…原话在草稿里」，
+ * - 同会话正在输入、原话稍后放回（writebackPending）：收窗 + 中性 toast，不等写回、不显示失败句（leo #167 r3）。
+ * - REWIND_FINISH_FAILED（截断已成功、写回抛错，原话已存好会继续放回）：收窗 + toast，
  *   不显示「从这里重来失败」（会话重读在 rewind-from-here 里做，leo #167 ③）。晚到的同样处理。
  * - 原话进了原来那个会话的草稿（前台已换会话）：收窗 + 小 toast 告诉用户（onSavedToOtherDraft）。
  * - 跑着的时候：点的那颗按钮转圈 +「正在还原…」，其余按钮 disabled（luna g159 ⑪）。
@@ -39,6 +40,8 @@ export type RewindDialogDeps = {
   onRewoundNotRestored?: () => void
   /** 原话放进了原来那个会话的草稿（前台已换会话）：toast。 */
   onSavedToOtherDraft?: () => void
+  /** 同会话正在输入：原话已存好、稍后放回输入框：toast（中性，不是失败）。 */
+  onWritebackPending?: () => void
 }
 
 /** 重来的 IPC 卡住多久后放开 busy（还原大仓库也够用；之后按钮恢复、弹窗能关）。 */
@@ -122,6 +125,7 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
     if (outcome.kind === "close") {
       close()
       if (outcome.draftToast) deps.onSavedToOtherDraft?.()
+      if (outcome.pendingToast) deps.onWritebackPending?.()
     } else if (outcome.kind === "rewound-not-restored") {
       close()
       deps.onRewoundNotRestored?.()
@@ -279,7 +283,8 @@ export function rewindDialogDeps(input: {
     onClose: () => input.onOpenChange(false),
     revealReview: input.revealReview,
     onRewoundNotRestored: () => toast("chat.rewindFinishFailedToast"),
-    onSavedToOtherDraft: () => toast("chat.rewindSavedToOtherDraft")
+    onSavedToOtherDraft: () => toast("chat.rewindSavedToOtherDraft"),
+    onWritebackPending: () => toast("chat.rewindWritebackPending")
   }
 }
 
