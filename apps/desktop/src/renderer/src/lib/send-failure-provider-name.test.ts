@@ -132,21 +132,23 @@ test("luna P2：认不出也没地址 → 「模型服务」/ the model service�
   }
 })
 
-test("接线：失败卡的 hook 取 defaultProviderFace，不再用档案名（defaultProviderLabel 已删）", () => {
+test("接线：失败卡的 hook 取 sendFailureTarget（这一轮的路线 → 档案），不再用 defaultProviderFace / 档案名（luna P2-1）", () => {
   const hook = readFileSync(new URL("../hooks/use-send-failure-provider-name.ts", import.meta.url), "utf8").replace(/\/\/.*$/gm, "")
-  assert.match(hook, /provider: defaultProviderFace\(/)
-  assert.ok(!/defaultProviderLabel|keyProfileName|credentialProviderFallback/.test(hook))
+  assert.match(hook, /return sendFailureTarget\(\{/)
+  assert.match(hook, /route: sessionId \? \(routes\.get\(sessionId\) \?\? null\) : null/)
+  assert.ok(!/defaultProviderFace|defaultProviderLabel|keyProfileName|credentialProviderFallback/.test(hook))
 })
 
 // 接线：三张失败卡都走 useSendFailureProviderName（node:test 渲染不了 .tsx，只能读源码）。
 test("接线：连不上 / 密钥没通过 / 拒绝·额度 三张卡的 {name} 都跟前台引擎走", () => {
   for (const file of ["thread-credential-network-notice.tsx", "thread-credential-invalid-notice.tsx", "thread-credential-restricted-notice.tsx"]) {
     const src = readFileSync(new URL(`../components/ai-chat/thread/${file}`, import.meta.url), "utf8").replace(/\/\/.*$/gm, "")
-    assert.match(src, /const face = useSendFailureProviderName\(\)/, file)
+    assert.match(src, file === "thread-credential-invalid-notice.tsx" ? /const \{ face, fixKey \} = useSendFailureTarget\(\)/ : /const face = useSendFailureProviderName\(\)/, file)
     assert.match(src, /fillProviderFace\(t, /, `${file} 没走 fillProviderFace（通用说法句首大写）`)
     assert.ok(!/name = defaultProviderLabel\(/.test(src), `${file} 又拿密钥档案名当 {name}`)
   }
   const hook = readFileSync(new URL("../hooks/use-send-failure-provider-name.ts", import.meta.url), "utf8")
   assert.match(hook, /runtimeId = useChatStore\(\(state\) => state\.runtimeId\)/)
-  assert.match(hook, /sendFailureProviderName\(\{\s*runtimeId,/)
+  const target = readFileSync(new URL("./send-failure-target.ts", import.meta.url), "utf8")
+  assert.match(target, /sendFailureProviderName\(\{\s*runtimeId,/)
 })

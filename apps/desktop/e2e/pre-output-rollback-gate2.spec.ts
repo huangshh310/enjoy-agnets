@@ -2,7 +2,7 @@
  * jojo gate2（#136）真机路径：
  * - P1：出字前失败回滚后，附件和字一起回输入框；重启后草稿附件仍在（session_draft_assets）。
  * - P2：新会话第一句被回滚，侧栏标题不留乐观标题 / 生成的 stub-title。
- * - P2：默认路线解析不出档案时，「改密钥」退回设置页「添加 API 密钥」，不哑掉。
+ * - P2-1：免密钥 Ollama 那一轮被拒，卡上说 Ollama、不给「改密钥」（档案找不到时才退回「添加 API 密钥」，单测覆盖）。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -75,7 +75,7 @@ test("P1 + P2：带图首句出字前失败 → 附件和字都回输入框、�
   }
 })
 
-test("P2：默认路线解析不出档案时「改密钥」打开添加 API 密钥，不哑掉", async () => {
+test("P2-1：免密钥的 Ollama 那一轮被拒——卡上说 Ollama（不是「模型服务」），不给「改密钥」", async () => {
   test.setTimeout(180_000)
   const { app, window } = await boot({ ...dirs(), ENJOY_E2E_SEND: "rejected" })
   try {
@@ -84,20 +84,14 @@ test("P2：默认路线解析不出档案时「改密钥」打开添加 API 密�
     await composer.press("Enter")
     const notice = window.getByTestId("thread-credential-invalid-notice")
     await expect(notice).toBeVisible({ timeout: 15_000 })
-    // luna P2 定稿：认不出供应商、也没有端点地址时说通用的「模型服务」，不说档案名。
-    await expect(notice).toContainText("密钥没通过：模型服务不认这把密钥")
+    // luna P2-1：默认 stub 路线是免密钥的 Ollama 档案（E2E Stub）：说这一轮实际用的 Ollama，档案名不出现。
+    await expect(notice).toContainText("密钥没通过：Ollama 不认这把密钥")
+    await expect(notice).not.toContainText("E2E Stub")
     await window.waitForTimeout(3_000)
     await expect(window.getByTestId("sidebar-session-row").filter({ hasText: "stub-title" })).toHaveCount(0)
     await window.screenshot({ path: join(shots, "04-rejected-notice.png") })
-    await notice.getByTestId("thread-credential-invalid-notice-action").click()
-    await window.waitForFunction(
-      // 默认 ollama 桩路线解析不出档案（卡上写「模型服务」）：必须退回添加 API 密钥。
-      () => location.hash.includes("settings/providers") && location.hash.includes("create=official"),
-      undefined,
-      { timeout: 8_000 }
-    )
-    await expect(window.getByText("选一家，粘贴密钥")).toBeVisible({ timeout: 8_000 })
-    await window.screenshot({ path: join(shots, "05-fixkey-opens-add-key.png") })
+    // 免密钥档案没有密钥可改：不给按钮（「添加 API 密钥」兜底只在档案找不到时，见 send-failure-target 单测）。
+    await expect(notice.getByTestId("thread-credential-invalid-notice-action")).toHaveCount(0)
   } finally {
     await closeForRelaunch(app)
   }

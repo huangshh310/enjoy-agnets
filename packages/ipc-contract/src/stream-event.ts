@@ -145,6 +145,13 @@ export const StreamEvent = z.discriminatedUnion("type", [
     preOutput: z.boolean().optional().catch(false),
     /** 首字前回滚保留了本轮之前就有的用户句（重新生成 / 编辑重发只 UPDATE）。renderer 只撤空助手。 */
     keptUserMessage: z.boolean().optional().catch(undefined),
+    /**
+     * 这一轮实际走的引擎（luna P2-1）：失败卡说谁、「改密钥」开哪份跟它走，不跟默认路线猜。
+     * 缺省 / 坏字段 = 旧事件，renderer 回落当前档案。
+     */
+    runtimeId: z.string().min(1).max(120).optional().catch(undefined),
+    /** 这一轮实际用的供应商档案 id（Enjoy 本地 = 开跑时的当前档案；ACP 绑了档案 = 绑的那份）。没有就不带。 */
+    providerId: z.string().min(1).max(120).optional().catch(undefined),
     turn: TurnOutcome.optional(),
     ...Envelope
   }),

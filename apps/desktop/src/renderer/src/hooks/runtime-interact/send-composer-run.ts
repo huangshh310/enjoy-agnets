@@ -16,6 +16,7 @@ import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
 import { pauseFollowupsAfterFailedStart } from "../followup-pause"
 import { markPendingFailedSendInFlight, notePendingFailedSend } from "../pending-failed-send"
 import { clearCredentialSendBlocked, noteCredentialSendBlocked } from "../credential-send-nudge"
+import { clearSendFailureRoute } from "../send-failure-route"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
@@ -232,6 +233,8 @@ async function sendComposerOnce(
   if (!sendAttemptCancelled(attempt) && shouldDismissOnNextSend(useChatStore.getState().error)) {
     useChatStore.getState().setError(null)
   }
+  // luna P2-1：这一发过了闸（放行或被拦）：卡说的是「这一发要用的」，不再是上一轮失败记下的那份。
+  clearSendFailureRoute(store.sessionId)
   if (!guardComposerSend(store)) {
     // jojo P3 / luna P2：闸拦下就是这一发的结局（卡已挂上），看门狗别再判它「静默失败」去换卡、再还一次稿。
     markSendSettled(attempt)
@@ -416,7 +419,7 @@ function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
       reasoning: "",
       tools: [],
       runKind,
-      ...pendingAssistantStamp(store)
+      ...pendingAssistantStamp(store, runKind === "agent" ? codingAgentRunInput(store).modelId : undefined)
     }
   ])
   // 作废仍在 await 的 loadSession，避免空库回灌把首发气泡洗成欢迎页。
@@ -451,6 +454,12 @@ async function launchComposerRun(
     if (isRequestStopped(sessionId, clientRequestId)) return settleStoppedLaunch(sessionId, result)
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
+      // jojo #169 P3：渲染端「能不能发」还没刷新、闸放行了，main 按落盘的校验态拒掉——同样记上「先改好密钥再发。」，
+      // 不能看起来像按了没反应。落地页发的（建会话窗）也记在落地页名下（同渲染端闸，见上）。
+      if (blocked === CREDENTIAL_INVALID) {
+        noteCredentialSendBlocked(sessionId)
+        if (createdSessionId) noteCredentialSendBlocked(null)
+      }
       failComposerSend({
         ...restoreFromPayload(payload),
         reason: blocked,

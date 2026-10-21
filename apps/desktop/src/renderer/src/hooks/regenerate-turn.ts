@@ -106,7 +106,7 @@ async function regenerateFromUserIndex(store: ChatStore, userIndex: number): Pro
       assets: undefined,
       structured: undefined,
       runKind,
-      ...pendingAssistantStamp(store)
+      ...pendingAssistantStamp(store, runKind === "agent" ? codingAgentRunInput(store).modelId : undefined)
     }
   ]
 
@@ -199,7 +199,7 @@ export async function editAndResendUserTurn(
       assets: undefined,
       structured: undefined,
       runKind,
-      ...pendingAssistantStamp(store)
+      ...pendingAssistantStamp(store, runKind === "agent" ? codingAgentRunInput(store).modelId : undefined)
     }
   ]
 
