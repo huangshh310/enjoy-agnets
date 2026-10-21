@@ -14,7 +14,9 @@
  *     （restoreRewindDraft），确认草稿里有这一整段、把草稿送到 main 之后才删记录。
  * - 关窗 / 刷新（pagehide / beforeunload）：每条记录按行并进它的草稿并立刻送到 main——前台会话以输入框当下的字为底，
  *   不用可能过期的内存草稿。记录不删（下次启动再对一遍，按行去重不会重复）。
- * - 启动时（本模块加载）把上次留下的记录读回来继续放：没打开的会话直接并进草稿；正在前台的等它稳定一拍再写输入框。
+ * - 同会话等待中：把「输入框当下的字 + 原话」按行写进它的草稿并立刻送到 main（被输入框盖掉就下一拍再补），
+ *   等待中被强杀也不只靠 localStorage；main 看到有草稿，离开时也不会把它当空会话删掉。
+ * - 启动时（本模块加载）把上次留下的记录读回来继续放：没打开的会话直接并进草稿；前台的在轮询里写输入框。
  * - 切会话那一下（store 订阅）只处理**离开的**会话（并进它的草稿），不碰新前台——它的输入框要等 loadSession 恢复完。
  */
 import { useChatStore } from "../stores/chat-store"
@@ -26,6 +28,7 @@ import {
   writePersistedDraftAssets
 } from "../lib/session-draft-storage"
 import { liveComposerText, mergeWritebackText, textContainsBlock, writeBackToComposer } from "./composer-writeback"
+import { composerInputEl } from "./composer-dom"
 import { restoreRewindDraft, type RewindDraftAsset } from "./rewind-draft-fallback"
 
 export type PendingRewind = { text: string; assets: RewindDraftAsset[] }
@@ -97,11 +100,50 @@ function clearPendingRewind(sessionId: string): void {
   save()
 }
 
-/** 这个会话的草稿（内存草稿优先，和打开会话时的取法一致）里有没有这一整段。 */
-function draftHas(sessionId: string, text: string): boolean {
+/** 这个会话的草稿（内存草稿优先，和打开会话时的取法一致）里有没有这一整段，图是不是都在。 */
+function draftHas(sessionId: string, rec: PendingRewind): boolean {
   const memory = useChatStore.getState().getSessionDraft(sessionId)
   const draft = memory?.text ?? readPersistedDraft(sessionId) ?? ""
-  return textContainsBlock(draft, text)
+  if (!textContainsBlock(draft, rec.text)) return false
+  const have = new Set(
+    ((memory?.assets ?? readPersistedDraftAssets(sessionId) ?? []) as Array<{ id?: string }>).map((a) => a?.id)
+  )
+  return rec.assets.every((a) => have.has(a.id))
+}
+
+/**
+ * 同会话还在等：把「输入框当下的字 + 原话」按行合并写进它的草稿并立刻送到 main（leo r4）。
+ * 输入框下一次变化会用自己的字盖掉这份草稿——没关系：记录才是源头，草稿里缺了就下一拍再补（按行去重，补多少次都一样）。
+ * 这样等待中被强杀，main 的草稿表里也有原话，不只靠 localStorage；离开时也不会被当成空会话删掉（main 有草稿就不删）。
+ */
+function mirrorIntoLiveDraft(sessionId: string, rec: PendingRewind): void {
+  let changed = false
+  if (!textContainsBlock(readPersistedDraft(sessionId) ?? "", rec.text)) {
+    writePersistedDraft(sessionId, mergeWritebackText(rec.text, liveComposerText()))
+    changed = true
+  }
+  const existing = readPersistedDraftAssets(sessionId) ?? []
+  const ids = new Set(existing.map((a) => a.id))
+  const extra = rec.assets.filter((a) => a?.id && !ids.has(a.id))
+  if (extra.length > 0) {
+    writePersistedDraftAssets(sessionId, [...existing, ...extra])
+    changed = true
+  }
+  if (changed) flushPersistedDrafts()
+}
+
+/**
+ * 写回之后光标放在用户自己打的字末尾（原话接在下一行），而不是跳到最后——用户可能正打着字（组字刚结束）。
+ * 只在输入框正有焦点时动；拿不到元素 / 不支持 setSelectionRange 就不管（写回本身已按约定把光标留在末尾）。
+ */
+function keepCaretAfterTyped(typed: string, merged: string): void {
+  const el = composerInputEl() as (HTMLTextAreaElement & { setSelectionRange?: (a: number, b: number) => void }) | null
+  if (!el || typeof el.setSelectionRange !== "function") return
+  const active = (globalThis as { document?: { activeElement?: unknown } }).document?.activeElement
+  if (active !== el) return
+  const head = typed.replace(/\s+$/, "")
+  if (!head || !merged.startsWith(head)) return
+  el.setSelectionRange(head.length, head.length)
 }
 
 export type SettleOutcome = "composer" | "draft" | "waiting" | "none"
@@ -116,12 +158,17 @@ export function settlePendingRewind(sessionId: string): SettleOutcome {
   if (useChatStore.getState().sessionId !== sessionId) {
     restoreRewindDraft(sessionId, rec.text, rec.assets)
     flushPersistedDrafts()
-    if (!draftHas(sessionId, rec.text)) return "waiting"
+    if (!draftHas(sessionId, rec)) return "waiting"
     clearPendingRewind(sessionId)
     return "draft"
   }
+  const typed = liveComposerText()
   const written = writeBackToComposer({ text: rec.text, assets: rec.assets }, { mode: "merge", expectSessionId: sessionId, focus: false })
-  if (!written.ok) return "waiting"
+  if (!written.ok) {
+    mirrorIntoLiveDraft(sessionId, rec)
+    return "waiting"
+  }
+  if (written.merged) keepCaretAfterTyped(typed, written.text)
   flushPersistedDrafts()
   clearPendingRewind(sessionId)
   return "composer"
@@ -137,7 +184,6 @@ export function onPendingRewindLanded(sessionId: string, hook: Landed): void {
 
 const poll = { ms: 50 }
 let timer: ReturnType<typeof setTimeout> | null = null
-let lastForeground: string | null | undefined
 let warned = false
 
 /** 测试用：调轮询间隔；null = 停掉轮询、清空记录和钩子。 */
@@ -150,7 +196,6 @@ export function resetPendingRewindsForTest(next?: { pollMs?: number } | null): v
     save()
     records = null
     landedHooks.clear()
-    lastForeground = undefined
     warned = false
   }
 }
@@ -159,7 +204,6 @@ export function resetPendingRewindsForTest(next?: { pollMs?: number } | null): v
 export function forgetPendingRewindCacheForTest(): void {
   records = null
   landedHooks.clear()
-  lastForeground = undefined
 }
 
 function runHook(sessionId: string, outcome: "composer" | "draft"): void {
@@ -173,17 +217,13 @@ function runHook(sessionId: string, outcome: "composer" | "draft"): void {
 }
 
 /**
- * 处理所有记录一遍。onlyBackground：只并非前台会话的（切会话那一下用，新前台的输入框还没恢复）。
- * requireStable：前台会话要连续两拍都是它才写输入框（启动 / 刚切进来时让 loadSession 先恢复输入框）。
+ * 处理所有记录一遍。onlyBackground：只处理不在前台的会话（切会话那一下用：新前台的输入框要等 loadSession 恢复）。
+ * 前台会话只在轮询里写（setTimeout 一拍之后）：loadSession 里换会话和恢复输入框在同一段同步代码里，轮询不会插进中间。
  */
-function drain(opts: { onlyBackground?: boolean; requireStable?: boolean } = {}): void {
+function drain(opts: { onlyBackground?: boolean } = {}): void {
   const fg = useChatStore.getState().sessionId
-  const stable = fg === lastForeground
-  lastForeground = fg
   for (const sessionId of listPendingRewindSessions()) {
-    const foreground = sessionId === fg
-    if (foreground && opts.onlyBackground) continue
-    if (foreground && opts.requireStable && !stable) continue
+    if (sessionId === fg && opts.onlyBackground) continue
     try {
       const outcome = settlePendingRewind(sessionId)
       if (outcome === "composer" || outcome === "draft") runHook(sessionId, outcome)
@@ -199,7 +239,7 @@ export function ensurePendingRewindLoop(): void {
   if (timer || listPendingRewindSessions().length === 0) return
   const tick = () => {
     timer = null
-    drain({ requireStable: true })
+    drain()
     if (listPendingRewindSessions().length > 0) {
       timer = setTimeout(tick, warned ? Math.max(poll.ms, 1000) : poll.ms)
       ;(timer as { unref?: () => void }).unref?.()
@@ -249,6 +289,5 @@ export function installPendingRewinds(): void {
     drain({ onlyBackground: true })
     ensurePendingRewindLoop()
   })
-  lastForeground = useChatStore.getState().sessionId
   ensurePendingRewindLoop()
 }

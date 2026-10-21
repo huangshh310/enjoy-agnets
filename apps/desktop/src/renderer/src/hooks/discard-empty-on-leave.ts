@@ -4,6 +4,7 @@
  */
 import { getIde, hasIde } from "../lib/ide"
 import { listFollowups } from "./followup-queue"
+import { readPendingRewind } from "./rewind-pending"
 
 export type LeaveState = {
   sessionId: string | null
@@ -31,6 +32,8 @@ export function emptySessionToDiscardOnLeave(state: LeaveState, nextSessionId: s
   if (state.createPending || state.queuedSend) return null
   // leo BLOCK #163 ①：还有排队的话（只在内存里）删了会话就把用户打的字一起丢了。快照没带上也再查一次队列。
   if (state.queuedFollowups || listFollowups(id).length > 0) return null
+  // #167 leo r4 e)：「从这里重来」截掉了第一条消息、原话还在等放回输入框——会话看着是空的，删了原话就没地方去。
+  if (readPendingRewind(id)) return null
   if (state.preparingHint && (state.preparingSessionId === null || state.preparingSessionId === id)) return null
   return id
 }
