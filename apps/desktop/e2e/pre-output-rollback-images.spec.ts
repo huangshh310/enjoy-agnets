@@ -250,10 +250,12 @@ test("leo r5 MUST 2：回滚后切到别的会话再切回——卡和「再发�
 const LOCKED = {
   zh: {
     restoredBoth: "文字和图片已放回输入框，可以直接再发。",
+    fixKeyFirst: "先改好密钥再发。",
     draftStays: "草稿会留着"
   },
   en: {
     restoredBoth: "Your text and image are back in the input. You can send them again.",
+    fixKeyFirst: "Fix the key first, then send.",
     draftStays: "draft stays"
   }
 } as const
@@ -283,11 +285,13 @@ for (const lang of ["zh", "en"] as const) {
       await expect(notice).not.toContainText(new RegExp(copy.draftStays, "i"))
       await expect(chip).toHaveCount(1)
       await window.screenshot({ path: join(shots, `r4-copy-${lang}-1-restored-after-send.png`) })
-      // ② 密钥已判无效：再回车被闸拦，输入框从没清空——只有原因 + 按钮，没有「已放回」行。
+      // ② 密钥已判无效：再回车被拦（渲染端闸或 main），输入框从没清空——原因 + 按钮，第二行只说「先改好密钥再发。」，
+      // 没有「已放回」行（jojo #169 P3：被拦不能看起来像按了没反应）。
       await composer.press("Enter")
       await window.waitForTimeout(1_500)
       await expect(notice).toBeVisible()
-      await expect(detail).toHaveCount(0)
+      await expect(detail).toHaveText(copy.fixKeyFirst)
+      await expect(notice).not.toContainText(copy.restoredBoth)
       await expect(notice).not.toContainText(new RegExp(copy.draftStays, "i"))
       await expect(composer).toHaveValue(lang === "zh" ? "看看这张图" : "check this image")
       await expect(chip).toHaveCount(1)
