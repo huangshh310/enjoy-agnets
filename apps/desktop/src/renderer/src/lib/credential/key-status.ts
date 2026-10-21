@@ -71,7 +71,11 @@ export function faceName(face: ProviderFace): string | undefined {
  * - **运行时界面**（设置行、失败卡、余额提示、排队行）一律「模型服务」。
  * 引导界面里带称呼的文案都登记在 SETUP_PROVIDER_TEMPLATES，测试逐条钉住；没登记的按「模型服务」。
  */
-export const KEY_HOLDER_GENERIC_KEYS = { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallbackMid" } as const
+/**
+ * 「供应商」/ The provider：英文只放句首（The provider rejected…）。英文要放句中的说密钥句子不套这个词，
+ * 改在 SETUP_GENERIC_SENTENCES 登记一整句不带称呼的通用句（避免 "a different the provider key"）。中文句首句中都是「供应商」。
+ */
+export const KEY_HOLDER_GENERIC_KEYS = { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallback" } as const
 export const SERVICE_GENERIC_KEYS = { start: "chat.credentialProviderGenericStart", mid: "chat.credentialProviderGeneric" } as const
 
 /** 引导界面里带供应商称呼的文案 → 说的是不是密钥（"key" 用「供应商」，"service" 用「模型服务」）。 */
@@ -80,6 +84,11 @@ export const SETUP_PROVIDER_TEMPLATES: Readonly<Record<string, "key" | "service"
   "settings.setupGuide.readyKeyInvalidTitle": "key", // 密钥被 {name} 拒绝了
   "settings.setupGuide.readyKeyInvalidHint": "key", // 换一个 {name} 密钥再试，改好就能开始
   "settings.providers.keyBillingHint": "service" // 第 4 步余额提示：{name} 账户余额不足（通用句是 keyBillingHintGeneric）
+}
+
+/** 没名字时整句换掉的引导文案（通用句里不出现称呼）。 */
+export const SETUP_GENERIC_SENTENCES: Readonly<Record<string, string>> = {
+  "settings.setupGuide.readyKeyInvalidHint": "settings.setupGuide.readyKeyInvalidHintGeneric" // Use a different API key… / 换一个供应商密钥再试…
 }
 
 /** 这条引导文案没名字时用哪对通用说法。 */
@@ -97,6 +106,10 @@ export function fillSetupProviderText(
   providerName: string | undefined,
   vars?: Record<string, string | number>
 ): string {
+  if (!providerName && Object.hasOwn(SETUP_GENERIC_SENTENCES, key)) {
+    // 通用句：英文不带称呼；中文仍留 {name} 槽，填「供应商」（词表不直接写「供应商密钥」）
+    return fillProviderFace(t, SETUP_GENERIC_SENTENCES[key]!, { kind: "generic" }, { vars, genericKeys: setupGenericKeys(key) })
+  }
   const face: ProviderFace = providerName ? { kind: "named", name: providerName } : { kind: "generic" }
   return fillProviderFace(t, key, face, { vars, genericKeys: setupGenericKeys(key) })
 }

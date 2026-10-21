@@ -250,12 +250,12 @@ test("luna #164 第 3 轮 1：只有带「密钥」的引导文案（第 4 步�
   }
   // 回落：中文「供应商」两边不留空格；英文句首 The provider、句中 the provider
   assert.deepEqual(keyed.map((key) => fillSetupProviderText(zhT, key, undefined)), ["密钥被供应商拒绝了，换一个再试", "密钥被供应商拒绝了", "换一个供应商密钥再试，改好就能开始"])
-  assert.deepEqual(keyed.map((key) => fillSetupProviderText(enT, key, undefined)), ["The provider rejected this key. Try another one", "The provider rejected your key", "Use a different the provider key and you're ready to go"])
+  assert.deepEqual(keyed.map((key) => fillSetupProviderText(enT, key, undefined)), ["The provider rejected this key. Try another one", "The provider rejected your key", "Use a different API key and you're ready to go"])
   // 有名字：拉丁留空格、中文不留
   assert.deepEqual(keyed.map((key) => fillSetupProviderText(zhT, key, "OpenAI")), ["密钥被 OpenAI 拒绝了，换一个再试", "密钥被 OpenAI 拒绝了", "换一个 OpenAI 密钥再试，改好就能开始"])
   assert.deepEqual(keyed.map((key) => fillSetupProviderText(zhT, key, "我的网关")), ["密钥被我的网关拒绝了，换一个再试", "密钥被我的网关拒绝了", "换一个我的网关密钥再试，改好就能开始"])
   assert.equal(fillSetupProviderText(zhT, "settings.setupGuide.readyTitle", undefined), zhT("settings.setupGuide.readyTitle"), "没名字槽的标题原样")
-  assert.deepEqual(KEY_HOLDER_GENERIC_KEYS, { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallbackMid" })
+  assert.deepEqual(KEY_HOLDER_GENERIC_KEYS, { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallback" })
   // 别处（设置行、失败卡）照旧「模型服务」
   const p = { kind: "openai", name: "mine", requiresKey: true, hasKey: true, credentialCheck: { state: "invalid" as const }, baseURL: "gw.example.com/v1" }
   assert.match(text(renderProviderKeyStatus(p, zhT, () => undefined)), /^密钥被模型服务拒绝了/)
@@ -298,14 +298,14 @@ test("luna #164 第 3 轮 2：自定义档案在设置行 / 余额提示 / 向�
   assert.equal(guideStatus({ ...readiness, apiKeys: [{ providerId: "p1", presetId: "openai" }] } as typeof readiness, [{ id: "p1", kind: "openai", name: "我的网关", baseURL: "https://gw.example.com/v1" }])?.providerName, "gw.example.com")
 })
 
-import { SETUP_PROVIDER_TEMPLATES, setupGenericKeys } from "./key-status.ts"
+import { SETUP_GENERIC_SENTENCES, SETUP_PROVIDER_TEMPLATES, setupGenericKeys } from "./key-status.ts"
 import { fillProviderFace, providerFace } from "../provider-face.ts"
 test("luna #164 通用说法细化：引导界面说密钥 →「供应商」，不说密钥 / 运行时 →「模型服务」（逐条表格钉住）", () => {
   // 引导界面带称呼的文案 → 没名字时中英各说什么
   const table: Array<[string, string, string]> = [
     ["settings.setupGuide.connectApiKeyInvalidHint", "密钥被供应商拒绝了，换一个再试", "The provider rejected this key. Try another one"],
     ["settings.setupGuide.readyKeyInvalidTitle", "密钥被供应商拒绝了", "The provider rejected your key"],
-    ["settings.setupGuide.readyKeyInvalidHint", "换一个供应商密钥再试，改好就能开始", "Use a different the provider key and you're ready to go"],
+    ["settings.setupGuide.readyKeyInvalidHint", "换一个供应商密钥再试，改好就能开始", "Use a different API key and you're ready to go"],
     ["settings.providers.keyBillingHint", "模型服务账户余额不足，充值后再试。", "The model service account is out of credit. Top up and try again."]
   ]
   assert.deepEqual(Object.keys(SETUP_PROVIDER_TEMPLATES).sort(), table.map(([key]) => key).sort(), "表格和登记表一一对应")
@@ -366,4 +366,32 @@ test("leo rv164e S-b：keyHolderFace 和失败卡同一条链——未知 kind /
   // 设置行
   const row = { kind: "mystery-preset", name: "Work key A", requiresKey: true, hasKey: true, credentialCheck: invalid }
   assert.match(text(renderProviderKeyStatus(row, zhT, () => undefined)), /^密钥被模型服务拒绝了/)
+})
+
+test("host #164：完成页摘要英文不靠冠词——有名字说 key for {name}，没名字换整句 API key；中文不变（表格）", () => {
+  const key = "settings.setupGuide.readyKeyInvalidHint"
+  const table: Array<[string | undefined, string, string]> = [
+    ["OpenAI", "换一个 OpenAI 密钥再试，改好就能开始", "Use a different key for OpenAI and you're ready to go"],
+    ["proxy.example.com", "换一个 proxy.example.com 密钥再试，改好就能开始", "Use a different key for proxy.example.com and you're ready to go"],
+    ["我的中转", "换一个我的中转密钥再试，改好就能开始", "Use a different key for 我的中转 and you're ready to go"],
+    [undefined, "换一个供应商密钥再试，改好就能开始", "Use a different API key and you're ready to go"]
+  ]
+  for (const [name, zh, en] of table) {
+    assert.equal(fillSetupProviderText(zhT, key, name), zh, String(name))
+    assert.equal(fillSetupProviderText(enT, key, name), en, String(name))
+  }
+  // 英文：任何一句都不出现「a different the」/ 句中的 the provider；通用句不带称呼
+  for (const [name] of table) assert.doesNotMatch(fillSetupProviderText(enT, key, name), /different the|the provider|The provider/)
+  assert.deepEqual(SETUP_GENERIC_SENTENCES, { [key]: "settings.setupGuide.readyKeyInvalidHintGeneric" })
+  // 守新文案：说密钥的英文句子，称呼要么在句首，要么登记了整句通用句
+  for (const k of Object.keys(SETUP_PROVIDER_TEMPLATES).filter((k) => SETUP_PROVIDER_TEMPLATES[k] === "key")) {
+    assert.ok(enT(k, { name: "\u0000" }).startsWith("\u0000") || Object.hasOwn(SETUP_GENERIC_SENTENCES, k), `${k} 英文称呼在句中，要登记通用句`)
+  }
+  // 英文通用句不留称呼槽
+  assert.doesNotMatch(enT("settings.setupGuide.readyKeyInvalidHintGeneric", { name: "X" }), /X/)
+  // providerFallbackMid 已删
+  assert.equal(enT("settings.setupGuide.providerFallbackMid"), "settings.setupGuide.providerFallbackMid")
+  // 接线：完成页摘要仍走 fillSetupProviderText（容忍 \r?\n）
+  const summary = readFileSync(join(dir, "../../components/setup-guide/ready-summary.tsx"), "utf8")
+  assert.match(summary, /fillSetupProviderText\([^)]*?"settings\.setupGuide\.readyKeyInvalidHint",\s*keyStatus\.providerName\)/)
 })
