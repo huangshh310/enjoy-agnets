@@ -4,6 +4,13 @@
 import { AiChatComposer } from "@renderer/components/ai-chat/ai-chat-composer"
 import { abortComposerRun, attachComposerFile, submitComposer } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { markUserSend, userSendQueues } from "@renderer/components/ai-chat/thread/scroll-on-send"
+
+/** 用户自己点的发送 / 插话：记一笔，对话只为这种发送贴底（排队自动发出、重来不拽，leo #170 soft-2）。 */
+function noteUserSend(requested: "send" | "steer") {
+  const { running, sessionId } = useChatStore.getState()
+  if (!userSendQueues(running, requested)) markUserSend(sessionId)
+}
 
 export function ChatComposer({
   className,
@@ -32,8 +39,14 @@ export function ChatComposer({
       modelId={modelId}
       models={models}
       onModelChange={onModelChange}
-      onSend={onSend}
-      onSteer={() => void submitComposer("steer")}
+      onSend={() => {
+        noteUserSend("send")
+        onSend()
+      }}
+      onSteer={() => {
+        noteUserSend("steer")
+        void submitComposer("steer")
+      }}
       onStop={() => void abortComposerRun()}
       onAttach={(file) => void attachComposerFile(file)}
       className={className}

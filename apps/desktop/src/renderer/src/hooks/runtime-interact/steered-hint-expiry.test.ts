@@ -6,7 +6,13 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { afterEach, test } from "node:test"
 import { getRuntimeHint, setRuntimeHint } from "../followup-queue.ts"
-import { clearSteeredHint, countUserMessages, STEERED_HINT_MAX_MS, steeredHintExpired } from "./steered-hint-expiry.ts"
+import {
+  clearSteeredHint,
+  countUserMessages,
+  STEERED_HINT_MAX_MS,
+  steeredHintExpired,
+  steeredHintRestarted
+} from "./steered-hint-expiry.ts"
 
 afterEach(() => setRuntimeHint(null))
 
@@ -40,6 +46,28 @@ test("clearSteeredHint 只清 steered，不清随后换上的排队提示", () =
   setRuntimeHint("queued", "s1")
   assert.equal(clearSteeredHint(), false)
   assert.equal(getRuntimeHint(), "queued")
+})
+
+test("leo soft-1：同一轮里连着插两句，第二句不把「已收到」收掉，而是重新计时", () => {
+  const again = { hint: "steered" as const, running: true, userCountAtShow: 3, userCount: 4, runIdAtShow: "r1", runId: "r1" }
+  assert.equal(steeredHintRestarted(again), true)
+  // 没有新消息：不重开。
+  assert.equal(steeredHintRestarted({ ...again, userCount: 3 }), false)
+  // 换了一轮（runId 变了）：那是「之后又发出了一句」，照旧收。
+  assert.equal(steeredHintRestarted({ ...again, runId: "r2" }), false)
+  assert.equal(steeredHintExpired({ ...base, userCount: 4 }), true)
+  // 这一轮已经结束 / 提示已不是 steered：不重开。
+  assert.equal(steeredHintRestarted({ ...again, running: false }), false)
+  assert.equal(steeredHintRestarted({ ...again, hint: "queued" }), false)
+})
+
+test("leo soft-1 接线：hook 先判重开（重记 + stamp 加一）再判收；30 秒计时器跟着 stamp 重开", () => {
+  const hook = readFileSync(new URL("./use-steered-hint-expiry.ts", import.meta.url), "utf8")
+  const restart = hook.indexOf("if (steeredHintRestarted(")
+  const expire = hook.indexOf("steeredHintExpired({")
+  assert.ok(restart > 0 && restart < expire, "重开要在收之前判")
+  assert.match(hook, /setStamp\(\(n\) => n \+ 1\)/)
+  assert.match(hook, /\}, \[hint, stamp\]\)/)
 })
 
 test("countUserMessages 只数用户消息", () => {

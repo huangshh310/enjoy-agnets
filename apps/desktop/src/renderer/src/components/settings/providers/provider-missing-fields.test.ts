@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { canSaveEditor, editorMissingFields, emptyEditor, missingFieldTab, type EditorState } from "./providers.types.ts"
+import { canSaveEditor, editorMissingFields, emptyEditor, missingFieldTab, proxyBlocksSave, type EditorState } from "./providers.types.ts"
 import { missingSummaryText } from "./provider-missing-copy.ts"
 import { zhSettings } from "../../../i18n/catalogs/zh/settings.ts"
 import { enSettings } from "../../../i18n/catalogs/en/settings.ts"
@@ -78,4 +78,40 @@ test("接线：模型栏下有提示、页签有圆点、底栏按钮灰着时�
   assert.match(read("./provider-editor-fields.tsx"), /<MissingTabDot missing=\{missing\} tab="models" \/>/)
   assert.match(read("./provider-editor-drawer-chrome.tsx"), /\{missingHint && !canSave \? \(/)
   assert.match(read("./provider-editor-drawer.tsx"), /editorMissingFields\(editor, preset\.requiresKey \?\? true\)/)
+})
+
+test("leo soft-3：canSaveEditor 只有一套规则——什么都不缺且代理不挡才能存，所有组合都和 editorMissingFields 对得上", () => {
+  const names = ["", "我的网关"]
+  const endpoints = [{}, { openai: "https://llm-gw.example/v1" }]
+  const keySets = [false, true]
+  const models = ["", "gpt-x"]
+  const proxies = ["", "http://127.0.0.1:7890", "socks5://127.0.0.1:1080"]
+  let seen = 0
+  for (const kind of ["custom", "openai"] as const)
+    for (const name of names)
+      for (const ep of endpoints)
+        for (const withKey of keySets)
+          for (const modelId of models)
+            for (const proxy of proxies)
+              for (const requiresKey of [true, false]) {
+                const base = emptyEditor(kind)
+                const editor: EditorState = {
+                  ...base,
+                  name,
+                  endpoints: ep,
+                  modelId,
+                  proxy,
+                  keys: base.keys.map((key) => ({ ...key, apiKey: withKey ? "sk-test" : "" }))
+                }
+                const expected = editorMissingFields(editor, requiresKey).length === 0 && !proxyBlocksSave(proxy)
+                assert.equal(canSaveEditor(editor, requiresKey), expected, JSON.stringify({ kind, name, ep, withKey, modelId, proxy, requiresKey }))
+                seen += 1
+              }
+  assert.equal(seen, 2 * 2 * 2 * 2 * 2 * 3 * 2)
+  assert.equal(canSaveEditor(null, true), false)
+  // 不再有第二份手写规则：canSaveEditor 直接调 editorMissingFields。
+  const src = readFileSync(new URL("./providers.types.ts", import.meta.url), "utf8")
+  const body = src.slice(src.indexOf("export function canSaveEditor"), src.indexOf("export type EditorMissingField"))
+  assert.match(body, /editorMissingFields\(editor, requiresKey\)\.length === 0 && !proxyBlocksSave\(editor\.proxy\)/)
+  assert.doesNotMatch(body, /modelId|hasEndpoint|apiKey/)
 })

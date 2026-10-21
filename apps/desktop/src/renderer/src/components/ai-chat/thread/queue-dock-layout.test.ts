@@ -46,8 +46,18 @@ test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thre
   assert.match(dock, /data-keep-thread=\{keepThread \? "true" : undefined\}/)
   assert.match(dock, /testId="queued-hidden-below"/)
   assert.match(dock, /label=\{t\("chat\.runtimeQueueMore", \{ n: hiddenBelow \}\)\}/)
-  // 小胶囊靠左、不铺满：区挤到一行高时不盖行右侧的按钮（queue-sendnow-approval 733×480）。
-  assert.match(dock, /sticky bottom-0 z-10 w-auto max-w-\[45%\] self-start/)
+  // 小胶囊靠左、不铺满；leo #170 soft-5：不再 sticky 浮在行上（会盖最后一条可见行左边的正文），
+  // 画在滚动区（scrollRef）外面、下面单独一行；藏行计数和「滚到底」都按里面的滚动区算。
+  assert.match(dock, /className="mt-1 w-auto max-w-\[45%\] self-start/)
+  assert.doesNotMatch(dock, /sticky bottom-0/)
+  assert.match(dock, /useRowsHiddenBelow\(scrollRef, mode === "all", items\.length\)/)
+  assert.match(dock, /scrollRef\.current\?\.scrollTo\(\{ top: scrollRef\.current\.scrollHeight/)
+  const scrollAt = dock.indexOf("ref={scrollRef}")
+  const scrollEnd = dock.indexOf("{hiddenBelow > 0 ? (")
+  assert.ok(scrollAt > 0 && scrollEnd > scrollAt, "小胶囊在滚动区后面")
+  assert.match(dock, /<\/div>\n\s*\{hiddenBelow > 0 \? \(/, "滚动区在小胶囊之前就闭合")
+  // 点开后最少留一行 + 小胶囊的高度，别等胶囊出来再长高。
+  assert.match(dock, /items\.length > 1 \? "min-h-16" : "min-h-9"/)
   const stage = src("../../app-shell/chat/chat-stage.tsx")
   const base = stage.indexOf("[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0")
   const keep = stage.indexOf("[&:has(>[data-testid=queued-followups-docked][data-keep-thread=true])>[data-thread-root]]:min-h-[4.5rem]")

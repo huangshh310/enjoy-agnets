@@ -27,7 +27,7 @@ import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
 import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
 import { displayThinkingLabel } from "./thread/thinking-label"
-import { lastUserMessageId, shouldScrollOnSend, type SendScrollMark } from "./thread/scroll-on-send"
+import { lastUserMessageId, shouldScrollOnSend, takeUserSend, type SendScrollMark } from "./thread/scroll-on-send"
 import { useT } from "@renderer/i18n"
 
 export function AiChatThread({
@@ -83,7 +83,7 @@ export function AiChatThread({
         </ConversationContent>
         <ConversationScrollButton />
         <ConversationViewportStick />
-        {/* 发出一句（同一会话里最后一条用户消息换了）就贴底，哪怕之前往上翻过（mike P3）。 */}
+        {/* 用户自己点了发送、最后一条用户消息换了才贴底，哪怕之前往上翻过；排队自动发出 / 重来不拽（mike P3，leo soft-2）。 */}
         <ConversationScrollOnChange trigger={sendTick} />
       </Conversation>
       <ThreadPreviewRail messages={visible} hasLedger={hasLedger} />
@@ -92,13 +92,13 @@ export function AiChatThread({
   )
 }
 
-/** 同一会话里最后一条用户消息换了一次，计数 +1；切会话只更新记号、不计数。 */
+/** 同一会话里最后一条用户消息换了、且是用户自己点的发送，计数 +1；切会话只更新记号、不计数。 */
 function useSendScrollTick(sessionId: string | null, lastUserId: string | null): number {
   const markRef = useRef<SendScrollMark>({ sessionId, lastUserId })
   const [tick, setTick] = useState(0)
   useEffect(() => {
     const next = { sessionId, lastUserId }
-    if (shouldScrollOnSend(markRef.current, next)) setTick((value) => value + 1)
+    if (shouldScrollOnSend(markRef.current, next, () => takeUserSend(sessionId))) setTick((value) => value + 1)
     markRef.current = next
   }, [sessionId, lastUserId])
   return tick

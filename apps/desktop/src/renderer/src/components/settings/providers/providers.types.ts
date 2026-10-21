@@ -233,19 +233,17 @@ export function cleanEndpoints(endpoints: EditorEndpoints): EditorEndpoints {
   return out
 }
 
+/** 能保存 = 什么都不缺 + 代理不挡。只有这一套规则（leo #170 soft-3），缺字段提示和按钮亮不亮都从 editorMissingFields 出。 */
 export function canSaveEditor(editor: EditorState | null, requiresKey: boolean): boolean {
-  if (!editor?.name.trim() || !editor.modelId.trim()) return false
-  if (editor.kind === "custom" && !hasEndpoint(editor.endpoints)) return false
-  if (proxyBlocksSave(editor.proxy)) return false
-  if (!requiresKey) return true
-  return editor.keys.some((key) => key.enabled && (key.apiKey.trim() || key.hasKey))
+  if (!editor) return false
+  return editorMissingFields(editor, requiresKey).length === 0 && !proxyBlocksSave(editor.proxy)
 }
 
 /** 「保存并启用」灰着时缺的是哪一项（mike P3，#163 巡检 25：只灰不说缺什么）。顺序 = 表单里从上到下。 */
 export type EditorMissingField = "name" | "endpoint" | "key" | "model"
 
 /**
- * 和 canSaveEditor 同一套规则，只是把「缺了什么」列出来；socks 代理不算缺字段（代理那一栏自己标红）。
+ * 「缺了什么」的唯一来源，canSaveEditor 直接用它；socks 代理不算缺字段（代理那一栏自己标红）。
  * canSaveEditor 为 false 而这里为空，说明是代理挡的。
  */
 export function editorMissingFields(editor: EditorState | null, requiresKey: boolean): EditorMissingField[] {

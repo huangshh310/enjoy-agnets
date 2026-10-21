@@ -158,7 +158,9 @@ function DockedRows({
   const t = useT()
   const tight = useDockTight(ref, !expanded, items.length)
   const mode = dockMode(items.length, tight, expanded)
-  const hiddenBelow = useRowsHiddenBelow(ref, mode === "all", items.length)
+  // 区内滚的是里面这层；「还有 N 条」画在它下面、不进滚动区，永远不盖任何一行（leo #170 soft-5）。
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
 
   const visible = mode === "more" ? items.slice(0, DOCK_VISIBLE_ROWS) : items
   return (
@@ -173,46 +175,53 @@ function DockedRows({
       data-hidden-below={hiddenBelow > 0 ? hiddenBelow : undefined}
       // 默认整行画（shrink-0）；用户点开后才让位：shrink 远大于审批卡（PermissionDock 是 shrink 1），最少留一行、区内滚。
       // relative z-30：盖过对话目录条（z-20），× 点得到。
+      // 点开后有可能出「还有 N 条」（2 条及以上）：最少留一行 + 小胶囊的高度（min-h-16），别等胶囊出来再长高（会来回跳）。
       className={cx(
-        "relative z-30 mx-6 flex flex-col gap-1 overflow-y-auto [scrollbar-width:none]",
-        expanded ? "max-h-[9.5rem] min-h-9 shrink-[1000] py-1" : "shrink-0",
+        "relative z-30 mx-6 flex flex-col overflow-hidden",
+        expanded ? cx("max-h-[9.5rem] shrink-[1000] py-1", items.length > 1 ? "min-h-16" : "min-h-9") : "shrink-0",
         !expanded && (mode === "collapsed" ? "py-0.5" : "py-1")
       )}
     >
-      {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
-      {mode === "collapsed" ? (
-        <DockSummaryButton testId="queued-collapsed" label={t("chat.runtimeQueueCount", { n: items.length })} onClick={() => setExpanded(true)} />
-      ) : (
-        <>
-          {visible.map((item, index) => (
-            <QueuedUserTurn
-              key={item.id}
-              item={item}
-              canMoveUp={index > 0}
-              canMoveDown={index < items.length - 1}
-              compact
-              paused={queuePaused}
-            />
-          ))}
-          {mode === "more" ? (
-            <DockSummaryButton
-              testId="queued-more"
-              label={t("chat.runtimeQueueMore", { n: items.length - DOCK_VISIBLE_ROWS })}
-              onClick={() => setExpanded(true)}
-            />
-          ) : null}
-          {hiddenBelow > 0 ? (
-            // 区内滚、滚动条隐藏：底下还有行时左下角贴一颗「还有 N 条」小胶囊，点一下滚到底。
-            // 只占左边一小块（行左侧是正文，按钮都在右边）：区被挤到一行高时也不盖行上的「马上发 / 上下移 / ×」。
-            <DockSummaryButton
-              testId="queued-hidden-below"
-              label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
-              className="sticky bottom-0 z-10 w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5 shadow-sm"
-              onClick={() => ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" })}
-            />
-          ) : null}
-        </>
-      )}
+      <div
+        ref={scrollRef}
+        data-testid="queued-followups-scroll"
+        className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto [scrollbar-width:none]"
+      >
+        {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
+        {mode === "collapsed" ? (
+          <DockSummaryButton testId="queued-collapsed" label={t("chat.runtimeQueueCount", { n: items.length })} onClick={() => setExpanded(true)} />
+        ) : (
+          <>
+            {visible.map((item, index) => (
+              <QueuedUserTurn
+                key={item.id}
+                item={item}
+                canMoveUp={index > 0}
+                canMoveDown={index < items.length - 1}
+                compact
+                paused={queuePaused}
+              />
+            ))}
+            {mode === "more" ? (
+              <DockSummaryButton
+                testId="queued-more"
+                label={t("chat.runtimeQueueMore", { n: items.length - DOCK_VISIBLE_ROWS })}
+                onClick={() => setExpanded(true)}
+              />
+            ) : null}
+          </>
+        )}
+      </div>
+      {hiddenBelow > 0 ? (
+        // 区内滚、滚动条隐藏：底下还有行时，滚动区下面单独一行左对齐「还有 N 条」，点一下滚到底。
+        // 不再 sticky 浮在行上（以前会盖住最后一条可见行左边的正文），也不盖行右侧的「马上发 / 上下移 / ×」。
+        <DockSummaryButton
+          testId="queued-hidden-below"
+          label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
+          className="mt-1 w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5"
+          onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })}
+        />
+      ) : null}
     </div>
   )
 }

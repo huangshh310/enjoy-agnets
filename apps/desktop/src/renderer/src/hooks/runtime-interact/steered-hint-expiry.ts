@@ -23,6 +23,23 @@ export function steeredHintExpired(input: {
   return input.elapsedMs >= STEERED_HINT_MAX_MS
 }
 
+/**
+ * 提示还挂着时，同一轮里对话又多了用户消息：跑着的时候普通发送只会进排队、不会进对话，
+ * 所以这一定是又插了一句（输入框 Ctrl+Enter 或排队行「马上发给它」）——「已收到」重新算 30 秒，不是收掉（leo #170 soft-1）。
+ * 换了一轮（runId 变了）才算「之后又发出了一句」。
+ */
+export function steeredHintRestarted(input: {
+  hint: RuntimeHintCode
+  running: boolean
+  userCountAtShow: number
+  userCount: number
+  runIdAtShow: string | null
+  runId: string | null
+}): boolean {
+  if (input.hint !== "steered" || !input.running) return false
+  return input.userCount > input.userCountAtShow && input.runId === input.runIdAtShow
+}
+
 /** 只在当前提示仍是 steered 时清掉，别把随后换上的排队提示一起清了。 */
 export function clearSteeredHint(): boolean {
   if (getRuntimeHint() !== "steered") return false

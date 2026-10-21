@@ -8,7 +8,6 @@ import {
   subscribeSessionContextChips
 } from "@renderer/hooks/session-context-chips"
 import { inspectorContextModel } from "./inspector-context-model"
-import { useEngineHandoffStore } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { publishedContextWindow } from "@enjoy-agents/providers/context-window"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import {
@@ -121,12 +120,8 @@ function inspectorSnapshot(input: {
 }
 
 function useInspectorFace(slice: ReturnType<typeof useInspectorChatSlice>) {
-  const phase = useEngineHandoffStore((state) => state.phase)
-  const toRuntimeId = useEngineHandoffStore((state) => state.toRuntimeId)
   const snapshot = useSettingsSnapshot()
   return inspectorContextModel({
-    phase,
-    toRuntimeId,
     runtimeId: slice.runtimeId,
     catalogId: slice.modelId,
     catalogLabel: slice.modelLabel,
