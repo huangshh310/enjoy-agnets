@@ -17,6 +17,7 @@
  * mike P3（#163 巡检）：
  * - 点开后区内滚（滚动条是隐藏的）：底下还藏着排队行时，滚动区下面单独一行「还有 N 条」，点一下滚到底；区被挤到放不下这一行（<64px）时不画，不盖行；
  * - 点开着、够高过，又被挤到 <64px（底下还藏着行）：折回一行（foldOnSqueeze，luna #170 r-luna ①）；空间回来不自己展开，只有用户点；
+ *   一轮只自动折一次：折过之后用户再点开就一直开着（autoFolded，换审批 / 暂停原因、窗口变矮收起、切会话、排队清空时清）；
  * - 点开过，窗口再被拉到 ≤600 高：重新折成一行（refoldOnShort，m211-33）；
  * - 停着且对话里挂着失败卡：给对话区留 data-keep-thread，chat-stage 据此给对话区保底高度，「再发一次」整颗露出。
  */
@@ -96,6 +97,9 @@ function DockedFollowups({
   const [expanded, setExpanded] = useState(false)
   // 点开着被挤到 <64px 时折回的一行：空间回来也不自己展开，只有用户点（luna #170 r-luna ①）。
   const [squeezed, setSqueezed] = useState(false)
+  // 这一轮已经自动折过一次：用户再点开就一直开着，不再被挤折（luna #170 r-luna ① 补充）。只在下面三处（换审批 / 暂停原因、窗口变矮收起、切会话）清；排队清空时整块卸掉。
+  const [autoFolded, setAutoFolded] = useState(false)
+  const sessionId = useChatStore((state) => state.sessionId)
   const expand = useCallback(() => {
     setSqueezed(false)
     setExpanded(true)
@@ -103,14 +107,23 @@ function DockedFollowups({
   const foldSqueezed = useCallback(() => {
     setExpanded(false)
     setSqueezed(true)
+    setAutoFolded(true)
   }, [])
   const short = useShortWindow()
-  // 换了一张审批卡 / 暂停原因变了：回到默认（不展开）。
-  useEffect(() => setExpanded(false), [approvalId, paused])
-  // 点开过，窗口再被拉矮到 ≤600：重新折起（m211-33）。
+  // 换了一张审批卡 / 暂停原因变了：回到默认（不展开），这一轮结束。
+  useEffect(() => {
+    setExpanded(false)
+    setAutoFolded(false)
+  }, [approvalId, paused])
+  // 切会话：这一轮结束。
+  useEffect(() => setAutoFolded(false), [sessionId])
+  // 点开过，窗口再被拉矮到 ≤600：重新折起（m211-33），这一轮结束。
   const wasShort = useRef(short)
   useEffect(() => {
-    if (refoldOnShort(wasShort.current, short)) setExpanded(false)
+    if (refoldOnShort(wasShort.current, short)) {
+      setExpanded(false)
+      setAutoFolded(false)
+    }
     wasShort.current = short
   }, [short])
   // 停着 + 对话里挂着失败卡：对话区保底高度（chat-stage 按 data-keep-thread 加 min-h），失败卡按钮整颗露出。
@@ -143,6 +156,7 @@ function DockedFollowups({
       queuePaused={queuePaused}
       expanded={expanded}
       squeezed={squeezed}
+      autoFolded={autoFolded}
       expand={expand}
       foldSqueezed={foldSqueezed}
       dockRef={ref}
@@ -157,6 +171,7 @@ function DockedRows({
   queuePaused,
   expanded,
   squeezed,
+  autoFolded,
   expand,
   foldSqueezed,
   dockRef: ref,
@@ -167,6 +182,7 @@ function DockedRows({
   queuePaused: boolean
   expanded: boolean
   squeezed: boolean
+  autoFolded: boolean
   expand: () => void
   foldSqueezed: () => void
   dockRef: RefObject<HTMLDivElement | null>
@@ -179,7 +195,7 @@ function DockedRows({
   const scrollRef = useRef<HTMLDivElement>(null)
   const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
   const dockHeight = useDockHeight(ref, expanded || hiddenBelow > 0)
-  useFoldOnSqueeze(expanded, dockHeight, hiddenBelow, foldSqueezed)
+  useFoldOnSqueeze(expanded, dockHeight, hiddenBelow, autoFolded, foldSqueezed)
   // 放不下单独一行（审批卡 + 733×480 挤到一行高）就不画，不再贴区底盖住那一行的字（luna #170 01d）。
   const pill = showHiddenBelowPill(hiddenBelow, dockHeight) ? (
     <DockSummaryButton
@@ -339,9 +355,9 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
 
 /**
  * 点开着：这次点开后够高过（≥64px），又被挤到不够、底下还藏着行 → 折回一行（foldOnSqueeze）。
- * 每次点开重新记「够高过」：本来就挤时用户点开不受影响。
+ * 每次点开重新记「够高过」：本来就挤时用户点开不受影响；这一轮自动折过（autoFolded）之后再点开，不再折。
  */
-function useFoldOnSqueeze(expanded: boolean, dockHeight: number, hiddenBelow: number, fold: () => void): void {
+function useFoldOnSqueeze(expanded: boolean, dockHeight: number, hiddenBelow: number, autoFolded: boolean, fold: () => void): void {
   const seenRoomy = useRef(false)
   useLayoutEffect(() => {
     if (!expanded) {
@@ -349,13 +365,13 @@ function useFoldOnSqueeze(expanded: boolean, dockHeight: number, hiddenBelow: nu
       return
     }
     if (!Number.isFinite(dockHeight)) return
-    if (foldOnSqueeze(seenRoomy.current, dockHeight, hiddenBelow)) {
+    if (foldOnSqueeze(seenRoomy.current, dockHeight, hiddenBelow, autoFolded)) {
       seenRoomy.current = false
       fold()
       return
     }
     if (pillFitsBelow(dockHeight)) seenRoomy.current = true
-  }, [expanded, dockHeight, hiddenBelow, fold])
+  }, [expanded, dockHeight, hiddenBelow, autoFolded, fold])
 }
 
 /** 排队区外层高度（px）：给 showHiddenBelowPill 判「还有 N 条」放不放得下单独一行、给 useFoldOnSqueeze 判挤没挤。不量时是 Infinity。 */

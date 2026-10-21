@@ -62,7 +62,12 @@ export function showHiddenBelowPill(hiddenBelow: number, dockHeight: number): bo
  * 本来就挤时用户自己点开不受影响（不然点开就被立刻收回，审批时排队行上的「马上发给它」永远点不到）。
  * 底下没藏行（全露着）不折。折了之后空间回来也不自己展开，只有用户点。
  * 用「够高过」而不是「上一次的高度」：高度和藏行数是两个观察者分别量的，先后到达时不会漏掉这一次。
+ * 一轮只自动折一次（luna #170 r-luna ① 补充）：自动折过（autoFolded）之后用户再点开，就是要看——之后再被挤也不再折，
+ * 直到这一轮结束。排队区点开后没有「收起」按钮（用户没法自己收），所以「一轮结束」按别的原因收起 / 换了上下文算：
+ * 换了一张审批卡 / 暂停原因变了（排队区本来就回到默认收起）、窗口从高变矮跨过 600 线被 refoldOnShort 收起、
+ * 切会话、排队清空（排队区整块卸掉，状态跟着没了）。用户点开不清——那正是「自动折过之后又点开」。
  */
-export function foldOnSqueeze(seenRoomy: boolean, dockHeight: number, hiddenBelow: number): boolean {
-  return seenRoomy && hiddenBelow > 0 && !pillFitsBelow(dockHeight)
+export function foldOnSqueeze(seenRoomy: boolean, dockHeight: number, hiddenBelow: number, autoFolded: boolean): boolean {
+  return !autoFolded && seenRoomy && hiddenBelow > 0 && !pillFitsBelow(dockHeight)
 }
+

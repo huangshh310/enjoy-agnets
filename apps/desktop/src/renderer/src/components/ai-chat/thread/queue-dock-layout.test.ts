@@ -42,7 +42,7 @@ test("停着 + 对话里有失败卡才给对话区保底；输入框帽檐的�
 
 test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thread；chat-stage 按它给对话区 min-h，且盖过 min-h-0", () => {
   const dock = src("./queued-followups.tsx")
-  assert.match(dock, /refoldOnShort\(wasShort\.current, short\)\) setExpanded\(false\)/)
+  assert.match(dock, /refoldOnShort\(wasShort\.current, short\)\) \{\s+setExpanded\(false\)/)
   assert.match(dock, /data-keep-thread=\{keepThread \? "true" : undefined\}/)
   assert.match(dock, /testId="queued-hidden-below"/)
   assert.match(dock, /label=\{t\("chat\.runtimeQueueMore", \{ n: hiddenBelow \}\)\}/)
@@ -86,14 +86,14 @@ test("luna #170 01d：排队区不到 64px 时不画「还有 N 条」（不盖�
 
 test("luna #170 r-luna ①：点开后够高过（≥64px），又被挤到 <64px 且底下藏着行 → 折回一行；本来就挤时用户点开不折；没藏行不折", () => {
   // 点开时 152px，审批卡 / 输入框长高把排队区挤到 36px（733×480）：折。
-  assert.equal(foldOnSqueeze(true, 36, 2), true)
-  assert.equal(foldOnSqueeze(true, 63, 1), true)
+  assert.equal(foldOnSqueeze(true, 36, 2, false), true)
+  assert.equal(foldOnSqueeze(true, 63, 1, false), true)
   // 64 还放得下「还有 N 条」那一行：不折。
-  assert.equal(foldOnSqueeze(true, 64, 2), false)
+  assert.equal(foldOnSqueeze(true, 64, 2, false), false)
   // 本来就挤（这次点开后从没够高过）：用户自己点开的不收回（和 refoldOnShort 一个规矩）。
-  assert.equal(foldOnSqueeze(false, 36, 2), false)
+  assert.equal(foldOnSqueeze(false, 36, 2, false), false)
   // 全露着（1 条）：不折。
-  assert.equal(foldOnSqueeze(true, 36, 0), false)
+  assert.equal(foldOnSqueeze(true, 36, 0, false), false)
 })
 
 test("luna #170 r-luna ① 接线：挤到 <64px 折成一行（squeezed）；空间回来不自己展开，只有用户点；停着时用「已暂停 · 排队 N 条」那一行", () => {
@@ -106,13 +106,37 @@ test("luna #170 r-luna ① 接线：挤到 <64px 折成一行（squeezed）；�
   assert.equal(dock.match(/setExpanded\(true\)/g)?.length, 1, "展开只有 expand 这一处")
   assert.match(dock, /if \(paused && \(pausedCollapsed\(short, expanded\) \|\| squeezed\)\)/)
   assert.match(dock, /const mode = dockMode\(items\.length, tight, expanded, squeezed\)/)
-  assert.match(dock, /useFoldOnSqueeze\(expanded, dockHeight, hiddenBelow, foldSqueezed\)/)
+  assert.match(dock, /useFoldOnSqueeze\(expanded, dockHeight, hiddenBelow, autoFolded, foldSqueezed\)/)
   assert.match(dock, /const dockHeight = useDockHeight\(ref, expanded \|\| hiddenBelow > 0\)/)
-  assert.match(dock, /if \(foldOnSqueeze\(seenRoomy\.current, dockHeight, hiddenBelow\)\) \{\s+seenRoomy\.current = false\s+fold\(\)/)
+  assert.match(dock, /if \(foldOnSqueeze\(seenRoomy\.current, dockHeight, hiddenBelow, autoFolded\)\) \{\s+seenRoomy\.current = false\s+fold\(\)/)
   assert.match(dock, /if \(pillFitsBelow\(dockHeight\)\) seenRoomy\.current = true/)
   assert.match(dock, /if \(!expanded\) \{\s+seenRoomy\.current = false/)
   // 不量了就忘掉旧高度：下次点开不拿上回的 152px 当「够高过」。
   assert.match(dock, /if \(!enabled \|\| !el\) \{[^}]*setHeight\(Number\.POSITIVE_INFINITY\)/)
   // 审批时（说明行让位）折起来的那一行：队列停着也说「已暂停 · 排队 N 条」。
   assert.match(dock, /label=\{t\(queuePaused \? "chat\.queuePausedCollapsed" : "chat\.runtimeQueueCount", \{ n: items\.length \}\)\}/)
+})
+
+test("luna #170 r-luna ① 补充：一轮只自动折一次——自动折过之后用户再点开，再被挤也不折", () => {
+  // 第一次：够高过、被挤到 36px、藏着行 → 折。
+  assert.equal(foldOnSqueeze(true, 36, 2, false), true)
+  // 自动折过（autoFolded），用户又点开、空间回来又被挤：不再折，一直开着。
+  assert.equal(foldOnSqueeze(true, 36, 2, true), false)
+  assert.equal(foldOnSqueeze(true, 10, 5, true), false)
+})
+
+test("luna #170 r-luna ① 补充 接线：只有自动折记 autoFolded；用户点开不清；换审批 / 暂停原因、窗口变矮收起、切会话才清", () => {
+  const dock = src("./queued-followups.tsx")
+  assert.match(dock, /const foldSqueezed = useCallback\(\(\) => \{\s+setExpanded\(false\)\s+setSqueezed\(true\)\s+setAutoFolded\(true\)/)
+  assert.equal(dock.match(/setAutoFolded\(true\)/g)?.length, 1, "只有自动折会记")
+  const expand = dock.slice(dock.indexOf("const expand = useCallback"), dock.indexOf("const foldSqueezed"))
+  assert.doesNotMatch(expand, /setAutoFolded/, "用户点开不清：自动折过之后再点开要一直开着")
+  // 三处清：换审批 / 暂停原因、切会话、窗口变矮被 refoldOnShort 收起（排队清空时整块卸掉）。
+  assert.equal(dock.match(/setAutoFolded\(false\)/g)?.length, 3)
+  assert.match(dock, /useEffect\(\(\) => \{\s+setExpanded\(false\)\s+setAutoFolded\(false\)\s+\}, \[approvalId, paused\]\)/)
+  assert.match(dock, /useEffect\(\(\) => setAutoFolded\(false\), \[sessionId\]\)/)
+  assert.match(dock, /if \(refoldOnShort\(wasShort\.current, short\)\) \{\s+setExpanded\(false\)\s+setAutoFolded\(false\)/)
+  // 传到判定里，并跟着它重算。
+  assert.match(dock, /autoFolded=\{autoFolded\}/)
+  assert.match(dock, /\}, \[expanded, dockHeight, hiddenBelow, autoFolded, fold\]\)/)
 })
