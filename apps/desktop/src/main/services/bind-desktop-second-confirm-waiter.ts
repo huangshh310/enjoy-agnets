@@ -8,6 +8,7 @@ import { checkpointActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { armCatchUpPark } from "./park-catch-up-approval"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
+import { runWasStopped } from "./run-stopped"
 import {
   APPROVAL_ARGS_MISSING,
   APPROVAL_ARGS_MISSING_MESSAGE,
@@ -19,6 +20,8 @@ export async function waitSecondConfirmApproval(
   run: ActiveRun,
   args: unknown
 ): Promise<"allow" | "deny" | "allow_session" | "allow_always"> {
+  // 这一轮已被用户停止：桌面二次确认不再落审批行、不挂未决、不推卡，直接拒，不去点。
+  if (runWasStopped(run)) return "deny"
   const toolCallId = run.tools.at(-1)?.id || createId("tool")
   if (isMissingApprovalArgs(args)) {
     emitEvent(run.window, {

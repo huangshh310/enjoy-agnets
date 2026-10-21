@@ -17,6 +17,13 @@ export function releaseClientRequestId(id: string): void {
   if (inFlightClientRequestId === id) inFlightClientRequestId = null
 }
 
+/** 起步窗口里用户点了停止：在路上那一发作废，交出它的 id（记成已停止），下一发另开新 id。 */
+export function abandonInFlightClientRequestId(): string | null {
+  const id = inFlightClientRequestId
+  inFlightClientRequestId = null
+  return id
+}
+
 export function peekClientRequestIdForTest(): string | null {
   return inFlightClientRequestId
 }

@@ -24,6 +24,7 @@ import {
   syncReviewGateOnComposerStart
 } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
+import { isRequestStopped } from "../stopped-runs"
 import { failComposerSend } from "./fail-composer-send"
 import { releaseClientRequestId, takeClientRequestId } from "./client-request-id"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
@@ -450,6 +451,14 @@ async function launchComposerRun(
     const runId = requireAgentRunId(result)
     // leo：只有 main 回了 userMessageId（返回前已同事务落库用户句）才算「可以清 main 的稿」。
     const userPersisted = userMessagePersisted(result)
+    // host #169：起步窗口里用户已经停了这一发（可能又马上发了一句、running 是新那句的）：
+    // 不认领（否则被停那一轮整段跑完、审批卡还能批），也不走失败还稿（main 已落用户句，还稿会让这句重复）——只 abort 那一轮。
+    if (isRequestStopped(clientRequestId)) {
+      abortOrphanedRun(runId)
+      // main 接手过这一发（有 runId）：乐观标的「执行中」不按没发出去还原，交给它的停止收尾（run.error 带 turn）。
+      commitComposerStartGate(sessionId)
+      return userPersisted
+    }
     const settled = settleLaunchedRun(sessionId, runId, claimComposerRun)
     // 出字前失败已先到并回滚（红卡 / 稿已还原）：不中止、不改写红卡、不删建会话窗的会话。
     if (settled === "discarded") return false

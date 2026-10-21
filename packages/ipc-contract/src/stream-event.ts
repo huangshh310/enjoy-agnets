@@ -4,6 +4,7 @@
  */
 import { z } from "zod"
 import { AutomationRunSource } from "./automations-missed.ts"
+import { CLIENT_REQUEST_ID_MAX } from "./pre-output-failure.ts"
 import { APPROVAL_RESOLVED_CODES } from "./desktop-notify.ts"
 import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
@@ -44,6 +45,11 @@ export const StreamEvent = z.discriminatedUnion("type", [
     promptMessageId: z.string().min(1).max(128).optional(),
     /** Composer / Agent 为 `agent`；标题补全等旁路带自己的 generation kind。 */
     kind: z.string().max(40).optional(),
+    /**
+     * 发起这一发的 agent.run 带的 clientRequestId，原样带回。渲染端按它认出「认领前已被用户停掉的那一发」，
+     * 不再按会话猜（停止后马上再发一句时，新旧两发的 run.start 同会话、都在认领前）。
+     */
+    clientRequestId: z.string().min(1).max(CLIENT_REQUEST_ID_MAX).optional(),
     sequence: z.number().int().optional(),
     timestamp: z.number().int().optional()
   }),

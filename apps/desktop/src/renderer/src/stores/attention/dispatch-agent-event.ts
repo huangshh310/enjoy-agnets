@@ -34,8 +34,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
   // 用户已停止的一轮：迟到的审批卡 / 开跑整条丢掉（不进 Inbox、不进前台、不停车），
-  // 否则卡、停止按钮、「执行中 / 正在写」又挂回来。起步窗口停的那一轮顺手 abort。
-  const late = lateStoppedEvent(event, sessionId, useChatStore.getState())
+  // 否则卡、停止按钮、「执行中 / 正在写」又挂回来。起步窗口停的那一发（按 run.start 带回的 clientRequestId 认）顺手 abort。
+  const late = lateStoppedEvent(event)
   if (late) {
     if (late === "beforeClaim" && runId) abortOrphanedRun(runId)
     return

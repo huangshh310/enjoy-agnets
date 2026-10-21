@@ -12,12 +12,11 @@ import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-p
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
 import { hasQueuedComposerSend } from "./queue-composer-send"
-import { clearStoppedBeforeClaim, noteRunStopped, noteStoppedBeforeClaim } from "./stopped-runs"
+import { noteRequestStopped, noteRunStopped } from "./stopped-runs"
+import { abandonInFlightClientRequestId } from "./runtime-interact/client-request-id"
 
 /** IPC 返回后认领本轮；切走则写入停车快照，只有用户 Stop 才当孤儿 abort。 */
 export function claimComposerRun(startedSessionId: string | null, runId: string): boolean {
-  // 起步窗口那一发回来了：之后它的审批卡按 runId 认（停过的 abortOrphanedRun 会记下）。
-  clearStoppedBeforeClaim(startedSessionId)
   const store = useChatStore.getState()
   if (canClaimComposerRun({
     running: store.running,
@@ -68,8 +67,10 @@ export async function abortComposerRun(opts?: {
   // #160 巡检 6：先记下被停的 run，abort 到达 main 之前它迟到的审批 / 出字一律丢掉，审批卡不再冒回来。
   rememberStoppedRun(sessionId, runId)
   // 停止后 main 迟到的审批卡 / 开跑不得把卡、停止按钮、执行中挂回来（jojo 211e3bbb 1c）。
-  // 有 runId 的由下面 abortOrphanedRun 记下；起步窗口还没 runId，先记会话。
-  if (!runId && inFlight) noteStoppedBeforeClaim(sessionId)
+  // 有 runId 的由下面 abortOrphanedRun 记下；起步窗口还没 runId：记下在路上那一发的 clientRequestId
+  // （run.start 带回它、回执也按它认，host #169 KAI），并放掉它——马上再发的一句另开 id，
+  // 否则 main 60s 去重会把新一句当成被停的那一发。
+  if (!runId && inFlight) noteRequestStopped(abandonInFlightClientRequestId())
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)

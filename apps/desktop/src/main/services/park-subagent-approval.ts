@@ -8,6 +8,7 @@ import { checkpointActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { armCatchUpPark } from "./park-catch-up-approval"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
+import { runWasStopped } from "./run-stopped"
 import {
   APPROVAL_ARGS_MISSING,
   APPROVAL_ARGS_MISSING_MESSAGE,
@@ -20,6 +21,8 @@ export async function waitForSubagentApproval(
   input: { toolName: string; toolCallId: string; input: unknown }
 ): Promise<"allow" | "deny" | "allow_session"> {
   const { toolName, toolCallId, input: args } = input
+  // 父一轮已被用户停止：子 Agent 迟到的审批整条丢（不落审批行、不挂未决、不推卡），直接拒，工具不执行。
+  if (runWasStopped(run)) return "deny"
   if (isExploreMutatingDeny(run.input.mode, toolName)) {
     emitEvent(run.window, {
       type: "tool.result",
@@ -44,6 +47,8 @@ export async function waitForSubagentApproval(
     return "deny"
   }
   const parked = await parkToolArgs(toolName, asParkArgs(args))
+  // 停止落在上面这个 await 里：同样丢掉。
+  if (runWasStopped(run)) return "deny"
   const approvalId = rememberApproval({
     runId,
     approvalId: createId("apr"),

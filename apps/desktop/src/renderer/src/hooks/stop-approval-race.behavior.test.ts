@@ -45,12 +45,14 @@ const { decidePendingApproval } = await import("./decide-pending-approval.ts")
 const { rewindFromUserTurn } = await import("./rewind-from-here.ts")
 const queue = await import("./followup-queue.ts")
 const { resetStoppedRunsForTest } = await import("./stopped-runs.ts")
+const { takeClientRequestId, resetClientRequestIdForTest } = await import("./runtime-interact/client-request-id.ts")
 
 afterEach(() => {
   calls.length = 0
   mainStopped.clear()
   queue.resetFollowupsForTest()
   resetStoppedRunsForTest()
+  resetClientRequestIdForTest()
 })
 
 let seq = 0
@@ -58,6 +60,9 @@ function running(tag: string, opts?: { unclaimed?: boolean }) {
   seq += 1
   const sessionId = `ses_${tag}_${seq}`
   const runId = `run_${tag}_${seq}`
+  // 起步窗口：这一发的 agent.run 还在路上，手里攥着它的 clientRequestId（main 的 run.start 会原样带回）。
+  resetClientRequestIdForTest()
+  const clientRequestId = opts?.unclaimed ? takeClientRequestId() : undefined
   useAttentionStore.getState().rememberRun(runId, sessionId)
   useChatStore.setState({
     workspaceId: "ws",
@@ -77,7 +82,12 @@ function running(tag: string, opts?: { unclaimed?: boolean }) {
     ]
   } as never)
   queue.enqueueFollowup({ sessionId, prompt: "排队一", assets: [] })
-  return { sessionId, runId }
+  return { sessionId, runId, clientRequestId }
+}
+
+/** main 的 run.start：Composer 那一发带回它的 clientRequestId。 */
+function runStart(runId: string, sessionId: string, clientRequestId?: string, prompt = "very slow") {
+  return { type: "run.start", runId, sessionId, kind: "agent", prompt, ...(clientRequestId ? { clientRequestId } : {}) } as never
 }
 
 function approval(runId: string, sessionId: string) {
@@ -171,9 +181,10 @@ test("decide 已经在路上时点了停止：main 回「no longer active」也�
   assert.equal(useChatStore.getState().error, null)
 })
 
-test("起步窗口（runId 还没认领）里停止：随后冒出的审批卡丢掉并 abort 那一轮，认领失败不挂回来", async () => {
-  const { sessionId, runId } = running("unclaimed", { unclaimed: true })
+test("起步窗口（runId 还没认领）里停止：随后冒出的开跑 + 审批卡丢掉并 abort 那一轮，认领失败不挂回来", async () => {
+  const { sessionId, runId, clientRequestId } = running("unclaimed", { unclaimed: true })
   await abortComposerRun()
+  dispatchAgentEvent(runStart(runId, sessionId, clientRequestId))
   dispatchAgentEvent(approval(runId, sessionId))
   assertStoppedUi(sessionId, "起步窗口迟到的卡")
   assert.ok(calls.some((c) => c.path === ".ai.abort" && c.arg === runId), "那一轮在 main 里也被 abort")
@@ -196,12 +207,15 @@ test("对照：没停的一轮审批卡照常挂上、running 照常在", async 
   assert.equal(useChatStore.getState().running, true)
 })
 
-test("对照：起步窗口停过、之后正常认领的新一轮，空闲时也不会被误丢（认领清掉标记）", async () => {
-  const { sessionId } = running("reclaim", { unclaimed: true })
+test("对照：起步窗口停过、之后正常认领的新一轮（新 clientRequestId），开跑和审批卡都不会被误丢", async () => {
+  const { sessionId, clientRequestId } = running("reclaim", { unclaimed: true })
   await abortComposerRun()
-  // 用户再发一句：running 起、认领新 runId。
+  // 用户再发一句：另开 clientRequestId，running 起、认领新 runId。
+  const fresh = takeClientRequestId()
+  assert.notEqual(fresh, clientRequestId, "停止放掉了旧 id，新一句另开")
   useChatStore.setState({ running: true } as never)
   const next = `run_reclaim_next_${seq}`
+  dispatchAgentEvent(runStart(next, sessionId, fresh, "再来一句"))
   assert.equal(claimComposerRun(sessionId, next), true)
   dispatchAgentEvent(approval(next, sessionId))
   assert.equal(useChatStore.getState().pendingApproval?.runId, next)
@@ -209,9 +223,9 @@ test("对照：起步窗口停过、之后正常认领的新一轮，空闲时�
 
 /** luna m211-50：起步窗口里停止后，main 迟到的 run.start（kind=agent）把 running 认领回来，随后认领成功、整段跑完。 */
 test("起步窗口里停止后迟到的 run.start：停止按钮 /「正在写」不回来，那一轮被 abort，认领失败，后续出字不进前台", async () => {
-  const { sessionId, runId } = running("late_start", { unclaimed: true })
+  const { sessionId, runId, clientRequestId } = running("late_start", { unclaimed: true })
   await abortComposerRun()
-  dispatchAgentEvent({ type: "run.start", runId, sessionId, kind: "agent", prompt: "very slow" } as never)
+  dispatchAgentEvent(runStart(runId, sessionId, clientRequestId))
   assert.equal(useChatStore.getState().running, false, "停止按钮 /「正在写」不回来")
   assert.equal(useChatStore.getState().runId, null)
   assert.ok(calls.some((c) => c.path === ".ai.abort" && c.arg === runId), "那一轮在 main 里被 abort")
@@ -222,9 +236,9 @@ test("起步窗口里停止后迟到的 run.start：停止按钮 /「正在写�
 })
 
 test("对照：起步窗口没停时 run.start 照常认领前台", async () => {
-  const { sessionId, runId } = running("start_ok", { unclaimed: true })
+  const { sessionId, runId, clientRequestId } = running("start_ok", { unclaimed: true })
   useChatStore.setState({ running: false } as never)
-  dispatchAgentEvent({ type: "run.start", runId, sessionId, kind: "agent", prompt: "very slow" } as never)
+  dispatchAgentEvent(runStart(runId, sessionId, clientRequestId))
   assert.equal(useChatStore.getState().running, true)
   assert.equal(useChatStore.getState().runId, runId)
 })
@@ -244,7 +258,7 @@ test("对照：起步窗口停过、旧回执还没到就又发了一句（runni
   await abortComposerRun()
   useChatStore.setState({ running: true, runId: null } as never)
   const next = `run_resend_next_${seq}`
-  dispatchAgentEvent({ type: "run.start", runId: next, sessionId, kind: "agent", prompt: "再来一句" } as never)
+  dispatchAgentEvent(runStart(next, sessionId, takeClientRequestId(), "再来一句"))
   const st = useChatStore.getState()
   // 认领前的事件先进 pendingStreamEvents，认领后回放：只要没被丢、没被 abort 就对。
   assert.ok(st.runId === next || st.pendingStreamEvents.some((e: any) => e.runId === next), "新一轮的开跑没被丢")
@@ -276,4 +290,15 @@ test("对照：已认领的一轮停止后，同会话空闲时别的一轮的�
   dispatchAgentEvent(approval(other, sessionId))
   assert.equal(useChatStore.getState().pendingApproval?.runId, other)
   assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === other))
+})
+
+test("对照（leo STUCK）：起步窗口停过、回执一直没回来（卡住 / 抛错），同会话之后空闲时的心跳一轮开跑 + 审批卡照常进来、不被 abort", async () => {
+  const { sessionId } = running("stuck", { unclaimed: true })
+  await abortComposerRun()
+  const heartbeat = `run_heartbeat_stuck_${seq}`
+  // 心跳 / 自动化不经 Composer，run.start 不带 clientRequestId。
+  dispatchAgentEvent(runStart(heartbeat, sessionId, undefined, "心跳"))
+  dispatchAgentEvent(approval(heartbeat, sessionId))
+  assert.equal(useChatStore.getState().pendingApproval?.runId, heartbeat, "心跳的卡挂上")
+  assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === heartbeat), "心跳一轮不被 abort")
 })

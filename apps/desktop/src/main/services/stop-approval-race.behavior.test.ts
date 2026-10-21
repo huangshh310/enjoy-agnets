@@ -24,7 +24,11 @@ const {
   rememberApproval,
   applyExplicitSessionTruncate,
   markRestoreWaitingSettled,
-  resetRestoreWaitingOnceForTests
+  resetRestoreWaitingOnceForTests,
+  waitForSubagentApproval,
+  waitSecondConfirmApproval,
+  runStartEvent,
+  acceptStreamEvent
 } = await import("./stop-approval-race.behavior.load.ts")
 
 type Sent = { type: string; decision?: string; code?: string; toolCallId?: string }
@@ -276,4 +280,133 @@ test("对照：workflow 父行（本来就没有 ActiveRun）的 waiting_review 
   } finally {
     resetRestoreWaitingOnceForTests()
   }
+})
+
+test("X5：结清残留 waiting_review 只动「从这里重来」的那个会话，别的会话的残留原样（等它自己的会话来结清）", () => {
+  markRestoreWaitingSettled()
+  try {
+    const mine = seedStaleWaiting("x5_mine")
+    const other = seedStaleWaiting("x5_other")
+    deleteActiveRun(mine.runId)
+    deleteActiveRun(other.runId)
+    assert.notEqual(mine.sessionId, other.sessionId)
+    assert.deepEqual(rewindPrecheck(mine.sessionId, mine.u1, mine.a1), { ok: true, deleted: 0 })
+    assert.equal(getRun(getDatabase(), mine.runId)?.status, "cancelled", "本会话的残留结清")
+    assert.equal(getRun(getDatabase(), other.runId)?.status, "waiting_review", "别的会话的 run 不动")
+    assert.equal(getApproval(getDatabase(), other.approvalId)?.decision, null, "别的会话的审批不动")
+  } finally {
+    resetRestoreWaitingOnceForTests()
+  }
+})
+
+/** 等不到就算挂住（leo 探针里子 Agent 停后那一张卡就是永远等不到）。 */
+function settleWithin<T>(promise: Promise<T>, ms = 1_000): Promise<T | "HANG"> {
+  return Promise.race([promise, new Promise<"HANG">((resolve) => setTimeout(() => resolve("HANG"), ms))])
+}
+
+function assertNoLateApproval(runId: string, events: Sent[], label: string) {
+  assert.ok(!typesAfter(events, "run.error").includes("approval.required"), `${label}：停止之后不推审批卡`)
+  assert.equal(listPendingApprovals(getDatabase(), runId).length, 0, `${label}：不留 decision=null 的审批行`)
+  assert.equal(getRun(getDatabase(), runId)?.status, "cancelled", `${label}：库 cancelled`)
+}
+
+test("soft 4：父一轮停止后子 Agent 的审批才到——直接拒（工具不执行），不落审批行、不推卡、不挂住", async () => {
+  const events: Sent[] = []
+  const { runId, run } = seed("sub_after", events)
+  abortActiveRunMemory(runId)
+  const decision = await settleWithin(
+    waitForSubagentApproval(run, runId, { toolName: "write_file", toolCallId: "tool_sub_after", input: { path: "a.ts" } })
+  )
+  assert.equal(decision, "deny")
+  assert.deepEqual(run.pendingApprovals, [])
+  assertNoLateApproval(runId, events, "子 Agent")
+})
+
+test("soft 4：父一轮停止后子 Agent 才来一张缺参 / Explore 只读的审批——入口就拒，不再推工具失败", async () => {
+  for (const variant of ["noargs", "explore"] as const) {
+    const events: Sent[] = []
+    const { runId, run } = seed(`sub_${variant}`, events)
+    if (variant === "explore") run.input.mode = "ask" as never
+    abortActiveRunMemory(runId)
+    const decision = await settleWithin(
+      waitForSubagentApproval(run, runId, {
+        toolName: "write_file",
+        toolCallId: `tool_sub_${variant}`,
+        input: variant === "noargs" ? undefined : { path: "a.ts" }
+      })
+    )
+    assert.equal(decision, "deny", variant)
+    assert.ok(!typesAfter(events, "run.error").includes("tool.result"), `${variant}：停止之后不再推工具结果`)
+  }
+})
+
+test("soft 4：子 Agent 审批整理参数（await）途中父一轮被停——同样直接拒，不落审批行、不推卡", async () => {
+  const events: Sent[] = []
+  const { runId, run } = seed("sub_during", events)
+  // desktop_act 要先 await 整理参数；入口闸已过，停止落在这个 await 里。
+  const pending = waitForSubagentApproval(run, runId, {
+    toolName: "desktop_act",
+    toolCallId: "tool_sub_during",
+    input: { observationId: "obs_sub", action: "click" }
+  })
+  abortActiveRunMemory(runId)
+  assert.equal(await settleWithin(pending), "deny")
+  assert.deepEqual(run.pendingApprovals, [])
+  assertNoLateApproval(runId, events, "子 Agent（await 中）")
+})
+
+test("对照：父一轮没停时子 Agent 的审批照常落行、推卡", async () => {
+  const events: Sent[] = []
+  const { runId, run } = seed("sub_live", events)
+  const pending = waitForSubagentApproval(run, runId, { toolName: "write_file", toolCallId: "tool_sub_live", input: { path: "a.ts" } })
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    assert.ok(events.some((event) => event.type === "approval.required" && event.toolCallId === "tool_sub_live"), "卡推出去了")
+    assert.equal(run.pendingApprovals.length, 1)
+  } finally {
+    abortActiveRunMemory(runId)
+    await settleWithin(pending)
+  }
+})
+
+test("soft 4：这一轮停止后桌面二次确认才到——直接拒（不去点），不落审批行、不推卡、不挂住", async () => {
+  const events: Sent[] = []
+  const { runId, run } = seed("second_after", events)
+  abortActiveRunMemory(runId)
+  const decision = await settleWithin(waitSecondConfirmApproval(runId, run, { observationId: "obs_2", action: "click" }))
+  assert.equal(decision, "deny")
+  assert.deepEqual(run.pendingApprovals, [])
+  assertNoLateApproval(runId, events, "二次确认")
+})
+
+test("对照：没停时桌面二次确认照常推卡", async () => {
+  const events: Sent[] = []
+  const { runId, run } = seed("second_live", events)
+  const pending = waitSecondConfirmApproval(runId, run, { observationId: "obs_2", action: "click" })
+  try {
+    assert.ok(events.some((event) => event.type === "approval.required"), "卡推出去了")
+    assert.equal(run.pendingApprovals.length, 1)
+  } finally {
+    abortActiveRunMemory(runId)
+    await settleWithin(pending)
+  }
+})
+
+test("host #169 ③：Composer 一轮的 run.start 原样带回 clientRequestId，过出站闸也不丢；没带就不出这个键", () => {
+  const input = {
+    sessionId: "ses_crid",
+    workspaceId: "ws",
+    modelId: "m",
+    mode: "agent",
+    attachments: [],
+    messages: [{ id: "u_crid", role: "user", content: "S1 text" }],
+    clientRequestId: "req_S1"
+  } as never
+  const event = acceptStreamEvent(runStartEvent(input, "run_crid", true)) as Record<string, unknown> | null
+  assert.equal(event?.type, "run.start")
+  assert.equal(event?.clientRequestId, "req_S1", "渲染端靠它认出被停的那一发")
+  assert.equal(event?.prompt, "S1 text")
+  const bare = acceptStreamEvent(runStartEvent({ ...(input as object), clientRequestId: undefined } as never, "run_bare")) as Record<string, unknown> | null
+  assert.equal(bare?.type, "run.start")
+  assert.equal("clientRequestId" in (bare ?? {}), false)
 })
