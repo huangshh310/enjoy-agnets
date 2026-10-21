@@ -5,12 +5,13 @@ import { useCallback, useEffect, useState } from "react"
 import { parseInboxPendingItems, type PendingApprovalItem } from "@enjoy-agents/ipc-contract/approvals-pending"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"
+import { attentionRefreshTick, useInboxPendingEpoch } from "@renderer/stores/attention/inbox-pending-refresh"
 
 export function useLivePendingApprovals(): PendingApprovalItem[] {
   const [items, setItems] = useState<PendingApprovalItem[]>([])
-  const attentionTick = useAttentionStore((state) =>
-    state.items.map((item) => `${item.id}:${item.status}:${item.kind}`).join("|")
-  )
+  const attentionTick = useAttentionStore((state) => attentionRefreshTick(state.items))
+  // 被停那一轮的审批结清不进 Attention 槽：另跟未决相关事件的节拍走，否则徽标挂着点不掉。
+  const pendingEpoch = useInboxPendingEpoch((state) => state.epoch)
   const refresh = useCallback(() => {
     if (!hasIde()) return
     void getIde()
@@ -22,6 +23,6 @@ export function useLivePendingApprovals(): PendingApprovalItem[] {
   }, [])
   useEffect(() => {
     refresh()
-  }, [refresh, attentionTick])
+  }, [refresh, attentionTick, pendingEpoch])
   return items
 }

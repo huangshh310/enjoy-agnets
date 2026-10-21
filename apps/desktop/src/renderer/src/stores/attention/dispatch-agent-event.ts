@@ -25,10 +25,13 @@ import { noteBackgroundPreOutputRollback } from "../after-pre-output-rollback"
 import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
 import { lateStoppedEvent } from "@renderer/hooks/stopped-runs"
 import { abortOrphanedRun } from "@renderer/hooks/composer-run-control"
+import { noteInboxPendingEvent } from "./inbox-pending-refresh"
 
 export { belongsToForeground } from "./foreground-event"
 
 export function dispatchAgentEvent(event: StreamEvent): void {
+  // 收件箱徽标重拉要排在下面的丢弃之前：被停那一轮的审批结清 / 收尾也得让徽标对一次库（jojo 54a533a2 B）。
+  noteInboxPendingEvent(event)
   // #160 巡检 6：用户停掉的那一轮迟到的审批 / 出字，不进 Attention、不停车、不进前台（终态照常放行）。
   if (isLateEventOfStoppedRun(event)) return
   const sessionId = resolveEventSessionId(event)
