@@ -2,30 +2,38 @@
  * luna P2（#163 巡检 m211-29c/d）：密钥没通过时按 Enter / 点发送被发送闸拦下，卡还是原来那张，看起来什么都没发生。
  * 被拦的那一刻按会话记一笔，「密钥没通过」卡上补一行「先改好密钥再发。」——绝不静默。
  * 下一次真正放行的发送（闸通过）就清掉。纯模块，测试直接调。
+ * 没有会话（落地页 / 新对话）记在空名下：从落地页发、被拦下后那个空会话会被删掉、回到落地页，卡要照样看得到（luna P2）。
  */
 let blocked: ReadonlySet<string> = new Set()
 const listeners = new Set<() => void>()
+
+/** 会话 → 提醒的键；没有会话 = 落地页。 */
+export function credentialNudgeKey(sessionId: string | null | undefined): string {
+  return sessionId ?? ""
+}
 
 function emit(): void {
   for (const listener of listeners) listener()
 }
 
 export function noteCredentialSendBlocked(sessionId: string | null | undefined): void {
-  if (!sessionId || blocked.has(sessionId)) return
-  blocked = new Set([...blocked, sessionId])
+  const key = credentialNudgeKey(sessionId)
+  if (blocked.has(key)) return
+  blocked = new Set([...blocked, key])
   emit()
 }
 
 export function clearCredentialSendBlocked(sessionId: string | null | undefined): void {
-  if (!sessionId || !blocked.has(sessionId)) return
+  const key = credentialNudgeKey(sessionId)
+  if (!blocked.has(key)) return
   const next = new Set(blocked)
-  next.delete(sessionId)
+  next.delete(key)
   blocked = next
   emit()
 }
 
 export function credentialSendBlocked(sessionId: string | null | undefined): boolean {
-  return Boolean(sessionId && blocked.has(sessionId))
+  return blocked.has(credentialNudgeKey(sessionId))
 }
 
 export function getCredentialSendBlocked(): ReadonlySet<string> {

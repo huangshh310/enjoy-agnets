@@ -71,6 +71,15 @@ export function markSendLaunched(attempt: SendAttempt | undefined): void {
   if (attempt) attempt.launched = true
 }
 
+/**
+ * 这一发已经有了自己的结局（被发送闸拦下、卡已挂上）：看门狗收手。
+ * jojo P3 / luna P2：闸拦下时挂的常常是 Enter 之前就在的同一张卡（如「密钥没通过」），
+ * noticeShown 按「Enter 后新冒出来的」认不出它，3s 后会误判静默失败——把具名卡换成通用「这次没发出去」、再还一次稿。
+ */
+export function markSendSettled(attempt: SendAttempt | undefined): void {
+  if (attempt) attempt.done = true
+}
+
 /** 看门狗已判失败并还稿：迟到的发送不得再发出，也不得再动输入框 / 附件 / Chip。 */
 export function sendAttemptCancelled(attempt: SendAttempt | undefined): boolean {
   return attempt?.cancelled === true

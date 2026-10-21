@@ -52,7 +52,7 @@ import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
 import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
 import { claimComposerRunning, releaseComposerRunningIfOwner, runningHeldByOther } from "./composer-running-owner"
-import { armSendWatchdog, markSendLaunched, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
+import { armSendWatchdog, markSendLaunched, markSendSettled, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { isNewSessionCreatePending } from "../new-session-create"
 import {
   captureComposerSend,
@@ -233,10 +233,16 @@ async function sendComposerOnce(
     useChatStore.getState().setError(null)
   }
   if (!guardComposerSend(store)) {
+    // jojo P3 / luna P2：闸拦下就是这一发的结局（卡已挂上），看门狗别再判它「静默失败」去换卡、再还一次稿。
+    markSendSettled(attempt)
     const blocked = useChatStore.getState().error
     traceSend("send:gate", { blocked })
     if (prepared) {
-      if (blocked === CREDENTIAL_INVALID) noteCredentialSendBlocked(store.sessionId)
+      if (blocked === CREDENTIAL_INVALID) {
+        noteCredentialSendBlocked(store.sessionId)
+        // 落地页发的（建会话窗续发）：空会话随后被删、回到落地页，提醒也要记在落地页名下，卡上才看得到。
+        if (prepared.sessionId) noteCredentialSendBlocked(null)
+      }
       failComposerSend({
         text: prepared.content,
         reason: blocked || SEND_FAILED_RESTORE,
@@ -251,6 +257,7 @@ async function sendComposerOnce(
     return
   }
   clearCredentialSendBlocked(store.sessionId)
+  if (prepared?.sessionId) clearCredentialSendBlocked(null)
   syncReviewGateOnComposerStart(store.sessionId)
   // 取稿前拍快照：失败时还原文 + 引用 / 技能 / 知识 Chip + 附件，不还拼好的 content。
   const snapshot = prepared

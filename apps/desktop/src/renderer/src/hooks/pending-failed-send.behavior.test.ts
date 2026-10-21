@@ -6,7 +6,7 @@
  * 真走 dispatchAgentEvent（出字前回滚）/ sendComposerMessage（发送闸）/ continueFollowups；自启用 useFollowupAutostart 同款 kick。
  */
 import assert from "node:assert/strict"
-import { afterEach, test } from "node:test"
+import { afterEach, mock, test } from "node:test"
 
 const memory = new Map<string, string>()
 ;(globalThis as any).localStorage = { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v), removeItem: (k: string) => void memory.delete(k) }
@@ -314,7 +314,7 @@ test("源码钉：输入框手势发送在闸前标记在发；闸放行清掉�
   const src = readFileSync(new URL("./runtime-interact/send-composer-run.ts", import.meta.url), "utf8")
   assert.match(src, /if \(!prepared\) markPendingFailedSendInFlight\(store\.sessionId\)/)
   assert.ok(src.indexOf("markPendingFailedSendInFlight(store.sessionId)") < src.indexOf("if (!guardComposerSend(store))"))
-  assert.match(src, /\r?\n  clearCredentialSendBlocked\(store\.sessionId\)\r?\n  syncReviewGateOnComposerStart/)
+  assert.match(src, /\r?\n  clearCredentialSendBlocked\(store\.sessionId\)\r?\n  if \(prepared\?\.sessionId\) clearCredentialSendBlocked\(null\)\r?\n  syncReviewGateOnComposerStart/)
 })
 
 test("停止 / 换助手仍不自动放行：失败那条发出去跑完也只是清掉记录，不解除暂停", async () => {
@@ -477,6 +477,88 @@ test("P2 卡接线（源码）：密钥卡订阅提醒，detail 走 credentialIn
   assert.match(src, /onDismiss=\{\(\) => \{[\s\S]*?clearCredentialSendBlocked\(sessionId\)[\s\S]*?onDismiss\(\)/)
   assert.equal((zhChat as any).credentialFixKeyFirst, "先改好密钥再发。")
   assert.equal((enChat as any).credentialFixKeyFirst, "Fix the key first, then send.")
+})
+
+// ---------------- #169 jojo P3 / luna P2：密钥卡出现后再按 Enter ----------------
+
+/** 看门狗用 setInterval + Date.now 计时：换成假时钟，拨过 3s 看它会不会误判「静默失败」。 */
+function fakeClock() {
+  mock.timers.enable({ apis: ["setInterval", "Date"] })
+  return { pass: (ms: number) => { for (let t = 0; t < ms; t += 250) mock.timers.tick(250) }, done: () => mock.timers.reset() }
+}
+
+test("jojo P3：密钥卡出现后再按 Enter（被闸拦下）——3s 后具名卡还在、不换成「这次没发出去」，用户随后打的字不被拼上旧稿", async () => {
+  inFlightTurn("ses_k3", "官方被拒", "B1")
+  useChatStore.setState({ runtimeId: "enjoy-local", modelId: "gpt" } as never)
+  preOutputFail("ses_k3", "credential_invalid")
+  keyReadiness("invalid")
+  assert.equal(useChatStore.getState().error, "credential_invalid")
+  const clock = fakeClock()
+  try {
+    fakeComposerDom("官方被拒")
+    useChatStore.setState({ composer: "官方被拒" } as never)
+    await sendComposerMessage(undefined, "官方被拒")
+    assert.equal(useChatStore.getState().error, "credential_invalid", "闸拦下：还是密钥卡")
+    assert.equal(nudge.credentialSendBlocked("ses_k3"), true, "卡上补「先改好密钥再发。」")
+    // 用户接着改了输入框（或又按了一次 Enter）——看门狗不能 3s 后再还一次旧稿。
+    fakeComposerDom("换个说法")
+    useChatStore.setState({ composer: "换个说法" } as never)
+    clock.pass(4_000)
+    await flush()
+    const st = useChatStore.getState()
+    assert.equal(st.error, "credential_invalid", "具名密钥卡不被通用「这次没发出去」顶掉")
+    assert.equal(st.composer, "换个说法", "旧稿不被拼进输入框")
+    assert.equal(nudge.credentialSendBlocked("ses_k3"), true)
+    assert.deepEqual(sent, [], "排队的不发")
+  } finally {
+    clock.done()
+  }
+})
+
+test("jojo P3：连按两次 Enter 都被闸拦下——卡始终是密钥卡，输入框只有一份字", async () => {
+  inFlightTurn("ses_k3b", "官方被拒")
+  useChatStore.setState({ runtimeId: "enjoy-local", modelId: "gpt" } as never)
+  preOutputFail("ses_k3b", "credential_invalid")
+  keyReadiness("invalid")
+  const clock = fakeClock()
+  try {
+    for (let i = 0; i < 2; i++) {
+      fakeComposerDom("官方被拒")
+      await sendComposerMessage(undefined, "官方被拒")
+      clock.pass(1_000)
+    }
+    clock.pass(4_000)
+    await flush()
+    assert.equal(useChatStore.getState().error, "credential_invalid")
+    assert.equal(useChatStore.getState().composer, "官方被拒")
+  } finally {
+    clock.done()
+  }
+})
+
+test("luna P2：从落地页发（建会话窗续发）被密钥闸拦下、空会话删掉回到落地页——落地页的密钥卡照样有「先改好密钥再发。」；放行后清掉", async () => {
+  useChatStore.setState({
+    workspaceId: "ws", sessionId: "ses_land_new", running: false, runId: null, composer: "", error: "credential_invalid",
+    notice: null, pendingApproval: null, hasKey: true, pendingStreamEvents: [], preparingHint: false, preparingSessionId: null,
+    messages: [], runtimeId: "enjoy-local", modelId: "gpt"
+  } as never)
+  keyReadiness("invalid")
+  await sendComposerMessage({ content: "官方被拒", sessionId: "ses_land_new", assets: [] })
+  assert.equal(useChatStore.getState().error, "credential_invalid")
+  // 被删的空会话：回到落地页（没有会话）。
+  useChatStore.setState({ sessionId: null } as never)
+  assert.equal(nudge.credentialSendBlocked(null), true, "落地页名下也记了")
+  assert.equal(nudge.credentialNudgeKey(null), nudge.credentialNudgeKey(undefined))
+  // 改好密钥后从落地页再发：闸放行，落地页的提醒清掉。
+  useChatStore.setState({ sessionId: "ses_land_new2" } as never)
+  keyReadiness("ok")
+  await sendComposerMessage({ content: "官方被拒", sessionId: "ses_land_new2", assets: [] }).catch(() => undefined)
+  assert.equal(nudge.credentialSendBlocked(null), false)
+})
+
+test("luna P2 卡接线（源码）：落地页按空名认提醒", () => {
+  const src = readFileSync(new URL("../components/ai-chat/thread/thread-credential-invalid-notice.tsx", import.meta.url), "utf8")
+  assert.match(src, /blockedAll\.has\(credentialNudgeKey\(sessionId\)\)/)
 })
 
 // ---------------- P3 ----------------

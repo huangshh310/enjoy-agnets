@@ -291,6 +291,8 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
 
     // 4) 审批轮在中间（后面还有命令轮）：确认删 1 轮，重跑写文件这一轮，命令轮不再出现。
     const writeRegen = regen.nth(1)
+    // 上一轮 run.end 落下前按钮是 disabled，force 点下去什么也不发生（CI 39551224529 偶发）。
+    await expect(writeRegen).toBeEnabled()
     await writeRegen.click({ force: true })
     await expect(dialog).toContainText("1 轮")
     await window.locator('[data-testid="regenerate-confirm"]').click()

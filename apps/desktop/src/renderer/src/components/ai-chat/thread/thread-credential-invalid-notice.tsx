@@ -18,6 +18,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import {
   clearCredentialSendBlocked,
   credentialInvalidDetail,
+  credentialNudgeKey,
   getCredentialSendBlocked,
   subscribeCredentialSendBlocked
 } from "@renderer/hooks/credential-send-nudge"
@@ -33,7 +34,8 @@ export function ThreadCredentialInvalidNotice({
   const restoredDetail = useRestoredImagesDetail()
   const sessionId = useChatStore((state) => state.sessionId)
   const blockedAll = useSyncExternalStore(subscribeCredentialSendBlocked, getCredentialSendBlocked)
-  const nudge = sessionId && blockedAll.has(sessionId) ? t("chat.credentialFixKeyFirst") : null
+  // 落地页（没有会话）也认：从落地页发被拦下时提醒记在空名下（luna P2）。
+  const nudge = blockedAll.has(credentialNudgeKey(sessionId)) ? t("chat.credentialFixKeyFirst") : null
   const navigate = useNavigate()
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
