@@ -96,6 +96,7 @@ export const enChat = {
   runtimeImageSteerQueuedHint: "This agent can't take images mid-run; this message (with images) will go out next turn",
   runtimeRemoveFollowup: "Remove queued follow-up",
   runtimeSteerItem: "Send right away",
+  runtimeSteerItemPaused: "Send this one now",
   runtimeEditFollowup: "Edit",
   runtimeMoveUp: "Move queued item up",
   runtimeMoveDown: "Move queued item down",

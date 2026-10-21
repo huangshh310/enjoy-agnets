@@ -202,11 +202,12 @@ function DockedRows({
             />
           ) : null}
           {hiddenBelow > 0 ? (
-            // 区内滚、滚动条隐藏：底下还有行时贴底一行「还有 N 条」，点一下滚到底（sticky，实底盖住后面的行）。
+            // 区内滚、滚动条隐藏：底下还有行时左下角贴一颗「还有 N 条」小胶囊，点一下滚到底。
+            // 只占左边一小块（行左侧是正文，按钮都在右边）：区被挤到一行高时也不盖行上的「马上发 / 上下移 / ×」。
             <DockSummaryButton
               testId="queued-hidden-below"
               label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
-              className="sticky bottom-0 z-10 border-solid bg-background-secondary-default"
+              className="sticky bottom-0 z-10 w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5 shadow-sm"
               onClick={() => ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" })}
             />
           ) : null}

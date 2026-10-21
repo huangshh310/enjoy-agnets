@@ -257,9 +257,10 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                 dismissSessionErrorCard({ onPersistFailed: () => showAppToast(t("chat.errorDismissPersistFailed")) })
               }
               title={t("chat.dismissError")}
+              aria-label={t("chat.dismissError")}
               className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
             >
-              <RiCloseLine className="size-4" />
+              <RiCloseLine className="size-4" aria-hidden />
             </button>
           </div>
           {detail ? (

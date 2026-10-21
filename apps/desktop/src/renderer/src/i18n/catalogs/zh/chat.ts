@@ -95,6 +95,7 @@ export const zhChat = {
   runtimeImageSteerQueuedHint: "这个 Agent 运行中收不了图，带图的这条排在下一轮发出",
   runtimeRemoveFollowup: "移除排队任务",
   runtimeSteerItem: "马上发给它",
+  runtimeSteerItemPaused: "单独发这条",
   runtimeEditFollowup: "编辑",
   runtimeMoveUp: "上移排队项",
   runtimeMoveDown: "下移排队项",

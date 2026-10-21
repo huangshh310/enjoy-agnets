@@ -140,6 +140,12 @@ export function queuedRowLabelKey(paused: boolean): string {
   return paused ? "chat.queuePausedLabel" : "chat.runtimeQueuedBubble"
 }
 
+/** 排队行「发」按钮：没在跑 → 立即发送；在跑 → 马上发给它；在跑但队列停着（暂停中来审批）→ 单独发这条，不和「已暂停」打架（mike P3）。 */
+export function queuedSendNowKey(running: boolean, paused: boolean): string {
+  if (!running) return "chat.runtimeSendNow"
+  return paused ? "chat.runtimeSteerItemPaused" : "chat.runtimeSteerItem"
+}
+
 /** E1：窗口高 ≤600 且没点开时，暂停的排队区折成一行（放在纯 .ts 里，单测能直接测）。 */
 export function pausedCollapsed(shortWindow: boolean, expanded: boolean): boolean {
   return shortWindow && !expanded

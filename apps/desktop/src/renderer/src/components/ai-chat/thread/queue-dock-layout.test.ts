@@ -46,7 +46,8 @@ test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thre
   assert.match(dock, /data-keep-thread=\{keepThread \? "true" : undefined\}/)
   assert.match(dock, /testId="queued-hidden-below"/)
   assert.match(dock, /label=\{t\("chat\.runtimeQueueMore", \{ n: hiddenBelow \}\)\}/)
-  assert.match(dock, /sticky bottom-0/)
+  // 小胶囊靠左、不铺满：区挤到一行高时不盖行右侧的按钮（queue-sendnow-approval 733×480）。
+  assert.match(dock, /sticky bottom-0 z-10 w-auto max-w-\[45%\] self-start/)
   const stage = src("../../app-shell/chat/chat-stage.tsx")
   const base = stage.indexOf("[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0")
   const keep = stage.indexOf("[&:has(>[data-testid=queued-followups-docked][data-keep-thread=true])>[data-thread-root]]:min-h-[4.5rem]")

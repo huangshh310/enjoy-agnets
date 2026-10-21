@@ -19,5 +19,5 @@ test("Git：有当前分支写分支名；HEAD 游离（有分支、当前不在
 
 test("接线：分支按钮 label 为 null 时整颗不画", () => {
   const src = readFileSync(new URL("./status-branch-picker.tsx", import.meta.url), "utf8")
-  assert.match(src, /const label = statusBranchLabel\(branchesQuery\.data, t\("chat\.gitNoBranch"\)\)\n\s+if \(label == null\) return null/)
+  assert.match(src, /const label = statusBranchLabel\(branchesQuery\.data, t\("chat\.gitNoBranch"\)\)\r?\n\s+if \(label == null\) return null/)
 })
