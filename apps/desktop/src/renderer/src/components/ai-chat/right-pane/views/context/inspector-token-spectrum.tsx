@@ -125,9 +125,8 @@ function BucketLegend({
   modelLabel?: string
 }) {
   const t = useT()
-  const unknown = modelLabel
-    ? t("chat.inspectorCapUnknownModel", { model: modelLabel })
-    : t("chat.inspectorCapUnknown")
+  // 窗口大小不知道时不写「未公布窗口」，只留模型名（没有就空着，mike P3）。
+  const unknown = modelLabel ?? ""
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
       <div className="flex items-baseline justify-between font-mono text-caption-2-medium">

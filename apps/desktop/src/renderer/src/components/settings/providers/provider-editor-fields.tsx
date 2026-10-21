@@ -18,7 +18,8 @@ import { ProviderConnectionFields } from "./provider-connection-fields"
 import { ProviderModelsTab } from "./provider-models-tab"
 import { ProviderOverridesTab } from "./provider-overrides-tab"
 import { ProviderParamsTab } from "./provider-params-tab"
-import type { EditorState, ProbeState } from "./providers.types"
+import { MissingTabDot } from "./provider-missing-hint"
+import type { EditorMissingField, EditorState, ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderEditorFields({
@@ -29,7 +30,8 @@ export function ProviderEditorFields({
   detecting,
   onChange,
   onFetchModels,
-  onDetect
+  onDetect,
+  missing
 }: {
   editor: EditorState
   preset: ProviderPreset
@@ -39,6 +41,8 @@ export function ProviderEditorFields({
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
   onDetect: () => void
+  /** 必填但没填的字段（「保存并启用」为什么灰着）。 */
+  missing?: readonly EditorMissingField[]
 }) {
   const t = useT()
   return (
@@ -51,6 +55,7 @@ export function ProviderEditorFields({
         >
           <RiLinkM className="size-3.5" />
           <span>{t("settings.providers.tabConnection")}</span>
+          <MissingTabDot missing={missing} tab="connection" />
         </TabsTrigger>
 
         <TabsTrigger
@@ -59,6 +64,7 @@ export function ProviderEditorFields({
         >
           <RiRobot2Line className="size-3.5" />
           <span>{t("settings.providers.tabModels")}</span>
+          <MissingTabDot missing={missing} tab="models" />
         </TabsTrigger>
 
         <TabsTrigger
@@ -86,6 +92,7 @@ export function ProviderEditorFields({
           detecting={detecting}
           onChange={onChange}
           onDetect={onDetect}
+          missing={missing}
         />
       </TabsContent>
 
@@ -96,6 +103,7 @@ export function ProviderEditorFields({
           probe={probe}
           onChange={onChange}
           onFetchModels={onFetchModels}
+          missing={missing}
         />
       </TabsContent>
 

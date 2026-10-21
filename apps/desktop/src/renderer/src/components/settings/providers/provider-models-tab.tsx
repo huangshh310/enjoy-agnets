@@ -16,7 +16,8 @@ import { getEffortLevels, getEffortMeta } from "@renderer/components/ai-chat/rea
 import { ReasoningEnergyBar } from "@renderer/components/ai-chat/reasoning-energy-bar"
 import { ProviderModelField } from "./provider-model-field"
 import { ProviderModelRow } from "./provider-model-row"
-import type { EditorModel, EditorState, ProbeState } from "./providers.types"
+import { MissingFieldHint } from "./provider-missing-hint"
+import type { EditorMissingField, EditorModel, EditorState, ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderModelsTab({
@@ -24,13 +25,15 @@ export function ProviderModelsTab({
   modelChoices,
   probe,
   onChange,
-  onFetchModels
+  onFetchModels,
+  missing
 }: {
   editor: EditorState
   modelChoices: Array<{ id: string; label: string }>
   probe: ProbeState
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
+  missing?: readonly EditorMissingField[]
 }) {
   const t = useT()
   const [newModelId, setNewModelId] = useState("")
@@ -71,6 +74,7 @@ export function ProviderModelsTab({
           onChange={(modelId) => onChange({ modelId })}
           onFetch={onFetchModels}
         />
+        <MissingFieldHint missing={missing} field="model" />
       </div>
 
       {/* 推理模式与思考能量条 (Reasoning Mode & Thinking Energy Gauge) */}

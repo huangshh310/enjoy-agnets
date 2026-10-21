@@ -135,7 +135,7 @@ function useInspectorFace(slice: ReturnType<typeof useInspectorChatSlice>) {
   })
 }
 
-/** 只信报出这次窗口的那台引擎。交接中看目标引擎，不用上一台留下的 size。 */
+/** 只信报出这次窗口的那台引擎（换助手确认前仍是原来那台，见 inspectorContextModel），不用别的引擎留下的 size。 */
 function resolveInspectorWindow(
   models: ReturnType<typeof useInspectorChatSlice>["models"],
   modelId: string,

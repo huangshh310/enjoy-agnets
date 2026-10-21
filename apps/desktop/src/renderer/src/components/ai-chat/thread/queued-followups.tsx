@@ -13,8 +13,13 @@
  *
  * E1（luna 定稿）：队列因停止 / 出错 / 额度停着时，同样画在输入框正上方的紧凑区，最上面加一行说明（QueuePausedRow），
  * 排队行本身不变；窗口高 ≤600 时整区折成一行「已暂停 · 排队 N 条」，点开展开。
+ *
+ * mike P3（#163 巡检）：
+ * - 点开后区内滚（滚动条是隐藏的）：底下还藏着排队行时，区底贴一行「还有 N 条」，点一下滚到底——不再有行悄悄压在输入框上沿下面；
+ * - 点开过，窗口再被拉到 ≤600 高：重新折成一行（refoldOnShort，m211-33）；
+ * - 停着且对话里挂着失败卡：给对话区留 data-keep-thread，chat-stage 据此给对话区保底高度，「再发一次」整颗露出。
  */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { RiArrowDownSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import {
@@ -27,6 +32,7 @@ import {
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
 import { pausedCollapsed } from "./queue-paused-view"
+import { keepThreadForFailureCard, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -90,6 +96,14 @@ function DockedFollowups({
   const short = useShortWindow()
   // 换了一张审批卡 / 暂停原因变了：回到默认（不展开）。
   useEffect(() => setExpanded(false), [approvalId, paused])
+  // 点开过，窗口再被拉矮到 ≤600：重新折起（m211-33）。
+  const wasShort = useRef(short)
+  useEffect(() => {
+    if (refoldOnShort(wasShort.current, short)) setExpanded(false)
+    wasShort.current = short
+  }, [short])
+  // 停着 + 对话里挂着失败卡：对话区保底高度（chat-stage 按 data-keep-thread 加 min-h），失败卡按钮整颗露出。
+  const keepThread = useChatStore((state) => keepThreadForFailureCard(paused != null, state.error))
   if (paused && pausedCollapsed(short, expanded)) {
     return (
       <div
@@ -99,6 +113,7 @@ function DockedFollowups({
         data-mode="paused-collapsed"
         data-paused={paused}
         data-count={items.length}
+        data-keep-thread={keepThread ? "true" : undefined}
         className="relative z-30 mx-6 flex shrink-0 flex-col py-0.5"
       >
         <DockSummaryButton
@@ -118,6 +133,7 @@ function DockedFollowups({
       expanded={expanded}
       setExpanded={setExpanded}
       dockRef={ref}
+      keepThread={keepThread}
     />
   )
 }
@@ -128,7 +144,8 @@ function DockedRows({
   queuePaused,
   expanded,
   setExpanded,
-  dockRef: ref
+  dockRef: ref,
+  keepThread
 }: {
   items: FollowupItem[]
   paused: FollowupPausedReason | null
@@ -136,10 +153,12 @@ function DockedRows({
   expanded: boolean
   setExpanded: (value: boolean) => void
   dockRef: RefObject<HTMLDivElement | null>
+  keepThread: boolean
 }) {
   const t = useT()
   const tight = useDockTight(ref, !expanded, items.length)
   const mode = dockMode(items.length, tight, expanded)
+  const hiddenBelow = useRowsHiddenBelow(ref, mode === "all", items.length)
 
   const visible = mode === "more" ? items.slice(0, DOCK_VISIBLE_ROWS) : items
   return (
@@ -150,6 +169,8 @@ function DockedRows({
       data-mode={mode}
       data-paused={paused ?? undefined}
       data-count={items.length}
+      data-keep-thread={keepThread ? "true" : undefined}
+      data-hidden-below={hiddenBelow > 0 ? hiddenBelow : undefined}
       // 默认整行画（shrink-0）；用户点开后才让位：shrink 远大于审批卡（PermissionDock 是 shrink 1），最少留一行、区内滚。
       // relative z-30：盖过对话目录条（z-20），× 点得到。
       className={cx(
@@ -180,6 +201,15 @@ function DockedRows({
               onClick={() => setExpanded(true)}
             />
           ) : null}
+          {hiddenBelow > 0 ? (
+            // 区内滚、滚动条隐藏：底下还有行时贴底一行「还有 N 条」，点一下滚到底（sticky，实底盖住后面的行）。
+            <DockSummaryButton
+              testId="queued-hidden-below"
+              label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
+              className="sticky bottom-0 z-10 border-solid bg-background-secondary-default"
+              onClick={() => ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" })}
+            />
+          ) : null}
         </>
       )}
     </div>
@@ -190,11 +220,13 @@ function DockSummaryButton({
   testId,
   label,
   icon,
+  className,
   onClick
 }: {
   testId: string
   label: string
   icon?: ReactNode
+  className?: string
   onClick: () => void
 }) {
   return (
@@ -205,7 +237,8 @@ function DockSummaryButton({
       onClick={onClick}
       className={cx(
         "flex min-h-6 w-full shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-border-button-default",
-        "bg-background-secondary-default/60 py-0.5 pr-2 pl-3 text-left text-caption-2-medium text-text-secondary hover:text-text-primary"
+        "bg-background-secondary-default/60 py-0.5 pr-2 pl-3 text-left text-caption-2-medium text-text-secondary hover:text-text-primary",
+        className
       )}
     >
       {icon}
@@ -265,6 +298,42 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
     return () => observer.disconnect()
   }, [ref, enabled, count])
   return enabled && tight
+}
+
+/**
+ * 点开后（区内滚）量一下：可视区底边以下还藏着几条排队行。滚动、区 / 行尺寸变化时重量。
+ * 「还有 N 条」行自己是 sticky 的，不参与计数（只数 queued-user-turn）。
+ */
+function useRowsHiddenBelow(ref: RefObject<HTMLDivElement | null>, enabled: boolean, count: number): number {
+  const [hidden, setHidden] = useState(0)
+  const measure = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-testid="queued-user-turn"]'))
+    const next = rowsHiddenBelow(
+      rows.map((row) => row.getBoundingClientRect().bottom),
+      el.getBoundingClientRect().bottom
+    )
+    setHidden((prev) => (prev === next ? prev : next))
+  }, [ref])
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setHidden(0)
+      return
+    }
+    const el = ref.current
+    if (!el) return
+    measure()
+    el.addEventListener("scroll", measure, { passive: true })
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    for (const child of Array.from(el.children)) observer.observe(child)
+    return () => {
+      el.removeEventListener("scroll", measure)
+      observer.disconnect()
+    }
+  }, [ref, enabled, count, measure])
+  return enabled ? hidden : 0
 }
 
 /** 审批卡上方「马上发」提示占的高度；没画 / 已让位（display:none）为 0。 */

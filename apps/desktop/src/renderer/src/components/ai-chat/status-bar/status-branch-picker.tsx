@@ -1,5 +1,6 @@
 /**
  * 底栏分支选择：列本地 heads 并 switch。脏工作树拒绝。
+ * 非 Git 文件夹 / 还没查到分支时整颗不画（statusBranchLabel 返回 null，mike P3）。
  */
 import { useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -9,6 +10,7 @@ import type { GitBranchesResult, GitSwitchResult } from "@enjoy-agents/ipc-contr
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { statusBranchLabel } from "./status-branch-label"
 
 export function StatusBranchPicker() {
   const t = useT()
@@ -52,7 +54,8 @@ export function StatusBranchPicker() {
     ])
   }
 
-  const label = current || t("chat.gitNoBranch")
+  const label = statusBranchLabel(branchesQuery.data, t("chat.gitNoBranch"))
+  if (label == null) return null
 
   return (
     <Popover

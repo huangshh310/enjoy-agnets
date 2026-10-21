@@ -14,7 +14,8 @@ import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { SecretInput } from "../secret-input"
 import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
 import { ProviderConnectionFields } from "./provider-connection-fields"
-import type { EditorState, ProbeState } from "./providers.types"
+import { MissingFieldHint } from "./provider-missing-hint"
+import type { EditorMissingField, EditorState, ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderSimpleFields({
@@ -24,7 +25,8 @@ export function ProviderSimpleFields({
   detecting,
   onChange,
   onDetect,
-  focusKey = false
+  focusKey = false,
+  missing
 }: {
   editor: EditorState
   preset: ProviderPreset
@@ -34,6 +36,7 @@ export function ProviderSimpleFields({
   onChange: (patch: Partial<EditorState>) => void
   onDetect: () => void
   focusKey?: boolean
+  missing?: readonly EditorMissingField[]
 }) {
   const t = useT()
   const key = editor.keys[0]
@@ -52,6 +55,7 @@ export function ProviderSimpleFields({
             id="provider-key-input"
           />
         ) : null}
+        <MissingFieldHint missing={missing} field="key" />
       </div>
       {preset.requiresKey || modelChoices.length > 0 ? (
         <div className="flex flex-col gap-1.5">
@@ -77,6 +81,7 @@ export function ProviderSimpleFields({
               className="h-9"
             />
           )}
+          <MissingFieldHint missing={missing} field="model" />
         </div>
       ) : null}
       <details className="rounded-xl border border-border-button-default px-3 py-2">
@@ -90,6 +95,8 @@ export function ProviderSimpleFields({
             detecting={detecting}
             onChange={onChange}
             onDetect={onDetect}
+            // 密钥、模型在上面已经各有一行提示，「高级」里只提名称 / 接口地址。
+            missing={missing?.filter((field) => field === "name" || field === "endpoint")}
           />
         </div>
       </details>

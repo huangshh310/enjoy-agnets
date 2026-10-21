@@ -34,7 +34,8 @@ test("I1 中文短句贴预览", () => {
   assert.equal(zhChat.modelSwitch.badge, "已切换")
   assert.equal(zhChat.modelSwitch.toast, "已切换到 {model}")
   assert.equal(zhChat.modelSwitch.footnote, "同一助手，不换引擎")
-  assert.equal(zhChat.modelSwitch.unsupported, "此引擎不支持中途换模型")
+  // mike P3：去掉「引擎 / 导轨」工程词（luna 待锁）。
+  assert.equal(zhChat.modelSwitch.unsupported, "这个助手不支持中途换模型。")
   assert.equal(zhChat.modelSwitch.notLoggedIn, "还没登录这个助手，换不了模型")
   assert.equal(zhChat.modelSwitch.empty, "这个助手还没有可换的模型")
   assert.doesNotMatch(zhChat.modelSwitch.hint, /已切换引擎|已交接|handoff/)

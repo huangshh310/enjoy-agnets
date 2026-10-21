@@ -101,8 +101,19 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     catalogLabel: "deepseek-flash",
     agents: [{ id: "claude", label: "Claude Code", selectedModel: "claude-sonnet-4-5" }]
   })
-  assert.equal(pending.id, "claude-sonnet-4-5")
-  assert.equal(pending.label, "claude-sonnet-4-5")
+  // mike P3：换助手还没确认时底栏 / 检查器仍是原来那台（Enjoy 本地的档案模型），确认后 runtimeId 换过去才跟上。
+  assert.equal(pending.id, "deepseek-flash")
+  assert.equal(pending.label, "deepseek-flash")
+  assert.equal(pending.runtimeId, "enjoy-local")
+  const confirmed = inspectorContextModel({
+    phase: "idle",
+    runtimeId: "claude",
+    catalogId: "deepseek-flash",
+    catalogLabel: "deepseek-flash",
+    agents: [{ id: "claude", label: "Claude Code", selectedModel: "claude-sonnet-4-5" }]
+  })
+  assert.equal(confirmed.id, "claude-sonnet-4-5")
+  assert.equal(confirmed.runtimeId, "claude")
 })
 
 test("上一引擎的 deepseek 覆盖不会粘到没有这个 id 的 Claude", () => {

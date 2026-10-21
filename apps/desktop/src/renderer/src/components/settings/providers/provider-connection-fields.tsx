@@ -8,7 +8,8 @@ import { cx } from "@/utils/cx"
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { ProviderEndpointFields } from "./provider-endpoint-fields"
 import { ProviderKeyList } from "./provider-key-list"
-import { proxyBlocksSave, type EditorState } from "./providers.types"
+import { MissingFieldHint } from "./provider-missing-hint"
+import { proxyBlocksSave, type EditorMissingField, type EditorState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderConnectionFields({
@@ -16,13 +17,15 @@ export function ProviderConnectionFields({
   preset,
   detecting,
   onChange,
-  onDetect
+  onDetect,
+  missing
 }: {
   editor: EditorState
   preset: ProviderPreset
   detecting: boolean
   onChange: (patch: Partial<EditorState>) => void
   onDetect: () => void
+  missing?: readonly EditorMissingField[]
 }) {
   const t = useT()
   const proxyMode = editor.proxy === "direct" ? "direct" : editor.proxy.trim() ? "custom" : "system"
@@ -36,6 +39,7 @@ export function ProviderConnectionFields({
           placeholder={t("settings.providers.namePlaceholder")}
           className="h-9"
         />
+        <MissingFieldHint missing={missing} field="name" />
       </div>
       <ProviderEndpointFields
         editor={editor}
@@ -44,7 +48,9 @@ export function ProviderConnectionFields({
         onChange={onChange}
         onDetect={onDetect}
       />
+      <MissingFieldHint missing={missing} field="endpoint" />
       <ProviderKeyList editor={editor} onChange={onChange} />
+      <MissingFieldHint missing={missing} field="key" />
       <div className="flex flex-col gap-1.5">
         <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.proxy")}</Label>
         <div className="flex flex-wrap gap-1 rounded-xl bg-background-tertiary-default p-1">

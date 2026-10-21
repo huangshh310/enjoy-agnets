@@ -2,12 +2,12 @@
  * Composer 上沿：交接确认卡与「已交接」微条互斥，禁止同时出现。
  */
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { EngineHandoffBanner } from "./engine-handoff-banner"
 import { EngineHandoffCard } from "./engine-handoff-card"
 import { useEngineHandoffStore } from "./engine-handoff-store"
+import { handoffEngineLabel } from "./handoff-labels"
 import { handoffSurfaces } from "./handoff-surfaces"
 import { restoreComposerEngineSelection } from "./restore-composer-engine"
 
@@ -22,8 +22,9 @@ export function EngineHandoffDock() {
 
   const fromId = fromRuntimeId ?? banner?.fromRuntimeId
   const toId = toRuntimeId ?? banner?.toRuntimeId
-  const fromLabel = labelFor(tools, fromId, t("chat.usage.enjoyLocal"))
-  const toLabel = labelFor(tools, toId, t("chat.usage.enjoyLocal"))
+  // Enjoy 本地走 i18n，英文不露「Enjoy 本地」（mike P3）。
+  const fromLabel = handoffEngineLabel(tools, fromId, t("chat.usage.enjoyLocal"))
+  const toLabel = handoffEngineLabel(tools, toId, t("chat.usage.enjoyLocal"))
 
   if (showBanner) return <EngineHandoffBanner fromLabel={fromLabel} toLabel={toLabel} />
   if (!showCard) return null
@@ -39,14 +40,4 @@ export function EngineHandoffDock() {
       />
     </div>
   )
-}
-
-function labelFor(
-  tools: Array<{ id: string; label: string }>,
-  id: string | null | undefined,
-  localLabel: string
-): string {
-  if (!id) return ""
-  if (id === DEFAULT_RUNTIME_ID) return tools.find((item) => item.id === id)?.label ?? localLabel
-  return tools.find((item) => item.id === id)?.label ?? id
 }

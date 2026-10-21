@@ -241,6 +241,28 @@ export function canSaveEditor(editor: EditorState | null, requiresKey: boolean):
   return editor.keys.some((key) => key.enabled && (key.apiKey.trim() || key.hasKey))
 }
 
+/** 「保存并启用」灰着时缺的是哪一项（mike P3，#163 巡检 25：只灰不说缺什么）。顺序 = 表单里从上到下。 */
+export type EditorMissingField = "name" | "endpoint" | "key" | "model"
+
+/**
+ * 和 canSaveEditor 同一套规则，只是把「缺了什么」列出来；socks 代理不算缺字段（代理那一栏自己标红）。
+ * canSaveEditor 为 false 而这里为空，说明是代理挡的。
+ */
+export function editorMissingFields(editor: EditorState | null, requiresKey: boolean): EditorMissingField[] {
+  if (!editor) return []
+  const missing: EditorMissingField[] = []
+  if (!editor.name.trim()) missing.push("name")
+  if (editor.kind === "custom" && !hasEndpoint(editor.endpoints)) missing.push("endpoint")
+  if (requiresKey && !editor.keys.some((key) => key.enabled && (key.apiKey.trim() || key.hasKey))) missing.push("key")
+  if (!editor.modelId.trim()) missing.push("model")
+  return missing
+}
+
+/** 缺的字段在哪个页签（完整表单分 连接 / 模型 两页，填了一页另一页还缺时要能看出来去哪填）。 */
+export function missingFieldTab(field: EditorMissingField): "connection" | "models" {
+  return field === "model" ? "models" : "connection"
+}
+
 export function hasEndpoint(endpoints: EditorEndpoints): boolean {
   return WIRE_STYLES.some((style) => Boolean(endpoints[style]?.trim()))
 }
