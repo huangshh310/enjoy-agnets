@@ -82,13 +82,13 @@ export const SERVICE_GENERIC_KEYS = { start: "chat.credentialProviderGenericStar
 export const SETUP_PROVIDER_TEMPLATES: Readonly<Record<string, "key" | "service">> = {
   "settings.setupGuide.connectApiKeyInvalidHint": "key", // 密钥被 {name} 拒绝了，换一个再试
   "settings.setupGuide.readyKeyInvalidTitle": "key", // 密钥被 {name} 拒绝了
-  "settings.setupGuide.readyKeyInvalidHint": "key", // 换一个 {name} 密钥再试，改好就能开始
+  "settings.setupGuide.readyKeyInvalidHint": "key", // 换一个 {name} 密钥再试
   "settings.providers.keyBillingHint": "service" // 第 4 步余额提示：{name} 账户余额不足（通用句是 keyBillingHintGeneric）
 }
 
 /** 没名字时整句换掉的引导文案（通用句里不出现称呼）。 */
 export const SETUP_GENERIC_SENTENCES: Readonly<Record<string, string>> = {
-  "settings.setupGuide.readyKeyInvalidHint": "settings.setupGuide.readyKeyInvalidHintGeneric" // Use a different API key… / 换一个供应商密钥再试…
+  "settings.setupGuide.readyKeyInvalidHint": "settings.setupGuide.readyKeyInvalidHintGeneric" // Try a different key / 换一个密钥再试
 }
 
 /** 这条引导文案没名字时用哪对通用说法。 */
@@ -107,7 +107,7 @@ export function fillSetupProviderText(
   vars?: Record<string, string | number>
 ): string {
   if (!providerName && Object.hasOwn(SETUP_GENERIC_SENTENCES, key)) {
-    // 通用句：英文不带称呼；中文仍留 {name} 槽，填「供应商」（词表不直接写「供应商密钥」）
+    // 通用句：整句不带称呼（中英都不嵌「供应商」/ the provider）
     return fillProviderFace(t, SETUP_GENERIC_SENTENCES[key]!, { kind: "generic" }, { vars, genericKeys: setupGenericKeys(key) })
   }
   const face: ProviderFace = providerName ? { kind: "named", name: providerName } : { kind: "generic" }
