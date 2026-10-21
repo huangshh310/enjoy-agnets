@@ -171,7 +171,8 @@ async function finishAfterTruncate(input: {
     ensurePendingRewindLoop()
     return { ok: false, code: REWIND_FINISH_FAILED }
   }
-  if (outcome === "draft") {
+  // parked 只会出现在「之前已停放、这次没新字」——截断刚记了新的一段，实际走不到；按进了原会话草稿处理。
+  if (outcome === "draft" || outcome === "parked") {
     waitingCutIds.delete(sessionId)
     onPendingRewindLanded(sessionId, () => undefined)
     return { ok: true, draftSessionId: sessionId }
