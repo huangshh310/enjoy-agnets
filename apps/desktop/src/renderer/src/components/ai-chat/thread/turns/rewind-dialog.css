@@ -1,9 +1,8 @@
 /**
  * 「从这里重来」弹窗的对比度（实机 CONDITIONAL 必修 ③，WCAG：文字 ≥ 4.5、描边 / 图形 ≥ 3）。
- * 只在这只弹窗里改 token（[data-rewind-dialog]），不动全站共用的按钮渐变 / 描边：#166（fix/accent-contrast）
- * 会把全站主按钮渐变改成 700 起、加 --color-focus-ring 一套，这里先局部对齐它的取值，两边能各自合并。
- * #166 合并后：删掉下面的主按钮三条渐变（全站已是同一套），描边改用 #166 的边线 token。
- * 数值由 rewind-dialog-contrast.test.ts 按 theme.css + skins/*.css + Tailwind 色板现算（四皮肤 × 亮暗 × 五强调色）。
+ * 只在这只弹窗里改 token（[data-rewind-dialog]），不动全站共用的按钮渐变 / 描边。
+ * 主按钮渐变 / 字色走全站（#166 已合入：700 起、琥珀 500 底墨色字 cta-foreground），这里不再覆盖。
+ * 数值由 rewind-dialog-must3-contrast.test.ts 按 theme.css + skins/*.css + Tailwind 色板现算（四皮肤 × 亮暗 × 五强调色）。
  * 由 styles/app.css @import 进 Tailwind 同一次编译：这里引用的色阶变量（如 red-800）才会被输出。
  */
 
@@ -11,34 +10,28 @@
   /* 「从这里重来失败」：浅色 red-700（原 red-500 对白 3.81）；深色见下 red-400。 */
   --color-text-error-primary: var(--color-red-700);
 
-  /* 「只改聊天」白字：渐变最浅一档也 ≥ 4.5。原 500→600（蓝 4.03–4.19），悬停 400→500 更浅。
-   * 取值同 #166：常态 700 → mix(700,800)，悬停 mix(700,800) → 800，按下 800 → 900。 */
-  --gradient-button-primary-default: linear-gradient(180deg, var(--color-accent-700) 0%, color-mix(in oklab, var(--color-accent-700) 50%, var(--color-accent-800)) 100%);
-  --gradient-button-primary-hover: linear-gradient(180deg, color-mix(in oklab, var(--color-accent-700) 50%, var(--color-accent-800)) 0%, var(--color-accent-800) 100%);
-  --gradient-button-primary-active: linear-gradient(180deg, var(--color-accent-800) 0%, var(--color-accent-900) 100%);
-
   /* 「删掉并还原」白字：原 500→600（4.1–4.6），悬停 400→500。同一套往深走，常态 / 悬停 / 按下 / 转圈都 ≥ 4.5。 */
   --gradient-button-danger-default: linear-gradient(180deg, var(--color-red-700) 0%, color-mix(in oklab, var(--color-red-700) 50%, var(--color-red-800)) 100%);
   --gradient-button-danger-hover: linear-gradient(180deg, color-mix(in oklab, var(--color-red-700) 50%, var(--color-red-800)) 0%, var(--color-red-800) 100%);
   --gradient-button-danger-active: linear-gradient(180deg, var(--color-red-800) 0%, var(--color-red-900) 100%);
 
   /* 「取消」「连文件一起还原」描边 + 弹窗外沿：原 neutral-200（浅 1.19）/ 700（深 1.46，对遮罩 1.91）。
-   * 500 对白 4.75、对 neutral-800 3.18、对遮罩 ≥ 3.9；悬停往对比更高的方向走。
+   * 常态用 #166 的边线 token --color-switch-off-border（neutral-500：对白 4.75、对 neutral-800 3.18、对遮罩 ≥ 3.9）；
+   * 悬停用 #166 的焦点 token --color-focus-ring（亮 accent-700 / 暗 accent-400，手绘墨色），往对比更高的方向走。
    * glass 的描边走 --skin-frost-line（白 55% / 14%），sketch 把描边设成 transparent：在这只弹窗里一并拉回。 */
-  --color-border-button-default: var(--color-neutral-500);
-  --color-border-button-hover: var(--color-neutral-600);
+  --color-border-button-default: var(--color-switch-off-border);
+  --color-border-button-hover: var(--color-focus-ring);
   --skin-frost-line: var(--color-border-button-default);
 }
 
 .dark [data-rewind-dialog] {
   --color-text-error-primary: var(--color-red-400);
-  --color-border-button-hover: var(--color-neutral-400);
 }
 
-/* 正在跑的那颗（data-busy，按钮是 disabled）：保持常态底色和白字，「正在还原…」不退成浅粉 / 浅灰。 */
+/* 正在跑的那颗（data-busy，按钮是 disabled）：保持常态底色和字色，「正在还原…」不退成浅粉 / 浅灰。 */
 [data-rewind-dialog] [data-busy="true"] {
   --gradient-button-primary-disabled: var(--gradient-button-primary-default);
   --gradient-button-danger-disabled: var(--gradient-button-danger-default);
-  --color-button-primary-disabled-foreground: var(--color-text-white);
+  --color-button-primary-disabled-foreground: var(--color-cta-foreground);
   --color-foreground-disabled-danger: var(--color-text-white);
 }

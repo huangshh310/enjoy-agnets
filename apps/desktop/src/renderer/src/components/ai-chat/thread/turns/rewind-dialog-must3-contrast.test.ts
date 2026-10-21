@@ -1,6 +1,6 @@
 /**
  * 实机 CONDITIONAL 必修 ③（luna h167-m-zh-light-* / h167-m-zh-dark-*）：「从这里重来」弹窗对比度，WCAG 文字 ≥ 4.5、描边 / 图形 ≥ 3。
- *   失败句「从这里重来失败」、「只改聊天」白字（渐变每一档）、「删掉并还原」白字（常态 / 悬停 / 按下 / 转圈）、
+ *   失败句「从这里重来失败」、「只改聊天」字（cta-foreground：琥珀是墨色，其余白字；渐变每一档）、「删掉并还原」白字（常态 / 悬停 / 按下 / 转圈）、
  *   「取消」「连文件一起还原」描边（对弹窗底和按钮底）、深色弹窗外沿（对遮罩）。
  * 四皮肤（classic / glass / ink / sketch）× 亮暗 × theme.css 里的每个 data-accent 全算。
  * 色值按 Tailwind 色板（tailwindcss/theme.css）+ packages/ui/styles/theme.css + skins/*.css + rewind-dialog.css 叠出来现算，不靠截图取色。
@@ -358,10 +358,11 @@ function busyText(ctx: Ctx, kind: "primary" | "danger"): Rgba {
 }
 
 function buttonTextOn(ctx: Ctx, kind: "primary" | "danger"): Array<{ state: string; ratio: number }> {
-  const white = resolveColor("var(--color-text-white)", dialogScope(ctx))
+  // #166：主按钮字走 text-cta-foreground（琥珀 = 墨色 #1A1612，其余白）；危险按钮仍是白字。
+  const fg = resolveColor(kind === "primary" ? "var(--color-cta-foreground)" : "var(--color-text-white)", dialogScope(ctx))
   return stops(ctx, kind).map(({ state, color }) => ({
     state,
-    ratio: contrast(state.startsWith("busy") ? busyText(ctx, kind) : white, color)
+    ratio: contrast(state.startsWith("busy") ? busyText(ctx, kind) : fg, color)
   }))
 }
 
@@ -400,7 +401,7 @@ test("必修 ③ 接线：弹窗挂 data-rewind-dialog + deco-off，样式由 ap
   assert.match(tsx, /data-testid="rewind-error" className="[^"]*\btext-text-error-primary\b/)
   assert.match(appCss, /@import "\.\.\/components\/ai-chat\/thread\/turns\/rewind-dialog\.css";/)
   // 按钮取色路径：主按钮 / 危险按钮走渐变 utility，outline 走 border-button-* token。
-  assert.match(buttonTsx, /default:\s*"bg-button-primary text-text-white[^"]*disabled:text-button-primary-disabled-foreground/)
+  assert.match(buttonTsx, /default:\s*"bg-button-primary text-cta-foreground[^"]*disabled:text-button-primary-disabled-foreground/)
   assert.match(buttonTsx, /destructive:\s*"bg-button-danger text-text-white[^"]*disabled:text-foreground-disabled-danger/)
   assert.match(buttonTsx, /outline:\s*"border border-border-button-default[^"]*hover:border-border-button-hover/)
   assert.match(themeCss, /@utility bg-button-primary \{[\s\S]*?var\(--gradient-button-primary-default\)[\s\S]*?var\(--gradient-button-primary-hover\)[\s\S]*?var\(--gradient-button-primary-active\)[\s\S]*?var\(--gradient-button-primary-disabled\)/)
@@ -446,9 +447,11 @@ test("必修 ③ 自检：不叠 rewind-dialog.css 时复现 luna 实机量到�
   const dark = measure({ skin: "classic", mode: "dark", accent: "blue", withDialog: false })
   // 浅色失败句 3.81（red-500 对白）。
   assert.ok(near(light.error, 3.81), `error ${light.error}`)
-  // 「只改聊天」常态两档 4.03–4.19（实机取的是渲染后像素，这里按色阶算 500 / 600 两端）。
+  // 「只改聊天」：实机旧值 4.03–4.19 是 #166 之前全站 500→600 渐变；#166 合入后全站主按钮渐变已是 700 起，
+  // 弹窗不再局部覆盖主按钮渐变（下面断言），不叠弹窗 CSS 时也 ≥ 4.5。
+  assert.doesNotMatch(dialogCss.replace(/\/\*[\s\S]*?\*\//g, ""), /--gradient-button-primary-(default|hover|active)\s*:/)
   const chatDefault = light.chat.filter((s) => s.state === "default").map((s) => s.ratio)
-  assert.ok(minOf(chatDefault) < 4.5 && Math.max(...chatDefault) >= 4.0, `chat ${chatDefault}`)
+  assert.ok(minOf(chatDefault) >= 4.5, `chat ${chatDefault}`)
   // 「删掉并还原」常态 4.1–4.6 区间里有 < 4.5 的一档。
   const delDefault = light.del.filter((s) => s.state === "default").map((s) => s.ratio)
   assert.ok(minOf(delDefault) < 4.5, `del ${delDefault}`)
