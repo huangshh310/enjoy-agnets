@@ -6,6 +6,11 @@ import { z } from "zod"
 export const TRUNCATE_STALE_SNAPSHOT = "TRUNCATE_STALE_SNAPSHOT"
 export const TRUNCATE_RUN_ACTIVE = "TRUNCATE_RUN_ACTIVE"
 export const TRUNCATE_MESSAGE_NOT_FOUND = "TRUNCATE_MESSAGE_NOT_FOUND"
+/**
+ * 会话绑的引擎不支持对话回滚（ACP 自己攒上下文）：main 侧拒绝 session.truncateFrom（#159 F1，leo soft 9）。
+ * 只属于 session.truncateFrom（不进 agent.run 共用的 SessionTruncateErrorCode）。
+ */
+export const TRUNCATE_ROLLBACK_UNSUPPORTED = "TRUNCATE_ROLLBACK_UNSUPPORTED"
 /** 外发用户句的 id 已落在别的会话：不开跑、不挂 run（leo 小修 2）。 */
 export const MESSAGE_ID_SESSION_MISMATCH = "MESSAGE_ID_SESSION_MISMATCH"
 
@@ -31,3 +36,19 @@ export const SessionTruncateResult = z.discriminatedUnion("ok", [
   SessionTruncateBlocked
 ])
 export type SessionTruncateResult = z.infer<typeof SessionTruncateResult>
+
+/** session.truncateFrom 的拒绝码：通用三种 + 引擎不支持回滚。 */
+export const SessionTruncateFromErrorCode = z.enum([
+  TRUNCATE_STALE_SNAPSHOT,
+  TRUNCATE_RUN_ACTIVE,
+  TRUNCATE_MESSAGE_NOT_FOUND,
+  TRUNCATE_ROLLBACK_UNSUPPORTED
+])
+export type SessionTruncateFromErrorCode = z.infer<typeof SessionTruncateFromErrorCode>
+
+/** session.truncateFrom 的结果（renderer 收到后按它校验，不合约按失败）。 */
+export const SessionTruncateFromResult = z.discriminatedUnion("ok", [
+  SessionTruncateOk,
+  z.object({ ok: z.literal(false), code: SessionTruncateFromErrorCode }).strict()
+])
+export type SessionTruncateFromResult = z.infer<typeof SessionTruncateFromResult>
