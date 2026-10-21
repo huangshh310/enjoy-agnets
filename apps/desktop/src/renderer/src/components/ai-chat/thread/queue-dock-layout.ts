@@ -4,6 +4,7 @@
  * - refoldOnShort：点开过，窗口再被拉到 ≤600 高 → 重新折成「已暂停 · 排队 N 条」（m211-33）。
  * - keepThreadForFailureCard：停着且对话里挂着失败卡（「再发一次」那张）→ 对话区保底一截高度，按钮整颗露出。
  * - showHiddenBelowPill：「还有 N 条」画不画——只在能单独占一行画在滚动区下面时画，放不下就不画（永不盖行）。
+ * - foldOnSqueeze：点开着的排队区从够高被挤到 <64px（底下还藏着行）的那一刻，折回一行（luna #170 r-luna ①）。
  */
 import { PREVIOUS_STILL_PREPARING } from "../../../lib/usage/classify-thread-error.ts"
 
@@ -52,4 +53,16 @@ export function pillFitsBelow(dockHeight: number): boolean {
 /** 画不画「还有 N 条」：底下真有藏着的行，且排队区够高能把它单独放一行；否则不画（不贴区底、不盖行）。 */
 export function showHiddenBelowPill(hiddenBelow: number, dockHeight: number): boolean {
   return hiddenBelow > 0 && pillFitsBelow(dockHeight)
+}
+
+/**
+ * luna #170 r-luna ①：点开着的排队区被挤到 <64px（审批卡 + 733×480 时只剩约 36px，「还有 N 条」放不下、行被裁）
+ * → 折回一行（「已暂停 · 排队 N 条」/「排队 N 条」，复用现成的折叠行），和 refoldOnShort 一个规矩：
+ * 只在「这次点开后够高过（≥64px，seenRoomy），现在被挤到不够」时折；
+ * 本来就挤时用户自己点开不受影响（不然点开就被立刻收回，审批时排队行上的「马上发给它」永远点不到）。
+ * 底下没藏行（全露着）不折。折了之后空间回来也不自己展开，只有用户点。
+ * 用「够高过」而不是「上一次的高度」：高度和藏行数是两个观察者分别量的，先后到达时不会漏掉这一次。
+ */
+export function foldOnSqueeze(seenRoomy: boolean, dockHeight: number, hiddenBelow: number): boolean {
+  return seenRoomy && hiddenBelow > 0 && !pillFitsBelow(dockHeight)
 }

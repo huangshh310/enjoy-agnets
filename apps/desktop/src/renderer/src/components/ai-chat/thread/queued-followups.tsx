@@ -16,6 +16,7 @@
  *
  * mike P3（#163 巡检）：
  * - 点开后区内滚（滚动条是隐藏的）：底下还藏着排队行时，滚动区下面单独一行「还有 N 条」，点一下滚到底；区被挤到放不下这一行（<64px）时不画，不盖行；
+ * - 点开着、够高过，又被挤到 <64px（底下还藏着行）：折回一行（foldOnSqueeze，luna #170 r-luna ①）；空间回来不自己展开，只有用户点；
  * - 点开过，窗口再被拉到 ≤600 高：重新折成一行（refoldOnShort，m211-33）；
  * - 停着且对话里挂着失败卡：给对话区留 data-keep-thread，chat-stage 据此给对话区保底高度，「再发一次」整颗露出。
  */
@@ -32,7 +33,7 @@ import {
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
 import { pausedCollapsed } from "./queue-paused-view"
-import { keepThreadForFailureCard, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout"
+import { foldOnSqueeze, keepThreadForFailureCard, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -93,6 +94,16 @@ function DockedFollowups({
   const approvalId = useChatStore((state) => state.pendingApproval?.approvalId ?? null)
   const ref = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
+  // 点开着被挤到 <64px 时折回的一行：空间回来也不自己展开，只有用户点（luna #170 r-luna ①）。
+  const [squeezed, setSqueezed] = useState(false)
+  const expand = useCallback(() => {
+    setSqueezed(false)
+    setExpanded(true)
+  }, [])
+  const foldSqueezed = useCallback(() => {
+    setExpanded(false)
+    setSqueezed(true)
+  }, [])
   const short = useShortWindow()
   // 换了一张审批卡 / 暂停原因变了：回到默认（不展开）。
   useEffect(() => setExpanded(false), [approvalId, paused])
@@ -104,7 +115,7 @@ function DockedFollowups({
   }, [short])
   // 停着 + 对话里挂着失败卡：对话区保底高度（chat-stage 按 data-keep-thread 加 min-h），失败卡按钮整颗露出。
   const keepThread = useChatStore((state) => keepThreadForFailureCard(paused != null, state.error))
-  if (paused && pausedCollapsed(short, expanded)) {
+  if (paused && (pausedCollapsed(short, expanded) || squeezed)) {
     return (
       <div
         ref={ref}
@@ -120,7 +131,7 @@ function DockedFollowups({
           testId="queue-paused-collapsed"
           label={t("chat.queuePausedCollapsed", { n: items.length })}
           icon={<QueuePausedIcon reason={paused} />}
-          onClick={() => setExpanded(true)}
+          onClick={expand}
         />
       </div>
     )
@@ -131,7 +142,9 @@ function DockedFollowups({
       paused={paused}
       queuePaused={queuePaused}
       expanded={expanded}
-      setExpanded={setExpanded}
+      squeezed={squeezed}
+      expand={expand}
+      foldSqueezed={foldSqueezed}
       dockRef={ref}
       keepThread={keepThread}
     />
@@ -143,7 +156,9 @@ function DockedRows({
   paused,
   queuePaused,
   expanded,
-  setExpanded,
+  squeezed,
+  expand,
+  foldSqueezed,
   dockRef: ref,
   keepThread
 }: {
@@ -151,17 +166,20 @@ function DockedRows({
   paused: FollowupPausedReason | null
   queuePaused: boolean
   expanded: boolean
-  setExpanded: (value: boolean) => void
+  squeezed: boolean
+  expand: () => void
+  foldSqueezed: () => void
   dockRef: RefObject<HTMLDivElement | null>
   keepThread: boolean
 }) {
   const t = useT()
   const tight = useDockTight(ref, !expanded, items.length)
-  const mode = dockMode(items.length, tight, expanded)
+  const mode = dockMode(items.length, tight, expanded, squeezed)
   // 区内滚的是里面这层；「还有 N 条」放得下就画在它下面、不进滚动区，不盖任何一行（leo #170 soft-5）。
   const scrollRef = useRef<HTMLDivElement>(null)
   const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
-  const dockHeight = useDockHeight(ref, hiddenBelow > 0)
+  const dockHeight = useDockHeight(ref, expanded || hiddenBelow > 0)
+  useFoldOnSqueeze(expanded, dockHeight, hiddenBelow, foldSqueezed)
   // 放不下单独一行（审批卡 + 733×480 挤到一行高）就不画，不再贴区底盖住那一行的字（luna #170 01d）。
   const pill = showHiddenBelowPill(hiddenBelow, dockHeight) ? (
     <DockSummaryButton
@@ -198,7 +216,12 @@ function DockedRows({
       >
         {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
         {mode === "collapsed" ? (
-          <DockSummaryButton testId="queued-collapsed" label={t("chat.runtimeQueueCount", { n: items.length })} onClick={() => setExpanded(true)} />
+          <DockSummaryButton
+            testId="queued-collapsed"
+            // 队列停着（审批时说明行让位）也说「已暂停 · 排队 N 条」，和不审批时折起来的那一行同一句（luna #170 r-luna ①）。
+            label={t(queuePaused ? "chat.queuePausedCollapsed" : "chat.runtimeQueueCount", { n: items.length })}
+            onClick={expand}
+          />
         ) : (
           <>
             {visible.map((item, index) => (
@@ -215,7 +238,7 @@ function DockedRows({
               <DockSummaryButton
                 testId="queued-more"
                 label={t("chat.runtimeQueueMore", { n: items.length - DOCK_VISIBLE_ROWS })}
-                onClick={() => setExpanded(true)}
+                onClick={expand}
               />
             ) : null}
           </>
@@ -261,10 +284,13 @@ function DockSummaryButton({
 
 export type DockMode = "collapsed" | "more" | "all"
 
-/** 紧凑区画法：放不下 → 一行「排队 N 条」；3 条及以上 → 2 行 +「还有 N 条」；用户点开后全部（区内滚）。 */
-export function dockMode(count: number, tight: boolean, expanded: boolean): DockMode {
+/**
+ * 紧凑区画法：放不下 → 一行「排队 N 条」；3 条及以上 → 2 行 +「还有 N 条」；用户点开后全部（区内滚）。
+ * squeezed：点开着被挤到 <64px 折回来的（luna #170 r-luna ①），用户再点开之前一直是一行，空间回来也不展开。
+ */
+export function dockMode(count: number, tight: boolean, expanded: boolean, squeezed = false): DockMode {
   if (expanded) return "all"
-  if (tight && count > 0) return "collapsed"
+  if ((tight || squeezed) && count > 0) return "collapsed"
   if (count > DOCK_VISIBLE_ROWS) return "more"
   return "all"
 }
@@ -311,12 +337,37 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
   return enabled && tight
 }
 
-/** 排队区外层高度（px），给 showHiddenBelowPill 判「还有 N 条」放不放得下单独一行。 */
+/**
+ * 点开着：这次点开后够高过（≥64px），又被挤到不够、底下还藏着行 → 折回一行（foldOnSqueeze）。
+ * 每次点开重新记「够高过」：本来就挤时用户点开不受影响。
+ */
+function useFoldOnSqueeze(expanded: boolean, dockHeight: number, hiddenBelow: number, fold: () => void): void {
+  const seenRoomy = useRef(false)
+  useLayoutEffect(() => {
+    if (!expanded) {
+      seenRoomy.current = false
+      return
+    }
+    if (!Number.isFinite(dockHeight)) return
+    if (foldOnSqueeze(seenRoomy.current, dockHeight, hiddenBelow)) {
+      seenRoomy.current = false
+      fold()
+      return
+    }
+    if (pillFitsBelow(dockHeight)) seenRoomy.current = true
+  }, [expanded, dockHeight, hiddenBelow, fold])
+}
+
+/** 排队区外层高度（px）：给 showHiddenBelowPill 判「还有 N 条」放不放得下单独一行、给 useFoldOnSqueeze 判挤没挤。不量时是 Infinity。 */
 function useDockHeight(ref: RefObject<HTMLDivElement | null>, enabled: boolean): number {
   const [height, setHeight] = useState(Number.POSITIVE_INFINITY)
   useLayoutEffect(() => {
     const el = ref.current
-    if (!enabled || !el) return
+    if (!enabled || !el) {
+      // 不量了就忘掉旧值：下次点开时不拿上一回的高度当「够高过」。
+      setHeight(Number.POSITIVE_INFINITY)
+      return
+    }
     const measure = () => setHeight(el.clientHeight)
     measure()
     const observer = new ResizeObserver(measure)

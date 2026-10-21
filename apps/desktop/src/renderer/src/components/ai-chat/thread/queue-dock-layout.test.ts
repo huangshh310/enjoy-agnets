@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { keepThreadForFailureCard, PILL_BELOW_MIN_DOCK_PX, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout.ts"
+import { foldOnSqueeze, keepThreadForFailureCard, PILL_BELOW_MIN_DOCK_PX, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout.ts"
 import { PREVIOUS_STILL_PREPARING } from "../../../lib/usage/classify-thread-error.ts"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../../../i18n/catalogs/en/chat.ts"
@@ -49,7 +49,6 @@ test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thre
   // 小胶囊靠左、不铺满；leo #170 soft-5：画在滚动区（scrollRef）外面、下面单独一行，不盖任何一行；
   // luna #170 01d：挤到一行高（审批卡 + 733×480）放不下就不画，不再贴区底（sticky）盖行。藏行计数和「滚到底」都按里面的滚动区算。
   assert.match(dock, /className="mt-1 w-auto max-w-\[45%\] self-start border-solid bg-background-secondary-default pr-1\.5"/)
-  assert.match(dock, /const dockHeight = useDockHeight\(ref, hiddenBelow > 0\)/)
   assert.match(dock, /const pill = showHiddenBelowPill\(hiddenBelow, dockHeight\) \?/)
   assert.match(dock, /setHeight\(el\.clientHeight\)/)
   assert.ok(!/sticky bottom-0/.test(dock), "「还有 N 条」不再 sticky 贴区底")
@@ -75,7 +74,7 @@ test("leo soft-5：「还有 N 条」单独一行要 64px（padding 8 + 一行 2
   assert.equal(pillFitsBelow(36), false) // min-h-9：挤到一行高
 })
 
-test("luna #170 01d：排队区不到 64px 时不画「还有 N 条」（不盖那一行的字）；够高且真有藏行才画", () => {
+test("luna #170 01d：排队区不到 64px 时不画「还有 N 条」（不盖那一行的字；用户自己在挤的时候点开、没被折回时的兜底）；够高且真有藏行才画", () => {
   assert.equal(showHiddenBelowPill(3, 152), true)
   assert.equal(showHiddenBelowPill(1, 64), true)
   assert.equal(showHiddenBelowPill(3, 63), false)
@@ -83,4 +82,37 @@ test("luna #170 01d：排队区不到 64px 时不画「还有 N 条」（不盖�
   assert.equal(showHiddenBelowPill(0, 152), false) // 没藏行
   assert.equal(showHiddenBelowPill(0, 36), false)
   assert.equal(showHiddenBelowPill(2, Number.POSITIVE_INFINITY), true) // 还没量到高度：按放得下
+})
+
+test("luna #170 r-luna ①：点开后够高过（≥64px），又被挤到 <64px 且底下藏着行 → 折回一行；本来就挤时用户点开不折；没藏行不折", () => {
+  // 点开时 152px，审批卡 / 输入框长高把排队区挤到 36px（733×480）：折。
+  assert.equal(foldOnSqueeze(true, 36, 2), true)
+  assert.equal(foldOnSqueeze(true, 63, 1), true)
+  // 64 还放得下「还有 N 条」那一行：不折。
+  assert.equal(foldOnSqueeze(true, 64, 2), false)
+  // 本来就挤（这次点开后从没够高过）：用户自己点开的不收回（和 refoldOnShort 一个规矩）。
+  assert.equal(foldOnSqueeze(false, 36, 2), false)
+  // 全露着（1 条）：不折。
+  assert.equal(foldOnSqueeze(true, 36, 0), false)
+})
+
+test("luna #170 r-luna ① 接线：挤到 <64px 折成一行（squeezed）；空间回来不自己展开，只有用户点；停着时用「已暂停 · 排队 N 条」那一行", () => {
+  const dock = src("./queued-followups.tsx")
+  // 折回：收起 + 记 squeezed；用户点开（expand）才清。
+  assert.match(dock, /const foldSqueezed = useCallback\(\(\) => \{\s+setExpanded\(false\)\s+setSqueezed\(true\)/)
+  assert.match(dock, /const expand = useCallback\(\(\) => \{\s+setSqueezed\(false\)\s+setExpanded\(true\)/)
+  assert.equal(dock.match(/setSqueezed\(false\)/g)?.length, 1, "只有用户点开清 squeezed（审批处理完 / 空间回来都不清）")
+  assert.doesNotMatch(dock, /setExpanded\(true\)\s*\}?\s*,\s*\[approvalId/, "审批换了不自己展开")
+  assert.equal(dock.match(/setExpanded\(true\)/g)?.length, 1, "展开只有 expand 这一处")
+  assert.match(dock, /if \(paused && \(pausedCollapsed\(short, expanded\) \|\| squeezed\)\)/)
+  assert.match(dock, /const mode = dockMode\(items\.length, tight, expanded, squeezed\)/)
+  assert.match(dock, /useFoldOnSqueeze\(expanded, dockHeight, hiddenBelow, foldSqueezed\)/)
+  assert.match(dock, /const dockHeight = useDockHeight\(ref, expanded \|\| hiddenBelow > 0\)/)
+  assert.match(dock, /if \(foldOnSqueeze\(seenRoomy\.current, dockHeight, hiddenBelow\)\) \{\s+seenRoomy\.current = false\s+fold\(\)/)
+  assert.match(dock, /if \(pillFitsBelow\(dockHeight\)\) seenRoomy\.current = true/)
+  assert.match(dock, /if \(!expanded\) \{\s+seenRoomy\.current = false/)
+  // 不量了就忘掉旧高度：下次点开不拿上回的 152px 当「够高过」。
+  assert.match(dock, /if \(!enabled \|\| !el\) \{[^}]*setHeight\(Number\.POSITIVE_INFINITY\)/)
+  // 审批时（说明行让位）折起来的那一行：队列停着也说「已暂停 · 排队 N 条」。
+  assert.match(dock, /label=\{t\(queuePaused \? "chat\.queuePausedCollapsed" : "chat\.runtimeQueueCount", \{ n: items\.length \}\)\}/)
 })
