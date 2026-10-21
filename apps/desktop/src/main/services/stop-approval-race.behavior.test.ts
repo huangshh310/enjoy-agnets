@@ -20,7 +20,11 @@ const {
   consumeRun,
   persistWaitingRun,
   persistRunningCheckpoint,
-  stubWriteApprovalPart
+  stubWriteApprovalPart,
+  rememberApproval,
+  applyExplicitSessionTruncate,
+  markRestoreWaitingSettled,
+  resetRestoreWaitingOnceForTests
 } = await import("./stop-approval-race.behavior.load.ts")
 
 type Sent = { type: string; decision?: string; code?: string; toolCallId?: string }
@@ -210,3 +214,53 @@ test("对照：没停的 run 照常停车 waiting_review、照常写工具边界
   }
 })
 
+/** 修之前停止留下的残局：库 waiting_review + 审批行 decision=null，内存里已没有这一轮。 */
+function seedStaleWaiting(tag: string) {
+  const events: Sent[] = []
+  const { runId, sessionId, approvalId } = seed(tag, events)
+  rememberApproval({ runId, approvalId, toolCallId: `tool_${approvalId}`, name: "write_file", args: { path: "a" } })
+  getDatabase().prepare("UPDATE runs SET status = 'waiting_review' WHERE id = ?").run(runId)
+  const db = getDatabase()
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(`${runId}_u1`, sessionId, "user", "u1", 1)
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(`${runId}_a1`, sessionId, "assistant", "a1", 2)
+  return { runId, sessionId, approvalId, u1: `${runId}_u1`, a1: `${runId}_a1` }
+}
+
+function rewindPrecheck(sessionId: string, u1: string, a1: string) {
+  return applyExplicitSessionTruncate({ sessionId, fromMessageId: u1, expectedTailIds: [u1, a1], reason: "rewind", dryRun: true })
+}
+
+test("残留的 waiting_review（没人能再拍板）不挡「从这里重来」：预检前按停止结清，run / 审批都 cancelled", () => {
+  markRestoreWaitingSettled()
+  try {
+    const { runId, sessionId, approvalId, u1, a1 } = seedStaleWaiting("stale")
+    deleteActiveRun(runId)
+    assert.deepEqual(rewindPrecheck(sessionId, u1, a1), { ok: true, deleted: 0 })
+    assert.equal(getRun(getDatabase(), runId)?.status, "cancelled")
+    assert.equal(getApproval(getDatabase(), approvalId)?.decision, "cancelled")
+  } finally {
+    resetRestoreWaitingOnceForTests()
+  }
+})
+
+test("对照：回挂还没扫完的 waiting_review 照样挡（等回挂），库不动", () => {
+  resetRestoreWaitingOnceForTests()
+  const { runId, sessionId, approvalId, u1, a1 } = seedStaleWaiting("restoring")
+  deleteActiveRun(runId)
+  assert.deepEqual(rewindPrecheck(sessionId, u1, a1), { ok: false, code: "TRUNCATE_RUN_ACTIVE" })
+  assert.equal(getRun(getDatabase(), runId)?.status, "waiting_review")
+  assert.equal(getApproval(getDatabase(), approvalId)?.decision, null)
+})
+
+test("对照：真在等审批（内存里有这一轮）照样挡，库不动", () => {
+  markRestoreWaitingSettled()
+  const { runId, sessionId, approvalId, u1, a1 } = seedStaleWaiting("live-wait")
+  try {
+    assert.deepEqual(rewindPrecheck(sessionId, u1, a1), { ok: false, code: "TRUNCATE_RUN_ACTIVE" })
+    assert.equal(getRun(getDatabase(), runId)?.status, "waiting_review")
+    assert.equal(getApproval(getDatabase(), approvalId)?.decision, null)
+  } finally {
+    deleteActiveRun(runId)
+    resetRestoreWaitingOnceForTests()
+  }
+})

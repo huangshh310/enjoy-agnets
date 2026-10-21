@@ -18,6 +18,7 @@ import { recomputeReviewAfterTruncate } from "./review-after-truncate.ts"
 import { persistUserTurnOutcome } from "./persist-user-attachments.ts"
 import type { PersistedMessage } from "./persist-session.ts"
 import { clearSessionCompaction } from "./session-compaction-store.ts"
+import { settleOrphanWaitingRuns } from "./settle-orphan-waiting.ts"
 import type { UserFileAsset } from "./user-attachment-parts.ts"
 
 export {
@@ -84,6 +85,8 @@ function tailsMatch(dbTail: string[], expected: string[]): boolean {
 
 export function applyExplicitSessionTruncate(input: ExplicitTruncateInput): SessionTruncateResult {
   const db = getDatabase()
+  // 停止后残留的 waiting_review（没人能再拍板）先结清，别挡「从这里重来」。放在事务外：预检 ROLLBACK 也不撤销。
+  settleOrphanWaitingRuns(input.sessionId)
   db.exec("BEGIN IMMEDIATE;")
   let deleted = 0
   let wroteUser = false
