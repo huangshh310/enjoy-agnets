@@ -602,7 +602,7 @@ export const zhChat = {
     unsupported: "这个助手不支持中途换模型。",
     unsupportedHint: "要换助手，点左下角的助手名，在左边一栏选。",
     menuTitle: "换模型",
-    menuSubtitle: "{engine} 官方列出的模型 · 同一个助手，只换模型",
+    menuSubtitle: "{engine} 官方列出的模型",
     current: "当前",
     menuFootnote: "这里只换模型。要换助手，在助手菜单的左边一栏选。",
     notLoggedIn: "还没登录这个助手，换不了模型",

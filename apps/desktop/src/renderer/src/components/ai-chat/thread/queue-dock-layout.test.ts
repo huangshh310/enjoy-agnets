@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { keepThreadForFailureCard, PILL_BELOW_MIN_DOCK_PX, pillFitsBelow, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout.ts"
+import { keepThreadForFailureCard, PILL_BELOW_MIN_DOCK_PX, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout.ts"
 import { PREVIOUS_STILL_PREPARING } from "../../../lib/usage/classify-thread-error.ts"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../../../i18n/catalogs/en/chat.ts"
@@ -46,20 +46,25 @@ test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thre
   assert.match(dock, /data-keep-thread=\{keepThread \? "true" : undefined\}/)
   assert.match(dock, /testId="queued-hidden-below"/)
   assert.match(dock, /label=\{t\("chat\.runtimeQueueMore", \{ n: hiddenBelow \}\)\}/)
-  // 小胶囊靠左、不铺满；leo #170 soft-5：放得下就画在滚动区（scrollRef）外面、下面单独一行，不盖任何一行；
-  // 挤到一行高（审批卡 + 733×480）才退回贴在区底左下角（只盖行左边，不盖右侧按钮）。藏行计数和「滚到底」都按里面的滚动区算。
-  assert.match(dock, /"w-auto max-w-\[45%\] self-start border-solid bg-background-secondary-default pr-1\.5",\s+pillBelow \? "mt-1" : "sticky bottom-0 z-10 shadow-sm"/)
-  assert.match(dock, /const pillBelow = useDockHeightAtLeast\(ref, hiddenBelow > 0\)/)
-  assert.match(dock, /setFits\(pillFitsBelow\(el\.clientHeight\)\)/)
+  // 小胶囊靠左、不铺满；leo #170 soft-5：画在滚动区（scrollRef）外面、下面单独一行，不盖任何一行；
+  // luna #170 01d：挤到一行高（审批卡 + 733×480）放不下就不画，不再贴区底（sticky）盖行。藏行计数和「滚到底」都按里面的滚动区算。
+  assert.match(dock, /className="mt-1 w-auto max-w-\[45%\] self-start border-solid bg-background-secondary-default pr-1\.5"/)
+  assert.match(dock, /const dockHeight = useDockHeight\(ref, hiddenBelow > 0\)/)
+  assert.match(dock, /const pill = showHiddenBelowPill\(hiddenBelow, dockHeight\) \?/)
+  assert.match(dock, /setHeight\(el\.clientHeight\)/)
+  assert.ok(!/sticky bottom-0/.test(dock), "「还有 N 条」不再 sticky 贴区底")
   assert.match(dock, /useRowsHiddenBelow\(scrollRef, mode === "all", items\.length\)/)
   assert.match(dock, /scrollRef\.current\?\.scrollTo\(\{ top: scrollRef\.current\.scrollHeight/)
-  assert.match(dock, /\{pillBelow \? null : pill\}\s+<\/>\s+\)\}\s+<\/div>\s+(\{\/\*[^*]*\*\/\}\s+)?\{pillBelow \? pill : null\}/, "放得下：滚动区闭合之后才画；放不下：在滚动区里")
+  assert.match(dock, /<\/>\s+\)\}\s+<\/div>\s+(\{\/\*[^*]*\*\/\}\s+)?\{pill\}\s+<\/div>/, "只在滚动区闭合之后画（不进滚动区）")
+  assert.equal(dock.match(/\{pill\}/g)?.length, 1, "只有一处画胶囊")
   // 点开后最少一行（min-h-9）不变：审批卡 + 733×480 时不能为小胶囊把排队区撑高（会压到审批三钮）。
   assert.match(dock, /expanded \? "max-h-\[9\.5rem\] min-h-9 shrink-\[1000\] py-1"/)
   const stage = src("../../app-shell/chat/chat-stage.tsx")
   const base = stage.indexOf("[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0")
-  const keep = stage.indexOf("[&:has(>[data-testid=queued-followups-docked][data-keep-thread=true])>[data-thread-root]]:min-h-[4.5rem]")
+  const keep = stage.indexOf("[&:has(>[data-testid=queued-followups-docked][data-keep-thread=true])>[data-thread-root]]:min-h-[5.5rem]")
   assert.ok(base >= 0 && keep > base, "保底那条在 min-h-0 后面、选择器多一个属性")
+  // luna #170 02：保底要放下整张失败卡（说明行 + 按钮 ≈ 74px + 矮窗底边 4px），4.5rem（72px）会把说明行裁掉半行。
+  assert.ok(!stage.includes("[data-keep-thread=true])>[data-thread-root]]:min-h-[4.5rem]"))
 })
 
 test("leo soft-5：「还有 N 条」单独一行要 64px（padding 8 + 一行 28 + 间距 4 + 胶囊 24），够就画在下面，不够才贴在区底", () => {
@@ -68,4 +73,14 @@ test("leo soft-5：「还有 N 条」单独一行要 64px（padding 8 + 一行 2
   assert.equal(pillFitsBelow(64), true)
   assert.equal(pillFitsBelow(63), false)
   assert.equal(pillFitsBelow(36), false) // min-h-9：挤到一行高
+})
+
+test("luna #170 01d：排队区不到 64px 时不画「还有 N 条」（不盖那一行的字）；够高且真有藏行才画", () => {
+  assert.equal(showHiddenBelowPill(3, 152), true)
+  assert.equal(showHiddenBelowPill(1, 64), true)
+  assert.equal(showHiddenBelowPill(3, 63), false)
+  assert.equal(showHiddenBelowPill(3, 36), false) // 审批卡 + 733×480：挤到一行高
+  assert.equal(showHiddenBelowPill(0, 152), false) // 没藏行
+  assert.equal(showHiddenBelowPill(0, 36), false)
+  assert.equal(showHiddenBelowPill(2, Number.POSITIVE_INFINITY), true) // 还没量到高度：按放得下
 })

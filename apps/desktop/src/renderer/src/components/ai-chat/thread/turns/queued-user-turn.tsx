@@ -7,7 +7,6 @@ import { cx } from "@/utils/cx"
 import { discardFollowup, returnFollowupToComposer, sendFollowupNow } from "@renderer/hooks/runtime-interact/followup-actions"
 import { moveFollowup, type FollowupItem } from "@renderer/hooks/followup-queue"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { markUserSend } from "../scroll-on-send"
 import { useT } from "@renderer/i18n"
 import { queuedExtrasLabel } from "../../composer-count-labels"
 import { QUEUE_BUBBLE_LABEL_TEXT, QUEUE_LINK_BUBBLE, QUEUE_LINK_DOCK, QUEUE_MUTED_TEXT, queuedRowLabelKey, queuedSendNowKey } from "../queue-paused-view"
@@ -49,11 +48,7 @@ export function QueuedUserTurn({
         type="button"
         data-testid="queued-send-now"
         className={actionClass}
-        onClick={() => {
-          // 用户自己点的「立即发送 / 马上发给它」：发出去后贴底（排队自己发出去时不贴，leo soft-2）。
-          markUserSend(item.sessionId)
-          void sendFollowupNow(item)
-        }}
+        onClick={() => void sendFollowupNow(item)}
       >
         <RiSendPlaneLine className="size-3.5" aria-hidden />
         {/* 队列停着又在跑（暂停中来审批）：「马上发给它」听着像继续整队，换成只发这一条（mike P3）。 */}

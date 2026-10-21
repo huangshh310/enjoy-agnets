@@ -15,7 +15,7 @@
  * 排队行本身不变；窗口高 ≤600 时整区折成一行「已暂停 · 排队 N 条」，点开展开。
  *
  * mike P3（#163 巡检）：
- * - 点开后区内滚（滚动条是隐藏的）：底下还藏着排队行时，区底贴一行「还有 N 条」，点一下滚到底——不再有行悄悄压在输入框上沿下面；
+ * - 点开后区内滚（滚动条是隐藏的）：底下还藏着排队行时，滚动区下面单独一行「还有 N 条」，点一下滚到底；区被挤到放不下这一行（<64px）时不画，不盖行；
  * - 点开过，窗口再被拉到 ≤600 高：重新折成一行（refoldOnShort，m211-33）；
  * - 停着且对话里挂着失败卡：给对话区留 data-keep-thread，chat-stage 据此给对话区保底高度，「再发一次」整颗露出。
  */
@@ -32,7 +32,7 @@ import {
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
 import { pausedCollapsed } from "./queue-paused-view"
-import { keepThreadForFailureCard, pillFitsBelow, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout"
+import { keepThreadForFailureCard, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -161,19 +161,16 @@ function DockedRows({
   // 区内滚的是里面这层；「还有 N 条」放得下就画在它下面、不进滚动区，不盖任何一行（leo #170 soft-5）。
   const scrollRef = useRef<HTMLDivElement>(null)
   const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
-  const pillBelow = useDockHeightAtLeast(ref, hiddenBelow > 0)
-  const pill =
-    hiddenBelow > 0 ? (
-      <DockSummaryButton
-        testId="queued-hidden-below"
-        label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
-        className={cx(
-          "w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5",
-          pillBelow ? "mt-1" : "sticky bottom-0 z-10 shadow-sm"
-        )}
-        onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })}
-      />
-    ) : null
+  const dockHeight = useDockHeight(ref, hiddenBelow > 0)
+  // 放不下单独一行（审批卡 + 733×480 挤到一行高）就不画，不再贴区底盖住那一行的字（luna #170 01d）。
+  const pill = showHiddenBelowPill(hiddenBelow, dockHeight) ? (
+    <DockSummaryButton
+      testId="queued-hidden-below"
+      label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
+      className="mt-1 w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5"
+      onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })}
+    />
+  ) : null
 
   const visible = mode === "more" ? items.slice(0, DOCK_VISIBLE_ROWS) : items
   return (
@@ -221,13 +218,11 @@ function DockedRows({
                 onClick={() => setExpanded(true)}
               />
             ) : null}
-            {/* 挤到一行高（审批卡 + 733×480）：放不下单独一行，退回贴在区底左下角，只盖行左边、不盖右侧按钮。 */}
-            {pillBelow ? null : pill}
           </>
         )}
       </div>
       {/* 区内滚、滚动条隐藏：底下还有行时，滚动区下面单独一行左对齐「还有 N 条」，点一下滚到底；不盖任何一行。 */}
-      {pillBelow ? pill : null}
+      {pill}
     </div>
   )
 }
@@ -316,25 +311,25 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
   return enabled && tight
 }
 
-/**
- * 点开后（区内滚）量一下：可视区底边以下还藏着几条排队行。滚动、区 / 行尺寸变化时重量。
- * 「还有 N 条」行自己是 sticky 的，不参与计数（只数 queued-user-turn）。
- */
-/** 排队区外层够不够高、能不能把「还有 N 条」单独一行画在滚动区下面（pillFitsBelow）。 */
-function useDockHeightAtLeast(ref: RefObject<HTMLDivElement | null>, enabled: boolean): boolean {
-  const [fits, setFits] = useState(true)
+/** 排队区外层高度（px），给 showHiddenBelowPill 判「还有 N 条」放不放得下单独一行。 */
+function useDockHeight(ref: RefObject<HTMLDivElement | null>, enabled: boolean): number {
+  const [height, setHeight] = useState(Number.POSITIVE_INFINITY)
   useLayoutEffect(() => {
     const el = ref.current
     if (!enabled || !el) return
-    const measure = () => setFits(pillFitsBelow(el.clientHeight))
+    const measure = () => setHeight(el.clientHeight)
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
   }, [ref, enabled])
-  return fits
+  return height
 }
 
+/**
+ * 点开后（区内滚）量一下：可视区底边以下还藏着几条排队行。滚动、区 / 行尺寸变化时重量。
+ * 「还有 N 条」画在滚动区外面，不参与计数（只数滚动区里的 queued-user-turn）。
+ */
 function useRowsHiddenBelow(ref: RefObject<HTMLDivElement | null>, enabled: boolean, count: number): number {
   const [hidden, setHidden] = useState(0)
   const measure = useCallback(() => {

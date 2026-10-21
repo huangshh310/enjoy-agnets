@@ -3,7 +3,7 @@
  * - rowsHiddenBelow：点开后区内滚，排队行被裁在区底下几条（给「还有 N 条」提示用）。
  * - refoldOnShort：点开过，窗口再被拉到 ≤600 高 → 重新折成「已暂停 · 排队 N 条」（m211-33）。
  * - keepThreadForFailureCard：停着且对话里挂着失败卡（「再发一次」那张）→ 对话区保底一截高度，按钮整颗露出。
- * - pillFitsBelow：「还有 N 条」能不能单独占一行画在滚动区下面（不盖任何一行）。
+ * - showHiddenBelowPill：「还有 N 条」画不画——只在能单独占一行画在滚动区下面时画，放不下就不画（永不盖行）。
  */
 import { PREVIOUS_STILL_PREPARING } from "../../../lib/usage/classify-thread-error.ts"
 
@@ -38,12 +38,18 @@ export function keepThreadForFailureCard(queuePaused: boolean, error: string | n
 
 /**
  * 「还有 N 条」单独一行画在滚动区下面需要的排队区高度（px）：上下 padding 8 + 一行排队 28 + 间距 4 + 小胶囊 24。
- * 够高 → 画在下面，永远不盖行（leo #170 soft-5）；不够（审批卡 + 733×480 把排队区挤到一行高）→ 退回贴在区底左下角，
- * 只盖那一行左边的正文、不盖右侧按钮——这时候再占一行就一条排队行都露不出来了。
- * 按排队区外层高度判：胶囊挪上挪下不改外层高度，不会来回跳。
+ * 够高 → 画在下面，永远不盖行（leo #170 soft-5）。不够（审批卡 + 733×480 把排队区挤到一行高）→ 不画（luna #170 01d）：
+ * 以前退回贴在区底左下角会盖住那一行左边的正文；这时候再占一行就一条排队行都露不出来，宁可不提示也不盖字。
+ * 区内仍可滚（滚轮 / 触控板），审批处理完排队区长回来，胶囊自己回来。
+ * 按排队区外层高度判：胶囊出现 / 消失不改外层高度（max-h / min-h 由排队区自己定），不会来回跳。
  */
 export const PILL_BELOW_MIN_DOCK_PX = 64
 
 export function pillFitsBelow(dockHeight: number): boolean {
   return dockHeight >= PILL_BELOW_MIN_DOCK_PX
+}
+
+/** 画不画「还有 N 条」：底下真有藏着的行，且排队区够高能把它单独放一行；否则不画（不贴区底、不盖行）。 */
+export function showHiddenBelowPill(hiddenBelow: number, dockHeight: number): boolean {
+  return hiddenBelow > 0 && pillFitsBelow(dockHeight)
 }

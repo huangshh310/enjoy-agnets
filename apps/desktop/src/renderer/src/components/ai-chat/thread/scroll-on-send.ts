@@ -1,33 +1,47 @@
 /**
  * 发出一句后对话要贴底（mike P3，#163 巡检 52：发「普通一句」后停在上面一条，右下有 ↓）。
- * 判定：同一个会话里最后一条用户消息换了，**而且是用户自己刚点了发送**（leo #170 soft-2）。
- * - 切会话不算（那是首屏贴底，StickToBottom 自己管）；用户消息没变（助手在出字、工具卡更新）也不算；
- * - 排队的那条自己发出去、重来改了最后一条：用户正往上翻着看历史时不拽回底部，右下原有的 ↓ 还在，想回去自己点。
+ * 规则（host #170 定，反过来写）：同一个会话里最后一条用户消息换了 → 贴底，**默认就滚**。
+ * 用户自己的各种发送（输入框发送 / 插话、动作 chip、计划卡「执行计划」、ACP 斜杠命令、再发一次、改了再发、
+ * 设计模式 / diff 评论插话……）都不用登记，新入口也不会漏。
+ * 只有两条路不是用户刚发的、不该把正往上翻着看历史的人拽回底部：排队那条自己发出去、重来（从这里重来截掉后面）。
+ * 它们发之前各打一个一次性的「这次别滚」记号，下一次「最后一条用户消息换了」时取走。
+ * - 切会话不算（那是首屏贴底，StickToBottom 自己管）；用户消息没变（助手在出字、工具卡更新）也不算。
+ * - 记号只管同一会话、10 秒内；排队那条发送结束了记号还没被取走（被拦下 / 没发出去，用户消息没换）就当场撤掉
+ *   （dropSkipSendScroll），不会留着吞掉后面用户自己那一发的贴底。重来截完一条用户消息都不剩时不打记号。
  */
 export type SendScrollMark = { sessionId: string | null; lastUserId: string | null }
 
-/** 点了发送后多久内出现的新用户消息算这次发送的（首发要先建会话 / 准备，留足余量）。 */
-export const USER_SEND_WINDOW_MS = 10_000
+/** 打了「这次别滚」后多久内出现的用户消息变化算它的（排队发出要等起跑、重来要等截断回执，留足余量）。 */
+export const SKIP_SCROLL_WINDOW_MS = 10_000
 
-let userSend: { sessionId: string | null; at: number } | null = null
+type SkipMark = { sessionId: string | null; at: number }
 
-/** 跑着时按 Enter 是排队，不会马上出现用户消息；这时不记，免得排队的那条稍后自己发出去时被当成「刚点了发送」。 */
-export function userSendQueues(running: boolean, requested: "send" | "steer"): boolean {
-  return running && requested === "send"
+let skip: SkipMark | null = null
+
+/** 排队那条自己发出去、重来：发之前打一个一次性的「这次别滚」记号。返回这个记号，发完没用上时拿它撤。 */
+export function skipNextSendScroll(sessionId: string | null | undefined, now: number = Date.now()): object {
+  const mark: SkipMark = { sessionId: sessionId ?? null, at: now }
+  skip = mark
+  return mark
 }
 
-/** 输入框发送 / 插话、排队行「立即发送 / 马上发给它」：用户自己点的发送，记一笔。 */
-export function markUserSend(sessionId: string | null, now: number = Date.now()): void {
-  userSend = { sessionId, at: now }
+/** 撤掉自己打的、还没被取走的记号（别人后来打的不动）。 */
+export function dropSkipSendScroll(mark: object): void {
+  if (skip === mark) skip = null
 }
 
-/** 取走记号：同一会话（新对话点发送时还没有会话也算）且没过期才算；取一次就清。 */
-export function takeUserSend(sessionId: string | null, now: number = Date.now()): boolean {
-  const mark = userSend
-  userSend = null
+/** 取走记号：同一会话且没过期才算「这次别滚」；不管算不算，取一次就清（一次性，不会留着吞下一次）。 */
+export function takeSkipSendScroll(sessionId: string | null, now: number = Date.now()): boolean {
+  const mark = skip
+  skip = null
   if (!mark) return false
-  if (mark.sessionId !== null && mark.sessionId !== sessionId) return false
-  return now - mark.at <= USER_SEND_WINDOW_MS
+  if (mark.sessionId !== sessionId) return false
+  return now - mark.at <= SKIP_SCROLL_WINDOW_MS
+}
+
+/** 测试用：清掉记号。 */
+export function resetSkipSendScrollForTest(): void {
+  skip = null
 }
 
 export function lastUserMessageId(messages: ReadonlyArray<{ id: string; role: string }>): string | null {
@@ -45,7 +59,7 @@ export function lastUserChanged(prev: SendScrollMark, next: SendScrollMark): boo
   return next.lastUserId !== prev.lastUserId
 }
 
-/** 最后一条用户消息换了，且是用户自己点的发送，才贴底。 */
-export function shouldScrollOnSend(prev: SendScrollMark, next: SendScrollMark, userInitiated: () => boolean): boolean {
-  return lastUserChanged(prev, next) && userInitiated()
+/** 最后一条用户消息换了就贴底，除非这次是排队自动发出 / 重来打了「这次别滚」（只在换了时才取记号）。 */
+export function shouldScrollOnSend(prev: SendScrollMark, next: SendScrollMark, skipThisOne: () => boolean): boolean {
+  return lastUserChanged(prev, next) && !skipThisOne()
 }

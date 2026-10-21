@@ -607,7 +607,7 @@ export const enChat = {
     unsupported: "This assistant can't change models mid-session.",
     unsupportedHint: "To switch assistants, click the assistant name at the bottom left and pick one on the left.",
     menuTitle: "Change model",
-    menuSubtitle: "{engine} · Listed models · same assistant, only the model changes",
+    menuSubtitle: "{engine} · Listed models",
     current: "Current",
     menuFootnote: "This list only changes models. To switch assistants, pick one on the left of the assistant menu.",
     notLoggedIn: "Sign in to this assistant before changing models",
