@@ -290,3 +290,46 @@ test("引擎不支持回滚：没有还原按钮（不是置灰）、没有任�
     }
   }
 })
+
+test("luna g159 ⑫：英文删 1 个新文件用单数句（定稿），多个仍是复数；中文不变；入口叫 Start over from here", () => {
+  const en = tFor("en")
+  const zh = tFor("zh")
+  const one = rewindDialogView({ kind: "untracked", files: ["a.txt"] }, en)
+  assert.equal(one.title, "Also delete 1 new file?")
+  assert.equal(
+    one.body,
+    "This file appeared after this turn started, even if you created it yourself. Restoring will delete it, and it can't be recovered."
+  )
+  for (const files of [["a.txt", "b.txt"], ["a", "b", "c", "d", "e", "f", "g"], null]) {
+    const many = rewindDialogView({ kind: "untracked", files }, en)
+    assert.equal(
+      many.body,
+      "These files appeared after this turn started, including any you created yourself. Restoring will delete them, and they can't be recovered.",
+      `plural for ${files?.length ?? "unknown"}`
+    )
+  }
+  const zhBody = "这些文件是这一轮开始后新出现的，包括你自己新建的。还原会把它们删掉，删了找不回。"
+  assert.equal(rewindDialogView({ kind: "untracked", files: ["a.txt"] }, zh).body, zhBody)
+  assert.equal(rewindDialogView({ kind: "untracked", files: ["a", "b"] }, zh).body, zhBody)
+  assert.equal(en("chat.rewindTitle"), "Start over from here")
+  assert.equal(zh("chat.rewindTitle"), "从这里重来")
+})
+
+test("luna g159 ⑭：REWIND_PROVIDER_UNSUPPORTED 走通用失败句；rewindUnsupported 文案已删", () => {
+  for (const restoreFiles of [true, false]) {
+    assert.deepEqual(rewindOutcome({ ok: false, code: "REWIND_PROVIDER_UNSUPPORTED" }, restoreFiles), {
+      kind: "error",
+      messageKey: "chat.rewindFailed"
+    })
+    // main 侧守卫拒绝的 code 同样走通用句。
+    assert.deepEqual(rewindOutcome({ ok: false, code: "TRUNCATE_ROLLBACK_UNSUPPORTED" }, restoreFiles), {
+      kind: "error",
+      messageKey: "chat.rewindFailed"
+    })
+  }
+  assert.equal("rewindUnsupported" in zhChat, false)
+  assert.equal("rewindUnsupported" in enChat, false)
+  for (const chat of [zhChat, enChat] as Array<Record<string, string>>) {
+    assert.ok(!Object.values(chat).some((v) => v === "当前引擎不能回滚对话" || v === "This engine cannot rewind the conversation"))
+  }
+})

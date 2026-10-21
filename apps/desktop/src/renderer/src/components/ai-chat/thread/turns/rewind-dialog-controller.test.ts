@@ -15,6 +15,8 @@ import { translate } from "../../../../i18n/lookup.ts"
 import type { RewindRunResult } from "./rewind-dialog-view.ts"
 import {
   createRewindDialogController,
+  REWIND_HANG_TIMEOUT_MS,
+  rewindDialogDeps,
   rewindEntryAction,
   type RewindDialogModel
 } from "./rewind-dialog-controller.ts"
@@ -38,9 +40,13 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-function harness(rewind: (input: { restoreFiles: boolean; confirmDeleteUntracked?: boolean }) => Promise<RewindRunResult>) {
+function harness(
+  rewind: (input: { restoreFiles: boolean; confirmDeleteUntracked?: boolean }) => Promise<RewindRunResult>,
+  timeoutMs?: number
+) {
   const calls = { close: 0, review: 0, rewind: 0 }
   const controller = createRewindDialogController({
+    ...(timeoutMs !== undefined ? { timeoutMs } : {}),
     rewind: (input) => {
       calls.rewind += 1
       return rewind(input)
@@ -188,7 +194,7 @@ test("成功：清回第一步并收窗；取消在跑的时候不收窗", async
   pending.resolve({ ok: true })
   await run
   assert.equal(calls.close, 1)
-  assert.deepEqual(controller.getSnapshot(), { busy: false, untracked: undefined, failure: null, errorKey: null })
+  assert.deepEqual(controller.getSnapshot(), { busy: false, busyButton: null, untracked: undefined, failure: null, errorKey: null })
 })
 
 test("引擎不支持回滚：消息上的「从这里重来」入口不出（不是置灰、没有提示）；支持时出且可点", () => {
@@ -217,4 +223,157 @@ test("组件接线：按钮的 disabled / onClick 来自 controller，入口按 
   // 入口：不支持就 return null，不再有「当前引擎不能回滚对话」的置灰提示。
   assert.match(src, /const entry = rewindEntryAction\(\{ canRewind, disabled, t \}\)\s*\n\s*if \(!entry\) return null/)
   assert.doesNotMatch(src, /rewindUnsupported/)
+})
+
+test("组件接线（leo soft 6）：展开 controller 的 buttonProps 之后，同一个元素上不准再写 onClick / disabled（会盖掉 controller）", () => {
+  const src = readFileSync(new URL("./rewind-from-here-dialog.tsx", import.meta.url), "utf8")
+  for (const spread of ["\\{\\.\\.\\.button\\.buttonProps\\}", "\\{\\.\\.\\.view\\.failure\\.review\\?\\.buttonProps\\}"]) {
+    // 从展开处到这个元素的开标签结束（第一个不在花括号里的 >）之间，不能有 onClick= / disabled=。
+    const at = new RegExp(spread).exec(src)
+    assert.ok(at, `spread ${spread} present`)
+    const rest = src.slice(at.index + at[0].length)
+    const tagEnd = rest.search(/^\s*\/?>/m)
+    const afterSpread = rest.slice(0, tagEnd >= 0 ? tagEnd + rest.slice(tagEnd).indexOf(">") : rest.length)
+    assert.doesNotMatch(afterSpread, /\b(onClick|disabled|onPointerDown|onMouseDown)\s*=/, `nothing overrides ${spread}`)
+  }
+  // 两颗按钮各只有一处 onClick / disabled 来源：controller 的展开（tsx 里不出现字面的 disabled= / onClick=，入口除外）。
+  const footer = src.slice(src.indexOf("<DialogFooter"), src.indexOf("</DialogFooter>"))
+  assert.doesNotMatch(footer, /\b(onClick|disabled)\s*=/, "footer buttons take onClick / disabled only from the spread")
+  const review = src.slice(src.indexOf('data-testid="rewind-go-review"'), src.indexOf("{view.failure.review?.label}"))
+  assert.doesNotMatch(review, /\b(onClick|disabled)\s*=/, "go-review takes onClick / disabled only from the spread")
+})
+
+test("组件接线（leo soft 7）：deps 来自 rewindDialogDeps，rewind 接到这一条消息的 rewindFromUserTurn", () => {
+  const src = readFileSync(new URL("./rewind-from-here-dialog.tsx", import.meta.url), "utf8")
+  assert.match(src, /const deps = rewindDialogDeps\(\{\s*messageId,\s*rewindFromUserTurn,\s*onOpenChange,/)
+  assert.match(src, /createRewindDialogController\(deps\)/)
+  assert.match(src, /controller\.setDeps\(deps\)/)
+  assert.doesNotMatch(src, /rewind:\s*\(/, "no hand-rolled rewind dep in the component")
+})
+
+test("deps.rewind：userMessageId 固定为这条消息，restoreFiles / confirmDeleteUntracked 原样透传；onClose 收窗；revealReview 透传", async () => {
+  const seen: unknown[] = []
+  const open: boolean[] = []
+  let reviews = 0
+  const deps = rewindDialogDeps({
+    messageId: "msg_42",
+    rewindFromUserTurn: async (input) => {
+      seen.push(input)
+      return { ok: false, code: "CHECKPOINT_CONFIRM_REQUIRED", untrackedToDelete: ["a.txt"] }
+    },
+    onOpenChange: (next) => void open.push(next),
+    revealReview: () => {
+      reviews += 1
+    }
+  })
+  assert.deepEqual(await deps.rewind({ restoreFiles: true }), {
+    ok: false,
+    code: "CHECKPOINT_CONFIRM_REQUIRED",
+    untrackedToDelete: ["a.txt"]
+  })
+  await deps.rewind({ restoreFiles: true, confirmDeleteUntracked: true })
+  await deps.rewind({ restoreFiles: false })
+  assert.deepEqual(seen, [
+    { userMessageId: "msg_42", restoreFiles: true, confirmDeleteUntracked: undefined },
+    { userMessageId: "msg_42", restoreFiles: true, confirmDeleteUntracked: true },
+    { userMessageId: "msg_42", restoreFiles: false, confirmDeleteUntracked: undefined }
+  ])
+  deps.onClose()
+  assert.deepEqual(open, [false])
+  deps.revealReview()
+  assert.equal(reviews, 1)
+
+  // 经 controller 点按钮：每颗按钮把对的参数交给这条消息。
+  const viaButtons: unknown[] = []
+  const controller = createRewindDialogController(
+    rewindDialogDeps({
+      messageId: "msg_7",
+      rewindFromUserTurn: async (input) => {
+        viaButtons.push(input)
+        return { ok: false, code: "CHECKPOINT_CONFIRM_REQUIRED", untrackedToDelete: ["n.txt"] }
+      },
+      onOpenChange: () => undefined,
+      revealReview: () => undefined
+    })
+  )
+  footer(gitModel(controller), "restore-files").buttonProps.onClick()
+  await new Promise((r) => setImmediate(r))
+  footer(gitModel(controller), "delete-and-restore").buttonProps.onClick()
+  await new Promise((r) => setImmediate(r))
+  assert.deepEqual(viaButtons, [
+    { userMessageId: "msg_7", restoreFiles: true, confirmDeleteUntracked: undefined },
+    { userMessageId: "msg_7", restoreFiles: true, confirmDeleteUntracked: true }
+  ])
+})
+
+test("跑着的时候：点的那颗按钮转圈 +「正在还原…」/ Restoring…，其余按钮 disabled 且不转圈；结束后复原", async () => {
+  const pending = deferred<RewindRunResult>()
+  const { controller } = harness(() => pending.promise)
+  footer(gitModel(controller), "restore-files").buttonProps.onClick()
+  for (const [lang, label] of [["zh", "正在还原…"], ["en", "Restoring…"]] as const) {
+    const m = gitModel(controller, lang)
+    const restore = footer(m, "restore-files")
+    assert.equal(restore.busy, true, `${lang} clicked button busy`)
+    assert.equal(restore.label, label)
+    assert.equal(restore.buttonProps.disabled, true)
+    for (const id of ["cancel", "chat-only"]) {
+      const b = footer(m, id)
+      assert.equal(b.busy, false, `${lang} ${id} not spinning`)
+      assert.equal(b.buttonProps.disabled, true, `${lang} ${id} disabled`)
+      assert.notEqual(b.label, label)
+    }
+  }
+  pending.resolve({ ok: false, code: "CHECKPOINT_CONFIRM_REQUIRED", untrackedToDelete: ["a.txt"] })
+  await new Promise((r) => setImmediate(r))
+  const m = gitModel(controller)
+  assert.equal(controller.getSnapshot().busyButton, null)
+  for (const b of m.buttons) assert.equal(b.busy, false)
+})
+
+test("重来的 IPC 卡住不回：超时后 busy 放开、显示通用失败句、按钮可点、弹窗能关；晚到的失败不改界面", async () => {
+  assert.ok(REWIND_HANG_TIMEOUT_MS >= 10_000 && REWIND_HANG_TIMEOUT_MS <= 60_000, "default timeout sensible")
+  await quietly(async (warns) => {
+    const hang = deferred<RewindRunResult>()
+    const { controller, calls } = harness(() => hang.promise, 20)
+    const run = controller.run(false, undefined, "chat-only")
+    assert.equal(controller.getSnapshot().busy, true)
+    controller.close()
+    assert.equal(calls.close, 0, "busy: cannot close yet")
+    await run
+    assert.equal(controller.getSnapshot().busy, false, "busy reset after timeout")
+    let m = gitModel(controller)
+    assert.equal(m.error, GENERIC.zh)
+    for (const b of m.buttons) assert.equal(b.buttonProps.disabled, false, `${b.id} enabled after timeout`)
+    assert.deepEqual(warns, [["[rewind] failed: REWIND_TIMEOUT"]])
+    // 晚到的失败：不改界面。
+    hang.resolve({ ok: false, code: "TRUNCATE_RUN_ACTIVE" })
+    await new Promise((r) => setImmediate(r))
+    m = gitModel(controller)
+    assert.equal(m.error, GENERIC.zh)
+    controller.close()
+    assert.equal(calls.close, 1, "dialog can close")
+  })
+})
+
+test("卡住超时之后晚到的成功：对话已截、原话已写回 → 收窗", async () => {
+  await quietly(async () => {
+    const hang = deferred<RewindRunResult>()
+    const { controller, calls } = harness(() => hang.promise, 10)
+    await controller.run(false)
+    assert.equal(controller.getSnapshot().busy, false)
+    hang.resolve({ ok: true })
+    await new Promise((r) => setImmediate(r))
+    assert.equal(calls.close, 1)
+  })
+})
+
+test("消息上的入口（leo E5）：user-turn 按当前会话引擎的能力算 canRewind，不准写死", () => {
+  const src = readFileSync(new URL("./user-turn.tsx", import.meta.url), "utf8")
+  assert.match(src, /const runtimeId = useChatStore\(\(s\) => s\.runtimeId\)/)
+  assert.match(src, /const canRewind = canRewindConversation\(runtimeId\)/)
+  const entries = [...src.matchAll(/<RewindFromHereAction[^>]*>/g)].map((m) => m[0])
+  assert.equal(entries.length, 1)
+  assert.match(entries[0]!, /canRewind=\{canRewind\}/)
+  assert.doesNotMatch(src, /canRewind=\{(true|!0|1)\}|canRewind\s*\/?>|canRewind=\{[^}]*\|\|/, "no hard-coded / defaulted canRewind")
+  assert.doesNotMatch(src, /const canRewind = (true|!0)/)
 })

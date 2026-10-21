@@ -4,9 +4,12 @@
  * 还原失败分灰色兜底（什么都没改）和琥珀色 +「去审查」（只还原了一部分）。
  * 跑 / 去审查 / 按钮的 disabled 与 onClick 都来自 rewind-dialog-controller.ts（node --test 直接测接线），这里只负责摆出来。
  * 引擎不支持回滚时，消息上的入口整个不出（luna：不是置灰、没有提示）。
+ * 对比度（luna g159 ⑩，≥4.5:1，只用语义 token）：正文 / 提示灰字 / 文件名单浅色 text-secondary（4.73）、
+ * 深色 text-primary/60（6.2）；「找不到记录」灰块 text-primary/60（浅 5.1 / 深 6.8）。rewind-dialog-contrast.test.ts 按 theme.css 现算。
+ * 中文正文末行不留孤字（text-pretty，不改文案）。跑着的按钮转圈 +「正在还原…」，置灰的按钮看得出是置灰的。
  */
 import { useState, useSyncExternalStore } from "react"
-import { RiHistoryLine } from "@remixicon/react"
+import { RiHistoryLine, RiLoader4Line } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { MessageAction } from "@/components/ai-elements/message"
 import {
@@ -21,7 +24,7 @@ import { rewindFromUserTurn } from "@renderer/hooks/rewind-from-here"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { revealRightPane } from "../../right-pane/open-pane"
-import { createRewindDialogController, rewindEntryAction, type RewindDialogDeps } from "./rewind-dialog-controller"
+import { createRewindDialogController, rewindDialogDeps, rewindEntryAction } from "./rewind-dialog-controller"
 
 export function RewindFromHereAction({
   messageId,
@@ -70,12 +73,12 @@ export function RewindFromHereDialog({
   const t = useT()
   // 审查面板同一份：workspace.changes 回来的 gitRepo；false = 明确没用 Git，null = 还不知道。
   const gitRepo = useChatStore((state) => state.gitRepo)
-  const deps: RewindDialogDeps = {
-    rewind: ({ restoreFiles, confirmDeleteUntracked }) =>
-      rewindFromUserTurn({ userMessageId: messageId, restoreFiles, confirmDeleteUntracked }),
-    onClose: () => onOpenChange(false),
+  const deps = rewindDialogDeps({
+    messageId,
+    rewindFromUserTurn,
+    onOpenChange,
     revealReview: () => revealRightPane("review")
-  }
+  })
   const [controller] = useState(() => createRewindDialogController(deps))
   controller.setDeps(deps)
   useSyncExternalStore(controller.subscribe, controller.getSnapshot)
@@ -98,24 +101,24 @@ export function RewindFromHereDialog({
           <DialogTitle data-testid="rewind-title" className="text-title-3-semibold text-text-primary">
             {view.title}
           </DialogTitle>
-          <DialogDescription data-testid="rewind-body" className="text-body-medium text-text-secondary">
+          <DialogDescription data-testid="rewind-body" className="text-pretty text-body-medium text-text-secondary dark:text-text-primary/60">
             {view.body}
           </DialogDescription>
           {view.hint ? (
-            <p data-testid="rewind-hint" className="text-caption-1-regular text-text-tertiary">
+            <p data-testid="rewind-hint" className="text-pretty text-caption-1-regular text-text-secondary dark:text-text-primary/60">
               {view.hint}
             </p>
           ) : null}
         </DialogHeader>
         {view.files.length > 0 ? (
-          <ul data-testid="rewind-files" className="mt-1 flex flex-col gap-0.5 text-caption-1-regular text-text-secondary">
+          <ul data-testid="rewind-files" className="mt-1 flex flex-col gap-0.5 text-caption-1-regular text-text-secondary dark:text-text-primary/60">
             {view.files.map((file) => (
               <li key={file} className="truncate font-mono" title={file}>
                 {file}
               </li>
             ))}
             {view.moreCount > 0 ? (
-              <li data-testid="rewind-files-more" className="text-text-tertiary">
+              <li data-testid="rewind-files-more" className="text-text-secondary dark:text-text-primary/60">
                 {t("chat.rewindConfirmUntrackedMore", { n: view.moreCount })}
               </li>
             ) : null}
@@ -127,7 +130,7 @@ export function RewindFromHereDialog({
             data-testid="rewind-failure"
             data-failure-kind="missing"
             role="status"
-            className="mt-1 rounded-xl bg-background-secondary-default px-3 py-2 text-caption-1-medium text-text-secondary"
+            className="mt-1 rounded-xl bg-background-secondary-default px-3 py-2 text-caption-1-medium text-text-primary/60"
           >
             {view.failure.text}
           </p>
@@ -161,10 +164,14 @@ export function RewindFromHereDialog({
             <Button
               key={button.id}
               data-testid={`rewind-${button.id}`}
+              data-busy={button.busy ? "true" : undefined}
+              aria-busy={button.busy || undefined}
               variant={button.variant}
               size="sm"
+              className="disabled:opacity-50 data-[busy=true]:opacity-100"
               {...button.buttonProps}
             >
+              {button.busy ? <RiLoader4Line data-testid="rewind-spinner" className="size-3.5 animate-spin" aria-hidden /> : null}
               {button.label}
             </Button>
           ))}

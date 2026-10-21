@@ -10,7 +10,9 @@
  *   if (!r.ok) …  // 输入框里有东西（或正在组字），什么都没写；调用方别把源数据拿走 / 丢掉
  *
  * - mode "refuse"：输入框有任何内容（正文非空白 / 附件 / 引用 / 技能 / 知识 Chip）或正在组字 → 不写，返回 { ok:false }。
- * - mode "merge"：正文按 mergeComposerText(写回的, 输入框现有的) 合并（现有在前，包含关系去重）；
+ * - mode "merge"：正文按 mergeWritebackText(写回的, 输入框现有的) 合并——现有在前，**只用一个换行**接上；
+ *   按整行去重：输入框里已有同一段（逐行去首尾空白后连续相同）就不再追加，同一段写回两次也只出现一次
+ *   （#159 F1 / leo：失败稿被写回两遍且没有分隔，变成「billing firstqueued two」）。
  *   附件按 id、Chip 按内容去重后追加（附件走 queueComposerAsset，和手贴一样落草稿存档）。只在正在组字时拒绝（不打断输入法）。
  * - expectSessionId：调用方的那一轮属于哪个会话；前台已换会话（中间有 await，#159 F1 回退还稿）→ 不写，
  *   返回 { ok:false, reason:"session-changed" }，不把别的会话的稿写进当前输入框。
@@ -20,7 +22,6 @@
  * - 纯同步函数，无 IPC；不碰排队队列 / 草稿持久化，调用方自己决定先查后取（refuse 时用 canWriteBackToComposer 先问）。
  */
 import { useChatStore } from "../stores/chat-store"
-import { mergeComposerText } from "../lib/merge-composer-text"
 import { readComposerDomText, syncComposerDom } from "./composer-dom"
 import { isComposerComposing } from "./composer-ime"
 import { isComposerWritebackHeld } from "./composer-sync-lock"
@@ -96,7 +97,7 @@ export function writeBackToComposer(
   const refusal = writebackRefusal(opts.mode, opts.expectSessionId)
   if (refusal) return { ok: false, reason: refusal, current }
   const dirty = composerHasLiveContent()
-  const text = dirty ? mergeComposerText(content.text, current) : content.text
+  const text = dirty ? mergeWritebackText(content.text, current) : content.text
   const store = useChatStore.getState()
   store.setComposer(text)
   syncComposerDom(text, true)
@@ -113,6 +114,47 @@ export function writeBackToComposer(
   }
   if (opts.focus !== false) focusComposerEnd()
   return { ok: true, merged: dirty, text }
+}
+
+/**
+ * merge 模式的正文合并（#159 F1，mike 与 kai 约定由这里管分隔与去重）：
+ * - 输入框没字 → 写回的；写回的没字 → 输入框原样。
+ * - 输入框里已经有写回的这一整段（按行比，逐行去首尾空白、忽略空行，必须连续相同）→ 不追加。
+ * - 写回的这一段已经包含输入框里的全部行 → 用写回的（不把同一句叠两遍）。
+ * - 子串不算重复：输入框「category」不会吞掉写回的「cat」。
+ * - 否则现有在前，现有末尾的空白收掉后用**一个**换行接上写回的（写回的开头空行也收掉）。
+ */
+export function mergeWritebackText(incoming: string, current: string): string {
+  if (!current.trim()) return incoming
+  if (!incoming.trim()) return current
+  const have = meaningfulLines(current)
+  const back = meaningfulLines(incoming)
+  if (containsBlock(have, back)) return current
+  if (containsBlock(back, have)) return incoming
+  return `${current.replace(/\s+$/, "")}\n${incoming.replace(/^(?:[ \t]*\n)+/, "")}`
+}
+
+function meaningfulLines(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+/** hay 里有没有一段连续的行与 needle 完全相同。 */
+function containsBlock(hay: readonly string[], needle: readonly string[]): boolean {
+  if (needle.length === 0 || needle.length > hay.length) return false
+  for (let start = 0; start + needle.length <= hay.length; start += 1) {
+    let same = true
+    for (let i = 0; i < needle.length; i += 1) {
+      if (hay[start + i] !== needle[i]) {
+        same = false
+        break
+      }
+    }
+    if (same) return true
+  }
+  return false
 }
 
 function uniqueBy<T>(items: readonly T[], key: (item: T) => string): T[] {
