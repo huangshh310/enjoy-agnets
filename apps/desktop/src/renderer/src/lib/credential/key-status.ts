@@ -5,7 +5,7 @@
  */
 import type { ChatReadiness, CredentialCheck } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
-import { CUSTOM_PROFILE_KIND, endpointIsOfficial, fillProviderFace, providerFace, type ProviderFace } from "../provider-face.ts"
+import { fillProviderFace, providerFace, type ProviderFace } from "../provider-face.ts"
 
 /** 密钥三态。ok=已验证（绿）；unverified=暂时没法确认（中性灰）；invalid=被供应商拒绝（红）。 */
 export type KeyStatus = "ok" | "unverified" | "invalid"
@@ -50,16 +50,13 @@ export function presetDisplayName(presetId: string | undefined, fallback: string
 }
 
 /**
- * 余额 / 密钥提示里说谁（luna #164 S1）：档案端点指到代理 / 中转（不是这家官方地址）时和失败卡同一规则——
- * 说主机名，解析不了说「模型服务」，不说预设品牌；端点没填或是官方地址时照旧说显示名（presetDisplayName）。
- * 自定义档案（kind 为 custom）说档案名（去空白、≤30 字），名字空才说主机名，再不行「模型服务」。
+ * 余额 / 密钥提示里说谁：和失败卡**同一条链**（providerFace，luna #164 S1 / 第 3 轮 2、leo rv164e S-b）。
+ * - 预设：端点没填或是官方地址 → 品牌；代理 / 中转 → 主机名；解析不了 → 「模型服务」。
+ * - 自定义档案（kind 为 custom）：档案名（去空白、≤30 字）→ 主机名 → 「模型服务」。
+ * - 未知 kind / 没 kind：主机名 → 「模型服务」。从不说原始 id / 预设 id（不再走 presetDisplayName 的回落）。
  */
-export function keyHolderFace(kind: string | undefined, fallbackName: string, baseURL?: string): ProviderFace {
-  // 自定义档案：档案名 → 主机名 → 「模型服务」（luna #164 第 3 轮，和失败卡同一条）
-  if (kind === CUSTOM_PROFILE_KIND) return providerFace({ kind, name: fallbackName, baseURL })
-  if (baseURL?.trim() && !endpointIsOfficial(kind, baseURL)) return providerFace({ kind, baseURL })
-  const name = kind ? presetDisplayName(kind, fallbackName) : fallbackName
-  return name ? { kind: "named", name } : { kind: "generic" }
+export function keyHolderFace(kind: string | undefined, profileName: string, baseURL?: string): ProviderFace {
+  return providerFace({ kind, name: profileName, baseURL })
 }
 
 /** ProviderFace → 现有 providerName 字段：通用说法给 undefined，调用方用自己的回落词。 */
@@ -67,21 +64,41 @@ export function faceName(face: ProviderFace): string | undefined {
   return face.kind === "named" ? face.name : undefined
 }
 
-/** 带「密钥」的引导文案（第 4 步行提示、完成页标题 / 摘要）的通用说法：「供应商」/ the provider（句首 The provider）。 */
+/**
+ * 通用说法（没名字可说时）怎么选——以后新加带 {name} 的文案按这条归类（luna #164 第 3 轮 1 细化）：
+ * - **引导界面**（完成页摘要、引导标题、第 4 步连接模型）里**说密钥**的句子 →「供应商」/ the provider（句首 The provider）。
+ * - 引导界面里**不说密钥**的句子（连不上、额度 / 余额）→「模型服务」/ the model service，和失败卡一致。
+ * - **运行时界面**（设置行、失败卡、余额提示、排队行）一律「模型服务」。
+ * 引导界面里带称呼的文案都登记在 SETUP_PROVIDER_TEMPLATES，测试逐条钉住；没登记的按「模型服务」。
+ */
 export const KEY_HOLDER_GENERIC_KEYS = { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallbackMid" } as const
+export const SERVICE_GENERIC_KEYS = { start: "chat.credentialProviderGenericStart", mid: "chat.credentialProviderGeneric" } as const
+
+/** 引导界面里带供应商称呼的文案 → 说的是不是密钥（"key" 用「供应商」，"service" 用「模型服务」）。 */
+export const SETUP_PROVIDER_TEMPLATES: Readonly<Record<string, "key" | "service">> = {
+  "settings.setupGuide.connectApiKeyInvalidHint": "key", // 密钥被 {name} 拒绝了，换一个再试
+  "settings.setupGuide.readyKeyInvalidTitle": "key", // 密钥被 {name} 拒绝了
+  "settings.setupGuide.readyKeyInvalidHint": "key", // 换一个 {name} 密钥再试，改好就能开始
+  "settings.providers.keyBillingHint": "service" // 第 4 步余额提示：{name} 账户余额不足（通用句是 keyBillingHintGeneric）
+}
+
+/** 这条引导文案没名字时用哪对通用说法。 */
+export function setupGenericKeys(key: string): { start: string; mid: string } {
+  return Object.hasOwn(SETUP_PROVIDER_TEMPLATES, key) && SETUP_PROVIDER_TEMPLATES[key] === "key" ? KEY_HOLDER_GENERIC_KEYS : SERVICE_GENERIC_KEYS
+}
 
 /**
- * 把 providerName 填进带「密钥」的引导文案（luna #164 第 3 轮 1）：没名字说「供应商」/ the provider，别处的「模型服务」不用在这里。
- * 空格走 placeProviderName：「密钥被供应商拒绝了」「密钥被 OpenAI 拒绝了」「密钥被我的网关拒绝了」。
+ * 把 providerName 填进引导界面的文案：通用说法按 setupGenericKeys 选，空格走 placeProviderName
+ * （「密钥被供应商拒绝了」「密钥被 OpenAI 拒绝了」「密钥被我的网关拒绝了」）。
  */
-export function fillKeyHolderText(
+export function fillSetupProviderText(
   t: Parameters<typeof fillProviderFace>[0],
   key: string,
   providerName: string | undefined,
   vars?: Record<string, string | number>
 ): string {
   const face: ProviderFace = providerName ? { kind: "named", name: providerName } : { kind: "generic" }
-  return fillProviderFace(t, key, face, { vars, genericKeys: KEY_HOLDER_GENERIC_KEYS })
+  return fillProviderFace(t, key, face, { vars, genericKeys: setupGenericKeys(key) })
 }
 
 export type KeyProviderRow = {

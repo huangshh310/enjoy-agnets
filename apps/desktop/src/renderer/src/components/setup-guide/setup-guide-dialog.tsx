@@ -19,7 +19,7 @@ import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
 import { readyGuidePrimaryAction, readyMarkKind, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
-import { fillKeyHolderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
+import { fillSetupProviderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
@@ -136,8 +136,8 @@ export function SetupGuideDialog() {
           titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus?.status) : undefined}
           title={
             step === "ready" && keyStatus
-              ? fillKeyHolderText(
-                  t as Parameters<typeof fillKeyHolderText>[0],
+              ? fillSetupProviderText(
+                  t as Parameters<typeof fillSetupProviderText>[0],
                   readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus.status),
                   keyStatus.providerName
                 )

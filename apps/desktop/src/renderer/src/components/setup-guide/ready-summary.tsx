@@ -5,7 +5,7 @@ import { useThemeMode } from "@/components/application/theme/theme-toggle"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import { fillKeyHolderText, type GuideKeyStatus } from "@renderer/lib/credential/key-status"
+import { fillSetupProviderText, type GuideKeyStatus } from "@renderer/lib/credential/key-status"
 
 export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: string; keyStatus?: GuideKeyStatus }) {
   const t = useT()
@@ -17,7 +17,7 @@ export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: stri
   if (!ready && keyStatus?.status === "invalid") {
     return (
       <p data-testid="ready-key-invalid-summary" className="text-center text-headline-regular leading-normal text-text-error-primary">
-        {fillKeyHolderText(t as Parameters<typeof fillKeyHolderText>[0], "settings.setupGuide.readyKeyInvalidHint", keyStatus.providerName)}
+        {fillSetupProviderText(t as Parameters<typeof fillSetupProviderText>[0], "settings.setupGuide.readyKeyInvalidHint", keyStatus.providerName)}
       </p>
     )
   }

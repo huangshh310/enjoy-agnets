@@ -22,7 +22,7 @@ import { GUIDE_TILE_CLASS } from "./setup-guide-frame"
 import { renderApiKeyBadge } from "./api-key-badge"
 import { guideKeyHint } from "@renderer/lib/credential/key-hint"
 import { renderKeyHint } from "@renderer/lib/credential/key-hint-view"
-import { fillKeyHolderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
+import { fillSetupProviderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { requestOpenExternalQuiet } from "@renderer/components/ai-chat/right-pane/views/terminal/attach-xterm-addons"
 
 export function ConnectModelStep({
@@ -197,10 +197,10 @@ function rowTitle(option: ConnectModelOption, t: (path: string, vars?: Record<st
   return t("settings.setupGuide.connectLater")
 }
 
-/** 行提示；密钥行的名字走 fillKeyHolderText（没名字说「供应商」，空格按 placeProviderName）。 */
+/** 行提示；密钥行的名字走 fillSetupProviderText（没名字说「供应商」，空格按 placeProviderName）。 */
 function connectModelRowHint(option: ConnectModelOption, t: (key: string, vars?: Record<string, string | number>) => string): string {
   const key = connectModelRowHintKey(option)
-  if (option.kind === "api_key") return fillKeyHolderText(t as Parameters<typeof fillKeyHolderText>[0], key, option.providerName)
+  if (option.kind === "api_key") return fillSetupProviderText(t as Parameters<typeof fillSetupProviderText>[0], key, option.providerName)
   if (option.kind === "engine") return t(key, { name: option.name })
   return t(key)
 }

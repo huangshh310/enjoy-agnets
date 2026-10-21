@@ -166,7 +166,7 @@ export function fillProviderFace(
   options: {
     varName?: string
     vars?: Record<string, string | number>
-    /** 通用说法用哪对词（句首 / 句中）；缺省「模型服务」/ the model service。 */
+    /** 通用说法用哪对词（句首 / 句中）；缺省「模型服务」/ the model service。引导界面说密钥的句子用「供应商」，规则见 key-status 的 setupGenericKeys。 */
     genericKeys?: { start: string; mid: string }
   } = {}
 ): string {
