@@ -57,7 +57,8 @@ test("之后有更新的改动 / main 已接手：不还原", () => {
 /** 乐观改 workflow 之后、main 接手之前的每个出口都要还原（或交给已还原 / 会还原的路径）。 */
 test("发送路径每个出口：乐观改 workflow 之后都还原或确认 main 接手", () => {
   const src = readFileSync(new URL("./send-composer-run.ts", import.meta.url), "utf8")
-  const handled = /rollbackComposerStartGate|failComposerSend\(|dropLateCancelledSend\(|commitComposerStartGate/
+  // settleStoppedLaunch：用户已停的那一发，里面按开没开跑 commit / rollback（见同文件）。
+  const handled = /rollbackComposerStartGate|failComposerSend\(|dropLateCancelledSend\(|commitComposerStartGate|settleStoppedLaunch\(/
   const check = (body: string, label: string) => {
     const lines = body.split("\n")
     let exits = 0

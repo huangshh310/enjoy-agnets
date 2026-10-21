@@ -315,3 +315,20 @@ test("v2 事件全集可 safeParse", () => {
     assert.equal(StreamEvent.safeParse(event).success, true, event.type)
   }
 })
+
+test("host #169 ③ / leo soft 2（C1 / C2）：run.start 的 clientRequestId 上下界——空串拒、80 收、81 拒、不带照收", async () => {
+  const { CLIENT_REQUEST_ID_MAX } = await import("./pre-output-failure.ts")
+  const base = { type: "run.start", runId: "r1", sessionId: "s1", kind: "agent" }
+  assert.equal(CLIENT_REQUEST_ID_MAX, 80)
+  assert.equal(StreamEvent.safeParse({ ...base, clientRequestId: "" }).success, false, "空串（C2：min(1)）")
+  assert.equal(StreamEvent.safeParse({ ...base, clientRequestId: "a" }).success, true, "1 个字符")
+  const atMax = StreamEvent.safeParse({ ...base, clientRequestId: "x".repeat(CLIENT_REQUEST_ID_MAX) })
+  assert.equal(atMax.success, true, "正好 80")
+  if (atMax.success && atMax.data.type === "run.start") assert.equal(atMax.data.clientRequestId?.length, 80)
+  assert.equal(
+    StreamEvent.safeParse({ ...base, clientRequestId: "x".repeat(CLIENT_REQUEST_ID_MAX + 1) }).success,
+    false,
+    "81（C1：max(80)）"
+  )
+  assert.equal(StreamEvent.safeParse(base).success, true, "不带照收")
+})

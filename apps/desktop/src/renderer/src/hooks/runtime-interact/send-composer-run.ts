@@ -94,11 +94,13 @@ export async function sendComposerMessage(
   queuedAttempt?: SendAttempt
 ) {
   // #136：同一手势的 agent.run 带同一 clientRequestId（误触连点 60s 内 main 不重开）；排队首发交给队列续用。
-  const request = { clientRequestId: takeClientRequestId(prepared?.clientRequestId), handoff: false }
+  // leo #169 BLOCK：id 按发出这一发的会话记，只在同一会话里复用；收尾也只放这个会话的。
+  const sessionKey = prepared?.sessionId ?? useChatStore.getState().sessionId
+  const request = { clientRequestId: takeClientRequestId(sessionKey, prepared?.clientRequestId), sessionKey, handoff: false }
   try {
     await sendComposerOnce(prepared, typedAtEnter, queuedAttempt, request)
   } finally {
-    if (!request.handoff) releaseClientRequestId(request.clientRequestId)
+    if (!request.handoff) releaseClientRequestId(request.sessionKey, request.clientRequestId)
   }
 }
 
@@ -106,7 +108,7 @@ async function sendComposerOnce(
   prepared: PreparedSend | undefined,
   typedAtEnter: string | undefined,
   queuedAttempt: SendAttempt | undefined,
-  request: { clientRequestId: string; handoff: boolean }
+  request: { clientRequestId: string; sessionKey: string | null; handoff: boolean }
 ) {
   let store = useChatStore.getState()
   // 这次发送的原文只取一次：Enter 那一刻的 DOM 全文（或按钮点下时现读 DOM），之后全链路只用它。
@@ -212,7 +214,7 @@ async function sendComposerOnce(
       await queued
     } finally {
       // leo soft（#136）：建会话失败 / 被取消时 sendReady 根本没跑，id 还挂着——下一发会被 main 当重复吞掉。
-      releaseClientRequestId(clientRequestId)
+      releaseClientRequestId(request.sessionKey, clientRequestId)
     }
     return
   }
@@ -437,6 +439,9 @@ async function launchComposerRun(
       payload.typed,
       clientRequestId
     )
+    // leo #169 soft 1：用户在起步窗口已经停了这一发——不论回执是成是败，都先按「停了」收：
+    // 不还稿、不出红卡、不动 running（可能已是马上再发的那一句的）。按发出时的会话 + id 认，别的会话的停止不算（BLOCK）。
+    if (isRequestStopped(sessionId, clientRequestId)) return settleStoppedLaunch(sessionId, result)
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
       failComposerSend({
@@ -451,14 +456,6 @@ async function launchComposerRun(
     const runId = requireAgentRunId(result)
     // leo：只有 main 回了 userMessageId（返回前已同事务落库用户句）才算「可以清 main 的稿」。
     const userPersisted = userMessagePersisted(result)
-    // host #169：起步窗口里用户已经停了这一发（可能又马上发了一句、running 是新那句的）：
-    // 不认领（否则被停那一轮整段跑完、审批卡还能批），也不走失败还稿（main 已落用户句，还稿会让这句重复）——只 abort 那一轮。
-    if (isRequestStopped(clientRequestId)) {
-      abortOrphanedRun(runId)
-      // main 接手过这一发（有 runId）：乐观标的「执行中」不按没发出去还原，交给它的停止收尾（run.error 带 turn）。
-      commitComposerStartGate(sessionId)
-      return userPersisted
-    }
     const settled = settleLaunchedRun(sessionId, runId, claimComposerRun)
     // 出字前失败已先到并回滚（红卡 / 稿已还原）：不中止、不改写红卡、不删建会话窗的会话。
     if (settled === "discarded") return false
@@ -478,6 +475,8 @@ async function launchComposerRun(
     void completeSessionTitle(payload.content)
     return userPersisted
   } catch (error) {
+    // soft 1：停掉的那一发 agent.run 抛错，同样不还稿、不出红卡。
+    if (isRequestStopped(sessionId, clientRequestId)) return settleStoppedLaunch(sessionId, undefined)
     failComposerSend({
       ...restoreFromPayload(payload),
       reason: composerSendError(error),
@@ -489,6 +488,26 @@ async function launchComposerRun(
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }
+}
+
+/**
+ * host #169 / leo soft 1：起步窗口里被用户停掉的那一发，回执到了（成 / 败 / 抛错）。
+ * - 开跑了（有 runId）：不认领（否则那一轮整段跑完、审批卡还能批），abort 掉；不走失败还稿（main 已落用户句，还稿会重复）；
+ *   乐观标的「执行中」交给 main 的停止收尾（run.error 带 turn）。
+ * - 没开跑（被闸拦 / 抛错）：静默收掉——不还稿、不出红卡、不动 running；乐观 workflow 还原，
+ *   但这个会话此刻另有一句在跑（停止后马上又发的）就留给它。
+ */
+function settleStoppedLaunch(sessionId: string | null, result: unknown): boolean {
+  const started = result !== undefined && !agentRunBlockedCode(result)
+  if (started) {
+    abortOrphanedRun(requireAgentRunId(result))
+    commitComposerStartGate(sessionId)
+    return userMessagePersisted(result)
+  }
+  const st = useChatStore.getState()
+  if (st.running && st.sessionId === sessionId) commitComposerStartGate(sessionId)
+  else rollbackComposerStartGate(sessionId)
+  return false
 }
 
 /** main 回 {ok:false} 或抛错：还用户原文 + Chip + 附件；乐观气泡按拼好的 content 找。 */

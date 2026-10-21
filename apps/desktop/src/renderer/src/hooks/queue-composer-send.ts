@@ -46,6 +46,8 @@ type QueuedSend = {
   seq: number
   content: string
   assets: QueuedComposerAsset[]
+  /** 排队时界面上的会话（建会话窗里通常为空）。 */
+  sessionId: string | null
 }
 
 let queueSeq = 0
@@ -173,6 +175,15 @@ export function hasQueuedComposerSend(): boolean {
   return queuedSend !== null
 }
 
+/**
+ * 建会话窗里排着的那一发属于这个会话吗（leo #169 BLOCK：停止 / 换助手只看自己会话的）。
+ * 按排队时记下的会话比（通常为空 = 新对话落地页）。
+ */
+export function hasQueuedComposerSendFor(sessionId: string | null | undefined): boolean {
+  if (!queuedSend) return false
+  return queuedSend.sessionId === (sessionId ?? null)
+}
+
 export function waitThenSendAfterCreate(
   text: string,
   sendReady: (prepared: PreparedComposerSend) => Promise<void>,
@@ -290,7 +301,8 @@ function replaceQueuedSend(content: string, incoming: QueuedComposerAsset[]): nu
   queuedSend = {
     seq,
     content,
-    assets: mergeQueuedAssets(queuedSend?.assets ?? [], incoming)
+    assets: mergeQueuedAssets(queuedSend?.assets ?? [], incoming),
+    sessionId: useChatStore.getState().sessionId ?? null
   }
   return seq
 }

@@ -11,7 +11,7 @@ import { rememberStoppedRun } from "../stores/stopped-runs"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
-import { hasQueuedComposerSend } from "./queue-composer-send"
+import { hasQueuedComposerSendFor } from "./queue-composer-send"
 import { noteRequestStopped, noteRunStopped } from "./stopped-runs"
 import { abandonInFlightClientRequestId } from "./runtime-interact/client-request-id"
 
@@ -70,7 +70,8 @@ export async function abortComposerRun(opts?: {
   // 有 runId 的由下面 abortOrphanedRun 记下；起步窗口还没 runId：记下在路上那一发的 clientRequestId
   // （run.start 带回它、回执也按它认，host #169 KAI），并放掉它——马上再发的一句另开 id，
   // 否则 main 60s 去重会把新一句当成被停的那一发。
-  if (!runId && inFlight) noteRequestStopped(abandonInFlightClientRequestId())
+  // leo #169 BLOCK：只动这个会话在路上的那一发，别的会话（切走前发出的）不动。
+  if (!runId && inFlight) noteRequestStopped(sessionId, abandonInFlightClientRequestId(sessionId))
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
@@ -94,7 +95,8 @@ export async function abortComposerRun(opts?: {
  */
 export function composerRunInFlight(store: ReturnType<typeof useChatStore.getState>): boolean {
   if (store.running || store.runId) return true
-  if (followupSendInFlight() || hasQueuedComposerSend()) return true
+  // 只看这个会话的：别的会话的自启 / 建会话窗排队不算这里在跑（leo #169 BLOCK）。
+  if (followupSendInFlight(store.sessionId) || hasQueuedComposerSendFor(store.sessionId)) return true
   if (isEmptyStreamingAssistant(store.messages.at(-1))) return true
   return Boolean(store.preparingHint && store.preparingSessionId === store.sessionId)
 }

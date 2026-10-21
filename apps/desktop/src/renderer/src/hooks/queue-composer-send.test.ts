@@ -19,6 +19,7 @@ import {
   remainingComposerAfterSend,
   cancelQueuedComposerSend,
   hasQueuedComposerSend,
+  hasQueuedComposerSendFor,
   resetQueuedComposerSendForTest,
   SEND_FAILED_RESTORE,
   SESSION_CREATE_TIMEOUT,
@@ -259,4 +260,29 @@ test("正文空又没附件：仍不入队", async () => {
   }, [])
   assert.equal(called, false)
   assert.equal(hasQueuedComposerSend(), false)
+})
+
+test("leo #169 BLOCK：建会话窗里排着的那一发按排队时的会话认——别的会话不算「这个会话有一发在路上」", async () => {
+  resetQueue()
+  const { useChatStore } = await import("../stores/chat-store.ts")
+  const before = useChatStore.getState().sessionId
+  useChatStore.setState({ sessionId: null } as never)
+  const { token } = beginNewSessionCreate()
+  const pending = waitThenSendAfterCreate("hi", async () => undefined, undefined, { readSessionId: () => "ses_new" })
+  assert.equal(hasQueuedComposerSend(), true)
+  assert.equal(hasQueuedComposerSendFor(null), true, "落地页（无会话）排的")
+  assert.equal(hasQueuedComposerSendFor(undefined), true)
+  assert.equal(hasQueuedComposerSendFor("ses_other"), false, "别的会话不算")
+  failNewSessionCreate(token, new Error("x"))
+  await pending
+  assert.equal(hasQueuedComposerSendFor(null), false)
+  useChatStore.setState({ sessionId: "ses_from" } as never)
+  const second = beginNewSessionCreate()
+  const p2 = waitThenSendAfterCreate("hi2", async () => undefined, undefined, { readSessionId: () => "ses_new2" })
+  assert.equal(hasQueuedComposerSendFor("ses_from"), true, "排队时的会话")
+  assert.equal(hasQueuedComposerSendFor(null), false)
+  assert.equal(hasQueuedComposerSendFor("ses_other"), false)
+  failNewSessionCreate(second.token, new Error("x"))
+  await p2
+  useChatStore.setState({ sessionId: before } as never)
 })

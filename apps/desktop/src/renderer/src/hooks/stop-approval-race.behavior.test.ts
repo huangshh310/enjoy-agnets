@@ -62,7 +62,7 @@ function running(tag: string, opts?: { unclaimed?: boolean }) {
   const runId = `run_${tag}_${seq}`
   // 起步窗口：这一发的 agent.run 还在路上，手里攥着它的 clientRequestId（main 的 run.start 会原样带回）。
   resetClientRequestIdForTest()
-  const clientRequestId = opts?.unclaimed ? takeClientRequestId() : undefined
+  const clientRequestId = opts?.unclaimed ? takeClientRequestId(sessionId) : undefined
   useAttentionStore.getState().rememberRun(runId, sessionId)
   useChatStore.setState({
     workspaceId: "ws",
@@ -211,7 +211,7 @@ test("对照：起步窗口停过、之后正常认领的新一轮（新 clientR
   const { sessionId, clientRequestId } = running("reclaim", { unclaimed: true })
   await abortComposerRun()
   // 用户再发一句：另开 clientRequestId，running 起、认领新 runId。
-  const fresh = takeClientRequestId()
+  const fresh = takeClientRequestId(sessionId)
   assert.notEqual(fresh, clientRequestId, "停止放掉了旧 id，新一句另开")
   useChatStore.setState({ running: true } as never)
   const next = `run_reclaim_next_${seq}`
@@ -258,7 +258,7 @@ test("对照：起步窗口停过、旧回执还没到就又发了一句（runni
   await abortComposerRun()
   useChatStore.setState({ running: true, runId: null } as never)
   const next = `run_resend_next_${seq}`
-  dispatchAgentEvent(runStart(next, sessionId, takeClientRequestId(), "再来一句"))
+  dispatchAgentEvent(runStart(next, sessionId, takeClientRequestId(sessionId), "再来一句"))
   const st = useChatStore.getState()
   // 认领前的事件先进 pendingStreamEvents，认领后回放：只要没被丢、没被 abort 就对。
   assert.ok(st.runId === next || st.pendingStreamEvents.some((e: any) => e.runId === next), "新一轮的开跑没被丢")
