@@ -33,16 +33,27 @@ const src = (rel: string) => read(`apps/desktop/src/renderer/src/${rel}`)
 const twTheme = readFileSync(createRequire(import.meta.url).resolve("tailwindcss/theme.css"), "utf8")
 const themeCss = read("packages/ui/styles/theme.css")
 const glassCss = read("packages/ui/styles/skins/glass.css")
+const inkCss = read("packages/ui/styles/skins/ink.css")
+const sketchCss = read("packages/ui/styles/skins/sketch.css")
 const globalsCss = read("packages/ui/styles/globals.css")
-const table = parseCssDecls(globalsCss, parseCssDecls(glassCss, parseCssDecls(themeCss, parseCssDecls(twTheme))))
+const table = parseCssDecls(
+  globalsCss,
+  parseCssDecls(sketchCss, parseCssDecls(inkCss, parseCssDecls(glassCss, parseCssDecls(themeCss, parseCssDecls(twTheme)))))
+)
 
 type Mode = "light" | "dark"
-type Skin = "classic" | "glass"
+/** checks() 只跑经典 / glass；手绘（ink）/ 素描（sketch）目前只用于发送按钮的焦点环 / 最外圈（见 FOCUS_CONTEXTS）。 */
+type Skin = "classic" | "glass" | "ink" | "sketch"
 type Area = "main" | "drawer" | "sidebar"
 type Ctx = { accent: (typeof THEME_ACCENTS)[number]; mode: Mode; skin: Skin }
 
 const CONTEXTS: Ctx[] = THEME_ACCENTS.flatMap((accent) =>
   (["light", "dark"] as const).flatMap((mode) => (["classic", "glass"] as const).map((skin) => ({ accent, mode, skin })))
+)
+/** 发送按钮焦点环 / 最外圈：五种强调色 × 亮暗 × 经典 / glass / 手绘 / 素描。 */
+const FOCUS_SKINS = ["classic", "glass", "ink", "sketch"] as const
+const FOCUS_CONTEXTS: Ctx[] = THEME_ACCENTS.flatMap((accent) =>
+  (["light", "dark"] as const).flatMap((mode) => FOCUS_SKINS.map((skin) => ({ accent, mode, skin })))
 )
 /** 琥珀的主按钮固定是 500 底墨色字（theme.css :root[data-accent="amber"] 里的 cta token），表头标出来。 */
 const column = (ctx: Ctx) => (ctx.accent.id === "amber" ? "amber（500 底墨色字）" : ctx.accent.id)
@@ -76,6 +87,10 @@ function buildScope(ctx: Ctx, area: Area): Map<string, string> {
       sels.push(`${NO_GPU} aside.rounded-3xl`)
       if (dark) sels.push(`${NO_GPU_DARK} aside.rounded-3xl`)
     }
+  }
+  if (ctx.skin === "ink" || ctx.skin === "sketch") {
+    sels.push(`html[data-skin="${ctx.skin}"]`)
+    if (dark) sels.push(`html.dark[data-skin="${ctx.skin}"]`)
   }
   // use-theme-accent.ts 行内写的 500 / 600 优先级最高。
   return layerScope(table, sels, { "--color-accent-500": ctx.accent.c500, "--color-accent-600": ctx.accent.c600 })
@@ -120,6 +135,33 @@ function ringColor(ctx: Ctx, token: string, kind: "outer" | "inset"): Rgba | nul
   const re = kind === "inset" ? new RegExp(String.raw`inset 0 0 0 1px ${color}`) : new RegExp(String.raw`(?<!inset )(?:^|,) ?0 0 0 1px ${color}`)
   const m = re.exec(v)
   return m ? resolveColor(m[1]!, scope(ctx, "main")) : null
+}
+
+/** 输入框（ai-chat-composer.tsx 的 data-frost="chip"）类名里的底色：亮 / 暗。 */
+const composerBgTokens = () => {
+  const [, light, dark] = pick(src("components/ai-chat/ai-chat-composer.tsx"), /border border-border-button-default bg-([\w-]+) dark:bg-([\w-]+)/, "输入框底色")
+  return { light: light!, dark: dark! }
+}
+/** 实测：手绘暗色输入框渲染出来是靛蓝（luna 真机取色），不是 --skin-ink-paper；两种都算。 */
+const INK_DARK_MEASURED = ["#323755", "#2d3351"] as const
+/**
+ * 输入框真实底色（可能不止一个，取最差）。第一个是该皮肤的主值。
+ *   经典：surface 上叠 bg-background-secondary-default（亮 = neutral-100 #f7f7f7）/ dark:bg-background-tertiary-default（neutral-800）。
+ *   glass：无 GPU 回退下 frost chip 叠在主栏上。
+ *   手绘：skins/ink.css 的 [data-frost="chip"] = --skin-ink-paper；暗色再加 luna 实测的靛蓝 #323755 / #2d3351。
+ *   素描：skins/sketch.css 的 [data-frost="chip"] = --skin-sketch-sheet。
+ */
+function composerSurfaces(ctx: Ctx): [string, Rgba][] {
+  const dark = ctx.mode === "dark"
+  const main = scope(ctx, "main")
+  if (ctx.skin === "glass") return [["glass frost chip", over(resolveColor("var(--skin-frost-chip)", main), surface(ctx, "main"))]]
+  if (ctx.skin === "ink") {
+    const paper: [string, Rgba] = ["--skin-ink-paper", resolveColor("var(--skin-ink-paper)", main)]
+    return dark ? [...INK_DARK_MEASURED.map((h): [string, Rgba] => [`实测 ${h}`, resolveColor(h, main)]), paper] : [paper]
+  }
+  if (ctx.skin === "sketch") return [["--skin-sketch-sheet", resolveColor("var(--skin-sketch-sheet)", main)]]
+  const t = composerBgTokens()
+  return [[dark ? t.dark : t.light, stack(ctx, "main", surface(ctx, "main"), dark ? t.dark : t.light)]]
 }
 
 type Check = { item: string; label: string; min: number | null; fg: Rgba; bg: Rgba; ratio?: number }
@@ -391,12 +433,7 @@ function checks(ctx: Ctx): Check[] {
   add("P2-7", "自动化·模式未选中", TEXT, col(ctx, "drawer", pick(mode, /text-cta-foreground" : "text-([\w-]+)"/, "模式未选中")[1]!), pillBg)
   const tog = src("components/ai-chat/composer/explore-execute/explore-execute-toggle.tsx")
   // 输入框底：经典读 ai-chat-composer.tsx 的 bg-… dark:bg-…（亮色 secondary = neutral-100 #f7f7f7，不是白）；glass 是 frost chip。
-  const composerSrc = src("components/ai-chat/ai-chat-composer.tsx")
-  const [, composerBg, composerBgDark] = pick(composerSrc, /border border-border-button-default bg-([\w-]+) dark:bg-([\w-]+)/, "输入框底色")
-  const composer =
-    ctx.skin === "glass"
-      ? over(resolveColor("var(--skin-frost-chip)", main), surface(ctx, "main"))
-      : stack(ctx, "main", surface(ctx, "main"), dark ? composerBgDark! : composerBg!)
+  const composer = composerSurfaces(ctx)[0]![1]
   // 发送按钮（亮色 bg-cta，图标 text-cta-foreground；暗色 500 底近黑图标）本身对输入框底 ≥ 3。
   // 亮色有 1px border-cta-edge：琥珀 500 底对白只有 2.15，靠 700 描边（5.05）给出边界；其它色描边 = 800。
   const send = src("components/ai-chat/composer/runtime-interact/composer-send-split.tsx")
@@ -661,6 +698,122 @@ test("启动时套用存下的强调色：App.tsx 模块加载时调 initThemeAc
   } finally {
     Object.assign(g, saved)
   }
+})
+
+// ---------- 发送按钮：Tab 焦点环（luna r5 P2-1）与暗色最外圈（P2-2），五色 × 亮暗 × 经典 / glass / 手绘 / 素描 ----------
+const sendSrc = () => src("components/ai-chat/composer/runtime-interact/composer-send-split.tsx")
+const sendConst = (name: string) => pick(sendSrc(), new RegExp(`const ${name} =\\s*"([^"]*)"`), name)[1]!
+type FocusSpec = { width: number; offset: number; ring: { light: string; dark: string }; offsetColor: { light: string; dark: string }; cls: string }
+function sendFocusSpec(): FocusSpec {
+  const cls = sendConst("sendFocusRing")
+  const one = (re: RegExp, what: string) => pick(cls, re, `焦点环 ${what}`)[1]!
+  const ringL = one(/(?:^|\s)focus-visible:ring-((?!offset)[a-z][\w-]*)/, "环色（亮）")
+  const ringD = /(?:^|\s)dark:focus-visible:ring-((?!offset)[a-z][\w-]*)/.exec(cls)?.[1] ?? ringL
+  const offL = one(/(?:^|\s)focus-visible:ring-offset-([a-z][\w-]*)/, "间隔色（亮）")
+  const offD = /(?:^|\s)dark:focus-visible:ring-offset-([a-z][\w-]*)/.exec(cls)?.[1] ?? offL
+  return {
+    width: Number(one(/(?:^|\s)focus-visible:ring-(\d+)(?!\S)/, "宽度")),
+    offset: Number(one(/(?:^|\s)focus-visible:ring-offset-(\d+)(?!\S)/, "间隔宽度")),
+    ring: { light: ringL, dark: ringD },
+    offsetColor: { light: offL, dark: offD },
+    cls
+  }
+}
+/** 发送按钮常态最外圈（不含焦点环）：1px 外圈阴影 > border > 底色，暗色取 dark: 覆盖。 */
+function sendEdge(ctx: Ctx): { name: string; color: Rgba } {
+  const cls = sendConst("sendClassName")
+  const dark = ctx.mode === "dark"
+  const get = (prop: string) => (dark && new RegExp(`(?:^|\\s)dark:${prop}-([a-z][\\w-]*)`).exec(cls)?.[1]) || pick(cls, new RegExp(`(?:^|\\s)${prop}-([a-z][\\w-]*)`), `发送按钮 ${prop}`)[1]!
+  const shadow = get("shadow")
+  const outer = ringColor(ctx, shadow, "outer")
+  if (outer) return { name: `shadow-${shadow}`, color: outer }
+  const border = get("border")
+  if (border === "transparent") return { name: `底 ${get("bg")}`, color: col(ctx, "main", get("bg")) }
+  return { name: `border-${border}`, color: col(ctx, "main", border) }
+}
+type FocusRow = { ctx: Ctx; check: "焦点环 vs 输入框底" | "焦点环 vs 间隔色" | "常态最外圈 vs 输入框底"; bg: string; ratio: number }
+function focusRows(): FocusRow[] {
+  const spec = sendFocusSpec()
+  const out: FocusRow[] = []
+  for (const ctx of FOCUS_CONTEXTS) {
+    const dark = ctx.mode === "dark"
+    const ring = col(ctx, "main", dark ? spec.ring.dark : spec.ring.light)
+    const offTok = dark ? spec.offsetColor.dark : spec.offsetColor.light
+    const edge = sendEdge(ctx)
+    for (const [bgName, bg] of composerSurfaces(ctx)) {
+      // 焦点环是 box-shadow：按钮外先画 2px 间隔（offset 色），再画 2px 环；环的外侧贴着输入框底。
+      const offset = over(col(ctx, "main", offTok), bg)
+      out.push({ ctx, check: "焦点环 vs 输入框底", bg: bgName, ratio: contrast(over(ring, bg), bg) })
+      out.push({ ctx, check: "焦点环 vs 间隔色", bg: `${offTok} on ${bgName}`, ratio: contrast(over(ring, offset), offset) })
+      out.push({ ctx, check: "常态最外圈 vs 输入框底", bg: `${edge.name} on ${bgName}`, ratio: contrast(over(edge.color, bg), bg) })
+    }
+  }
+  return out
+}
+function focusReport(rows: FocusRow[]): string {
+  const lines = ["| 检查 | 强调色 | 亮·经典 | 亮·glass | 亮·手绘 | 亮·素描 | 暗·经典 | 暗·glass | 暗·手绘 | 暗·素描 |", "|---|---|---|---|---|---|---|---|---|---|"]
+  for (const check of ["焦点环 vs 输入框底", "焦点环 vs 间隔色", "常态最外圈 vs 输入框底"] as const) {
+    for (const accent of THEME_ACCENTS) {
+      const cells = (["light", "dark"] as const).flatMap((mode) =>
+        FOCUS_SKINS.map((skin) => {
+          const rs = rows.filter((r) => r.check === check && r.ctx.accent.id === accent.id && r.ctx.mode === mode && r.ctx.skin === skin)
+          return Math.min(...rs.map((r) => r.ratio)).toFixed(2)
+        })
+      )
+      lines.push(`| ${check} | ${accent.id} | ${cells.join(" | ")} |`)
+    }
+  }
+  return lines.join("\n")
+}
+
+test("发送按钮 Tab 焦点：去掉浏览器默认 outline，2px accent 环（亮 700 / 暗 400）+ 2px 间隔，间隔色 = 输入框底，两个状态的按钮都套上", () => {
+  const spec = sendFocusSpec()
+  assert.match(spec.cls, /(?:^|\s)focus-visible:outline-none(?!\S)/, "要有 focus-visible:outline-none（Chromium 默认 1px 橙色 outline 对输入框只有 2.2）")
+  assert.match(spec.cls, /(?:^|\s)outline-none(?!\S)/)
+  assert.ok(spec.width >= 2, `焦点环宽度 ${spec.width}px`)
+  assert.ok(spec.offset >= 2, `焦点环间隔 ${spec.offset}px`)
+  assert.deepEqual(spec.ring, { light: "accent-700", dark: "accent-400" })
+  const bg = composerBgTokens()
+  assert.deepEqual(spec.offsetColor, { light: bg.light, dark: bg.dark }, "间隔色要跟输入框底同一个 token")
+  // 亮色经典输入框真实底 = #f7f7f7
+  const lightClassic: Ctx = { accent: THEME_ACCENTS[0]!, mode: "light", skin: "classic" }
+  assert.equal(toHex(composerSurfaces(lightClassic)[0]![1]), "#f7f7f7")
+  assert.equal(toHex(col(lightClassic, "main", spec.offsetColor.light)), "#f7f7f7")
+  // Stop、发送（就绪 / 未就绪）两处 className 都拼上 sendFocusRing（第三个是 disabled 按钮，Tab 不到）
+  const code = sendSrc()
+  const uses = [...code.matchAll(/className=\{`\$\{[^`]*\}`\}/g)].map((m) => m[0])
+  assert.equal(uses.length, 2, `发送按钮 className 拼接处：${uses.join(" / ")}`)
+  for (const u of uses) assert.match(u, /\$\{sendFocusRing\}/)
+  assert.doesNotMatch(code, /className=\{(?:sendClassName|mutedSendClassName)\}/, "不能有漏掉焦点环的发送按钮")
+})
+
+test("发送按钮焦点环 / 常态最外圈：五色 × 亮暗 × 经典 / glass / 手绘 / 素描，对输入框真实底色 ≥ 3（含手绘暗色靛蓝 #323755 / #2d3351）", () => {
+  const rows = focusRows()
+  if (process.env.ACCENT_CONTRAST_REPORT) console.log(`\n${focusReport(rows)}\n`)
+  assert.equal(new Set(rows.map((r) => `${r.ctx.accent.id}|${r.ctx.mode}|${r.ctx.skin}`)).size, THEME_ACCENTS.length * 2 * FOCUS_SKINS.length)
+  assert.ok(rows.some((r) => r.ctx.skin === "ink" && r.ctx.mode === "dark" && r.bg.includes("#323755")))
+  const bad = rows.filter((r) => r.ratio < GRAPHIC).map((r) => `${r.check} [${r.ctx.accent.id} ${r.ctx.mode} ${r.ctx.skin}] ${r.bg} = ${r.ratio.toFixed(2)}`)
+  assert.deepEqual(bad, [])
+})
+
+test("发送按钮暗色最外圈在所有皮肤都是 1px accent-400（底仍是 500）；反向对照：旧的 500 外圈在手绘暗色靛蓝上判不过", () => {
+  const cls = sendConst("sendClassName")
+  for (const skin of FOCUS_SKINS) {
+    for (const accent of THEME_ACCENTS) {
+      const ctx: Ctx = { accent, mode: "dark", skin }
+      const edge = sendEdge(ctx)
+      assert.equal(edge.name, "border-accent-400", `${accent.id} ${skin} 暗色最外圈`)
+    }
+  }
+  assert.match(cls, /(?:^|\s)dark:bg-accent-500(?!\S)/, "暗色底不变（500）")
+  const at = (id: string): Ctx => ({ accent: THEME_ACCENTS.find((a) => a.id === id)!, mode: "dark", skin: "ink" })
+  const indigo = resolveColor(INK_DARK_MEASURED[0], scope(at("slate"), "main"))
+  assert.ok(contrast(col(at("slate"), "main", "accent-500"), indigo) < GRAPHIC, "旧的 slate 500 外圈对 #323755 必须判不过（2.43）")
+  assert.ok(contrast(col(at("purple"), "main", "accent-500"), indigo) < GRAPHIC, "旧的紫 500 外圈对 #323755 必须判不过（2.74）")
+  // skins/*.css 里输入框（data-frost="chip"）的底色还是测试假设的那个 token（改了要同步 composerSurfaces()）
+  const flat = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ")
+  assert.match(flat(inkCss), /html\[data-skin="ink"\] \[data-frost="chip"\] \{[^}]*background-color: var\(--skin-ink-paper\);/)
+  assert.match(flat(sketchCss), /html\[data-skin="sketch"\] \[data-frost="chip"\],[^{]*\{[^}]*background-color: var\(--skin-sketch-sheet\);/)
 })
 
 test("css-contrast 自检：oklch → sRGB 与 Tailwind 官方 hex 一致；WCAG 公式", () => {
