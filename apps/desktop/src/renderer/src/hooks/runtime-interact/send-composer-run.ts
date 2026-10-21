@@ -14,6 +14,8 @@ import { listComposerAssets, setComposerAssets, takeComposerAssetDetails, type Q
 import { takeComposerText } from "./composer-draft"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
 import { pauseFollowupsAfterFailedStart } from "../followup-pause"
+import { markPendingFailedSendInFlight, notePendingFailedSend } from "../pending-failed-send"
+import { clearCredentialSendBlocked, noteCredentialSendBlocked } from "../credential-send-nudge"
 import { composerCanSend } from "./composer-can-send"
 import { composerRunKind } from "../composer-run-kind"
 import {
@@ -22,6 +24,7 @@ import {
   syncReviewGateOnComposerStart
 } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
+import { isRequestStopped } from "../stopped-runs"
 import { failComposerSend } from "./fail-composer-send"
 import { releaseClientRequestId, takeClientRequestId } from "./client-request-id"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
@@ -49,7 +52,7 @@ import { runWhenComposerIdle } from "./composer-idle-turn"
 import { traceSend } from "../send-debug"
 import { resolveSendPayload, type SendPayload } from "./resolve-send-payload"
 import { claimComposerRunning, releaseComposerRunningIfOwner, runningHeldByOther } from "./composer-running-owner"
-import { armSendWatchdog, markSendLaunched, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
+import { armSendWatchdog, markSendLaunched, markSendSettled, sendAttemptCancelled, type SendAttempt } from "./send-watchdog"
 import { isNewSessionCreatePending } from "../new-session-create"
 import {
   captureComposerSend,
@@ -91,11 +94,13 @@ export async function sendComposerMessage(
   queuedAttempt?: SendAttempt
 ) {
   // #136：同一手势的 agent.run 带同一 clientRequestId（误触连点 60s 内 main 不重开）；排队首发交给队列续用。
-  const request = { clientRequestId: takeClientRequestId(prepared?.clientRequestId), handoff: false }
+  // leo #169 BLOCK：id 按发出这一发的会话记，只在同一会话里复用；收尾也只放这个会话的。
+  const sessionKey = prepared?.sessionId ?? useChatStore.getState().sessionId
+  const request = { clientRequestId: takeClientRequestId(sessionKey, prepared?.clientRequestId), sessionKey, handoff: false }
   try {
     await sendComposerOnce(prepared, typedAtEnter, queuedAttempt, request)
   } finally {
-    if (!request.handoff) releaseClientRequestId(request.clientRequestId)
+    if (!request.handoff) releaseClientRequestId(request.sessionKey, request.clientRequestId)
   }
 }
 
@@ -103,7 +108,7 @@ async function sendComposerOnce(
   prepared: PreparedSend | undefined,
   typedAtEnter: string | undefined,
   queuedAttempt: SendAttempt | undefined,
-  request: { clientRequestId: string; handoff: boolean }
+  request: { clientRequestId: string; sessionKey: string | null; handoff: boolean }
 ) {
   let store = useChatStore.getState()
   // 这次发送的原文只取一次：Enter 那一刻的 DOM 全文（或按钮点下时现读 DOM），之后全链路只用它。
@@ -209,7 +214,7 @@ async function sendComposerOnce(
       await queued
     } finally {
       // leo soft（#136）：建会话失败 / 被取消时 sendReady 根本没跑，id 还挂着——下一发会被 main 当重复吞掉。
-      releaseClientRequestId(clientRequestId)
+      releaseClientRequestId(request.sessionKey, clientRequestId)
     }
     return
   }
@@ -218,6 +223,8 @@ async function sendComposerOnce(
   // luna 锁定文案 + leo r5 MUST 2：发起新一发，本会话上一次的还稿快照作废（闸拦这一发时白卡不带「…已放回」，
   // 也不再给「再发一次」）；别的会话的快照不动。
   clearRestoredImages(store.sessionId)
+  // luna P1（m211）：从输入框发出 = 把还没发出去的失败那条（可能改过）发出去了；这一轮跑完才清记录、排队才接着发。
+  if (!prepared) markPendingFailedSendInFlight(store.sessionId)
   // running 归属：迟到作废时只放掉自己占的。
   const runningToken: object = attempt ?? {}
   claimComposerRunning(runningToken)
@@ -226,9 +233,16 @@ async function sendComposerOnce(
     useChatStore.getState().setError(null)
   }
   if (!guardComposerSend(store)) {
+    // jojo P3 / luna P2：闸拦下就是这一发的结局（卡已挂上），看门狗别再判它「静默失败」去换卡、再还一次稿。
+    markSendSettled(attempt)
     const blocked = useChatStore.getState().error
     traceSend("send:gate", { blocked })
     if (prepared) {
+      if (blocked === CREDENTIAL_INVALID) {
+        noteCredentialSendBlocked(store.sessionId)
+        // 落地页发的（建会话窗续发）：空会话随后被删、回到落地页，提醒也要记在落地页名下，卡上才看得到。
+        if (prepared.sessionId) noteCredentialSendBlocked(null)
+      }
       failComposerSend({
         text: prepared.content,
         reason: blocked || SEND_FAILED_RESTORE,
@@ -242,6 +256,8 @@ async function sendComposerOnce(
     restoreDraftAfterSendGate(store, prepared)
     return
   }
+  clearCredentialSendBlocked(store.sessionId)
+  if (prepared?.sessionId) clearCredentialSendBlocked(null)
   syncReviewGateOnComposerStart(store.sessionId)
   // 取稿前拍快照：失败时还原文 + 引用 / 技能 / 知识 Chip + 附件，不还拼好的 content。
   const snapshot = prepared
@@ -370,6 +386,10 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   const blocked = useChatStore.getState().error
   const draft = prepared?.content || readComposerDomText() || store.composer
   if (draft) restoreComposerDraft(draft, prepared?.assets)
+  // luna P1（m211）：闸拦住也是没发出去；稿在输入框里，排队暂停行照样不给「继续」。
+  if (draft) notePendingFailedSend(store.sessionId, { where: "composer", text: draft, assetIds: (prepared?.assets ?? []).map((a) => a.id) })
+  // luna P2（m211-29c/d）：密钥还没改好就按发送——卡上说「先改好密钥再发。」，绝不静默。
+  if (blocked === CREDENTIAL_INVALID) noteCredentialSendBlocked(store.sessionId)
   if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL || blocked === CREDENTIAL_INVALID) return
   if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)
@@ -426,6 +446,9 @@ async function launchComposerRun(
       payload.typed,
       clientRequestId
     )
+    // leo #169 soft 1：用户在起步窗口已经停了这一发——不论回执是成是败，都先按「停了」收：
+    // 不还稿、不出红卡、不动 running（可能已是马上再发的那一句的）。按发出时的会话 + id 认，别的会话的停止不算（BLOCK）。
+    if (isRequestStopped(sessionId, clientRequestId)) return settleStoppedLaunch(sessionId, result)
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
       failComposerSend({
@@ -459,6 +482,8 @@ async function launchComposerRun(
     void completeSessionTitle(payload.content)
     return userPersisted
   } catch (error) {
+    // soft 1：停掉的那一发 agent.run 抛错，同样不还稿、不出红卡。
+    if (isRequestStopped(sessionId, clientRequestId)) return settleStoppedLaunch(sessionId, undefined)
     failComposerSend({
       ...restoreFromPayload(payload),
       reason: composerSendError(error),
@@ -470,6 +495,26 @@ async function launchComposerRun(
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }
+}
+
+/**
+ * host #169 / leo soft 1：起步窗口里被用户停掉的那一发，回执到了（成 / 败 / 抛错）。
+ * - 开跑了（有 runId）：不认领（否则那一轮整段跑完、审批卡还能批），abort 掉；不走失败还稿（main 已落用户句，还稿会重复）；
+ *   乐观标的「执行中」交给 main 的停止收尾（run.error 带 turn）。
+ * - 没开跑（被闸拦 / 抛错）：静默收掉——不还稿、不出红卡、不动 running；乐观 workflow 还原，
+ *   但这个会话此刻另有一句在跑（停止后马上又发的）就留给它。
+ */
+function settleStoppedLaunch(sessionId: string | null, result: unknown): boolean {
+  const started = result !== undefined && !agentRunBlockedCode(result)
+  if (started) {
+    abortOrphanedRun(requireAgentRunId(result))
+    commitComposerStartGate(sessionId)
+    return userMessagePersisted(result)
+  }
+  const st = useChatStore.getState()
+  if (st.running && st.sessionId === sessionId) commitComposerStartGate(sessionId)
+  else rollbackComposerStartGate(sessionId)
+  return false
 }
 
 /** main 回 {ok:false} 或抛错：还用户原文 + Chip + 附件；乐观气泡按拼好的 content 找。 */

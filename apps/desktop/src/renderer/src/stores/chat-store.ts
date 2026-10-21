@@ -25,6 +25,7 @@ import {
 } from "./discarded-pre-output-runs"
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { afterPreOutputRollback } from "./after-pre-output-rollback"
+import { notePendingFailedSend } from "../hooks/pending-failed-send"
 import { clearRestoredImages } from "./restored-images-snapshot"
 import { readComposerForMerge, writeComposerAfterMerge } from "./composer-io"
 import { noteTurnSettled } from "./turn-settled"
@@ -238,6 +239,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     if (patch.running === true) clearRestoredImages(sessionId)
     if (patch.rolledBack) afterPreOutputRollback(sessionId, patch.rolledBack.assets, patch.messages, patch.composer ?? "")
     else noteTurnSettled(sessionId, event)
+    // luna P1（m211）：重新生成 / 编辑重发出字前失败，用户句留在线程里（卡上「再试一次」）——同样算还没发出去。
+    if (keptUserFailed(event, patch)) notePendingFailedSend(sessionId, { where: "thread" })
   },
   appendUserMessage: (content, assets) => {
     const first = !get().messages.some((message) => message.role === "user")
@@ -455,4 +458,18 @@ function writeSidebarCollapsed(collapsed: boolean): void {
   } catch {
     // 存不了就只在本次生效。
   }
+}
+
+/** 出字前失败但用户句留在线程里（main 带 keptUserMessage，renderer 只撕了助手泡）。 */
+function keptUserFailed(
+  event: { type: string; keptUserMessage?: boolean },
+  patch: { error?: string | null; rolledBack?: unknown; messages: readonly { role: string }[] }
+): boolean {
+  return (
+    event.type === "run.error" &&
+    event.keptUserMessage === true &&
+    Boolean(patch.error) &&
+    !patch.rolledBack &&
+    patch.messages.at(-1)?.role === "user"
+  )
 }

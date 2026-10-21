@@ -11,7 +11,9 @@ import { rememberStoppedRun } from "../stores/stopped-runs"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
-import { hasQueuedComposerSend } from "./queue-composer-send"
+import { hasQueuedComposerSendFor } from "./queue-composer-send"
+import { noteRequestStopped, noteRunStopped } from "./stopped-runs"
+import { abandonInFlightClientRequestId } from "./runtime-interact/client-request-id"
 
 /** IPC 返回后认领本轮；切走则写入停车快照，只有用户 Stop 才当孤儿 abort。 */
 export function claimComposerRun(startedSessionId: string | null, runId: string): boolean {
@@ -33,6 +35,7 @@ export function claimComposerRun(startedSessionId: string | null, runId: string)
 
 /** 主进程已经开工但 UI 已停 / 已切会话时，把那一轮 abort 掉。 */
 export function abortOrphanedRun(runId: string) {
+  noteRunStopped(runId)
   if (!hasIde()) return
   // leo #164 S5：abort IPC 失败不再静默吞掉——main 那边这一轮可能还在跑，记一条日志便于排查。
   // 界面照旧立刻停（不等 IPC），迟到事件仍按 stopped-runs 丢弃。
@@ -59,9 +62,16 @@ export async function abortComposerRun(opts?: {
   // luna #163 P2⑤：「刚开始发、还没出字」也算在跑（见 composerRunInFlight），否则随后那一发作废报的「出错」
   // 把说明行改成琥珀色，用户手动发一条跑完后排队的就自己发给新助手了。
   const reason = opts?.pauseReason ?? "stopped"
-  if (reason === "stopped" || composerRunInFlight(store)) pauseFollowups(sessionId, reason)
+  const inFlight = composerRunInFlight(store)
+  if (reason === "stopped" || inFlight) pauseFollowups(sessionId, reason)
   // #160 巡检 6：先记下被停的 run，abort 到达 main 之前它迟到的审批 / 出字一律丢掉，审批卡不再冒回来。
   rememberStoppedRun(sessionId, runId)
+  // 停止后 main 迟到的审批卡 / 开跑不得把卡、停止按钮、执行中挂回来（jojo 211e3bbb 1c）。
+  // 有 runId 的由下面 abortOrphanedRun 记下；起步窗口还没 runId：记下在路上那一发的 clientRequestId
+  // （run.start 带回它、回执也按它认，host #169 KAI），并放掉它——马上再发的一句另开 id，
+  // 否则 main 60s 去重会把新一句当成被停的那一发。
+  // leo #169 BLOCK：只动这个会话在路上的那一发，别的会话（切走前发出的）不动。
+  if (!runId && inFlight) noteRequestStopped(sessionId, abandonInFlightClientRequestId(sessionId))
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
@@ -85,7 +95,8 @@ export async function abortComposerRun(opts?: {
  */
 export function composerRunInFlight(store: ReturnType<typeof useChatStore.getState>): boolean {
   if (store.running || store.runId) return true
-  if (followupSendInFlight() || hasQueuedComposerSend()) return true
+  // 只看这个会话的：别的会话的自启 / 建会话窗排队不算这里在跑（leo #169 BLOCK）。
+  if (followupSendInFlight(store.sessionId) || hasQueuedComposerSendFor(store.sessionId)) return true
   if (isEmptyStreamingAssistant(store.messages.at(-1))) return true
   return Boolean(store.preparingHint && store.preparingSessionId === store.sessionId)
 }

@@ -8,8 +8,11 @@ import { getDatabase } from "./database"
 import { requestFromAgentInput } from "./persist-run"
 import { runningCheckpointFlags, TOOL_BOUNDARY } from "./running-orphan-plan"
 import type { ActiveRun } from "./agent-run-state"
+import { runWasStopped } from "./run-stopped"
 
 export function persistRunningCheckpoint(run: ActiveRun, runId: string): void {
+  // 同上：停掉的这一轮不得被工具边界写回 running。
+  if (runWasStopped(run)) return
   if (run.pendingApprovals.length > 0) return
   if (!Array.isArray(run.messages) || run.messages.length === 0) return
   const request = requestFromAgentInput(run.input)

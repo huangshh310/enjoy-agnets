@@ -54,7 +54,8 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   for (const src of [network, invalid, restricted]) {
     assert.match(src, /const restoredDetail = useRestoredImagesDetail\(\)/)
   }
-  assert.match(invalid, /detail=\{restoredDetail\}/)
+  // luna P2（m211）：被闸拦过时第二行先说「先改好密钥再发。」，还原说明跟在后面。
+  assert.match(invalid, /detail=\{credentialInvalidDetail\(nudge, restoredDetail\)\}/)
   // leo r5 / luna：重试卡按 retryCardView 换第二行（行为测试见 retry-kept-draft.behavior）。
   for (const src of [network, restricted]) assert.match(src, /detail=\{view\.detail\}/)
   assert.match(restricted, /tone="warning"/)

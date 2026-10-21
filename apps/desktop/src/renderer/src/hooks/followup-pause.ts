@@ -4,6 +4,8 @@
  * - 审批被拒「本次未执行」是用户自己的决定，不算出错，不停。
  * - 停着时，同一会话里有一轮正常跑完（run.end，比如失败卡上「再发一次」发出去了）：出错 / 额度的暂停自动解除，
  *   排队的按顺序接着发——失败那句先发，排队的跟在后面，不再倒序（#136 联动）。用户停止的暂停只认「继续」。
+ * - luna P1（m211）：失败的那一条还没发出去（pending-failed-send）时，跑完的若不是它（比如「马上发给它」发了排队的一条），
+ *   不解除——失败那条还在输入框 / 卡上，排队的不能抢在它前面。
  */
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
@@ -11,9 +13,12 @@ import { classifyThreadError } from "../lib/usage/classify-thread-error"
 import {
   followupPausedReason,
   pauseFollowups,
+  noteFollowupSessionRunStarted,
   resumeFollowups,
+  settleNeutralPause,
   type FollowupPausedReason
 } from "./followup-queue"
+import { settlePendingFailedSendOnRunEnd, settlePendingFailedSendOnRunError } from "./pending-failed-send"
 
 /** 失败原因（错误码或文案）→ 暂停原因。 */
 export function followupPauseReasonForFailure(message: string, code?: string | null): FollowupPausedReason {
@@ -36,9 +41,9 @@ export function followupPauseReasonForRunError(event: { message: string; code?: 
   return followupPauseReasonForFailure(event.message, event.code)
 }
 
-/** 中性（灰色）的暂停：用户自己停的（点停止 / 换助手）。出错、额度用完是琥珀色。 */
+/** 中性（灰色）的暂停：用户自己停的（点停止 / 换助手，及其后的 held）。出错、额度用完是琥珀色。 */
 export function isNeutralPause(reason: FollowupPausedReason | null): boolean {
-  return reason === "stopped" || reason === "engineSwitched"
+  return reason === "stopped" || reason === "engineSwitched" || reason === "held"
 }
 
 /** 这种暂停在同会话一轮正常跑完后自动解除吗。 */
@@ -56,12 +61,19 @@ export function noteFollowupRunEvent(
   nonAgentRun: boolean
 ): void {
   if (!sessionId || nonAgentRun) return
+  if (event.type === "run.start") {
+    noteFollowupSessionRunStarted(sessionId)
+    return
+  }
   if (event.type === "run.error") {
+    settlePendingFailedSendOnRunError(sessionId)
     const reason = followupPauseReasonForRunError({ message: event.message ?? "", code: event.code })
     if (reason) pauseFollowups(sessionId, reason)
     return
   }
-  if (event.type === "run.end" && autoResumesAfterSuccess(followupPausedReason(sessionId))) {
-    resumeFollowups(sessionId)
-  }
+  if (event.type !== "run.end") return
+  const pendingFailed = settlePendingFailedSendOnRunEnd(sessionId)
+  settleNeutralPause(sessionId)
+  if (pendingFailed === "kept") return
+  if (autoResumesAfterSuccess(followupPausedReason(sessionId))) resumeFollowups(sessionId)
 }

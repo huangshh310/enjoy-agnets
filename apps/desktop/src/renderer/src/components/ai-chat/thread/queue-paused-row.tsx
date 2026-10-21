@@ -5,7 +5,10 @@
  * - 「改一下再发」：输入框已有内容时隐藏（不置灰）。
  * - 与 #136：出错 / 额度后失败卡上「再发一次 / 再试一次」显示时，隐藏「继续」「改一下再发」，原因后加
  *   「先发上面这条，发出去后排队的会接着发。」——重发成功后队列自己接着发（followup-pause）。
+ * - luna P1（m211）：失败的那一条只要还没发出去（卡关了、换了模型、卡上没有重发按钮但稿在输入框里也算），
+ *   一样不给「继续」「改一下再发」，句尾说「先发输入框里这条…」；用户把它从输入框整条清掉才回到「…点继续」。
  */
+import { useEffect, useSyncExternalStore } from "react"
 import { RiPauseCircleLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { FollowupPausedReason } from "@renderer/hooks/followup-queue"
@@ -18,6 +21,14 @@ import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { clearQueuedWithUndo, queuePausedView, QUEUE_MUTED_TEXT } from "./queue-paused-view"
 import { continueFollowups, editFirstFollowup } from "@renderer/hooks/runtime-interact/followup-pause-actions"
+import { listComposerAssets, subscribeComposerAssets } from "@renderer/hooks/composer-assets"
+import {
+  clearPendingFailedSend,
+  failedSendAbandoned,
+  getPendingFailedSends,
+  pendingFailedSendPlace,
+  subscribePendingFailedSend
+} from "@renderer/hooks/pending-failed-send"
 
 export function QueuePausedIcon({ reason }: { reason: FollowupPausedReason }) {
   return (
@@ -35,13 +46,25 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
   const error = useChatStore((state) => state.error)
   const composerHasContent = useComposerHasDraft(composer)
   const retryAvailable = useRetryKeptDraftAvailable()
+  const pendingAll = useSyncExternalStore(subscribePendingFailedSend, getPendingFailedSends)
+  const composerAssetIds = useSyncExternalStore(subscribeComposerAssetIds, composerAssetIdsKey).split("\n").filter(Boolean)
+  const pendingFailed = sessionId ? (pendingAll[sessionId] ?? null) : null
+  const abandoned = pendingFailed ? failedSendAbandoned(pendingFailed, { text: composer, assetIds: composerAssetIds }) : false
+  // 用户把失败那条从输入框整条清掉 = 放弃它：记录清掉，之后再打同样的字也不再拦「继续」。
+  useEffect(() => {
+    if (abandoned && sessionId) clearPendingFailedSend(sessionId)
+  }, [abandoned, sessionId])
   // 和失败卡同一个称呼（luna P2 锁定链）：ACP / CLI 引擎说引擎名；Enjoy 本地说品牌名 → 端点主机名 → 「模型服务」，从不说密钥档案名。
   const provider = useSendFailureProviderName()
   const view = queuePausedView({
     reason,
     count,
     composerHasContent,
-    failureCardRetryShowing: retryAvailable && failureCardOffersRetry(error),
+    pendingFailed: pendingFailedSendPlace(pendingFailed, {
+      composerText: composer,
+      composerAssetIds,
+      failureCardRetryShowing: retryAvailable && failureCardOffersRetry(error)
+    }),
     provider,
     t
   })
@@ -96,6 +119,17 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
       </div>
     </div>
   )
+}
+
+function subscribeComposerAssetIds(listener: () => void): () => void {
+  return subscribeComposerAssets(() => listener())
+}
+
+/** 字符串快照（useSyncExternalStore 要稳定值）。 */
+function composerAssetIdsKey(): string {
+  return listComposerAssets()
+    .map((a) => a.id)
+    .join("\n")
 }
 
 /** 带「再发一次 / 再试一次」的那几张首字前失败卡（#136：连不上 / 拒绝 / 额度）。 */

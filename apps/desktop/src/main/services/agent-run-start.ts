@@ -31,7 +31,8 @@ import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-c
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurnOutcome } from "./persist-user-attachments"
-import { isInternalTodoContinueTurn, runAgentPersistUser, shouldPersistOutgoingUser } from "./outgoing-user-persist"
+import { runAgentPersistUser, shouldPersistOutgoingUser } from "./outgoing-user-persist"
+import { lastOutgoingUser, lastUserContent, runStartEvent } from "./run-start-event"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
@@ -326,27 +327,8 @@ function emitRunStart(
   runId: string,
   promptEcho?: boolean
 ): void {
-  const echoed = promptEcho && !isInternalTodoContinueTurn(input) ? lastUserContent(input) : ""
-  const echoedId = echoed ? lastOutgoingUser(input)?.id : undefined
   persistSessionWorkflow(input.sessionId, "in_progress")
-  emitEvent(window, {
-    type: "run.start",
-    runId,
-    sessionId: input.sessionId,
-    kind: "agent",
-    ...(echoed ? { prompt: echoed } : {}),
-    // leo #147 MF-1：代发用户句落库用的就是这个 id，气泡直接用它。
-    ...(echoed && echoedId && echoedId.length <= 128 ? { promptMessageId: echoedId } : {})
-  })
-}
-
-function lastOutgoingUser(input: RunAgentInput): RunAgentInput["messages"][number] | undefined {
-  return [...input.messages].reverse().find((message) => message.role === "user")
-}
-
-function lastUserContent(input: RunAgentInput): string {
-  const content = lastOutgoingUser(input)?.content
-  return typeof content === "string" ? content.trim() : ""
+  emitEvent(window, runStartEvent(input, runId, promptEcho))
 }
 
 /** 开跑凭证态缺记录时，只有 e2e 夹具快照可代答；正式运行不借缓存（可能是别的档案的）。 */

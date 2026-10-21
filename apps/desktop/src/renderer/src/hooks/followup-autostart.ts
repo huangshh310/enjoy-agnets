@@ -20,15 +20,29 @@ let queue = new DrainableQueue<FollowupJob>(runJob)
  */
 let starting = false
 
+/** 还在「开始发」的自启项，按会话计数（leo #169 BLOCK：别的会话的自启不算这个会话在跑）。 */
+let inFlightBySession = new Map<string, number>()
+
+function bump(sessionId: string, delta: number) {
+  const next = (inFlightBySession.get(sessionId) ?? 0) + delta
+  if (next > 0) inFlightBySession.set(sessionId, next)
+  else inFlightBySession.delete(sessionId)
+}
+
 async function runJob(job: FollowupJob) {
-  // 发送链接手这几张图（发出即由 main 清库；失败还回输入框当普通草稿），排队标记先摘掉。
-  if (job.item.assets.length) releaseQueuedDraftAssets(job.item.sessionId, job.item.id)
-  await job.send(job.item)
+  try {
+    // 发送链接手这几张图（发出即由 main 清库；失败还回输入框当普通草稿），排队标记先摘掉。
+    if (job.item.assets.length) releaseQueuedDraftAssets(job.item.sessionId, job.item.id)
+    await job.send(job.item)
+  } finally {
+    bump(job.item.sessionId, -1)
+  }
 }
 
 /** 测试用：换一条空队列。 */
 export function resetFollowupAutostart() {
   queue = new DrainableQueue<FollowupJob>(runJob)
+  inFlightBySession = new Map()
   starting = false
 }
 
@@ -36,8 +50,8 @@ export function resetFollowupAutostart() {
  * 自启取出的那一条还在「开始发」阶段（send 没返回：agent.run 还没回执、还没出字）。
  * luna #163 P2⑤：这时换助手也算停了一轮——abortComposerRun 靠它补上 store.running 看不到的起跑窗口。
  */
-export function followupSendInFlight(): boolean {
-  return queue.size > 0
+export function followupSendInFlight(sessionId: string | null | undefined): boolean {
+  return Boolean(sessionId) && (inFlightBySession.get(sessionId as string) ?? 0) > 0
 }
 
 export function drainFollowupAutostart(): Promise<void> {
@@ -58,6 +72,7 @@ export function tryStartNextFollowup(input: {
   try {
     const next = takeNextFollowup(input.sessionId)
     if (!next) return false
+    bump(next.sessionId, 1)
     queue.enqueue({ item: next, send: input.send })
     return true
   } finally {

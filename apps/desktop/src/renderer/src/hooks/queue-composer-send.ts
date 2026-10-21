@@ -26,6 +26,7 @@ import {
   SESSION_NOT_READY
 } from "./queue-composer-send-copy"
 import { pauseFollowupsAfterFailedStart } from "./followup-pause"
+import { notePendingFailedSend } from "./pending-failed-send"
 
 export {
   PREVIOUS_STILL_PREPARING,
@@ -45,6 +46,8 @@ type QueuedSend = {
   seq: number
   content: string
   assets: QueuedComposerAsset[]
+  /** 排队时界面上的会话（建会话窗里通常为空）。 */
+  sessionId: string | null
 }
 
 let queueSeq = 0
@@ -124,6 +127,12 @@ export function restoreComposerAfterFailedSend(
   // leo BLOCK #163 ③：在放 running 之前停住排队（看门狗等所有还稿路径都经这里）。
   // leo soft：停的是发出这一发的会话，不是此刻的前台（看门狗 3s 后触发时用户可能已切走）。
   pauseFollowupsAfterFailedStart(sentFromSessionId ?? store.sessionId, reason)
+  // luna P1（m211）：这一发没发出去、稿回到输入框——还没发出去，排队暂停行不给「继续」。
+  notePendingFailedSend(sentFromSessionId ?? store.sessionId, {
+    where: "composer",
+    text,
+    assetIds: (assets ?? []).map((asset) => asset.id)
+  })
   store.setRunning(false)
   const before = store.composer
   restoreComposerDraft(text, assets)
@@ -164,6 +173,15 @@ export function cancelQueuedComposerSend(): void {
 
 export function hasQueuedComposerSend(): boolean {
   return queuedSend !== null
+}
+
+/**
+ * 建会话窗里排着的那一发属于这个会话吗（leo #169 BLOCK：停止 / 换助手只看自己会话的）。
+ * 按排队时记下的会话比（通常为空 = 新对话落地页）。
+ */
+export function hasQueuedComposerSendFor(sessionId: string | null | undefined): boolean {
+  if (!queuedSend) return false
+  return queuedSend.sessionId === (sessionId ?? null)
 }
 
 export function waitThenSendAfterCreate(
@@ -283,7 +301,8 @@ function replaceQueuedSend(content: string, incoming: QueuedComposerAsset[]): nu
   queuedSend = {
     seq,
     content,
-    assets: mergeQueuedAssets(queuedSend?.assets ?? [], incoming)
+    assets: mergeQueuedAssets(queuedSend?.assets ?? [], incoming),
+    sessionId: useChatStore.getState().sessionId ?? null
   }
   return seq
 }

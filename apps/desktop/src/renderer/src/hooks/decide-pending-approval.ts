@@ -14,6 +14,7 @@ import { useChatStore } from "../stores/chat-store"
 import { approvalOtherChatNotice, approvalOtherChatTitle } from "../lib/approval-other-chat"
 import { approvalDecideUiError } from "./approval-decide-failure"
 import { resolveApprovalRunId } from "./resolve-approval-run"
+import { isRunStopped } from "./stopped-runs"
 
 export async function decidePendingApproval(
   decision: "allow" | "deny" | "allow_session" | "allow_always",
@@ -41,6 +42,11 @@ export async function decidePendingApprovalOrThrow(
   const pending = store.pendingApproval
   const runId = resolveApprovalRunId(pending, store.runId)
   if (!pending || !runId) throw new Error("没有等待中的审批。")
+  // 这一轮用户已经停了：main 那边早结清了，点批准 / 拒绝只收卡，不发 decide、不出红卡。
+  if (isRunStopped(runId)) {
+    store.setPendingApproval(null)
+    return
+  }
   // jojo P1（ACP 导入）：这一轮已知属于别的会话（前台会话切过、卡没跟着走），绝不替那个会话批。
   const owner = useAttentionStore.getState().sessionOfRun(runId)
   // 文案在 chat.approvalBelongsToOtherChat(Titled)，luna 可以改字不动逻辑。
@@ -64,6 +70,8 @@ export async function decidePendingApprovalOrThrow(
       ...(answers ? { answers } : {})
     })
   } catch (error) {
+    // decide 在路上时点了停止：main 回「no longer active」是预期，不出红卡。
+    if (isRunStopped(runId)) return
     const shown = approvalDecideUiError(error)
     if (shown) throw new Error(translateDecideError(shown))
     if (extractApprovalDecideCode(error) === APPROVAL_NOT_REATTACHED) return

@@ -23,14 +23,26 @@ import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 import { noteTurnSettled } from "../turn-settled"
 import { noteBackgroundPreOutputRollback } from "../after-pre-output-rollback"
 import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
+import { lateStoppedEvent } from "@renderer/hooks/stopped-runs"
+import { abortOrphanedRun } from "@renderer/hooks/composer-run-control"
+import { noteInboxPendingEvent } from "./inbox-pending-refresh"
 
 export { belongsToForeground } from "./foreground-event"
 
 export function dispatchAgentEvent(event: StreamEvent): void {
+  // 收件箱徽标重拉要排在下面的丢弃之前：被停那一轮的审批结清 / 收尾也得让徽标对一次库（jojo 54a533a2 B）。
+  noteInboxPendingEvent(event)
   // #160 巡检 6：用户停掉的那一轮迟到的审批 / 出字，不进 Attention、不停车、不进前台（终态照常放行）。
   if (isLateEventOfStoppedRun(event)) return
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
+  // 用户已停止的一轮：迟到的审批卡 / 开跑整条丢掉（不进 Inbox、不进前台、不停车），
+  // 否则卡、停止按钮、「执行中 / 正在写」又挂回来。起步窗口停的那一发（按 run.start 带回的 clientRequestId 认）顺手 abort。
+  const late = lateStoppedEvent(event)
+  if (late) {
+    if (late === "beforeClaim" && runId) abortOrphanedRun(runId)
+    return
+  }
   const eventKind = generationKindOf(event)
   if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId, eventKind)
   const rememberedKind = runId ? useAttentionStore.getState().kindOfRun(runId) : undefined

@@ -6,6 +6,7 @@ import { billingContextOf, enrichUsageEvent } from "./enrich-usage-cost"
 import { applyActiveRunUsage, finalizePumpUsage } from "./run-usage"
 import { checkpointActiveRun } from "./flush-agent-run"
 import { emitEvent, type ActiveRun } from "./agent-run-state"
+import { runWasStopped } from "./run-stopped"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 
@@ -41,6 +42,7 @@ export async function consumeRun(
       onCheckpoint: () => {
         checkpointActiveRun(run)
       },
+      isStopped: () => runWasStopped(run),
       emit: (event) => {
         const next = event.type === "usage.updated" ? enrichUsageEvent(event, billingContextOf(run)) : event
         emitEvent(run.window, next)
