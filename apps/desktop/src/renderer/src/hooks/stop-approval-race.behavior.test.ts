@@ -258,3 +258,22 @@ test("对照：起步窗口停过，同会话的标题之类非对话开跑不�
   dispatchAgentEvent({ type: "run.start", runId: title, sessionId, kind: "completion" } as never)
   assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === title))
 })
+
+test("对照：起步窗口停过的那一发认领失败后，同会话空闲时别的一轮（心跳 / 自动化）的审批卡照常挂上、不被 abort", async () => {
+  const { sessionId, runId } = running("other_run", { unclaimed: true })
+  await abortComposerRun()
+  assert.equal(claimComposerRun(sessionId, runId), false)
+  const other = `run_heartbeat_${seq}`
+  dispatchAgentEvent(approval(other, sessionId))
+  assert.equal(useChatStore.getState().pendingApproval?.runId, other)
+  assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === other), "别的一轮不被 abort")
+})
+
+test("对照：已认领的一轮停止后，同会话空闲时别的一轮的审批卡照常挂上（只丢被停那一轮的）", async () => {
+  const { sessionId } = running("claimed_other")
+  await abortComposerRun()
+  const other = `run_auto_${seq}`
+  dispatchAgentEvent(approval(other, sessionId))
+  assert.equal(useChatStore.getState().pendingApproval?.runId, other)
+  assert.ok(!calls.some((c) => c.path === ".ai.abort" && c.arg === other))
+})
