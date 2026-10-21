@@ -102,12 +102,13 @@ test("接线：对话里挂 ConversationScrollOnChange；只有排队自启和�
   for (const rel of ["../../app-shell/chat/chat-composer.tsx", "./turns/queued-user-turn.tsx"]) {
     assert.doesNotMatch(read(rel), /scroll-on-send|markUserSend|skipNextSendScroll/, rel)
   }
-  const { execFileSync } = await import("node:child_process")
-  const root = new URL("../../../", import.meta.url).pathname
-  const users = execFileSync("rg", ["-l", "skipNextSendScroll\\(", root, "--glob", "!*.test.ts"], { encoding: "utf8" })
-    .trim()
-    .split("\n")
-    .map((path) => path.slice(root.length))
+  // 不靠外部 rg（CI 机器上没有）：自己走一遍 renderer 源码。
+  const { readdirSync } = await import("node:fs")
+  const root = new URL("../../../", import.meta.url)
+  const users = (readdirSync(root, { recursive: true }) as string[])
+    .map((path) => path.split("\\").join("/"))
+    .filter((path) => /\.tsx?$/.test(path) && !path.endsWith(".test.ts"))
+    .filter((path) => /skipNextSendScroll\(/.test(readFileSync(new URL(path, root), "utf8")))
     .sort()
   assert.deepEqual(users, ["components/ai-chat/thread/scroll-on-send.ts", "hooks/rewind-from-here.ts", "hooks/use-followup-autostart.ts"])
   const ui = read("../../../../../../../../packages/ui/components/ai-elements/conversation.tsx")
