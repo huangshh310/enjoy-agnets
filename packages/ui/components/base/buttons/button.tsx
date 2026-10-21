@@ -78,7 +78,7 @@ const styles = sortCx({
     "inline-flex items-center justify-center gap-0.5 whitespace-nowrap overflow-hidden",
     "font-sans select-none cursor-pointer",
     "button-press-motion",
-    "outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-border-focus-ring",
+    "outline-none focus-ring",
     "disabled:cursor-not-allowed aria-disabled:cursor-not-allowed",
   ].join(" "),
 
@@ -115,7 +115,7 @@ const styles = sortCx({
 
   variant: {
     primary: [
-      "bg-button-primary text-text-white shadow-xs",
+      "bg-button-primary text-cta-foreground shadow-xs",
       "disabled:text-button-primary-disabled-foreground disabled:shadow-none",
       "aria-disabled:text-button-primary-disabled-foreground aria-disabled:shadow-none",
     ].join(" "),

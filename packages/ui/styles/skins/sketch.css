@@ -26,6 +26,8 @@ html[data-skin="sketch"] {
   --shadow-card: 0 0 #0000;
   --shadow-2xs: 0 0 #0000;
   --shadow-xs: 0 0 #0000;
+  /* 主栏 / 卡片 / 输入框都是 sheet 纸色，焦点环间隔跟它走。 */
+  --focus-ring-offset: var(--skin-sketch-sheet);
 }
 
 html.dark[data-skin="sketch"] {
@@ -48,6 +50,7 @@ html.dark[data-skin="sketch"] {
   --color-border-button-active: color-mix(in srgb, #e8e0d2 22%, transparent);
   --color-separator-border: color-mix(in srgb, #e8e0d2 12%, transparent);
   --color-separator-border-strong: color-mix(in srgb, #e8e0d2 16%, transparent);
+  --focus-ring-offset: var(--skin-sketch-sheet);
 }
 
 html[data-skin="sketch"] [data-testid="window-frame"]:not(.rounded-none) {
@@ -86,6 +89,7 @@ html[data-skin="sketch"] main div.border-dashed {
   border-color: transparent;
   box-shadow: none;
   background-color: var(--skin-sketch-sheet);
+  --focus-ring-offset: var(--skin-sketch-sheet);
 }
 
 html[data-skin="sketch"] .shadow-card,

@@ -44,7 +44,7 @@ export function GateRowActions({
         data-testid="review-gate-approve"
         disabled={busy}
         onClick={onApprove}
-        className="ml-1 flex h-6 items-center rounded-md bg-accent-500 px-2.5 text-caption-2-medium text-text-white hover:bg-accent-600 disabled:opacity-50"
+        className="ml-1 flex h-6 items-center rounded-md bg-cta px-2.5 text-caption-2-medium text-cta-foreground hover:bg-cta-hover disabled:opacity-50"
       >
         {t("sessionOps.approve")}
       </button>

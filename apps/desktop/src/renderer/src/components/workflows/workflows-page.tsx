@@ -184,7 +184,7 @@ export function WorkflowsPage() {
                 type="button"
                 data-testid="workflow-start"
                 disabled={!sessionId || isStarting}
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-accent-500 hover:bg-accent-500 px-3 text-caption-2-medium text-white shadow-sm transition disabled:opacity-40"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-cta hover:bg-cta-hover px-3 text-caption-2-medium text-cta-foreground shadow-sm transition disabled:opacity-40"
                 onClick={() => void startPipeline()}
               >
                 {isStarting ? (

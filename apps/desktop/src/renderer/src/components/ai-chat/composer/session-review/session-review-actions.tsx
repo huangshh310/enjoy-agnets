@@ -42,7 +42,7 @@ export function SessionReviewActions({
         title={t("chat.sessionReviewOpen")}
         disabled={busy}
         onClick={onOpenReview}
-        className="ml-1 flex h-6 cursor-pointer items-center rounded-md bg-accent-500 px-2.5 text-caption-2-medium text-text-white transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
+        className="ml-1 flex h-6 cursor-pointer items-center rounded-md bg-cta px-2.5 text-caption-2-medium text-cta-foreground transition-colors hover:bg-cta-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {t("chat.sessionReviewOpen")}
       </button>

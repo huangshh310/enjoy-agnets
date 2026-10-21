@@ -113,7 +113,7 @@ export const ReviewCommitDock = forwardRef<
           placeholder={t("chat.reviewCommitPlaceholder")}
           disabled={locked}
           rows={2}
-          className="min-h-[44px] max-h-24 resize-none overflow-y-auto rounded-lg border-separator-border bg-background-primary-default py-1.5 pl-2.5 pr-8 text-caption-1-medium text-text-primary shadow-none placeholder:text-text-tertiary focus-visible:border-accent-500 focus-visible:ring-1 focus-visible:ring-accent-500"
+          className="min-h-[44px] max-h-24 resize-none overflow-y-auto rounded-lg border-separator-border bg-background-primary-default py-1.5 pl-2.5 pr-8 text-caption-1-medium text-text-primary shadow-none placeholder:text-text-tertiary focus-visible:border-border-focus-ring focus-visible:ring-1 focus-visible:ring-border-focus-ring"
         />
         {onReadPatch ? (
           <QuietIconButton

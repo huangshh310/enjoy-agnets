@@ -47,7 +47,7 @@ const CARD_CLASS = cx(
   "group relative flex flex-col rounded-xl border p-3 text-left transition-colors cursor-pointer outline-none",
   "border-border-button-default bg-background-primary-default shadow-xs",
   "hover:border-accent-500/50 hover:bg-background-secondary-hover/40 hover:shadow-md",
-  "focus-visible:border-border-focus-ring focus-visible:ring-2 focus-visible:ring-border-focus-ring/20"
+  "focus-visible:border-border-focus-ring focus-visible:ring-1 focus-visible:ring-border-focus-ring"
 )
 
 function onCardKey(event: { key: string; preventDefault: () => void }, onClick: () => void) {

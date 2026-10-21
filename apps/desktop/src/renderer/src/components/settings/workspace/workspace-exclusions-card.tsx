@@ -98,7 +98,7 @@ export function WorkspaceExclusionsCard({ workspaceId }: { workspaceId?: string 
                   handleAddPattern()
                 }
               }}
-              className="h-8 flex-1 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 font-mono text-caption-2-regular text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-colors"
+              className="h-8 flex-1 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 font-mono text-caption-2-regular text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring transition-colors"
             />
             <Button
               type="button"

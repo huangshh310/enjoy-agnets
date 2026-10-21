@@ -274,7 +274,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                 <button
                   type="button"
                   onClick={() => void handleSwitchToEnjoyLocal()}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white shadow-2xs hover:bg-accent-600 transition-colors"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-cta px-2.5 py-1 text-caption-2-medium font-semibold text-cta-foreground shadow-2xs hover:bg-cta-hover transition-colors"
                 >
                   <RiComputerLine className="size-3" />
                   <span>{t("chat.switchToEnjoyLocal")}</span>
@@ -304,7 +304,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                   setError(null)
                   void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
                 }}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-cta px-2.5 py-1 text-caption-2-medium font-semibold text-cta-foreground"
               >
                 <RiRefreshLine className="size-3" />
                 <span>{t("chat.retryInspect")}</span>
@@ -314,7 +314,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               <button
                 type="button"
                 onClick={handleAuth}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-cta px-2.5 py-1 text-caption-2-medium font-semibold text-cta-foreground"
               >
                 <RiUserLine className="size-3" />
                 <span>
@@ -326,7 +326,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               <button
                 type="button"
                 onClick={handleAddKey}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-cta px-2.5 py-1 text-caption-2-medium font-semibold text-cta-foreground"
               >
                 <RiKey2Line className="size-3" />
                 <span>{t("chat.addProviderKey")}</span>
@@ -340,7 +340,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                   setError(null)
                   if (workspaceId) void getIde().workspace.retry({ workspaceId })
                 }}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white shadow-2xs hover:bg-accent-600 transition-colors"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-cta px-2.5 py-1 text-caption-2-medium font-semibold text-cta-foreground shadow-2xs hover:bg-cta-hover transition-colors"
               >
                 <RiRefreshLine className="size-3" />
                 <span>{t("settings.workspace.sshReconnect")}</span>

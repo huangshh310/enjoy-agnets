@@ -95,10 +95,12 @@
     inset 0 1px 0 0 rgb(255 255 255 / 0.251);
 
   /* Checkbox checked/indeterminate surface (from the Figma Checkbox component):
-   * inner top highlight + 1px inner blue edge over the primary gradient. */
+   * inner top highlight + 1px inner edge over the primary fill.
+   * 选中态没有 border，这条 1px 内描边就是复选框最外圈：颜色走 --color-checkbox-rim（亮色 = cta-edge，暗色 = accent-500），
+   * 原来固定 accent-500，亮色对白底琥珀 2.15 / 绿 2.54。 */
   --shadow-checkbox-selected:
     inset 0 2px 0 0 rgb(255 255 255 / 0.25),
-    inset 0 0 0 1px var(--color-accent-500);
+    inset 0 0 0 1px var(--color-checkbox-rim);
 
   /* 1px contact shadow used on white cards/dropdown triggers sitting on the
    * secondary background (Figma drop shadow 0 1 1 5%). */
@@ -185,6 +187,8 @@
   --color-text-error-primary:   var(--color-red-500);
   --color-input-disabled-text:  var(--color-neutral-300);
   --color-text-white:           var(--color-white);
+  /* 分段控件 / 选项卡 / 皮肤名这类「没选中但可点」的字：tertiary 在浅灰底上只有 2.4，这里单独给 ≥ 4.5 的一档。 */
+  --color-text-unselected:      var(--color-neutral-600);
 
   /* Background */
   /* Canvas behind floating cards. Neutral-100 (#f7f7f7) so white
@@ -232,7 +236,15 @@
   --color-border-sidebar-profile-hover: var(--color-neutral-300);
   --color-separator-border:        var(--color-neutral-200);
   --color-separator-border-strong: var(--color-neutral-200);
-  --color-border-focus-ring:       var(--color-accent-500);
+  /* 焦点环颜色（全站唯一）：亮 700、暗 400（.dark）、手绘亮色墨色 #1A1612（skins/ink.css）。
+   * 原来是 accent-500：琥珀 / 绿对白底只有 2.15 / 2.54。border-focus-ring / --ring 都跟它走。 */
+  --color-focus-ring:              var(--color-accent-700);
+  --color-border-focus-ring:       var(--color-focus-ring);
+  /* 焦点环 2px 间隔的颜色 = 控件所在那块底色。默认是主栏卡片底；输入框 / 侧栏 / 各皮肤在自己的规则里改这个变量，
+   * 不要在类名里写死 ring-offset-<颜色>。 */
+  --focus-ring-offset:             var(--color-background-primary-default);
+  /* 开关关态轨道的描边：轨道底色和卡片几乎一样（glass 下 1.04），靠描边做到 ≥ 3:1。 */
+  --color-switch-off-border:       var(--color-neutral-500);
 
   /* State */
   --color-state-success-text: var(--color-lime-800);
@@ -375,11 +387,28 @@
   --color-chart-warning:      var(--color-amber-500);
   --color-chart-warning-text: var(--color-amber-600);
 
-  /* Button gradients */
-  --gradient-button-primary-default:  linear-gradient(180deg, var(--color-accent-500)    0%, var(--color-accent-600)    100%);
-  --gradient-button-primary-hover:    linear-gradient(180deg, var(--color-accent-400)    0%, var(--color-accent-500)    100%);
-  --gradient-button-primary-active:   linear-gradient(180deg, var(--color-accent-600)    0%, var(--color-accent-700)    100%);
+  /* Button gradients
+   * 白字主按钮：渐变两端对白字都要 ≥ 4.5:1，五种强调色都算（lib/accent-contrast.test.ts）。
+   * 原来常态 500→600、悬停 400→500，绿 / 琥珀的 600 只有 3.76 / 3.19；现在常态从 700 起，悬停 / 按下往深走。 */
+  --gradient-button-primary-default:  linear-gradient(180deg, var(--color-accent-700) 0%, color-mix(in oklab, var(--color-accent-700) 50%, var(--color-accent-800)) 100%);
+  --gradient-button-primary-hover:    linear-gradient(180deg, color-mix(in oklab, var(--color-accent-700) 50%, var(--color-accent-800)) 0%, var(--color-accent-800) 100%);
+  --gradient-button-primary-active:   linear-gradient(180deg, var(--color-accent-800) 0%, var(--color-accent-900) 100%);
   --gradient-button-primary-disabled: linear-gradient(180deg, var(--color-neutral-200) 0%, var(--color-neutral-300) 100%);
+
+  /* 实心主按钮（非渐变）：底 / 悬停底 / 字。组件一律写 bg-cta hover:bg-cta-hover text-cta-foreground，
+   * 不要直接写 bg-accent-* + 白字，否则下面琥珀的深字变体切不过去（lib/accent-contrast.test.ts 会扫源码）。 */
+  --color-cta:            var(--color-accent-700);
+  --color-cta-hover:      var(--color-accent-800);
+  --color-cta-foreground: var(--color-white);
+  /* 主按钮的 1px 描边：默认比底深一档（800）；琥珀 500 底时用 700，让按钮对白底也有 ≥ 3 的边界。 */
+  --color-cta-edge:       var(--color-cta-hover);
+  /* 复选框选中态最外圈（见 --shadow-checkbox-selected）：亮色跟 cta 描边（默认 800、琥珀 700，对白 / neutral-100 ≥ 3）。 */
+  --color-checkbox-rim:   var(--color-cta-edge);
+  /* 亮的强调色（暗色下的 accent-400/500）上放的深色图形：开关开态滑块、发送按钮图标。
+   * 白色放在 500 上琥珀 / 绿只有 2.15 / 2.54；这个近黑在五色 500 上 ≥ 3.7。 */
+  --color-on-accent-bright: var(--color-neutral-950);
+  /* 发送 / Stop 按钮常态最外圈：亮色跟主按钮描边（cta-edge），暗色 400（.dark），手绘亮色墨色（skins/ink.css）。 */
+  --color-send-edge: var(--color-cta-edge);
 
   --gradient-button-danger-default:   linear-gradient(180deg, var(--color-red-500) 0%, var(--color-red-600) 100%);
   --gradient-button-danger-hover:     linear-gradient(180deg, var(--color-red-400) 0%, var(--color-red-500) 100%);
@@ -388,6 +417,11 @@
 }
 
 .dark {
+  /* 焦点环暗色 400（对 neutral-800 / 900、手绘靛蓝 ≥ 3）；发送按钮暗色最外圈同为 400。 */
+  --color-focus-ring: var(--color-accent-400);
+  --color-send-edge: var(--color-accent-400);
+  /* 暗色复选框：700 填充对 neutral-800 只有 1.46–2.82，靠 500 内描边（3.18–7.04）撑住轮廓。 */
+  --color-checkbox-rim: var(--color-accent-500);
   /* Foreground */
   --color-foreground-full:            var(--color-neutral-700);
   --color-foreground-icon-primary:    var(--color-neutral-50);
@@ -407,6 +441,7 @@
   --color-text-tertiary: var(--color-neutral-600);
   --color-text-disabled: var(--color-neutral-800);
   --color-text-error-primary: var(--color-red-400);
+  --color-text-unselected: var(--color-neutral-400);
   --color-input-disabled-text: color-mix(in srgb, var(--color-neutral-500) 40%, transparent);
 
   /* Background */
@@ -662,6 +697,98 @@
   --color-accent-950: var(--color-slate-950);
 }
 
+/* 琥珀主按钮固定样式（luna #166 真机定稿，没有开关）：琥珀 500 底 + 墨色字 #1A1612。
+ * 琥珀 700 白字偏棕；其它四色仍是 700 底白字。主按钮 / 发送按钮 / 复选框 / --primary 都走 cta token，所以这里一处改全跟着变。
+ * 墨色字对比度：常态 500 = 8.38、渐变底端 mix(500,600) = 6.91、悬停 400 = 10.48、按下底端 600 = 5.65（全部 ≥ 4.5）。
+ * 500 底对白色页面只有 2.15，需要靠边界的（发送按钮）加 1px border-cta-edge = 700（对白 5.05）。 */
+:root[data-accent="amber"] {
+  --color-cta: var(--color-accent-500);
+  --color-cta-hover: var(--color-accent-400);
+  --color-cta-foreground: #1a1612;
+  --color-cta-edge: var(--color-accent-700);
+  --gradient-button-primary-default: linear-gradient(180deg, var(--color-accent-500) 0%, color-mix(in oklab, var(--color-accent-500) 50%, var(--color-accent-600)) 100%);
+  --gradient-button-primary-hover: linear-gradient(180deg, var(--color-accent-400) 0%, var(--color-accent-500) 100%);
+  --gradient-button-primary-active: linear-gradient(180deg, color-mix(in oklab, var(--color-accent-500) 50%, var(--color-accent-600)) 0%, var(--color-accent-600) 100%);
+}
+
+/* 个人资料热力图色阶（luna h163 P2-2）：每种强调色单独一套，不走共用 ramp（blue-400 被覆盖成 #3392ff 后
+ * 和 500 几乎一样亮）。按 WCAG 亮度反推：色相取该色板 500，色度取相邻档、超出 sRGB 时收窄。
+ *   亮色：最浅一档对白卡 ≥ 3.27，往深每档亮度比 ≈ 1.42。
+ *   暗色：最浅一档对 neutral-800 卡 ≥ 3.33，往亮每档 ≈ 1.42。
+ * 数值由 lib/accent-contrast.test.ts 校验（门槛：对卡片 ≥ 3，相邻 ≥ 1.3）。 */
+:root {
+  --color-heat-1: #438cfe;
+  --color-heat-2: #016df7;
+  --color-heat-3: #0257c7;
+  --color-heat-4: #0a4394;
+}
+:root.dark {
+  --color-heat-1: #1a71ef;
+  --color-heat-2: #5290f0;
+  --color-heat-3: #87afed;
+  --color-heat-4: #b7cff5;
+}
+:root[data-accent="blue"] {
+  --color-heat-1: #438cfe;
+  --color-heat-2: #016df7;
+  --color-heat-3: #0257c7;
+  --color-heat-4: #0a4394;
+}
+:root.dark[data-accent="blue"] {
+  --color-heat-1: #1a71ef;
+  --color-heat-2: #5290f0;
+  --color-heat-3: #87afed;
+  --color-heat-4: #b7cff5;
+}
+:root[data-accent="emerald"] {
+  --color-heat-1: #1ea16d;
+  --color-heat-2: #23845a;
+  --color-heat-3: #1f6948;
+  --color-heat-4: #145036;
+}
+:root.dark[data-accent="emerald"] {
+  --color-heat-1: #008859;
+  --color-heat-2: #02a56d;
+  --color-heat-3: #3ec389;
+  --color-heat-4: #93ddb6;
+}
+:root[data-accent="amber"] {
+  --color-heat-1: #cc7b08;
+  --color-heat-2: #a86403;
+  --color-heat-3: #875002;
+  --color-heat-4: #673c03;
+}
+:root.dark[data-accent="amber"] {
+  --color-heat-1: #ab6600;
+  --color-heat-2: #cf7d05;
+  --color-heat-3: #f89605;
+  --color-heat-4: #ffc285;
+}
+:root[data-accent="purple"] {
+  --color-heat-1: #9d75ff;
+  --color-heat-2: #8b4aff;
+  --color-heat-3: #7232d8;
+  --color-heat-4: #5726a6;
+}
+:root.dark[data-accent="purple"] {
+  --color-heat-1: #8c4ffd;
+  --color-heat-2: #9d7bf5;
+  --color-heat-3: #b3a3ed;
+  --color-heat-4: #d0c9f1;
+}
+:root[data-accent="slate"] {
+  --color-heat-1: #7e8fa9;
+  --color-heat-2: #64768e;
+  --color-heat-3: #4e5e74;
+  --color-heat-4: #38475d;
+}
+:root.dark[data-accent="slate"] {
+  --color-heat-1: #657892;
+  --color-heat-2: #8191a9;
+  --color-heat-3: #a5aebb;
+  --color-heat-4: #c8ced6;
+}
+
 /* Re-export semantic tokens as Tailwind utilities. The `inline` form means
  * Tailwind reads the *current* computed value of the variable, so light↔dark
  * flips work without rebuild. */
@@ -689,6 +816,7 @@
   --color-text-error-primary:   var(--color-text-error-primary);
   --color-input-disabled-text:  var(--color-input-disabled-text);
   --color-text-white:           var(--color-text-white);
+  --color-text-unselected:      var(--color-text-unselected);
 
   --color-background-full:              var(--color-background-full);
   --color-background-primary-default:   var(--color-background-primary-default);
@@ -728,6 +856,18 @@
   --color-separator-border:        var(--color-separator-border);
   --color-separator-border-strong: var(--color-separator-border-strong);
   --color-border-focus-ring:       var(--color-border-focus-ring);
+  --color-switch-off-border:       var(--color-switch-off-border);
+  --color-cta:            var(--color-cta);
+  --color-cta-hover:      var(--color-cta-hover);
+  --color-cta-foreground: var(--color-cta-foreground);
+  --color-cta-edge:       var(--color-cta-edge);
+  --color-on-accent-bright: var(--color-on-accent-bright);
+  --color-focus-ring: var(--color-focus-ring);
+  --color-send-edge: var(--color-send-edge);
+  --color-heat-1: var(--color-heat-1);
+  --color-heat-2: var(--color-heat-2);
+  --color-heat-3: var(--color-heat-3);
+  --color-heat-4: var(--color-heat-4);
 
   --color-state-success-text: var(--color-state-success-text);
   --color-state-success-base: var(--color-state-success-base);
@@ -868,6 +1008,13 @@
 /* Keep color feedback quick while the physical press motion remains soft.
  * The transform uses a shorter duration on press and the slower duration only
  * when returning to rest, so hover styles never inherit the 700ms timing. */
+/* 全站唯一的焦点环：2px、颜色 --color-focus-ring、2px 间隔（间隔色 --focus-ring-offset = 控件所在底色）。
+ * 用 outline-hidden 不用 outline-none：Windows 高对比度下仍保留一圈系统色焦点框。
+ * 只在 :focus-visible（键盘）出现，鼠标点不出。lib/accent-contrast.test.ts 按五色 × 亮暗 × 四皮肤校验 ≥ 3。 */
+@utility focus-ring {
+  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-(--focus-ring-offset);
+}
+
 @utility button-press-motion {
   transition:
     background-color var(--button-transition-ms) ease,

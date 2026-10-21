@@ -104,10 +104,10 @@ function SurfaceButton({
       className={cx(
         "h-6 rounded-full px-2.5 text-caption-2-medium transition-all duration-150 select-none",
         disabled ? "cursor-not-allowed" : "cursor-pointer",
-        active && variant === "explore" && "bg-accent-500/15 font-medium text-accent-600 dark:text-accent-400 shadow-2xs",
-        active && variant === "execute" && "bg-accent-500 font-medium text-text-white shadow-2xs",
-        !active && "text-text-tertiary",
-        !active && !disabled && "hover:text-text-secondary"
+        active && variant === "explore" && "bg-accent-500/15 font-medium text-accent-800 dark:text-accent-300 shadow-2xs",
+        active && variant === "execute" && "bg-cta font-medium text-cta-foreground shadow-2xs",
+        !active && "text-text-unselected",
+        !active && !disabled && "hover:text-text-primary"
       )}
     >
       {label}

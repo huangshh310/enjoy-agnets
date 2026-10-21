@@ -16,6 +16,27 @@
 @source "../lib/**/*.{ts,tsx}";
 @source "../hooks/**/*.{ts,tsx}";
 
+/* 焦点：
+ * 1. 输入框（data-frost=chip）里的焦点环间隔 = 输入框底（亮 background-secondary-default #f7f7f7，暗 background-tertiary-default）。
+ *    皮肤在 skins/*.css 里各自覆盖（glass 回退 / 手绘天空渐变 / 素描纸色）。
+ * 2. 没写自己焦点样式的控件不再用 Chromium 默认 1px 橙色 outline（#e59700，对白 / 暗底只有 2.2–2.4），
+ *    换成焦点环颜色 2px 实线 + 2px 透明间隔（间隔里就是控件所在的真实底色）。写了 outline-none / outline-hidden / focus-ring 的照旧。
+ *    原生复选框不在这里：MCP 信任勾选单独处理（#168）；主题 / 语言开关的隐藏复选框由外层容器画焦点。 */
+[data-frost="chip"] {
+  --focus-ring-offset: var(--color-background-secondary-default);
+}
+
+.dark [data-frost="chip"] {
+  --focus-ring-offset: var(--color-background-tertiary-default);
+}
+
+@layer base {
+  :focus-visible:not(input[type="checkbox"]) {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
 :root {
   --font-inter: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono-source: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -904,8 +925,8 @@ input[type="search"]::-webkit-search-cancel-button {
   --card-foreground: var(--color-text-primary);
   --popover: var(--color-background-primary-default);
   --popover-foreground: var(--color-text-primary);
-  --primary: var(--color-accent-500);
-  --primary-foreground: var(--color-text-white);
+  --primary: var(--color-cta); /* 跟主按钮一致：默认 700 白字，琥珀 500 墨色字（500 + 白字在琥珀 / 绿只有 2.15 / 2.54） */
+  --primary-foreground: var(--color-cta-foreground);
   --secondary: var(--color-background-secondary-default);
   --secondary-foreground: var(--color-text-primary);
   --muted: var(--color-background-secondary-default);

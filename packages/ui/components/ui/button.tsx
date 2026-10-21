@@ -5,12 +5,12 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap font-sans text-body-medium select-none button-press-motion outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-border-focus-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap font-sans text-body-medium select-none button-press-motion outline-none cursor-pointer focus-ring disabled:pointer-events-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "bg-button-primary text-text-white shadow-xs disabled:text-button-primary-disabled-foreground disabled:shadow-none",
+          "bg-button-primary text-cta-foreground shadow-xs disabled:text-button-primary-disabled-foreground disabled:shadow-none",
         destructive:
           "bg-button-danger text-text-white shadow-xs disabled:text-foreground-disabled-danger disabled:shadow-none",
         outline:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
         link: "text-accent-500 underline-offset-4 hover:underline",
         // 实底主操作：启用主色实底白字；禁用灰底 + 明显描边（浅色描边偏深），浅深色都看得见。
         solid:
-          "border border-accent-600 bg-accent-500 font-semibold text-text-white shadow-xs hover:bg-accent-600 disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
+          "border border-cta-edge bg-cta font-semibold text-cta-foreground shadow-xs hover:bg-cta-hover disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
       },
       size: {
         default: "h-9 rounded-2lg p-2 has-[>svg]:px-3",

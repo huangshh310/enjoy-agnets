@@ -43,8 +43,9 @@ export function CheckboxGlyph({
         s.box,
         isMarked
           ? cx(
-              "bg-linear-to-b shadow-checkbox-selected",
-              hover ? "from-accent-400 to-accent-500" : "from-accent-500 to-accent-600",
+              "shadow-checkbox-selected",
+              // 走主按钮 token：默认 700 底白勾（悬停 800），琥珀 500 底墨色勾（悬停 400）；原来 500→600 白勾琥珀只有 2.15
+              hover ? "bg-cta-hover" : "bg-cta",
             )
           : cx(
               "border bg-background-primary-default shadow-xs",
@@ -56,11 +57,11 @@ export function CheckboxGlyph({
     >
       <svg viewBox="0 0 16 16" fill="none" className={s.glyph}>
         {isIndeterminate ? (
-          <path d="M4.5 8H8H11.5" stroke="var(--color-white)" strokeWidth="2" strokeLinecap="round" />
+          <path d="M4.5 8H8H11.5" stroke="var(--color-cta-foreground)" strokeWidth="2" strokeLinecap="round" />
         ) : isSelected ? (
           <path
             d="M4 7.7002L6.64645 10.3466C6.84171 10.5419 7.15829 10.5419 7.35355 10.3466L12 5.7002"
-            stroke="var(--color-white)"
+            stroke="var(--color-cta-foreground)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"

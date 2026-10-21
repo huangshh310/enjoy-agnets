@@ -157,7 +157,7 @@ export function CreateSkillFormPane({
           value={body}
           onChange={(e) => onBodyChange(e.target.value)}
           placeholder="撰写此技能的具体执行指引、约束与输出规范..."
-          className="w-full flex-1 rounded-2xl border border-separator-border/70 bg-background-secondary-default/30 p-3.5 font-mono text-caption-2-regular leading-relaxed text-text-primary focus:border-accent-500 focus:outline-none resize-none"
+          className="w-full flex-1 rounded-2xl border border-separator-border/70 bg-background-secondary-default/30 p-3.5 font-mono text-caption-2-regular leading-relaxed text-text-primary focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring focus:outline-none resize-none"
         />
       </label>
     </div>

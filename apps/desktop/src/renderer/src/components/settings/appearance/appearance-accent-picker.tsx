@@ -20,10 +20,11 @@ export function AppearanceAccentPicker() {
             key={item.id}
             type="button"
             role="radio"
+            data-accent-option={item.id}
             aria-checked={isSelected}
             onClick={() => applyThemeAccent(item.id)}
             className={cx(
-              "group relative flex items-center gap-2.5 rounded-xl border px-3.5 py-2 text-left transition-all duration-150 cursor-pointer select-none",
+              "group relative flex items-center gap-2.5 rounded-xl border px-3.5 py-2 text-left transition-all duration-150 cursor-pointer select-none focus-ring",
               isSelected
                 ? "border-accent-500/50 bg-background-primary-default shadow-xs ring-1 ring-accent-500/30"
                 : "border-separator-border/80 bg-background-secondary-default/40 hover:border-separator-border hover:bg-background-secondary-default/80"

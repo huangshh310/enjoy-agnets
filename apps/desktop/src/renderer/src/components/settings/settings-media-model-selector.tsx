@@ -167,7 +167,7 @@ function SelectorSearch({ value, onChange }: { value: string; onChange: (value: 
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={t("settings.media.searchModels")}
-        className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pr-3 pl-8 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring"
+        className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pr-3 pl-8 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"
       />
     </div>
   )

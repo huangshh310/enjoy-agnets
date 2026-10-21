@@ -34,7 +34,7 @@ export function ExtensionsColumn({ column }: { column: ExtensionsColumnModel }) 
         <a
           href={column.addHref}
           data-testid={`extensions-add-${column.id}`}
-          className="inline-flex shrink-0 items-center rounded-md bg-accent-500 px-2.5 py-1 text-caption-2-medium text-text-white hover:bg-accent-600"
+          className="inline-flex shrink-0 items-center rounded-md bg-cta px-2.5 py-1 text-caption-2-medium text-cta-foreground hover:bg-cta-hover"
         >
           {column.addLabel}
         </a>

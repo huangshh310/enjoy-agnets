@@ -31,13 +31,14 @@ html[data-skin="glass"] {
   --color-ai-chat-composer-add-background: color-mix(in srgb, var(--color-white) 36%, transparent);
   --color-ai-chat-composer-add-hover-background: color-mix(in srgb, var(--color-white) 52%, transparent);
 
+  /* 次级字 / 时间戳 / 占位符 / 次级图标用中性灰：掺强调色后像链接（luna h163 P3）。主字仍带一点色调。 */
   --color-text-primary: color-mix(in srgb, var(--color-neutral-800) 90%, var(--color-accent-800));
-  --color-text-secondary: color-mix(in srgb, var(--color-neutral-600) 62%, var(--color-accent-700));
-  --color-text-tertiary: color-mix(in srgb, var(--color-neutral-500) 58%, var(--color-accent-600));
-  --color-text-placeholder: color-mix(in srgb, var(--color-neutral-500) 55%, var(--color-accent-600));
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary: var(--color-neutral-500);
+  --color-text-placeholder: var(--color-neutral-500);
   --color-foreground-icon-primary: color-mix(in srgb, var(--color-neutral-700) 72%, var(--color-accent-700));
-  --color-foreground-icon-secondary: color-mix(in srgb, var(--color-neutral-600) 58%, var(--color-accent-600));
-  --color-foreground-icon-tertiary: color-mix(in srgb, var(--color-neutral-500) 55%, var(--color-accent-600));
+  --color-foreground-icon-secondary: var(--color-neutral-600);
+  --color-foreground-icon-tertiary: var(--color-neutral-500);
   --color-foreground-icon-quaternary: color-mix(in srgb, var(--color-neutral-400) 60%, var(--color-accent-500));
 
   --skin-frost-fill: color-mix(in srgb, var(--color-white) 26%, transparent);
@@ -52,6 +53,8 @@ html[data-skin="glass"] {
   --glass-light-x: 50%;
   --glass-light-y: 28%;
   --glass-light-angle: 135deg;
+  /* 开 GPU 时底下是桌面壁纸，算不出确定底色：间隔用外壳的霜色。无 GPU 回退见下面（纯色，可校验）。 */
+  --focus-ring-offset: var(--skin-frost-fill);
 }
 
 html.dark[data-skin="glass"] {
@@ -80,7 +83,7 @@ html.dark[data-skin="glass"] {
   --color-text-primary: color-mix(in srgb, var(--color-neutral-50) 92%, var(--color-accent-200));
   --color-text-secondary: color-mix(in srgb, var(--color-neutral-300) 70%, var(--color-accent-200));
   --color-text-tertiary: color-mix(in srgb, var(--color-neutral-400) 75%, var(--color-accent-300));
-  --color-text-placeholder: color-mix(in srgb, var(--color-neutral-500) 80%, var(--color-accent-300));
+  --color-text-placeholder: color-mix(in srgb, var(--color-neutral-400) 80%, var(--color-accent-300));
   --color-foreground-icon-primary: color-mix(in srgb, var(--color-neutral-50) 88%, var(--color-accent-200));
   --color-foreground-icon-secondary: color-mix(in srgb, var(--color-neutral-300) 72%, var(--color-accent-200));
   --color-foreground-icon-tertiary: color-mix(in srgb, var(--color-neutral-400) 75%, var(--color-accent-300));
@@ -213,6 +216,8 @@ html[data-skin="glass"] [data-testid="right-pane-shell"]::after {
 
 html[data-skin="glass"]:not([data-gpu-compositing="on"]) {
   --color-background-full: #ffffff;
+  /* 回退时主栏是纯白（globals.css !important），焦点环间隔同色。 */
+  --focus-ring-offset: #ffffff;
 }
 
 html[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
@@ -225,15 +230,25 @@ html[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
   --color-border-button-default: var(--color-neutral-200);
   --shadow-2xs: 0 0 #0000;
   --shadow-sidebar: none;
+  --focus-ring-offset: #fafafa;
 }
 
 html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) {
   --color-background-full: var(--color-neutral-900);
+  --focus-ring-offset: var(--color-neutral-900);
 }
 
+/* 暗色回退侧栏：上面亮色那条把 hover / tertiary / 描边改成了浅灰，暗色必须整套盖回来，
+   否则侧栏选中行（secondary-hover）和搜索框（tertiary）变成 #f7f7f7 底配近白字（luna h163 P2）。 */
 html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
   --color-background-primary-default: #1c1c1c;
+  --color-background-primary-hover: var(--color-neutral-800);
   --color-background-secondary-default: #1c1c1c;
+  --color-background-secondary-hover: var(--color-neutral-800);
+  --color-background-tertiary-default: var(--color-neutral-800);
+  --color-border-button-white: var(--color-neutral-700);
+  --color-border-button-default: var(--color-neutral-700);
+  --focus-ring-offset: #1c1c1c;
 }
 
 html[data-skin="glass"][data-gpu-compositing="off"] aside.rounded-3xl::after,
@@ -264,6 +279,15 @@ html[data-skin="glass"] :is(.settings-card, [data-frost="tile"], [data-frost="ch
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: var(--skin-meniscus);
+}
+
+/* 输入框在无 GPU 回退下的真实底：亮色 white 26% 叠在纯白主栏上 = 纯白；暗色 neutral-800 40% 叠在 neutral-900 上。 */
+html[data-skin="glass"]:not([data-gpu-compositing="on"]) [data-frost="chip"] {
+  --focus-ring-offset: #ffffff;
+}
+
+html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) [data-frost="chip"] {
+  --focus-ring-offset: color-mix(in srgb, var(--color-neutral-800) 40%, var(--color-neutral-900));
 }
 
 /* Composer：与外壳同填充，禁止二次 blur */

@@ -216,7 +216,7 @@ export function CapabilitySettings() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("settings.capabilities.searchPlaceholder")}
-              className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pl-8 pr-2.5 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring"
+              className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pl-8 pr-2.5 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"
             />
           </div>
         </div>
@@ -293,7 +293,7 @@ function FilterPill({
       className={cx(
         "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-caption-2-medium transition-colors cursor-pointer",
         active
-          ? "bg-accent-500 text-white font-semibold shadow-2xs"
+          ? "bg-cta text-cta-foreground font-semibold shadow-2xs"
           : "bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
       )}
     >

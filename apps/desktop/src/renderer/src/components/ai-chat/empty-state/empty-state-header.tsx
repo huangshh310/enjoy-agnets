@@ -29,7 +29,8 @@ export function EmptyStateHeader({
         {place ? (
           <>
             {t("chat.emptyAskLead")}
-            <span className="text-accent-500">{place}</span>
+            {/* 亮色 500 在琥珀 / 绿只有 2.15 / 2.54，换 700；暗色 500 在深底上够亮，不变 */}
+            <span className="text-accent-700 dark:text-accent-500">{place}</span>
             {t("chat.emptyAskTail")}
           </>
         ) : (

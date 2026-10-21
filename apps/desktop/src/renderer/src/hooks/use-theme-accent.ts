@@ -42,6 +42,7 @@ function getStoredAccent(): ThemeAccent {
   }
 }
 
+/** 每次都完整重写（包括再点当前已选的那个），不做「没变就跳过」。 */
 export function applyThemeAccent(accent: ThemeAccent): void {
   if (typeof window === "undefined") return
   try {
@@ -57,7 +58,7 @@ export function applyThemeAccent(accent: ThemeAccent): void {
   window.dispatchEvent(new CustomEvent(THEME_ACCENT_CHANGE_EVENT, { detail: accent }))
 }
 
-/** 在 App 启动时执行一次 */
+/** 在 App 启动时执行一次（App.tsx 模块加载时和 initThemeSkin 一起调）。重复调用无副作用。 */
 export function initThemeAccent(): ThemeAccent {
   const current = getStoredAccent()
   if (typeof window !== "undefined") {

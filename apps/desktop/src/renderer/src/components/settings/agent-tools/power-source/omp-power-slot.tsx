@@ -52,7 +52,7 @@ function OmpModelPicker({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-full items-center gap-2 rounded-xl border border-border-button-default bg-background-primary-default px-3 text-left shadow-2xs outline-none hover:border-border-button-hover focus:ring-1 focus:ring-accent-500"
+          className="flex h-9 w-full items-center gap-2 rounded-xl border border-border-button-default bg-background-primary-default px-3 text-left shadow-2xs outline-none hover:border-border-button-hover focus:ring-2 focus:ring-border-focus-ring"
         >
           <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-primary">
             {current?.label || current?.id || t("settings.agentTools.model")}

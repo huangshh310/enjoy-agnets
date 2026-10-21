@@ -11,7 +11,7 @@ const BUTTON =
   "flex size-6 cursor-pointer items-center justify-center rounded-md text-foreground-icon-secondary outline-none transition-colors hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
 
 const CLOSE =
-  "flex size-6 cursor-pointer items-center justify-center rounded-md text-foreground-icon-secondary outline-none transition-colors hover:bg-text-error-primary/15 hover:text-text-error-primary focus-visible:ring-2 focus-visible:ring-border-error-default"
+  "flex size-6 cursor-pointer items-center justify-center rounded-md text-foreground-icon-secondary outline-none transition-colors hover:bg-text-error-primary/15 hover:text-text-error-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
 
 export function WindowGlyphControls({
   isMaximized,

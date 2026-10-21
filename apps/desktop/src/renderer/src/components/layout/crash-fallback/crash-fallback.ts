@@ -50,7 +50,7 @@ export function CrashFallback({
           "data-testid": "renderer-crash-reload",
           onClick: onReload,
           className:
-            "inline-flex h-9 cursor-pointer items-center justify-center rounded-2lg bg-button-primary px-3 text-body-medium text-text-white outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+            "inline-flex h-9 cursor-pointer items-center justify-center rounded-2lg bg-button-primary px-3 text-body-medium text-cta-foreground outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         },
         copy.reload
       )

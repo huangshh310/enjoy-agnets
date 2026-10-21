@@ -26,7 +26,7 @@ export function InboxToolbar(props: {
         </span>
         {approvalCount > 0 ? (
           <span
-            className="inline-flex items-center rounded-full bg-accent-500 px-1.5 py-px text-caption-2-semibold font-semibold text-text-white"
+            className="inline-flex items-center rounded-full bg-cta px-1.5 py-px text-caption-2-semibold font-semibold text-cta-foreground"
             title={t("pages.inbox.approvalBadgeTitle")}
           >
             {approvalCount}

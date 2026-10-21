@@ -168,7 +168,7 @@ export function AiChatComposer({
             "border border-border-button-default bg-background-secondary-default dark:bg-background-tertiary-default",
             "shadow-card backdrop-blur-md transition-all duration-300 ease-out",
             "hover:border-border-button-hover hover:shadow-dropdown",
-            isFocused && "border-accent-500 ring-2 ring-accent-500/20 shadow-[0_4px_24px_-2px_rgba(59,130,246,0.16)] dark:shadow-[0_4px_28px_-2px_rgba(59,130,246,0.22)]",
+            isFocused && "border-border-focus-ring ring-1 ring-border-focus-ring shadow-[0_4px_24px_-2px_rgba(59,130,246,0.16)] dark:shadow-[0_4px_28px_-2px_rgba(59,130,246,0.22)]",
             isDragging && "scale-[1.008] border-accent-500 ring-2 ring-accent-500/25"
           )}
         >

@@ -157,7 +157,7 @@ export function ProviderSettings() {
                 className={cx(
                   "rounded-full px-1.5 py-0.2 text-caption-2-bold font-bold",
                   activeTab === "configured"
-                    ? "bg-accent-50 text-accent-600 dark:bg-accent-950 dark:text-accent-300"
+                    ? "bg-accent-50 text-accent-700 dark:bg-accent-950 dark:text-accent-300"
                     : "bg-background-secondary-default text-text-tertiary"
                 )}
               >
@@ -181,7 +181,7 @@ export function ProviderSettings() {
                 className={cx(
                   "rounded-full px-1.5 py-0.2 text-caption-2-bold font-bold",
                   activeTab === "presets"
-                    ? "bg-accent-50 text-accent-600 dark:bg-accent-950 dark:text-accent-300"
+                    ? "bg-accent-50 text-accent-700 dark:bg-accent-950 dark:text-accent-300"
                     : "bg-background-secondary-default text-text-tertiary"
                 )}
               >

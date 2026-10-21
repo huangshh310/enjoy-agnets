@@ -144,7 +144,7 @@ export function ReviewHeader(props: {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="ml-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-button-primary px-3 py-1 text-caption-2-medium font-semibold text-text-white shadow-xs hover:bg-button-primary/90 active:scale-98 cursor-pointer transition-all"
+                className="ml-1 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-button-primary px-3 py-1 text-caption-2-medium font-semibold text-cta-foreground shadow-xs hover:bg-button-primary/90 active:scale-98 cursor-pointer transition-all"
               >
                 <RiGitCommitLine className="size-3.5 shrink-0" />
                 <span className="hidden whitespace-nowrap min-[1280px]:inline">{t("chat.reviewCommitOrPush")}</span>

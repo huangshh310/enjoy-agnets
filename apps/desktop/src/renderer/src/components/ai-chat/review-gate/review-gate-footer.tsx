@@ -31,7 +31,7 @@ export function ReviewGateFooter({
           data-testid="review-gate-approve"
           disabled={busy}
           onClick={onApprove}
-          className="h-7 cursor-pointer rounded-md bg-accent-500 px-3 text-caption-2-medium text-text-white hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-7 cursor-pointer rounded-md bg-cta px-3 text-caption-2-medium text-cta-foreground hover:bg-cta-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t("sessionOps.approve")}
         </button>

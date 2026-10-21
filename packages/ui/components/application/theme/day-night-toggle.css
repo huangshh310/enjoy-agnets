@@ -165,8 +165,13 @@
   transform: translateY(-50%);
 }
 
-.theme-switch:focus-within .theme-switch__container {
-  outline: 2px solid var(--color-border-focus-ring);
+/* 隐藏的原生复选框自己不画焦点（Chromium 默认橙色 outline 对暗底只有 2.4），由容器画焦点环颜色；只在键盘焦点时出现。 */
+.theme-switch__checkbox {
+  outline: none;
+}
+
+.theme-switch:has(.theme-switch__checkbox:focus-visible) .theme-switch__container {
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 

@@ -279,7 +279,7 @@ export function McpServerToolsModal(props: {
                     value={testArgsJson}
                     onChange={(e) => setTestArgsJson(e.target.value)}
                     rows={4}
-                    className="w-full font-mono text-caption-1-regular rounded-xl border border-separator-border/80 bg-background-secondary-default p-2.5 text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    className="w-full font-mono text-caption-1-regular rounded-xl border border-separator-border/80 bg-background-secondary-default p-2.5 text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
                     placeholder='{ "key": "value" }'
                   />
                 </div>

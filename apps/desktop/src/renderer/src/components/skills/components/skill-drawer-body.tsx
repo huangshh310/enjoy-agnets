@@ -89,7 +89,7 @@ export function SkillDrawerBody({
                     className={cx(
                       "flex size-5 items-center justify-center rounded-full border",
                       isEnabled
-                        ? "border-accent-500 bg-accent-500 text-text-white"
+                        ? "border-cta bg-cta text-cta-foreground"
                         : "border-separator-border/80 text-transparent"
                     )}
                   >

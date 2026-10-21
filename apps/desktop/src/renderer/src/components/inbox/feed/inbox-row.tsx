@@ -40,7 +40,7 @@ export function InboxRow(props: {
         title={identity.trueNameTitle}
         className={cx(
           "group flex w-full flex-col gap-1.5 rounded-2xl border p-3.5 text-left outline-none transition-all duration-150 cursor-pointer",
-          "focus-visible:ring-2 focus-visible:ring-border-focus-ring focus-visible:ring-offset-1",
+          "focus-ring",
           selected
             ? "border-border-button-default bg-background-primary-default shadow-xs ring-1 ring-accent-500/25"
             : "border-separator-border/40 bg-background-primary-default/50 hover:border-separator-border/80 hover:bg-background-primary-default hover:shadow-2xs"

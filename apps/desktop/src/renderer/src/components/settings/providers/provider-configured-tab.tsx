@@ -88,7 +88,7 @@ export function ProviderConfiguredTab({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("settings.providers.filterPlaceholder")}
-              className="w-full rounded-xl border border-border-button-default bg-background-secondary-default/50 pl-8 pr-3 py-1.5 text-caption-1-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:bg-background-primary-default focus:ring-2 focus:ring-border-focus-ring/20 transition-all"
+              className="w-full rounded-xl border border-border-button-default bg-background-secondary-default/50 pl-8 pr-3 py-1.5 text-caption-1-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring focus:bg-background-primary-default transition-all"
             />
           </div>
 

@@ -24,7 +24,7 @@ export function ModePills({
           onClick={() => onChange("plan")}
           className={cx(
             "rounded-full px-3 py-1 text-caption-1-medium",
-            surface === "explore" ? "bg-accent-500 font-semibold text-text-white" : "text-text-tertiary"
+            surface === "explore" ? "bg-cta font-semibold text-cta-foreground" : "text-text-unselected"
           )}
         >
           {t("chat.surfaceExplore")}
@@ -34,7 +34,7 @@ export function ModePills({
           onClick={() => onChange("agent")}
           className={cx(
             "rounded-full px-3 py-1 text-caption-1-medium",
-            surface === "execute" ? "bg-accent-500 font-semibold text-text-white" : "text-text-tertiary"
+            surface === "execute" ? "bg-cta font-semibold text-cta-foreground" : "text-text-unselected"
           )}
         >
           {t("chat.surfaceExecute")}
