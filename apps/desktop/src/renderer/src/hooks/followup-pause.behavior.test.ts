@@ -1057,7 +1057,7 @@ test("强调色整条 ramp：每种可选强调色在 theme.css 里都定义 acc
 
 // ---- luna #163（10-21）中文空格规则（对称）：中文和拉丁字母 / 数字相邻留空格，前后各自判断；挨中文标点不留 ----
 test("中文空格规则（对称）：失败卡和排队行同一个函数（fillProviderFace → placeProviderName）；称呼前后各自判断，挨中文标点不留，英文不变", async () => {
-  const { fillProviderFace, providerNameEndsCjk, placeProviderName } = await import("../lib/provider-face.ts")
+  const { fillProviderFace, placeProviderName } = await import("../lib/provider-face.ts")
   const zh = tr(zhChat as never)
   const en = tr(enChat as never)
   const generic = { kind: "generic" as const }
@@ -1096,9 +1096,21 @@ test("中文空格规则（对称）：失败卡和排队行同一个函数（fi
   assert.equal(placeProviderName("在@里", "OpenAI", "@"), "在 OpenAI 里", "文案没写空格也补上")
   assert.equal(placeProviderName("「@」", "OpenAI", "@"), "「OpenAI」")
   assert.equal(placeProviderName("@ 说@ said", "通义", "@"), "通义说通义 said")
-  assert.equal(providerNameEndsCjk("模型服务"), true)
-  assert.equal(providerNameEndsCjk("glm4"), false)
-  assert.equal(providerNameEndsCjk("host…"), false)
+  // leo M6 / M4b：称呼边上是全角标点、全角字母、半角片假名时，英文从不粘连；中文照规则。
+  const quota = (provider: Face, t: typeof zh) => row(provider, t).split(/，|, so/)[0]
+  assert.equal(quota(named("Claude（工作）"), en), "Claude（工作） is out of credit")
+  assert.equal(quota(named("Claude（工作）"), zh), "Claude（工作）额度用完了")
+  assert.equal(quota(named("ｸﾛｰﾄﾞ"), en), "ｸﾛｰﾄﾞ is out of credit")
+  assert.equal(quota(named("ｸﾛｰﾄﾞ"), zh), "ｸﾛｰﾄﾞ额度用完了", "半角片假名算中日韩文字")
+  assert.equal(quota(named("ＡＢＣ"), zh), "ＡＢＣ 额度用完了", "全角字母按拉丁")
+  const reach = (provider: Face, t: typeof zh) => card("credentialNetworkNotice", provider, t).split(/[.。，]/)[0]
+  assert.equal(reach(named("「通义」"), en), "Could not reach 「通义」")
+  assert.equal(reach(named("ＡＢＣ"), en), "Could not reach ＡＢＣ")
+  assert.equal(reach(named("「通义」"), zh), "连不上「通义」")
+  assert.equal(reach(named("ＡＢＣ"), zh), "连不上 ＡＢＣ")
+  assert.equal(placeProviderName("@ said", "Ｑｗｅｎ３", "@"), "Ｑｗｅｎ３ said")
+  assert.equal(placeProviderName("用@问", "Ｑｗｅｎ３", "@"), "用 Ｑｗｅｎ３ 问", "全角字母数字和中文之间留空格")
+  assert.equal(placeProviderName("@ＡＩ", "通义", "@"), "通义 ＡＩ", "文案那边的全角字母也按拉丁")
   // 英文不变
   assert.equal(row(generic, en), "The model service is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
   assert.equal(row(named("通义"), en), "通义 is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
