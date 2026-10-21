@@ -26,6 +26,27 @@ export const THEME_ACCENTS: ThemeAccentConfig[] = [
 export const THEME_ACCENT_STORAGE_KEY = "boardui:accent"
 export const THEME_ACCENT_CHANGE_EVENT = "boardui:accent-change"
 
+/**
+ * 主按钮变体（luna h163）：默认 700 底白字；"ink" 只在琥珀下生效，改成琥珀 500 底 + 墨色字 #1A1612（见 theme.css）。
+ * 没有界面开关，真机上在 DevTools 里切：localStorage.setItem("boardui:cta-variant", "ink"); location.reload()
+ */
+export const CTA_VARIANT_STORAGE_KEY = "boardui:cta-variant"
+
+export function parseCtaVariant(value: string | null): "ink" | null {
+  return value === "ink" ? "ink" : null
+}
+
+function applyCtaVariant(): void {
+  let variant: "ink" | null = null
+  try {
+    variant = parseCtaVariant(localStorage.getItem(CTA_VARIANT_STORAGE_KEY))
+  } catch {
+    // 存储受限兜底
+  }
+  if (variant) document.documentElement.setAttribute("data-cta", variant)
+  else document.documentElement.removeAttribute("data-cta")
+}
+
 export function parseThemeAccent(value: string | null): ThemeAccent {
   if (value === "emerald" || value === "amber" || value === "purple" || value === "slate") {
     return value
@@ -52,6 +73,7 @@ export function applyThemeAccent(accent: ThemeAccent): void {
 
   const config = THEME_ACCENTS.find((a) => a.id === accent) ?? THEME_ACCENTS[0]
   document.documentElement.setAttribute("data-accent", accent)
+  applyCtaVariant()
   document.documentElement.style.setProperty("--color-accent-500", config.c500)
   document.documentElement.style.setProperty("--color-accent-600", config.c600)
   window.dispatchEvent(new CustomEvent(THEME_ACCENT_CHANGE_EVENT, { detail: accent }))

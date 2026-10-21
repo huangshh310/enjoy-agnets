@@ -114,7 +114,7 @@ export function ModelListPane({
               <button
                 type="button"
                 onClick={onManageProviders}
-                className="mt-4 rounded-xl bg-accent-700 px-3 py-1.5 text-caption-1-medium text-text-white transition-colors hover:bg-accent-800"
+                className="mt-4 rounded-xl bg-cta px-3 py-1.5 text-caption-1-medium text-cta-foreground transition-colors hover:bg-cta-hover"
               >
                 {t("chat.manageProviders")}
               </button>

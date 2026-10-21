@@ -341,7 +341,7 @@ export function AgentToolQuickKeyDialog({
                   type="button"
                   disabled={saving || secretBlocked || !apiKey.trim()}
                   onClick={() => void handleSaveAndBind()}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-accent-700 px-3.5 py-1.5 text-caption-2-medium font-semibold text-text-white shadow-2xs transition-colors hover:bg-accent-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-cta px-3.5 py-1.5 text-caption-2-medium font-semibold text-cta-foreground shadow-2xs transition-colors hover:bg-cta-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? (
                     <RiLoader4Line className="size-3.5 animate-spin" />

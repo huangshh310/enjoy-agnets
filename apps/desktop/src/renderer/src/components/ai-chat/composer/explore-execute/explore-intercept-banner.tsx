@@ -33,7 +33,7 @@ export function ExploreInterceptBanner() {
         <div className="mt-2 flex flex-wrap gap-2">
           <button
             type="button"
-            className="h-7 cursor-pointer rounded-lg bg-accent-700 px-2.5 text-caption-1-semibold text-text-white"
+            className="h-7 cursor-pointer rounded-lg bg-cta px-2.5 text-caption-1-semibold text-cta-foreground"
             onClick={() => useChatStore.getState().setMode(applyComposerSurface(mode, "execute"))}
           >
             {t("chat.surfaceSwitchExecute")}

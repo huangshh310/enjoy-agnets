@@ -11,7 +11,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import { createRequire } from "node:module"
-import { THEME_ACCENTS } from "../hooks/use-theme-accent.ts"
+import { CTA_VARIANT_STORAGE_KEY, THEME_ACCENTS, parseCtaVariant } from "../hooks/use-theme-accent.ts"
 import { HEATMAP_LEVEL_CLASSES } from "../components/account/constants.ts"
 import {
   contrast,
@@ -21,6 +21,7 @@ import {
   parseCssDecls,
   resolveColor,
   rgbToOklch,
+  toHex,
   twColor,
   type Rgba
 } from "./css-contrast.ts"
@@ -38,11 +39,15 @@ const table = parseCssDecls(globalsCss, parseCssDecls(glassCss, parseCssDecls(th
 type Mode = "light" | "dark"
 type Skin = "classic" | "glass"
 type Area = "main" | "drawer" | "sidebar"
-type Ctx = { accent: (typeof THEME_ACCENTS)[number]; mode: Mode; skin: Skin }
+/** cta：主按钮变体。"ink" = 琥珀 500 底墨色字（<html data-cta="ink">，只对琥珀生效），只给琥珀多算一列。 */
+type Ctx = { accent: (typeof THEME_ACCENTS)[number]; mode: Mode; skin: Skin; cta: "default" | "ink" }
 
 const CONTEXTS: Ctx[] = THEME_ACCENTS.flatMap((accent) =>
-  (["light", "dark"] as const).flatMap((mode) => (["classic", "glass"] as const).map((skin) => ({ accent, mode, skin })))
+  (accent.id === "amber" ? (["default", "ink"] as const) : (["default"] as const)).flatMap((cta) =>
+    (["light", "dark"] as const).flatMap((mode) => (["classic", "glass"] as const).map((skin) => ({ accent, mode, skin, cta })))
+  )
 )
+const column = (ctx: Ctx) => (ctx.cta === "ink" ? `${ctx.accent.id}·ink` : ctx.accent.id)
 
 const NO_GPU = 'html[data-skin="glass"]:not([data-gpu-compositing="on"])'
 const NO_GPU_DARK = 'html.dark[data-skin="glass"]:not([data-gpu-compositing="on"])'
@@ -53,6 +58,8 @@ function scope(ctx: Ctx, area: Area): Map<string, string> {
   const sels = ["@theme default", "@theme", ":root"]
   if (dark) sels.push(".dark", ".dark[data-accent]")
   sels.push(`:root[data-accent="${ctx.accent.id}"]`)
+  if (dark) sels.push(`:root.dark[data-accent="${ctx.accent.id}"]`)
+  if (ctx.cta === "ink") sels.push(`:root[data-accent="${ctx.accent.id}"][data-cta="ink"]`)
   if (glass) {
     sels.push('html[data-skin="glass"]')
     if (dark) sels.push('html.dark[data-skin="glass"]')
@@ -100,7 +107,7 @@ const card = (ctx: Ctx) =>
 type Check = { item: string; label: string; min: number | null; fg: Rgba; bg: Rgba }
 const TEXT = 4.5
 const GRAPHIC = 3
-const HEAT_STEP = 1.15
+const HEAT_STEP = 1.3
 
 const pick = (s: string, re: RegExp, what: string) => {
   const m = re.exec(s)
@@ -144,26 +151,32 @@ function checks(ctx: Ctx): Check[] {
   const dark = ctx.mode === "dark"
   const add = (item: string, label: string, min: number | null, fg: Rgba, bg: Rgba) => out.push({ item, label, min, fg, bg })
 
-  // P2-1 白字主按钮：渐变两端 + 所有实心白字按钮
+  // P2-1 主按钮：渐变两端 + 实心主按钮（bg-cta / hover:bg-cta-hover），字色是 cta-foreground（默认白、琥珀 ink 变体墨色）
   const main = scope(ctx, "main")
+  const ctaFg = col(ctx, "main", "cta-foreground")
   for (const state of ["default", "hover", "active"] as const) {
     const stops = gradientStops(`var(--gradient-button-primary-${state})`, main)
     const name = { default: "常态", hover: "悬停", active: "按下" }[state]
-    add("P2-1", `主按钮渐变·${name}·顶`, TEXT, WHITE, stops[0]!)
-    add("P2-1", `主按钮渐变·${name}·底`, TEXT, WHITE, stops.at(-1)!)
+    add("P2-1", `主按钮渐变·${name}·顶`, TEXT, ctaFg, stops[0]!)
+    add("P2-1", `主按钮渐变·${name}·底`, TEXT, ctaFg, stops.at(-1)!)
   }
+  add("P2-1", "实心主按钮 bg-cta（含「继续」）", TEXT, ctaFg, col(ctx, "main", "cta"))
+  add("P2-1", "实心主按钮 hover:bg-cta-hover", TEXT, ctaFg, col(ctx, "main", "cta-hover"))
+  // 还直接写白字 + bg-accent-* 的地方（理应没有；有的话也必须过）
   for (const key of [...whiteOnAccentShades().keys()].sort()) {
     add("P2-1", `白字实心按钮 ${key}`, TEXT, WHITE, col(ctx, "main", key.replace(/^(?:hover:)?bg-/, "")))
   }
 
   // P2-2 热力图：最浅一档对卡片 ≥ 3；相邻两档 ≥ 1.25（看得出差别）
   const levels = ([1, 2, 3, 4] as const).map((n) => {
-    const { light, dark: d } = lightDark(HEATMAP_LEVEL_CLASSES[n], "bg")
-    return col(ctx, "main", dark ? d : light)
+    const cls = HEATMAP_LEVEL_CLASSES[n]
+    const d = /(?:^|\s)dark:bg-([\w-]+)/.exec(cls)
+    const l = pick(cls, /(?:^|\s)bg-([\w-]+)/, `热力图第 ${n} 档`)
+    return col(ctx, "main", dark && d ? d[1]! : l[1]!)
   })
   const heatCard = card(ctx)
   add("P2-2", "热力图·最浅数据档 vs 卡片", GRAPHIC, levels[0]!, heatCard)
-  // 暗色从 500 往亮走，现成色阶里最优组合的最小值是 1.17（蓝 500 → 400，theme.css 把 blue-400 调深了）。
+  // 每种强调色单独一套（theme.css --color-heat-1…4），相邻 ≈ 1.42。
   for (let i = 1; i < levels.length; i++) add("P2-2", `热力图·第 ${i} / ${i + 1} 档区分`, HEAT_STEP, levels[i]!, levels[i - 1]!)
 
   // P2-3 「已配置」计数 / 技能 Store 角标
@@ -217,7 +230,7 @@ function checks(ctx: Ctx): Check[] {
   const trig = src("components/automations/components/trigger-pills.tsx")
   add("P2-7", "自动化·触发方式未选中", TEXT, col(ctx, "drawer", pick(trig, /: "bg-background-secondary-default text-([\w-]+) /, "触发未选中")[1]!), pillBg)
   const mode = src("components/automations/components/mode-pills.tsx")
-  add("P2-7", "自动化·模式未选中", TEXT, col(ctx, "drawer", pick(mode, /text-text-white" : "text-([\w-]+)"/, "模式未选中")[1]!), pillBg)
+  add("P2-7", "自动化·模式未选中", TEXT, col(ctx, "drawer", pick(mode, /text-cta-foreground" : "text-([\w-]+)"/, "模式未选中")[1]!), pillBg)
   const tog = src("components/ai-chat/composer/explore-execute/explore-execute-toggle.tsx")
   const composer =
     ctx.skin === "glass"
@@ -252,14 +265,14 @@ function allRows(): Row[] {
 }
 
 function report(rows: Row[]): string {
-  const ids = THEME_ACCENTS.map((a) => a.id)
+  const ids = [...new Set(rows.map((r) => column(r.ctx)))]
   const keys = [...new Set(rows.map((r) => `${r.item}|${r.label}`))].sort((a, b) => a.split("|")[0]!.localeCompare(b.split("|")[0]!))
   const lines = [`| 项 | 检查 | 门槛 | ${ids.join(" | ")} |`, `|---|---|---|${ids.map(() => "---").join("|")}|`]
   for (const key of keys) {
     const [item, label] = key.split("|")
     const rs = rows.filter((r) => `${r.item}|${r.label}` === key)
     const cells = ids.map((id) => {
-      const mine = rs.filter((r) => r.ctx.accent.id === id)
+      const mine = rs.filter((r) => column(r.ctx) === id)
       const worst = mine.reduce((a, b) => (b.ratio < a.ratio ? b : a))
       const where = `${worst.ctx.mode === "light" ? "亮" : "暗"}${worst.ctx.skin === "glass" ? "·glass" : ""}`
       const flag = worst.min !== null && worst.ratio < worst.min ? " ❌" : ""
@@ -276,16 +289,31 @@ test("对比度报告（ACCENT_CONTRAST_REPORT=1 时打印，每格是该强调�
   assert.ok(rows.length > CONTEXTS.length * 20)
 })
 
-test("P2 / P3：每种强调色 × 亮暗 × 经典 / glass 回退，字 ≥ 4.5、图形 ≥ 3、热力图相邻档 ≥ 1.15", () => {
+test("P2 / P3：每种强调色 × 亮暗 × 经典 / glass 回退，字 ≥ 4.5、图形 ≥ 3、热力图相邻档 ≥ 1.3", () => {
   const bad = allRows()
     .filter((r) => r.min !== null && r.ratio < r.min)
-    .map((r) => `${r.item} ${r.label} [${r.ctx.accent.id} ${r.ctx.mode} ${r.ctx.skin}] = ${r.ratio.toFixed(2)} < ${r.min}`)
+    .map((r) => `${r.item} ${r.label} [${column(r.ctx)} ${r.ctx.mode} ${r.ctx.skin}] = ${r.ratio.toFixed(2)} < ${r.min}`)
   assert.deepEqual(bad, [])
 })
 
-test("P2-1：白字落在实心强调色上只能用 700 及更深（hover 800+），源码扫描", () => {
+test("P2-1：主按钮只走 cta token（bg-cta / bg-button-primary 配 text-cta-foreground，不写死白字）；白字落在实心强调色上只能 700+（hover 800+）", () => {
+  let ctaLines = 0
+  for (const root of ["apps/desktop/src/renderer/src", "packages/ui"]) {
+    const base = new URL(`${root}/`, repo)
+    for (const rel of readdirSync(base, { recursive: true }) as string[]) {
+      if (!/\.tsx?$/.test(rel) || rel.includes("node_modules") || rel.endsWith(".test.ts")) continue
+      const lines = readFileSync(new URL(rel, base), "utf8").split("\n")
+      lines.forEach((line, i) => {
+        if (!/(?<![\w:-])bg-(?:cta|button-primary)(?![\w-])/.test(line)) return
+        ctaLines++
+        const near = `${line}\n${lines[i + 1] ?? ""}`
+        assert.ok(!/(?<![\w:-])text-(?:text-)?white\b/.test(near), `${root}/${rel}:${i + 1} 主按钮写死了白字，琥珀 ink 变体切不过去`)
+        assert.ok(/text-cta-foreground/.test(near), `${root}/${rel}:${i + 1} 主按钮缺 text-cta-foreground`)
+      })
+    }
+  }
+  assert.ok(ctaLines >= 30, `扫到的主按钮太少：${ctaLines}`)
   const shades = whiteOnAccentShades()
-  assert.ok(shades.size > 0, "扫到了白字按钮")
   for (const [key, where] of shades) {
     const n = Number(/(\d+)$/.exec(key)![1])
     assert.ok(n >= (key.startsWith("hover:") ? 800 : 700), `${key} 上放白字：${[...where].join(", ")}`)
@@ -308,6 +336,20 @@ test("glass 无 GPU 回退的底色还是测试里假设的那几个（改了要
   assert.match(flat, /html\.dark:not\(\[data-gpu-compositing="on"\]\) aside\.rounded-3xl \{ background-color: #1c1c1c !important; \}/)
   assert.match(flat, /html\.dark:not\(\[data-gpu-compositing="on"\]\) \[data-shell-canvas\] \{ background-color: var\(--color-neutral-900\) !important; \}/)
   assert.match(src("components/settings/settings-side-drawer.tsx"), /<aside[\s\S]*?rounded-3xl/)
+})
+
+test("琥珀 ink 变体：只在 data-accent=amber 下生效；墨色字 #1A1612；use-theme-accent 从 localStorage 读开关", () => {
+  assert.ok(table.has(':root[data-accent="amber"][data-cta="ink"]'))
+  assert.equal([...table.keys()].filter((k) => k.includes('[data-cta="ink"]')).length, 1, "变体只给琥珀")
+  const amber = THEME_ACCENTS.find((a) => a.id === "amber")!
+  const ink = col({ accent: amber, mode: "light", skin: "classic", cta: "ink" }, "main", "cta-foreground")
+  assert.equal(toHex(ink), "#1a1612")
+  const blueInk = { accent: THEME_ACCENTS[0]!, mode: "light" as const, skin: "classic" as const, cta: "ink" as const }
+  assert.throws(() => scope(blueInk, "main"), /找不到选择器/, "非琥珀没有 ink 变体")
+  assert.equal(CTA_VARIANT_STORAGE_KEY, "boardui:cta-variant")
+  assert.equal(parseCtaVariant("ink"), "ink")
+  assert.equal(parseCtaVariant("white"), null)
+  assert.equal(parseCtaVariant(null), null)
 })
 
 test("css-contrast 自检：oklch → sRGB 与 Tailwind 官方 hex 一致；WCAG 公式", () => {

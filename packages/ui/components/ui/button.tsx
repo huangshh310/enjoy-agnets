@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-button-primary text-text-white shadow-xs disabled:text-button-primary-disabled-foreground disabled:shadow-none",
+          "bg-button-primary text-cta-foreground shadow-xs disabled:text-button-primary-disabled-foreground disabled:shadow-none",
         destructive:
           "bg-button-danger text-text-white shadow-xs disabled:text-foreground-disabled-danger disabled:shadow-none",
         outline:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
         link: "text-accent-500 underline-offset-4 hover:underline",
         // 实底主操作：启用主色实底白字；禁用灰底 + 明显描边（浅色描边偏深），浅深色都看得见。
         solid:
-          "border border-accent-800 bg-accent-700 font-semibold text-text-white shadow-xs hover:bg-accent-800 disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
+          "border border-cta-hover bg-cta font-semibold text-cta-foreground shadow-xs hover:bg-cta-hover disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
       },
       size: {
         default: "h-9 rounded-2lg p-2 has-[>svg]:px-3",

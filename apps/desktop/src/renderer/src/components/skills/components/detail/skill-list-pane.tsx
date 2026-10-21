@@ -155,7 +155,7 @@ export function SkillListPane({
                     className={cx(
                       "flex size-5 shrink-0 items-center justify-center rounded-lg border transition-all cursor-pointer",
                       isSelected
-                        ? "border-accent-700 bg-accent-700 text-text-white shadow-xs"
+                        ? "border-cta bg-cta text-cta-foreground shadow-xs"
                         : "border-separator-border/80 bg-background-primary-default hover:border-text-tertiary"
                     )}
                     aria-label={t("pages.skills.listPane.toggleAria", { name: skill.name })}

@@ -119,7 +119,7 @@ function CheckpointRow(props: {
         type="button"
         disabled={disabled}
         onClick={onRestore}
-        className="shrink-0 cursor-pointer rounded-md bg-accent-700 px-2.5 py-1 text-caption-2-medium text-text-white hover:bg-accent-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="shrink-0 cursor-pointer rounded-md bg-cta px-2.5 py-1 text-caption-2-medium text-cta-foreground hover:bg-cta-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {t("chat.reviewCheckpointRestore")}
       </button>

@@ -55,7 +55,7 @@ function TriggerChip({
       className={cx(
         "rounded-full px-2.5 py-1 text-caption-1-medium",
         selected
-          ? "bg-accent-700 font-semibold text-text-white"
+          ? "bg-cta font-semibold text-cta-foreground"
           : "bg-background-secondary-default text-text-unselected ring-1 ring-border-button-default"
       )}
     >

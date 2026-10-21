@@ -927,7 +927,7 @@ test("P3a 排队行标签：停着说「已暂停 / Paused」，没停「排队�
 })
 
 // ---- luna #163 真机门 P2④：对比度 ≥ 4.5:1（亮 / 暗）----
-test("P2④ 对比度：说明行灰字 / 次按钮 / 紧凑行标签用 neutral-600（亮）/ neutral-400（暗），时间线泡标签亮色 neutral-700，「继续」白字落在 accent-700 上（悬停 800）；全部 ≥ 4.5", () => {
+test("P2④ 对比度：说明行灰字 / 次按钮 / 紧凑行标签用 neutral-600（亮）/ neutral-400（暗），时间线泡标签亮色 neutral-700，「继续」走 bg-cta（默认 accent-700 白字，悬停 800）；全部 ≥ 4.5", () => {
   const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
   const lum = (h: string) => {
     const [r, g, b] = hex(h).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
@@ -948,7 +948,7 @@ test("P2④ 对比度：说明行灰字 / 次按钮 / 紧凑行标签用 neutral
   assert.equal(view.QUEUE_MUTED_TEXT, "text-neutral-600 dark:text-neutral-400")
   const row = readSource("../components/ai-chat/thread/queue-paused-row.tsx")
   assert.match(row, /const secondaryClass = `[^`]*\$\{QUEUE_MUTED_TEXT\}/)
-  assert.match(row, /const primaryClass =\s+"[^"]*bg-accent-700 [^"]*text-white hover:bg-accent-800"/)
+  assert.match(row, /const primaryClass =\s+"[^"]*bg-cta [^"]*text-cta-foreground hover:bg-cta-hover"/)
   assert.ok(!/text-text-secondary|bg-accent-500/.test(row.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")), "说明行不再用 4.43 / 3.76 的旧色")
   const turn = readSource("../components/ai-chat/thread/turns/queued-user-turn.tsx")
   assert.match(turn, /data-testid="queued-row-label" className=\{cx\("shrink-0", QUEUE_MUTED_TEXT\)\}/)

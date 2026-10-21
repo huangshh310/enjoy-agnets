@@ -39,7 +39,7 @@ export function PlanCard({ messageId }: { messageId: string }) {
         {actionable ? (
           <button
             type="button"
-            className="cursor-pointer rounded-md bg-accent-700 px-2.5 py-1 text-caption-2-medium text-text-white"
+            className="cursor-pointer rounded-md bg-cta px-2.5 py-1 text-caption-2-medium text-cta-foreground"
             onClick={() => {
               setMode("agent")
               void sendComposerMessage({ content: t("chat.executePlanPrompt"), executePlan: true })

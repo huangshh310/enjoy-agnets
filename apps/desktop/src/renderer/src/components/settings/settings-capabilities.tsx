@@ -293,7 +293,7 @@ function FilterPill({
       className={cx(
         "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-caption-2-medium transition-colors cursor-pointer",
         active
-          ? "bg-accent-700 text-white font-semibold shadow-2xs"
+          ? "bg-cta text-cta-foreground font-semibold shadow-2xs"
           : "bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
       )}
     >

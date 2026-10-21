@@ -22,7 +22,7 @@ export function ExploreDesktopBanner() {
         <p className="mt-0.5 text-text-secondary">{t("chat.surfaceDesktopInterceptBody")}</p>
         <button
           type="button"
-          className="mt-2 h-7 cursor-pointer rounded-lg bg-accent-700 px-2.5 text-caption-1-semibold text-text-white"
+          className="mt-2 h-7 cursor-pointer rounded-lg bg-cta px-2.5 text-caption-1-semibold text-cta-foreground"
           onClick={() => useChatStore.getState().setMode(applyComposerSurface(mode, "execute"))}
         >
           {t("chat.surfaceSwitchExecute")}
