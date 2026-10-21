@@ -37,7 +37,7 @@ export function AgentToolOmpLogin({
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder={t("settings.agentTools.ompLoginSearch")}
-        className="h-8 w-full rounded-lg border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-regular text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent-500"
+        className="h-8 w-full rounded-lg border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-regular text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"
       />
       <div className="max-h-48 space-y-1 overflow-y-auto">
         {pending.map((item) => (

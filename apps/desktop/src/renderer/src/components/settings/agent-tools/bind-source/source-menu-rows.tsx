@@ -50,7 +50,7 @@ export function SourceSearch({ query, onChange }: { query: string; onChange: (va
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => event.stopPropagation()}
         placeholder={t("settings.agentTools.searchProviders")}
-        className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default/50 pr-2 pl-8 text-caption-2-medium outline-none focus:border-accent-500"
+        className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default/50 pr-2 pl-8 text-caption-2-medium outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"
       />
     </div>
   )

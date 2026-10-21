@@ -82,7 +82,7 @@ function ModelPicker({
           }}
           placeholder={t("settings.agentTools.bindModelHint")}
           aria-label={t("settings.agentTools.bindModelLabel")}
-          className="h-11 w-full rounded-2xl border border-border-button-default bg-background-primary-default px-3 font-mono text-caption-1-medium outline-none focus:ring-1 focus:ring-accent-500"
+          className="h-11 w-full rounded-2xl border border-border-button-default bg-background-primary-default px-3 font-mono text-caption-1-medium outline-none focus:ring-2 focus:ring-border-focus-ring"
         />
       </BindField>
     )

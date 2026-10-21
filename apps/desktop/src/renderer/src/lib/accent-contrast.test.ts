@@ -91,6 +91,8 @@ function buildScope(ctx: Ctx, area: Area): Map<string, string> {
   if (ctx.skin === "ink" || ctx.skin === "sketch") {
     sels.push(`html[data-skin="${ctx.skin}"]`)
     if (dark) sels.push(`html.dark[data-skin="${ctx.skin}"]`)
+    // 手绘亮色：焦点环 / 发送按钮边改墨色
+    if (ctx.skin === "ink" && !dark) sels.push('html[data-skin="ink"]:not(.dark)')
   }
   // use-theme-accent.ts 行内写的 500 / 600 优先级最高。
   return layerScope(table, sels, { "--color-accent-500": ctx.accent.c500, "--color-accent-600": ctx.accent.c600 })
@@ -142,27 +144,32 @@ const composerBgTokens = () => {
   const [, light, dark] = pick(src("components/ai-chat/ai-chat-composer.tsx"), /border border-border-button-default bg-([\w-]+) dark:bg-([\w-]+)/, "输入框底色")
   return { light: light!, dark: dark! }
 }
-/** 实测：手绘暗色输入框渲染出来是靛蓝（luna 真机取色），不是 --skin-ink-paper；两种都算。 */
+/** 实测：手绘暗色输入框渲染出来是靛蓝（luna 真机取色，发送按钮旁）。 */
 const INK_DARK_MEASURED = ["#323755", "#2d3351"] as const
+/** 实测：手绘亮色输入框是天空蓝渐变，发送按钮旁 #569ac3，上沿 #5caad4（luna r6 取色）。 */
+const INK_LIGHT_MEASURED = ["#569ac3", "#5caad4"] as const
 /**
  * 输入框真实底色（可能不止一个，取最差）。第一个是该皮肤的主值。
  *   经典：surface 上叠 bg-background-secondary-default（亮 = neutral-100 #f7f7f7）/ dark:bg-background-tertiary-default（neutral-800）。
  *   glass：无 GPU 回退下 frost chip 叠在主栏上。
- *   手绘：skins/ink.css 的 [data-frost="chip"] = --skin-ink-paper；暗色再加 luna 实测的靛蓝 #323755 / #2d3351。
- *   素描：skins/sketch.css 的 [data-frost="chip"] = --skin-sketch-sheet。
+ *   手绘：输入框同时带 .rounded-3xl.shadow-card，skins/ink.css 里天空那条规则特异性最高，所以底是天空渐变（不是 --skin-ink-paper）：
+ *         发送按钮旁实测（亮 #569ac3 / #5caad4，暗 #323755 / #2d3351）+ 渐变两端 --skin-ink-sky / --skin-ink-sky-bot。
+ *   素描：--skin-sketch-sheet。
  */
 function composerSurfaces(ctx: Ctx): [string, Rgba][] {
   const dark = ctx.mode === "dark"
   const main = scope(ctx, "main")
   if (ctx.skin === "glass") return [["glass frost chip", over(resolveColor("var(--skin-frost-chip)", main), surface(ctx, "main"))]]
   if (ctx.skin === "ink") {
-    const paper: [string, Rgba] = ["--skin-ink-paper", resolveColor("var(--skin-ink-paper)", main)]
-    return dark ? [...INK_DARK_MEASURED.map((h): [string, Rgba] => [`实测 ${h}`, resolveColor(h, main)]), paper] : [paper]
+    const measured = (dark ? INK_DARK_MEASURED : INK_LIGHT_MEASURED).map((h): [string, Rgba] => [`实测 ${h}`, resolveColor(h, main)])
+    return [...measured, ["--skin-ink-sky", resolveColor("var(--skin-ink-sky)", main)], ["--skin-ink-sky-bot", resolveColor("var(--skin-ink-sky-bot)", main)]]
   }
   if (ctx.skin === "sketch") return [["--skin-sketch-sheet", resolveColor("var(--skin-sketch-sheet)", main)]]
   const t = composerBgTokens()
   return [[dark ? t.dark : t.light, stack(ctx, "main", surface(ctx, "main"), dark ? t.dark : t.light)]]
 }
+/** 发送按钮旁的底色（间隔色要跟它几乎一样）：手绘只取实测那两个，渐变另一端离按钮远。 */
+const nearSend = (ctx: Ctx) => composerSurfaces(ctx).filter(([n]) => ctx.skin !== "ink" || n.startsWith("实测"))
 
 type Check = { item: string; label: string; min: number | null; fg: Rgba; bg: Rgba; ratio?: number }
 const TEXT = 4.5
@@ -457,7 +464,8 @@ function checks(ctx: Ctx): Check[] {
   const utilEdge = (kind: "ring" | "outline"): Rgba | null => {
     const width = lastTok(new RegExp(String.raw`^${kind}(?:-(\d+))?$`))
     if (width === undefined || width === "0") return null
-    const c = lastTok(new RegExp(String.raw`^${kind}-((?!\d|inset|offset|none|hidden|solid|dashed|dotted|double)[a-z][\w-]*)$`))
+    // 颜色可以带 /透明度（ring-accent-700/30 也要按真实叠色算，leo r5）
+    const c = lastTok(new RegExp(String.raw`^${kind}-((?!\d|inset|offset|none|hidden|solid|dashed|dotted|double)[a-z][\w-]*(?:\/\d+)?)$`))
     return col(ctx, "main", c ?? sendIcon)
   }
   const outerRing = utilEdge("outline") ?? utilEdge("ring") ?? ringColor(ctx, sendShadow, "outer")
@@ -700,119 +708,268 @@ test("启动时套用存下的强调色：App.tsx 模块加载时调 initThemeAc
   }
 })
 
-// ---------- 发送按钮：Tab 焦点环（luna r5 P2-1）与暗色最外圈（P2-2），五色 × 亮暗 × 经典 / glass / 手绘 / 素描 ----------
+// ---------- 全站焦点环（luna r5 / r6）：一个 token（--color-focus-ring）+ 一个 utility（focus-ring），五色 × 亮暗 × 经典 / glass / 手绘 / 素描 ----------
+// 亮 accent-700、暗 accent-400、手绘亮色墨色 #1A1612；2px 环 + 2px 间隔，间隔色 = 控件所在底色（--focus-ring-offset，各皮肤 / 输入框在 CSS 里设）。
+const INK = "#1a1612"
+/** 间隔色和所在底色要「看起来一样」：亮度比 ≤ 1.3（写死 #f7f7f7 放在手绘天空蓝上是 2.6，会被抓到）。 */
+const OFFSET_MATCH = 1.3
 const sendSrc = () => src("components/ai-chat/composer/runtime-interact/composer-send-split.tsx")
 const sendConst = (name: string) => pick(sendSrc(), new RegExp(`const ${name} =\\s*"([^"]*)"`), name)[1]!
-type FocusSpec = { width: number; offset: number; ring: { light: string; dark: string }; offsetColor: { light: string; dark: string }; cls: string }
-function sendFocusSpec(): FocusSpec {
-  const cls = sendConst("sendFocusRing")
-  const one = (re: RegExp, what: string) => pick(cls, re, `焦点环 ${what}`)[1]!
-  const ringL = one(/(?:^|\s)focus-visible:ring-((?!offset)[a-z][\w-]*)/, "环色（亮）")
-  const ringD = /(?:^|\s)dark:focus-visible:ring-((?!offset)[a-z][\w-]*)/.exec(cls)?.[1] ?? ringL
-  const offL = one(/(?:^|\s)focus-visible:ring-offset-([a-z][\w-]*)/, "间隔色（亮）")
-  const offD = /(?:^|\s)dark:focus-visible:ring-offset-([a-z][\w-]*)/.exec(cls)?.[1] ?? offL
-  return {
-    width: Number(one(/(?:^|\s)focus-visible:ring-(\d+)(?!\S)/, "宽度")),
-    offset: Number(one(/(?:^|\s)focus-visible:ring-offset-(\d+)(?!\S)/, "间隔宽度")),
-    ring: { light: ringL, dark: ringD },
-    offsetColor: { light: offL, dark: offD },
-    cls
-  }
+
+/** theme.css 里 @utility focus-ring 的 @apply 内容。 */
+function focusRingUtility(): string {
+  return pick(themeCss.replace(/\/\*[\s\S]*?\*\//g, ""), /@utility focus-ring \{\s*@apply ([^;]+);\s*\}/, "@utility focus-ring")[1]!.trim()
 }
-/** 发送按钮常态最外圈（不含焦点环）：1px 外圈阴影 > border > 底色，暗色取 dark: 覆盖。 */
-function sendEdge(ctx: Ctx): { name: string; color: Rgba } {
-  const cls = sendConst("sendClassName")
+
+/** 某个状态 + 若干额外选择器（按特异性从低到高）下解出来的 scope。 */
+const extraScopeCache = new Map<string, Map<string, string>>()
+function scopeWith(ctx: Ctx, area: Area, extra: string[]): Map<string, string> {
+  const key = `${ctx.accent.id}|${ctx.mode}|${ctx.skin}|${area}|${extra.join(",")}`
+  const hit = extraScopeCache.get(key)
+  if (hit) return hit
+  const base = scope(ctx, area)
+  const out = new Map(base)
+  for (const sel of extra) {
+    const decls = table.get(sel)
+    if (!decls) throw new Error(`CSS 里找不到选择器：${sel}`)
+    for (const [k, v] of decls) if (k !== "--color-accent-500" && k !== "--color-accent-600") out.set(k, v)
+  }
+  extraScopeCache.set(key, out)
+  return out
+}
+
+type FocusSurface = { name: string; area: Area; extra: string[]; bgs: [string, Rgba][]; near: [string, Rgba][] }
+/** 焦点环可能落在的底（每种皮肤各几块），以及该处 --focus-ring-offset 由哪些选择器决定。 */
+function focusSurfaces(ctx: Ctx): FocusSurface[] {
   const dark = ctx.mode === "dark"
-  const get = (prop: string) => (dark && new RegExp(`(?:^|\\s)dark:${prop}-([a-z][\\w-]*)`).exec(cls)?.[1]) || pick(cls, new RegExp(`(?:^|\\s)${prop}-([a-z][\\w-]*)`), `发送按钮 ${prop}`)[1]!
-  const shadow = get("shadow")
+  const main = scope(ctx, "main")
+  const chip = ['[data-frost="chip"]', ...(dark ? ['.dark [data-frost="chip"]'] : [])]
+  const composer = (extra: string[]): FocusSurface => ({ name: "输入框", area: "main", extra: [...chip, ...extra], bgs: composerSurfaces(ctx), near: nearSend(ctx) })
+  const one = (name: string, area: Area, extra: string[], bg: Rgba): FocusSurface => ({ name, area, extra, bgs: [[name, bg]], near: [[name, bg]] })
+  if (ctx.skin === "classic") {
+    return [one("主栏 / 卡片", "main", [], surface(ctx, "main")), one("侧栏", "sidebar", [], surface(ctx, "sidebar")), composer([])]
+  }
+  if (ctx.skin === "glass") {
+    const noGpuChip = [`html[data-skin="glass"]:not([data-gpu-compositing="on"]) [data-frost="chip"]`, ...(dark ? [`html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) [data-frost="chip"]`] : [])]
+    return [one("主栏（无 GPU 回退）", "main", [], surface(ctx, "main")), one("侧栏 / 抽屉", "sidebar", [], surface(ctx, "sidebar")), one("frost 卡片", "main", [], card(ctx)), composer(noGpuChip)]
+  }
+  if (ctx.skin === "ink") {
+    const sky: [string, Rgba][] = [["--skin-ink-sky", resolveColor("var(--skin-ink-sky)", main)], ["--skin-ink-sky-bot", resolveColor("var(--skin-ink-sky-bot)", main)]]
+    const skyRule = 'html[data-skin="ink"] .rounded-3xl.shadow-card:not([data-pane-shell-deco="off"])'
+    const inkChip = ['html[data-skin="ink"] [data-frost="chip"].rounded-3xl.shadow-card', ...(dark ? ['html.dark[data-skin="ink"] [data-frost="chip"].rounded-3xl.shadow-card'] : [])]
+    return [
+      { name: "主栏 / 侧栏（天空渐变）", area: "main", extra: ['html[data-skin="ink"] main'], bgs: sky, near: sky },
+      one("纸色卡片", "main", ['html[data-skin="ink"] .settings-card'], resolveColor("var(--skin-ink-paper)", main)),
+      composer([skyRule, ...inkChip])
+    ]
+  }
+  const sheet = resolveColor("var(--skin-sketch-sheet)", main)
+  return [one("主栏 / 卡片（sheet）", "main", [], sheet), composer(['html[data-skin="sketch"] [data-frost="chip"]'])]
+}
+
+/** 类名串里的「常态最外圈」：常驻 ring-* / outline-*（含 /透明度）> 1px 外圈阴影 > border > 底色；暗色叠 dark: 的。 */
+function restingEdge(ctx: Ctx, cls: string): { name: string; color: Rgba } {
+  const dark = ctx.mode === "dark"
+  const plain = cls.split(/\s+/).filter((t) => t && !t.includes(":"))
+  const darkOnly = cls.split(/\s+/).filter((t) => t.startsWith("dark:") && !t.slice(5).includes(":")).map((t) => t.slice(5))
+  const toks = dark ? [...plain, ...darkOnly] : plain
+  const last = (re: RegExp) => toks.filter((t) => re.test(t)).map((t) => re.exec(t)![1] ?? "").pop()
+  const COLOR = String.raw`((?!\d|inset|offset|none|hidden|solid|dashed|dotted|double|\[)[a-z][\w-]*(?:\/\d+)?)`
+  for (const kind of ["outline", "ring"] as const) {
+    const width = last(new RegExp(String.raw`^${kind}(?:-(\d+))?$`))
+    if (width === undefined || width === "0") continue
+    const c = last(new RegExp(String.raw`^${kind}-${COLOR}$`))
+    return { name: `${kind}-${width || "1"} ${c ?? "currentColor"}`, color: c ? col(ctx, "main", c) : col(ctx, "main", last(/^text-([\w-]+)$/) ?? "text-primary") }
+  }
+  const shadow = last(/^shadow-([a-z][\w-]*)$/) ?? "none"
   const outer = ringColor(ctx, shadow, "outer")
   if (outer) return { name: `shadow-${shadow}`, color: outer }
-  const border = get("border")
-  if (border === "transparent") return { name: `底 ${get("bg")}`, color: col(ctx, "main", get("bg")) }
+  const border = last(new RegExp(String.raw`^border-${COLOR}$`))
+  const bg = last(/^bg-([a-z][\w-]*)$/)!
+  if (!border || border === "transparent") return { name: `底 ${bg}`, color: col(ctx, "main", bg) }
   return { name: `border-${border}`, color: col(ctx, "main", border) }
 }
-type FocusRow = { ctx: Ctx; check: "焦点环 vs 输入框底" | "焦点环 vs 间隔色" | "常态最外圈 vs 输入框底"; bg: string; ratio: number }
+
+type FocusRow = { ctx: Ctx; check: "焦点环 vs 所在底" | "焦点环 vs 间隔色" | "间隔色 ≈ 所在底" | "发送按钮常态最外圈 vs 输入框底"; where: string; ratio: number }
 function focusRows(): FocusRow[] {
-  const spec = sendFocusSpec()
   const out: FocusRow[] = []
   for (const ctx of FOCUS_CONTEXTS) {
-    const dark = ctx.mode === "dark"
-    const ring = col(ctx, "main", dark ? spec.ring.dark : spec.ring.light)
-    const offTok = dark ? spec.offsetColor.dark : spec.offsetColor.light
-    const edge = sendEdge(ctx)
-    for (const [bgName, bg] of composerSurfaces(ctx)) {
-      // 焦点环是 box-shadow：按钮外先画 2px 间隔（offset 色），再画 2px 环；环的外侧贴着输入框底。
-      const offset = over(col(ctx, "main", offTok), bg)
-      out.push({ ctx, check: "焦点环 vs 输入框底", bg: bgName, ratio: contrast(over(ring, bg), bg) })
-      out.push({ ctx, check: "焦点环 vs 间隔色", bg: `${offTok} on ${bgName}`, ratio: contrast(over(ring, offset), offset) })
-      out.push({ ctx, check: "常态最外圈 vs 输入框底", bg: `${edge.name} on ${bgName}`, ratio: contrast(over(edge.color, bg), bg) })
+    const ring = col(ctx, "main", "focus-ring")
+    for (const s of focusSurfaces(ctx)) {
+      const sc = scopeWith(ctx, s.area, s.extra)
+      const offsetRaw = resolveColor("var(--focus-ring-offset)", sc)
+      for (const [bgName, bg] of s.bgs) {
+        const offset = over(offsetRaw, bg)
+        out.push({ ctx, check: "焦点环 vs 所在底", where: `${s.name} ${bgName}`, ratio: contrast(over(ring, bg), bg) })
+        out.push({ ctx, check: "焦点环 vs 间隔色", where: `${s.name} ${bgName}`, ratio: contrast(over(ring, offset), offset) })
+      }
+      for (const [bgName, bg] of s.near) out.push({ ctx, check: "间隔色 ≈ 所在底", where: `${s.name} ${bgName} 间隔 ${toHex(over(offsetRaw, bg))}`, ratio: contrast(over(offsetRaw, bg), bg) })
+    }
+    for (const name of ["sendClassName", "mutedSendClassName"] as const) {
+      if (name === "mutedSendClassName") continue // 未就绪按钮是中性灰描边，不在强调色范围
+      const edge = restingEdge(ctx, sendConst(name))
+      for (const [bgName, bg] of composerSurfaces(ctx)) out.push({ ctx, check: "发送按钮常态最外圈 vs 输入框底", where: `${edge.name} on ${bgName}`, ratio: contrast(over(edge.color, bg), bg) })
     }
   }
   return out
 }
+const FOCUS_CHECKS = ["焦点环 vs 所在底", "焦点环 vs 间隔色", "发送按钮常态最外圈 vs 输入框底"] as const
 function focusReport(rows: FocusRow[]): string {
   const lines = ["| 检查 | 强调色 | 亮·经典 | 亮·glass | 亮·手绘 | 亮·素描 | 暗·经典 | 暗·glass | 暗·手绘 | 暗·素描 |", "|---|---|---|---|---|---|---|---|---|---|"]
-  for (const check of ["焦点环 vs 输入框底", "焦点环 vs 间隔色", "常态最外圈 vs 输入框底"] as const) {
+  for (const check of [...FOCUS_CHECKS, "间隔色 ≈ 所在底"] as const) {
     for (const accent of THEME_ACCENTS) {
       const cells = (["light", "dark"] as const).flatMap((mode) =>
         FOCUS_SKINS.map((skin) => {
           const rs = rows.filter((r) => r.check === check && r.ctx.accent.id === accent.id && r.ctx.mode === mode && r.ctx.skin === skin)
-          return Math.min(...rs.map((r) => r.ratio)).toFixed(2)
+          const v = check === "间隔色 ≈ 所在底" ? Math.max(...rs.map((r) => r.ratio)) : Math.min(...rs.map((r) => r.ratio))
+          return v.toFixed(2)
         })
       )
-      lines.push(`| ${check} | ${accent.id} | ${cells.join(" | ")} |`)
+      lines.push(`| ${check}${check === "间隔色 ≈ 所在底" ? "（最大，≤ 1.3）" : ""} | ${accent.id} | ${cells.join(" | ")} |`)
     }
   }
   return lines.join("\n")
 }
 
-test("发送按钮 Tab 焦点：去掉浏览器默认 outline，2px accent 环（亮 700 / 暗 400）+ 2px 间隔，间隔色 = 输入框底，两个状态的按钮都套上", () => {
-  const spec = sendFocusSpec()
-  assert.match(spec.cls, /(?:^|\s)focus-visible:outline-none(?!\S)/, "要有 focus-visible:outline-none（Chromium 默认 1px 橙色 outline 对输入框只有 2.2）")
-  assert.match(spec.cls, /(?:^|\s)outline-none(?!\S)/)
-  assert.ok(spec.width >= 2, `焦点环宽度 ${spec.width}px`)
-  assert.ok(spec.offset >= 2, `焦点环间隔 ${spec.offset}px`)
-  assert.deepEqual(spec.ring, { light: "accent-700", dark: "accent-400" })
-  const bg = composerBgTokens()
-  assert.deepEqual(spec.offsetColor, { light: bg.light, dark: bg.dark }, "间隔色要跟输入框底同一个 token")
-  // 亮色经典输入框真实底 = #f7f7f7
-  const lightClassic: Ctx = { accent: THEME_ACCENTS[0]!, mode: "light", skin: "classic" }
-  assert.equal(toHex(composerSurfaces(lightClassic)[0]![1]), "#f7f7f7")
-  assert.equal(toHex(col(lightClassic, "main", spec.offsetColor.light)), "#f7f7f7")
-  // Stop、发送（就绪 / 未就绪）两处 className 都拼上 sendFocusRing（第三个是 disabled 按钮，Tab 不到）
-  const code = sendSrc()
-  const uses = [...code.matchAll(/className=\{`\$\{[^`]*\}`\}/g)].map((m) => m[0])
-  assert.equal(uses.length, 2, `发送按钮 className 拼接处：${uses.join(" / ")}`)
-  for (const u of uses) assert.match(u, /\$\{sendFocusRing\}/)
-  assert.doesNotMatch(code, /className=\{(?:sendClassName|mutedSendClassName)\}/, "不能有漏掉焦点环的发送按钮")
+// ---------- 源码扫描：所有交互控件的焦点样式 ----------
+const FOCUS_VARIANT = /(?:^|:)(?:focus|focus-visible|focus-within|group-focus-visible|peer-focus-visible|has-\[.*focus.*\]|data-\[focus[^\]]*\]):$/
+type FocusHit = { where: string; tok: string; why: string }
+/** 一个类名单元里不合规的焦点片段。 */
+function badFocusTokens(text: string): string[] {
+  const out: string[] = []
+  const toks = text.split(/\s+/).filter(Boolean)
+  const split = (t: string) => {
+    const m = /^((?:[\w-]*(?:\[[^\s]*?\])?(?:\/[\w-]+)?:)*)(.*)$/.exec(t)!
+    return { pfx: m[1]!, util: m[2]! }
+  }
+  const parsed = toks.map((t) => ({ t, ...split(t) }))
+  const focusBorderPfx = new Set(parsed.filter((p) => FOCUS_VARIANT.test(p.pfx) && p.util === "border-border-focus-ring").map((p) => p.pfx))
+  for (const { t, pfx, util } of parsed) {
+    if (/^ring-offset-(?!\d|\(--focus-ring-offset\))/.test(util)) out.push(`${t}（间隔色写死，要走 --focus-ring-offset）`)
+    if (!FOCUS_VARIANT.test(pfx)) continue
+    if (/^ring-(?!\d|inset|offset|\[)[a-z][\w-]*(?:\/\d+)?$/.test(util) && util !== "ring-border-focus-ring") out.push(`${t}（焦点环颜色只能是 border-focus-ring / focus-ring，不能 accent-* / ring / 透明度）`)
+    if (/^ring(?:-1|-\[\d+px\]|-[3-9])?$/.test(util) && !(util === "ring-1" && focusBorderPfx.has(pfx))) out.push(`${t}（焦点环 2px；只有边框变色的输入框可以 border + ring-1 = 2px）`)
+    if (/^border-(?:accent-\d+|ring|primary)(?:\/\d+)?$/.test(util) || /^border-border-focus-ring\/\d+$/.test(util)) out.push(`${t}（焦点边框要用 border-border-focus-ring）`)
+    if (/^outline-(?!none|hidden|offset)(?:\d|[a-z])/.test(util)) out.push(`${t}（焦点不要再画 outline，走 focus-ring）`)
+  }
+  return out
+}
+function focusScan(): FocusHit[] {
+  const out: FocusHit[] = []
+  for (const u of allClassUnits()) for (const why of badFocusTokens(u.text)) out.push({ where: u.where, tok: why.split("（")[0]!, why })
+  return out
+}
+
+test("焦点环 token / utility：亮 700、暗 400、手绘亮色墨色 #1A1612；border-focus-ring / --ring 跟它走；utility = 2px 环 + 2px 间隔（--focus-ring-offset）+ outline-hidden", () => {
+  const util = focusRingUtility()
+  for (const part of ["focus-visible:outline-hidden", "focus-visible:ring-2", "focus-visible:ring-(--color-focus-ring)", "focus-visible:ring-offset-2", "focus-visible:ring-offset-(--focus-ring-offset)"]) {
+    assert.ok(util.split(/\s+/).includes(part), `@utility focus-ring 缺 ${part}：${util}`)
+  }
+  assert.doesNotMatch(util, /outline-none/, "用 outline-hidden（Windows 高对比度下保留焦点框），不要 outline-none")
+  assert.doesNotMatch(util, /ring-offset-(?!2\b|\(--focus-ring-offset\))/, "间隔色不能写死")
+  for (const ctx of FOCUS_CONTEXTS) {
+    const ring = toHex(col(ctx, "main", "focus-ring"))
+    const want = ctx.skin === "ink" && ctx.mode === "light" ? INK : toHex(col(ctx, "main", ctx.mode === "dark" ? "accent-400" : "accent-700"))
+    assert.equal(ring, want, `${ctx.accent.id} ${ctx.mode} ${ctx.skin} 焦点环`)
+    assert.equal(toHex(col(ctx, "main", "border-focus-ring")), ring, "border-focus-ring 跟焦点环同色")
+    assert.equal(toHex(resolveColor("var(--ring)", scope(ctx, "main"))), ring, "shadcn --ring 跟焦点环同色")
+    const edge = toHex(col(ctx, "main", "send-edge"))
+    const wantEdge = ctx.skin === "ink" && ctx.mode === "light" ? INK : ctx.mode === "dark" ? toHex(col(ctx, "main", "accent-400")) : toHex(col(ctx, "main", "cta-edge"))
+    assert.equal(edge, wantEdge, `${ctx.accent.id} ${ctx.mode} ${ctx.skin} 发送按钮常态最外圈`)
+  }
 })
 
-test("发送按钮焦点环 / 常态最外圈：五色 × 亮暗 × 经典 / glass / 手绘 / 素描，对输入框真实底色 ≥ 3（含手绘暗色靛蓝 #323755 / #2d3351）", () => {
+test("全站焦点环：五色 × 亮暗 × 经典 / glass / 手绘 / 素描，对所在底 ≥ 3、对间隔色 ≥ 3、间隔色 ≈ 所在底（手绘亮色按真实天空渐变 #569ac3 / #5caad4）", () => {
   const rows = focusRows()
   if (process.env.ACCENT_CONTRAST_REPORT) console.log(`\n${focusReport(rows)}\n`)
   assert.equal(new Set(rows.map((r) => `${r.ctx.accent.id}|${r.ctx.mode}|${r.ctx.skin}`)).size, THEME_ACCENTS.length * 2 * FOCUS_SKINS.length)
-  assert.ok(rows.some((r) => r.ctx.skin === "ink" && r.ctx.mode === "dark" && r.bg.includes("#323755")))
-  const bad = rows.filter((r) => r.ratio < GRAPHIC).map((r) => `${r.check} [${r.ctx.accent.id} ${r.ctx.mode} ${r.ctx.skin}] ${r.bg} = ${r.ratio.toFixed(2)}`)
+  assert.ok(rows.some((r) => r.ctx.skin === "ink" && r.ctx.mode === "light" && r.where.includes("#569ac3")), "手绘亮色要按实测天空蓝算")
+  const bad = rows
+    .filter((r) => (r.check === "间隔色 ≈ 所在底" ? r.ratio > OFFSET_MATCH : r.ratio < GRAPHIC))
+    .map((r) => `${r.check} [${r.ctx.accent.id} ${r.ctx.mode} ${r.ctx.skin}] ${r.where} = ${r.ratio.toFixed(2)}`)
   assert.deepEqual(bad, [])
 })
 
-test("发送按钮暗色最外圈在所有皮肤都是 1px accent-400（底仍是 500）；反向对照：旧的 500 外圈在手绘暗色靛蓝上判不过", () => {
-  const cls = sendConst("sendClassName")
-  for (const skin of FOCUS_SKINS) {
-    for (const accent of THEME_ACCENTS) {
-      const ctx: Ctx = { accent, mode: "dark", skin }
-      const edge = sendEdge(ctx)
-      assert.equal(edge.name, "border-accent-400", `${accent.id} ${skin} 暗色最外圈`)
-    }
+test("发送 / Stop 按钮：focus-ring + border-send-edge，类名里不写死颜色；反向对照：手绘亮色用 accent 边 / 焦点环过不了", () => {
+  for (const name of ["sendClassName", "mutedSendClassName"]) {
+    const cls = sendConst(name)
+    assert.match(cls, /(?:^|\s)focus-ring(?!\S)/, `${name} 要用 focus-ring`)
+    assert.deepEqual(badFocusTokens(cls), [], name)
   }
+  const cls = sendConst("sendClassName")
+  assert.match(cls, /(?:^|\s)border-send-edge(?!\S)/)
+  assert.doesNotMatch(cls, /(?:^|\s)dark:(?:border|shadow|ring)-/, "暗色最外圈由 --color-send-edge 决定，不要再写 dark:border-* / dark:shadow-*")
   assert.match(cls, /(?:^|\s)dark:bg-accent-500(?!\S)/, "暗色底不变（500）")
-  const at = (id: string): Ctx => ({ accent: THEME_ACCENTS.find((a) => a.id === id)!, mode: "dark", skin: "ink" })
-  const indigo = resolveColor(INK_DARK_MEASURED[0], scope(at("slate"), "main"))
-  assert.ok(contrast(col(at("slate"), "main", "accent-500"), indigo) < GRAPHIC, "旧的 slate 500 外圈对 #323755 必须判不过（2.43）")
-  assert.ok(contrast(col(at("purple"), "main", "accent-500"), indigo) < GRAPHIC, "旧的紫 500 外圈对 #323755 必须判不过（2.74）")
-  // skins/*.css 里输入框（data-frost="chip"）的底色还是测试假设的那个 token（改了要同步 composerSurfaces()）
+  const code = sendSrc()
+  assert.equal([...code.matchAll(/className=\{(?:sendClassName|ready \? sendClassName : mutedSendClassName)\}/g)].length, 2, "Stop 和发送都用这两个常量")
+  // 反向对照：手绘亮色天空蓝上，accent-700 焦点环 / 琥珀 700 边都 < 3
+  const at = (id: string): Ctx => ({ accent: THEME_ACCENTS.find((a) => a.id === id)!, mode: "light", skin: "ink" })
+  const sky = resolveColor(INK_LIGHT_MEASURED[0], scope(at("blue"), "main"))
+  assert.ok(contrast(col(at("blue"), "main", "accent-700"), sky) < GRAPHIC, "蓝 700 在 #569ac3 上必须判不过")
+  assert.ok(contrast(col(at("amber"), "main", "cta-edge"), sky) < GRAPHIC, "琥珀 cta-edge 在 #569ac3 上必须判不过")
+  assert.ok(contrast(resolveColor(INK, scope(at("blue"), "main")), sky) >= 5.5, "墨色在 #569ac3 上 ≈ 5.9")
+  // 暗色反向对照：旧的 500 外圈在手绘靛蓝上判不过
+  const dk = (id: string): Ctx => ({ accent: THEME_ACCENTS.find((a) => a.id === id)!, mode: "dark", skin: "ink" })
+  const indigo = resolveColor(INK_DARK_MEASURED[0], scope(dk("slate"), "main"))
+  assert.ok(contrast(col(dk("slate"), "main", "accent-500"), indigo) < GRAPHIC)
+})
+
+test("源码扫描：交互控件不再有 ring-accent-* / 透明度焦点环 / ring-1 / 写死的间隔色 / 焦点 outline；luna 点名的控件都走统一焦点环", () => {
+  assert.deepEqual(focusScan().map((h) => `${h.where} ${h.why}`), [])
+  let units = 0
+  for (const u of allClassUnits()) if (/(?:^|\s)focus-ring(?!\S)/.test(u.text) || /focus[\w-]*:ring-border-focus-ring/.test(u.text)) units++
+  assert.ok(units >= 70, `走统一焦点环的控件太少：${units}`)
+  // 自检：几种旧写法都要被抓到
+  for (const old of [
+    "focus-visible:ring-2 focus-visible:ring-accent-500",
+    "focus-visible:ring-2 focus-visible:ring-accent-700/30",
+    "focus-visible:ring-1 focus-visible:ring-border-focus-ring",
+    "focus-visible:ring-[3px] focus-visible:ring-ring/50",
+    "focus:border-accent-500",
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-background-secondary-default",
+    "group-focus-visible:ring-2 group-focus-visible:ring-accent-500",
+    "focus-visible:outline-2 focus-visible:outline-accent-500"
+  ]) assert.ok(badFocusTokens(old).length > 0, `没抓到：${old}`)
+  assert.deepEqual(badFocusTokens("focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"), [], "输入框 border + ring-1 = 2px 合规")
+  // luna 点名：发送 / Stop、输入框焦点边、设置按钮（ui/button + base/buttons）、皮肤卡、强调色选项、对话框关闭按钮
+  const named: [string, RegExp][] = [
+    ["apps/desktop/src/renderer/src/components/ai-chat/ai-chat-composer.tsx", /isFocused && "border-border-focus-ring ring-1 ring-border-focus-ring /],
+    ["packages/ui/components/ui/button.tsx", /focus-ring/],
+    ["packages/ui/components/base/buttons/button.tsx", /focus-ring/],
+    ["packages/ui/components/base/buttons/icon-button.tsx", /focus-ring/],
+    ["packages/ui/components/base/buttons/close-button.tsx", /focus-ring/],
+    ["packages/ui/components/ui/dialog.tsx", /focus-ring/],
+    ["apps/desktop/src/renderer/src/components/settings/appearance/appearance-skin-card.tsx", /group-focus-visible:ring-2 group-focus-visible:ring-border-focus-ring/],
+    ["apps/desktop/src/renderer/src/components/settings/appearance/appearance-accent-picker.tsx", /select-none focus-ring/]
+  ]
+  for (const [file, re] of named) assert.match(read(file), re, file)
+})
+
+test("没写焦点样式的控件不再是 Chromium 默认橙色 outline：base 层 :focus-visible 用焦点环颜色 2px + 2px 透明间隔；隐藏复选框由容器画；MCP 原生复选框（#168）不动", () => {
   const flat = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ")
-  assert.match(flat(inkCss), /html\[data-skin="ink"\] \[data-frost="chip"\] \{[^}]*background-color: var\(--skin-ink-paper\);/)
+  assert.match(flat(globalsCss), /@layer base \{ :focus-visible:not\(input\[type="checkbox"\]\) \{ outline: 2px solid var\(--color-focus-ring\); outline-offset: 2px; \} \}/)
+  const toggles: [string, string][] = [
+    ["packages/ui/components/application/theme/day-night-toggle.css", "theme-switch"],
+    ["apps/desktop/src/renderer/src/components/ai-chat/sidebar/locale-switch.css", "locale-switch"]
+  ]
+  for (const [file, c] of toggles) {
+    const css = flat(read(file))
+    assert.match(css, new RegExp(String.raw`\.${c}__checkbox \{ outline: none; \}`), `${file} 隐藏复选框不画 Chromium 默认 outline`)
+    assert.match(css, new RegExp(String.raw`\.${c}:has\(\.${c}__checkbox:focus-visible\) \.${c}__container \{ outline: 2px solid var\(--color-focus-ring\);`), `${file} 容器只在键盘焦点时画焦点环颜色`)
+    assert.doesNotMatch(css, /:focus-within/, `${file} 不用 focus-within（鼠标点也会出）`)
+  }
+  // 任何 CSS 里的 outline 颜色都只能是焦点环 token
+  for (const file of ["packages/ui/styles/globals.css", "packages/ui/styles/theme.css", ...toggles.map(([f]) => f)]) {
+    for (const m of flat(read(file)).matchAll(/outline:\s*\d+px\s+solid\s+([^;]+);/g)) assert.match(m[1]!, /^var\(--color-(?:border-)?focus-ring\)$/, `${file} outline 颜色 ${m[1]}`)
+  }
+  assert.match(read("apps/desktop/src/renderer/src/components/mcp/components/mcp-create-form-body.tsx"), /type="checkbox"/, "MCP 原生复选框还在（#168 单独处理）")
+})
+
+test("各皮肤输入框 / 底色真的是测试假设的那样（改了要同步 composerSurfaces / focusSurfaces）", () => {
+  const flat = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ")
+  // 手绘：输入框同时带 rounded-3xl + shadow-card，命中天空渐变那条（特异性 0,4,1 高于 [data-frost=chip] 的 0,2,1 和纸色卡片的 0,3,3）
+  assert.match(src("components/ai-chat/ai-chat-composer.tsx"), /data-frost="chip"[\s\S]{0,200}rounded-3xl[\s\S]{0,200}shadow-card/)
+  assert.match(flat(inkCss), /html\[data-skin="ink"\] \.rounded-3xl\.shadow-card:not\(\[data-pane-shell-deco="off"\]\),?[^{]*\{[^}]*background-color: var\(--skin-ink-sky\);[^}]*linear-gradient\(to bottom, var\(--skin-ink-sky\) 0%, var\(--skin-ink-sky-bot\) 100%\)/)
   assert.match(flat(sketchCss), /html\[data-skin="sketch"\] \[data-frost="chip"\],[^{]*\{[^}]*background-color: var\(--skin-sketch-sheet\);/)
 })
 

@@ -78,7 +78,7 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={t("settings.agentTools.searchPlaceholder")}
-            className="h-7 w-36 rounded-lg border border-border-button-default bg-background-primary-default pr-2.5 pl-8 text-caption-2-medium text-text-primary shadow-2xs outline-none placeholder:text-text-tertiary hover:border-border-button-hover focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+            className="h-7 w-36 rounded-lg border border-border-button-default bg-background-primary-default pr-2.5 pl-8 text-caption-2-medium text-text-primary shadow-2xs outline-none placeholder:text-text-tertiary hover:border-border-button-hover focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"
           />
         </div>
       </div>

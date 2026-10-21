@@ -216,7 +216,7 @@ export function CapabilitySettings() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("settings.capabilities.searchPlaceholder")}
-              className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pl-8 pr-2.5 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring"
+              className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pl-8 pr-2.5 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring"
             />
           </div>
         </div>

@@ -236,7 +236,13 @@
   --color-border-sidebar-profile-hover: var(--color-neutral-300);
   --color-separator-border:        var(--color-neutral-200);
   --color-separator-border-strong: var(--color-neutral-200);
-  --color-border-focus-ring:       var(--color-accent-500);
+  /* 焦点环颜色（全站唯一）：亮 700、暗 400（.dark）、手绘亮色墨色 #1A1612（skins/ink.css）。
+   * 原来是 accent-500：琥珀 / 绿对白底只有 2.15 / 2.54。border-focus-ring / --ring 都跟它走。 */
+  --color-focus-ring:              var(--color-accent-700);
+  --color-border-focus-ring:       var(--color-focus-ring);
+  /* 焦点环 2px 间隔的颜色 = 控件所在那块底色。默认是主栏卡片底；输入框 / 侧栏 / 各皮肤在自己的规则里改这个变量，
+   * 不要在类名里写死 ring-offset-<颜色>。 */
+  --focus-ring-offset:             var(--color-background-primary-default);
   /* 开关关态轨道的描边：轨道底色和卡片几乎一样（glass 下 1.04），靠描边做到 ≥ 3:1。 */
   --color-switch-off-border:       var(--color-neutral-500);
 
@@ -401,6 +407,8 @@
   /* 亮的强调色（暗色下的 accent-400/500）上放的深色图形：开关开态滑块、发送按钮图标。
    * 白色放在 500 上琥珀 / 绿只有 2.15 / 2.54；这个近黑在五色 500 上 ≥ 3.7。 */
   --color-on-accent-bright: var(--color-neutral-950);
+  /* 发送 / Stop 按钮常态最外圈：亮色跟主按钮描边（cta-edge），暗色 400（.dark），手绘亮色墨色（skins/ink.css）。 */
+  --color-send-edge: var(--color-cta-edge);
 
   --gradient-button-danger-default:   linear-gradient(180deg, var(--color-red-500) 0%, var(--color-red-600) 100%);
   --gradient-button-danger-hover:     linear-gradient(180deg, var(--color-red-400) 0%, var(--color-red-500) 100%);
@@ -409,6 +417,9 @@
 }
 
 .dark {
+  /* 焦点环暗色 400（对 neutral-800 / 900、手绘靛蓝 ≥ 3）；发送按钮暗色最外圈同为 400。 */
+  --color-focus-ring: var(--color-accent-400);
+  --color-send-edge: var(--color-accent-400);
   /* 暗色复选框：700 填充对 neutral-800 只有 1.46–2.82，靠 500 内描边（3.18–7.04）撑住轮廓。 */
   --color-checkbox-rim: var(--color-accent-500);
   /* Foreground */
@@ -851,6 +862,8 @@
   --color-cta-foreground: var(--color-cta-foreground);
   --color-cta-edge:       var(--color-cta-edge);
   --color-on-accent-bright: var(--color-on-accent-bright);
+  --color-focus-ring: var(--color-focus-ring);
+  --color-send-edge: var(--color-send-edge);
   --color-heat-1: var(--color-heat-1);
   --color-heat-2: var(--color-heat-2);
   --color-heat-3: var(--color-heat-3);
@@ -995,6 +1008,13 @@
 /* Keep color feedback quick while the physical press motion remains soft.
  * The transform uses a shorter duration on press and the slower duration only
  * when returning to rest, so hover styles never inherit the 700ms timing. */
+/* 全站唯一的焦点环：2px、颜色 --color-focus-ring、2px 间隔（间隔色 --focus-ring-offset = 控件所在底色）。
+ * 用 outline-hidden 不用 outline-none：Windows 高对比度下仍保留一圈系统色焦点框。
+ * 只在 :focus-visible（键盘）出现，鼠标点不出。lib/accent-contrast.test.ts 按五色 × 亮暗 × 四皮肤校验 ≥ 3。 */
+@utility focus-ring {
+  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-(--focus-ring-offset);
+}
+
 @utility button-press-motion {
   transition:
     background-color var(--button-transition-ms) ease,

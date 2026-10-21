@@ -67,7 +67,7 @@ const styles = sortCx({
     "select-none cursor-pointer",
     "transition-colors duration-150 ease",
     "hover:text-text-primary",
-    "outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-border-focus-ring",
+    "outline-none focus-ring",
   ].join(" "),
   container: {
     "2xs": "size-4",

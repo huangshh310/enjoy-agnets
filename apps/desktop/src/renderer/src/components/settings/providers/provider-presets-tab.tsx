@@ -93,7 +93,7 @@ export function ProviderPresetsTab({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("settings.providers.searchPresets")}
-                className="w-full rounded-xl border border-border-button-default bg-background-primary-default pl-9 pr-3 py-1.5 text-caption-1-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:ring-2 focus:ring-border-focus-ring/20 transition-all"
+                className="w-full rounded-xl border border-border-button-default bg-background-primary-default pl-9 pr-3 py-1.5 text-caption-1-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring transition-all"
               />
             </div>
           </div>

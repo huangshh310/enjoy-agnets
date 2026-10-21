@@ -249,7 +249,7 @@ export function AgentToolQuickKeyDialog({
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder={t("settings.agentTools.quickKeyInputPlaceholder")}
-                className="w-full rounded-xl border border-border-button-default bg-background-secondary-default py-2 pr-9 pl-3 text-body-medium text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
+                className="w-full rounded-xl border border-border-button-default bg-background-secondary-default py-2 pr-9 pl-3 text-body-medium text-text-primary placeholder:text-text-tertiary focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring focus:outline-none"
               />
               <button
                 type="button"
@@ -272,7 +272,7 @@ export function AgentToolQuickKeyDialog({
               value={baseURL}
               onChange={(e) => setBaseURL(e.target.value)}
               placeholder={preset.defaultBaseURL || t("settings.agentTools.quickKeyBaseUrlPlaceholder")}
-              className="w-full rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-regular text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
+              className="w-full rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-regular text-text-primary placeholder:text-text-tertiary focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring focus:outline-none"
             />
           </div>
 
@@ -285,7 +285,7 @@ export function AgentToolQuickKeyDialog({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-regular text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
+              className="w-full rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-regular text-text-primary placeholder:text-text-tertiary focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring focus:outline-none"
             />
           </div>
 

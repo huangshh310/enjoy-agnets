@@ -24,7 +24,7 @@ export function ModuleNav() {
 
   return (
     <div className="flex h-full min-h-0 flex-col px-2.5 py-1.5">
-      <label className="relative mb-1.5 flex h-8 items-center gap-2 rounded-xl border border-border-button-default/60 bg-background-tertiary-default/80 px-3 focus-within:border-accent-500 focus-within:bg-background-primary-default focus-within:ring-2 focus-within:ring-accent-500/20">
+      <label className="relative mb-1.5 flex h-8 items-center gap-2 rounded-xl border border-border-button-default/60 bg-background-tertiary-default/80 px-3 focus-within:border-border-focus-ring focus-within:ring-1 focus-within:ring-border-focus-ring focus-within:bg-background-primary-default">
         <RiSearchLine className="size-4 shrink-0 text-text-tertiary" aria-hidden />
         <input
           type="search"

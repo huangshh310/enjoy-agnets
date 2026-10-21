@@ -179,8 +179,13 @@
   transform: translate(0);
 }
 
-.locale-switch:focus-within .locale-switch__container {
-  outline: 2px solid var(--color-border-focus-ring);
+/* 隐藏的原生复选框自己不画焦点（Chromium 默认橙色 outline 对暗底只有 2.4），由容器画焦点环颜色；只在键盘焦点时出现。 */
+.locale-switch__checkbox {
+  outline: none;
+}
+
+.locale-switch:has(.locale-switch__checkbox:focus-visible) .locale-switch__container {
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 

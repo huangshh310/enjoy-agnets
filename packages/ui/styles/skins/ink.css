@@ -22,6 +22,15 @@ html[data-skin="ink"] {
   --color-foreground-icon-secondary: color-mix(in srgb, #1a1a1a 80%, transparent);
   --color-foreground-icon-tertiary: color-mix(in srgb, #1a1a1a 62%, transparent);
   --color-foreground-icon-quaternary: color-mix(in srgb, #1a1a1a 48%, transparent);
+  /* 主栏 / 侧栏是天空渐变（sky → sky-bot），焦点环间隔取渐变中段。 */
+  --focus-ring-offset: color-mix(in srgb, var(--skin-ink-sky) 50%, var(--skin-ink-sky-bot));
+}
+
+/* 手绘亮色：底是天空蓝渐变（#5caad4 → #4a92bd），accent-700 在上面只有 1.5–2.8（蓝 2.7、琥珀边 1.53）。
+ * 焦点环和发送按钮常态最外圈都用墨色 #1A1612（对 #569ac3 ≈ 5.9）；暗色不受影响（:not(.dark)）。 */
+html[data-skin="ink"]:not(.dark) {
+  --color-focus-ring: #1a1612;
+  --color-send-edge: #1a1612;
 }
 
 html.dark[data-skin="ink"] {
@@ -42,6 +51,7 @@ html.dark[data-skin="ink"] {
   --color-foreground-icon-secondary: color-mix(in srgb, #e8e0d4 80%, transparent);
   --color-foreground-icon-tertiary: color-mix(in srgb, #e8e0d4 62%, transparent);
   --color-foreground-icon-quaternary: color-mix(in srgb, #e8e0d4 48%, transparent);
+  --focus-ring-offset: color-mix(in srgb, var(--skin-ink-sky) 50%, var(--skin-ink-sky-bot));
 }
 
 
@@ -56,6 +66,7 @@ html[data-skin="ink"] [data-testid="window-frame"]:not(.rounded-none) {
   border-radius: var(--skin-ink-radius);
   box-shadow: var(--skin-ink-shift);
   background-color: var(--skin-ink-sky);
+  --focus-ring-offset: color-mix(in srgb, var(--skin-ink-sky) 50%, var(--skin-ink-sky-bot));
   background-image:
     radial-gradient(ellipse 42% 32% at 12% 16%, rgb(255 255 255 / 0.2) 0%, transparent 72%),
     radial-gradient(ellipse 36% 28% at 86% 12%, rgb(255 255 255 / 0.14) 0%, transparent 70%),
@@ -81,6 +92,16 @@ html[data-skin="ink"] [data-frost="chip"] {
   );
 }
 
+/* 输入框（data-frost=chip）同时带 .rounded-3xl.shadow-card，上面天空那条规则特异性最高，真机底色是天空渐变不是纸色。
+ * 发送按钮在右下角：亮色实测 #569ac3 / #5caad4，暗色 #323755 / #2d3351（叠了光斑，比主栏渐变亮），间隔色按那里取。 */
+html[data-skin="ink"] [data-frost="chip"].rounded-3xl.shadow-card {
+  --focus-ring-offset: color-mix(in srgb, var(--skin-ink-sky) 40%, var(--skin-ink-sky-bot));
+}
+
+html.dark[data-skin="ink"] [data-frost="chip"].rounded-3xl.shadow-card {
+  --focus-ring-offset: color-mix(in srgb, var(--skin-ink-cloud) 60%, var(--skin-ink-sky-bot));
+}
+
 html[data-skin="ink"] .settings-card,
 html[data-skin="ink"] main div.rounded-xl.border,
 html[data-skin="ink"] main div.rounded-2xl.border,
@@ -93,6 +114,7 @@ html[data-skin="ink"] main div.border-dashed {
   border-radius: 10px;
   box-shadow: var(--skin-ink-shift);
   background-color: var(--skin-ink-paper);
+  --focus-ring-offset: var(--skin-ink-paper);
   background-image:
     radial-gradient(80% 60% at 100% 0%, rgb(92 170 212 / 0.22) 0%, transparent 55%),
     repeating-linear-gradient(

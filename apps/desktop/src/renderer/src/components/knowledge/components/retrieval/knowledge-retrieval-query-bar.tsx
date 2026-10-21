@@ -49,7 +49,7 @@ export function KnowledgeRetrievalQueryBar({
               }
             }}
             placeholder={t("pages.knowledge.askMemoryPlaceholder")}
-            className="h-11 rounded-2xl border-separator-border/70 bg-background-secondary-default/40 pl-10 pr-24 text-body-medium shadow-2xs focus:border-accent-500 focus:bg-background-primary-default"
+            className="h-11 rounded-2xl border-separator-border/70 bg-background-secondary-default/40 pl-10 pr-24 text-body-medium shadow-2xs focus:border-border-focus-ring focus:ring-1 focus:ring-border-focus-ring focus:bg-background-primary-default"
           />
           <button
             type="button"

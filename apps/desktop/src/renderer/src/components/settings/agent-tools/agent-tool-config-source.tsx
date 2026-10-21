@@ -60,7 +60,7 @@ function ModelPicker({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-8 max-w-64 min-w-0 items-center gap-2 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-left shadow-2xs outline-none transition-colors hover:border-border-button-hover hover:bg-background-secondary-hover focus:ring-1 focus:ring-accent-500"
+          className="flex h-8 max-w-64 min-w-0 items-center gap-2 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-left shadow-2xs outline-none transition-colors hover:border-border-button-hover hover:bg-background-secondary-hover focus:ring-2 focus:ring-border-focus-ring"
         >
           <span className="flex size-4 shrink-0 items-center justify-center">
             <AgentBrandIcon id={tool.id} size={15} />

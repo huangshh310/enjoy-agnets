@@ -52,7 +52,9 @@ export function AttentionChip(props: {
       className={cx(
         "group flex h-7 min-w-32 max-w-56 shrink-0 animate-in fade-in items-center gap-1.5 rounded-full border border-border-button-default/70",
         "bg-background-secondary-default/80 pl-2.5 pr-1.5 shadow-2xs outline-none duration-200 transition-all",
-        "hover:bg-background-secondary-hover hover:border-border-button-hover"
+        "hover:bg-background-secondary-hover hover:border-border-button-hover",
+        // 里面的按钮自己不画焦点（focus-visible:outline-none），焦点环画在整颗胶囊上
+        "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-border-focus-ring"
       )}
     >
       <button
