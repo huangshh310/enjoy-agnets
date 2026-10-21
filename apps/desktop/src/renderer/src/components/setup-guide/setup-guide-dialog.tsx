@@ -19,7 +19,7 @@ import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
 import { readyGuidePrimaryAction, readyMarkKind, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
-import { guideKeyStatus } from "@renderer/lib/credential/key-status"
+import { fillSetupProviderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
@@ -134,7 +134,15 @@ export function SetupGuideDialog() {
         <SetupGuideHeader
           step={step}
           titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus?.status) : undefined}
-          titleVars={step === "ready" && keyStatus ? { name: keyStatus.providerName ?? t("settings.setupGuide.providerFallback") } : undefined}
+          title={
+            step === "ready" && keyStatus
+              ? fillSetupProviderText(
+                  t as Parameters<typeof fillSetupProviderText>[0],
+                  readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus.status),
+                  keyStatus.providerName
+                )
+              : undefined
+          }
           readyMark={step === "ready" ? readyMarkKind(chatReady, readiness?.credentialCheck?.state) : undefined}
           summary={step === "ready" ? <ReadySummary workspaceName={workspaceName} keyStatus={keyStatus} /> : undefined}
         />

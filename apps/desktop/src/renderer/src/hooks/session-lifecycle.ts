@@ -74,15 +74,27 @@ type MessageRow = {
   parts?: unknown[]
 }
 
-async function sessionOwnActiveRunning(sessionId: string): Promise<boolean> {
+/** main 说这个会话在不在跑；IPC 失败或回包里没有布尔 running → undefined（不知道，不当成「空闲」）。 */
+async function sessionOwnActiveRunning(sessionId: string): Promise<boolean | undefined> {
   try {
     const active = (await getIde().agent.sessionActive({ sessionId })) as {
       running?: boolean
     }
-    return active?.running === true
+    return typeof active?.running === "boolean" ? active.running : undefined
   } catch {
-    return false
+    return undefined
   }
+}
+
+/**
+ * leo #164 S4：main 明确说空闲，而停车档里还记着一轮已开跑（有 runId）的 running——那一轮已经结束、
+ * 结束事件没赶上（P3）。信 main：输入框收回空闲（没有停止键、能发），不把残留的 running 搬回前台。
+ * 没有 runId 的停车档（刚发出、main 还没登记）不算「已知的一轮」，照旧恢复。
+ */
+function staleParkedRun(sessionId: string, mainRunning: boolean | undefined): boolean {
+  if (mainRunning !== false) return false
+  const park = useAttentionStore.getState().parks[sessionId]
+  return park?.running === true && Boolean(park.runId)
 }
 
 export function saveCurrentSessionDraft() {
@@ -110,7 +122,10 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   })
   const generation = bumpSessionHydrateGeneration()
   const parkedRunning = useAttentionStore.getState().parks[sessionId]?.running === true
-  const sessionRunning = (await sessionOwnActiveRunning(sessionId)) || parkedRunning
+  const mainSays = await sessionOwnActiveRunning(sessionId)
+  const mainRunning = mainSays === true
+  const parkIsStale = staleParkedRun(sessionId, mainSays)
+  const sessionRunning = mainRunning || (parkedRunning && !parkIsStale)
   if (!sameSession) {
     useAttentionStore.getState().clearCompletes()
     if (store.sessionId) {
@@ -127,7 +142,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     applyComposerModel(store, sessionId)
     useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
     useEngineHandoffStore.getState().resetPending()
-    restoreComposerForSession(sessionId)
+    restoreComposerForSession(sessionId, { mainIdle: parkIsStale })
   } else {
     store.setSession(sessionId, title)
   }
@@ -144,7 +159,8 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     sameSession,
     generation,
     sessionId,
-    sessionRunning
+    sessionRunning,
+    mainRunning
   })
   await applyHydratedLivePending(sessionId)
   // jojo P1：库里有失败 run → 红卡 + 重试；活泵在跑不盖。
@@ -277,10 +293,18 @@ export function parkForegroundRun() {
   if (snapped) useAttentionStore.getState().putPark(snapped)
 }
 
-export function restoreComposerForSession(sessionId: string) {
+export function restoreComposerForSession(sessionId: string, opts?: { mainIdle?: boolean }) {
   const park = useAttentionStore.getState().takePark(sessionId)
   const keptNotice = keepRestoreFamilyNotice(useChatStore.getState().notice)
-  if (park) {
+  if (park && opts?.mainIdle) {
+    // S4：main 说空闲 → 停车档里的 running / 审批 / 未放的流事件都不搬回来，只留错误和提示。
+    useChatStore.setState({
+      ...idleComposerPatch(),
+      lastRunId: park.runId,
+      error: park.error,
+      notice: park.notice ?? keptNotice
+    })
+  } else if (park) {
     useChatStore.setState({
       ...parkedComposerPatch(park),
       notice: park.notice ?? keptNotice

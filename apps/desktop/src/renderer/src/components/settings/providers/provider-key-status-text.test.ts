@@ -71,4 +71,10 @@ test("余额不足 / 没权限：徽标仍灰，另出提示条；没存密钥 /
   assert.equal(renderProviderKeyHint({ ...billing, hasKey: false }, t, actions), null)
   assert.equal(renderProviderKeyHint(withCheck({ state: "ok" }), t, actions), null)
   assert.equal(renderProviderKeyHint(withCheck({ state: "invalid", code: "auth_rejected" }), t, actions), null)
+  // luna #164：设置行的档案指到代理 → 余额提示照出，但没有「去充值」按钮（接线：baseURL 传进 keyHintOf）
+  const proxied = renderToStaticMarkup(renderProviderKeyHint({ ...billing, baseURL: "https://relay.example.cn/v1" }, t, actions)!)
+  assert.match(proxied, /data-hint-kind="billing"/)
+  assert.doesNotMatch(proxied, /provider-key-hint-action/)
+  const direct = renderToStaticMarkup(renderProviderKeyHint({ ...billing, baseURL: "https://api.deepseek.com/v1" }, t, actions)!)
+  assert.match(direct, /provider-key-hint-action/)
 })

@@ -3,10 +3,11 @@
  */
 import { createElement, type ReactElement } from "react"
 import type { KeyHint } from "./key-hint.ts"
+import { fillProviderFace, type ProviderFace } from "../provider-face.ts"
 
 export function renderKeyHint(
   hint: KeyHint | undefined,
-  providerName: string,
+  provider: ProviderFace,
   t: (key: string, vars?: Record<string, string>) => string,
   actions: { onEdit: () => void; onOpenUrl: (url: string) => void },
   testIdPrefix = "key-hint"
@@ -15,7 +16,9 @@ export function renderKeyHint(
   const text =
     hint.kind === "forbidden"
       ? t("settings.providers.keyForbiddenHint")
-      : t("settings.providers.keyBillingHint", { name: providerName })
+      : provider.kind === "generic"
+        ? t("settings.providers.keyBillingHintGeneric")
+        : fillProviderFace(t as Parameters<typeof fillProviderFace>[0], "settings.providers.keyBillingHint", provider)
   const billingUrl = hint.kind === "billing" ? hint.url : undefined
   const button =
     hint.kind === "forbidden"

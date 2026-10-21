@@ -1,19 +1,38 @@
 /**
- * 失败卡（连不上 / 密钥没通过 / 拒绝 / 额度）和排队暂停行里「{name}」该说谁（luna P2 定稿）：
- * 1. 已知预设 → 品牌名（OpenAI / DeepSeek…），和设置页供应商行、计费卡 {服务商} 同源；
- * 2. 用户自定义端点（或未知预设）→ 端点**主机名**：不带协议、端口、路径、查询、账号；超过 30 字截断加「…」；
- * 3. 都没有（URL 解析不了 / 没 kind 没地址）→ 通用说法「模型服务」/ "the model service"（句首大写）。
- * 任何情况都不出现密钥档案名、预设 id、完整 URL。ACP / CLI 引擎说引擎名（send-failure-provider-name）。
+ * 失败卡（连不上 / 密钥没通过 / 拒绝 / 额度）和排队暂停行里「{name}」该说谁（luna P2 定稿 + #164 S5a）：
+ * 预设档案（kind 是一键预设里的一家）：
+ * 1. 预设品牌名（OpenAI / DeepSeek…）只在端点**没填**，或端点主机是这家的**官方地址**时用：
+ *    云端预设 = 主机是这家登记的官方地址（后缀 / 精确主机，见 provider-official-domains）；
+ *    本地预设（Ollama / LM Studio）= 本机地址 localhost、*.localhost、127.0.0.0/8、0.0.0.0、::1、::，任意端口。
+ * 2. 端点填了、能解析、但不是官方地址（代理、中转、自建、局域网机器）→ 端点**主机名**：
+ *    不带协议、端口、路径、查询、账号；超过 30 字截断加「…」。防的是借代理冒充预设品牌。
+ * 3. 端点填了但没有协议 / 解析不了 / 不是 http(s) → 通用说法「模型服务」/ "the model service"（句首大写）。
+ *    不回落品牌：填错的地址连不上，不是这家的问题。
+ * 自定义档案（kind 为 custom，用户自己建的端点，luna #164 第 3 轮）：说**档案名**（用户起的 name，去首尾空白，
+ * 超过 30 字截断加「…」）；名字空才说端点主机名，再不行说「模型服务」。没有品牌可冒充，所以不走主机名优先。
+ * 未知 kind / 没 kind：主机名 → 「模型服务」。预设档案的档案名、预设 id、完整 URL 都不出现。
+ * ACP / CLI 引擎说引擎名（send-failure-provider-name）。
  */
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
+import { isOfficialEndpointHost, normalizeHost } from "./provider-official-domains.ts"
 
 /** 主机名最多显示的字数（含末尾「…」）。 */
 export const ENDPOINT_HOST_MAX = 30
 
 export type ProviderFace = { kind: "named"; name: string } | { kind: "generic" }
 
-/** 端点地址 → 主机名；解析不了 / 不是 http(s) / 没主机名 → undefined。 */
-export function endpointHostLabel(baseURL: string | null | undefined, max = ENDPOINT_HOST_MAX): string | undefined {
+/** 自定义档案的 kind（预设列表里的「自定义端点」）。 */
+export const CUSTOM_PROFILE_KIND = "custom"
+
+/** 档案名 → 显示用（去首尾空白，超过 max 个字符截断加「…」，按码点数，不切开 emoji / 生僻字）；空 → undefined。 */
+export function profileNameLabel(name: string | null | undefined, max = ENDPOINT_HOST_MAX): string | undefined {
+  const chars = [...(name?.trim() ?? "")]
+  if (chars.length === 0) return undefined
+  return chars.length > max ? `${chars.slice(0, max - 1).join("")}…` : chars.join("")
+}
+
+/** 端点地址 → 规整后的主机名（WHATWG URL）；解析不了 / 不是 http(s) / 没主机名 → undefined。 */
+export function endpointHost(baseURL: string | null | undefined): string | undefined {
   const raw = baseURL?.trim()
   if (!raw) return undefined
   let url: URL
@@ -23,7 +42,12 @@ export function endpointHostLabel(baseURL: string | null | undefined, max = ENDP
     return undefined
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return undefined
-  const host = url.hostname.replace(/^\[|\]$/g, "")
+  return normalizeHost(url.hostname)
+}
+
+/** 端点地址 → 显示用主机名（不带协议 / 端口 / 路径，超过 max 截断加「…」）；解析不了 → undefined。 */
+export function endpointHostLabel(baseURL: string | null | undefined, max = ENDPOINT_HOST_MAX): string | undefined {
+  const host = endpointHost(baseURL)
   if (!host) return undefined
   return host.length > max ? `${host.slice(0, max - 1)}…` : host
 }
@@ -34,9 +58,33 @@ export function presetBrand(kind: string | null | undefined): string | undefined
   return PROVIDER_PRESETS.find((preset) => preset.kind === kind)?.name?.trim() || undefined
 }
 
-export function providerFace(row: { kind?: string; baseURL?: string } | undefined): ProviderFace {
-  const name = presetBrand(row?.kind) ?? endpointHostLabel(row?.baseURL)
-  return name ? { kind: "named", name } : { kind: "generic" }
+/**
+ * leo #164 S5 / luna #164 ①②：预设品牌只在端点没填，或主机是这家官方地址时用。
+ * 用户把 OpenAI 预设改到自己的地址（代理、中转、自建）时，连不上的是那个地址，不是 OpenAI：说主机名。
+ * 地址填了但解析不了（没协议、不是 http(s)）→「模型服务」，不回落品牌。
+ * 主机按 WHATWG URL 解析（`https://api.openai.com@evil.com` 的主机是 evil.com，账号部分不算）。
+ */
+export function providerFace(row: { kind?: string; baseURL?: string; name?: string } | undefined): ProviderFace {
+  if (row?.kind === CUSTOM_PROFILE_KIND) {
+    const name = profileNameLabel(row.name)
+    if (name) return { kind: "named", name }
+  }
+  const brand = presetBrand(row?.kind)
+  if (!row?.baseURL?.trim()) return brand ? { kind: "named", name: brand } : { kind: "generic" }
+  const host = endpointHost(row.baseURL)
+  if (!host) return { kind: "generic" }
+  if (brand && row.kind && isOfficialEndpointHost(row.kind, host)) return { kind: "named", name: brand }
+  return { kind: "named", name: endpointHostLabel(row.baseURL)! }
+}
+
+/**
+ * 端点是不是这家预设的官方地址：没填算是（用预设默认地址）；填了但解析不了、或主机不是官方地址都不算。
+ * 充值 / 控制台链接只在官方地址时给（代理的额度不在这家控制台里充，luna #164）。
+ */
+export function endpointIsOfficial(kind: string | null | undefined, baseURL: string | null | undefined): boolean {
+  if (!baseURL?.trim()) return true
+  const host = endpointHost(baseURL)
+  return Boolean(kind && host && isOfficialEndpointHost(kind, host))
 }
 
 type T = (key: string, vars?: Record<string, string | number>) => string
@@ -115,15 +163,16 @@ export function fillProviderFace(
   t: T,
   key: string,
   face: ProviderFace,
-  options: { varName?: string; vars?: Record<string, string | number> } = {}
+  options: {
+    varName?: string
+    vars?: Record<string, string | number>
+    /** 通用说法用哪对词（句首 / 句中）；缺省「模型服务」/ the model service。引导界面说密钥的句子用「供应商」，规则见 key-status 的 setupGenericKeys。 */
+    genericKeys?: { start: string; mid: string }
+  } = {}
 ): string {
   const varName = options.varName ?? "name"
   const template = t(key, { ...options.vars, [varName]: SLOT })
-  const name =
-    face.kind === "named"
-      ? face.name
-      : template.startsWith(SLOT)
-        ? t("chat.credentialProviderGenericStart")
-        : t("chat.credentialProviderGeneric")
+  const generic = options.genericKeys ?? { start: "chat.credentialProviderGenericStart", mid: "chat.credentialProviderGeneric" }
+  const name = face.kind === "named" ? face.name : template.startsWith(SLOT) ? t(generic.start) : t(generic.mid)
   return placeProviderName(template, name)
 }

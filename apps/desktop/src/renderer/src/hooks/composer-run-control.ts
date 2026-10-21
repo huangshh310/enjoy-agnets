@@ -7,6 +7,7 @@ import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
+import { rememberStoppedRun } from "../stores/stopped-runs"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
@@ -33,7 +34,13 @@ export function claimComposerRun(startedSessionId: string | null, runId: string)
 /** 主进程已经开工但 UI 已停 / 已切会话时，把那一轮 abort 掉。 */
 export function abortOrphanedRun(runId: string) {
   if (!hasIde()) return
-  void getIde().ai.abort(runId).catch(() => undefined)
+  // leo #164 S5：abort IPC 失败不再静默吞掉——main 那边这一轮可能还在跑，记一条日志便于排查。
+  // 界面照旧立刻停（不等 IPC），迟到事件仍按 stopped-runs 丢弃。
+  void getIde()
+    .ai.abort(runId)
+    .catch((error: unknown) => {
+      console.warn("[run] ABORT_IPC_FAILED", runId, error)
+    })
 }
 
 /**
@@ -53,6 +60,8 @@ export async function abortComposerRun(opts?: {
   // 把说明行改成琥珀色，用户手动发一条跑完后排队的就自己发给新助手了。
   const reason = opts?.pauseReason ?? "stopped"
   if (reason === "stopped" || composerRunInFlight(store)) pauseFollowups(sessionId, reason)
+  // #160 巡检 6：先记下被停的 run，abort 到达 main 之前它迟到的审批 / 出字一律丢掉，审批卡不再冒回来。
+  rememberStoppedRun(sessionId, runId)
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)

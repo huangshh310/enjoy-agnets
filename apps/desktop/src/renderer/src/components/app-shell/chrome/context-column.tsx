@@ -9,6 +9,7 @@ import {
   startPersistedSession
 } from "@renderer/hooks/use-agent-session"
 import { formatNodeTime, useChatStore } from "@renderer/stores/chat-store"
+import { useMinuteTick } from "@renderer/hooks/use-minute-tick"
 import { useT } from "@renderer/i18n"
 import { ModuleNav } from "./module-nav"
 
@@ -20,6 +21,8 @@ export function ContextColumn({ isChat }: { isChat: boolean }) {
   const sessionId = useChatStore((state) => state.sessionId)
   const toggleExpanded = useChatStore((state) => state.toggleExpanded)
   const sessionCount = repositories.filter((node) => node.kind === "session").length
+  // 「刚刚 / N 分钟」每分钟往前走：只让本列每分钟重画一次。
+  useMinuteTick()
 
   if (isChat) {
     return (

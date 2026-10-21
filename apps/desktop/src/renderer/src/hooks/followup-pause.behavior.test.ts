@@ -343,7 +343,7 @@ test("说明行文案（luna 定稿）：三种原因 × 中英 × N=1 单数；
   }
 })
 
-test("额度句的服务商名和失败卡同源（useSendFailureProviderName → luna P2① 锁定链）：Amp 会话说 Amp；Enjoy 本地说品牌名 → 端点主机名 → 「模型服务」，从不说密钥档案名", async () => {
+test("额度句的服务商名和失败卡同源（useSendFailureProviderName → luna P2① 锁定链）：Amp 会话说 Amp；Enjoy 本地说品牌名 → 端点主机名 → 「模型服务」，预设不说密钥档案名、自定义档案说档案名", async () => {
   const { sendFailureProviderName } = await import("../lib/send-failure-provider-name.ts")
   const { defaultProviderFace } = await import("../lib/default-provider-label.ts")
   const { readFileSync } = await import("node:fs")
@@ -364,10 +364,12 @@ test("额度句的服务商名和失败卡同源（useSendFailureProviderName �
   // 预设品牌名（档案名叫 E2E Stub Key 也不说）。
   const preset = view.queuePausedView({ ...base, provider: local({ name: "E2E Stub Key", kind: "deepseek" }), t: zh }).text
   assert.equal(preset, "DeepSeek 额度用完了，排队的 2 条先不发。充值后点继续。")
-  // 自定义端点：只说主机名（不带协议 / 路径），超 30 字截断加「…」。
-  const host = view.queuePausedView({ ...base, provider: local({ name: "E2E Stub Key", kind: "custom", baseURL: "https://llm.example.com:8443/v1?key=x" }), t: en }).text
+  // 自定义档案（luna #164 第 3 轮）：说档案名（去空白、按 placeProviderName 排空格）；名字空才说主机名（不带协议 / 路径），超 30 字截断加「…」。
+  assert.equal(view.queuePausedView({ ...base, provider: local({ name: " 我的网关 ", kind: "custom", baseURL: "https://llm.example.com/v1" }), t: zh }).text, "我的网关额度用完了，排队的 2 条先不发。充值后点继续。")
+  assert.equal(view.queuePausedView({ ...base, provider: local({ name: "My Relay", kind: "custom", baseURL: "https://llm.example.com/v1" }), t: zh }).text, "My Relay 额度用完了，排队的 2 条先不发。充值后点继续。")
+  const host = view.queuePausedView({ ...base, provider: local({ name: "", kind: "custom", baseURL: "https://llm.example.com:8443/v1?key=x" }), t: en }).text
   assert.equal(host, "llm.example.com is out of credit, so 2 queued messages are on hold. Top up, then press Continue.")
-  const long = view.queuePausedView({ ...base, provider: local({ name: "k", kind: "custom", baseURL: "https://a-very-long-subdomain.inference.example.org/v1" }), t: zh }).text
+  const long = view.queuePausedView({ ...base, provider: local({ name: "  ", kind: "custom", baseURL: "https://a-very-long-subdomain.inference.example.org/v1" }), t: zh }).text
   assert.match(long, /^a-very-long-subdomain\.inferen… 额度用完了/)
   // 都没有 → 「模型服务」；英文句首大写。
   assert.equal(view.queuePausedView({ ...base, provider: local(null), t: zh }).text, "模型服务额度用完了，排队的 2 条先不发。充值后点继续。")

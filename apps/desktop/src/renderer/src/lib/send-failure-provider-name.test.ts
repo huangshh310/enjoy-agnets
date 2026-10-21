@@ -20,8 +20,14 @@ test("引擎起了显示名就用显示名；空 / 「未命名」回退品牌�
   assert.deepEqual(sendFailureProviderName({ runtimeId: "amp", tools, displayNames: { amp: "未命名" }, provider: DS }), named("Amp"))
 })
 
-test("引擎不在列表里也不拿密钥档案顶名，用 runtimeId", () => {
-  assert.deepEqual(sendFailureProviderName({ runtimeId: "codex", tools, displayNames: {}, provider: DS }), named("codex"))
+test("引擎不在列表里：不拿密钥档案 / 供应商 / 原始 runtimeId 顶名，退到「模型服务」", () => {
+  assert.deepEqual(sendFailureProviderName({ runtimeId: "codex", tools, displayNames: {}, provider: DS }), { kind: "generic" })
+  assert.deepEqual(
+    sendFailureProviderName({ runtimeId: "custom:acp_7f3a", tools, displayNames: {}, provider: DS }),
+    { kind: "generic" }
+  )
+  // 用户给它起的名字仍然算
+  assert.deepEqual(sendFailureProviderName({ runtimeId: "codex", tools, displayNames: { codex: "小码" }, provider: DS }), named("小码"))
 })
 
 test("Enjoy 本地 / 还没定引擎：说供应商（调用方传 defaultProviderFace 的结果）", () => {
@@ -58,8 +64,10 @@ async function cards() {
 
 test("luna P2：Enjoy 本地五种失败文案中英都说品牌名，不出现档案名 / 预设 id / 括号", async () => {
   const { render } = await cards()
+  // 端点用各家官方地址（改到别的地址会说主机名，见 provider-face S5）
+  const official = { openai: "https://api.openai.com/v1", deepseek: "https://api.deepseek.com/v1" } as const
   for (const [profile, kind, brand] of [["Work key A", "openai", "OpenAI"], ["E2E Stub Key", "openai", "OpenAI"], ["我的 DS 钥匙", "deepseek", "DeepSeek"]] as const) {
-    for (const { key, text } of render({ name: profile, kind, baseURL: "https://api.openai.com/v1" })) {
+    for (const { key, text } of render({ name: profile, kind, baseURL: official[kind] })) {
       assert.ok(text.includes(brand), `${key}: ${text}`)
       assert.ok(!text.includes(profile), `${key} 出现了档案名：${text}`)
       assert.ok(!text.includes(kind === "openai" ? "openai" : kind), `${key} 出现了预设 id：${text}`)
@@ -71,12 +79,35 @@ test("luna P2：Enjoy 本地五种失败文案中英都说品牌名，不出现�
   assert.equal(zh.find((c) => c.lang === "zh" && c.key === "credentialNetworkNotice")!.text, "连不上 OpenAI，消息没发出去。检查网络后再试。")
 })
 
-test("luna P2：自定义端点只说主机名——不带协议 / 端口 / 路径 / 查询 / 账号，不出现档案名", async () => {
+test("luna #164 第 3 轮：自定义档案说档案名，每张失败卡都一样，空格走 placeProviderName；不露地址任何部分", async () => {
   const { render } = await cards()
-  const all = render({ name: "我的网关", kind: "custom", baseURL: "https://bob:s3cret@api.example.com:8443/v1/chat?team=x" })
+  const all = render({ name: "  我的网关 ", kind: "custom", baseURL: "https://bob:s3cret@api.example.com:8443/v1/chat?team=x" })
+  for (const { key, lang, text } of all) {
+    assert.ok(text.includes("我的网关"), `${key}: ${text}`)
+    if (lang === "zh") assert.ok(!/ 我的网关|我的网关 /.test(text), `${key} 中文挨着留了空格：${text}`)
+    for (const bad of ["api.example.com", "custom", "https", "8443", "/v1", "team=x", "bob", "s3cret", "  我的网关"]) {
+      assert.ok(!text.includes(bad), `${key} 露出了「${bad}」：${text}`)
+    }
+  }
+  const pick = (lang: string, key: string) => all.find((c) => c.lang === lang && c.key === key)!.text
+  assert.equal(pick("zh", "credentialNetworkNotice"), "连不上我的网关，消息没发出去。检查网络后再试。")
+  assert.equal(pick("zh", "credentialInvalidNotice"), "密钥没通过：我的网关不认这把密钥，消息没发出去。")
+  const latin = render({ name: "Team Relay 2", kind: "custom", baseURL: "not a url" })
+  assert.equal(latin.find((c) => c.lang === "zh" && c.key === "credentialNetworkNotice")!.text, "连不上 Team Relay 2，消息没发出去。检查网络后再试。")
+  assert.equal(latin.find((c) => c.lang === "en" && c.key === "credentialNetworkNotice")!.text, "Could not reach Team Relay 2. The message was not sent. Check the network and try again.")
+  const long = render({ name: "一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十多", kind: "custom" })
+  assert.equal(long.find((c) => c.lang === "zh" && c.key === "credentialNetworkNotice")!.text, "连不上一二三四五六七八九十一二三四五六七八九十一二三四五六七八九…，消息没发出去。检查网络后再试。")
+  // 预设档案的档案名照旧不说
+  const preset = render({ name: "我的网关", kind: "openai", baseURL: "https://proxy.example.com/v1" })
+  for (const { key, text } of preset) assert.ok(!text.includes("我的网关") && text.includes("proxy.example.com"), `${key}: ${text}`)
+})
+
+test("luna P2：自定义档案名字空 → 只说主机名——不带协议 / 端口 / 路径 / 查询 / 账号", async () => {
+  const { render } = await cards()
+  const all = render({ name: "   ", kind: "custom", baseURL: "https://bob:s3cret@api.example.com:8443/v1/chat?team=x" })
   for (const { key, text } of all) {
     assert.ok(text.includes("api.example.com"), `${key}: ${text}`)
-    for (const bad of ["我的网关", "custom", "https", "://", "8443", "/v1", "team=x", "bob", "s3cret"]) {
+    for (const bad of ["custom", "https", "://", "8443", "/v1", "team=x", "bob", "s3cret"]) {
       assert.ok(!text.includes(bad), `${key} 露出了「${bad}」：${text}`)
     }
   }

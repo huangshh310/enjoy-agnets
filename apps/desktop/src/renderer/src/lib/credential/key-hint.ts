@@ -5,7 +5,9 @@
  */
 import type { ChatReadiness, CredentialCheck } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { presetBillingUrl } from "../preset-console-url.ts"
-import { keyStatusOf, presetDisplayName, type GuideKeyStatus } from "./key-status.ts"
+import { endpointIsOfficial } from "../provider-face.ts"
+import { keyHolderFace, keyStatusOf, type GuideKeyStatus } from "./key-status.ts"
+import type { ProviderFace } from "../provider-face.ts"
 
 type CheckLike = Pick<CredentialCheck, "state"> & { code?: CredentialCheck["code"] }
 
@@ -15,17 +17,22 @@ export type KeyHint =
   /** 去充值 → 系统浏览器打开 url；没有 url 只显示文案。 */
   | { kind: "billing"; url?: string }
 
-export function keyHintOf(check: CheckLike | null | undefined, presetKind: string | undefined): KeyHint | undefined {
+/** baseURL：档案的端点。指到代理 / 中转（不是这家官方地址）时不给「去充值」链接（那边的额度不在这家控制台充）。 */
+export function keyHintOf(
+  check: CheckLike | null | undefined,
+  presetKind: string | undefined,
+  baseURL?: string
+): KeyHint | undefined {
   if (!check || keyStatusOf(check) !== "unverified") return undefined
   if (check.code === "forbidden") return { kind: "forbidden" }
   if (check.code === "billing") {
-    const url = presetBillingUrl(presetKind)
+    const url = endpointIsOfficial(presetKind, baseURL) ? presetBillingUrl(presetKind) : undefined
     return url ? { kind: "billing", url } : { kind: "billing" }
   }
   return undefined
 }
 
-export type KeyHintProviderRow = { id: string; kind: string; name?: string; credentialCheck?: CheckLike }
+export type KeyHintProviderRow = { id: string; kind: string; name?: string; baseURL?: string; credentialCheck?: CheckLike }
 
 /**
  * 向导 API 密钥行的提示：和 guideKeyStatus 同一份档案、同一口径
@@ -35,7 +42,7 @@ export function guideKeyHint(
   readiness: Pick<ChatReadiness, "apiKeys" | "defaultRoute" | "credentialCheck"> | undefined,
   providers: readonly KeyHintProviderRow[],
   key: GuideKeyStatus | undefined
-): { hint: KeyHint; providerName?: string } | undefined {
+): { hint: KeyHint; provider: ProviderFace } | undefined {
   if (!key?.profileId || key.status !== "unverified") return undefined
   const keys = readiness?.apiKeys ?? []
   const entry = keys.find((row) => row.providerId === key.profileId)
@@ -43,7 +50,8 @@ export function guideKeyHint(
   const readinessOwns = readiness?.defaultRoute?.profileId === key.profileId || keys.length === 1
   const check = (readinessOwns ? readiness?.credentialCheck : undefined) ?? profile?.credentialCheck
   const kind = entry?.presetId ?? profile?.kind
-  const hint = keyHintOf(check, kind)
+  const hint = keyHintOf(check, kind, profile?.baseURL)
   if (!hint) return undefined
-  return { hint, providerName: key.providerName ?? (kind ? presetDisplayName(kind, profile?.name ?? "") : undefined) }
+  // 和失败卡同一规则：代理档案说主机名 / 「模型服务」，不说预设品牌（luna #164 S1）
+  return { hint, provider: keyHolderFace(kind, profile?.name ?? "", profile?.baseURL) }
 }

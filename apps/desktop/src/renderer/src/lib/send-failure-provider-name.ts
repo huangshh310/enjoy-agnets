@@ -20,7 +20,9 @@ export function sendFailureProviderName(input: {
 }): ProviderFace {
   const runtimeId = input.runtimeId
   if (!runtimeId || runtimeId === "enjoy-local") return input.provider
-  const brandLabel = input.tools.find((tool) => tool.id === runtimeId)?.label?.trim() || runtimeId
+  // 不在列表里的引擎：不拿 runtimeId（custom:xxx / 内部 id）顶名，退到「模型服务」（luna 锁定链第 3 档，leo #164 软 c）。
+  // 也不拿 input.provider：那是 Enjoy 本地的供应商，不是这个引擎。
+  const brandLabel = input.tools.find((tool) => tool.id === runtimeId)?.label?.trim() ?? ""
   const name = resolveEngineFace({ displayName: input.displayNames[runtimeId], brandLabel })
-  return name ? { kind: "named", name } : input.provider
+  return name ? { kind: "named", name } : { kind: "generic" }
 }

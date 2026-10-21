@@ -18,6 +18,7 @@ import { consumeRestartNotice, rememberRestartNotice } from "../hooks/hydrate-re
 import { noteSessionOpened } from "../hooks/session-history-pending"
 import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
+import { isLateEventOfStoppedRun } from "./stopped-runs"
 import {
   isDiscardedPreOutputRun,
   rememberDiscardedPreOutputRun
@@ -192,6 +193,8 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
     }
     const eventRunId = "runId" in event ? event.runId : undefined
     if (isDiscardedPreOutputRun(eventRunId)) return
+    // 用户停掉的那一轮：迟到的审批卡（含切回时 hydrate 补的卡）/ 出字不再进前台。
+    if (isLateEventOfStoppedRun(event)) return
     if (shouldBufferComposerEvent(get().running, get().runId) && !isImmediatePreOutputError(event)) {
       const queued = get().pendingStreamEvents
       if (queued.length >= 80) return

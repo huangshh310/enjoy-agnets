@@ -5,6 +5,7 @@
  */
 import type { ChatReadiness, CredentialCheck } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
+import { fillProviderFace, providerFace, type ProviderFace } from "../provider-face.ts"
 
 /** 密钥三态。ok=已验证（绿）；unverified=暂时没法确认（中性灰）；invalid=被供应商拒绝（红）。 */
 export type KeyStatus = "ok" | "unverified" | "invalid"
@@ -48,10 +49,77 @@ export function presetDisplayName(presetId: string | undefined, fallback: string
   return PROVIDER_PRESETS.find((preset) => preset.kind === presetId)?.name ?? (fallback || presetId)
 }
 
+/**
+ * 余额 / 密钥提示里说谁：和失败卡**同一条链**（providerFace，luna #164 S1 / 第 3 轮 2、leo rv164e S-b）。
+ * - 预设：端点没填或是官方地址 → 品牌；代理 / 中转 → 主机名；解析不了 → 「模型服务」。
+ * - 自定义档案（kind 为 custom）：档案名（去空白、≤30 字）→ 主机名 → 「模型服务」。
+ * - 未知 kind / 没 kind：主机名 → 「模型服务」。从不说原始 id / 预设 id（不再走 presetDisplayName 的回落）。
+ */
+export function keyHolderFace(kind: string | undefined, profileName: string, baseURL?: string): ProviderFace {
+  return providerFace({ kind, name: profileName, baseURL })
+}
+
+/** ProviderFace → 现有 providerName 字段：通用说法给 undefined，调用方用自己的回落词。 */
+export function faceName(face: ProviderFace): string | undefined {
+  return face.kind === "named" ? face.name : undefined
+}
+
+/**
+ * 通用说法（没名字可说时）怎么选——以后新加带 {name} 的文案按这条归类（luna #164 第 3 轮 1 细化）：
+ * - **引导界面**（完成页摘要、引导标题、第 4 步连接模型）里**说密钥**的句子 →「供应商」/ the provider（句首 The provider）。
+ * - 引导界面里**不说密钥**的句子（连不上、额度 / 余额）→「模型服务」/ the model service，和失败卡一致。
+ * - **运行时界面**（设置行、失败卡、余额提示、排队行）一律「模型服务」。
+ * 引导界面里带称呼的文案都登记在 SETUP_PROVIDER_TEMPLATES，测试逐条钉住；没登记的按「模型服务」。
+ */
+/**
+ * 「供应商」/ The provider：英文只放句首（The provider rejected…）。英文要放句中的说密钥句子不套这个词，
+ * 改在 SETUP_GENERIC_SENTENCES 登记一整句不带称呼的通用句（避免 "a different the provider key"）。中文句首句中都是「供应商」。
+ */
+export const KEY_HOLDER_GENERIC_KEYS = { start: "settings.setupGuide.providerFallback", mid: "settings.setupGuide.providerFallback" } as const
+export const SERVICE_GENERIC_KEYS = { start: "chat.credentialProviderGenericStart", mid: "chat.credentialProviderGeneric" } as const
+
+/** 引导界面里带供应商称呼的文案 → 说的是不是密钥（"key" 用「供应商」，"service" 用「模型服务」）。 */
+export const SETUP_PROVIDER_TEMPLATES: Readonly<Record<string, "key" | "service">> = {
+  "settings.setupGuide.connectApiKeyInvalidHint": "key", // 密钥被 {name} 拒绝了，换一个再试
+  "settings.setupGuide.readyKeyInvalidTitle": "key", // 密钥被 {name} 拒绝了
+  "settings.setupGuide.readyKeyInvalidHint": "key", // 换一个 {name} 密钥再试
+  "settings.providers.keyBillingHint": "service" // 第 4 步余额提示：{name} 账户余额不足（通用句是 keyBillingHintGeneric）
+}
+
+/** 没名字时整句换掉的引导文案（通用句里不出现称呼）。 */
+export const SETUP_GENERIC_SENTENCES: Readonly<Record<string, string>> = {
+  "settings.setupGuide.readyKeyInvalidHint": "settings.setupGuide.readyKeyInvalidHintGeneric" // Try a different key / 换一个密钥再试
+}
+
+/** 这条引导文案没名字时用哪对通用说法。 */
+export function setupGenericKeys(key: string): { start: string; mid: string } {
+  return Object.hasOwn(SETUP_PROVIDER_TEMPLATES, key) && SETUP_PROVIDER_TEMPLATES[key] === "key" ? KEY_HOLDER_GENERIC_KEYS : SERVICE_GENERIC_KEYS
+}
+
+/**
+ * 把 providerName 填进引导界面的文案：通用说法按 setupGenericKeys 选，空格走 placeProviderName
+ * （「密钥被供应商拒绝了」「密钥被 OpenAI 拒绝了」「密钥被我的网关拒绝了」）。
+ */
+export function fillSetupProviderText(
+  t: Parameters<typeof fillProviderFace>[0],
+  key: string,
+  providerName: string | undefined,
+  vars?: Record<string, string | number>
+): string {
+  if (!providerName && Object.hasOwn(SETUP_GENERIC_SENTENCES, key)) {
+    // 通用句：整句不带称呼（中英都不嵌「供应商」/ the provider）
+    return fillProviderFace(t, SETUP_GENERIC_SENTENCES[key]!, { kind: "generic" }, { vars, genericKeys: setupGenericKeys(key) })
+  }
+  const face: ProviderFace = providerName ? { kind: "named", name: providerName } : { kind: "generic" }
+  return fillProviderFace(t, key, face, { vars, genericKeys: setupGenericKeys(key) })
+}
+
 export type KeyProviderRow = {
   id: string
   kind: string
   name?: string
+  /** 档案端点：指到代理时提示说主机名（keyHolderFace）。 */
+  baseURL?: string
   credentialCheck?: Pick<CredentialCheck, "state">
 }
 
@@ -87,7 +155,7 @@ export function guideKeyStatus(
     return {
       status: keyStatusOf(check ?? profile?.credentialCheck),
       profileId: key.providerId,
-      providerName: presetDisplayName(key.presetId, profile?.name ?? key.presetId)
+      providerName: faceName(keyHolderFace(key.presetId, profile?.name ?? "", profile?.baseURL))
     }
   }
   if (routeProfile) {
