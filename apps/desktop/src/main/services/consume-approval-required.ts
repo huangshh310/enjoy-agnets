@@ -29,10 +29,14 @@ export async function consumeApprovalRequired(
     onDecidedReplay?: (message: ModelMessage) => void
     onCheckpoint?: () => void
     emit: (event: StreamEvent) => void
+    /** 用户已停止这一轮：迟到的审批整条丢掉（不落审批行、不挂未决、不推卡）。 */
+    isStopped?: () => boolean
   },
   lastCheckpointAt: number,
   emitCheckpoint: (eventType: string, last: number, onCheckpoint?: () => void) => number
 ): Promise<number> {
+  // 停止先到、审批后到（stub 慢流 / SDK 缓冲里已有这一条）：不写拒绝行，也不推工具失败。
+  if (input.isStopped?.()) return lastCheckpointAt
   const toolCallId = event.toolCallId || createId("tool")
   const requestArgs = event.args
   const resolved = resolveApprovalArgs({
@@ -45,6 +49,8 @@ export async function consumeApprovalRequired(
     return denyMissingArgs(event, input, toolCallId, requestArgs, resolved, lastCheckpointAt, emitCheckpoint)
   }
   const args = await parkApprovalArgs(event.name, resolved.args)
+  // 停止落在这个 await 里（审批事件已出流、卡还没推）：同样丢掉，否则库里留 decision=null、泵随后停车 waiting_review。
+  if (input.isStopped?.()) return lastCheckpointAt
   const applied = applyRememberedApproval(
     rememberApproval({
       runId: input.runId,

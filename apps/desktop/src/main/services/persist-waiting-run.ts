@@ -9,6 +9,7 @@ import { requestFromAgentInput } from "./persist-run"
 import type { ActiveRun } from "./agent-run-state"
 import { parseAgentCheckpointExtras } from "./running-orphan-plan"
 import { armCatchUpPark } from "./park-catch-up-approval"
+import { runWasStopped } from "./run-stopped"
 
 export type WaitingCheckpoint = {
   version: 1
@@ -22,6 +23,8 @@ export type WaitingCheckpoint = {
 }
 
 export function persistWaitingRun(run: ActiveRun, runId: string): void {
+  // 停止已把库写成 cancelled：泵晚到的停车不得改回 waiting_review（否则「从这里重来」被挡、要再点一次停止）。
+  if (runWasStopped(run)) return
   const request = requestFromAgentInput(run.input)
   const body: WaitingCheckpoint = {
     version: 1,
