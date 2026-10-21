@@ -3,10 +3,11 @@
  * 最后截断 SQLite 对话。ACP 禁止对话回滚。乐观气泡 id 必须与落库 id 相同。
  * STALE 时只有刷新后尾巴与原名单完全相同才重试（truncate-retry.ts，leo MF-A）。
  * 截断成功之后（#159 F1，leo BLOCK）：**先**把原话 + 图写回输入框（composer-writeback merge：不冲掉已有的字、图按 id 去重），
- * 前台已换会话（中间有 await）就写回**原会话**的草稿；**再**改消息列表。整段包在 try/catch 里：
- * 任何一步抛错，原话和图都还在（输入框或原会话草稿），弹窗显示通用失败句。
+ * 前台已换会话（中间有 await）就按行合并进**原会话**的草稿；同会话但正在组字 / 发送占锁就等一下再合并一次，
+ * 合并成功**才**改消息列表。整段包在 try/catch 里：任何一步抛错，原话和图都还在（输入框或原会话草稿），
+ * 返回 REWIND_FINISH_FAILED（弹窗收掉、会话重读、toast 告诉用户原话在草稿里）。
  */
-import { TRUNCATE_STALE_SNAPSHOT } from "@enjoy-agents/ipc-contract/session-truncate"
+import { SessionTruncateFromResult } from "@enjoy-agents/ipc-contract/session-truncate"
 import { supportsConversationRollback } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import {
   ListCheckpointsResult,
@@ -14,14 +15,14 @@ import {
   RestoreCheckpointResult
 } from "@enjoy-agents/ipc-contract/workspace-io"
 import type { QueuedComposerAsset } from "./composer-assets"
-import { writeBackToComposer } from "./composer-writeback"
+import { canWriteBackToComposer, writeBackToComposer } from "./composer-writeback"
+import { restoreRewindDraft } from "./rewind-draft-fallback"
 import { focusComposerEnd } from "./composer-focus"
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
 import { visibleUserText } from "../lib/user-message-text"
 import { useChatStore } from "../stores/chat-store"
 import { loadSession } from "./session-lifecycle"
-import { restoreDraftIntoSession } from "../lib/session-draft-storage"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
 import { isTruncateRetryable } from "./truncate-notice"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
@@ -29,8 +30,10 @@ import { decideTruncateRetry } from "./truncate-retry"
 import { lastUserMessageId, skipNextSendScroll } from "../components/ai-chat/thread/scroll-on-send"
 
 export type RewindResult =
-  | { ok: true }
-  | { ok: false; code: string; untrackedToDelete?: string[] }
+  /** draftSessionId：前台已换会话，原话放进了这个（原）会话的草稿。 */
+  | { ok: true; draftSessionId?: string }
+  /** keepThread：截断成功但原话一直放不回输入框，消息还留在界面上（别重读会话）。 */
+  | { ok: false; code: string; untrackedToDelete?: string[]; keepThread?: boolean }
 
 export function canRewindConversation(runtimeId: string | undefined): boolean {
   return supportsConversationRollback(runtimeId)
@@ -73,29 +76,64 @@ export async function rewindFromUserTurn(input: {
 
   const cut = await guarded(false)
   if (cut) return { ok: false, code: cut }
-  return finishAfterTruncate({ sessionId, userMessageId: input.userMessageId, target, messages, index })
+  return finishAfterTruncate({ sessionId, sessionTitle, userMessageId: input.userMessageId, target, messages, index })
 }
 
-/** 截断后收尾抛错时的 code：弹窗走通用失败句（原话已保住）。 */
+/**
+ * 截断已成功、但原话没能放回输入框（收尾抛错 / 一直写不进）：原话在原会话草稿里，弹窗收掉、
+ * 会话从库里重读（对话和库一致），toast「已回到这里，但没能放回输入框，原话在草稿里。」（leo #167 ③）。
+ */
 export const REWIND_FINISH_FAILED = "REWIND_FINISH_FAILED"
+
+/** truncateFrom 回来的东西不合约（zod 校验不过）：按失败处理，走通用句。 */
+export const REWIND_TRUNCATE_RESULT_INVALID = "REWIND_TRUNCATE_RESULT_INVALID"
 
 type RewindMessage = {
   id: string
   role: string
   content: string
   createdAt: number
-  assets?: Array<{ assetId: string; name: string; mediaType?: string; url?: string }>
+  assets?: Array<{ assetId: string; name: string; mediaType?: string; url?: string; size?: number }>
 }
 
 /**
- * 截断已成功：先保住原话，再改消息列表（leo #159 F1 BLOCK）。
- * - 写回：composer-writeback merge + expectSessionId。session-changed（中间切了会话）或其它拒绝（组字 / 回写锁）
- *   → 写进**原会话**的草稿（restoreDraftIntoSession：与已有草稿按行合并、图按 id 去重），绝不进别的会话的输入框。
- * - 改消息：只在前台仍是原会话时改；切走了就不碰当前会话的列表（原会话下次打开从库里读，已是截断后的）。
- * - 任何一步抛错：原话还没写成就补写原会话草稿；返回 REWIND_FINISH_FAILED（通用句），不丢字不丢图。
+ * 同一会话但写回被拒（组字中 / 发送占着回写锁）时，等输入框能写再合并一次（leo #167 P3/P4）。
+ * 轮询而不是订阅：组字状态在 composer-ime（kai 的文件），这里不加监听口子。
+ */
+const writebackWait = { pollMs: 50, capMs: 60_000 }
+
+/** 测试用：调小等待。 */
+export function setRewindWritebackWaitForTest(next: Partial<typeof writebackWait> | null): void {
+  writebackWait.pollMs = next?.pollMs ?? 50
+  writebackWait.capMs = next?.capMs ?? 60_000
+}
+
+/** 等到输入框能按 merge 写（或会话换了 / 到点）。 */
+async function waitUntilWritable(sessionId: string): Promise<void> {
+  const deadline = Date.now() + writebackWait.capMs
+  for (;;) {
+    if (useChatStore.getState().sessionId !== sessionId) return
+    if (canWriteBackToComposer("merge", { expectSessionId: sessionId })) return
+    if (Date.now() >= deadline) return
+    await new Promise((resolve) => setTimeout(resolve, writebackWait.pollMs))
+  }
+}
+
+/**
+ * 截断已成功：先保住原话，再改消息列表（leo #159 F1 / #167 BLOCK）。
+ * - 写回：composer-writeback merge + expectSessionId。
+ *   - session-changed（中间切了会话）→ 按行合并进**原会话**草稿（restoreRewindDraft），绝不进别的会话的输入框；
+ *     当前会话的消息不碰；返回 ok + draftSessionId（弹窗提示一句「原话在原来那个对话的草稿里」）。
+ *   - 同一会话但被拒（组字中 / 回写锁）→ 等输入框能写再合并**一次**；合并成功才改消息。
+ *     等的时候切走了 → 同上进原会话草稿。还是写不进 → 消息不动（原话仍在对话里看得见），
+ *     原话按行合并进草稿，返回 REWIND_FINISH_FAILED（keepThread：不重读会话，免得把看得见的那条也收掉）。
+ * - 改消息：只在前台仍是原会话时改；只去掉截断时那段尾巴的 id（等待期间新来的消息不动）。
+ * - 任何一步抛错：原话还没写成就补写原会话草稿（按行合并）；同会话就从库里重读一次让对话和库一致；
+ *   返回 REWIND_FINISH_FAILED，不丢字不丢图。
  */
 async function finishAfterTruncate(input: {
   sessionId: string
+  sessionTitle: string
   userMessageId: string
   target: RewindMessage
   messages: ReturnType<typeof useChatStore.getState>["messages"]
@@ -106,45 +144,84 @@ async function finishAfterTruncate(input: {
     text: visibleUserText(input.target.content) || input.target.content,
     assets: rewindAssets(input.target)
   }
+  const cutIds = new Set(input.messages.slice(input.index).map((message) => message.id))
+  cutIds.add(input.userMessageId)
   let saved = false
   try {
     // luna P2：main 截断后按剩下的轮次重算了待验收；刷新会话节点，审查条跟着库走。
     void refreshAllWorkspaces().catch(() => undefined)
     const latest = useChatStore.getState()
-    const sameSession = latest.sessionId === sessionId
-    const keepIndex = sameSession ? latest.messages.findIndex((message) => message.id === input.userMessageId) : -1
+    const keepIndex =
+      latest.sessionId === sessionId ? latest.messages.findIndex((message) => message.id === input.userMessageId) : -1
     const keep = keepIndex >= 0 ? (latest.messages[keepIndex] as RewindMessage) : input.target
     restored = { text: visibleUserText(keep.content) || keep.content, assets: rewindAssets(keep) }
-    // ① 先写回原话（不冲掉已有的字、图去重）；写不进当前输入框就进原会话草稿。
-    const written = writeBackToComposer(
-      { text: restored.text, assets: restored.assets },
-      { mode: "merge", expectSessionId: sessionId, focus: false }
-    )
-    if (!written.ok) restoreDraftIntoSession(sessionId, restored.text, restored.assets)
+    const content = { text: restored.text, assets: restored.assets }
+    const opts = { mode: "merge" as const, expectSessionId: sessionId, focus: false }
+    // ① 先写回原话（不冲掉已有的字、图去重）。
+    let written = writeBackToComposer(content, opts)
+    let deferred = false
+    if (!written.ok && written.reason !== "session-changed") {
+      // 同会话被拒：等组字结束 / 发送放锁，再合并一次。
+      deferred = true
+      await waitUntilWritable(sessionId)
+      written = writeBackToComposer(content, opts)
+    }
+    if (!written.ok) {
+      restoreRewindDraft(sessionId, restored.text, restored.assets)
+      saved = true
+      if (written.reason === "session-changed") return { ok: true, draftSessionId: sessionId }
+      // 同会话还是写不进：消息不动（原话在对话里还看得见），原话也进了草稿。
+      console.warn(`[rewind] ${REWIND_FINISH_FAILED}: writeback ${written.reason}`)
+      return { ok: false, code: REWIND_FINISH_FAILED, keepThread: true }
+    }
     saved = true
-    // ② 再改消息列表：只改原会话。
+    // ② 合并成功才改消息列表：只改原会话，只去掉截断的那段尾巴。
     const now = useChatStore.getState()
     if (now.sessionId === sessionId) {
-      const nowIndex = now.messages.findIndex((message) => message.id === input.userMessageId)
-      const kept = nowIndex >= 0 ? now.messages.slice(0, nowIndex) : input.messages.slice(0, input.index)
+      const kept = dropCutTail(now.messages, input.userMessageId, cutIds, input.messages.slice(0, input.index))
       // 重来截掉后面：最后一条用户消息退回更早的一条，这不是用户刚发了一句，别贴底（host #170，一次性记号）。
       // 一条用户消息都不剩时「最后一条用户消息」不会变，不打记号（否则会留给下一次用户自己发送）。
       if (lastUserMessageId(kept)) skipNextSendScroll(sessionId)
       now.setMessages(kept)
-      if (written.ok) focusComposerEnd()
+      if (!deferred) focusComposerEnd()
     }
     return { ok: true }
   } catch (error) {
     console.warn(`[rewind] ${REWIND_FINISH_FAILED}`, error)
     if (!saved) {
       try {
-        restoreDraftIntoSession(sessionId, restored.text, restored.assets)
+        restoreRewindDraft(sessionId, restored.text, restored.assets)
       } catch (draftError) {
         console.warn("[rewind] draft fallback failed", draftError)
       }
     }
+    // 对话已经截了：同会话先把截掉的尾巴从界面拿掉，再从库里重读一次（再点「重来」不会报「还没落库」）。
+    // 只先拿掉不行：库空时同会话回灌会保住界面上的气泡；只重读也不行：同理。
+    const now = useChatStore.getState()
+    if (now.sessionId === sessionId) {
+      try {
+        now.setMessages(dropCutTail(now.messages, input.userMessageId, cutIds, input.messages.slice(0, input.index)))
+      } catch (dropError) {
+        console.warn("[rewind] drop cut tail failed", dropError)
+      }
+      void Promise.resolve()
+        .then(() => loadSession(sessionId, input.sessionTitle))
+        .catch((reloadError) => console.warn("[rewind] reload after finish failure failed", reloadError))
+    }
     return { ok: false, code: REWIND_FINISH_FAILED }
   }
+}
+
+/** 去掉截断时那段尾巴（这条及之后）；等待期间新来的消息留着。找不到这条就退回截断时的快照。 */
+function dropCutTail<T extends { id: string }>(
+  messages: readonly T[],
+  userMessageId: string,
+  cutIds: ReadonlySet<string>,
+  fallback: readonly T[]
+): T[] {
+  const at = messages.findIndex((message) => message.id === userMessageId)
+  if (at < 0) return [...fallback]
+  return [...messages.slice(0, at), ...messages.slice(at).filter((message) => !cutIds.has(message.id))]
 }
 
 /** 这条消息的图 → 输入框附件，按 id 去重（同一张图不会进两次托盘）。 */
@@ -154,7 +231,14 @@ function rewindAssets(message: RewindMessage): QueuedComposerAsset[] {
   for (const asset of message.assets ?? []) {
     if (!asset?.assetId || seen.has(asset.assetId)) continue
     seen.add(asset.assetId)
-    out.push({ id: asset.assetId, name: asset.name, mediaType: asset.mediaType, url: asset.url })
+    const size = typeof asset.size === "number" && Number.isFinite(asset.size) ? asset.size : undefined
+    out.push({
+      id: asset.assetId,
+      name: asset.name,
+      mediaType: asset.mediaType,
+      url: asset.url,
+      ...(size !== undefined ? { size } : {})
+    })
   }
   return out
 }
@@ -242,11 +326,14 @@ async function truncateWithGuardedRetry(input: {
   }
 }
 
+/** truncateFrom 的结果按合约校验（zod）：通过返回 null；被拒返回它的 code；不合约按失败（通用句）。 */
 function truncateBlockedCode(result: unknown): string | null {
-  if (result && typeof result === "object" && "ok" in result && (result as { ok?: unknown }).ok === false) {
-    return String((result as { code?: string }).code ?? TRUNCATE_STALE_SNAPSHOT)
+  const parsed = SessionTruncateFromResult.safeParse(result)
+  if (!parsed.success) {
+    console.warn(`[rewind] ${REWIND_TRUNCATE_RESULT_INVALID}`, parsed.error.issues)
+    return REWIND_TRUNCATE_RESULT_INVALID
   }
-  return null
+  return parsed.data.ok ? null : parsed.data.code
 }
 
 function nextUserCreatedAt(

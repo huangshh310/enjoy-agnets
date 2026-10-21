@@ -169,6 +169,8 @@ export const enChat = {
   rewindTruncateMissing: "This message is not persisted yet, so the thread cannot be truncated",
   rewindFailed: "Could not rewind from here",
   rewindRestoring: "Restoring…",
+  rewindFinishFailedToast: "Rewound to here, but couldn't put your message back in the composer. It's saved in your draft.",
+  rewindSavedToOtherDraft: "Your message was saved to the draft of the chat you started from.",
   truncateStaleSnapshot: "This chat has new messages. Refresh and try again.",
   truncateTailChanged: "There’s new content. Review it, then click again.",
   truncateRunActive: "This chat is still running or waiting for approval, so it can't be truncated.",

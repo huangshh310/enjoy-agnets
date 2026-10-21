@@ -37,7 +37,18 @@ export const SessionTruncateResult = z.discriminatedUnion("ok", [
 ])
 export type SessionTruncateResult = z.infer<typeof SessionTruncateResult>
 
-/** session.truncateFrom 的结果：通用截断结果，或引擎不支持回滚。 */
-export type SessionTruncateFromResult =
-  | SessionTruncateResult
-  | { ok: false; code: typeof TRUNCATE_ROLLBACK_UNSUPPORTED }
+/** session.truncateFrom 的拒绝码：通用三种 + 引擎不支持回滚。 */
+export const SessionTruncateFromErrorCode = z.enum([
+  TRUNCATE_STALE_SNAPSHOT,
+  TRUNCATE_RUN_ACTIVE,
+  TRUNCATE_MESSAGE_NOT_FOUND,
+  TRUNCATE_ROLLBACK_UNSUPPORTED
+])
+export type SessionTruncateFromErrorCode = z.infer<typeof SessionTruncateFromErrorCode>
+
+/** session.truncateFrom 的结果（renderer 收到后按它校验，不合约按失败）。 */
+export const SessionTruncateFromResult = z.discriminatedUnion("ok", [
+  SessionTruncateOk,
+  z.object({ ok: z.literal(false), code: SessionTruncateFromErrorCode }).strict()
+])
+export type SessionTruncateFromResult = z.infer<typeof SessionTruncateFromResult>
