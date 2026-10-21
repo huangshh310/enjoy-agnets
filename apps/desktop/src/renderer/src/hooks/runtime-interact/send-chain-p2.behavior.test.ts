@@ -305,3 +305,71 @@ test("B：建会话窗里回车发 A、再打 B 点发送按钮——B 交出去
   assert.equal(useChatStore.getState().composer, "", "输入框里没有 B（不会再回车发第二遍）")
   assert.equal(storage.readPersistedDraft("ses_bb"), undefined, "新会话草稿为空")
 })
+
+// ───────────────────────── C：排队首发出字前额度失败 + 排在后面的 B ─────────────────────────
+
+const billing = (runId: string, sessionId: string) =>
+  dispatchAgentEvent({ type: "run.error", runId, sessionId, message: "provider_billing", code: "provider_billing", preOutput: true } as never)
+
+/** 建会话窗：A「billing first」排队首发，B「queued two」排在 A 后面；会话建好、A 开跑。 */
+async function createWindowAB(sessionId: string, onRunA: (input: any) => unknown) {
+  useChatStore.setState({ workspaceId: "ws", sessionId: null, running: false, runId: null, preparingHint: true, composer: "billing first", error: null, hasKey: true, modelId: "stub-e2e", runtimeId: "enjoy-local", messages: [] } as never)
+  dom = "billing first"
+  const { token } = beginNewSessionCreate()
+  const sendingA = sendComposerMessage(undefined, "billing first", att("billing first"))
+  dom = "queued two"
+  useChatStore.getState().setComposer("queued two")
+  void sendComposerMessage(undefined, "queued two")
+  await flush()
+  onRun = onRunA
+  useChatStore.setState({ sessionId } as never)
+  finishNewSessionCreate(token, sessionId)
+  // 包一层：async 函数直接 return Promise 会被摊平成「等 A 发完」。
+  return { sendingA }
+}
+
+test("C：排队首发 A 出字前额度失败先于回执——A 的失败稿只写回一次；B 不进队列不自启，接在 A 后（一个换行）还回输入框", async () => {
+  const writes: string[] = []
+  let off = () => {}
+  try {
+    const { sendingA } = await createWindowAB("ses_c1", () => {
+      billing("run_c1", "ses_c1")
+      return { ok: true, runId: "run_c1", userMessageId: "msg_c1" }
+    })
+    // 从 A、B 都已交出去（输入框已清）开始记。
+    off = useChatStore.subscribe((s, p) => {
+      if (s.composer !== p.composer) writes.push(s.composer)
+    })
+    await sendingA
+    await flush()
+    // 自启照常踢一下（use-followup-autostart 在 running 落下 / 入队时都会踢）。
+    const s = useChatStore.getState()
+    tryStartNextFollowup({ sessionId: s.sessionId, running: s.running, send: (item) => sendComposerMessage({ content: item.prompt, assets: item.assets }) })
+    await drainFollowupAutostart()
+    await flush()
+    const now = useChatStore.getState()
+    assert.equal(runs.length, 1, "B 没有抢在 A 前面发出去")
+    assert.equal(fq.listFollowups("ses_c1").length, 0, "B 没进运行中队列")
+    assert.equal(now.composer, "billing first\nqueued two", "A 在前、B 在后，一个换行")
+    assert.equal(dom, "billing first\nqueued two")
+    assert.equal(now.error, "provider_billing", "红卡仍是额度")
+    assert.equal(writes.filter((w) => w === "billing first").length, 1, `A 的失败稿只写回一次：${JSON.stringify(writes)}`)
+  } finally {
+    off()
+  }
+})
+
+test("C 对照：A 已开跑（回执先到）再报额度——B 已在队列里、停住（quota），输入框只有 A", async () => {
+  let resolveRun!: (v: unknown) => void
+  const { sendingA } = await createWindowAB("ses_c2", () => new Promise((r) => (resolveRun = r)))
+  await flush()
+  resolveRun({ ok: true, runId: "run_c2", userMessageId: "msg_c2" })
+  await sendingA
+  await flush()
+  billing("run_c2", "ses_c2")
+  await flush()
+  assert.deepEqual(fq.listFollowups("ses_c2").map((f) => f.prompt), ["queued two"])
+  assert.equal(fq.followupPausedReason("ses_c2"), "quota")
+  assert.equal(useChatStore.getState().composer, "billing first")
+  assert.equal(runs.length, 1)
+})

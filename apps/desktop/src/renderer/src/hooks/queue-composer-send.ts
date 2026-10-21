@@ -107,6 +107,15 @@ export function clearQueuedComposerText(sent?: string): void {
   syncComposerDom("", true)
 }
 
+/**
+ * kai send-p2 C：排队首发 A 出字前失败、回滚先于 agent.run 回执到达——稿已由 chat-store 回滚补丁还回输入框
+ * （不经 restoreComposerDraft），这里同样把 A 记成「没发出去」。否则排在后面的 B 被当成 A 已发出，进运行中队列
+ * （那时队列是空的，run.error 的暂停落空）立刻自启：B 发送时把 A 的失败稿再写回输入框一次，B 再失败又接一行。
+ */
+export function noteFirstSendRolledBack(): void {
+  if (activeFirstSend) activeFirstSend.failed = true
+}
+
 /** 还全文草稿，不改 error：发送闸中性条要留着。 */
 export function restoreComposerDraft(text: string, assets?: QueuedComposerAsset[]): void {
   if (activeFirstSend) activeFirstSend.failed = true

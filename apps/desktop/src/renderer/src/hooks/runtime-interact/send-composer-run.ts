@@ -63,6 +63,7 @@ import {
   clearSentComposerText,
   composerNeedsSessionReady,
   hasQueuedComposerSend,
+  noteFirstSendRolledBack,
   restoreComposerAfterFailedSend,
   restoreComposerDraft,
   PREVIOUS_STILL_PREPARING,
@@ -443,6 +444,8 @@ async function launchComposerRun(
     const userPersisted = userMessagePersisted(result)
     const settled = settleLaunchedRun(sessionId, runId, claimComposerRun)
     // 出字前失败已先到并回滚（红卡 / 稿已还原）：不中止、不改写红卡、不删建会话窗的会话。
+    // kai send-p2 C：排队首发也要记成没发出——排在它后面的 B 接在失败稿后还回输入框，不自启、不让 A 的稿被写回第二次。
+    if (settled === "discarded" && createdSessionId) noteFirstSendRolledBack()
     if (settled === "discarded") return false
     if (settled === "orphan") {
       abortOrphanedRun(runId)
