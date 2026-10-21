@@ -32,7 +32,7 @@ import {
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
 import { pausedCollapsed } from "./queue-paused-view"
-import { keepThreadForFailureCard, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout"
+import { keepThreadForFailureCard, pillFitsBelow, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -158,9 +158,22 @@ function DockedRows({
   const t = useT()
   const tight = useDockTight(ref, !expanded, items.length)
   const mode = dockMode(items.length, tight, expanded)
-  // 区内滚的是里面这层；「还有 N 条」画在它下面、不进滚动区，永远不盖任何一行（leo #170 soft-5）。
+  // 区内滚的是里面这层；「还有 N 条」放得下就画在它下面、不进滚动区，不盖任何一行（leo #170 soft-5）。
   const scrollRef = useRef<HTMLDivElement>(null)
   const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
+  const pillBelow = useDockHeightAtLeast(ref, hiddenBelow > 0)
+  const pill =
+    hiddenBelow > 0 ? (
+      <DockSummaryButton
+        testId="queued-hidden-below"
+        label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
+        className={cx(
+          "w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5",
+          pillBelow ? "mt-1" : "sticky bottom-0 z-10 shadow-sm"
+        )}
+        onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })}
+      />
+    ) : null
 
   const visible = mode === "more" ? items.slice(0, DOCK_VISIBLE_ROWS) : items
   return (
@@ -175,10 +188,9 @@ function DockedRows({
       data-hidden-below={hiddenBelow > 0 ? hiddenBelow : undefined}
       // 默认整行画（shrink-0）；用户点开后才让位：shrink 远大于审批卡（PermissionDock 是 shrink 1），最少留一行、区内滚。
       // relative z-30：盖过对话目录条（z-20），× 点得到。
-      // 点开后有可能出「还有 N 条」（2 条及以上）：最少留一行 + 小胶囊的高度（min-h-16），别等胶囊出来再长高（会来回跳）。
       className={cx(
         "relative z-30 mx-6 flex flex-col overflow-hidden",
-        expanded ? cx("max-h-[9.5rem] shrink-[1000] py-1", items.length > 1 ? "min-h-16" : "min-h-9") : "shrink-0",
+        expanded ? "max-h-[9.5rem] min-h-9 shrink-[1000] py-1" : "shrink-0",
         !expanded && (mode === "collapsed" ? "py-0.5" : "py-1")
       )}
     >
@@ -209,19 +221,13 @@ function DockedRows({
                 onClick={() => setExpanded(true)}
               />
             ) : null}
+            {/* 挤到一行高（审批卡 + 733×480）：放不下单独一行，退回贴在区底左下角，只盖行左边、不盖右侧按钮。 */}
+            {pillBelow ? null : pill}
           </>
         )}
       </div>
-      {hiddenBelow > 0 ? (
-        // 区内滚、滚动条隐藏：底下还有行时，滚动区下面单独一行左对齐「还有 N 条」，点一下滚到底。
-        // 不再 sticky 浮在行上（以前会盖住最后一条可见行左边的正文），也不盖行右侧的「马上发 / 上下移 / ×」。
-        <DockSummaryButton
-          testId="queued-hidden-below"
-          label={t("chat.runtimeQueueMore", { n: hiddenBelow })}
-          className="mt-1 w-auto max-w-[45%] self-start border-solid bg-background-secondary-default pr-1.5"
-          onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })}
-        />
-      ) : null}
+      {/* 区内滚、滚动条隐藏：底下还有行时，滚动区下面单独一行左对齐「还有 N 条」，点一下滚到底；不盖任何一行。 */}
+      {pillBelow ? pill : null}
     </div>
   )
 }
@@ -314,6 +320,21 @@ function useDockTight(ref: RefObject<HTMLDivElement | null>, enabled: boolean, c
  * 点开后（区内滚）量一下：可视区底边以下还藏着几条排队行。滚动、区 / 行尺寸变化时重量。
  * 「还有 N 条」行自己是 sticky 的，不参与计数（只数 queued-user-turn）。
  */
+/** 排队区外层够不够高、能不能把「还有 N 条」单独一行画在滚动区下面（pillFitsBelow）。 */
+function useDockHeightAtLeast(ref: RefObject<HTMLDivElement | null>, enabled: boolean): boolean {
+  const [fits, setFits] = useState(true)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!enabled || !el) return
+    const measure = () => setFits(pillFitsBelow(el.clientHeight))
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref, enabled])
+  return fits
+}
+
 function useRowsHiddenBelow(ref: RefObject<HTMLDivElement | null>, enabled: boolean, count: number): number {
   const [hidden, setHidden] = useState(0)
   const measure = useCallback(() => {

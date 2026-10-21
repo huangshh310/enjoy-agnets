@@ -3,6 +3,7 @@
  * - rowsHiddenBelow：点开后区内滚，排队行被裁在区底下几条（给「还有 N 条」提示用）。
  * - refoldOnShort：点开过，窗口再被拉到 ≤600 高 → 重新折成「已暂停 · 排队 N 条」（m211-33）。
  * - keepThreadForFailureCard：停着且对话里挂着失败卡（「再发一次」那张）→ 对话区保底一截高度，按钮整颗露出。
+ * - pillFitsBelow：「还有 N 条」能不能单独占一行画在滚动区下面（不盖任何一行）。
  */
 import { PREVIOUS_STILL_PREPARING } from "../../../lib/usage/classify-thread-error.ts"
 
@@ -33,4 +34,16 @@ export function refoldOnShort(wasShort: boolean, isShort: boolean): boolean {
  */
 export function keepThreadForFailureCard(queuePaused: boolean, error: string | null | undefined): boolean {
   return queuePaused && Boolean(error) && error !== PREVIOUS_STILL_PREPARING
+}
+
+/**
+ * 「还有 N 条」单独一行画在滚动区下面需要的排队区高度（px）：上下 padding 8 + 一行排队 28 + 间距 4 + 小胶囊 24。
+ * 够高 → 画在下面，永远不盖行（leo #170 soft-5）；不够（审批卡 + 733×480 把排队区挤到一行高）→ 退回贴在区底左下角，
+ * 只盖那一行左边的正文、不盖右侧按钮——这时候再占一行就一条排队行都露不出来了。
+ * 按排队区外层高度判：胶囊挪上挪下不改外层高度，不会来回跳。
+ */
+export const PILL_BELOW_MIN_DOCK_PX = 64
+
+export function pillFitsBelow(dockHeight: number): boolean {
+  return dockHeight >= PILL_BELOW_MIN_DOCK_PX
 }

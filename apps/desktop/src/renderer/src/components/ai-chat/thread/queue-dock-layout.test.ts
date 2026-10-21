@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { keepThreadForFailureCard, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout.ts"
+import { keepThreadForFailureCard, PILL_BELOW_MIN_DOCK_PX, pillFitsBelow, refoldOnShort, rowsHiddenBelow } from "./queue-dock-layout.ts"
 import { PREVIOUS_STILL_PREPARING } from "../../../lib/usage/classify-thread-error.ts"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../../../i18n/catalogs/en/chat.ts"
@@ -46,20 +46,26 @@ test("接线：排队区用 refoldOnShort / rowsHiddenBelow，挂 data-keep-thre
   assert.match(dock, /data-keep-thread=\{keepThread \? "true" : undefined\}/)
   assert.match(dock, /testId="queued-hidden-below"/)
   assert.match(dock, /label=\{t\("chat\.runtimeQueueMore", \{ n: hiddenBelow \}\)\}/)
-  // 小胶囊靠左、不铺满；leo #170 soft-5：不再 sticky 浮在行上（会盖最后一条可见行左边的正文），
-  // 画在滚动区（scrollRef）外面、下面单独一行；藏行计数和「滚到底」都按里面的滚动区算。
-  assert.match(dock, /className="mt-1 w-auto max-w-\[45%\] self-start/)
-  assert.doesNotMatch(dock, /sticky bottom-0/)
+  // 小胶囊靠左、不铺满；leo #170 soft-5：放得下就画在滚动区（scrollRef）外面、下面单独一行，不盖任何一行；
+  // 挤到一行高（审批卡 + 733×480）才退回贴在区底左下角（只盖行左边，不盖右侧按钮）。藏行计数和「滚到底」都按里面的滚动区算。
+  assert.match(dock, /"w-auto max-w-\[45%\] self-start border-solid bg-background-secondary-default pr-1\.5",\s+pillBelow \? "mt-1" : "sticky bottom-0 z-10 shadow-sm"/)
+  assert.match(dock, /const pillBelow = useDockHeightAtLeast\(ref, hiddenBelow > 0\)/)
+  assert.match(dock, /setFits\(pillFitsBelow\(el\.clientHeight\)\)/)
   assert.match(dock, /useRowsHiddenBelow\(scrollRef, mode === "all", items\.length\)/)
   assert.match(dock, /scrollRef\.current\?\.scrollTo\(\{ top: scrollRef\.current\.scrollHeight/)
-  const scrollAt = dock.indexOf("ref={scrollRef}")
-  const scrollEnd = dock.indexOf("{hiddenBelow > 0 ? (")
-  assert.ok(scrollAt > 0 && scrollEnd > scrollAt, "小胶囊在滚动区后面")
-  assert.match(dock, /<\/div>\n\s*\{hiddenBelow > 0 \? \(/, "滚动区在小胶囊之前就闭合")
-  // 点开后最少留一行 + 小胶囊的高度，别等胶囊出来再长高。
-  assert.match(dock, /items\.length > 1 \? "min-h-16" : "min-h-9"/)
+  assert.match(dock, /\{pillBelow \? null : pill\}\s+<\/>\s+\)\}\s+<\/div>\s+(\{\/\*[^*]*\*\/\}\s+)?\{pillBelow \? pill : null\}/, "放得下：滚动区闭合之后才画；放不下：在滚动区里")
+  // 点开后最少一行（min-h-9）不变：审批卡 + 733×480 时不能为小胶囊把排队区撑高（会压到审批三钮）。
+  assert.match(dock, /expanded \? "max-h-\[9\.5rem\] min-h-9 shrink-\[1000\] py-1"/)
   const stage = src("../../app-shell/chat/chat-stage.tsx")
   const base = stage.indexOf("[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0")
   const keep = stage.indexOf("[&:has(>[data-testid=queued-followups-docked][data-keep-thread=true])>[data-thread-root]]:min-h-[4.5rem]")
   assert.ok(base >= 0 && keep > base, "保底那条在 min-h-0 后面、选择器多一个属性")
+})
+
+test("leo soft-5：「还有 N 条」单独一行要 64px（padding 8 + 一行 28 + 间距 4 + 胶囊 24），够就画在下面，不够才贴在区底", () => {
+  assert.equal(PILL_BELOW_MIN_DOCK_PX, 64)
+  assert.equal(pillFitsBelow(152), true) // max-h-[9.5rem]
+  assert.equal(pillFitsBelow(64), true)
+  assert.equal(pillFitsBelow(63), false)
+  assert.equal(pillFitsBelow(36), false) // min-h-9：挤到一行高
 })
