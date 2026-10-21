@@ -256,9 +256,20 @@ export function editorMissingFields(editor: EditorState | null, requiresKey: boo
   return missing
 }
 
-/** 简易表单里名称要不要放在最上面露着（luna #170 r-luna ③）：自定义端点（必填、没有预设名）要；预设自带名称，收在「高级」里。 */
-export function simpleNameUpFront(kind: ProviderKind): boolean {
+/**
+ * 简易表单里必填的连接项要不要放在最上面露着（luna #170 r-luna ③）：自定义端点（名称、接口地址都得用户填）要——
+ * 顺序 名称 → 接口地址 → 密钥（→ 模型），「高级」里只剩选填项；预设自带名称和地址（35 个预设里只有自定义端点没有地址），收在「高级」里不动。
+ */
+export function simpleConnectionUpFront(kind: ProviderKind): boolean {
   return kind === "custom"
+}
+
+/**
+ * 简易表单每栏下面画哪几条「…才能保存」：自定义端点一次只说第一条（按表单从上到下：名称 → 地址 → 密钥 → 模型，
+ * 名称、地址都缺时只说名称），填好一条下一条才冒出来；预设照旧缺几条说几条。底栏「还差：…」仍列全部。
+ */
+export function simpleFormMissingHints(kind: ProviderKind, missing: readonly EditorMissingField[]): EditorMissingField[] {
+  return simpleConnectionUpFront(kind) ? missing.slice(0, 1) : [...missing]
 }
 
 /** 缺的字段在哪个页签（完整表单分 连接 / 模型 两页，填了一页另一页还缺时要能看出来去哪填）。 */

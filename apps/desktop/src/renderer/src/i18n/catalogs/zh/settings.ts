@@ -1127,7 +1127,7 @@ export const zhSettings = {
     missingJoiner: "、",
     missingOnTab: "{field}（在「{tab}」页）",
     missingNameHint: "起个名字才能保存。",
-    missingEndpointHint: "填一个接口地址才能保存。",
+    missingEndpointHint: "填上地址才能保存。",
     missingKeyHint: "贴上密钥才能保存。",
     missingModelHint: "填一个模型 ID 才能保存。",
     missingTabAria: "这一页还有没填的",

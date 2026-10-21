@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { canSaveEditor, editorMissingFields, emptyEditor, missingFieldTab, proxyBlocksSave, simpleNameUpFront, type EditorState } from "./providers.types.ts"
+import { canSaveEditor, editorMissingFields, emptyEditor, missingFieldTab, proxyBlocksSave, simpleConnectionUpFront, simpleFormMissingHints, type EditorState } from "./providers.types.ts"
 import { missingSummaryText } from "./provider-missing-copy.ts"
 import { zhSettings } from "../../../i18n/catalogs/zh/settings.ts"
 import { enSettings } from "../../../i18n/catalogs/en/settings.ts"
@@ -116,20 +116,54 @@ test("leo soft-3：canSaveEditor 只有一套规则——什么都不缺且代�
   assert.doesNotMatch(body, /modelId|hasEndpoint|apiKey/)
 })
 
-test("luna #170 r-luna ③：简易表单的自定义端点，名称放在最上面露着（不收进「高级」），「起个名字才能保存。」就在它下面；预设仍收在「高级」", () => {
-  assert.equal(simpleNameUpFront("custom"), true)
-  assert.equal(simpleNameUpFront("deepseek"), false)
+test("luna #170 r-luna ③：简易表单的自定义端点，名称 → 接口地址 → 密钥露在外面（不收进「高级」）；每栏下面一次只说第一条缺的；预设不动", () => {
+  assert.equal(simpleConnectionUpFront("custom"), true)
+  assert.equal(simpleConnectionUpFront("deepseek"), false)
+  // 一次只说第一条（按表单从上到下）：名称、地址都缺 → 只说名称；名称有了 → 说地址。预设照旧缺几条说几条。
+  assert.deepEqual(simpleFormMissingHints("custom", ["name", "endpoint", "key", "model"]), ["name"])
+  assert.deepEqual(simpleFormMissingHints("custom", ["endpoint", "key"]), ["endpoint"])
+  assert.deepEqual(simpleFormMissingHints("custom", ["key", "model"]), ["key"])
+  assert.deepEqual(simpleFormMissingHints("custom", []), [])
+  assert.deepEqual(simpleFormMissingHints("deepseek", ["key", "model"]), ["key", "model"])
+  // 和 editorMissingFields 的顺序对得上（名称在地址前面）。
+  const empty = customEditor({ name: "", endpoints: {}, keys: [], modelId: "" })
+  assert.deepEqual(simpleFormMissingHints("custom", editorMissingFields(empty, true)), ["name"])
+  // 文案（luna）：名称沿用现有句；地址「填上地址才能保存。」/「Add the address to save.」。
+  assert.equal(zhSettings.providers.missingNameHint, "起个名字才能保存。")
+  assert.equal(zhSettings.providers.missingEndpointHint, "填上地址才能保存。")
+  assert.equal(enSettings.providers.missingNameHint, "Add a name to save.")
+  assert.equal(enSettings.providers.missingEndpointHint, "Add the address to save.")
+
   const read = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8")
   const simple = read("./provider-simple-fields.tsx")
-  const up = simple.indexOf("{nameUpFront ? <ProviderNameField editor={editor} onChange={onChange} missing={missing} /> : null}")
-  const details = simple.indexOf("<details")
-  assert.ok(up >= 0 && details > up, "名称在「高级」<details> 之前（露着）")
-  assert.match(simple, /const nameUpFront = simpleNameUpFront\(editor\.kind\)/)
-  // 「高级」里不再画第二个名称栏、也不再提名称。
-  assert.match(simple, /missing=\{missing\?\.filter\(\(field\) => \(field === "name" && !nameUpFront\) \|\| field === "endpoint"\)\}\s+showName=\{!nameUpFront\}/)
+  const at = (needle: string) => {
+    const index = simple.indexOf(needle)
+    assert.ok(index >= 0, needle)
+    return index
+  }
+  const name = at("{upFront ? <ProviderNameField editor={editor} onChange={onChange} missing={hints} /> : null}")
+  const address = at("{upFront ? <ProviderPrimaryAddressField editor={editor} onChange={onChange} missing={hints} /> : null}")
+  const key = at('<MissingFieldHint missing={hints} field="key" />')
+  const details = at("<details")
+  assert.ok(name < address && address < key && key < details, "名称 → 地址 → 密钥，都在「高级」<details> 前面")
+  assert.match(simple, /const upFront = simpleConnectionUpFront\(editor\.kind\)/)
+  assert.match(simple, /const hints = simpleFormMissingHints\(editor\.kind, missing \?\? \[\]\)/)
+  assert.match(simple, /\{!upFront \|\| key \? \(/, "自定义端点没有密钥栏时不画空的密钥标题")
+  assert.match(simple, /<MissingFieldHint missing=\{hints\} field="model" \/>/)
+  // 「高级」：自定义端点不再画名称、主地址，也不再提示（只剩选填项）；预设照旧。
+  assert.match(
+    simple,
+    /missing=\{upFront \? \[\] : missing\?\.filter\(\(field\) => field === "name" \|\| field === "endpoint"\)\}\s+showName=\{!upFront\}\s+showPrimaryAddress=\{!upFront\}/
+  )
   const conn = read("./provider-connection-fields.tsx")
   assert.match(conn, /\{showName \? <ProviderNameField editor=\{editor\} onChange=\{onChange\} missing=\{missing\} \/> : null\}/)
-  // 名称栏下面紧跟着缺名称的提示。
+  assert.match(conn, /onDetect=\{onDetect\}\s+showPrimaryAddress=\{showPrimaryAddress\}/)
   const field = conn.slice(conn.indexOf("export function ProviderNameField"))
   assert.match(field, /placeholder=\{t\("settings\.providers\.namePlaceholder"\)\}[\s\S]*?\/>\s+<MissingFieldHint missing=\{missing\} field="name" \/>/)
+  const endpoints = read("./provider-endpoint-fields.tsx")
+  assert.match(endpoints, /\{showPrimaryAddress \? <PrimaryAddressInput editor=\{editor\} onChange=\{onChange\} \/> : null\}/)
+  assert.match(
+    endpoints,
+    /export function ProviderPrimaryAddressField[\s\S]*?<PrimaryAddressInput editor=\{editor\} onChange=\{onChange\} \/>\s+<MissingFieldHint missing=\{missing\} field="endpoint" \/>/
+  )
 })

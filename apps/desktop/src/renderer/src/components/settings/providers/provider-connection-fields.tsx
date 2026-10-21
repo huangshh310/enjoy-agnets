@@ -19,7 +19,8 @@ export function ProviderConnectionFields({
   onChange,
   onDetect,
   missing,
-  showName = true
+  showName = true,
+  showPrimaryAddress = true
 }: {
   editor: EditorState
   preset: ProviderPreset
@@ -29,6 +30,8 @@ export function ProviderConnectionFields({
   missing?: readonly EditorMissingField[]
   /** 名称已经画在外面（简易表单的自定义端点，luna #170 r-luna ③）时不再画一遍。 */
   showName?: boolean
+  /** 主地址已经画在外面（同上）时不再画一遍。 */
+  showPrimaryAddress?: boolean
 }) {
   const t = useT()
   const proxyMode = editor.proxy === "direct" ? "direct" : editor.proxy.trim() ? "custom" : "system"
@@ -41,6 +44,7 @@ export function ProviderConnectionFields({
         detecting={detecting}
         onChange={onChange}
         onDetect={onDetect}
+        showPrimaryAddress={showPrimaryAddress}
       />
       <MissingFieldHint missing={missing} field="endpoint" />
       <ProviderKeyList editor={editor} onChange={onChange} />
