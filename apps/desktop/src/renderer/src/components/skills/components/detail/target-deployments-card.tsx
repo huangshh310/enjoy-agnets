@@ -81,7 +81,7 @@ export function TargetDeploymentsCard({
                   className={cx(
                     "flex size-4.5 shrink-0 items-center justify-center rounded-full text-caption-2-bold font-bold transition-all",
                     isEnabled
-                      ? "bg-accent-500 text-text-white shadow-xs scale-105"
+                      ? "bg-accent-700 text-text-white shadow-xs scale-105"
                       : "border border-separator-border/80 bg-background-primary-default text-text-tertiary"
                   )}
                 >

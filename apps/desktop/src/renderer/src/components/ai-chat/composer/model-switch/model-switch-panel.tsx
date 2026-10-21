@@ -101,7 +101,7 @@ function ModelSwitchFailure({
             className={cx(
               "mt-1.5 h-7 rounded-lg px-2.5 text-caption-1-medium",
               kind === "needs_login"
-                ? "bg-accent-500 text-text-white hover:bg-accent-600"
+                ? "bg-accent-700 text-text-white hover:bg-accent-800"
                 : "border border-border-button-default text-text-primary hover:bg-background-secondary-hover"
             )}
           >

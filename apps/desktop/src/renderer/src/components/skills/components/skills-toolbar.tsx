@@ -174,7 +174,7 @@ export function SkillsToolbar({
           >
             <RiCompass3Line className="size-3.5" />
             <span>{t("pages.skills.toolbar.tabCurated")}</span>
-            <span className="rounded-full bg-accent-500/10 px-1.5 py-0.2 text-caption-2-regular text-accent-600 dark:text-accent-400 font-mono">
+            <span className="rounded-full bg-accent-500/10 px-1.5 py-0.2 text-caption-2-regular text-accent-800 dark:text-accent-300 font-mono">
               Store
             </span>
           </button>

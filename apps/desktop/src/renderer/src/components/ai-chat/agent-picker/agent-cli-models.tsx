@@ -76,7 +76,7 @@ function CliModelsEmpty({
       <p className="text-caption-1-medium text-text-tertiary">{t("chat.agentCliModel")}</p>
       <button
         type="button"
-        className="rounded-full bg-accent-500 px-3 py-1 text-caption-1-medium text-text-white hover:bg-accent-600"
+        className="rounded-full bg-accent-700 px-3 py-1 text-caption-1-medium text-text-white hover:bg-accent-800"
         onClick={() => onUseDefault?.()}
       >
         {t("chat.agentUse", { name: agent.label })}

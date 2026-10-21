@@ -17,7 +17,7 @@ export function CuratedEmpty({ onRetry }: { onRetry: () => void }) {
         type="button"
         data-testid="extensions-curated-retry"
         onClick={onRetry}
-        className="mt-3 inline-flex h-7 items-center rounded-lg bg-accent-500 px-3 text-caption-2-medium text-text-white hover:bg-accent-600"
+        className="mt-3 inline-flex h-7 items-center rounded-lg bg-accent-700 px-3 text-caption-2-medium text-text-white hover:bg-accent-800"
       >
         {t(EXTENSIONS_COPY.retry)}
       </button>

@@ -185,6 +185,8 @@
   --color-text-error-primary:   var(--color-red-500);
   --color-input-disabled-text:  var(--color-neutral-300);
   --color-text-white:           var(--color-white);
+  /* 分段控件 / 选项卡 / 皮肤名这类「没选中但可点」的字：tertiary 在浅灰底上只有 2.4，这里单独给 ≥ 4.5 的一档。 */
+  --color-text-unselected:      var(--color-neutral-600);
 
   /* Background */
   /* Canvas behind floating cards. Neutral-100 (#f7f7f7) so white
@@ -233,6 +235,8 @@
   --color-separator-border:        var(--color-neutral-200);
   --color-separator-border-strong: var(--color-neutral-200);
   --color-border-focus-ring:       var(--color-accent-500);
+  /* 开关关态轨道的描边：轨道底色和卡片几乎一样（glass 下 1.04），靠描边做到 ≥ 3:1。 */
+  --color-switch-off-border:       var(--color-neutral-500);
 
   /* State */
   --color-state-success-text: var(--color-lime-800);
@@ -375,10 +379,12 @@
   --color-chart-warning:      var(--color-amber-500);
   --color-chart-warning-text: var(--color-amber-600);
 
-  /* Button gradients */
-  --gradient-button-primary-default:  linear-gradient(180deg, var(--color-accent-500)    0%, var(--color-accent-600)    100%);
-  --gradient-button-primary-hover:    linear-gradient(180deg, var(--color-accent-400)    0%, var(--color-accent-500)    100%);
-  --gradient-button-primary-active:   linear-gradient(180deg, var(--color-accent-600)    0%, var(--color-accent-700)    100%);
+  /* Button gradients
+   * 白字主按钮：渐变两端对白字都要 ≥ 4.5:1，五种强调色都算（lib/accent-contrast.test.ts）。
+   * 原来常态 500→600、悬停 400→500，绿 / 琥珀的 600 只有 3.76 / 3.19；现在常态从 700 起，悬停 / 按下往深走。 */
+  --gradient-button-primary-default:  linear-gradient(180deg, var(--color-accent-700) 0%, color-mix(in oklab, var(--color-accent-700) 50%, var(--color-accent-800)) 100%);
+  --gradient-button-primary-hover:    linear-gradient(180deg, color-mix(in oklab, var(--color-accent-700) 50%, var(--color-accent-800)) 0%, var(--color-accent-800) 100%);
+  --gradient-button-primary-active:   linear-gradient(180deg, var(--color-accent-800) 0%, var(--color-accent-900) 100%);
   --gradient-button-primary-disabled: linear-gradient(180deg, var(--color-neutral-200) 0%, var(--color-neutral-300) 100%);
 
   --gradient-button-danger-default:   linear-gradient(180deg, var(--color-red-500) 0%, var(--color-red-600) 100%);
@@ -407,6 +413,7 @@
   --color-text-tertiary: var(--color-neutral-600);
   --color-text-disabled: var(--color-neutral-800);
   --color-text-error-primary: var(--color-red-400);
+  --color-text-unselected: var(--color-neutral-400);
   --color-input-disabled-text: color-mix(in srgb, var(--color-neutral-500) 40%, transparent);
 
   /* Background */
@@ -689,6 +696,7 @@
   --color-text-error-primary:   var(--color-text-error-primary);
   --color-input-disabled-text:  var(--color-input-disabled-text);
   --color-text-white:           var(--color-text-white);
+  --color-text-unselected:      var(--color-text-unselected);
 
   --color-background-full:              var(--color-background-full);
   --color-background-primary-default:   var(--color-background-primary-default);
@@ -728,6 +736,7 @@
   --color-separator-border:        var(--color-separator-border);
   --color-separator-border-strong: var(--color-separator-border-strong);
   --color-border-focus-ring:       var(--color-border-focus-ring);
+  --color-switch-off-border:       var(--color-switch-off-border);
 
   --color-state-success-text: var(--color-state-success-text);
   --color-state-success-base: var(--color-state-success-base);

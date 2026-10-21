@@ -107,6 +107,6 @@ function failureCardOffersRetry(error: string | null): boolean {
 
 const secondaryClass = `inline-flex shrink-0 cursor-pointer items-center rounded-md px-1.5 py-0.5 ${QUEUE_MUTED_TEXT} hover:bg-background-secondary-hover hover:text-text-primary`
 
-/** 白字在 accent-500 上只有 3.76；accent-600 = 5.25，悬停 accent-700 = 6.83（默认蓝色强调色，亮暗同值）。 */
+/** 白字要在五种强调色下都 ≥ 4.5：accent-700（琥珀最低 5.05），悬停 accent-800（琥珀 7.13）。600 在绿 / 琥珀只有 3.77 / 3.19。 */
 const primaryClass =
-  "inline-flex shrink-0 cursor-pointer items-center rounded-md bg-accent-600 px-2 py-0.5 text-white hover:bg-accent-700"
+  "inline-flex shrink-0 cursor-pointer items-center rounded-md bg-accent-700 px-2 py-0.5 text-white hover:bg-accent-800"

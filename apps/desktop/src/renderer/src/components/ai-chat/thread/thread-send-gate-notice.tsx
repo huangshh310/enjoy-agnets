@@ -135,7 +135,7 @@ function NoticeAction({
       className={cx(
         "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-caption-2-medium font-semibold disabled:cursor-not-allowed disabled:opacity-60",
         variant === "primary"
-          ? "bg-accent-500 text-text-white"
+          ? "bg-accent-700 text-text-white"
           : "border border-border-button-default bg-background-primary-default text-text-primary"
       )}
     >

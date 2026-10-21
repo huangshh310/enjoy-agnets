@@ -233,7 +233,7 @@ function KeepRowActions({
         data-testid="session-review-open"
         disabled={busy}
         onClick={onReview}
-        className="ml-1 flex h-6 items-center rounded-md bg-accent-500 px-2.5 text-caption-2-medium text-text-white hover:bg-accent-600 disabled:opacity-50"
+        className="ml-1 flex h-6 items-center rounded-md bg-accent-700 px-2.5 text-caption-2-medium text-text-white hover:bg-accent-800 disabled:opacity-50"
       >
         {t("chat.sessionReviewOpen")}
       </button>

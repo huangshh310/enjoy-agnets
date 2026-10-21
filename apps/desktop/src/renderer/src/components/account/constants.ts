@@ -14,12 +14,17 @@ export const GLASS_COVER_PRESETS: Array<{
   { id: "frost", labelKey: "frost" }
 ]
 
+/**
+ * 有数据的最浅一档对卡片底 ≥ 3:1（五种强调色、亮暗都算过，见 lib/accent-contrast.test.ts）：
+ * 亮色从 600 往深走（600 → 700 → 800 → 950），暗色从 500 往亮走（500 → 400 → 300 → 100）。
+ * 相邻两档亮度比 ≥ 1.15（暗色蓝 500 → 400 最小 1.17，现成色阶里已是最优组合）。
+ */
 export const HEATMAP_LEVEL_CLASSES: Record<HeatmapCellData["level"], string> = {
   0: "bg-background-secondary-default border border-separator-border/80",
-  1: "bg-accent-200",
-  2: "bg-accent-400",
-  3: "bg-accent-500",
-  4: "bg-accent-700"
+  1: "bg-accent-600 dark:bg-accent-500",
+  2: "bg-accent-700 dark:bg-accent-400",
+  3: "bg-accent-800 dark:bg-accent-300",
+  4: "bg-accent-950 dark:bg-accent-100"
 }
 
 /** BoardUI 环比胶囊：涨用 success/accent，跌用 error，0% 用次级灰。 */

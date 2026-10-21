@@ -58,7 +58,7 @@ export function ContinueButton({ onContinue }: { onContinue: () => void }) {
 export function TaskRadio({ status, live = true }: { status: TaskStatus; live?: boolean }) {
   if (status === "completed") {
     return (
-      <span className="flex size-3.5 shrink-0 items-center justify-center rounded-full bg-accent-500">
+      <span className="flex size-3.5 shrink-0 items-center justify-center rounded-full bg-accent-700">
         <RiCheckLine className="size-2.5 text-text-white" aria-hidden />
       </span>
     )

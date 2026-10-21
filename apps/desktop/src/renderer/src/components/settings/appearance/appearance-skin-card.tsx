@@ -37,7 +37,7 @@ export function AppearanceSkinCard({
         <span
           className={cx(
             "text-caption-1-medium transition-colors",
-            selected ? "font-semibold text-text-primary" : "text-text-tertiary group-hover:text-text-secondary"
+            selected ? "font-semibold text-text-primary" : "text-text-unselected group-hover:text-text-primary"
           )}
         >
           {option.name}

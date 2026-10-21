@@ -27,7 +27,7 @@ export function UncompactedBody({
         className={cx(
           "flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-caption-1-medium font-medium transition-all shadow-2xs",
           canCompact
-            ? "bg-accent-500 text-text-white hover:bg-accent-600 active:scale-98 cursor-pointer"
+            ? "bg-accent-700 text-text-white hover:bg-accent-800 active:scale-98 cursor-pointer"
             : "bg-background-secondary-default text-text-tertiary opacity-60 cursor-not-allowed"
         )}
       >

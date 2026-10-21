@@ -143,4 +143,4 @@ const actionBaseClass =
   "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-accent-500/10"
 
 const iconClass =
-  "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary disabled:cursor-default disabled:opacity-30"
+  "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-text-primary disabled:cursor-default disabled:opacity-50"
