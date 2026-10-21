@@ -291,7 +291,7 @@ test("引擎不支持回滚：没有还原按钮（不是置灰）、没有任�
   }
 })
 
-test("luna g159 ⑫：英文删 1 个新文件用单数句（定稿），多个仍是复数；中文不变；入口叫 Start over from here", () => {
+test("luna g159 ⑫：英文删 1 个新文件用单数句（定稿），多个仍是复数；中文单个说「这个文件」；入口叫 Start over from here", () => {
   const en = tFor("en")
   const zh = tFor("zh")
   const one = rewindDialogView({ kind: "untracked", files: ["a.txt"] }, en)
@@ -308,9 +308,15 @@ test("luna g159 ⑫：英文删 1 个新文件用单数句（定稿），多个�
       `plural for ${files?.length ?? "unknown"}`
     )
   }
-  const zhBody = "这些文件是这一轮开始后新出现的，包括你自己新建的。还原会把它们删掉，删了找不回。"
-  assert.equal(rewindDialogView({ kind: "untracked", files: ["a.txt"] }, zh).body, zhBody)
-  assert.equal(rewindDialogView({ kind: "untracked", files: ["a", "b"] }, zh).body, zhBody)
+  // leo #167：中文单个文件说「这个文件」，多个仍是「这些文件」。
+  assert.equal(
+    rewindDialogView({ kind: "untracked", files: ["a.txt"] }, zh).body,
+    "这个文件是这一轮开始后新出现的，包括你自己新建的。还原会把它删掉，删了找不回。"
+  )
+  assert.equal(
+    rewindDialogView({ kind: "untracked", files: ["a", "b"] }, zh).body,
+    "这些文件是这一轮开始后新出现的，包括你自己新建的。还原会把它们删掉，删了找不回。"
+  )
   assert.equal(en("chat.rewindTitle"), "Start over from here")
   assert.equal(zh("chat.rewindTitle"), "从这里重来")
 })

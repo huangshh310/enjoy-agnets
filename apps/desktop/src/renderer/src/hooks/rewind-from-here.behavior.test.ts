@@ -20,6 +20,8 @@ let dbAssets: Record<string, Array<Record<string, unknown>>> = {}
 const ideCalls: string[] = []
 /** 每次 truncateFrom（非 dryRun）被调时跑一下，模拟 await 期间用户的操作。 */
 let onTruncate: (() => void) | null = null
+/** 非 dryRun 的 truncateFrom 回什么（测 zod 校验）。 */
+let truncateResult: unknown = { ok: true, deleted: 2 }
 function bridge(path: string): any {
   return new Proxy(() => undefined, {
     get: (_t, key) => (key === "then" ? undefined : bridge(`${path}.${String(key)}`)),
@@ -36,8 +38,9 @@ function bridge(path: string): any {
       }
       if (path === ".session.truncateFrom") {
         const input = args[0] as { dryRun?: boolean }
-        if (!input.dryRun) onTruncate?.()
-        return Promise.resolve({ ok: true, deleted: 2 })
+        if (input.dryRun) return Promise.resolve({ ok: true, deleted: 0 })
+        onTruncate?.()
+        return Promise.resolve(truncateResult)
       }
       if (path === ".session.messages") return Promise.resolve([])
       return Promise.resolve(path.endsWith(".list") ? [] : undefined)
@@ -47,7 +50,9 @@ function bridge(path: string): any {
 ;(globalThis as any).window = { ide: bridge("") }
 
 const { useChatStore } = await import("../stores/chat-store.ts")
-const { rewindFromUserTurn, REWIND_FINISH_FAILED } = await import("./rewind-from-here.ts")
+const { rewindFromUserTurn, REWIND_FINISH_FAILED, setRewindWritebackWaitForTest } = await import("./rewind-from-here.ts")
+const { setComposerComposing } = await import("./composer-ime.ts")
+const { setComposerWritebackHeld } = await import("./composer-sync-lock.ts")
 const writeback = await import("./composer-writeback.ts")
 const assets = await import("./composer-assets.ts")
 const storage = await import("../lib/session-draft-storage.ts")
@@ -75,7 +80,7 @@ function fakeComposerDom(domText: string, opts: { throwOnWrite?: boolean } = {})
   return el
 }
 
-function seedSession(sessionId = "ses_r") {
+function seedSession(sessionId = "ses_r", text = TEXT, imgs: Array<Record<string, unknown>> = [IMG_A, IMG_A, IMG_B]) {
   useChatStore.setState({
     workspaceId: "ws",
     sessionId,
@@ -87,7 +92,7 @@ function seedSession(sessionId = "ses_r") {
       { id: "u1", role: "user", content: "first", createdAt: 1 },
       { id: "a1", role: "assistant", content: "ok", createdAt: 2 },
       // 同一张图在消息里出现两次：写回托盘只进一次。
-      { id: "u2", role: "user", content: TEXT, createdAt: 3, assets: [IMG_A, IMG_A, IMG_B] },
+      { id: "u2", role: "user", content: text, createdAt: 3, assets: imgs },
       { id: "a2", role: "assistant", content: "stub-ok", createdAt: 4 }
     ]
   } as never)
@@ -104,6 +109,10 @@ afterEach(() => {
   dbAssets = {}
   ideCalls.length = 0
   onTruncate = null
+  truncateResult = { ok: true, deleted: 2 }
+  setComposerComposing(false)
+  setComposerWritebackHeld(false)
+  setRewindWritebackWaitForTest(null)
   console.warn = warn
   delete (globalThis as any).document
 })
@@ -176,7 +185,7 @@ test("截断的 await 期间切了会话（session-changed）：写进原会话�
     el = fakeComposerDom("B 的字")
   }
   const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
-  assert.deepEqual(result, { ok: true })
+  assert.deepEqual(result, { ok: true, draftSessionId: "ses_r" }, "弹窗据此提示原话在原来那个对话的草稿里")
   const now = useChatStore.getState()
   assert.equal(now.sessionId, "ses_other")
   assert.equal(el.value, "B 的字", "当前会话输入框没被写")
@@ -235,4 +244,183 @@ test("composer-writeback merge + expectSessionId：换了会话返回 session-ch
   assert.deepEqual(r, { ok: false, reason: "session-changed", current: "别动" })
   assert.equal(el.value, "别动")
   assert.deepEqual(trayIds(), [])
+})
+
+const ids = () => useChatStore.getState().messages.map((m) => m.id)
+const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms))
+
+test("#167 P2：截断期间切了会话，原会话草稿「look at the book」，写回的「ok」不被当子串吞掉（按行合并）", async () => {
+  seedSession("ses_r", "ok", [IMG_A])
+  storage.writePersistedDraft("ses_r", "look at the book")
+  onTruncate = () => {
+    useChatStore.setState({ sessionId: "ses_other", messages: [], composer: "" } as never)
+    fakeComposerDom("")
+  }
+  fakeComposerDom("")
+  const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  assert.deepEqual(result, { ok: true, draftSessionId: "ses_r" })
+  assert.equal(storage.readPersistedDraft("ses_r"), "look at the book\nok", "原话没丢、一个换行")
+  assert.deepEqual((storage.readPersistedDraftAssets("ses_r") ?? []).map((a) => a.id), ["ast_a"])
+})
+
+test("#167 P2：原会话有内存草稿（切走时存的）时同样按行合并，内存草稿和落盘一致；整行相同才去重", async () => {
+  seedSession("ses_r", "ok\nlook at the book")
+  useChatStore.getState().saveSessionDraft("ses_r", { text: "look at the book", assets: [{ id: "ast_a", name: "a.png" }] })
+  onTruncate = () => {
+    useChatStore.setState({ sessionId: "ses_other", messages: [], composer: "" } as never)
+  }
+  fakeComposerDom("")
+  const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  assert.equal(result.ok, true)
+  const memory = useChatStore.getState().getSessionDraft("ses_r")
+  assert.equal(memory?.text, "ok\nlook at the book", "写回的整段包含已有的那行 → 用写回的，不叠两遍")
+  assert.equal(storage.readPersistedDraft("ses_r"), "ok\nlook at the book")
+  assert.deepEqual((memory?.assets ?? []).map((a: { id: string }) => a.id), ["ast_a", "ast_b"], "图按 id 去重")
+})
+
+test("#167 P3：同会话、截断回来时正在用输入法组字 → 等组字结束再合并；合并前消息不删，合并后才删；图进托盘；之后打字不会冲掉", async () => {
+  setRewindWritebackWaitForTest({ pollMs: 5, capMs: 5_000 })
+  seedSession()
+  const el = fakeComposerDom("")
+  onTruncate = () => {
+    // 30 秒超时后用户关了弹窗、开始用中文输入法打字，晚到的成功这时才回来。
+    el.value = "我在"
+    setComposerComposing(true)
+  }
+  const pending = rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  await tick(30)
+  assert.deepEqual(ids(), ["u1", "a1", "u2", "a2"], "还没合并：消息不删")
+  assert.equal(el.value, "我在", "组字中不碰输入框")
+  el.value = "我在打字"
+  setComposerComposing(false)
+  const result = await pending
+  assert.deepEqual(result, { ok: true })
+  assert.equal(el.value, `我在打字\n${TEXT}`, "用户的字在前，原话一个换行接上")
+  assert.equal(useChatStore.getState().composer, `我在打字\n${TEXT}`)
+  assert.deepEqual(trayIds(), ["ast_a", "ast_b"], "图进托盘")
+  assert.deepEqual(ids(), ["u1", "a1"], "合并成功后才删消息")
+  // 用户继续打字：原话在输入框里，跟着输入框落草稿，不会被冲掉。
+  useChatStore.getState().setComposer(`我在打字\n${TEXT}继续`)
+  assert.ok(String(storage.readPersistedDraft("ses_r")).includes(TEXT))
+})
+
+test("#167 P4：同会话、发送占着回写锁（writeback-held）→ 放锁后合并；之前消息不删", async () => {
+  setRewindWritebackWaitForTest({ pollMs: 5, capMs: 5_000 })
+  seedSession()
+  const el = fakeComposerDom("")
+  onTruncate = () => setComposerWritebackHeld(true)
+  const pending = rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  await tick(30)
+  assert.deepEqual(ids(), ["u1", "a1", "u2", "a2"])
+  assert.equal(el.value, "")
+  // 等待期间来了一条新消息（发送流程），它不在截断的尾巴里，不能被一起删掉。
+  useChatStore.setState({ messages: [...useChatStore.getState().messages, { id: "u3", role: "user", content: "x", createdAt: 5 }] } as never)
+  el.value = "x"
+  setComposerWritebackHeld(false)
+  const result = await pending
+  assert.deepEqual(result, { ok: true })
+  assert.equal(el.value, `x\n${TEXT}`)
+  assert.deepEqual(trayIds(), ["ast_a", "ast_b"])
+  assert.deepEqual(ids(), ["u1", "a1", "u3"], "只删截断的尾巴，新来的留着")
+})
+
+test("#167 P3：等的时候切走了 → 进原会话草稿（按行合并），当前会话不动", async () => {
+  setRewindWritebackWaitForTest({ pollMs: 5, capMs: 5_000 })
+  seedSession()
+  storage.writePersistedDraft("ses_r", "我在")
+  const el = fakeComposerDom("我在")
+  onTruncate = () => setComposerComposing(true)
+  const pending = rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  await tick(20)
+  setComposerComposing(false)
+  useChatStore.setState({ sessionId: "ses_other", messages: [], composer: "" } as never)
+  el.value = ""
+  const result = await pending
+  assert.deepEqual(result, { ok: true, draftSessionId: "ses_r" })
+  assert.equal(el.value, "")
+  assert.deepEqual(trayIds(), [])
+  assert.equal(storage.readPersistedDraft("ses_r"), `我在\n${TEXT}`)
+})
+
+test("#167 P3/P4：一直写不进（到点）→ 消息留着看得见、原话进草稿；返回 REWIND_FINISH_FAILED + keepThread（不重读会话）", async () => {
+  setRewindWritebackWaitForTest({ pollMs: 5, capMs: 30 })
+  seedSession()
+  const el = fakeComposerDom("我在")
+  quiet()
+  onTruncate = () => {
+    setComposerComposing(true)
+    ideCalls.length = 0
+  }
+  const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  assert.deepEqual(result, { ok: false, code: REWIND_FINISH_FAILED, keepThread: true })
+  assert.deepEqual(ids(), ["u1", "a1", "u2", "a2"], "消息留着：原话在对话里看得见")
+  assert.equal(el.value, "我在", "组字中的输入框没被碰")
+  assert.ok(String(storage.readPersistedDraft("ses_r")).includes(TEXT), "原话也进了草稿")
+  assert.ok(!ideCalls.includes(".session.messages"), "不重读会话（否则看得见的那条也被收掉）")
+})
+
+test("#167 ③：截断后收尾抛错（REWIND_FINISH_FAILED）→ 同会话从库里重读，界面不再挂着已删的消息", async () => {
+  seedSession()
+  fakeComposerDom("", { throwOnWrite: true })
+  quiet()
+  onTruncate = () => void (ideCalls.length = 0)
+  const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  assert.deepEqual(result, { ok: false, code: REWIND_FINISH_FAILED })
+  await tick(20)
+  assert.ok(ideCalls.includes(".session.messages"), "重读了会话")
+  assert.deepEqual(ids(), ["u1", "a1"], "界面不再挂着截掉的消息")
+  assert.equal(storage.readPersistedDraft("ses_r"), TEXT, "原话在草稿里")
+})
+
+test("#167：还原的图带着 size（有就留）", async () => {
+  seedSession("ses_r", TEXT, [{ ...IMG_A, size: 1234 }, IMG_B])
+  fakeComposerDom("")
+  const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+  assert.deepEqual(result, { ok: true })
+  const tray = assets.listComposerAssets()
+  assert.equal(tray.find((a) => a.id === "ast_a")?.size, 1234)
+  assert.equal(tray.find((a) => a.id === "ast_b")?.size, undefined)
+})
+
+test("#167：truncateFrom 回来的东西按 zod 合约校验——不合约按失败，消息不删、不写回", async () => {
+  for (const bad of [{ ok: true }, { ok: false, code: "SOMETHING_ELSE" }, null, "ok"]) {
+    seedSession()
+    const el = fakeComposerDom("")
+    quiet()
+    truncateResult = bad
+    const result = await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false })
+    assert.deepEqual(result, { ok: false, code: "REWIND_TRUNCATE_RESULT_INVALID" }, JSON.stringify(bad))
+    assert.deepEqual(ids(), ["u1", "a1", "u2", "a2"])
+    assert.equal(el.value, "")
+  }
+  seedSession()
+  fakeComposerDom("")
+  truncateResult = { ok: false, code: "TRUNCATE_ROLLBACK_UNSUPPORTED" }
+  assert.deepEqual(await rewindFromUserTurn({ userMessageId: "u2", restoreFiles: false }), {
+    ok: false,
+    code: "TRUNCATE_ROLLBACK_UNSUPPORTED"
+  })
+})
+
+test("#167 X7：经 writeBackToComposer 合并（不是只测 helper）——子串不算重复：输入框「category」写回「cat」两行都在", () => {
+  useChatStore.setState({ sessionId: "ses_w", composer: "category" } as never)
+  const el = fakeComposerDom("category")
+  const r = writeback.writeBackToComposer({ text: "cat" }, { mode: "merge", focus: false })
+  assert.deepEqual(r, { ok: true, merged: true, text: "category\ncat" })
+  assert.equal(el.value, "category\ncat")
+  const el2 = fakeComposerDom("look at the book")
+  writeback.writeBackToComposer({ text: "ok" }, { mode: "merge", focus: false })
+  assert.equal(el2.value, "look at the book\nok")
+})
+
+test("#167 P1a / P7：写回的稿里本来就有重复行（含 CRLF）原样保留，不按集合去重", () => {
+  useChatStore.setState({ sessionId: "ses_w", composer: "x" } as never)
+  const el = fakeComposerDom("x")
+  writeback.writeBackToComposer({ text: "a\na\nb" }, { mode: "merge", focus: false })
+  assert.equal(el.value, "x\na\na\nb")
+  assert.equal(writeback.mergeWritebackText("a\na\nb", "x"), "x\na\na\nb")
+  const el2 = fakeComposerDom("draft")
+  writeback.writeBackToComposer({ text: "step\r\nstep\r\n\r\n继续" }, { mode: "merge", focus: false })
+  assert.equal(el2.value, "draft\nstep\r\nstep\r\n\r\n继续")
+  assert.equal(writeback.mergeWritebackText("x\r\ny", "x\ny"), "x\ny", "CRLF 与 LF 同一段：不追加")
 })
