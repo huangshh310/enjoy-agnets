@@ -7,6 +7,7 @@ import { setComposerIo } from "../stores/composer-io"
 import { mergeComposerText } from "../lib/merge-composer-text"
 import { readComposerDomText, syncComposerDom } from "./composer-dom"
 import { setComposerWritebackHeld } from "./composer-sync-lock"
+import { noteComposerSubmitted } from "./composer-ime"
 import {
   listComposerAssets,
   setComposerAssets,
@@ -95,8 +96,12 @@ export function clearSentComposerText(sent: string): void {
 /**
  * jojo P1：建会话窗里首发入队即清输入框（store + DOM）。原文在队列里，失败路径照常还回。
  * 写回锁保持（入队期间仍禁止 store 半成品写回），只强制把 DOM 清空。
+ * kai send-p2 B（jojo 巡检 17–18）：sent = 这次交出去的原文，记成「刚交出去的」。输入框是受控的，写回锁期间
+ * 它只认这条记录才肯跟着 store 清空（use-composer-ime）；回车走 captureComposerEnter 记过，**点发送按钮**没人记，
+ * 框里的受控值把原话重新渲染回 DOM，建好会话时被 flush 成「后打的字」留在输入框并落成新会话的草稿，再按回车就重发。
  */
-export function clearQueuedComposerText(): void {
+export function clearQueuedComposerText(sent?: string): void {
+  if (sent !== undefined) noteComposerSubmitted(sent)
   const store = useChatStore.getState()
   if (store.composer) store.setComposer("")
   syncComposerDom("", true)

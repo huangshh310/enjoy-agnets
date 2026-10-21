@@ -168,7 +168,7 @@ async function sendComposerOnce(
       if (behindAssets.length) setComposerAssets(behindAssets)
       return
     }
-    clearQueuedComposerText()
+    clearQueuedComposerText(typed)
     await queueBehindPreparingSend(behindText, behindAssets, {
       enqueue: ({ sessionId, prompt, assets }) => {
         enqueueFollowup({ sessionId, prompt, assets })
@@ -204,7 +204,8 @@ async function sendComposerOnce(
       assets
     )
     // jojo P1：A 入队即清输入框（原文在队列里，失败路径会还回来），后面打的 B 不会和 A 并成一句。
-    clearQueuedComposerText()
+    // kai send-p2 B：带上 A 的原文，点发送按钮（没走 captureComposerEnter）时输入框也认得这句、跟着清。
+    clearQueuedComposerText(text)
     try {
       await queued
     } finally {

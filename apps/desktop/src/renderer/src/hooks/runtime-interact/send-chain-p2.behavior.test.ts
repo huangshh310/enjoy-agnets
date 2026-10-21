@@ -239,3 +239,69 @@ test("A 对照：纯文字插话不变——不带 attachments，提示已收到
   assert.equal(steers[0]!.attachments, undefined)
   assert.equal(fq.getRuntimeHint(), "steered")
 })
+
+// ───────────────────────── B：建会话慢 + 点发送按钮 ─────────────────────────
+
+/** createAndOpenSession 建好会话那一段（flush DOM → publish → finish → 放写回锁）。 */
+function finishCreate(token: number, sessionId: string) {
+  flushComposerDomToStore()
+  useChatStore.setState({ sessionId, sessionTitle: "新对话", messages: [] } as never)
+  finishNewSessionCreate(token, sessionId)
+  if (!qcs.hasQueuedComposerSend()) setComposerWritebackHeld(false)
+}
+
+for (const via of ["button", "enter"] as const) {
+  test(`B：建会话窗里${via === "button" ? "点发送按钮" : "按回车"}发出第一句——发出后输入框与新会话草稿都空，再按回车不重发`, async () => {
+    controlled = true
+    useChatStore.setState({ workspaceId: "ws", sessionId: null, running: false, runId: null, preparingHint: true, composer: "", error: null, hasKey: true, modelId: "stub-e2e", runtimeId: "enjoy-local", messages: [] } as never)
+    ime.noteComposerSubmitted("上一次发的别的话")
+    const { token } = beginNewSessionCreate()
+    userTypes("发送锁测试一句完整的话")
+    await flush()
+    if (via === "enter") captureComposerEnter(dom)
+    const sending = submitComposer("send")
+    await flush()
+    assert.equal(dom, "", "入队后输入框（受控值）跟着清空")
+    onRun = () => ({ ok: true, runId: "run_b", userMessageId: "msg_b" })
+    finishCreate(token, "ses_b")
+    await sending
+    await flush()
+    assert.equal(runs.length, 1, "发出 1 次")
+    assert.equal(useChatStore.getState().messages.filter((m) => m.role === "user").length, 1)
+    assert.equal(dom, "", "发出后输入框为空")
+    assert.equal(useChatStore.getState().composer, "")
+    assert.equal(storage.readPersistedDraft("ses_b"), undefined, "新会话草稿为空")
+    assert.equal(useChatStore.getState().getSessionDraft("ses_b")?.text ?? "", "")
+    // stub 回复瞬时跑完；用户再按一次回车。
+    useChatStore.setState({ running: false, runId: null } as never)
+    captureComposerEnter(dom)
+    await submitComposer("send")
+    await flush()
+    assert.equal(runs.length, 1, "第二次回车不重发")
+  })
+}
+
+test("B：建会话窗里回车发 A、再打 B 点发送按钮——B 交出去后输入框也清空，发完不留 B、不落成草稿", async () => {
+  controlled = true
+  useChatStore.setState({ workspaceId: "ws", sessionId: null, running: false, runId: null, preparingHint: true, composer: "", error: null, hasKey: true, modelId: "stub-e2e", runtimeId: "enjoy-local", messages: [] } as never)
+  const { token } = beginNewSessionCreate()
+  userTypes("第一句A")
+  await flush()
+  captureComposerEnter(dom)
+  const sendingA = submitComposer("send")
+  await flush()
+  userTypes("第二句B")
+  await flush()
+  void submitComposer("send") // 点按钮：没有 captureComposerEnter
+  await flush()
+  assert.equal(dom, "", "B 交出去后输入框（受控值）跟着清空")
+  onRun = () => ({ ok: true, runId: "run_bb", userMessageId: "msg_bb" })
+  finishCreate(token, "ses_bb")
+  await sendingA
+  await flush()
+  assert.equal(runs.length, 1, "A 发出 1 次")
+  assert.deepEqual(fq.listFollowups("ses_bb").map((f) => f.prompt), ["第二句B"], "B 排在 A 后面")
+  assert.equal(dom, "")
+  assert.equal(useChatStore.getState().composer, "", "输入框里没有 B（不会再回车发第二遍）")
+  assert.equal(storage.readPersistedDraft("ses_bb"), undefined, "新会话草稿为空")
+})
