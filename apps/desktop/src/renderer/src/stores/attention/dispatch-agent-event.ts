@@ -26,6 +26,7 @@ import { noteBackgroundRunError } from "@renderer/lib/session-draft-storage"
 import { lateStoppedEvent } from "@renderer/hooks/stopped-runs"
 import { abortOrphanedRun } from "@renderer/hooks/composer-run-control"
 import { noteInboxPendingEvent } from "./inbox-pending-refresh"
+import { noteSendFailureRouteFromEvent } from "@renderer/hooks/send-failure-route"
 
 export { belongsToForeground } from "./foreground-event"
 
@@ -68,6 +69,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
 
   // E1：出错 / 停止先停住这个会话的排队，再让 store / 停车放 running=false（自启看不到空档）。
   noteFollowupRunEvent(sessionId, event, isNonAgentRunKind(event, rememberedKind))
+  // luna P2-1：失败卡说谁、改密钥开哪份，跟这一轮实际走的（main 在 run.error 上带回）。
+  if (!isNonAgentRunKind(event, rememberedKind)) noteSendFailureRouteFromEvent(sessionId, event)
   if (sessionId && event.type === "run.start") clearSessionUsage(sessionId)
   // #160 巡检 5：发出 / 一轮结束时侧栏时间跟着走（前台、后台会话都算）。
   if (sessionId && bumpsSessionTime(event as BumpProbe) && !isNonAgentRunKind(event, rememberedKind)) {

@@ -15,8 +15,11 @@ import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 import {
   classifyEnjoyLocalSendFailure,
-  persistCredentialAfterSend
+  pushFullReadinessAfterSend,
+  recordCredentialAfterSend
 } from "./credential-send-outcome.ts"
+import { failedTurnRoute } from "./failed-turn-route.ts"
+import { readAgentToolOverrides } from "./agent-tools-overrides-read"
 import { isPreOutputFailureCode } from "@enjoy-agents/ipc-contract/pre-output-failure"
 import {
   isForegroundPreOutputFailure,
@@ -35,7 +38,14 @@ export async function failAgentPump(runId: string, run: ActiveRun, error: unknow
   )
   if (!claimCatchUpFail(run)) return
   if (!run.userCancelled) {
-    emitFailedRun(runId, run, error)
+    const sendFail = isCatchUpApprovalTimeout(run, error) ? null : classifyEnjoyLocalSendFailure(error)
+    // jojo #169 P3：结构化 401 先落盘、先把「这份档案密钥被拒」推给渲染端，再发 run.error——
+    // 卡一出现，「能不能发」就已经是被拒；不再等整张快照重算（列引擎 + ping 本机模型）那一段空窗。
+    const written = sendFail?.persist
+      ? await recordCredentialAfterSend(run, sendFail.persist).catch(() => undefined)
+      : undefined
+    if (!run.userCancelled) emitFailedRun(runId, run, error, sendFail)
+    if (written) void pushFullReadinessAfterSend()
   }
   clearSteer(run.input.sessionId)
   deleteActiveRun(runId)
@@ -61,7 +71,12 @@ async function disposeFailedStream(runId: string, run: ActiveRun): Promise<void>
   }
 }
 
-function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
+function emitFailedRun(
+  runId: string,
+  run: ActiveRun,
+  error: unknown,
+  sendFail: ReturnType<typeof classifyEnjoyLocalSendFailure>
+): void {
   if (isCatchUpApprovalTimeout(run, error)) {
     emitCatchUpTimeoutFail(runId, run)
     return
@@ -69,10 +84,6 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
   const classified = classifyError(error)
   if (classified.message === INTERNAL_STORE_ERROR) {
     console.error("agent pump store error", error)
-  }
-  const sendFail = classifyEnjoyLocalSendFailure(error)
-  if (sendFail?.persist) {
-    void persistCredentialAfterSend(run, sendFail.persist)
   }
   const code = sendFail?.code ?? (isPreOutputFailureCode(classified.message) ? classified.message : undefined)
   const message = code ?? classified.message
@@ -100,6 +111,7 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     message,
     ...(code ? { code } : {}),
     preOutput: false,
+    ...failedTurnRoute(run, readAgentToolOverrides),
     turn
   })
   if (classified.errorClass !== "timeout") return
@@ -147,6 +159,7 @@ function emitPreOutputFail(runId: string, run: ActiveRun, code: string): boolean
     code,
     preOutput: true,
     ...(run.userMessageId || !run.keptUserMessage ? {} : { keptUserMessage: true }),
+    ...failedTurnRoute(run, readAgentToolOverrides),
     turn
   })
   return true

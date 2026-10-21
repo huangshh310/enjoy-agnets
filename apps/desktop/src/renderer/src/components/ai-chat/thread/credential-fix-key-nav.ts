@@ -3,6 +3,7 @@
  * jojo P2（#136 gate2）：默认路线解析不出档案时不能哑掉——退回设置页「添加 API 密钥」选厂商。
  */
 import { editProviderSearch, officialProviderSearch } from "../../setup-guide/open-provider-form"
+import type { FixKeyTarget } from "../../../lib/send-failure-target"
 
 export type FixKeyNavigation = {
   to: "/settings/$section"
@@ -24,4 +25,19 @@ export function goFixKey(
   providerId: string | null | undefined
 ): void {
   void navigate(fixKeyNavigation(providerId))
+}
+
+export type FixKeyTargetNavigation =
+  | FixKeyNavigation
+  | { to: "/settings/$section"; params: { section: "agent" }; search: { tool: string } }
+
+/**
+ * luna P2-1：按这一轮实际走的去改——档案 → 它的编辑框；ACP 引擎没绑档案 → 这个引擎自己的设置卡；
+ * 找不到档案 → 添加 API 密钥。免密钥档案调用方根本不给按钮（target 为 null）。
+ */
+export function fixKeyTargetNavigation(target: FixKeyTarget): FixKeyTargetNavigation {
+  if (target.kind === "agent") {
+    return { to: "/settings/$section", params: { section: "agent" }, search: { tool: target.toolId } }
+  }
+  return fixKeyNavigation(target.kind === "provider" ? target.providerId : undefined)
 }
