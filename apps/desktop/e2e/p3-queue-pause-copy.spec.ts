@@ -153,3 +153,43 @@ test("14：往上翻过之后再发一句，对话回到底部", async () => {
     await closeForRelaunch(app)
   }
 })
+
+test("15：点「改一下再发」后自己发出去要贴底，之后再发也贴底（luna m4df B3e / C9：main 上离底 28→1068）", async () => {
+  test.setTimeout(240_000)
+  const { app, window } = await boot()
+  try {
+    // luna 的窗口 1024×640（>600，暂停行不折成一行）；先攒几轮让对话能滚。
+    await window.setViewportSize({ width: 1024, height: 640 })
+    for (const n of [1, 2, 3]) {
+      await sendText(window, `第${n}句`)
+      await expect(stage(window).getByText(`stub-ok 第${n}句`)).toBeVisible({ timeout: 20_000 })
+    }
+    await sendText(window, SLOW)
+    await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+    await queueText(window, "排队1")
+    await queueText(window, "排队2")
+    await window.getByTestId("composer-stop").click()
+    await expect(window.getByTestId("queue-paused-row")).toBeVisible({ timeout: 8_000 })
+
+    const scroller = window.locator('[role="log"] > div').first()
+    const gap = () => scroller.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop)
+
+    // 「改一下再发」：第一条进输入框，队列仍停着。
+    await window.getByTestId("queue-paused-edit-first").click()
+    const composer = window.getByTestId("composer-input")
+    await expect(composer).toHaveValue(/排队1/, { timeout: 5_000 })
+    await composer.fill("改过的一句")
+    await composer.press("Enter")
+    await expect(stage(window).getByText("stub-ok 改过的一句")).toBeVisible({ timeout: 20_000 })
+    await expect.poll(gap, { timeout: 5_000 }).toBeLessThan(8)
+    await shot(window, "p3-15-after-edit-first-send")
+
+    // 之后再发一句：仍贴底（不是只贴一次）。
+    await sendText(window, "再来一句")
+    await expect(stage(window).getByText("stub-ok 再来一句")).toBeVisible({ timeout: 20_000 })
+    await expect.poll(gap, { timeout: 5_000 }).toBeLessThan(8)
+    await shot(window, "p3-15-after-next-send")
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
