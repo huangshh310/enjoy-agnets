@@ -1,6 +1,7 @@
 /**
- * kai send-p2 A（jojo 巡检 211e3bbb / #163）：运行中贴图 + Ctrl+Enter 插话——
- * 图要跟着进当前 run；收不了图就整条老实排到下一轮，绝不出「已收到」。
+ * kai send-p2 A/B（jojo 巡检 211e3bbb / #163）：
+ * A：运行中贴图 + Ctrl+Enter 插话——图要跟着进当前 run；收不了图就整条老实排到下一轮，绝不出「已收到」。
+ * B：建会话慢时点发送按钮发出第一句——发出后输入框和新会话草稿都空，再按回车不重发。
  * 真走 submitComposer / chat-store，只假 IPC 桥（window.ide）和输入框 DOM。
  */
 import assert from "node:assert/strict"
@@ -15,7 +16,9 @@ const memory = new Map<string, string>()
 }
 
 let dbAssets: Record<string, Array<Record<string, unknown>>> = {}
+const runs: any[] = []
 const steers: Array<{ sessionId: string; text: string; attachments?: string[] }> = []
+let onRun: (input: any) => unknown = () => ({ ok: true, runId: "run_default" })
 let steerImpl: (input: { sessionId: string; text: string; attachments?: string[] }) => unknown = () => ({ ok: true })
 function bridge(path: string): any {
   return new Proxy(() => undefined, {
@@ -31,6 +34,10 @@ function bridge(path: string): any {
         return undefined
       }
       return (async () => {
+        if (path === ".agent.run") {
+          runs.push(args[0])
+          return onRun(args[0])
+        }
         if (path === ".agent.steer") {
           const input = args[0] as { sessionId: string; text: string; attachments?: string[] }
           steers.push(input)
@@ -52,7 +59,12 @@ function bridge(path: string): any {
 }
 ;(globalThis as any).window = { ide: bridge("") }
 
+/**
+ * 受控输入框（React 19）：DOM 值每次重渲染都会被改回组件的 shown；shown 只按 use-composer-ime 的规则变
+ * （这里用它真正调用的那几个判定函数）。store 变化后的重渲染是异步的（setTimeout 0）。B 组需要。
+ */
 let dom = ""
+let shown = ""
 const el = {
   get value() {
     return dom
@@ -66,7 +78,14 @@ const el = {
 
 const { useChatStore } = await import("../../stores/chat-store.ts")
 const { submitComposer } = await import("../send-composer.ts")
+const { captureComposerEnter, flushComposerDomToStore, shouldHoldComposerStoreSync } = await import("../composer-dom.ts")
+const ime = await import("../composer-ime.ts")
+const { beginNewSessionCreate, finishNewSessionCreate, resetNewSessionCreateForTest } = await import("../new-session-create.ts")
+const qcs = await import("../queue-composer-send.ts")
+const { setComposerWritebackHeld } = await import("../composer-sync-lock.ts")
+const { resetComposerRunningOwnerForTest } = await import("./composer-running-owner.ts")
 const fq = await import("../followup-queue.ts")
+const { resetFollowupAutostart } = await import("../followup-autostart.ts")
 const assets = await import("../composer-assets.ts")
 const storage = await import("../../lib/session-draft-storage.ts")
 const { hintLabel } = await import("../../components/ai-chat/composer/runtime-interact/runtime-hint-label.ts")
@@ -78,21 +97,55 @@ const tEn = (path: string, vars?: Record<string, string | number>) => translate(
 
 storage.installSessionDraftPersistence()
 
+let controlled = false
+useChatStore.subscribe((state, prev) => {
+  if (!controlled) return
+  const composerChanged = state.composer !== prev.composer
+  const sessionChanged = state.sessionId !== prev.sessionId
+  if (!composerChanged && !sessionChanged) return
+  setTimeout(() => {
+    dom = shown // 重渲染：受控值盖回 DOM
+    const now = useChatStore.getState()
+    if (composerChanged) {
+      if (!now.composer && ime.shouldClearShownOnQueuedSend(shown, ime.lastComposerSubmitted())) shown = ""
+      else if (!shouldHoldComposerStoreSync()) shown = now.composer
+    }
+    if (sessionChanged && ime.shouldResetShownOnSessionChange(shown, now.composer)) shown = now.composer
+    dom = shown
+  }, 0)
+})
+
 function userTypes(text: string) {
   dom = text
+  shown = text
   useChatStore.getState().setComposer(text)
 }
 
-afterEach(() => {
+const flush = async () => {
+  for (let i = 0; i < 40; i += 1) await new Promise((r) => setTimeout(r, 0))
+}
+
+afterEach(async () => {
+  await flush()
+  controlled = false
+  qcs.cancelQueuedComposerSend()
+  resetNewSessionCreateForTest()
+  qcs.resetQueuedComposerSendForTest()
+  resetComposerRunningOwnerForTest()
+  resetFollowupAutostart()
   fq.resetFollowupsForTest()
   assets.clearComposerAssets()
   storage.resetPersistedDraftAssetsForTest()
   storage.resetPersistedDraftCacheForTest()
   memory.clear()
   dbAssets = {}
+  runs.length = 0
   steers.length = 0
+  onRun = () => ({ ok: true, runId: "run_default" })
   steerImpl = () => ({ ok: true })
   dom = ""
+  shown = ""
+  ime.noteComposerSubmitted("")
 })
 
 const IMG = { id: "ast_orange", name: "orange.png", mediaType: "image/png" }
@@ -202,4 +255,71 @@ test("A 对照：纯文字插话不变——不带 attachments，提示已收到
   assert.equal(steers.length, 1)
   assert.equal(steers[0]!.attachments, undefined)
   assert.equal(fq.getRuntimeHint(), "steered")
+})
+
+// ───────────────────────── B：建会话慢 + 点发送按钮 ─────────────────────────
+// 真机复现：ENJOY_DEV_DELAY_SESSION_CREATE / DELAY_SESSION_CREATE 创建窗（~4s）内点发送。
+
+/** createAndOpenSession 建好会话那一段（flush DOM → publish → finish → 放写回锁）。 */
+function finishCreate(token: number, sessionId: string) {
+  flushComposerDomToStore()
+  useChatStore.setState({ sessionId, sessionTitle: "新对话", messages: [] } as never)
+  finishNewSessionCreate(token, sessionId)
+  if (!qcs.hasQueuedComposerSend()) setComposerWritebackHeld(false)
+}
+
+for (const via of ["button", "enter"] as const) {
+  test(`B：建会话窗里${via === "button" ? "点发送按钮" : "按回车"}发出第一句——发出后输入框与新会话草稿都空，再按回车不重发`, async () => {
+    controlled = true
+    useChatStore.setState({ workspaceId: "ws", sessionId: null, running: false, runId: null, preparingHint: true, composer: "", error: null, hasKey: true, modelId: "stub-e2e", runtimeId: "enjoy-local", messages: [] } as never)
+    ime.noteComposerSubmitted("上一次发的别的话")
+    const { token } = beginNewSessionCreate()
+    userTypes("发送锁测试一句完整的话")
+    await flush()
+    if (via === "enter") captureComposerEnter(dom)
+    const sending = submitComposer("send")
+    await flush()
+    assert.equal(dom, "", "入队后输入框（受控值）跟着清空")
+    onRun = () => ({ ok: true, runId: "run_b", userMessageId: "msg_b" })
+    finishCreate(token, "ses_b")
+    await sending
+    await flush()
+    assert.equal(runs.length, 1, "发出 1 次")
+    assert.equal(useChatStore.getState().messages.filter((m) => m.role === "user").length, 1)
+    assert.equal(dom, "", "发出后输入框为空")
+    assert.equal(useChatStore.getState().composer, "")
+    assert.equal(storage.readPersistedDraft("ses_b"), undefined, "新会话草稿为空")
+    assert.equal(useChatStore.getState().getSessionDraft("ses_b")?.text ?? "", "")
+    // stub 回复瞬时跑完；用户再按一次回车。
+    useChatStore.setState({ running: false, runId: null } as never)
+    captureComposerEnter(dom)
+    await submitComposer("send")
+    await flush()
+    assert.equal(runs.length, 1, "第二次回车不重发")
+  })
+}
+
+test("B：建会话窗里回车发 A、再打 B 点发送按钮——B 交出去后输入框也清空，发完不留 B、不落成草稿", async () => {
+  controlled = true
+  useChatStore.setState({ workspaceId: "ws", sessionId: null, running: false, runId: null, preparingHint: true, composer: "", error: null, hasKey: true, modelId: "stub-e2e", runtimeId: "enjoy-local", messages: [] } as never)
+  const { token } = beginNewSessionCreate()
+  userTypes("第一句A")
+  await flush()
+  captureComposerEnter(dom)
+  const sendingA = submitComposer("send")
+  await flush()
+  userTypes("第二句B")
+  await flush()
+  void submitComposer("send") // 点按钮：没有 captureComposerEnter
+  await flush()
+  assert.equal(dom, "", "B 交出去后输入框（受控值）跟着清空")
+  onRun = () => ({ ok: true, runId: "run_bb", userMessageId: "msg_bb" })
+  finishCreate(token, "ses_bb")
+  await sendingA
+  await flush()
+  assert.equal(runs.length, 1, "A 发出 1 次")
+  assert.deepEqual(fq.listFollowups("ses_bb").map((f) => f.prompt), ["第二句B"], "B 排在 A 后面")
+  assert.equal(dom, "")
+  assert.equal(useChatStore.getState().composer, "", "输入框里没有 B（不会再回车发第二遍）")
+  assert.equal(storage.readPersistedDraft("ses_bb"), undefined, "新会话草稿为空")
 })
