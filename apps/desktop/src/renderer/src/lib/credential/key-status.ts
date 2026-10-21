@@ -5,6 +5,7 @@
  */
 import type { ChatReadiness, CredentialCheck } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
+import { endpointIsOfficial, providerFace, type ProviderFace } from "../provider-face.ts"
 
 /** 密钥三态。ok=已验证（绿）；unverified=暂时没法确认（中性灰）；invalid=被供应商拒绝（红）。 */
 export type KeyStatus = "ok" | "unverified" | "invalid"
@@ -48,10 +49,27 @@ export function presetDisplayName(presetId: string | undefined, fallback: string
   return PROVIDER_PRESETS.find((preset) => preset.kind === presetId)?.name ?? (fallback || presetId)
 }
 
+/**
+ * 余额 / 密钥提示里说谁（luna #164 S1）：档案端点指到代理 / 中转（不是这家官方地址）时和失败卡同一规则——
+ * 说主机名，解析不了说「模型服务」，不说预设品牌；端点没填或是官方地址时照旧说显示名（presetDisplayName）。
+ */
+export function keyHolderFace(kind: string | undefined, fallbackName: string, baseURL?: string): ProviderFace {
+  if (baseURL?.trim() && !endpointIsOfficial(kind, baseURL)) return providerFace({ kind, baseURL })
+  const name = kind ? presetDisplayName(kind, fallbackName) : fallbackName
+  return name ? { kind: "named", name } : { kind: "generic" }
+}
+
+/** ProviderFace → 现有 providerName 字段：通用说法给 undefined，调用方用自己的回落词。 */
+export function faceName(face: ProviderFace): string | undefined {
+  return face.kind === "named" ? face.name : undefined
+}
+
 export type KeyProviderRow = {
   id: string
   kind: string
   name?: string
+  /** 档案端点：指到代理时提示说主机名（keyHolderFace）。 */
+  baseURL?: string
   credentialCheck?: Pick<CredentialCheck, "state">
 }
 
@@ -87,7 +105,7 @@ export function guideKeyStatus(
     return {
       status: keyStatusOf(check ?? profile?.credentialCheck),
       profileId: key.providerId,
-      providerName: presetDisplayName(key.presetId, profile?.name ?? key.presetId)
+      providerName: faceName(keyHolderFace(key.presetId, profile?.name ?? key.presetId, profile?.baseURL))
     }
   }
   if (routeProfile) {

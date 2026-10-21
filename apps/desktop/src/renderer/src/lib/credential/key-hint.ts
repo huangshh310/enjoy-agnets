@@ -6,7 +6,8 @@
 import type { ChatReadiness, CredentialCheck } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { presetBillingUrl } from "../preset-console-url.ts"
 import { endpointIsOfficial } from "../provider-face.ts"
-import { keyStatusOf, presetDisplayName, type GuideKeyStatus } from "./key-status.ts"
+import { keyHolderFace, keyStatusOf, type GuideKeyStatus } from "./key-status.ts"
+import type { ProviderFace } from "../provider-face.ts"
 
 type CheckLike = Pick<CredentialCheck, "state"> & { code?: CredentialCheck["code"] }
 
@@ -41,7 +42,7 @@ export function guideKeyHint(
   readiness: Pick<ChatReadiness, "apiKeys" | "defaultRoute" | "credentialCheck"> | undefined,
   providers: readonly KeyHintProviderRow[],
   key: GuideKeyStatus | undefined
-): { hint: KeyHint; providerName?: string } | undefined {
+): { hint: KeyHint; provider: ProviderFace } | undefined {
   if (!key?.profileId || key.status !== "unverified") return undefined
   const keys = readiness?.apiKeys ?? []
   const entry = keys.find((row) => row.providerId === key.profileId)
@@ -51,5 +52,6 @@ export function guideKeyHint(
   const kind = entry?.presetId ?? profile?.kind
   const hint = keyHintOf(check, kind, profile?.baseURL)
   if (!hint) return undefined
-  return { hint, providerName: key.providerName ?? (kind ? presetDisplayName(kind, profile?.name ?? "") : undefined) }
+  // 和失败卡同一规则：代理档案说主机名 / 「模型服务」，不说预设品牌（luna #164 S1）
+  return { hint, provider: keyHolderFace(kind, profile?.name ?? "", profile?.baseURL) }
 }

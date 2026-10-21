@@ -66,7 +66,7 @@ export function ConnectModelStep({
           {option.kind === "api_key" && option.connected && keyHint
             ? renderKeyHint(
                 keyHint.hint,
-                keyHint.providerName ?? t("settings.setupGuide.providerFallback"),
+                keyHint.provider,
                 t,
                 { onEdit: () => onFixKey(option.profileId), onOpenUrl: requestOpenExternalQuiet },
                 "connect-model-key-hint"

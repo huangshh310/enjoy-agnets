@@ -1085,6 +1085,7 @@ export const enSettings = {
     fixKey: "Change key",
     keyForbiddenHint: "This key doesn't have access to this model. Use another key or pick another model.",
     keyBillingHint: "Your {name} account is out of credit. Top up and try again.",
+    keyBillingHintGeneric: "The model service account is out of credit. Top up and try again.",
     topUp: "Top up",
     missingKey: "Key not added yet",
     noKeyRequired: "No Key Required",

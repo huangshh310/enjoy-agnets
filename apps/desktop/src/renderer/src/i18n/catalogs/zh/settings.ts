@@ -1080,6 +1080,7 @@ export const zhSettings = {
     fixKey: "改密钥",
     keyForbiddenHint: "这把密钥没有权限用这个模型，换一把或换个模型。",
     keyBillingHint: "{name} 账户余额不足，充值后再试。",
+    keyBillingHintGeneric: "模型服务账户余额不足，充值后再试。",
     topUp: "去充值",
     missingKey: "还没填写密钥",
     noKeyRequired: "无需密钥",
