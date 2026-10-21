@@ -22,7 +22,7 @@ const buttonVariants = cva(
         link: "text-accent-500 underline-offset-4 hover:underline",
         // 实底主操作：启用主色实底白字；禁用灰底 + 明显描边（浅色描边偏深），浅深色都看得见。
         solid:
-          "border border-cta-hover bg-cta font-semibold text-cta-foreground shadow-xs hover:bg-cta-hover disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
+          "border border-cta-edge bg-cta font-semibold text-cta-foreground shadow-xs hover:bg-cta-hover disabled:border-foreground-icon-tertiary disabled:bg-background-tertiary-default disabled:text-text-secondary disabled:shadow-none dark:disabled:border-border-button-hover",
       },
       size: {
         default: "h-9 rounded-2lg p-2 has-[>svg]:px-3",

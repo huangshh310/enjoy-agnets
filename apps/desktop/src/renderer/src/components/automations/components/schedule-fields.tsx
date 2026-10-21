@@ -64,7 +64,7 @@ export function ScheduleFields({
               "rounded-full px-2 py-1 text-caption-1-medium ring-1",
               parsed.preset === preset
                 ? "bg-accent-500/10 text-text-primary ring-accent-500/30"
-                : "bg-background-secondary-default text-text-secondary ring-border-button-default"
+                : "bg-background-secondary-default text-text-unselected ring-border-button-default hover:text-text-primary"
             )}
           >
             {t(PRESET_KEYS[preset])}

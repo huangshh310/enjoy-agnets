@@ -904,8 +904,8 @@ input[type="search"]::-webkit-search-cancel-button {
   --card-foreground: var(--color-text-primary);
   --popover: var(--color-background-primary-default);
   --popover-foreground: var(--color-text-primary);
-  --primary: var(--color-accent-700); /* 配白字（primary-foreground），500 在琥珀 / 绿只有 2.15 / 2.54 */
-  --primary-foreground: var(--color-text-white);
+  --primary: var(--color-cta); /* 跟主按钮一致：默认 700 白字，琥珀 500 墨色字（500 + 白字在琥珀 / 绿只有 2.15 / 2.54） */
+  --primary-foreground: var(--color-cta-foreground);
   --secondary: var(--color-background-secondary-default);
   --secondary-foreground: var(--color-text-primary);
   --muted: var(--color-background-secondary-default);
