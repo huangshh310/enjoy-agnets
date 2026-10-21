@@ -256,6 +256,11 @@ export function editorMissingFields(editor: EditorState | null, requiresKey: boo
   return missing
 }
 
+/** 简易表单里名称要不要放在最上面露着（luna #170 r-luna ③）：自定义端点（必填、没有预设名）要；预设自带名称，收在「高级」里。 */
+export function simpleNameUpFront(kind: ProviderKind): boolean {
+  return kind === "custom"
+}
+
 /** 缺的字段在哪个页签（完整表单分 连接 / 模型 两页，填了一页另一页还缺时要能看出来去哪填）。 */
 export function missingFieldTab(field: EditorMissingField): "connection" | "models" {
   return field === "model" ? "models" : "connection"

@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
-import { canSaveEditor, editorMissingFields, emptyEditor, missingFieldTab, proxyBlocksSave, type EditorState } from "./providers.types.ts"
+import { canSaveEditor, editorMissingFields, emptyEditor, missingFieldTab, proxyBlocksSave, simpleNameUpFront, type EditorState } from "./providers.types.ts"
 import { missingSummaryText } from "./provider-missing-copy.ts"
 import { zhSettings } from "../../../i18n/catalogs/zh/settings.ts"
 import { enSettings } from "../../../i18n/catalogs/en/settings.ts"
@@ -114,4 +114,22 @@ test("leo soft-3：canSaveEditor 只有一套规则——什么都不缺且代�
   const body = src.slice(src.indexOf("export function canSaveEditor"), src.indexOf("export type EditorMissingField"))
   assert.match(body, /editorMissingFields\(editor, requiresKey\)\.length === 0 && !proxyBlocksSave\(editor\.proxy\)/)
   assert.doesNotMatch(body, /modelId|hasEndpoint|apiKey/)
+})
+
+test("luna #170 r-luna ③：简易表单的自定义端点，名称放在最上面露着（不收进「高级」），「起个名字才能保存。」就在它下面；预设仍收在「高级」", () => {
+  assert.equal(simpleNameUpFront("custom"), true)
+  assert.equal(simpleNameUpFront("deepseek"), false)
+  const read = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8")
+  const simple = read("./provider-simple-fields.tsx")
+  const up = simple.indexOf("{nameUpFront ? <ProviderNameField editor={editor} onChange={onChange} missing={missing} /> : null}")
+  const details = simple.indexOf("<details")
+  assert.ok(up >= 0 && details > up, "名称在「高级」<details> 之前（露着）")
+  assert.match(simple, /const nameUpFront = simpleNameUpFront\(editor\.kind\)/)
+  // 「高级」里不再画第二个名称栏、也不再提名称。
+  assert.match(simple, /missing=\{missing\?\.filter\(\(field\) => \(field === "name" && !nameUpFront\) \|\| field === "endpoint"\)\}\s+showName=\{!nameUpFront\}/)
+  const conn = read("./provider-connection-fields.tsx")
+  assert.match(conn, /\{showName \? <ProviderNameField editor=\{editor\} onChange=\{onChange\} missing=\{missing\} \/> : null\}/)
+  // 名称栏下面紧跟着缺名称的提示。
+  const field = conn.slice(conn.indexOf("export function ProviderNameField"))
+  assert.match(field, /placeholder=\{t\("settings\.providers\.namePlaceholder"\)\}[\s\S]*?\/>\s+<MissingFieldHint missing=\{missing\} field="name" \/>/)
 })

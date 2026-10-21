@@ -1,5 +1,7 @@
 /**
  * 向导 / 去连接的添加表单：先贴密钥（必要时选模型），端点与协议收进「高级」。
+ * 自定义端点的名称是必填、没有预设名：放在表单最上面露着，缺的时候「起个名字才能保存。」就在它下面（luna #170 r-luna ③）；
+ * 预设自带名称，仍收在「高级」里。
  */
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,9 +15,9 @@ import {
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { SecretInput } from "../secret-input"
 import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
-import { ProviderConnectionFields } from "./provider-connection-fields"
+import { ProviderConnectionFields, ProviderNameField } from "./provider-connection-fields"
 import { MissingFieldHint } from "./provider-missing-hint"
-import type { EditorMissingField, EditorState, ProbeState } from "./providers.types"
+import { simpleNameUpFront, type EditorMissingField, type EditorState, type ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderSimpleFields({
@@ -40,8 +42,10 @@ export function ProviderSimpleFields({
 }) {
   const t = useT()
   const key = editor.keys[0]
+  const nameUpFront = simpleNameUpFront(editor.kind)
   return (
     <div data-testid="provider-simple-fields" className="flex flex-col gap-4">
+      {nameUpFront ? <ProviderNameField editor={editor} onChange={onChange} missing={missing} /> : null}
       <div className="flex flex-col gap-1.5">
         <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.apiKey")}</Label>
         {key ? (
@@ -95,8 +99,9 @@ export function ProviderSimpleFields({
             detecting={detecting}
             onChange={onChange}
             onDetect={onDetect}
-            // 密钥、模型在上面已经各有一行提示，「高级」里只提名称 / 接口地址。
-            missing={missing?.filter((field) => field === "name" || field === "endpoint")}
+            // 密钥、模型（自定义端点还有名称）在上面已经各有一行提示，「高级」里只提剩下的名称 / 接口地址。
+            missing={missing?.filter((field) => (field === "name" && !nameUpFront) || field === "endpoint")}
+            showName={!nameUpFront}
           />
         </div>
       </details>
