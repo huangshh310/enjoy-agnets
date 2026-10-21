@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect } from "@playwright/test"
-import type { ElectronApplication, Page } from "playwright"
+import type { ElectronApplication, Locator, Page } from "playwright"
 
 export const MAIN_ENTRY = join(process.cwd(), "out/main/index.js")
 export const SHOTS = "/opt/cursor/artifacts/screenshots"
@@ -87,9 +87,50 @@ export async function openConnectModelStep(window: Page): Promise<void> {
   await window.getByTestId("setup-guide-connect-model").waitFor({ timeout: 8_000 })
 }
 
-export async function skipGuideIfOpen(window: Page): Promise<void> {
+/** 向导弹窗里有限次的动画（zoom-in-95 进场 / zoom-out-95 退场）都跑完；无限循环的（转圈）不等。元素没了就算完。 */
+async function guideAnimationsSettled(window: Page, skip: Locator): Promise<void> {
+  await window
+    .getByRole("dialog")
+    .filter({ has: skip })
+    .first()
+    .evaluate((el) =>
+      Promise.all(
+        el
+          .getAnimations({ subtree: true })
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => undefined))
+      )
+    , undefined, { timeout: 3_000 })
+    .catch(() => undefined)
+}
+
+/**
+ * 有「跳过设置」就点掉，并确认向导真的收掉了。
+ * 向导的 DialogContent 每次打开都换 key（dialog-open-generation.ts）、进场带 zoom-in-95：
+ * 首启闸在启动早期会把向导关了再开，按钮会「不稳定」（还在缩放）或「已从 DOM 卸下」（换了一代）；
+ * 旧写法 count()>0 后直接 click()，赶上向导刚被收掉，click 就对着一个不会回来的按钮等满 30 秒。
+ * 这里每轮重新查按钮：没了就结束；有就等动画跑完再点（短超时），点不到（卸下 / 不稳定 / 被收掉）就重查再来；
+ * 点到后等按钮消失。不用 force、不靠固定 sleep。
+ */
+export async function skipGuideIfOpen(window: Page, timeout = 20_000): Promise<void> {
   const skip = window.getByRole("button", { name: "跳过设置" })
-  if ((await skip.count()) > 0) await skip.click()
+  const deadline = Date.now() + timeout
+  while (Date.now() < deadline) {
+    if ((await skip.count()) === 0) return
+    await guideAnimationsSettled(window, skip)
+    try {
+      await skip.click({ timeout: 2_000 })
+    } catch {
+      continue
+    }
+    try {
+      await expect(skip).toHaveCount(0, { timeout: 5_000 })
+      return
+    } catch {
+      // 点完又被首启闸重新打开：下一轮再收
+    }
+  }
+  await expect(skip, "向导「跳过设置」一直收不掉").toHaveCount(0, { timeout: 1_000 })
 }
 
 /** 向导「添加 API 密钥」→ DeepSeek 简易表单。不要 hideGuide，以免首启闸把向导再打开。 */
