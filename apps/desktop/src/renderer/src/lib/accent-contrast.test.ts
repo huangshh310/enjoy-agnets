@@ -412,9 +412,20 @@ function checks(ctx: Ctx): Check[] {
   // 最外圈：有 1px 外圈阴影（shadow-nav-selected = 0 0 0 1px accent-500）就是它；没有就是 border；border 透明就是底色。
   const sendShadow = darkOr(/dark:shadow-([\w-]+)/, /(?:^|\s)shadow-([\w-]+)/, "阴影（shadow-…）")
   const sendBorder = darkOr(/dark:border-([a-z][\w-]*)/, /(?:^|\s)border-([a-z][\w-]*)/, "描边（border-…）")
-  const outerRing = ringColor(ctx, sendShadow, "outer")
+  // Tailwind ring-* / outline-* 也画在 border 外面，比 shadow 的外圈还靠外：有就以它为最外圈（只写宽度没写色 = currentColor = 图标色）。
+  const plainToks = sendCls.split(/\s+/).filter((t) => t && !t.includes(":"))
+  const darkToks = sendCls.split(/\s+/).filter((t) => t.startsWith("dark:") && !t.slice(5).includes(":")).map((t) => t.slice(5))
+  const toks = dark ? [...plainToks, ...darkToks] : plainToks
+  const lastTok = (re: RegExp) => toks.filter((t) => re.test(t)).map((t) => re.exec(t)![1] ?? "").pop()
+  const utilEdge = (kind: "ring" | "outline"): Rgba | null => {
+    const width = lastTok(new RegExp(String.raw`^${kind}(?:-(\d+))?$`))
+    if (width === undefined || width === "0") return null
+    const c = lastTok(new RegExp(String.raw`^${kind}-((?!\d|inset|offset|none|hidden|solid|dashed|dotted|double)[a-z][\w-]*)$`))
+    return col(ctx, "main", c ?? sendIcon)
+  }
+  const outerRing = utilEdge("outline") ?? utilEdge("ring") ?? ringColor(ctx, sendShadow, "outer")
   const edgeColor = outerRing ?? (sendBorder === "transparent" ? col(ctx, "main", sendBg) : col(ctx, "main", sendBorder))
-  const edgeName = outerRing ? `外圈 shadow-${sendShadow}` : sendBorder === "transparent" ? `底 ${sendBg}` : `border-${sendBorder}`
+  const edgeName = outerRing ? "外圈 ring/outline/shadow" : sendBorder === "transparent" ? `底 ${sendBg}` : `border-${sendBorder}`
   add("P2-1", `发送按钮图标（${dark ? "暗" : "亮"}）`, GRAPHIC, col(ctx, "main", sendIcon), col(ctx, "main", sendBg))
   add("P2-1", `发送按钮图标·悬停（${dark ? "暗" : "亮"}）`, GRAPHIC, col(ctx, "main", sendIcon), col(ctx, "main", sendHover))
   add("P2-1", `发送按钮最外圈 vs 输入框底（${sendTag}）`, GRAPHIC, over(edgeColor, composer), composer)
