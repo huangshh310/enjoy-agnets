@@ -58,9 +58,9 @@ export async function abortComposerRun(opts?: {
   const reason = opts?.pauseReason ?? "stopped"
   const inFlight = composerRunInFlight(store)
   if (reason === "stopped" || inFlight) pauseFollowups(sessionId, reason)
-  // 停止后 main 迟到的审批卡不得把卡 / 停止按钮 / 执行中挂回来（jojo 211e3bbb 1c）。
-  if (runId) noteRunStopped(runId)
-  else if (inFlight) noteStoppedBeforeClaim(sessionId)
+  // 停止后 main 迟到的审批卡 / 开跑不得把卡、停止按钮、执行中挂回来（jojo 211e3bbb 1c）。
+  // 有 runId 的由下面 abortOrphanedRun 记下；起步窗口还没 runId，先记会话。
+  if (!runId && inFlight) noteStoppedBeforeClaim(sessionId)
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
