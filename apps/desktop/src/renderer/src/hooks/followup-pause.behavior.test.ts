@@ -867,12 +867,12 @@ test("P2⑤ 换助手落在自启起跑窗口（send 没返回、running 被上�
   finishSend()
   await flush()
   const zh = tr(zhChat as never)
-  // luna P1（m211）：s1 回到输入框、还没发出去 → 不给「继续」，句尾「先发输入框里这条。」（换助手不会自动接着发，不许诺）。
+  // luna P1（m211）：s1 回到输入框、还没发出去 → 不给「继续」，句尾「先发输入框里这条，发出去后再点继续。」（换助手不会自动接着发，不许诺；luna 10-21 说完下一步）。
   const { pendingFailedSendFor, pendingFailedSendPlace } = await import("./pending-failed-send.ts")
   const place = pendingFailedSendPlace(pendingFailedSendFor("ses_sw4"), { composerText: "s1", composerAssetIds: [], failureCardRetryShowing: false })
   assert.equal(place, "composer")
   const v = view.queuePausedView({ reason: queue.followupPausedReason("ses_sw4")!, count: 1, composerHasContent: true, pendingFailed: place, provider: { kind: "generic" }, t: zh })
-  assert.equal(v.text, "你换了助手，上一轮停了，排队的 1 条先不发。先发输入框里这条。")
+  assert.equal(v.text, "你换了助手，上一轮停了，排队的 1 条先不发。先发输入框里这条，发出去后再点继续。")
   assert.equal(v.showContinue, false)
   assert.equal(pause.isNeutralPause(queue.followupPausedReason("ses_sw4")), true)
   // 用户手动把 s1 发出去并跑完（run.end）：engineSwitched 不自动解除，s2 不自己发。

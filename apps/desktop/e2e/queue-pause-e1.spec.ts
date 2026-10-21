@@ -233,7 +233,7 @@ for (const lang of ["zh", "en"] as const) {
   }
 
   // luna #163 合并后 P1（m211）：失败那句还没发出去（卡关了 / 卡上没有重发按钮），「继续」不出，句子叫人先发输入框里这条；
-  // 输入框清空才算放弃 → 继续回来。
+  // 输入框清空才算放弃 → 继续回来；改成别的话仍拦。
   for (const kind of ["billing", "forbidden", "rejected"] as const) {
     test(`失败那句没发出去（${lang}，${kind}${kind === "rejected" ? "，卡还在" : "，关掉卡"}）：不出继续，先发输入框里这条；清空输入框才给继续`, async () => {
       test.setTimeout(180_000)
@@ -256,6 +256,10 @@ for (const lang of ["zh", "en"] as const) {
         await expect(window.getByTestId("queue-paused-edit-first")).toHaveCount(0)
         await expectNotAutoSent(window, "排队那句")
         await shot(window, `e1-order-${lang}-${kind}-composer-first`)
+        // luna（10-21）：输入框里只要还有内容就一直拦——整句换成完全不同的话也不给继续。
+        await window.getByTestId("composer-input").fill("完全不同的另一句")
+        await expect(reason).toContainText(kind === "billing" ? copy.quotaComposer : copy.composerFirst)
+        await expect(window.getByTestId("queue-paused-continue")).toHaveCount(0)
         await window.getByTestId("composer-input").fill("")
         await expect(window.getByTestId("queue-paused-continue")).toBeVisible({ timeout: 5_000 })
         await expect(reason).not.toContainText(kind === "billing" ? copy.quotaComposer : copy.composerFirst)

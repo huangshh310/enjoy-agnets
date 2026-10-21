@@ -205,19 +205,38 @@ test("清空输入框 → 失败那条算放弃：记录清掉，句子回到「
   assert.deepEqual(sent, ["B1"])
 })
 
-test("「清掉」的边界：改几个字 / 只删字留图 / 加一行 → 仍算没发；换成完全不相干的一句 → 算放弃", () => {
+test("「清掉」的边界（luna 10-21）：输入框里有任何内容都仍拦——改几个字、换成完全不同的话、只剩图（哪怕不是它的图）；只有清空（只剩空白、没有附件）才算放弃", () => {
   const entry = { sessionId: "s", where: "composer" as const, text: "第一行\n第二行", assetIds: ["img1"], inFlight: false }
   const abandoned = (text: string, assetIds: string[] = []) => pending.failedSendAbandoned(entry, { text, assetIds })
   assert.equal(abandoned(""), true, "字和图都没了")
+  assert.equal(abandoned("   \n\t "), true, "只剩空白")
   assert.equal(abandoned("", ["img1"]), false, "字删了图还在")
+  assert.equal(abandoned("", ["other"]), false, "换了一张别的图也算有内容")
+  assert.equal(abandoned("  ", ["other"]), false, "空白 + 别的图")
   assert.equal(abandoned("第一行"), false, "留着一整行")
-  assert.equal(abandoned("前面补一句\n第一行\n第二行"), false)
-  assert.equal(abandoned("第一行改了\n第二行改了"), false, "整行包含（行内补字）仍算还在")
-  assert.equal(abandoned("完全不同的话"), true)
-  assert.equal(abandoned("   "), true, "只剩空白")
+  assert.equal(abandoned("第一行改了\n第二行改了"), false, "改了几个字")
+  assert.equal(abandoned("完全不同的话"), false, "整句换成完全不同的话也仍拦")
+  assert.equal(abandoned("x"), false, "只剩一个字也仍拦")
   assert.equal(pending.failedSendAbandoned({ ...entry, inFlight: true }, { text: "", assetIds: [] }), false, "正在发出去时不算放弃")
   assert.equal(pending.failedSendAbandoned({ ...entry, where: "thread" }, { text: "", assetIds: [] }), false, "留在时间线上的那一轮与输入框无关")
   assert.equal(pending.failedSendAbandoned({ ...entry, text: "" , assetIds: [] }, { text: "后台回滚、原文没记到", assetIds: [] }), false)
+  assert.equal(pending.failedSendAbandoned({ ...entry, text: "" , assetIds: [] }, { text: "", assetIds: [] }), true)
+})
+
+test("改写成完全不同的话仍拦（走 failedSendStillPending / 排队行同一条链）：不出继续，继续也不发；清空才放", async () => {
+  inFlightTurn("ses_rw", "hello quota", "B1")
+  preOutputFail("ses_rw", "provider_billing")
+  useChatStore.getState().setError(null)
+  useChatStore.setState({ running: false, composer: "完全不同的另一句话" } as never)
+  const v = row("ses_rw", zh)
+  assert.equal(v.showContinue, false)
+  assert.ok(pending.pendingFailedSendFor("ses_rw"), "记录还在")
+  actions.continueFollowups("ses_rw")
+  await flush()
+  assert.deepEqual(sent, [])
+  useChatStore.setState({ composer: "  " } as never)
+  assert.equal(row("ses_rw", zh).showContinue, true, "只剩空白 = 清空")
+  assert.equal(pending.pendingFailedSendFor("ses_rw"), null)
 })
 
 // ---------------- 成功 → 自动接着发 ----------------
@@ -307,6 +326,14 @@ test("停止 / 换助手仍不自动放行：失败那条发出去跑完也只�
   dispatchAgentEvent({ type: "run.end", runId: "run_x", sessionId: "ses_stop" } as never)
   assert.equal(pending.pendingFailedSendFor("ses_stop"), null)
   assert.notEqual(queue.followupPausedReason("ses_stop"), null)
+  // 发出去了：「继续」重新出现，但不自动接着发。
+  useChatStore.setState({ running: false, composer: "" } as never)
+  const after = row("ses_stop", zh)
+  assert.equal(after.showContinue, true, "失败那条发出去后「继续」回来")
+  assert.doesNotMatch(after.text, /先发/)
+  kick()
+  await flush()
+  assert.deepEqual(sent, [], "中性暂停不自动接着发")
   queue.pauseFollowups("ses_sw", "engineSwitched")
   queue.enqueueFollowup({ sessionId: "ses_sw", prompt: "B", assets: [] })
   queue.pauseFollowups("ses_sw", "engineSwitched")
@@ -314,6 +341,62 @@ test("停止 / 换助手仍不自动放行：失败那条发出去跑完也只�
   pending.markPendingFailedSendInFlight("ses_sw")
   dispatchAgentEvent({ type: "run.end", runId: "run_y", sessionId: "ses_sw" } as never)
   assert.equal(queue.followupPausedReason("ses_sw"), "engineSwitched")
+})
+
+test("中性暂停（停止 / 换助手 / held）+ 失败那条没发：句尾说完下一步「…发出去后再点继续。」（中英）；不出继续", () => {
+  for (const reason of ["stopped", "engineSwitched", "held"] as const) {
+    const at = (place: "card" | "composer", t: typeof zh) =>
+      view.queuePausedView({ reason, count: 2, composerHasContent: place === "composer", pendingFailed: place, provider: named("P"), t: t as never })
+    const reasonZh = view.queuePausedReasonText(zh as never, reason, 2, named("P"))
+    const reasonEn = view.queuePausedReasonText(en as never, reason, 2, named("P"))
+    assert.equal(at("card", zh).text, `${reasonZh}先发上面这条，发出去后再点继续。`, reason)
+    assert.equal(at("composer", zh).text, `${reasonZh}先发输入框里这条，发出去后再点继续。`, reason)
+    assert.equal(at("card", en).text, `${reasonEn} Send the one above first, then press Continue.`, reason)
+    assert.equal(at("composer", en).text, `${reasonEn} Send the message in the box first, then press Continue.`, reason)
+    for (const place of ["card", "composer"] as const) {
+      assert.equal(at(place, zh).showContinue, false)
+      assert.equal(at(place, zh).showEditFirst, false)
+    }
+  }
+  assert.equal((zhChat as any).queuePausedResendFirstHeld, "先发上面这条，发出去后再点继续。")
+  assert.equal((zhChat as any).queuePausedComposerFirstHeld, "先发输入框里这条，发出去后再点继续。")
+  assert.equal((enChat as any).queuePausedResendFirstHeld, "Send the one above first, then press Continue.")
+  assert.equal((enChat as any).queuePausedComposerFirstHeld, "Send the message in the box first, then press Continue.")
+})
+
+test("「马上发给它」在失败那条没发时仍可用：不标在发；那一轮跑完队列不自动接着发，暂停行还是同一句（停止 / 额度）", async () => {
+  const { sendFollowupNow } = await import("./runtime-interact/followup-actions.ts")
+  for (const [sid, reason] of [["ses_now_s", "stopped"], ["ses_now_q", "quota"]] as const) {
+    inFlightTurn(sid, "失败那条", "B1", "B2")
+    queue.pauseFollowups(sid, reason)
+    pending.notePendingFailedSend(sid, { where: "composer", text: "失败那条" })
+    useChatStore.setState({ running: false, runId: null, composer: "失败那条" } as never)
+    const before = row(sid, zh)
+    assert.equal(before.showContinue, false)
+    const first = queue.listFollowups(sid)[0]!
+    await sendFollowupNow(first).catch(() => undefined)
+    assert.equal(pending.pendingFailedSendFor(sid)?.inFlight, false, `${reason}：马上发给它不算发出失败那条`)
+    dispatchAgentEvent({ type: "run.start", runId: `run_now_${sid}`, sessionId: sid } as never)
+    dispatchAgentEvent({ type: "run.end", runId: `run_now_${sid}`, sessionId: sid } as never)
+    useChatStore.setState({ running: false, runId: null, composer: "失败那条" } as never)
+    assert.ok(pending.pendingFailedSendFor(sid), `${reason}：记录保留`)
+    assert.notEqual(queue.followupPausedReason(sid), null, `${reason}：仍停着`)
+    const after = row(sid, zh)
+    assert.equal(after.showContinue, false)
+    const left = queue.listFollowups(sid).length
+    // 停止后又开跑并跑完一轮 → 原因按 P3 改成 held（「排队的 N 条先不发。」）；额度不变。句尾那句「先发…」不变。
+    const nowReason = queue.followupPausedReason(sid)!
+    assert.equal(nowReason, reason === "stopped" ? "held" : "quota")
+    const same = (r: typeof nowReason, n: number) =>
+      view.queuePausedView({ reason: r, count: n, composerHasContent: true, pendingFailed: "composer", provider: named("OpenAI"), t: zh as never }).text
+    assert.equal(before.text, same(reason, 2))
+    assert.equal(after.text, same(nowReason, left), `${reason}：暂停行还是同一句（只是条数跟着变）`)
+    assert.match(after.text, reason === "quota" ? /充值后先发输入框里这条，发出去后排队的会接着发。$/ : /先发输入框里这条，发出去后再点继续。$/)
+    sent.length = 0
+    kick()
+    await flush()
+    assert.deepEqual(sent, [], `${reason}：不自动接着发`)
+  }
 })
 
 // ---------------- P2 密钥 ----------------
