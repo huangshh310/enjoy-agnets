@@ -42,6 +42,8 @@ export async function consumeFullStream(input: {
   /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
   onCheckpoint?: () => void
   emit: (event: StreamEvent) => void
+  /** 用户已停止这一轮（迟到的审批丢掉，见 consumeApprovalRequired）。 */
+  isStopped?: () => boolean
 }) {
   let lastCheckpointAt = 0
   for await (const part of input.stream) {
