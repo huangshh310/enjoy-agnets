@@ -15,7 +15,8 @@ import { useReviewViewModel } from "./review/use-review-view-model"
 export function ReviewView(props: ReviewViewProps) {
   const vm = useReviewViewModel(props)
   const gitRepo = useChatStore((state) => state.gitRepo)
-  if (gitRepo === false) return <ReviewNotGitEmpty />
+  // null（未探测）也不要先画 git 空态 / treeClean；探测到 true 再进 scope 面板。
+  if (gitRepo !== true) return <ReviewNotGitEmpty />
   if (vm.scope === "checkpoints") return <ReviewCheckpointsPane vm={vm} />
   if (vm.scope === "commits") return <ReviewCommitsPane vm={vm} />
   return <ReviewChangesPane vm={vm} />

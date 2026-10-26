@@ -44,3 +44,9 @@ test("接线：ai-generation 失败走 generationFailedTurn，不再硬写 in_pr
   assert.match(src, /turn: generationFailedTurn\(request\.sessionId\)/)
   assert.doesNotMatch(src, /workflow: "in_progress", attention: "error"/)
 })
+
+test("接线：automations-run 失败走 generationFailedTurn，不再硬写 in_progress", () => {
+  const auto = readFileSync(new URL("./automations-run.ts", import.meta.url), "utf8")
+  assert.match(auto, /turn: generationFailedTurn\(openedSessionId\)/)
+  assert.doesNotMatch(auto, /workflow: "in_progress", attention: "error"/)
+})

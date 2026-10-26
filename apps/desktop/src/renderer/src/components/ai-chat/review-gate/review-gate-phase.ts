@@ -16,13 +16,14 @@ export function claimDoneForcesReview(eventType: string): boolean {
   return eventType === "run.end"
 }
 
-/** 流事件 → 会话工单态。有 turn 时只信 main；失败/取消回执行中。 */
+/** 流事件 → 会话工单态。有 turn 时只信 main；缺 turn 的 run.error 回待办（与 decideTurnOutcome 对齐），开跑标执行中。 */
 export function workflowAfterStreamEvent(
   eventType: string,
   opts?: { deniedOnly?: boolean; turn?: TurnOutcome }
 ): "in_progress" | "needs_review" | "todo" | null {
   if (opts?.turn) return opts.turn.workflow
-  if (eventType === "run.start" || eventType === "run.error") return "in_progress"
+  if (eventType === "run.error") return "todo"
+  if (eventType === "run.start") return "in_progress"
   if (eventType === "run.end") return opts?.deniedOnly ? "todo" : "needs_review"
   return null
 }

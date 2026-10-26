@@ -26,7 +26,7 @@ export function useReviewViewModel(props: ReviewViewProps) {
   const { options, toggleOption, allExpanded, toggleAllExpanded, jumpOpen, setJumpOpen } =
     useReviewOptions()
   const { palette, setPalette } = useDiffPalette()
-  const inGit = gitRepo !== false
+  const inGit = gitRepo === true
   const git = useWorkspaceGit(props.workspaceId, {
     enabled: active && inGit,
     includeBranchFiles: active && inGit && scope === "branch"

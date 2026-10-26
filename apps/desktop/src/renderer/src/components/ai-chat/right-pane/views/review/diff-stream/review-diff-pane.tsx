@@ -34,12 +34,12 @@ export function ReviewDiffPane(props: {
 
   // 非 git 禁止自动选文件：onSelectFile 每渲一次新引用，选不中就会 Maximum update depth。
   useEffect(() => {
-    if (gitRepo === false) return
+    if (gitRepo !== true) return
     if (selectedFilePath) return
     if (activePath) onSelectFile(activePath)
   }, [activePath, selectedFilePath, onSelectFile, gitRepo])
 
-  if (gitRepo === false) return <ReviewNotGitEmpty />
+  if (gitRepo !== true) return <ReviewNotGitEmpty />
   if (changes.length === 0 && !activePath) {
     return (
       <div
