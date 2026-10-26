@@ -206,16 +206,17 @@ async function finishAfterTruncate(input: {
  */
 function dropCutTailFromView(sessionId: string, cutIds: ReadonlySet<string>, rethrow = false): void {
   try {
-    const now = useChatStore.getState()
-    if (now.sessionId !== sessionId) return
-    const next = now.messages.filter(
+    const latest = useChatStore.getState()
+    if (latest.sessionId !== sessionId) return
+    const next = latest.messages.filter(
       (message) => !cutIds.has(message.id) && !((message as { persistedId?: string }).persistedId && cutIds.has((message as { persistedId?: string }).persistedId!))
     )
-    if (next.length !== now.messages.length) {
+    if (next.length !== latest.messages.length) {
       const kept = next
       // 重来截掉后面：最后一条用户消息退回更早的一条，这不是用户刚发了一句，别贴底（host #170，一次性记号）。
+      // 一条用户消息都不剩时「最后一条用户消息」不会变，不打记号（否则会留给下一次用户自己发送）。
       if (lastUserMessageId(kept)) skipNextSendScroll(sessionId)
-      now.setMessages(kept)
+      latest.setMessages(kept)
     }
   } catch (error) {
     if (rethrow) throw error
