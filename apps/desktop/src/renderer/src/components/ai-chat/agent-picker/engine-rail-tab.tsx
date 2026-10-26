@@ -48,7 +48,7 @@ export function EngineRailTab({
       aria-selected={isSelected}
       title={subtitle ? `${trueNameTitle} · ${subtitle}` : trueNameTitle}
       onClick={onSelect}
-      className={`group relative flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-caption-1-medium transition-all duration-150 outline-none select-none ${
+      className={`group relative flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-caption-1-medium transition-all duration-150 select-none focus-ring ${
         isSelected
           ? "bg-background-primary-default text-text-primary shadow-xs ring-1 ring-border-button-default"
           : "text-text-secondary hover:bg-background-primary-default/60 hover:text-text-primary"

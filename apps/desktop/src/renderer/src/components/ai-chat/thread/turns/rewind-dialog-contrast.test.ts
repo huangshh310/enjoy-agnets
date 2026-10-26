@@ -118,13 +118,13 @@ test("弹窗灰字对比度 ≥ 4.5:1（浅色 / 深色）", () => {
   console.log(report.join("\n"))
 })
 
-test("算法自检：复现 luna 量到的旧值（提示灰字浅色 2.58 / 深色 1.94，深色正文 3.19，「找不到记录」浅色 4.43）", () => {
+test("算法自检：#168 修完后次级 / 三级字对比度（浅色 tertiary≈7.80、深色≈5.83，浅色 secondary on secondary-default≈7.28）", () => {
   const near = (a: number, b: number) => Math.abs(a - b) < 0.03
-  assert.ok(near(contrast(luminance("color-text-tertiary", "light"), luminance(DIALOG_BG, "light")), 2.58))
-  assert.ok(near(contrast(luminance("color-text-tertiary", "dark"), luminance(DIALOG_BG, "dark")), 1.94))
-  assert.ok(near(contrast(luminance("color-text-secondary", "dark"), luminance(DIALOG_BG, "dark")), 3.19))
+  assert.ok(near(contrast(luminance("color-text-tertiary", "light"), luminance(DIALOG_BG, "light")), 7.8))
+  assert.ok(near(contrast(luminance("color-text-tertiary", "dark"), luminance(DIALOG_BG, "dark")), 5.83))
+  assert.ok(near(contrast(luminance("color-text-secondary", "dark"), luminance(DIALOG_BG, "dark")), 5.83))
   assert.ok(
-    near(contrast(luminance("color-text-secondary", "light"), luminance("color-background-secondary-default", "light")), 4.43)
+    near(contrast(luminance("color-text-secondary", "light"), luminance("color-background-secondary-default", "light")), 7.28)
   )
 })
 

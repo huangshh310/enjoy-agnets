@@ -230,6 +230,9 @@ export function InspectorPane({
         <div
           data-testid="inspector-host"
           data-drawer={drawer.active ? (drawerOpen ? "open" : "closed") : "off"}
+          // #173：收起后内容仍在树里（Panel 宽 0），8 个工具按钮还能 Tab 到。inert 让焦点跳过整栏。
+          inert={panelCollapsed && !drawerOpen ? true : undefined}
+          aria-hidden={panelCollapsed && !drawerOpen ? true : undefined}
           className={
             drawer.active
               ? cx(

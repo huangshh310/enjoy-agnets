@@ -20,7 +20,7 @@ export function AppearanceSkinCard({
       aria-label={option.name}
       title={option.hint}
       onClick={() => applyThemeSkin(option.id)}
-      className="group flex w-40 cursor-pointer flex-col gap-2 text-left outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+      className="group flex w-40 cursor-pointer flex-col gap-2 text-left outline-hidden transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
     >
       <span
         className={cx(

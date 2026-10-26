@@ -31,7 +31,7 @@ export function ContextWindowBar({
       <button
         type="button"
         onClick={onToggleExpand}
-        className="group flex items-center justify-between w-full text-left cursor-pointer outline-none select-none"
+        className="group flex w-full cursor-pointer items-center justify-between text-left select-none focus-ring"
       >
         <span className="text-body-medium font-semibold text-text-primary transition-colors group-hover:text-accent-500">
           {t("chat.contextWindow")}

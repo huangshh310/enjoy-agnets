@@ -145,7 +145,7 @@ export function ProviderSettings() {
               type="button"
               onClick={() => setActiveTab("configured")}
               className={cx(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-1-medium transition-all outline-none",
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-1-medium transition-all focus-ring",
                 activeTab === "configured"
                   ? "bg-background-primary-default text-text-primary shadow-xs font-semibold"
                   : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/50"
@@ -169,7 +169,7 @@ export function ProviderSettings() {
               type="button"
               onClick={() => setActiveTab("presets")}
               className={cx(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-1-medium transition-all outline-none",
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-1-medium transition-all focus-ring",
                 activeTab === "presets"
                   ? "bg-background-primary-default text-text-primary shadow-xs font-semibold"
                   : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/50"

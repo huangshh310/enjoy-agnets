@@ -162,7 +162,7 @@ function FilterPill({
       type="button"
       onClick={onClick}
       className={cx(
-        "rounded-lg px-3 py-1 text-caption-1-medium transition-all outline-none",
+        "rounded-lg px-3 py-1 text-caption-1-medium transition-all focus-ring",
         active
           ? "bg-background-primary-default text-text-primary shadow-xs font-semibold"
           : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/60"

@@ -139,7 +139,6 @@ export const zhSettings = {
     readyNoWorkspace: "还没打开项目",
     shortcutsToday: "今天值得记住的快捷键",
     shortcutSettings: "打开设置",
-    shortcutApproval: "切换审批",
     shortcutFind: "在本会话查找",
     replayTitle: "启动引导",
     replay: "重新打开入门向导",

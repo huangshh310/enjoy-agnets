@@ -66,5 +66,4 @@ export function toolDef(kind: RightPaneKind, t: TranslateFn): RightPaneToolDef {
   return tools.find((item) => item.kind === kind) ?? tools[0]!
 }
 
-export const PANE_FOCUS =
-  "outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+export const PANE_FOCUS = "focus-ring"
