@@ -244,7 +244,9 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     const window = await readyWindow(app)
     await window.setViewportSize({ width: 1440, height: 900 })
     const composer = window.locator('[data-testid="composer-input"]')
-    const regen = window.getByRole("button", { name: "重新生成回复" })
+    // 限定会话线程容器，避免整页其它底脚「重新生成回复」把 count 顶到 3（CI flake Received: 3）。
+    const thread = window.locator('[data-testid="chat-conversation"]')
+    const regen = thread.getByRole("button", { name: "重新生成回复" })
     const banner = window.locator('[data-testid="thread-error-banner"]')
     const dialog = window.locator('[data-testid="regenerate-confirm-dialog"]')
     const allowOnce = window.locator('[data-testid="approval-allow"]')
@@ -256,7 +258,8 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     await expect.poll(() => countText("stub-ok hello(?! two)")).toBe(1)
     await sendComposer(window, composer, "hello two")
     await expect.poll(() => countText("stub-ok hello two")).toBe(1)
-    await expect(regen).toHaveCount(2, { timeout: 10_000 })
+    // 等线程内按钮稳定为 2（裸 toHaveCount 会跟页脚第三颗抢）。
+    await expect.poll(async () => regen.count(), { timeout: 10_000 }).toBe(2)
     await regen.first().click({ force: true })
     await expect(dialog).toBeVisible({ timeout: 8_000 })
     await expect(dialog).toContainText("1 轮")
