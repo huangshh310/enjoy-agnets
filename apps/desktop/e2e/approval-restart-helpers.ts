@@ -61,6 +61,12 @@ export async function relaunchElectron(env: NodeJS.ProcessEnv): Promise<Electron
 
 /** 等审批时 app.close() 会撞 before-quit 确认框，必须 forceQuit，否则 CI 挂满 180s。 */
 export async function closeForRelaunch(app: ElectronApplication): Promise<void> {
+  let proc: ReturnType<ElectronApplication["process"]> | null = null
+  try {
+    proc = app.process()
+  } catch {
+    /* already gone */
+  }
   try {
     for (const window of app.windows()) {
       await window
@@ -75,7 +81,8 @@ export async function closeForRelaunch(app: ElectronApplication): Promise<void> 
   } catch {
     /* already gone */
   }
-  await Promise.race([app.close(), delay(5_000)]).catch(() => undefined)
+  // forceQuit 后先等进程自然退出 / 检查点 flush 完，再 SIGKILL；过早 kill 会让软重启丢 waiting 卡（CI flake）。
+  await Promise.race([waitExit(proc), app.close(), delay(15_000)]).catch(() => undefined)
   await crashKill(app)
 }
 
@@ -192,9 +199,16 @@ async function launchElectron(env: NodeJS.ProcessEnv): Promise<ElectronApplicati
   })
 }
 
-function waitExit(proc: { once?: (event: string, fn: () => void) => void } | null): Promise<void> {
+function waitExit(
+  proc: { once?: (event: string, fn: () => void) => void; exitCode?: number | null } | null
+): Promise<void> {
   return new Promise((resolve) => {
     if (!proc?.once) {
+      resolve()
+      return
+    }
+    // 已退出则立刻返回，避免再挂 wait。
+    if (proc.exitCode !== null && proc.exitCode !== undefined) {
       resolve()
       return
     }
