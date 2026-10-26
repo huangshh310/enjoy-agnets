@@ -658,6 +658,7 @@ export const zhChat = {
   addProject: "+ 点击添加项目",
   recent: "最近",
   sessionActive: "进行中",
+  sessionNeedsAttention: "需处理",
   newChat: "新建对话",
   noChats: "暂无聊天",
   newChatPlus: "+ 新建",

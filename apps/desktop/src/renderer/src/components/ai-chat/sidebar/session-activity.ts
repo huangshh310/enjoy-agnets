@@ -55,7 +55,7 @@ export function sessionActivity(input: SessionActivityInput): SessionActivity {
   }
 }
 
-/** 钉住组：等你优先，其次仍在跑。最多 8 条。 */
+/** 钉住组：等你优先，其次仍在跑；未消 error 也钉（别的会话顶部条不列，靠侧栏红点+本组发现）。最多 8 条。 */
 export function pickActiveSessions<T extends { id: string; updatedAt: number }>(
   sessions: readonly T[],
   activityOf: (id: string) => SessionActivity
@@ -72,4 +72,19 @@ export function pickActiveSessions<T extends { id: string; updatedAt: number }>(
       return right.updatedAt - left.updatedAt
     })
     .slice(0, ACTIVE_SESSION_CAP)
+}
+
+/**
+ * 钉住组标题：只要还有 live running / 等你 →「进行中」；
+ * 组里只剩未消 error（看板已是待办）→「需处理」，避免与 workflow statusInProgress 同文案误读（gate-180 soft）。
+ */
+export type ActivePinLabelKey = "sessionActive" | "sessionNeedsAttention"
+
+export function activePinLabelKey(
+  activities: ReadonlyArray<Pick<SessionActivity, "running" | "waitingReview" | "failed">>
+): ActivePinLabelKey {
+  const hasLive = activities.some((a) => a.running || a.waitingReview)
+  if (hasLive) return "sessionActive"
+  const hasFailed = activities.some((a) => Boolean(a.failed))
+  return hasFailed ? "sessionNeedsAttention" : "sessionActive"
 }

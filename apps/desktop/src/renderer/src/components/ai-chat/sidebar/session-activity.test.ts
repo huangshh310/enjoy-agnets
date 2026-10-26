@@ -7,8 +7,10 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import {
+  activePinLabelKey,
   pickActiveSessions,
   sessionActivity,
+  sessionFailed,
   sessionIsRunning,
   sessionWaitingReview
 } from "./session-activity.ts"
@@ -92,4 +94,64 @@ test("侧栏不得只给当前会话画运行灯", () => {
   const row = readFileSync(join(dir, "sidebar-workspace-row.tsx"), "utf8")
   assert.equal(repos.includes("session.id === sessionId && running"), false)
   assert.equal(row.includes("session.id === sessionId && running"), false)
+})
+
+test("未消 error 仍钉住，便于别的会话发现", () => {
+  const items = [
+    { sessionId: "ses_fail", kind: "error" as const, status: "active" as const }
+  ]
+  const input = {
+    currentId: "ses_other",
+    running: false,
+    parks: {},
+    items
+  }
+  assert.equal(sessionFailed("ses_fail", items), true)
+  const picked = pickActiveSessions(
+    [
+      { id: "ses_fail", updatedAt: 2 },
+      { id: "ses_idle", updatedAt: 9 }
+    ],
+    (id) => sessionActivity({ ...input, sessionId: id })
+  )
+  assert.deepEqual(
+    picked.map((item) => item.id),
+    ["ses_fail"]
+  )
+  assert.equal(
+    activePinLabelKey(picked.map((s) => sessionActivity({ ...input, sessionId: s.id }))),
+    "sessionNeedsAttention"
+  )
+})
+
+test("有 live running/等你时钉标题仍是进行中", () => {
+  const items = [
+    { sessionId: "ses_fail", kind: "error" as const, status: "active" as const },
+    { sessionId: "ses_wait", kind: "pending_approval" as const, status: "active" as const }
+  ]
+  const input = {
+    currentId: "ses_fg",
+    running: true,
+    parks: { ses_bg: { running: true } },
+    items
+  }
+  const picked = pickActiveSessions(
+    [
+      { id: "ses_fg", updatedAt: 3 },
+      { id: "ses_fail", updatedAt: 2 },
+      { id: "ses_wait", updatedAt: 1 }
+    ],
+    (id) => sessionActivity({ ...input, sessionId: id })
+  )
+  assert.equal(
+    activePinLabelKey(picked.map((s) => sessionActivity({ ...input, sessionId: s.id }))),
+    "sessionActive"
+  )
+})
+
+test("只有失败钉住时不用进行中文案键", () => {
+  assert.equal(activePinLabelKey([{ running: false, waitingReview: false, failed: true }]), "sessionNeedsAttention")
+  assert.equal(activePinLabelKey([{ running: true, waitingReview: false, failed: true }]), "sessionActive")
+  assert.equal(activePinLabelKey([{ running: false, waitingReview: true, failed: false }]), "sessionActive")
+  assert.equal(activePinLabelKey([]), "sessionActive")
 })
