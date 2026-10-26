@@ -139,7 +139,6 @@ export const enSettings = {
     readyNoWorkspace: "No project yet",
     shortcutsToday: "Shortcuts worth learning today",
     shortcutSettings: "Open settings",
-    shortcutApproval: "Cycle approval",
     shortcutFind: "Find in this thread",
     replayTitle: "Setup guide",
     replay: "Reopen the setup guide",

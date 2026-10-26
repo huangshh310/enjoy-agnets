@@ -407,22 +407,22 @@ function checks(ctx: Ctx): Check[] {
   const thumbOn = dark ? pick(thumb, /dark:data-\[state=checked\]:bg-([\w-]+)/, "暗色开态滑块")[1]! : pick(thumb, /(?:^|\s)bg-([\w-]+)/, "滑块")[1]!
   add("P2-4", "开关·开态滑块 vs 轨道", GRAPHIC, col(ctx, "main", thumbOn), onTrack)
 
-  // P2-5 侧栏选中行 / 搜索框（glass 暗色回退出过 #f7f7f7 底）
+  // P2-5 侧栏选中行 / 搜索框（#168：经典 secondary/tertiary 也按 TEXT 4.5 卡；glass 暗色回退出过 #f7f7f7 底）
   const row = src("components/ai-chat/sidebar/sidebar-session-row.tsx")
   const [, rowBg, rowFg] = pick(row, /active\s*\?\s*"bg-([\w-]+) text-([\w-]+)"/, "会话行选中")
   const side = surface(ctx, "sidebar")
   const rowSurface = stack(ctx, "sidebar", side, rowBg!)
-  // 这一项（luna P2-5）是 glass 的；经典皮肤的 text-secondary（亮 neutral-500 / 暗没覆盖也是 neutral-500）不在这次范围，只记录。
-  const glassOnly = ctx.skin === "glass" ? TEXT : null
-  const tag = ctx.skin === "glass" ? "glass" : "经典·仅记录"
-  add("P2-5", `侧栏·选中会话行文字（${tag}）`, glassOnly, col(ctx, "sidebar", rowFg!), rowSurface)
-  add("P2-5", `侧栏·选中会话行时间（${tag}）`, glassOnly, col(ctx, "sidebar", "text-secondary"), rowSurface)
+  const tag = ctx.skin === "glass" ? "glass" : "经典"
+  add("P2-5", `侧栏·选中会话行文字（${tag}）`, TEXT, col(ctx, "sidebar", rowFg!), rowSurface)
+  add("P2-5", `侧栏·选中会话行时间（${tag}）`, TEXT, col(ctx, "sidebar", "text-secondary"), rowSurface)
+  add("P2-5", `侧栏·选中会话行三级字（${tag}）`, TEXT, col(ctx, "sidebar", "text-tertiary"), rowSurface)
   assert.match(src("components/ai-chat/ai-chat-sidebar.tsx"), /items-center bg-background-tertiary-default /)
   const search = stack(ctx, "sidebar", side, "background-tertiary-default")
-  add("P2-5", `侧栏·快速搜索框文字（${tag}）`, glassOnly, col(ctx, "sidebar", "text-secondary"), search)
+  add("P2-5", `侧栏·快速搜索框文字（${tag}）`, TEXT, col(ctx, "sidebar", "text-secondary"), search)
+  add("P2-5", `侧栏·快速搜索框三级字（${tag}）`, TEXT, col(ctx, "sidebar", "text-tertiary"), search)
   assert.match(src("components/app-shell/chrome/module-nav.tsx"), /bg-background-tertiary-default\/80 /)
   const navSearch = stack(ctx, "sidebar", side, "background-tertiary-default/80")
-  add("P2-5", `设置导航·搜索框输入字（${tag}）`, glassOnly, col(ctx, "sidebar", "text-primary"), navSearch)
+  add("P2-5", `设置导航·搜索框输入字（${tag}）`, TEXT, col(ctx, "sidebar", "text-primary"), navSearch)
 
   // P2-6 外观页·未选中的皮肤名（常态 / 悬停）
   const skin = src("components/settings/appearance/appearance-skin-card.tsx")
@@ -488,7 +488,7 @@ function checks(ctx: Ctx): Check[] {
   // text-title-1-bold = 24px / 700，WCAG 算大字（门槛 3）。亮色仍按 4.5 卡（luna：琥珀亮色 2.15）；暗色 500 不变，按大字 3 算。
   add("P2-8", `新会话标题·工作区名（${dark ? "暗·大字 3" : "亮·按 4.5"}）`, dark ? GRAPHIC : TEXT, col(ctx, "main", dark ? heroTok.dark : heroTok.light), surface(ctx, "main"))
 
-  // P3-8 glass 次级字回到中性灰（这里只算 glass；经典皮肤的 tertiary 不在这次范围）
+  // P3-8 glass 次级字回到中性灰（经典 secondary/tertiary 已在 P2-5 按 TEXT 卡）
   if (ctx.skin === "glass") {
     for (const [token, name] of [["text-secondary", "次级字"], ["text-tertiary", "三级字 / 时间戳"], ["text-placeholder", "占位符"]] as const) {
       add("P3-8", `glass·${name} vs 主栏`, TEXT, col(ctx, "main", token), surface(ctx, "main"))

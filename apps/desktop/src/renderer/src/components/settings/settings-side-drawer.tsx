@@ -2,7 +2,7 @@
  * 设置侧边抽屉：portal 到 body，避免被上级 overflow / transform 裁切。
  * nested 叠在另一只抽屉上（供应商 CRUD 已回到 `#/settings/providers`，不再从智能体抽屉叠新建）。
  */
-import { useEffect, type ReactNode } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { cx } from "@/utils/cx"
 import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
@@ -30,6 +30,24 @@ export function SettingsSideDrawer({
   children: ReactNode
 }) {
   const nested = layer === "nested"
+  const panelRef = useRef<HTMLAsideElement>(null)
+
+  // #173：键盘打开后焦点进入抽屉（否则停在触发按钮 / 遮罩外）。
+  useEffect(() => {
+    if (!open) return
+    const panel = panelRef.current
+    if (!panel) return
+    const frame = requestAnimationFrame(() => {
+      const alreadyInside = panel.contains(document.activeElement)
+      if (alreadyInside) return
+      const target =
+        panel.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? panel
+      target.focus()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -65,9 +83,11 @@ export function SettingsSideDrawer({
         aria-label={closeLabel}
       />
       <aside
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
+        tabIndex={-1}
         className={cx(
           "absolute inset-y-3 right-3 z-10 flex min-w-0 flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card",
           motion && "animate-in slide-in-from-right duration-250",

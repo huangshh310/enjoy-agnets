@@ -131,7 +131,7 @@ export function ProviderModelsTab({
                 type="button"
                 onClick={() => onChange({ reasoningEffort: opt.effortValue })}
                 className={cx(
-                  "flex h-7.5 items-center justify-center rounded-lg text-caption-1-regular transition-all outline-none",
+                  "flex h-7.5 items-center justify-center rounded-lg text-caption-1-regular transition-all focus-ring",
                   isSelected
                     ? "bg-background-primary-default text-text-primary font-semibold shadow-xs border border-border-button-default/60"
                     : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/50"

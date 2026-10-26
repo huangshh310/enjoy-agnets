@@ -228,7 +228,7 @@ function EnergyLabels({
           type="button"
           onClick={() => onChange(level.effortValue)}
           className={cx(
-            "cursor-pointer rounded px-1 text-caption-2-medium font-medium outline-none",
+            "cursor-pointer rounded px-1 text-caption-2-medium font-medium focus-ring",
             level.value === value ? cx("scale-105 font-semibold", level.iconColorClass) : "text-text-tertiary hover:text-text-primary"
           )}
         >

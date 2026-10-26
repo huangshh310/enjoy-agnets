@@ -43,8 +43,7 @@ export function SidebarAction({
       aria-label={label}
       title={collapsed ? label : undefined}
       className={cx(
-        "flex items-center overflow-hidden rounded-2lg p-2 text-left outline-none transition-all duration-200 ease-in-out cursor-pointer",
-        "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+        "flex cursor-pointer items-center overflow-hidden rounded-2lg p-2 text-left transition-all duration-200 ease-in-out focus-ring",
         "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0",
         active
           ? "bg-accent-500/10 text-accent-600 dark:text-accent-400 font-semibold shadow-2xs"

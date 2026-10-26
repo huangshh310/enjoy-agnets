@@ -130,7 +130,7 @@ function EmbeddingModelSelector({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-[280px] items-center justify-between gap-2 rounded-xl border border-border-button-default bg-background-primary-default px-3 py-1.5 text-left outline-none transition-colors hover:bg-background-secondary-hover cursor-pointer shadow-2xs group"
+          className="group flex h-9 w-[280px] cursor-pointer items-center justify-between gap-2 rounded-xl border border-border-button-default bg-background-primary-default px-3 py-1.5 text-left shadow-2xs transition-colors hover:bg-background-secondary-hover focus-ring"
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <span className="truncate text-caption-1-medium text-text-primary">{active?.label || selectedId}</span>

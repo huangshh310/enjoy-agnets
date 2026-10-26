@@ -47,7 +47,7 @@ export function CanvasModelPicker({
         <button
           type="button"
           data-canvas-no-zoom
-          className="flex h-8 min-w-0 max-w-[190px] items-center gap-1.5 rounded-full px-2 text-left outline-none hover:bg-black/5"
+          className="flex h-8 min-w-0 max-w-[190px] items-center gap-1.5 rounded-full px-2 text-left hover:bg-black/5 focus-ring"
           title={t("pages.workflows.canvasSelectModel")}
         >
           <ModelBrandIcon modelId={selectedId} providerKind={current?.provider} apiStyle={current?.apiStyle} size={15} />

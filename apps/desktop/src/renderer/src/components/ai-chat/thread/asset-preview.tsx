@@ -176,7 +176,7 @@ function AttachedImage({
     <button
       type="button"
       onClick={() => onOpen?.(src)}
-      className="group cursor-pointer rounded-2xl border-0 bg-transparent p-0 focus:outline-none"
+      className="group cursor-pointer rounded-2xl border-0 bg-transparent p-0 focus-ring"
       title={t("chat.previewName", { name })}
     >
       <img
@@ -213,7 +213,7 @@ function GeneratedImage({
         <button
           type="button"
           onClick={() => onOpen?.(src)}
-          className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          className="cursor-pointer focus-ring"
           title={t("chat.previewName", { name })}
         >
           <img src={src} alt={name} />

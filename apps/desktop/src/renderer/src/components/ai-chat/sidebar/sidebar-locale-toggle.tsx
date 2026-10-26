@@ -29,7 +29,7 @@ export function SidebarLocaleToggle({
         aria-label={t("common.localeSwitch")}
         title={t("common.localeSwitch")}
         onClick={() => select(english ? "zh" : "en")}
-        className="flex size-9 cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary outline-none hover:bg-background-secondary-hover hover:text-foreground-icon-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+        className="flex size-9 cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-foreground-icon-primary focus-ring"
       >
         {english ? <EnGlyph /> : <ZhGlyph />}
       </button>

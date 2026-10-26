@@ -34,7 +34,8 @@ html[data-skin="glass"] {
   /* 次级字 / 时间戳 / 占位符 / 次级图标用中性灰：掺强调色后像链接（luna h163 P3）。主字仍带一点色调。 */
   --color-text-primary: color-mix(in srgb, var(--color-neutral-800) 90%, var(--color-accent-800));
   --color-text-secondary: var(--color-neutral-600);
-  --color-text-tertiary: var(--color-neutral-500);
+  /* #168：侧栏选中行 / 搜索底上 tertiary 500 只有 4.42，提到 600 与 secondary 齐，≥4.5。 */
+  --color-text-tertiary: var(--color-neutral-600);
   --color-text-placeholder: var(--color-neutral-500);
   --color-foreground-icon-primary: color-mix(in srgb, var(--color-neutral-700) 72%, var(--color-accent-700));
   --color-foreground-icon-secondary: var(--color-neutral-600);

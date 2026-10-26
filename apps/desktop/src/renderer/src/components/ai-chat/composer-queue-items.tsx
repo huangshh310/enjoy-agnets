@@ -78,7 +78,7 @@ export function ImageAttachmentItem({
         type="button"
         title={t("chat.previewImage", { name: item.name })}
         onClick={() => src && onOpenPreview(src)}
-        className="size-full overflow-hidden rounded-xl focus:outline-none cursor-pointer"
+        className="size-full cursor-pointer overflow-hidden rounded-xl focus-ring"
       >
         {src ? (
           <img

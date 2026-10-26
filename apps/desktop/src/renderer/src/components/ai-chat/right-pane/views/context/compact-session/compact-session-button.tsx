@@ -50,7 +50,7 @@ export function CompactSessionButton({ sessionId, messageCount, className }: Com
       disabled={!canCompact || isCompacting}
       title={titleText}
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full py-0.5 px-2.5 text-caption-1-medium transition-all duration-200 outline-none select-none",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-caption-1-medium transition-all duration-200 select-none focus-ring",
         compaction
           ? "bg-accent-500/10 text-accent-600 border border-accent-500/20 hover:bg-accent-500/15 cursor-pointer"
           : canCompact

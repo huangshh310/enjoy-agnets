@@ -179,8 +179,9 @@
 
   /* Text */
   --color-text-primary:         var(--color-neutral-950);
-  --color-text-secondary:       var(--color-neutral-500);
-  --color-text-tertiary:        var(--color-neutral-400);
+  /* #168：次级 / 三级字按小字 ≥4.5（含 #f7f7f7、neutral-200 悬停底）。 */
+  --color-text-secondary:       var(--color-neutral-600);
+  --color-text-tertiary:        var(--color-neutral-600);
   --color-text-disabled:        var(--color-neutral-300);
   --color-text-disabled-danger: var(--color-red-300);
   --color-text-placeholder:     var(--color-neutral-400);
@@ -438,7 +439,9 @@
 
   /* Text */
   --color-text-primary:  var(--color-neutral-50);
-  --color-text-tertiary: var(--color-neutral-600);
+  /* #168：暗色补 secondary（原先沿用亮色 500，对 neutral-800 只有 3.19）；tertiary 600→400。 */
+  --color-text-secondary: var(--color-neutral-400);
+  --color-text-tertiary: var(--color-neutral-400);
   --color-text-disabled: var(--color-neutral-800);
   --color-text-error-primary: var(--color-red-400);
   --color-text-unselected: var(--color-neutral-400);

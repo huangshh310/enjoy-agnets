@@ -49,9 +49,8 @@ export function SidebarUserCard({
       <AriaButton
         aria-label={userName}
         className={cx(
-          "group flex cursor-pointer items-center overflow-hidden outline-none",
+          "group flex cursor-pointer items-center overflow-hidden focus-ring",
           "transition-all duration-200 ease-out",
-          "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
           collapsed
             ? "size-9 justify-center rounded-full bg-transparent p-0 hover:bg-background-secondary-hover"
             : "w-full justify-between rounded-xl px-2.5 py-1.5 border border-transparent hover:bg-background-secondary-hover hover:border-border-button-default/40 active:scale-[0.98]",

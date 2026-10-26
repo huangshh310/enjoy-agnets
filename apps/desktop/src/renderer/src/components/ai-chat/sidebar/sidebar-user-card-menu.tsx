@@ -100,7 +100,7 @@ function UserCardMenuItemRow({
         onSelect()
       }}
       className={cx(
-        "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left outline-none transition-all duration-150 active:scale-[0.98]",
+        "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left transition-all duration-150 active:scale-[0.98] focus-ring",
         item.isSelected
           ? "bg-background-secondary-hover text-text-primary"
           : "text-text-primary hover:bg-background-secondary-hover/90"

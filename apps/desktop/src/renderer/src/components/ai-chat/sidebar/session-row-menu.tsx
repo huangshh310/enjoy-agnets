@@ -123,9 +123,8 @@ export function SessionRowMenu({
           }}
           aria-label={t("chat.sessionActions")}
           className={cx(
-            "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary outline-none",
+            "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary focus-ring",
             "hover:bg-background-primary-default hover:text-text-primary",
-            "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
             "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0",
             open ? "opacity-100" : "opacity-0 group-hover/session:opacity-100 group-focus-within/session:opacity-100",
             className

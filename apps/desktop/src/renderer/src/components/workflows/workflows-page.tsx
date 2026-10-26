@@ -155,7 +155,7 @@ export function WorkflowsPage() {
             {selectedId ? (
               <div className="flex items-center gap-1.5">
                 <input
-                  className="h-7 w-56 rounded-md bg-transparent px-2 text-caption-1-semibold text-text-primary outline-none transition hover:bg-background-secondary-default/60 dark:hover:bg-background-secondary-default/40 focus:bg-background-secondary-default dark:focus:bg-background-secondary-default"
+                  className="h-7 w-56 rounded-md bg-transparent px-2 text-caption-1-semibold text-text-primary transition hover:bg-background-secondary-default/60 focus-ring dark:hover:bg-background-secondary-default/40 focus:bg-background-secondary-default dark:focus:bg-background-secondary-default"
                   value={currentProject?.title ?? ""}
                   placeholder={t("pages.workflows.canvasUntitled")}
                   onChange={(event) => renameProject(selectedId, event.target.value)}

@@ -60,7 +60,7 @@ function UserMenuItem({ initials, color, name, isSelected, onSelect }: UserRow &
       aria-current={isSelected ? "page" : undefined}
       onClick={onSelect}
       className={cx(
-        "flex w-full items-center gap-2 rounded-2lg px-2 py-1.5 outline-none transition-colors",
+        "flex w-full items-center gap-2 rounded-2lg px-2 py-1.5 transition-colors focus-ring",
         isSelected
           ? "bg-background-primary-hover"
           : "hover:bg-background-primary-hover focus-visible:bg-background-primary-hover",

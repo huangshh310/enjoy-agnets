@@ -31,7 +31,7 @@ export function RailButton({
       aria-current={active ? "page" : undefined}
       onClick={onClick}
       className={cx(
-        "group relative flex size-9 cursor-pointer items-center justify-center rounded-2lg outline-none transition-all duration-200 ease-out active:scale-90",
+        "group relative flex size-9 cursor-pointer items-center justify-center rounded-2lg transition-all duration-200 ease-out active:scale-90 focus-ring",
         active
           ? "bg-background-secondary-default text-text-primary shadow-2xs"
           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
