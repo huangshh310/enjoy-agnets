@@ -9,11 +9,16 @@
  *   超时之后、第一次调用真正回来之前（pending）：只有「取消」能点——不能再点一次重来 / 去审查，
  *   免得两次文件还原并发（leo #167）。
  * - 同会话正在输入、原话稍后放回（writebackPending）：收窗 + 中性 toast，不等写回、不显示失败句（leo #167 r3）。
- * - REWIND_FINISH_FAILED（截断已成功、写回抛错，原话已存好会继续放回）：收窗 + toast，
- *   不显示「从这里重来失败」（会话重读在 rewind-from-here 里做，leo #167 ③）。晚到的同样处理。
+ * - REWIND_FINISH_FAILED（截断已成功、写回抛错，原话已存好会继续放回）：收窗 + toast（luna n167 P2：延迟约 300ms；
+ *   期间已放回则不弹），不显示「从这里重来失败」（会话重读在 rewind-from-here 里做，leo #167 ③）。晚到的同样处理。
+ * - 30s 超时后迟到的成功（原话已写回输入框）：收窗 + toast「已经回到这里，原话放回输入框了。」（luna n167 P2）。
  * - 原话进了原来那个会话的草稿（前台已换会话）：收窗 + 小 toast 告诉用户（onSavedToOtherDraft）。
  * - 跑着的时候：点的那颗按钮转圈 +「正在还原…」，其余按钮 disabled（luna g159 ⑪）。
  */
+import {
+  clearRewindFinishFailedToast,
+  scheduleRewindFinishFailedToast
+} from "@renderer/hooks/rewind-finish-failed-toast"
 import {
   REWIND_THREW,
   rewindDialogView,
@@ -42,6 +47,8 @@ export type RewindDialogDeps = {
   onSavedToOtherDraft?: () => void
   /** 同会话正在输入：原话已存好、稍后放回输入框：toast（中性，不是失败）。 */
   onWritebackPending?: () => void
+  /** 30s 超时后迟到的成功（原话已写回输入框）：toast（luna n167 P2）。 */
+  onLateRestored?: () => void
 }
 
 /** 重来的 IPC 卡住多久后放开 busy（还原大仓库也够用；之后按钮恢复、弹窗能关）。 */
@@ -125,7 +132,8 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
     if (outcome.kind === "close") {
       close()
       if (outcome.draftToast) deps.onSavedToOtherDraft?.()
-      if (outcome.pendingToast) deps.onWritebackPending?.()
+      else if (outcome.pendingToast) deps.onWritebackPending?.()
+      else if (late) deps.onLateRestored?.()
     } else if (outcome.kind === "rewound-not-restored") {
       close()
       deps.onRewoundNotRestored?.()
@@ -282,10 +290,18 @@ export function rewindDialogDeps(input: {
       input.rewindFromUserTurn({ userMessageId: input.messageId, restoreFiles, confirmDeleteUntracked }),
     onClose: () => input.onOpenChange(false),
     revealReview: input.revealReview,
-    onRewoundNotRestored: () => toast("chat.rewindFinishFailedToast"),
+    // luna n167 P2：延迟约 300ms；期间放回则不弹。切会话 / 卸载清理由 dialog 调 disposeRewindDialogToasts。
+    onRewoundNotRestored: () =>
+      scheduleRewindFinishFailedToast(() => toast("chat.rewindFinishFailedToast")),
     onSavedToOtherDraft: () => toast("chat.rewindSavedToOtherDraft"),
-    onWritebackPending: () => toast("chat.rewindWritebackPending")
+    onWritebackPending: () => toast("chat.rewindWritebackPending"),
+    onLateRestored: () => toast("chat.rewindLateRestoredToast")
   }
+}
+
+/** 弹窗卸载时清掉尚未弹出的「还没能放回」延迟 toast（luna n167 P2）。 */
+export function disposeRewindDialogToasts(): void {
+  clearRewindFinishFailedToast()
 }
 
 /**

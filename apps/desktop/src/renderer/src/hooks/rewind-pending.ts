@@ -45,6 +45,7 @@ import {
 } from "./composer-writeback"
 import { composerInputEl, syncComposerDom } from "./composer-dom"
 import { isComposerComposing } from "./composer-ime"
+import { cancelRewindFinishFailedToastOnRestored } from "./rewind-finish-failed-toast"
 import { listComposerAssets, queueComposerAsset } from "./composer-assets"
 import { restoreRewindDraft, type RewindDraftAsset } from "./rewind-draft-fallback"
 
@@ -339,6 +340,8 @@ export function forgetPendingRewindCacheForTest(): void {
 }
 
 function runHook(sessionId: string, outcome: "composer" | "draft"): void {
+  // luna n167 P2：原话已放回输入框 → 取消尚未弹出的「还没能放回」toast。
+  if (outcome === "composer") cancelRewindFinishFailedToastOnRestored()
   const hook = landedHooks.get(sessionId)
   landedHooks.delete(sessionId)
   try {

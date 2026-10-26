@@ -10,7 +10,7 @@
  * 实机 CONDITIONAL 必修 ③（WCAG 文字 ≥ 4.5、描边 ≥ 3）：失败句浅 red-700 / 深 red-400、「只改聊天」「删掉并还原」渐变 700 起
  * （转圈时保持常态色）、「取消」「连文件一起还原」描边与弹窗外沿 neutral-500——都在 rewind-dialog.css 里按 [data-rewind-dialog] 局部覆盖。
  */
-import { useState, useSyncExternalStore } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { RiHistoryLine, RiLoader4Line } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { MessageAction } from "@/components/ai-elements/message"
@@ -27,7 +27,7 @@ import { useT } from "@renderer/i18n"
 import { showAppToast } from "@renderer/lib/app-toast"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { revealRightPane } from "../../right-pane/open-pane"
-import { createRewindDialogController, rewindDialogDeps, rewindEntryAction } from "./rewind-dialog-controller"
+import { createRewindDialogController, disposeRewindDialogToasts, rewindDialogDeps, rewindEntryAction } from "./rewind-dialog-controller"
 
 export function RewindFromHereAction({
   messageId,
@@ -87,6 +87,16 @@ export function RewindFromHereDialog({
   const [controller] = useState(() => createRewindDialogController(deps))
   controller.setDeps(deps)
   useSyncExternalStore(controller.subscribe, controller.getSnapshot)
+  // luna n167 P2：卸载或切会话时清掉尚未弹出的「还没能放回」延迟 toast。
+  useEffect(() => {
+    const unsub = useChatStore.subscribe((state, prev) => {
+      if (state.sessionId !== prev.sessionId) disposeRewindDialogToasts()
+    })
+    return () => {
+      unsub()
+      disposeRewindDialogToasts()
+    }
+  }, [])
   const view = controller.model({ canRestoreFiles, gitRepo, t })
 
   return (

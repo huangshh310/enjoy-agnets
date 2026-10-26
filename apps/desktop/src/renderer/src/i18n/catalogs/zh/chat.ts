@@ -170,6 +170,7 @@ export const zhChat = {
   rewindRestoring: "正在还原…",
   rewindFinishFailedToast: "已回到这里，但还没能放回输入框。原话已保存，会放回这个对话的输入框或草稿。",
   rewindWritebackPending: "已回到这里，原话稍后放回输入框。",
+  rewindLateRestoredToast: "已经回到这里，原话放回输入框了。",
   rewindSavedToOtherDraft: "原话放回了原来那个对话的草稿里。",
   truncateStaleSnapshot: "对话已经有新消息，刷新后再试一次。",
   truncateTailChanged: "有新内容，请确认后再点一次。",
