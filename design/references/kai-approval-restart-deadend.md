@@ -49,3 +49,9 @@
 - 不启 Enjoy / 不上本机 e2e
 - 不改 #180 分支、不碰 soft 7 启动猜清洗
 - 不改活审批回挂成功路径的 `waiting_review` 语义
+
+## 落地状态
+
+- 已在 `endRestoredRunWithoutSdkReply` 补 `persistTurnWorkflow(sid, turn)`（`todo`/`neutral`），与 `run.error` 事件 turn 对齐。
+- 行为测：`restore-waiting-restart.behavior.test.ts`（nocheck 落库 + sticky）+ `restore-approval-workflow.behavior.test.ts`（abandon 工单/封口/源码正则）。
+- 变异：见 `/workspace/enjoy-docs/kai-approval-restart-deadend-mutants.md`（4 killed / 1 survived 非关键决策）。

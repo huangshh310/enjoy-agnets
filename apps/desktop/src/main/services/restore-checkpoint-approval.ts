@@ -18,6 +18,7 @@ import { recordSdkApprovalResponse } from "./approval-hmac"
 import { getDatabase } from "./database"
 import { settlePendingApprovalsForRun, RESTART_UNVERIFIABLE_DECISION } from "./settle-run-approvals"
 import { persistSealedAssistantTools, writeCancelledRestoreError } from "./restore-interrupted-running"
+import { persistTurnWorkflow } from "./apply-turn-outcome"
 
 /** 无匹配行 / planSdkReplay fail closed：机器码，禁止英文句子进 run.error。 */
 export const RESTORE_NO_MATCHING_CODE = "restore_no_matching_approval"
@@ -156,6 +157,10 @@ export function endRestoredRunWithoutSdkReply(
     })
   }
   writeCancelledRestoreError(runId, RESTORE_NO_MATCHING_CODE)
+  // 与事件 turn 对齐落库：禁止 sessions.workflow_status 留在开跑时的 in_progress（侧栏死路）。
+  // needs_review 粘性由 persistSessionWorkflow / shouldWriteSessionWorkflow 守住。
+  const turn = { workflow: "todo" as const, attention: "neutral" as const }
+  if (sid) persistTurnWorkflow(sid, turn)
   if (target) {
     emitEvent(target, {
       type: "run.error",
@@ -163,7 +168,7 @@ export function endRestoredRunWithoutSdkReply(
       sessionId: sessionId ?? run?.input.sessionId,
       message: RESTORE_NO_MATCHING_CODE,
       code: RESTORE_NO_MATCHING_CODE,
-      turn: { workflow: "todo", attention: "neutral" },
+      turn,
       preOutput: false
     })
   }
