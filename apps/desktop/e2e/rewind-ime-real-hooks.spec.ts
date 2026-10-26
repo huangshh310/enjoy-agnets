@@ -180,3 +180,63 @@ for (const action of ["edit", "clear"] as const) {
     }
   })
 }
+
+for (const via of ["alt-left", "sidebar-click"] as const) {
+  test(`luna P1：A 组字中经 ${via === "alt-left" ? "Alt+Left" : "点侧栏"} 切到 B → B 框是 B 草稿，compositionend 不盖 B`, async () => {
+    test.setTimeout(90_000)
+    const { page, close } = await openHarness()
+    try {
+      const r = await page.evaluate(async () => {
+        const { useChatStore, ime, switchSession } = (window as any).__rewind
+        const el = document.querySelector("textarea") as HTMLTextAreaElement
+        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
+        // Alt+Left 与点侧栏都只改 sessionId，hook 同一条 effect——两条路径共用本用例。
+        useChatStore.getState().saveSessionDraft("s_a", { text: "A committed", assets: [], quotedContexts: [] })
+        useChatStore.getState().saveSessionDraft("s_b", { text: "B own", assets: [], quotedContexts: [] })
+        useChatStore.setState({ sessionId: "s_a", composer: "A committed" })
+        await sleep(40)
+        el.focus()
+        el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }))
+        el.value = "alt"
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: "alt", isComposing: true }))
+        el.dispatchEvent(new CompositionEvent("compositionupdate", { bubbles: true, data: "alt" }))
+        await sleep(40)
+        switchSession("s_b")
+        await sleep(60)
+        const afterSwitch = {
+          shown: el.value,
+          store: useChatStore.getState().composer,
+          composing: ime.isComposerComposing(),
+          sessionId: useChatStore.getState().sessionId
+        }
+        el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "alt" }))
+        await sleep(80)
+        const afterEnd = {
+          shown: el.value,
+          store: useChatStore.getState().composer,
+          draftB: useChatStore.getState().getSessionDraft("s_b")?.text
+        }
+        switchSession("s_a")
+        await sleep(60)
+        const backA = {
+          shown: el.value,
+          store: useChatStore.getState().composer,
+          draftA: useChatStore.getState().getSessionDraft("s_a")?.text
+        }
+        return { afterSwitch, afterEnd, backA }
+      })
+      console.log(`[rewind-ime P1 ${via}]`, JSON.stringify(r))
+      expect(r.afterSwitch.sessionId).toBe("s_b")
+      expect(r.afterSwitch.composing).toBe(false)
+      expect(r.afterSwitch.shown).toBe("B own")
+      expect(r.afterSwitch.store).toBe("B own")
+      expect(r.afterEnd.shown).toBe("B own")
+      expect(r.afterEnd.store).toBe("B own")
+      expect(r.afterEnd.draftB).toBe("B own")
+      expect(r.backA.shown).toBe("A committed")
+      expect(r.backA.store).toBe("A committed")
+    } finally {
+      await close()
+    }
+  })
+}

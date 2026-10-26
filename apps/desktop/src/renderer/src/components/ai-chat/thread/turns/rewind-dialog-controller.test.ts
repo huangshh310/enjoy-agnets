@@ -6,7 +6,12 @@
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { test } from "node:test"
+import { afterEach, mock, test } from "node:test"
+import {
+  clearRewindFinishFailedToast,
+  REWIND_FINISH_FAILED_TOAST_DELAY_MS,
+  rewindFinishFailedToastPendingForTest
+} from "../../../../hooks/rewind-finish-failed-toast.ts"
 import { zhChat } from "../../../../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../../../../i18n/catalogs/en/chat.ts"
 import { zhCommon } from "../../../../i18n/catalogs/zh/common.ts"
@@ -372,6 +377,28 @@ test("卡住超时之后晚到的成功：对话已截、原话已写回 → 收
   })
 })
 
+test("luna n167 P2：30s 超时后迟到的成功 → 收窗 + toast「已经回到这里，原话放回输入框了。」", async () => {
+  for (const lang of ["zh", "en"] as const) {
+    await quietly(async () => {
+      const hang = deferred<RewindRunResult>()
+      const { controller, calls } = wiredHarness(() => hang.promise, lang, 10)
+      await controller.run(false)
+      assert.equal(calls.close, 0)
+      hang.resolve({ ok: true })
+      await new Promise((r) => setImmediate(r))
+      assert.equal(calls.close, 1, `${lang}: closed`)
+      assert.deepEqual(calls.toasts, [LATE_RESTORED[lang]], `${lang}: late restored toast`)
+    })
+  }
+})
+
+test("luna n167 P2：普通成功（未超时）不弹迟到成功 toast", async () => {
+  const { controller, calls } = wiredHarness(async () => ({ ok: true }), "zh")
+  await controller.run(false)
+  assert.equal(calls.close, 1)
+  assert.deepEqual(calls.toasts, [])
+})
+
 test("消息上的入口（leo E5）：user-turn 按当前会话引擎的能力算 canRewind，不准写死", () => {
   const src = readFileSync(new URL("./user-turn.tsx", import.meta.url), "utf8")
   assert.match(src, /const runtimeId = useChatStore\(\(s\) => s\.runtimeId\)/)
@@ -386,8 +413,17 @@ test("消息上的入口（leo E5）：user-turn 按当前会话引擎的能力�
 // r3（leo）：写回抛错时原话还在「待放回」记录里、不在草稿里——toast 不能说「原话在草稿里」。
 const FINISH_TOAST = {
   zh: "已回到这里，但还没能放回输入框。原话已保存，会放回这个对话的输入框或草稿。",
-  en: "Rewound to here, but your message isn't back in the composer yet. It's saved and will go back into this chat's composer or draft."
+  en: "Rewound to here, but your message isn't back in the message box yet. It's saved and will go back into this chat's message box or draft."
 } as const
+const LATE_RESTORED = {
+  zh: "已经回到这里，原话放回输入框了。",
+  en: "You're back here. Your message is in the message box again."
+} as const
+
+afterEach(() => {
+  clearRewindFinishFailedToast()
+  mock.timers.reset()
+})
 
 /** 接上 rewindDialogDeps（真实接线），toast 记下来。 */
 function wiredHarness(rewind: () => Promise<RewindRunResult>, lang: "zh" | "en", timeoutMs?: number) {
@@ -411,21 +447,46 @@ function wiredHarness(rewind: () => Promise<RewindRunResult>, lang: "zh" | "en",
   return { controller, calls }
 }
 
-test("#167 ③：截断成功但原话没放回输入框（REWIND_FINISH_FAILED）→ 收窗 + toast（中英定稿），不显示「从这里重来失败」", async () => {
+test("#167 ③ / luna n167 P2：REWIND_FINISH_FAILED → 收窗；「还没能放回」toast 延迟 300ms 再弹（中英定稿）", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   for (const lang of ["zh", "en"] as const) {
     await quietly(async () => {
       const { controller, calls } = wiredHarness(async () => ({ ok: false, code: "REWIND_FINISH_FAILED" }), lang)
       await controller.run(false, undefined, "chat-only")
       assert.equal(calls.close, 1, `${lang}: dialog closed`)
-      assert.deepEqual(calls.toasts, [FINISH_TOAST[lang]], `${lang}: toast copy`)
+      assert.deepEqual(calls.toasts, [], `${lang}: no toast before ${REWIND_FINISH_FAILED_TOAST_DELAY_MS}ms`)
+      assert.equal(rewindFinishFailedToastPendingForTest(), true)
+      t.mock.timers.tick(REWIND_FINISH_FAILED_TOAST_DELAY_MS - 1)
+      assert.deepEqual(calls.toasts, [], `${lang}: still silent at ${REWIND_FINISH_FAILED_TOAST_DELAY_MS - 1}ms`)
+      t.mock.timers.tick(1)
+      assert.deepEqual(calls.toasts, [FINISH_TOAST[lang]], `${lang}: toast copy after delay`)
+      assert.equal(rewindFinishFailedToastPendingForTest(), false)
       const m = controller.model({ canRestoreFiles: true, gitRepo: true, t: tFor(lang) })
       assert.equal(m.error, null, `${lang}: no generic failure line`)
       assert.notEqual(m.error, GENERIC[lang])
+      clearRewindFinishFailedToast()
     })
   }
 })
 
-test("#167 ③：超时之后晚到的 REWIND_FINISH_FAILED 也收窗 + toast", async () => {
+test("luna n167 P2：300ms 内已成功放回 → 「还没能放回」不弹", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
+  await quietly(async () => {
+    const { controller, calls } = wiredHarness(async () => ({ ok: false, code: "REWIND_FINISH_FAILED" }), "zh")
+    await controller.run(false, undefined, "chat-only")
+    assert.equal(calls.close, 1)
+    assert.equal(rewindFinishFailedToastPendingForTest(), true)
+    t.mock.timers.tick(100)
+    // 模拟 pending 落地进输入框
+    const { cancelRewindFinishFailedToastOnRestored } = await import("../../../../hooks/rewind-finish-failed-toast.ts")
+    cancelRewindFinishFailedToastOnRestored()
+    assert.equal(rewindFinishFailedToastPendingForTest(), false)
+    t.mock.timers.tick(REWIND_FINISH_FAILED_TOAST_DELAY_MS)
+    assert.deepEqual(calls.toasts, [], "restored within delay → no toast")
+  })
+})
+
+test("#167 ③ / luna n167 P2：超时之后晚到的 REWIND_FINISH_FAILED 也收窗 + 延迟 toast", async () => {
   await quietly(async () => {
     const hang = deferred<RewindRunResult>()
     const { controller, calls } = wiredHarness(() => hang.promise, "zh", 10)
@@ -434,6 +495,9 @@ test("#167 ③：超时之后晚到的 REWIND_FINISH_FAILED 也收窗 + toast", 
     hang.resolve({ ok: false, code: "REWIND_FINISH_FAILED" })
     await new Promise((r) => setImmediate(r))
     assert.equal(calls.close, 1)
+    assert.deepEqual(calls.toasts, [], "toast still delayed")
+    assert.equal(rewindFinishFailedToastPendingForTest(), true)
+    await new Promise((r) => setTimeout(r, REWIND_FINISH_FAILED_TOAST_DELAY_MS + 30))
     assert.deepEqual(calls.toasts, [FINISH_TOAST.zh])
   })
 })
@@ -492,7 +556,7 @@ test("#167：超时后第一次没回来前点取消能关窗", async () => {
 test("#167 r3：同会话正在输入、原话稍后放回（writebackPending）→ 立刻收窗 + 中性 toast，不显示失败句", async () => {
   for (const [lang, copy] of [
     ["zh", "已回到这里，原话稍后放回输入框。"],
-    ["en", "Rewound to here. Your message will go back into the composer in a moment."]
+    ["en", "Rewound to here. Your message will go back into the message box in a moment."]
   ] as const) {
     const { controller, calls } = wiredHarness(async () => ({ ok: true, writebackPending: true }), lang)
     await controller.run(false, undefined, "chat-only")
@@ -500,4 +564,27 @@ test("#167 r3：同会话正在输入、原话稍后放回（writebackPending）
     assert.deepEqual(calls.toasts, [copy])
     assert.equal(controller.model({ canRestoreFiles: true, gitRepo: true, t: tFor(lang) }).error, null)
   }
+})
+
+
+test("luna n167 P2：rewind 范围 en 文案统一 message box，不含 the input / the composer", () => {
+  const keys = [
+    "rewindBody",
+    "rewindBodyNotGit",
+    "rewindBodyChatOnly",
+    "rewindFinishFailedToast",
+    "rewindWritebackPending",
+    "rewindLateRestoredToast",
+    "rewindSavedToOtherDraft"
+  ] as const
+  for (const key of keys) {
+    const s = enChat[key]
+    assert.ok(typeof s === "string", key)
+    assert.doesNotMatch(s, /\bthe input\b/i, `${key} must not say "the input"`)
+    assert.doesNotMatch(s, /\bthe composer\b/i, `${key} must not say "the composer"`)
+    assert.doesNotMatch(s, /\bcomposer\b/i, `${key} must not say composer`)
+  }
+  assert.match(enChat.rewindLateRestoredToast, /message box/)
+  assert.match(enChat.rewindFinishFailedToast, /message box/)
+  assert.match(enChat.rewindBody, /message box/)
 })

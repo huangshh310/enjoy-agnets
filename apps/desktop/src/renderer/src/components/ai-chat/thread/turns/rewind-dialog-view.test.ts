@@ -35,7 +35,7 @@ const git: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo
 const notGit: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo: false, failure: null }
 const unknownGit: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo: null, failure: null }
 const NEUTRAL_ZH = "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。"
-const NEUTRAL_EN = "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone."
+const NEUTRAL_EN = "This message and everything after it will be removed, and its text goes back into the message box. File changes won't be undone."
 const PARTIAL_ZH = "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。"
 const PARTIAL_EN = "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand."
 const MISSING_ZH = "没能还原文件：找不到这一轮开始前的记录。聊天没有改动。"
@@ -51,7 +51,7 @@ test("Git 工作区：标题 / 正文 / 灰字 / 取消 · 连文件一起还原
   assert.deepEqual(buttons(zh), ["cancel:outline:取消", "restore-files:outline:连文件一起还原", "chat-only:default:只改聊天"])
   const en = rewindDialogView(git, tFor("en"))
   assert.equal(en.title, "Start over from this message?")
-  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the input so you can edit and resend.")
+  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the message box so you can edit and resend.")
   assert.equal(en.hint, "You can also restore files to how they were before this turn.")
   assert.deepEqual(buttons(en), ["cancel:outline:Cancel", "restore-files:outline:Restore files too", "chat-only:default:Chat only"])
 })
@@ -86,7 +86,7 @@ test("非 Git 工作区：没有还原按钮，取消 · 从这里重来", () =>
   assert.equal(zh.hint, null)
   assert.deepEqual(buttons(zh), ["cancel:outline:取消", "start-over:default:从这里重来"])
   const en = rewindDialogView(notGit, tFor("en"))
-  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the input. This folder isn't tracked by Git, so file changes won't be undone.")
+  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the message box. This folder isn't tracked by Git, so file changes won't be undone.")
   assert.deepEqual(buttons(en), ["cancel:outline:Cancel", "start-over:default:Start over"])
 })
 
@@ -281,7 +281,7 @@ test("引擎不支持回滚：没有还原按钮（不是置灰）、没有任�
         const en = rewindDialogView(state, tFor("en"))
         assert.equal(
           en.body,
-          "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone.",
+          "This message and everything after it will be removed, and its text goes back into the message box. File changes won't be undone.",
           `${gitRepo} en body`
         )
         assert.equal(en.hint, null)
