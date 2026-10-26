@@ -1,6 +1,6 @@
 /**
  * 执行自动化：新建或复用会话，再走同一条 Agent 循环（含 P0-S 注入）。
- * 失败只发 run.error，进 Inbox「失败」，不标 needs_review。
+ * 失败只发 run.error（turn 走 generationFailedTurn，与媒体生成失败同规则），进 Inbox「失败」，不标 needs_review。
  */
 import type { BrowserWindow } from "electron"
 import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
@@ -28,6 +28,7 @@ import {
 import { scheduleOnSaveFire, cancelOnSaveFire } from "./automations-onsave"
 import { createId } from "./ids"
 import { stampAndSend } from "./event-bus"
+import { generationFailedTurn } from "./generation-failed-turn"
 
 export { cancelOnSaveFire }
 
@@ -120,7 +121,7 @@ export async function launchAutomationAgent(
           runId: createId("run"),
           message,
           preOutput: false,
-          turn: { workflow: "in_progress", attention: "error" }
+          turn: generationFailedTurn(openedSessionId)
         },
         openedSessionId
       )

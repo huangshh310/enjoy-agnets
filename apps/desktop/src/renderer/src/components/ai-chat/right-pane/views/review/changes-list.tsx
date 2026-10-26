@@ -28,8 +28,8 @@ export function ChangesList(props: {
   const t = useT()
 
   const gitRepo = useChatStore((state) => state.gitRepo)
-  // 非 git：不要拿空 status / 合成 last-turn 行去画 diff，只出诚实空态 + 本轮 path。
-  if (gitRepo === false) return <ReviewNotGitEmpty />
+  // 非 git / 尚未探测：不要拿空 status 去画「仓库很干净」，只出诚实空态 + 本轮 path。
+  if (gitRepo !== true) return <ReviewNotGitEmpty />
   if (changes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 bg-background-primary-default p-5 text-center">

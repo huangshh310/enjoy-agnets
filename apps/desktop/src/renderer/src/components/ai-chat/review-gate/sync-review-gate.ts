@@ -1,7 +1,7 @@
 /**
  * 开跑标执行中。宣称收工的 run.end 进待验收，只有人点通过才能 done。
  * 本轮工具全是拒绝 / 未执行：回待办，不进待验收。
- * run.error / 取消回 in_progress，走 Inbox 失败筛。≠ waiting_review 工具闸。
+ * 缺 turn 的 run.error 回 todo（有 turn 只信 main）；开跑标 in_progress。走 Inbox 失败筛。≠ waiting_review 工具闸。
  */
 import type { SessionWorkflowStatus, StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
