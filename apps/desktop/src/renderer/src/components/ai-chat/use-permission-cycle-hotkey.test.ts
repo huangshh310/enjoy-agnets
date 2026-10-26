@@ -1,5 +1,5 @@
 /**
- * Shift+Tab：只在焦点就在空的 Composer 输入框时切审批档；写入成功才提示（luna / leo #154）。
+ * shouldCyclePermissionOnShiftTab：只在焦点就在空的 Composer 输入框时切审批档；写入成功才提示（luna / leo #154；默认快捷键已解绑 #173）。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"

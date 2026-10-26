@@ -257,7 +257,7 @@ test("英文：抽屉只填提示词提示填名称；顺手项文案（Skills �
   }
 })
 
-test("440 浮层：点击 / 回车切到另一个会话、看板 / 自动化入口关浮层、浮层内 Shift+Tab 不改权限、输入框内改权限有提示（luna #154）", async () => {
+test("440 浮层：点击 / 回车切到另一个会话、看板 / 自动化入口关浮层、浮层内与空输入框 Shift+Tab 均不改权限（#173 / luna #154）", async () => {
   test.setTimeout(300_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const env = await bootPendingApproval()
@@ -349,24 +349,33 @@ test("440 浮层：点击 / 回车切到另一个会话、看板 / 自动化入�
     await window.locator('[data-testid="rail-chat"]').click()
     await expect(nav).toHaveAttribute("data-collapsed", "true")
 
-    // —— 输入框内（空）Shift+Tab 改权限并提示 ——
+    // —— 空输入框 Shift+Tab 也不改权限（默认已解绑 chat.permission.cycle；#173）——
     await window.setViewportSize({ width: 1440, height: 920 })
     await window.waitForTimeout(500)
     const composer = window.locator('[data-testid="composer-input"]').first()
+    const chip = window.getByRole("button", { name: "工具审批策略" })
+    await expect(chip).toContainText("读取")
     // leo #154 B2：焦点在 Composer 里的按钮（附件 / 模型 / 盾牌等）上（不是输入框本身）不切权限。
     await composer.fill("")
     await window.locator('[data-composer] button:visible').first().focus()
     await window.keyboard.press("Shift+Tab")
     await window.waitForTimeout(500)
+    await expect(window.locator('[data-testid="permission-cycled-toast"]')).toHaveCount(0)
     await expect(window.locator("body")).not.toContainText("权限已切到")
+    await expect(chip).toContainText("读取")
     await composer.fill("")
     await composer.focus()
     await window.keyboard.press("Shift+Tab")
-    await expect(window.locator("body")).toContainText("权限已切到「编辑」", { timeout: 5_000 })
-    await snap(window, "1440x920-composer-shift-tab-toast")
+    await window.waitForTimeout(500)
+    await expect(window.locator('[data-testid="permission-cycled-toast"]')).toHaveCount(0)
+    await expect(window.locator("body")).not.toContainText("权限已切到")
+    await expect(chip).toContainText("读取")
+    await snap(window, "1440x920-composer-shift-tab-no-permission-change")
     await composer.focus()
     await window.keyboard.press("Shift+Tab")
-    await expect(window.locator("body")).toContainText("权限已切到「读取」", { timeout: 5_000 })
+    await window.waitForTimeout(500)
+    await expect(window.locator("body")).not.toContainText("权限已切到")
+    await expect(chip).toContainText("读取")
   } finally {
     await closeForRelaunch(env.app)
   }

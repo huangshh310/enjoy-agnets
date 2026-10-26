@@ -364,7 +364,7 @@ export const zhChat = {
 
   approvalSection: "审批策略",
   approvalAria: "工具审批策略",
-  approvalCycleHint: "工具审批策略 · 空输入时 Shift+Tab 在读取和编辑之间切换",
+  approvalCycleHint: "工具审批策略 · 点盾牌菜单切换读取/编辑，也可在设置 → 快捷键自行绑定",
   approvalChipHintReads: "读取：助手改文件或运行命令前会逐条问你",
   approvalChipHintEdits: "编辑：助手可直接改文件，运行命令前仍会问你",
   approvalChipHintAll: "全部：助手可直接改文件、运行命令，不再逐条问你",

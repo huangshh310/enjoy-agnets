@@ -110,7 +110,7 @@ export function flagsFromPrefs(prefs?: Partial<ApprovalPrefFlags> | null): Appro
   }
 }
 
-/** Shift+Tab 只在读取 / 编辑之间切；全部只能下手选。当前是全部时回到读取。 */
+/** 审批循环命令（chat.permission.cycle）只在读取 / 编辑之间切；全部只能下手选。当前是全部时回到读取。默认快捷键未绑定（#173）。 */
 export function cyclePermissionMode(current: PermissionMode): PermissionMode {
   if (current === "allow-reads") return "allow-edits"
   if (current === "allow-edits") return "allow-reads"

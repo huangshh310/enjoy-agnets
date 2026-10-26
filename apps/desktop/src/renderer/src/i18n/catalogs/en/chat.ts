@@ -365,7 +365,7 @@ export const enChat = {
 
   approvalSection: "Permission mode",
   approvalAria: "Tool approval policy",
-  approvalCycleHint: "Tool approval policy · Shift+Tab switches between Reads and Edits when the composer is empty",
+  approvalCycleHint: "Tool approval policy · switch Reads/Edits from the shield menu, or bind a shortcut in Settings → Shortcuts",
   approvalChipHintReads: "Reads: The assistant asks before changing files or running commands",
   approvalChipHintEdits: "Edits: The assistant can change files directly, and still asks before running commands",
   approvalChipHintAll: "All: The assistant can change files and run commands without asking each time",

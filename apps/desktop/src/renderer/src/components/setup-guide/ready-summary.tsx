@@ -46,9 +46,9 @@ export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: stri
   )
 }
 
+// chat.permission.cycle 默认未绑定，入门页不再展示 ⇧ Tab 切换审批（#173）。
 const SHORTCUTS = [
   { label: "settings.setupGuide.shortcutSettings", keys: ["⌘", ","] },
-  { label: "settings.setupGuide.shortcutApproval", keys: ["⇧", "Tab"] },
   { label: "settings.setupGuide.shortcutFind", keys: ["⌘", "F"] }
 ] as const
 
