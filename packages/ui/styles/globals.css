@@ -1013,6 +1013,12 @@ html:not([data-gpu-compositing="on"]) main {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
+  /* box-shadow 不在此清：aside 自身 :focus-visible 焦点环（ring=box-shadow）见下方 soft 块；main 单独清。 */
+}
+
+/* main 无 aside-as-dialog 边案：装饰阴影仍无条件清掉 */
+html[data-gpu-compositing="off"] main,
+html:not([data-gpu-compositing="on"]) main {
   box-shadow: none !important;
 }
 
