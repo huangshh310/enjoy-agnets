@@ -30,7 +30,7 @@ export function SettingsSideDrawer({
   children: ReactNode
 }) {
   const nested = layer === "nested"
-  const panelRef = useRef<HTMLAsideElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
 
   // #173：键盘打开后焦点进入抽屉（否则停在触发按钮 / 遮罩外）。
   useEffect(() => {
