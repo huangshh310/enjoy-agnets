@@ -1122,7 +1122,7 @@ export const enSettings = {
     endpointHint: "e.g. https://api.example.com/v1",
     endpointRootHint: "e.g. https://api.example.com",
     fastPlaceholder: "e.g. gpt-4o-mini, haiku",
-    reasoningPlaceholder: "e.g. o1, deepseek-reasoner",
+    reasoningPlaceholder: "e.g. o1, deepseek-v4-pro",
     noHeaders: "No headers yet",
     moreActions: "More actions",
     editTitle: "Edit {name}",
@@ -1282,7 +1282,7 @@ export const enSettings = {
     presetFixed: "The preset is fixed when the profile is created.",
     useDisabled: "Enable the provider before using it",
     blurb: {
-      deepseek: "Official Chat and Reasoner. Chat, Responses, and Messages.",
+      deepseek: "Official Flash and V4 Pro. Chat, Responses, and Messages.",
       openai: "Official OpenAI. Chat Completions and Responses.",
       anthropic: "Claude Messages API.",
       google: "Official Gemini. Requests stay on the native SDK host.",

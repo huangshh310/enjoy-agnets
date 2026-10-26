@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-10（leo：本机 HMAC 指纹含 endpoints/apiStyle；jojo：只有 401=invalid，403=forbidden，402/额度=billing；2026-10-14 mike+luna：forbidden/billing 徽标仍灰，只在提示条文案区分）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-21（kai：DeepSeek 预设换官方当前名 + 官方端点档案停用名迁移）；2026-10-10（leo：本机 HMAC 指纹含 endpoints/apiStyle；jojo：只有 401=invalid，403=forbidden，402/额度=billing；2026-10-14 mike+luna：forbidden/billing 徽标仍灰，只在提示条文案区分）
 
 ## 当前真相
 
@@ -23,6 +23,8 @@ invalid：不 ready、不自动 adopt、发送 `definitely_unusable` + `credenti
 密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
 
 旧档案没有 `endpoints` 时，`readVault` 做一次迁移：`endpoints[apiStyle] = baseURL`；URL 等于该预设同一区域的官方地址时才补兄弟端点，改过的中转地址不补。已保存的 MiniMax / 智谱 / 豆包 URL 不改去套餐主机。读档失败不当成空 vault 覆盖。
+
+DeepSeek 预设只列官方当前名 `deepseek-flash`、`deepseek-v4-pro`（2026-10-21 核对 https://api-docs.deepseek.com/quick_start/pricing/ 与 https://api-docs.deepseek.com/updates/ ）。读档时 `migrateRetiredDeepseekProfile`（`packages/providers/src/deepseek-retired-models.ts`）把 `deepseek-chat` / `deepseek-reasoner` / `deepseek-v4-flash` / `deepseek-v4-flash-vision-exp` 改成 `deepseek-flash`：目录、`modelId`、`fastModelId`、`reasoningModelId` 一起改，同 id 去重。只对 `kind === "deepseek"` 且**每一条**已填端点都是 `https:` + 精确主机 `api.deepseek.com` + 无端口 + 无用户名密码的档案生效；一条端点都没填也算官方（请求回落预设 `https://api.deepseek.com/v1`，计价也把空地址当官方）。http、子域、中转、自定义地址、官方加中转混填、`custom` kind 一律不动。`source: "manual"` 的模型（哪怕 id 就是停用名）和指向它的选中项不动。列表里已有 `deepseek-flash` 行时它赢，停用行全部丢掉：它是 manual 就一个字节都不改，不是 manual 只会在它关着、停用行开着时打开。没有现成行时，新行只带 `id` / `label` / `enabled` / `source`，旧模型的单价、上下文窗口、输出上限不带过来，让快照价生效；结果和停用行先后顺序无关。替代名不在映射左边，所以跑第二次 `changed=false`。档案的「网络代理」字段不影响判断（请求仍到官方主机）。历史运行记录不改。
 
 目录 URL：`modelsURL` 优先，否则 Chat，再 Responses，再把 Anthropic 根去掉 `/anthropic`。`resolvedBaseURL` 禁止把档案里的 Anthropic 根改写成 Chat 根。拉取只追加远程新增（`source: "remote"`、`enabled: true`），不打开用户关掉的，不删远程消失的，不改手填。窗口：行上 `contextWindow`，否则档案手填，再 Gateway，再 `publishedContextWindow`。
 
@@ -108,3 +110,4 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - **隐患**：`cohere` 没有聊天 preset 时 `presetFor` 会落到 custom，空 baseURL 会被当成官方端点。正确做法：`kindAllowsSnapshot` 显式排除 `cohere` 与其它媒体-only kind。
 - models.dev `siliconflow` 是国际站 `.com`，本仓 preset 是国内站 `.cn`，共有模型里有不同价。正确做法：收录 `siliconflow-cn`。目录带 `api` 时必须和 preset 同站，对不上就撤。
 - Node `--experimental-strip-types` 加载 `@enjoy-agents/providers` 入口时，无后缀 `./capabilities/probe` 会 `ERR_MODULE_NOT_FOUND`（文件是 `probe.ts`）；`from "./presets"` 在 Unix 会撞上 `presets/` 目录。正确做法：相对导入带 `.ts`。`capabilities/probe.ts` 只是内存缓存桩，不发网络请求。
+- **隐患**：预设里长期留着已停用的 `deepseek-chat` / `deepseek-reasoner`，价格快照没有这两个 id，选了就是「价格未知」，请求也可能失败。只改预设不够：`modelsFromLegacy` 原样保留旧目录和选中项，老档案不会自己换名。正确做法：预设只放官方「当前名」（`deepseek-v4-flash` 这种「temporarily routed」的旧名也不放），再加只针对官方端点、幂等的读档迁移（见当前真相）。官方再改名时同时改 `DEEPSEEK_RETIRED_MODEL_IDS`，替代名必须在预设里且不能出现在映射左边（`deepseek-retired-models.test.ts` 守着）。

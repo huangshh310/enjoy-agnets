@@ -1116,7 +1116,7 @@ export const zhSettings = {
     endpointHint: "例如 https://api.example.com/v1",
     endpointRootHint: "例如 https://api.example.com",
     fastPlaceholder: "例如 gpt-4o-mini、haiku",
-    reasoningPlaceholder: "例如 o1、deepseek-reasoner",
+    reasoningPlaceholder: "例如 o1、deepseek-v4-pro",
     noHeaders: "还没有请求头",
     moreActions: "更多操作",
     editTitle: "编辑 {name}",
@@ -1275,7 +1275,7 @@ export const zhSettings = {
     presetFixed: "预设在创建时确定，不能改成别的厂商。",
     useDisabled: "先开启再使用",
     blurb: {
-      deepseek: "官方 Chat 与 Reasoner。支持 Chat、Responses 和 Messages。",
+      deepseek: "官方 Flash 与 V4 Pro。支持 Chat、Responses 和 Messages。",
       openai: "官方 OpenAI。支持 Chat Completions 和 Responses。",
       anthropic: "Claude Messages 接口。",
       google: "官方 Gemini。请求走原生 SDK 主机。",

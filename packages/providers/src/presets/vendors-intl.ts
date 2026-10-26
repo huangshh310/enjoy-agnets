@@ -7,7 +7,7 @@ export const INTL_VENDOR_PRESETS: ProviderPreset[] = [
   definePreset({
     kind: "deepseek",
     name: "DeepSeek",
-    description: "Official DeepSeek Chat and Reasoner models. Chat, Responses, and Anthropic Messages.",
+    description: "Official DeepSeek Flash and V4 Pro models. Chat, Responses, and Anthropic Messages.",
     group: "vendor",
     apiStyle: "openai",
     requiresKey: true,
@@ -20,10 +20,10 @@ export const INTL_VENDOR_PRESETS: ProviderPreset[] = [
       anthropic: "https://api.deepseek.com/anthropic"
     },
     models: [
-      presetModel("deepseek-v4-flash", "DeepSeek V4 Flash"),
-      presetModel("deepseek-v4-pro", "DeepSeek V4 Pro"),
-      presetModel("deepseek-chat", "DeepSeek Chat (legacy)"),
-      presetModel("deepseek-reasoner", "DeepSeek Reasoner")
+      // 官方当前名（api-docs.deepseek.com/quick_start/pricing/，2026-10-21 核对）。
+      // deepseek-chat / deepseek-reasoner 已于 2026-07-24 停用；deepseek-v4-flash 只是临时转发，不进预设。
+      presetModel("deepseek-flash", "DeepSeek Flash"),
+      presetModel("deepseek-v4-pro", "DeepSeek V4 Pro")
     ]
   }),
   definePreset({
