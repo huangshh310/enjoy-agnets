@@ -13,3 +13,24 @@ test("乐观泡 stamp 会话覆盖，不读上一会话模型", () => {
   assert.equal(stamp.runtimeId, "claude")
   assert.equal(stamp.modelId, "opus")
 })
+
+test("luna P2-2：runModelId 跟这一发 agent.run（如 cli:amp）时盖它；标签只在同 store.modelId 才盖", () => {
+  const store = {
+    runtimeId: "amp",
+    modelId: "stub-e2e",
+    modelLabel: "E2E Stub",
+    sessionId: "s1",
+    sessionModels: {}
+  }
+  const amp = pendingAssistantStamp(store, "cli:amp")
+  assert.equal(amp.runtimeId, "amp")
+  assert.equal(amp.modelId, "cli:amp")
+  assert.equal(amp.modelLabel, undefined)
+
+  const local = pendingAssistantStamp(
+    { ...store, runtimeId: "enjoy-local" },
+    "stub-e2e"
+  )
+  assert.equal(local.modelId, "stub-e2e")
+  assert.equal(local.modelLabel, "E2E Stub")
+})
