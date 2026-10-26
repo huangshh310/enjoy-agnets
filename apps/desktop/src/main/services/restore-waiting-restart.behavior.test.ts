@@ -27,7 +27,7 @@ const {
   setApprovalSdkResponse
 } = await import("./restore-waiting-runs.behavior.load.ts")
 
-type SentEvent = { type: string; approvalId?: string; code?: string; message?: string; toolCallId?: string }
+type SentEvent = { type: string; approvalId?: string; code?: string; message?: string; toolCallId?: string; turn?: { workflow?: string; attention?: string } }
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -46,6 +46,7 @@ function seedWaiting(input: {
   workspaceId: string
   approvalId: string
   checkpoint: string | null
+  workflowStatus?: string
 }): void {
   const db = getDatabase()
   db.prepare(
@@ -54,6 +55,9 @@ function seedWaiting(input: {
   db.prepare(
     "INSERT OR IGNORE INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
   ).run(input.sessionId, input.workspaceId, "restart", 1, 1)
+  if (input.workflowStatus) {
+    db.prepare("UPDATE sessions SET workflow_status = ? WHERE id = ?").run(input.workflowStatus, input.sessionId)
+  }
   insertRun(db, {
     id: input.runId,
     sessionId: input.sessionId,
@@ -103,7 +107,8 @@ test("模拟重启无检查点：未决 cancelled(restart)，run 停止，Inbox 
     sessionId,
     workspaceId: "ws_restart_nocheck",
     approvalId,
-    checkpoint: null
+    checkpoint: null,
+    workflowStatus: "in_progress"
   })
   await restoreWaitingRuns(recordWindow(events))
   const stored = getApproval(getDatabase(), approvalId)
@@ -119,6 +124,39 @@ test("模拟重启无检查点：未决 cancelled(restart)，run 停止，Inbox 
     )
   )
   assert.equal(events.some((event) => event.type === "approval.required"), false)
+  const workflow = (
+    getDatabase()
+      .prepare("SELECT workflow_status as w FROM sessions WHERE id = ?")
+      .get(sessionId) as { w: string | null }
+  ).w
+  assert.equal(workflow, "todo", "abandon 后工单必须落库 todo，禁止侧栏卡在进行中")
+  const errEvent = events.find((event) => event.type === "run.error" && event.code === RESTORE_NO_MATCHING_CODE) as
+    | (SentEvent & { turn?: { workflow?: string; attention?: string } })
+    | undefined
+  assert.equal(errEvent?.turn?.workflow, "todo")
+  assert.equal(errEvent?.turn?.attention, "neutral")
+})
+
+test("模拟重启无检查点：needs_review 粘性不被 abandon 擦成 todo", async () => {
+  resetRestoreWaitingOnceForTests()
+  const runId = "run_restart_sticky"
+  const sessionId = "ses_restart_sticky"
+  const approvalId = "apr_restart_sticky"
+  seedWaiting({
+    runId,
+    sessionId,
+    workspaceId: "ws_restart_sticky",
+    approvalId,
+    checkpoint: null,
+    workflowStatus: "needs_review"
+  })
+  await restoreWaitingRuns(recordWindow([]))
+  const workflow = (
+    getDatabase()
+      .prepare("SELECT workflow_status as w FROM sessions WHERE id = ?")
+      .get(sessionId) as { w: string | null }
+  ).w
+  assert.equal(workflow, "needs_review")
 })
 
 test("模拟重启有检查点：HMAC+签参回挂可决策卡，Inbox 仍有活行", async () => {
