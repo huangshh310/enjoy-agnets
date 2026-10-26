@@ -75,10 +75,24 @@ export function shouldClearShownOnQueuedSend(shown: string, submitted: string): 
   return Boolean(s) && s === submitted.trim()
 }
 
-/** 换会话：框里不是新会话的稿就换掉（组字中不动）。 */
+/**
+ * 换会话：框里不是新会话的稿就换掉。
+ * 组字中也要换——未提交的组字属于旧会话，切走（Alt+Left / 侧栏，同一条 sessionId 变化）就丢弃，
+ * 对齐新会话草稿；否则旧组字会留在框里，compositionend 再写进新会话（luna P1 #167）。
+ */
 export function shouldResetShownOnSessionChange(shown: string, sessionComposer: string): boolean {
-  if (composing) return false
   return shown !== sessionComposer
+}
+
+/**
+ * compositionend 是否把组字结果写入当前会话 store。
+ * 组字开始时记下的 sessionId 与当前不一致 → 已切走，不得 onChange，避免污染新会话草稿。
+ */
+export function shouldCommitCompositionToSession(
+  compositionSessionId: string | null | undefined,
+  currentSessionId: string | null | undefined
+): boolean {
+  return compositionSessionId === currentSessionId
 }
 
 export function shouldIgnoreComposerEnter(event: {
