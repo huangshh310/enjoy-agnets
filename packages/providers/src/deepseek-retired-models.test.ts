@@ -320,3 +320,60 @@ test("纯改名：chat 和 reasoner 都带单价、开关不同时，结果和�
   assert.deepEqual(ab, expected)
   assert.deepEqual(ba, expected)
 })
+
+test("全关保持关：停用行全部关着时，新 deepseek-flash 也关着，不会误打开", () => {
+  const chat = { id: "deepseek-chat", label: "c", enabled: false, source: "preset" as const }
+  const reasoner = { id: "deepseek-reasoner", label: "r", enabled: false, source: "remote" as const }
+  const ab = remapRetiredDeepseekModels([chat, reasoner], {}, labelFor).models
+  const ba = remapRetiredDeepseekModels([reasoner, chat], {}, labelFor).models
+  const expected = [{ id: "deepseek-flash", label: "DeepSeek Flash", enabled: false, source: "preset" }]
+  assert.deepEqual(ab, expected)
+  assert.deepEqual(ba, expected)
+
+  const { profile } = migrateStoredProfile(
+    stored({
+      models: [
+        { id: "deepseek-chat", label: "DeepSeek Chat (legacy)", enabled: false, source: "preset" },
+        { id: "deepseek-reasoner", label: "DeepSeek Reasoner", enabled: false, source: "preset" }
+      ]
+    })
+  )
+  assert.deepEqual(profile.models, [
+    { id: "deepseek-flash", label: "DeepSeek Flash", enabled: false, source: "preset", contextWindow: undefined, maxOutputTokens: undefined }
+  ])
+})
+
+test("全关保持关：非手动保留行关着、停用行也全关时，保留行仍关着", () => {
+  const { profile } = migrateStoredProfile(
+    stored({
+      models: [
+        { id: "deepseek-chat", label: "DeepSeek Chat (legacy)", enabled: false, source: "preset" },
+        { id: "deepseek-flash", label: "DeepSeek Flash", enabled: false, source: "remote", contextWindow: 1_048_576 }
+      ]
+    })
+  )
+  assert.deepEqual(ids(profile), ["deepseek-flash"])
+  assert.equal(profile.models?.[0]?.enabled, false)
+  assert.equal(profile.models?.[0]?.source, "remote")
+  assert.equal(profile.models?.[0]?.contextWindow, 1_048_576)
+})
+
+test("实际迁移时 migrateStoredProfile / normalizeVault 都报 changed=true", () => {
+  const raw = stored({
+    modelId: "deepseek-chat",
+    models: [{ id: "deepseek-chat", label: "DeepSeek Chat (legacy)", enabled: true, source: "preset" }]
+  })
+  const migrated = migrateStoredProfile(raw)
+  assert.equal(migrated.changed, true)
+  assert.equal(migrated.profile.modelId, "deepseek-flash")
+  assert.deepEqual(ids(migrated.profile), ["deepseek-flash"])
+
+  const vault = {
+    activeId: "prv_ds",
+    profiles: [raw]
+  }
+  const normalized = normalizeVault(vault)
+  assert.equal(normalized.changed, true)
+  assert.equal(normalized.vault.profiles[0]?.modelId, "deepseek-flash")
+  assert.deepEqual(ids(normalized.vault.profiles[0]!), ["deepseek-flash"])
+})
