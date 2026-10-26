@@ -22,7 +22,9 @@ const {
   persistMessage,
   setTruncateThrowAfterFirstDeleteForTest,
   snapshotConversationSessionAllow,
-  truncateSessionFrom
+  setSetting,
+  truncateSessionFrom,
+  TRUNCATE_ROLLBACK_UNSUPPORTED
 } = await import("./session-truncate.behavior.load.ts")
 
 function seedSession(sessionId: string): void {
@@ -423,4 +425,87 @@ test("leo 小修 2：agent-run-start 开跑前预检、挂 run 与落用户句�
   assert.match(src, /const held = holdRunThenPersistUser\(/)
   assert.match(src, /if \(!held\.ok\) return held/)
   assert.doesNotMatch(src, /\bholdAgentRun\(/)
+})
+
+test("#159 F1（leo soft 9）：会话绑的引擎不支持回滚 → truncateFrom（含 dryRun）拒绝，一条都不删；Enjoy 本地 / 没绑过照常", async () => {
+  const ids = (sid: string) => {
+    seedSession(sid)
+    insertMessage(sid, `${sid}_u1`, "user", 1)
+    insertMessage(sid, `${sid}_a1`, "assistant", 2)
+    return [`${sid}_u1`, `${sid}_a1`]
+  }
+  const acp = ids("ses_rb_amp")
+  const sandbox = ids("ses_rb_sbx")
+  const local = ids("ses_rb_local")
+  const legacy = ids("ses_rb_legacy")
+  const bound = ids("ses_rb_bound")
+  setSetting(
+    "session.runtimes",
+    JSON.stringify({ ses_rb_amp: "amp", ses_rb_sbx: "sandbox-harness", ses_rb_local: "enjoy-local" })
+  )
+  // 没绑 session.runtimes、但挂着 ACP 会话绑定（acp_runtime_id）的也拒。
+  getDatabase().prepare("UPDATE sessions SET acp_runtime_id = ?, acp_session_id = ? WHERE id = ?").run("claude", "acp-1", "ses_rb_bound")
+  for (const [sid, tail] of [["ses_rb_amp", acp], ["ses_rb_sbx", sandbox], ["ses_rb_bound", bound]] as const) {
+    for (const dryRun of [true, false]) {
+      assert.deepEqual(
+        await truncateSessionFrom(sid, tail[0]!, [...tail], { dryRun }),
+        { ok: false, code: TRUNCATE_ROLLBACK_UNSUPPORTED },
+        `${sid} dryRun=${dryRun}`
+      )
+      assert.deepEqual(messageIds(sid), tail, `${sid}: nothing deleted`)
+    }
+  }
+  assert.deepEqual(await truncateSessionFrom("ses_rb_local", local[0]!, [...local]), { ok: true, deleted: 2 })
+  assert.deepEqual(messageIds("ses_rb_local"), [])
+  assert.deepEqual(await truncateSessionFrom("ses_rb_legacy", legacy[1]!, [legacy[1]!]), { ok: true, deleted: 1 })
+  assert.deepEqual(messageIds("ses_rb_legacy"), [legacy[0]])
+})
+
+test("#167 ②（leo X5b / PM1 / PM2b）：绑了未知引擎 / 自定义 ACP → 拒；session.runtimes 坏 JSON / 数组 / 值不是字符串 → 拒，一条都不删", async () => {
+  const seed = (sid: string) => {
+    seedSession(sid)
+    insertMessage(sid, `${sid}_u1`, "user", 1)
+    insertMessage(sid, `${sid}_a1`, "assistant", 2)
+    return [`${sid}_u1`, `${sid}_a1`]
+  }
+  const expectRefused = async (sid: string, tail: string[], why: string) => {
+    for (const dryRun of [true, false]) {
+      assert.deepEqual(
+        await truncateSessionFrom(sid, tail[0]!, [...tail], { dryRun }),
+        { ok: false, code: TRUNCATE_ROLLBACK_UNSUPPORTED },
+        `${why} dryRun=${dryRun}`
+      )
+      assert.deepEqual(messageIds(sid), tail, `${why}: nothing deleted`)
+    }
+  }
+  const unknown = seed("ses_x5_unknown")
+  const custom = seed("ses_x5_custom")
+  const codex = seed("ses_x5_codex")
+  setSetting(
+    "session.runtimes",
+    JSON.stringify({ ses_x5_unknown: "mystery-engine", ses_x5_custom: "custom:my-agent", ses_x5_codex: "codex" })
+  )
+  await expectRefused("ses_x5_unknown", unknown, "unknown id")
+  await expectRefused("ses_x5_custom", custom, "custom ACP")
+  await expectRefused("ses_x5_codex", codex, "codex ACP")
+
+  const corrupt = seed("ses_pm1_corrupt")
+  setSetting("session.runtimes", "{not json")
+  await expectRefused("ses_pm1_corrupt", corrupt, "corrupt JSON")
+
+  const arr = seed("ses_pm2b_array")
+  setSetting("session.runtimes", JSON.stringify(["ses_pm2b_array", "enjoy-local"]))
+  await expectRefused("ses_pm2b_array", arr, "array settings")
+
+  const num = seed("ses_pm2_number")
+  setSetting("session.runtimes", JSON.stringify({ ses_pm2_number: 42 }))
+  await expectRefused("ses_pm2_number", num, "non-string binding")
+
+  // 读得出来、这条会话没绑（或空串）→ 照常按 Enjoy 本地放行。
+  const free = seed("ses_pm_free")
+  const blank = seed("ses_pm_blank")
+  setSetting("session.runtimes", JSON.stringify({ other: "amp", ses_pm_blank: "  " }))
+  assert.deepEqual(await truncateSessionFrom("ses_pm_free", free[0]!, [...free]), { ok: true, deleted: 2 })
+  assert.deepEqual(await truncateSessionFrom("ses_pm_blank", blank[0]!, [...blank]), { ok: true, deleted: 2 })
+  setSetting("session.runtimes", "{}")
 })

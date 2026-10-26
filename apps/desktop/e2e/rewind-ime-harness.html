@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <body>
+    <div id="root"></div>
+    <script>
+      // window.ide 桩：任意路径都是可调用的空函数（返回 Promise<undefined>）。
+      const fn = new Proxy(function () {}, {
+        get: (t, k) => (k === "then" ? undefined : fn),
+        apply: () => Promise.resolve(undefined)
+      })
+      window.ide = new Proxy({}, { get: () => fn })
+      // 记录每一次程序化改 textarea.value（复现时看 React 那两次提交）。
+      window.__sets = []
+      const d = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")
+      Object.defineProperty(HTMLTextAreaElement.prototype, "value", {
+        get() {
+          return d.get.call(this)
+        },
+        set(v) {
+          window.__sets.push(JSON.stringify(v))
+          return d.set.call(this, v)
+        },
+        configurable: true
+      })
+    </script>
+    <script type="module" src="/harness.js"></script>
+  </body>
+</html>

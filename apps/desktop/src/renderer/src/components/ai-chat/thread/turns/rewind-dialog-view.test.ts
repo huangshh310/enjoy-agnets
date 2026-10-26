@@ -35,7 +35,7 @@ const git: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo
 const notGit: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo: false, failure: null }
 const unknownGit: RewindDialogState = { kind: "confirm", canRestoreFiles: true, gitRepo: null, failure: null }
 const NEUTRAL_ZH = "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。"
-const NEUTRAL_EN = "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone."
+const NEUTRAL_EN = "This message and everything after it will be removed, and its text goes back into the message box. File changes won't be undone."
 const PARTIAL_ZH = "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。"
 const PARTIAL_EN = "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand."
 const MISSING_ZH = "没能还原文件：找不到这一轮开始前的记录。聊天没有改动。"
@@ -51,7 +51,7 @@ test("Git 工作区：标题 / 正文 / 灰字 / 取消 · 连文件一起还原
   assert.deepEqual(buttons(zh), ["cancel:outline:取消", "restore-files:outline:连文件一起还原", "chat-only:default:只改聊天"])
   const en = rewindDialogView(git, tFor("en"))
   assert.equal(en.title, "Start over from this message?")
-  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the input so you can edit and resend.")
+  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the message box so you can edit and resend.")
   assert.equal(en.hint, "You can also restore files to how they were before this turn.")
   assert.deepEqual(buttons(en), ["cancel:outline:Cancel", "restore-files:outline:Restore files too", "chat-only:default:Chat only"])
 })
@@ -86,7 +86,7 @@ test("非 Git 工作区：没有还原按钮，取消 · 从这里重来", () =>
   assert.equal(zh.hint, null)
   assert.deepEqual(buttons(zh), ["cancel:outline:取消", "start-over:default:从这里重来"])
   const en = rewindDialogView(notGit, tFor("en"))
-  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the input. This folder isn't tracked by Git, so file changes won't be undone.")
+  assert.equal(en.body, "This message and everything after it will be removed. Its text goes back into the message box. This folder isn't tracked by Git, so file changes won't be undone.")
   assert.deepEqual(buttons(en), ["cancel:outline:Cancel", "start-over:default:Start over"])
 })
 
@@ -281,12 +281,61 @@ test("引擎不支持回滚：没有还原按钮（不是置灰）、没有任�
         const en = rewindDialogView(state, tFor("en"))
         assert.equal(
           en.body,
-          "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone.",
+          "This message and everything after it will be removed, and its text goes back into the message box. File changes won't be undone.",
           `${gitRepo} en body`
         )
         assert.equal(en.hint, null)
         assert.deepEqual(en.buttons.map((b) => b.label), ["Cancel", "Start over"])
       }
     }
+  }
+})
+
+test("luna g159 ⑫：英文删 1 个新文件用单数句（定稿），多个仍是复数；中文单个说「这个文件」；入口叫 Start over from here", () => {
+  const en = tFor("en")
+  const zh = tFor("zh")
+  const one = rewindDialogView({ kind: "untracked", files: ["a.txt"] }, en)
+  assert.equal(one.title, "Also delete 1 new file?")
+  assert.equal(
+    one.body,
+    "This file appeared after this turn started, even if you created it yourself. Restoring will delete it, and it can't be recovered."
+  )
+  for (const files of [["a.txt", "b.txt"], ["a", "b", "c", "d", "e", "f", "g"], null]) {
+    const many = rewindDialogView({ kind: "untracked", files }, en)
+    assert.equal(
+      many.body,
+      "These files appeared after this turn started, including any you created yourself. Restoring will delete them, and they can't be recovered.",
+      `plural for ${files?.length ?? "unknown"}`
+    )
+  }
+  // leo #167：中文单个文件说「这个文件」，多个仍是「这些文件」。
+  assert.equal(
+    rewindDialogView({ kind: "untracked", files: ["a.txt"] }, zh).body,
+    "这个文件是这一轮开始后新出现的，包括你自己新建的。还原会把它删掉，删了找不回。"
+  )
+  assert.equal(
+    rewindDialogView({ kind: "untracked", files: ["a", "b"] }, zh).body,
+    "这些文件是这一轮开始后新出现的，包括你自己新建的。还原会把它们删掉，删了找不回。"
+  )
+  assert.equal(en("chat.rewindTitle"), "Start over from here")
+  assert.equal(zh("chat.rewindTitle"), "从这里重来")
+})
+
+test("luna g159 ⑭：REWIND_PROVIDER_UNSUPPORTED 走通用失败句；rewindUnsupported 文案已删", () => {
+  for (const restoreFiles of [true, false]) {
+    assert.deepEqual(rewindOutcome({ ok: false, code: "REWIND_PROVIDER_UNSUPPORTED" }, restoreFiles), {
+      kind: "error",
+      messageKey: "chat.rewindFailed"
+    })
+    // main 侧守卫拒绝的 code 同样走通用句。
+    assert.deepEqual(rewindOutcome({ ok: false, code: "TRUNCATE_ROLLBACK_UNSUPPORTED" }, restoreFiles), {
+      kind: "error",
+      messageKey: "chat.rewindFailed"
+    })
+  }
+  assert.equal("rewindUnsupported" in zhChat, false)
+  assert.equal("rewindUnsupported" in enChat, false)
+  for (const chat of [zhChat, enChat] as Array<Record<string, string>>) {
+    assert.ok(!Object.values(chat).some((v) => v === "当前引擎不能回滚对话" || v === "This engine cannot rewind the conversation"))
   }
 })

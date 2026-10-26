@@ -78,7 +78,8 @@ export function rewindDialogView(state: RewindDialogState, t: Translate, busy = 
     const shown = files.slice(0, REWIND_FILES_SHOWN)
     return {
       title,
-      body: t("chat.rewindConfirmUntrackedBody"),
+      // 英文单个文件用单数句（luna 定稿）；中文同一句。
+      body: n === 1 ? t("chat.rewindConfirmUntrackedBodyOne") : t("chat.rewindConfirmUntrackedBody"),
       hint: null,
       failure: null,
       files: shown,
@@ -138,10 +139,12 @@ export function rewindFailureKind(code: string): RewindFailure | null {
   return null
 }
 
-/** 其它失败 → 固定文案键。不认识的 code（包括被当成 code 传上来的原始错误文本）一律用通用句。 */
+/**
+ * 其它失败 → 固定文案键。不认识的 code（包括被当成 code 传上来的原始错误文本）一律用通用句。
+ * REWIND_PROVIDER_UNSUPPORTED 也走通用句：入口在不支持的引擎上整个不出，到这里只可能是竞态（luna g159 ⑭）。
+ */
 export function rewindErrorKey(code: string): string {
   if (code.includes("REWIND_BUSY")) return "chat.rewindBusy"
-  if (code.includes("REWIND_PROVIDER_UNSUPPORTED")) return "chat.rewindUnsupported"
   if (code.includes("TRUNCATE_MESSAGE_NOT_FOUND")) return "chat.rewindTruncateMissing"
   if (code.includes("TRUNCATE_STALE_SNAPSHOT")) return "chat.truncateStaleSnapshot"
   if (code.includes("TRUNCATE_TAIL_CHANGED")) return "chat.truncateTailChanged"
@@ -150,11 +153,22 @@ export function rewindErrorKey(code: string): string {
   return "chat.rewindFailed"
 }
 
-export type RewindRunResult = { ok: true } | { ok: false; code: string; untrackedToDelete?: string[] }
+export type RewindRunResult =
+  | { ok: true; draftSessionId?: string; writebackPending?: boolean }
+  | { ok: false; code: string; untrackedToDelete?: string[] }
+
+/**
+ * 截断已成功、写回输入框抛错（与 rewind-from-here.ts 的 REWIND_FINISH_FAILED 同值）：原话已存好、会继续放回。
+ * 不显示「从这里重来失败」——弹窗收掉 + toast（leo #167 ③ / r3：不说「已在草稿里」）。
+ */
+export const REWIND_FINISH_FAILED_CODE = "REWIND_FINISH_FAILED"
 
 /** 一次重来的结果 → 弹窗下一步。弹窗只照这个改状态，不直接碰 code 文本。 */
 export type RewindOutcome =
-  | { kind: "close" }
+  /** draftToast：原话进了原来那个会话的草稿（前台已换会话），收窗时提示一句。 */
+  | { kind: "close"; draftToast?: boolean; pendingToast?: boolean }
+  /** 截断已成功、原话在草稿里：收窗 + toast（不显示失败句）。 */
+  | { kind: "rewound-not-restored" }
   | { kind: "untracked"; files: string[] | null }
   | { kind: "failure"; failure: RewindFailure }
   | { kind: "error"; messageKey: string }
@@ -173,7 +187,12 @@ export async function settleRewind(run: () => Promise<RewindRunResult>): Promise
 }
 
 export function rewindOutcome(result: RewindRunResult, restoreFiles: boolean): RewindOutcome {
-  if (result.ok) return { kind: "close" }
+  if (result.ok) {
+    if (result.draftSessionId) return { kind: "close", draftToast: true }
+    if (result.writebackPending) return { kind: "close", pendingToast: true }
+    return { kind: "close" }
+  }
+  if (result.code === REWIND_FINISH_FAILED_CODE) return { kind: "rewound-not-restored" }
   if (result.code === "CHECKPOINT_CONFIRM_REQUIRED") {
     // 拿不到名单时 N 未知：标题换成不带数字的说法。
     const files = result.untrackedToDelete && result.untrackedToDelete.length > 0 ? result.untrackedToDelete : null

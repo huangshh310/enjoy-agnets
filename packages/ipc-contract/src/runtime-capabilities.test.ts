@@ -220,3 +220,11 @@ test("三路路径：Enjoy 本地 / ACP / 沙箱；沙箱不上导轨", () => {
   assert.equal(composerChromeFor("enjoy-local").showOnEngineRail, true)
   assert.equal(composerChromeFor("enjoy-local").quota, false)
 })
+
+test("对话回滚（#159 F1，leo soft 5）：只有 Enjoy 本地；undefined / 空串 / 未知 id / 沙箱 / 自定义 ACP 一律不支持", () => {
+  assert.equal(supportsConversationRollback("enjoy-local"), true)
+  for (const id of [undefined, "", "not-a-tool", "ENJOY-LOCAL", " enjoy-local", SANDBOX_HARNESS_ID, "custom:lab"] as const) {
+    assert.equal(supportsConversationRollback(id), false, JSON.stringify(id))
+  }
+  for (const id of WIRED) assert.equal(supportsConversationRollback(id), id === "enjoy-local", id)
+})
