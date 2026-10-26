@@ -8,6 +8,7 @@ import {
   setComposerComposing,
   shouldClearShownOnPreparing,
   shouldClearShownOnQueuedSend,
+  shouldCommitCompositionToSession,
   shouldResetShownOnSessionChange,
   shownAfterCompositionOnPreparing
 } from "@renderer/hooks/composer-ime"
@@ -52,13 +53,20 @@ export function useComposerIme(value: string, onChange: (next: string) => void) 
   }, [value])
 
   // jojo / luna：切会话 / 点新对话时输入框换成那个会话自己的稿。写回锁（建会话窗等）期间 store→框的同步被拦，
-  // 旧会话的字会留在框里，随后被 flush 进新会话——会话一变就强制对齐一次（组字中除外）。
+  // 旧会话的字会留在框里，随后被 flush 进新会话——会话一变就强制对齐一次。
+  // luna P1 #167：组字中也要对齐并清 composing；未提交组字丢弃，不写进新会话（Alt+Left / 侧栏都走 sessionId 变化）。
   const sessionId = useChatStore((state) => state.sessionId)
   const lastSessionId = useRef(sessionId)
+  /** 组字开始时所在会话；compositionend 时若已切走则不得 onChange。 */
+  const compositionSessionIdRef = useRef<string | null>(null)
   useEffect(() => {
     if (lastSessionId.current === sessionId) return
     lastSessionId.current = sessionId
-    if (composingRef.current) return
+    if (composingRef.current) {
+      composingRef.current = false
+      setComposerComposing(false)
+      // 保留 compositionSessionIdRef，让随后的 compositionend 仍能认出「已切走」。
+    }
     const next = useChatStore.getState().composer
     if (shouldResetShownOnSessionChange(shownRef.current, next)) setShown(next)
   }, [sessionId])
@@ -78,14 +86,24 @@ export function useComposerIme(value: string, onChange: (next: string) => void) 
     onCompositionStart() {
       composingRef.current = true
       setComposerComposing(true)
+      compositionSessionIdRef.current = useChatStore.getState().sessionId
     },
     onCompositionUpdate(event: CompositionEvent<HTMLTextAreaElement>) {
       setShown(event.currentTarget.value)
     },
     onCompositionEnd(event: CompositionEvent<HTMLTextAreaElement>) {
       const typed = event.currentTarget.value
+      const startedIn = compositionSessionIdRef.current
+      compositionSessionIdRef.current = null
       composingRef.current = false
       setComposerComposing(false)
+      const currentSessionId = useChatStore.getState().sessionId
+      // 切走后的 compositionend：丢掉组字，不 onChange，框保持新会话草稿。
+      if (!shouldCommitCompositionToSession(startedIn, currentSessionId)) {
+        const draft = useChatStore.getState().composer
+        setShown(draft)
+        return
+      }
       // preparing 翻起时在组字没擦成：组字结束补查，已交出去的旧句不留。
       // 已知窄窗：这里不看 wasPreparing——preparing 期间用户新起一句、恰以旧句开头，
       // 组字结束时旧句那段前缀会被一并擦掉（只剩后半）。窗口仅限建会话 + 准备中，接受。
