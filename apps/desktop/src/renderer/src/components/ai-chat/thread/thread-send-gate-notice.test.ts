@@ -43,7 +43,9 @@ test("NEED_MODEL 与无路线共用中性条，去选择打开 Picker", () => {
   assert.match(invalid, /tone="danger"/)
   assert.match(invalid, /chat\.goFixKey/)
   // 跳转目标的行为测试见 credential-fix-key-nav.test.ts。
-  assert.match(invalid, /goFixKey\(navigate as never, providerId\)/)
+  // luna P2-1：「改密钥」开这一轮实际用的那份（fixKeyTargetNavigation）；免密钥档案没有按钮。
+  assert.match(invalid, /navigate\(fixKeyTargetNavigation\(fixKey\)/)
+  assert.match(invalid, /actionLabel=\{fixKey \? t\("chat\.goFixKey"\) : undefined\}/)
   assert.doesNotMatch(invalid, /if \(!providerId\) return/)
   assert.doesNotMatch(invalid, /goConnect/)
   assert.match(network, /tone="neutral"/)

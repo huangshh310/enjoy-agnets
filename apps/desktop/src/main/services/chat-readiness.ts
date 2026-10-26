@@ -2,7 +2,12 @@
  * 可对话路线真源：向导末屏、默认路线与发送闸。
  * 发送闸读 hasSecret()；ping 失败只驱动向导，不拦发送。
  */
-import { app, BrowserWindow } from "electron"
+import { app } from "electron"
+import {
+  emitChatReadiness,
+  peekCachedChatReadiness,
+  rememberChatReadinessSnapshot
+} from "./chat-readiness-snapshot.ts"
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { isVerifiedLocalModel } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { listAgentTools } from "./agent-tools-service"
@@ -17,17 +22,14 @@ export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-
 
 const PUSH_DEBOUNCE_MS = 120
 
-let cached: ChatReadiness | undefined
+export { emitChatReadiness, peekCachedChatReadiness, pushCredentialCheckNow } from "./chat-readiness-snapshot.ts"
 let lastLoggedIn = new Set<string>()
 let pushTimer: ReturnType<typeof setTimeout> | undefined
 let restamping = false
 
-export function peekCachedChatReadiness(): ChatReadiness | undefined {
-  return cached
-}
-
 /** 发送闸读缓存：有 ping 通过的本机模型。从未算过 = unknown。 */
 export function peekVerifiedLocalModel(): boolean | "unknown" {
+  const cached = peekCachedChatReadiness()
   if (!cached) return "unknown"
   return cached.localModels.some(isVerifiedLocalModel)
 }
@@ -88,15 +90,7 @@ async function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean
 }
 
 function rememberSnapshot(snapshot: ChatReadiness): ChatReadiness {
-  cached = snapshot
-  return snapshot
-}
-
-export function emitChatReadiness(snapshot: ChatReadiness): void {
-  for (const window of BrowserWindow.getAllWindows()) {
-    if (window.isDestroyed()) continue
-    window.webContents.send("chat.readiness", snapshot)
-  }
+  return rememberChatReadinessSnapshot(snapshot)
 }
 
 /** 立刻重算并推快照。recheck 等需要等新状态的入口用这个。 */

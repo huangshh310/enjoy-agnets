@@ -89,6 +89,6 @@ function pendingAssistant(
     reasoning: "",
     tools: [],
     runKind,
-    ...pendingAssistantStamp(store)
+    ...pendingAssistantStamp(store, codingAgentRunInput(store).modelId)
   }
 }

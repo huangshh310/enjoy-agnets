@@ -3,6 +3,7 @@
  */
 import { isAbsolute } from "node:path"
 import { z } from "zod"
+import { AGENT_TOOL_OVERRIDES_KEY, readAgentToolOverrides } from "./agent-tools-overrides-read"
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
 import { assertSafeAgentCommand } from "./agent-tools-guard"
 import {
@@ -15,35 +16,9 @@ import { clearAcpSessionBind } from "./acp-session-bind.ts"
 
 export { unbindProviderInOverrides } from "./agent-tools-unbind"
 export { mergeAgentToolOverride, type AgentToolOverride } from "./agent-tools-override-merge"
+export { readAgentToolOverrides } from "./agent-tools-overrides-read"
 
-const KEY = "agentTools.overrides"
-
-const OVERRIDE_SCHEMA = z.object({
-  enabled: z.boolean().optional(),
-  binaryPath: z.string().optional(),
-  extraArgs: z.array(z.string()).optional(),
-  modelId: z.string().optional(),
-  providerId: z.string().optional(),
-  useCustomProvider: z.boolean().optional()
-})
-
-export function readAgentToolOverrides(): Record<string, AgentToolOverride> {
-  const raw = getSetting(KEY)
-  if (!raw) return {}
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
-    // 逐条校验：单个坏条目丢弃，不报废整份覆盖。
-    const out: Record<string, AgentToolOverride> = {}
-    for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
-      const row = OVERRIDE_SCHEMA.safeParse(value)
-      if (row.success) out[id] = row.data
-    }
-    return out
-  } catch {
-    return {}
-  }
-}
+const KEY = AGENT_TOOL_OVERRIDES_KEY
 
 export function writeAgentToolOverride(
   id: AgentToolId,
