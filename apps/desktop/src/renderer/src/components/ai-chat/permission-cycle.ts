@@ -1,6 +1,7 @@
 /**
- * Shift+Tab 切审批档的判定：只在焦点在 Composer 且为空时切；有字让出焦点；
- * 焦点不在 Composer（浮层、弹窗、菜单、其它输入框、终端）一律不切，让 Shift+Tab 做焦点后退（luna #154）。
+ * chat.permission.cycle 切审批档的判定（默认无快捷键；用户在设置绑定后仍走这里）。
+ * 只在焦点在 Composer 且为空时切；有字让出焦点；
+ * 焦点不在 Composer（浮层、弹窗、菜单、其它输入框、终端）一律不切，让 Shift+Tab 做焦点后退（luna #154 / #173）。
  */
 export function shouldCyclePermissionOnShiftTab(input: {
   /** 焦点就在 [data-testid="composer-input"] 上（不是附件 / Chip / 模型 / 盾牌按钮；leo #154 B2）。 */

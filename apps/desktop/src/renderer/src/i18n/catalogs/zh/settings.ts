@@ -255,7 +255,7 @@ export const zhSettings = {
     steer: "马上发给它",
     steerDesc: "任务进行中，把输入框里的话马上发给它，它下一步就会看到。",
     cyclePermission: "循环切换审批风险档",
-    cyclePermissionDesc: "在读取和编辑两档之间切换。全部只能下手选。仅在输入框获得焦点且为空时生效；有字或焦点在别处时 Shift+Tab 后退焦点。",
+    cyclePermissionDesc: "在读取和编辑两档之间切换。全部只能下手选。默认未绑定；可在设置 → 快捷键自行绑定。绑定后仅在输入框获得焦点且为空时生效。",
     threadFind: "在本会话查找",
     threadFindDesc: "打开当前对话的查找条，上一条 / 下一条跳转匹配。",
     context: "上下文",

@@ -1,5 +1,5 @@
 /**
- * Shift+Tab 只在读取 / 编辑之间切；全部回落到读取。
+ * chat.permission.cycle 只在读取 / 编辑之间切；全部回落到读取（默认快捷键未绑定，#173）。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"

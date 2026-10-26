@@ -255,7 +255,7 @@ export const enSettings = {
     steer: "Send right away",
     steerDesc: "While it's running, send what you typed right away. It sees it at its next step.",
     cyclePermission: "Cycle Approval Permission Mode",
-    cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Works only when the input is focused and empty; otherwise Shift+Tab moves focus backward.",
+    cyclePermissionDesc: "Switch between Reads and Edits. All is dropdown-only. Unbound by default; bind it in Settings → Shortcuts. When bound, works only when the input is focused and empty.",
     threadFind: "Find in this thread",
     threadFindDesc: "Open the in-thread find bar and jump to the previous or next match.",
     context: "Context",

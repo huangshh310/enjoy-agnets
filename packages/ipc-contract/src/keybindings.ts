@@ -69,7 +69,8 @@ export const DEFAULT_KEYBINDINGS: readonly KeybindingRule[] = [
   { key: "mod+shift+c", command: "pane.context" },
   { key: "mod+shift+d", command: "pane.desktop" },
   { key: "mod+f", command: "chat.find", when: "!terminalFocus" },
-  { key: "shift+tab", command: "chat.permission.cycle" },
+  // chat.permission.cycle 默认未绑定：Shift+Tab 留给焦点后退，避免空 Composer 悄悄放宽审批（#173）。
+  // 命令仍在 KEYBINDING_COMMANDS，可在设置 → 快捷键自行绑定。
   { key: "?", command: "shortcuts.sheet", when: "!inputFocus" }
 ]
 

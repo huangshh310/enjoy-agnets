@@ -1,5 +1,6 @@
 /**
- * Shift+Tab 只在读取 / 编辑之间切；全部只能下手选，从全部回到读取。
+ * chat.permission.cycle：只在读取 / 编辑之间切；全部只能下手选，从全部回到读取。
+ * 默认未绑定快捷键（Shift+Tab 留给焦点后退，#173）；用户在设置绑定后仍走此 handler。
  * 只在焦点就在空的 Composer 输入框（无附件 / Chip、非组字）时切档，写入成功后弹 toast；否则让出，做焦点后退。
  */
 import { isTerminalKeyTarget } from "@renderer/components/ai-chat/right-pane/views/terminal/terminal-focus"
