@@ -108,7 +108,7 @@ export function Select<T extends object>({
               "text-text-primary",
               "transition-[background-color,border-color,box-shadow,padding,font-size] duration-200 ease",
               "hover:bg-background-primary-hover hover:border-border-button-hover",
-              "outline-none focus-ring",
+              "focus-ring",
               "disabled:cursor-not-allowed disabled:bg-background-primary-disabled disabled:text-text-tertiary disabled:shadow-none",
               size === "sm"
                 ? "gap-1 px-[7px] py-1 text-body-2-medium"

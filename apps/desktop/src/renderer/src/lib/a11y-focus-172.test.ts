@@ -1,5 +1,5 @@
 /**
- * #172 / #173 leftovers / #168 soft：焦点环接线与收起栏 inert、抽屉进焦、废弃文案。
+ * #172 / #173 leftovers / #168 soft / #178 soft / #181 P1P2：焦点环接线与收起栏 inert、抽屉进焦、废弃文案。
  * 源码契约测试，不启 Electron。
  */
 import assert from "node:assert/strict"
@@ -26,8 +26,29 @@ test("右栏 PANE_FOCUS 走 focus-ring；收起时 inspector-host 设 inert", ()
 
 test("无 GPU 侧栏不清掉 :focus-visible 的 box-shadow（焦点环）", () => {
   const css = read("packages/ui/styles/globals.css")
+  // 子节点与 aside 自身都用 :not(:focus-visible)，aside-as-dialog 边案也能留环
+  assert.match(css, /aside\.rounded-3xl:not\(:focus-visible\)/)
   assert.match(css, /aside\.rounded-3xl \*:not\(:focus-visible\)/)
   assert.match(css, /box-shadow:\s*none\s*!important/)
+  // 任何「aside.rounded-3xl 自身」的 box-shadow:none 规则都必须带 :not(:focus-visible)
+  // （防止 ~1008 无条件块再抵消 soft 放行）
+  const ruleRe = /([^{]+)\{([^}]*)\}/g
+  let m: RegExpExecArray | null
+  while ((m = ruleRe.exec(css))) {
+    const [, sels, body] = m
+    if (!/box-shadow:\s*none/.test(body)) continue
+    for (const sel of sels.split(",")) {
+      const t = sel.trim()
+      if (!t.includes("aside.rounded-3xl")) continue
+      // 后代选择器（aside.rounded-3xl …）交给 *:not(:focus-visible) 契约
+      if (/aside\.rounded-3xl\s+\S/.test(t)) continue
+      assert.match(
+        t,
+        /aside\.rounded-3xl:not\(:focus-visible\)/,
+        `aside 自身无条件清 box-shadow: ${t}`,
+      )
+    }
+  }
 })
 
 test("设置侧边抽屉打开后把焦点移进 panel", () => {
@@ -60,4 +81,25 @@ test("入门页遗留 shortcutApproval 文案已删除", () => {
     const src = read(`apps/desktop/src/renderer/src/i18n/catalogs/${lang}/settings.ts`)
     assert.doesNotMatch(src, /shortcutApproval/)
   }
+})
+
+test("dashboard-user-menu 触发器用 focus-ring，不再叠 outline-none", () => {
+  const src = read("packages/ui/components/application/dashboard/dashboard-user-menu.tsx")
+  assert.match(src, /rounded-full focus-ring/)
+  // 触发器那一行不再 outline-none+focus-ring 双叠（Dialog 容器可保留 outline-none）
+  assert.doesNotMatch(src, /rounded-full outline-none[\s\S]{0,40}focus-ring/)
+  assert.doesNotMatch(src, /outline-none focus-ring/)
+})
+
+test("base select 触发器用 focus-ring，不再叠 outline-none", () => {
+  const src = read("packages/ui/components/base/select/select.tsx")
+  assert.match(src, /\bfocus-ring\b/)
+  assert.doesNotMatch(src, /outline-none focus-ring/)
+})
+
+test("C 端活体 workspace-dropdown-menu 触发器用 focus-ring，不再叠 outline-none", () => {
+  const src = read("apps/desktop/src/renderer/src/components/workspace/workspace-dropdown-menu.tsx")
+  assert.match(src, /rounded-full focus-ring/)
+  assert.doesNotMatch(src, /rounded-full outline-none[\s\S]{0,40}focus-ring/)
+  assert.doesNotMatch(src, /outline-none focus-ring/)
 })

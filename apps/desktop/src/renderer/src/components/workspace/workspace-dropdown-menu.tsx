@@ -103,8 +103,7 @@ export function WorkspaceDropdownMenu({
             if (suppressHover) onHoverSuppressionEnd?.()
           }}
           className={cx(
-            "relative flex min-w-0 cursor-pointer items-center gap-2 rounded-full outline-none",
-            "focus-ring",
+            "relative flex min-w-0 cursor-pointer items-center gap-2 rounded-full focus-ring",
             "before:pointer-events-none before:absolute before:-inset-x-1.5 before:-inset-y-[5px] before:rounded-full before:border-2 before:border-transparent before:transition-colors before:duration-150",
             !suppressHover && "hover:before:border-border-sidebar-profile-hover",
             collapsed && "w-9 justify-center gap-0 before:-inset-x-[3px]"

@@ -1013,6 +1013,12 @@ html:not([data-gpu-compositing="on"]) main {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
+  /* box-shadow 不在此清：aside 自身 :focus-visible 焦点环（ring=box-shadow）见下方 soft 块；main 单独清。 */
+}
+
+/* main 无 aside-as-dialog 边案：装饰阴影仍无条件清掉 */
+html[data-gpu-compositing="off"] main,
+html:not([data-gpu-compositing="on"]) main {
   box-shadow: none !important;
 }
 
@@ -1079,10 +1085,11 @@ html:not([data-gpu-compositing="on"]) aside.rounded-3xl * {
   background-image: none !important;
 }
 
-/* #173/#172：无 GPU 时仍清掉装饰阴影，但键盘焦点环（Tailwind ring = box-shadow）要留着。 */
-html[data-gpu-compositing="off"] aside.rounded-3xl,
+/* #173/#172/#178-soft：无 GPU 时仍清掉装饰阴影，但键盘焦点环（Tailwind ring = box-shadow）要留着。
+   aside 自身（抽屉/侧栏 dialog 边案）在 :focus-visible 时也不清 box-shadow。 */
+html[data-gpu-compositing="off"] aside.rounded-3xl:not(:focus-visible),
 html[data-gpu-compositing="off"] aside.rounded-3xl *:not(:focus-visible),
-html:not([data-gpu-compositing="on"]) aside.rounded-3xl,
+html:not([data-gpu-compositing="on"]) aside.rounded-3xl:not(:focus-visible),
 html:not([data-gpu-compositing="on"]) aside.rounded-3xl *:not(:focus-visible) {
   box-shadow: none !important;
 }
