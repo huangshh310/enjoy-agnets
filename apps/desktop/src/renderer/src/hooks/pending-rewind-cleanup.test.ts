@@ -51,9 +51,13 @@ test("forgetPendingRewindsNotIn：名单为空 → 全部清掉（模拟 prune �
   pendingMod.resetPendingRewindsForTest(null)
 })
 
-test("接线：归档当前会话显式 forgetPendingRewinds（归档表还在，reconcile 清不掉）", () => {
+test("接线：archiveCurrentSession 内显式 forgetPendingRewinds（归档表还在，reconcile 清不掉）", () => {
   const src = readFileSync(new URL("./workspace-lifecycle.ts", import.meta.url), "utf8")
-  assert.match(src, /session\.archive[\s\S]*?forgetPendingRewinds\(\[sessionId\]\)/)
+  const fn = src.match(/export async function archiveCurrentSession\([\s\S]*?\n\}/)
+  assert.ok(fn, "找到 archiveCurrentSession")
+  assert.match(fn[0], /forgetPendingRewinds\(\[sessionId\]\)/)
+  // 删归档另有 forget，不把整文件任意 archive…forget 当归档路径
+  assert.doesNotMatch(fn[0], /deleteArchivedSession/)
 })
 
 test("接线：离开即删成功后 forgetPendingRewinds；有 pending 仍不删空会话", () => {
@@ -67,4 +71,6 @@ test("接线：refreshAllWorkspaces 灌完侧栏后 syncPendingRewindsWithKnownS
   assert.match(src, /syncPendingRewindsWithKnownSessions\(lastSuccess\?\.items/)
   assert.match(src, /forgetPendingRewindsNotIn\(known\)/)
   assert.match(src, /session\.listArchived/)
+  // 空项目树不扫：避免夹具 / 失败回落的 [] 清掉在飞的 pending
+  assert.match(src, /if \(items\.length === 0\) return/)
 })
