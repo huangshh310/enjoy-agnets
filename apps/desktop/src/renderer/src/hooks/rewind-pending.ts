@@ -17,7 +17,7 @@
  *     停放的后台记录不占轮询（只在它回到前台时才动）。
  *     回到前台那一下就判（leo r7 S1）：切会话订阅排一个微任务，loadSession 恢复完输入框、用户还没法动它之前对一遍，
  *     不等下一拍轮询——否则用户在轮询前改了那行会被再追加一遍、清空了的会复活。到达时正在组字才等 compositionend。
- * - 会话被删（forgetPendingRewinds，leo r7 S3）：记录一起删，pagehide / 启动不再给已删的会话写孤儿草稿。
+ * - 会话被删 / 归档（forgetPendingRewinds，leo r7 S3 / gate-167）：记录一起删；pruneEmptySessions 删掉的由 refresh 后 forgetPendingRewindsNotIn 扫掉，pagehide / 启动不再给已删的会话写孤儿草稿。
  * - 关窗 / 刷新（pagehide / beforeunload）：每条记录按行并进它的草稿并立刻送到 main——前台会话以输入框当下的字为底，
  *   不用可能过期的内存草稿。记录不删（下次启动再对一遍，按行去重不会重复）。
  * - 同会话等待中：把「输入框当下的字 + 原话」按行写进它的草稿并立刻送到 main（被输入框盖掉就下一拍再补），
@@ -154,6 +154,18 @@ export function forgetPendingRewinds(sessionIds: readonly string[]): void {
     changed = true
   }
   if (changed) save()
+}
+
+/**
+ * gate-167 P3 / kai：会话已从库里消失（pruneEmptySessions / 离开即删 / 用户删除）后，
+ * localStorage 里的 pending 记录也必须清掉。main 看不见 renderer 的键，只能由 renderer
+ * 在侧栏/归档名单刷新后对照「还在的会话」扫一遍；已知还在的 id 不删（含已归档）。
+ * 归档路径另走 forgetPendingRewinds（会话还在归档表里，但产品上归档即丢待放回）。
+ */
+export function forgetPendingRewindsNotIn(knownSessionIds: ReadonlySet<string> | readonly string[]): void {
+  const known = knownSessionIds instanceof Set ? knownSessionIds : new Set(knownSessionIds)
+  const gone = listPendingRewindSessions().filter((sessionId) => !known.has(sessionId))
+  if (gone.length > 0) forgetPendingRewinds(gone)
 }
 
 /** 这个会话的草稿（内存草稿优先，和打开会话时的取法一致）里有没有这一整段，图是不是都在。 */

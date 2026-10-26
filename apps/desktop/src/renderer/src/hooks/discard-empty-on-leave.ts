@@ -4,7 +4,7 @@
  */
 import { getIde, hasIde } from "../lib/ide"
 import { listFollowups } from "./followup-queue"
-import { readPendingRewind } from "./rewind-pending"
+import { forgetPendingRewinds, readPendingRewind } from "./rewind-pending"
 
 export type LeaveState = {
   sessionId: string | null
@@ -56,6 +56,8 @@ export function discardEmptySessionOnLeave(
     .then(async (result) => {
       // luna P2：库里删了但侧栏不刷，空行要等重启才消失。删成功就刷工作区会话列表。
       if ((result as { deleted?: boolean } | undefined)?.deleted !== true) return
+      // gate-167 P3：离开即删成功也清 pending（有 pending 时 emptySessionToDiscardOnLeave 本就不会删；这里兜底）。
+      forgetPendingRewinds([id])
       const { refreshAllWorkspaces } = await import("./refresh-workspaces")
       await refreshAllWorkspaces()
     })
