@@ -57,11 +57,11 @@ const COPY = {
   en: {
     action: "Start over from here",
     title: "Start over from this message?",
-    gitBody: "This message and everything after it will be removed. Its text goes back into the input so you can edit and resend.",
+    gitBody: "This message and everything after it will be removed. Its text goes back into the message box so you can edit and resend.",
     gitHint: "You can also restore files to how they were before this turn.",
     gitButtons: ["Cancel", "Restore files too", "Chat only"],
     notGitBody:
-      "This message and everything after it will be removed. Its text goes back into the input. This folder isn't tracked by Git, so file changes won't be undone.",
+      "This message and everything after it will be removed. Its text goes back into the message box. This folder isn't tracked by Git, so file changes won't be undone.",
     notGitButtons: ["Cancel", "Start over"],
     untrackedTitle: (n: number) => (n === 1 ? "Also delete 1 new file?" : `Also delete ${n} new files?`),
     untrackedUnknown: "Also delete files that appeared after this turn started?",
@@ -73,7 +73,7 @@ const COPY = {
     partial: "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand.",
     goReview: "Go to Review",
     neutralBody:
-      "This message and everything after it will be removed, and its text goes back into the input. File changes won't be undone.",
+      "This message and everything after it will be removed, and its text goes back into the message box. File changes won't be undone.",
     genericError: "Could not rewind from here",
     restoring: "Restoring…",
     review: "Review",
