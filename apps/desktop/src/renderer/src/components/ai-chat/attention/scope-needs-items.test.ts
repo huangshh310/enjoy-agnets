@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { AttentionItem } from "../../../stores/attention/attention.types.ts"
-import { sessionActivity, pickActiveSessions } from "../sidebar/session-activity.ts"
+import { activePinLabelKey, sessionActivity, pickActiveSessions } from "../sidebar/session-activity.ts"
 import { scopeNeedsItems } from "./scope-needs-items.ts"
 
 function item(id: string, sessionId: string, kind: AttentionItem["kind"]): AttentionItem {
@@ -32,7 +32,7 @@ test("其它页面（收件箱等）照常列全部会话", () => {
   )
 })
 
-test("别的会话出错：顶部条不列，但侧栏会话行仍标出错、钉进「进行中」", () => {
+test("别的会话出错：顶部条不列，但侧栏会话行仍标出错、钉进需处理组", () => {
   assert.deepEqual(scopeNeedsItems(items, { isChat: true, sessionId: "ses_b" }).map((i) => i.id), ["p1"])
   const other = sessionActivity({ sessionId: "ses_a", currentId: "ses_b", running: false, parks: {}, items })
   assert.equal(other.failed, true)
@@ -41,4 +41,8 @@ test("别的会话出错：顶部条不列，但侧栏会话行仍标出错、�
     (id) => sessionActivity({ sessionId: id, currentId: "ses_b", running: false, parks: {}, items })
   )
   assert.deepEqual(pinned.map((s) => s.id), ["ses_a"])
+  assert.equal(
+    activePinLabelKey(pinned.map((s) => sessionActivity({ sessionId: s.id, currentId: "ses_b", running: false, parks: {}, items }))),
+    "sessionNeedsAttention"
+  )
 })
