@@ -17,7 +17,8 @@ import { cx } from "@/utils/cx"
 import { adviseCatalogUrl, type ApiStyle, type ProviderPreset } from "@enjoy-agents/providers/presets"
 import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
 import { applyRegionSwitch } from "./provider-editor-form"
-import { WIRE_STYLES, type EditorState } from "./providers.types"
+import { MissingFieldHint } from "./provider-missing-hint"
+import { WIRE_STYLES, type EditorMissingField, type EditorState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 const STYLE_KEY = {
@@ -31,13 +32,16 @@ export function ProviderEndpointFields({
   preset,
   detecting,
   onChange,
-  onDetect
+  onDetect,
+  showPrimaryAddress = true
 }: {
   editor: EditorState
   preset: ProviderPreset
   detecting: boolean
   onChange: (patch: Partial<EditorState>) => void
   onDetect: () => void
+  /** 主地址已经画在外面（简易表单的自定义端点，luna #170 r-luna ③）时这里只留主接口选择。 */
+  showPrimaryAddress?: boolean
 }) {
   const t = useT()
   const others = WIRE_STYLES.filter((style) => style !== editor.baseAPI)
@@ -68,7 +72,7 @@ export function ProviderEndpointFields({
         </Field>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-[180px_minmax(0,1fr)]">
+      <div className={cx("grid grid-cols-1 gap-3.5", showPrimaryAddress && "sm:grid-cols-[180px_minmax(0,1fr)]")}>
         <Field label={t("settings.providers.primaryApi")} hint={t("settings.providers.primaryApiHint")}>
           <Select value={editor.baseAPI} onValueChange={(value) => onChange({ baseAPI: value as ApiStyle })}>
             <SelectTrigger className="h-9 w-full rounded-2lg">
@@ -86,15 +90,7 @@ export function ProviderEndpointFields({
             </SelectContent>
           </Select>
         </Field>
-        <EndpointInput
-          label={t("settings.providers.baseUrl")}
-          hint={t("settings.providers.baseUrlHint")}
-          style={editor.baseAPI}
-          value={editor.endpoints[editor.baseAPI] ?? ""}
-          mismatch={Boolean(editor.detectMismatch?.[editor.baseAPI])}
-          code={editor.detectCodes?.[editor.baseAPI]}
-          onChange={(value) => setEndpoint(editor, editor.baseAPI, value, onChange)}
-        />
+        {showPrimaryAddress ? <PrimaryAddressInput editor={editor} onChange={onChange} /> : null}
       </div>
 
       <Field label={t("settings.providers.otherProtocols")} hint={t("settings.providers.otherProtocolsHint")}>
@@ -117,6 +113,40 @@ export function ProviderEndpointFields({
       <Button type="button" variant="outline" size="sm" className="self-start rounded-xl" disabled={detecting} onClick={onDetect}>
         {detecting ? t("settings.providers.detecting") : t("settings.providers.detect")}
       </Button>
+    </div>
+  )
+}
+
+/** 主接口的地址一栏。 */
+function PrimaryAddressInput({ editor, onChange }: { editor: EditorState; onChange: (patch: Partial<EditorState>) => void }) {
+  const t = useT()
+  return (
+    <EndpointInput
+      label={t("settings.providers.baseUrl")}
+      hint={t("settings.providers.baseUrlHint")}
+      style={editor.baseAPI}
+      value={editor.endpoints[editor.baseAPI] ?? ""}
+      mismatch={Boolean(editor.detectMismatch?.[editor.baseAPI])}
+      code={editor.detectCodes?.[editor.baseAPI]}
+      onChange={(value) => setEndpoint(editor, editor.baseAPI, value, onChange)}
+    />
+  )
+}
+
+/** 简易表单的自定义端点：接口地址放在名称下面露着，缺的时候「填上地址才能保存。」就在它下面（luna #170 r-luna ③）。 */
+export function ProviderPrimaryAddressField({
+  editor,
+  onChange,
+  missing
+}: {
+  editor: EditorState
+  onChange: (patch: Partial<EditorState>) => void
+  missing?: readonly EditorMissingField[]
+}) {
+  return (
+    <div data-testid="provider-address-field" className="flex flex-col gap-1.5">
+      <PrimaryAddressInput editor={editor} onChange={onChange} />
+      <MissingFieldHint missing={missing} field="endpoint" />
     </div>
   )
 }

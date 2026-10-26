@@ -233,12 +233,48 @@ export function cleanEndpoints(endpoints: EditorEndpoints): EditorEndpoints {
   return out
 }
 
+/** 能保存 = 什么都不缺 + 代理不挡。只有这一套规则（leo #170 soft-3），缺字段提示和按钮亮不亮都从 editorMissingFields 出。 */
 export function canSaveEditor(editor: EditorState | null, requiresKey: boolean): boolean {
-  if (!editor?.name.trim() || !editor.modelId.trim()) return false
-  if (editor.kind === "custom" && !hasEndpoint(editor.endpoints)) return false
-  if (proxyBlocksSave(editor.proxy)) return false
-  if (!requiresKey) return true
-  return editor.keys.some((key) => key.enabled && (key.apiKey.trim() || key.hasKey))
+  if (!editor) return false
+  return editorMissingFields(editor, requiresKey).length === 0 && !proxyBlocksSave(editor.proxy)
+}
+
+/** 「保存并启用」灰着时缺的是哪一项（mike P3，#163 巡检 25：只灰不说缺什么）。顺序 = 表单里从上到下。 */
+export type EditorMissingField = "name" | "endpoint" | "key" | "model"
+
+/**
+ * 「缺了什么」的唯一来源，canSaveEditor 直接用它；socks 代理不算缺字段（代理那一栏自己标红）。
+ * canSaveEditor 为 false 而这里为空，说明是代理挡的。
+ */
+export function editorMissingFields(editor: EditorState | null, requiresKey: boolean): EditorMissingField[] {
+  if (!editor) return []
+  const missing: EditorMissingField[] = []
+  if (!editor.name.trim()) missing.push("name")
+  if (editor.kind === "custom" && !hasEndpoint(editor.endpoints)) missing.push("endpoint")
+  if (requiresKey && !editor.keys.some((key) => key.enabled && (key.apiKey.trim() || key.hasKey))) missing.push("key")
+  if (!editor.modelId.trim()) missing.push("model")
+  return missing
+}
+
+/**
+ * 简易表单里必填的连接项要不要放在最上面露着（luna #170 r-luna ③）：自定义端点（名称、接口地址都得用户填）要——
+ * 顺序 名称 → 接口地址 → 密钥（→ 模型），「高级」里只剩选填项；预设自带名称和地址（35 个预设里只有自定义端点没有地址），收在「高级」里不动。
+ */
+export function simpleConnectionUpFront(kind: ProviderKind): boolean {
+  return kind === "custom"
+}
+
+/**
+ * 简易表单每栏下面画哪几条「…才能保存」：自定义端点一次只说第一条（按表单从上到下：名称 → 地址 → 密钥 → 模型，
+ * 名称、地址都缺时只说名称），填好一条下一条才冒出来；预设照旧缺几条说几条。底栏「还差：…」仍列全部。
+ */
+export function simpleFormMissingHints(kind: ProviderKind, missing: readonly EditorMissingField[]): EditorMissingField[] {
+  return simpleConnectionUpFront(kind) ? missing.slice(0, 1) : [...missing]
+}
+
+/** 缺的字段在哪个页签（完整表单分 连接 / 模型 两页，填了一页另一页还缺时要能看出来去哪填）。 */
+export function missingFieldTab(field: EditorMissingField): "connection" | "models" {
+  return field === "model" ? "models" : "connection"
 }
 
 export function hasEndpoint(endpoints: EditorEndpoints): boolean {

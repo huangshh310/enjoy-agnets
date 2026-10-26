@@ -1,7 +1,7 @@
 "use client"
 
 import { isComposerRailNotice } from "@renderer/components/ai-chat/composer/runtime-interact/composer-previous-preparing-rail"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ThreadFindBar } from "./thread/thread-find/thread-find-bar"
 import { useThreadFindOpen } from "./thread/thread-find/use-thread-find-hotkey"
 import { TranscriptSelectionAction } from "./thread/transcript-selection-action"
@@ -10,6 +10,7 @@ import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
+  ConversationScrollOnChange,
   ConversationViewportStick
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
@@ -26,6 +27,7 @@ import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
 import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
 import { displayThinkingLabel } from "./thread/thinking-label"
+import { lastUserMessageId, shouldScrollOnSend, takeSkipSendScroll, type SendScrollMark } from "./thread/scroll-on-send"
 import { useT } from "@renderer/i18n"
 
 export function AiChatThread({
@@ -52,6 +54,7 @@ export function AiChatThread({
   const findOpen = useThreadFindOpen()
   const notice = useChatStore((state) => state.notice)
   const anchorId = noticeAnchorId(visible, notice)
+  const sendTick = useSendScrollTick(sessionId, lastUserMessageId(visible))
 
   return (
     <div data-thread-root="" className="relative flex min-h-6 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
@@ -80,11 +83,25 @@ export function AiChatThread({
         </ConversationContent>
         <ConversationScrollButton />
         <ConversationViewportStick />
+        {/* 最后一条用户消息换了就贴底（用户的各种发送都算，哪怕之前往上翻过）；只有排队自动发出 / 重来打了一次性「这次别滚」（host #170）。 */}
+        <ConversationScrollOnChange trigger={sendTick} />
       </Conversation>
       <ThreadPreviewRail messages={visible} hasLedger={hasLedger} />
       <SubagentPill messages={visible} />
     </div>
   )
+}
+
+/** 同一会话里最后一条用户消息换了、且不是排队自动发出 / 重来，计数 +1；切会话只更新记号、不计数。 */
+function useSendScrollTick(sessionId: string | null, lastUserId: string | null): number {
+  const markRef = useRef<SendScrollMark>({ sessionId, lastUserId })
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const next = { sessionId, lastUserId }
+    if (shouldScrollOnSend(markRef.current, next, () => takeSkipSendScroll(sessionId))) setTick((value) => value + 1)
+    markRef.current = next
+  }, [sessionId, lastUserId])
+  return tick
 }
 
 function ThreadTurnBlock(props: {

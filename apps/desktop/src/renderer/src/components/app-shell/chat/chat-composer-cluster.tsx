@@ -21,7 +21,8 @@ export function ChatComposerCluster(props: {
   return (
     <div className={cx("flex shrink-0 flex-col", props.className)} data-toast-clearance="">
       {props.dock === false ? null : <PermissionDock />}
-      <ComposerPreparingHint />
+      {/* 有消息时（dock=false）簇不加左右内边距、Composer 自己带 px-6：提示跟着让出来，和输入框里的字对齐。 */}
+      <ComposerPreparingHint composerFramed={props.dock === false} />
       <ChatComposer
         className={props.composerClassName}
         autoFocus={props.autoFocus}

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { followupPausedReason, listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { useSteeredHintExpiry } from "@renderer/hooks/runtime-interact/use-steered-hint-expiry"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-styles"
 import { runtimeHintPlacement } from "./runtime-hint-placement"
@@ -27,6 +28,8 @@ export function ComposerFollowupRail() {
     sync()
     return subscribeFollowups(sync)
   }, [sessionId])
+  // 「已收到…」不再只能点 × 关：这一轮结束 / 又发了一句 / 满 30 秒自己收（帽檐和审批卡上方那条共用同一个提示）。
+  useSteeredHintExpiry(hint)
   if (!hint) return null
   // E1：队列停着时排队区连同暂停说明行也在输入框上方，「将在当前任务完成后执行」既重复又不对（runtimeHintPlacement 的 paused）。
   if (runtimeHintPlacement(hint, approvalPending, listFollowups(sessionId).length, paused) !== "frame") return null

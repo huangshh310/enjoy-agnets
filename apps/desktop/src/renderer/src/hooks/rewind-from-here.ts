@@ -21,6 +21,7 @@ import { refreshAllWorkspaces } from "./refresh-workspaces"
 import { isTruncateRetryable } from "./truncate-notice"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { decideTruncateRetry } from "./truncate-retry"
+import { lastUserMessageId, skipNextSendScroll } from "../components/ai-chat/thread/scroll-on-send"
 
 export type RewindResult =
   | { ok: true }
@@ -72,7 +73,11 @@ export async function rewindFromUserTurn(input: {
   const latest = useChatStore.getState()
   const keepIndex = latest.messages.findIndex((message) => message.id === input.userMessageId)
   const keep = keepIndex >= 0 ? latest.messages[keepIndex] : target
-  latest.setMessages(keepIndex >= 0 ? latest.messages.slice(0, keepIndex) : messages.slice(0, index))
+  const kept = keepIndex >= 0 ? latest.messages.slice(0, keepIndex) : messages.slice(0, index)
+  // 重来截掉后面：最后一条用户消息退回更早的一条，这不是用户刚发了一句，别贴底（host #170，一次性记号）。
+  // 一条用户消息都不剩时「最后一条用户消息」不会变，不打记号（否则会留给下一次用户自己发送）。
+  if (lastUserMessageId(kept)) skipNextSendScroll(sessionId)
+  latest.setMessages(kept)
   latest.setComposer(visibleUserText(keep.content) || keep.content)
   for (const asset of keep.assets ?? []) {
     queueComposerAsset({

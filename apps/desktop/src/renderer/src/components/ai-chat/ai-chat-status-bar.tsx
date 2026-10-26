@@ -1,7 +1,6 @@
 "use client"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentLimitsCard } from "./agent-limits/agent-limits-card"
 import { CompactSessionButton } from "./right-pane/views/context/compact-session"
@@ -47,14 +46,10 @@ export function AiChatStatusBar({
               className="inline-flex min-w-0 items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
               <ContextRing value={capKnown ? usagePercent : 0} />
-              {/* 窄窗（≤1000）上下文未知时只留圆环，文字进 title，让分支 / 项目名别被挤成「未检…」（jojo 巡检）。 */}
-              <span className={cx("min-w-12 max-w-40 truncate font-medium font-mono", !capKnown && "max-[1000px]:hidden")}>
-                {capKnown
-                  ? `${usagePercent}%`
-                  : inspector.modelLabel
-                    ? t("chat.inspectorCapUnknownModel", { model: inspector.modelLabel })
-                    : t("chat.inspectorCapUnknown")}
-              </span>
+              {/* 上下文窗口大小不知道时整段不写（不再写「未公布窗口 / no advertised window」，mike P3）：只留圆环，点开看用量卡。 */}
+              {capKnown ? (
+                <span className="min-w-12 max-w-40 truncate font-medium font-mono">{`${usagePercent}%`}</span>
+              ) : null}
             </button>
           </PopoverTrigger>
           <PopoverContent

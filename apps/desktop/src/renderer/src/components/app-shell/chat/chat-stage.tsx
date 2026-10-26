@@ -262,6 +262,10 @@ function ChatThreadBody(props: {
                 "flex min-h-14 min-w-0 flex-1 flex-col",
                 pendingApproval && "min-h-[min(13rem,25cqh)]",
                 "[&:has(>[data-testid=queued-followups-docked])>[data-thread-root]]:min-h-0",
+                // 停着的排队区 + 对话末尾的失败卡（mike P3，733×480「再发一次」只露半颗）：对话区保底露出整张失败卡
+                // （一行说明 + 按钮约 74px，矮窗对话底边 4px；4.5rem 只露按钮、说明行被裁半行，luna #170 02 → 5.5rem）。
+                // 排队区点开后自己让位（它是 shrink-[1000]、区内滚，底下有「还有 N 条」）。选择器多一个属性，盖过上一行的 min-h-0。
+                "[&:has(>[data-testid=queued-followups-docked][data-keep-thread=true])>[data-thread-root]]:min-h-[5.5rem]",
                 "[&:has(>[data-testid=dock-runtime-hint]:not([hidden]))>[data-thread-root]]:min-h-0"
               )}
             >

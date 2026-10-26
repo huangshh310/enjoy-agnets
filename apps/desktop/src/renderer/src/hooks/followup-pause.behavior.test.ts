@@ -1129,7 +1129,7 @@ test("中文空格规则（对称）：失败卡和排队行同一个函数（fi
   assert.equal(card("credentialNetworkNotice", named("OpenAI"), en), "Could not reach OpenAI. The message was not sent. Check the network and try again.")
   // 接线：两个界面都只经 fillProviderFace 填称呼，不各自插值。
   const viewSrc = readSource("../components/ai-chat/thread/queue-paused-view.ts")
-  assert.equal((viewSrc.match(/fillProviderFace\(/g) ?? []).length, 2, "排队行两处（原因句、额度重发句）都走 fillProviderFace")
+  assert.equal((viewSrc.match(/fillProviderFace\(/g) ?? []).length, 4, "排队行四处（原因句、额度重发句，及 luna #170 的两条窄句）都走 fillProviderFace")
   assert.ok(!/provider: input\.provider\.|\.name\b.*provider/.test(viewSrc.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")), "排队行不自己拿 face.name 插值")
   for (const file of ["thread-credential-invalid-notice.tsx", "thread-credential-network-notice.tsx", "thread-credential-restricted-notice.tsx"]) {
     const src = readSource(`../components/ai-chat/thread/${file}`).replace(/\/\/.*$/gm, "")

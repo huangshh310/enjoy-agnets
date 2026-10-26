@@ -8,7 +8,8 @@ import { cx } from "@/utils/cx"
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { ProviderEndpointFields } from "./provider-endpoint-fields"
 import { ProviderKeyList } from "./provider-key-list"
-import { proxyBlocksSave, type EditorState } from "./providers.types"
+import { MissingFieldHint } from "./provider-missing-hint"
+import { proxyBlocksSave, type EditorMissingField, type EditorState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderConnectionFields({
@@ -16,35 +17,38 @@ export function ProviderConnectionFields({
   preset,
   detecting,
   onChange,
-  onDetect
+  onDetect,
+  missing,
+  showName = true,
+  showPrimaryAddress = true
 }: {
   editor: EditorState
   preset: ProviderPreset
   detecting: boolean
   onChange: (patch: Partial<EditorState>) => void
   onDetect: () => void
+  missing?: readonly EditorMissingField[]
+  /** 名称已经画在外面（简易表单的自定义端点，luna #170 r-luna ③）时不再画一遍。 */
+  showName?: boolean
+  /** 主地址已经画在外面（同上）时不再画一遍。 */
+  showPrimaryAddress?: boolean
 }) {
   const t = useT()
   const proxyMode = editor.proxy === "direct" ? "direct" : editor.proxy.trim() ? "custom" : "system"
   return (
     <div className="flex flex-col gap-4 py-1">
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.displayName")}</Label>
-        <Input
-          value={editor.name}
-          onChange={(event) => onChange({ name: event.target.value })}
-          placeholder={t("settings.providers.namePlaceholder")}
-          className="h-9"
-        />
-      </div>
+      {showName ? <ProviderNameField editor={editor} onChange={onChange} missing={missing} /> : null}
       <ProviderEndpointFields
         editor={editor}
         preset={preset}
         detecting={detecting}
         onChange={onChange}
         onDetect={onDetect}
+        showPrimaryAddress={showPrimaryAddress}
       />
+      <MissingFieldHint missing={missing} field="endpoint" />
       <ProviderKeyList editor={editor} onChange={onChange} />
+      <MissingFieldHint missing={missing} field="key" />
       <div className="flex flex-col gap-1.5">
         <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.proxy")}</Label>
         <div className="flex flex-wrap gap-1 rounded-xl bg-background-tertiary-default p-1">
@@ -96,5 +100,30 @@ function ProxyChoice({ label, active, onClick }: { label: string; active: boolea
     >
       {label}
     </button>
+  )
+}
+
+/** 名称一栏 + 缺名称时下面的琥珀小字「起个名字才能保存。」。 */
+export function ProviderNameField({
+  editor,
+  onChange,
+  missing
+}: {
+  editor: EditorState
+  onChange: (patch: Partial<EditorState>) => void
+  missing?: readonly EditorMissingField[]
+}) {
+  const t = useT()
+  return (
+    <div data-testid="provider-name-field" className="flex flex-col gap-1.5">
+      <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.displayName")}</Label>
+      <Input
+        value={editor.name}
+        onChange={(event) => onChange({ name: event.target.value })}
+        placeholder={t("settings.providers.namePlaceholder")}
+        className="h-9"
+      />
+      <MissingFieldHint missing={missing} field="name" />
+    </div>
   )
 }

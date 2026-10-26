@@ -72,6 +72,7 @@ export function EditorDrawerFooter({
   saveLabel,
   saveError = null,
   secretBlocked = false,
+  missingHint = "",
   onClose
 }: {
   docsURL?: string
@@ -80,6 +81,8 @@ export function EditorDrawerFooter({
   saveLabel?: string
   saveError?: SecretWriteErrorCode | null
   secretBlocked?: boolean
+  /** 「保存并启用」灰着时缺的字段（「还差：…」）；空串不画。 */
+  missingHint?: string
   onClose: () => void
 }) {
   const t = useT()
@@ -100,6 +103,11 @@ export function EditorDrawerFooter({
       )}
       <div className="flex min-w-0 flex-col items-end gap-1.5">
         {saveError ? <SecretWriteError code={saveError} className="text-right text-caption-2-medium text-text-error-primary" /> : null}
+        {missingHint && !canSave ? (
+          <p data-testid="provider-editor-missing" className="text-right text-caption-2-medium text-status-yellow-text">
+            {missingHint}
+          </p>
+        ) : null}
         <div className="flex items-center gap-2">
           <Button
             type="button"

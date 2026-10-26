@@ -5,9 +5,12 @@
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { preparingHintVisible } from "@renderer/hooks/preparing-hint-visible"
+import { cx } from "@/utils/cx"
 import { railAlreadySaysPreparing } from "./preparing-hint-dedupe"
+import { preparingHintInsetClass } from "./composer-preparing-hint-inset"
 
-export function ComposerPreparingHint() {
+/** composerFramed：Composer 自己带 px-6（有消息时）；左边和输入框里的字对齐（luna #170 r-luna ④）。 */
+export function ComposerPreparingHint({ composerFramed = false }: { composerFramed?: boolean }) {
   const t = useT()
   const preparingHint = useChatStore((state) => state.preparingHint)
   const preparingSessionId = useChatStore((state) => state.preparingSessionId)
@@ -19,7 +22,7 @@ export function ComposerPreparingHint() {
   return (
     <p
       data-testid="composer-preparing-hint"
-      className="px-1 pb-1.5 text-caption-2-regular text-text-secondary"
+      className={cx("pb-1.5 text-caption-2-regular text-text-secondary", preparingHintInsetClass(composerFramed))}
     >
       {t("chat.preparingHint")}
     </p>
