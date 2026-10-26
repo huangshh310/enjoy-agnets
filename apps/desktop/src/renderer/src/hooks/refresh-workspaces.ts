@@ -55,6 +55,9 @@ export async function refreshAllWorkspaces() {
     },
     activeWorkspaceId: () => useChatStore.getState().workspaceId
   })
+  // gate-167 P3：main 启动 pruneEmptySessions 删掉的会话，renderer localStorage 里可能还挂着 pending。
+  // 侧栏灌完后对照「还在的会话」（侧栏 + 已归档）扫掉幽灵键；归档本身另走 forgetPendingRewinds。
+  await syncPendingRewindsWithKnownSessions(lastSuccess?.items ?? [])
 }
 
 /** 生产灌入路径；测试用内存 sink，避免测试直接依赖 chat-store。 */
@@ -81,6 +84,33 @@ function applyLatestSuccess(sink: WorkspaceHydrateSink) {
   if (lastSuccess.generation <= appliedGeneration) return
   sink.hydrate(lastSuccess.items, sink.activeWorkspaceId())
   appliedGeneration = lastSuccess.generation
+}
+
+
+/**
+ * 把已不在库里的会话的 pending-rewind 清掉（prune / 离开即删漏清时的兜底）。
+ * 不变量：
+ * - 必须真的灌到过项目树（items.length > 0）。真空 / 夹具里 workspace.list→[] 时不扫，
+ *   否则会把截断后还在写回的 pending 整表清掉（#167 行为测 / CI fail 21）。
+ * - prune 后项目还在、会话没了 → items 非空且 sessions=[]，照常扫幽灵键。
+ * - 列归档失败则不动，避免误删归档会话的记录。
+ * - 归档本身另走 forgetPendingRewinds（会话还在归档表）。
+ */
+async function syncPendingRewindsWithKnownSessions(items: HydrateItems): Promise<void> {
+  const { forgetPendingRewindsNotIn, listPendingRewindSessions } = await import("./rewind-pending")
+  if (listPendingRewindSessions().length === 0) return
+  if (items.length === 0) return
+  const known = new Set<string>()
+  for (const item of items) {
+    for (const session of item.sessions) known.add(session.id)
+  }
+  try {
+    const archived = (await getIde().session.listArchived()) as Array<{ id: string }>
+    for (const row of archived) known.add(row.id)
+  } catch {
+    return
+  }
+  forgetPendingRewindsNotIn(known)
 }
 
 async function collectWorkspaceHydrateItems() {

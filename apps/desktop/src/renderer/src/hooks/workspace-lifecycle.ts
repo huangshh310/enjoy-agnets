@@ -38,6 +38,8 @@ export async function archiveCurrentSession(sessionId: string) {
   const adjacentId = wasCurrent ? pickAdjacentSessionId(visibleIds, sessionId) : null
   const archived = await getIde().session.archive({ sessionId })
   void readDeniedApprovals(archived)
+  // gate-167：归档即丢掉该会话的「从这里重来」待放回记录（会话还在归档表，reconcile 不会清）。
+  forgetPendingRewinds([sessionId])
   useAttentionStore.getState().clearSession(sessionId)
   useAttentionStore.getState().takePark(sessionId)
   if (wasCurrent) await landAfterArchive(adjacentId)

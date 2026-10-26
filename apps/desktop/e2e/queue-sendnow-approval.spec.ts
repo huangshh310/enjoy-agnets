@@ -11,6 +11,10 @@
  *   - 1024x733 长对话：排队行 × 不被对话目录条盖住，点 × 删掉这条、不打开目录预览。
  * 另一条：紧凑行有文字又带图时，文字后面跟一个附件数小签（不然单行里看不出带着图），按钮仍整排露出。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘，文件名前缀 ENJOY_E2E_SHOT_TAG（默认 after）。
+ *
+ * #170 1d（luna CONDITIONAL → 可真机）：审批卡挤高 <64px 不画「还有 N 条」；
+ * tall 展开够高过再缩到 733×480 → foldOnSqueeze 折成一行；再点开（autoFolded）保持展开且仍无胶囊。
+ * 复现：ENJOY_E2E_STUB=1，发「please write a note」出审批卡，再排 ≥3 条，窗口 1024×720 → 展开 → 缩 733×480。
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -336,6 +340,8 @@ for (const lang of ["zh", "en"] as const) {
       await page.waitForTimeout(300)
       await shot("4-expanded")
       await expectApprovalReachable(page, `${lang} expanded`, size)
+      // #170 1d：733×480 + 审批卡把排队区挤到 <64px → 不画「还有 N 条」（本来就挤着点开，不走 foldOnSqueeze）。
+      await expect(page.locator('[data-testid="queued-hidden-below"]'), `${lang} no hidden-below pill when squeezed`).toHaveCount(0)
 
       // 不带 force 真点「批准」：审批被处理，不是点到了别处。
       await page.locator('[data-testid="approval-allow"]').click({ timeout: 5_000 })
@@ -527,3 +533,56 @@ for (const lang of ["zh", "en"] as const) {
     }
   })
 }
+
+/**
+ * #170 1d / luna r-luna ①：审批卡 + 排队区 — tall 展开够高过（seenRoomy）再缩到 733×480 →
+ * foldOnSqueeze 折回一行；再点开（autoFolded）保持展开且无「还有 N 条」胶囊。
+ * refoldOnShort（tall→≤600）是另一条路径，本用例缩窗前先确认审批卡在、用高度变化挤 dock，不把它当回归。
+ */
+test("审批卡挤高：tall 展开后再缩 733×480 → 折成一行；再点开无「还有 N 条」胶囊（zh）", async () => {
+  test.setTimeout(240_000)
+  const lang = "zh" as const
+  const copy = COPY[lang]
+  const { app, page, composer, queued, dock } = await launchApproval(lang)
+  try {
+    // 高窗：审批卡 + 排 5 条，点开展开 → dock 够高（≥64），可能有「还有 N 条」。
+    await page.setViewportSize({ width: 1024, height: 720 })
+    await page.waitForTimeout(300)
+    for (let i = 1; i <= 5; i++) await enqueue(page, composer, `${copy.queued} ${i}`, i)
+    const collapsed = page.locator('[data-testid="queued-collapsed"]')
+    if (await collapsed.isVisible()) await collapsed.click()
+    // 也可能是「还有 N 条」的 more 模式：点开看全部。
+    const more = page.locator('[data-testid="queued-more"]')
+    if (await more.isVisible()) await more.click()
+    await expect(dock).toHaveAttribute("data-mode", "all", { timeout: 5_000 })
+    await expect(queued).toHaveCount(5)
+    await page.waitForTimeout(400)
+    const roomyHeight = await dock.evaluate((el) => (el as HTMLElement).clientHeight)
+    expect(roomyHeight, `tall dock should be roomy (≥64), got ${roomyHeight}`).toBeGreaterThanOrEqual(64)
+    if (shotsDir) await page.screenshot({ path: join(shotsDir, `${shotTag}-170-1d-tall-expanded.png`) })
+
+    // 缩到 733×480：审批卡把排队区挤到 <64px → foldOnSqueeze 折回一行。
+    await page.setViewportSize({ width: 733, height: 480 })
+    await page.waitForTimeout(600)
+    await expect(page.locator('[data-testid="approval-allow"]')).toBeVisible()
+    await expect(collapsed, "foldOnSqueeze → 折成一行「排队 N 条」").toBeVisible({ timeout: 5_000 })
+    await expect(collapsed).toHaveText(COLLAPSED[lang](5))
+    await expect(page.locator('[data-testid="queued-hidden-below"]')).toHaveCount(0)
+    if (shotsDir) await page.screenshot({ path: join(shotsDir, `${shotTag}-170-1d-squeezed-folded.png`) })
+
+    // 再点开：autoFolded 这一轮不再自动折；挤着也不画胶囊。
+    await collapsed.click()
+    await expect(dock).toHaveAttribute("data-mode", "all", { timeout: 5_000 })
+    await expect(queued).toHaveCount(5)
+    await page.waitForTimeout(400)
+    const squeezedHeight = await dock.evaluate((el) => (el as HTMLElement).clientHeight)
+    expect(squeezedHeight, `squeezed dock <64 after re-expand, got ${squeezedHeight}`).toBeLessThan(64)
+    await expect(page.locator('[data-testid="queued-hidden-below"]'), "挤高不画胶囊").toHaveCount(0)
+    // 仍保持展开（不再被 foldOnSqueeze 折回去）。
+    await page.waitForTimeout(500)
+    await expect(dock).toHaveAttribute("data-mode", "all")
+    if (shotsDir) await page.screenshot({ path: join(shotsDir, `${shotTag}-170-1d-reexpanded-no-pill.png`) })
+  } finally {
+    await closeForRelaunch(app)
+  }
+})
