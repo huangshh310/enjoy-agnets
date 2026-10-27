@@ -213,3 +213,24 @@ test("只读的文件保留；同一 path 既读又改时只留改", () => {
     ]
   )
 })
+
+test("estimatedCost 进用量行；number 兼容旧签名", () => {
+  const withBag = collectRunLedger(
+    { id: "a", tools: [] },
+    {
+      tokens: 1200,
+      estimatedCost: { status: "estimated", usd: 0.42, source: "snapshot" },
+      costEngineLabel: "Claude Code"
+    }
+  )
+  assert.equal(withBag[0]?.kind, "usage")
+  assert.equal(withBag[0]?.estimatedCost?.status, "estimated")
+  assert.equal(withBag[0]?.estimatedCost?.usd, 0.42)
+  assert.equal(withBag[0]?.costEngineLabel, "Claude Code")
+
+  const legacy = collectRunLedger({ id: "b", tools: [] }, 800)
+  assert.equal(legacy[0]?.kind, "usage")
+  assert.equal(legacy[0]?.title, "800")
+  assert.equal(legacy[0]?.estimatedCost, undefined)
+})
+

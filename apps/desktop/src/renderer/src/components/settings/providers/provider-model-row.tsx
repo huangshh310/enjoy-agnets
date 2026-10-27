@@ -1,5 +1,5 @@
 /**
- * 模型目录的一行：品牌标、id、启用、设为主模型、窗口，以及删除。
+ * 模型目录的一行：品牌标、id、启用、设为主模型、窗口，以及单价（COST-P3）。
  */
 import { RiCloseLine } from "@remixicon/react"
 import { Input } from "@/components/ui/input"
@@ -78,6 +78,56 @@ export function ProviderModelRow({
           className="h-8 font-mono text-caption-1-regular"
         />
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          type="number"
+          step="any"
+          min={0}
+          value={model.inputPricePerMillion ?? ""}
+          placeholder={t("settings.providers.inputPriceShort")}
+          aria-label={t("settings.providers.inputPriceShort")}
+          title={t("settings.providers.pricePerMillionHint")}
+          onChange={(event) => onPatch({ inputPricePerMillion: priceOrEmpty(event.target.value) })}
+          className="h-8 font-mono text-caption-1-regular"
+          data-testid="provider-model-input-price"
+        />
+        <Input
+          type="number"
+          step="any"
+          min={0}
+          value={model.outputPricePerMillion ?? ""}
+          placeholder={t("settings.providers.outputPriceShort")}
+          aria-label={t("settings.providers.outputPriceShort")}
+          title={t("settings.providers.pricePerMillionHint")}
+          onChange={(event) => onPatch({ outputPricePerMillion: priceOrEmpty(event.target.value) })}
+          className="h-8 font-mono text-caption-1-regular"
+          data-testid="provider-model-output-price"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          type="number"
+          step="any"
+          min={0}
+          value={model.cacheReadPricePerMillion ?? ""}
+          placeholder={t("settings.providers.cacheReadPriceShort")}
+          aria-label={t("settings.providers.cacheReadPriceShort")}
+          title={t("settings.providers.pricePerMillionHint")}
+          onChange={(event) => onPatch({ cacheReadPricePerMillion: priceOrEmpty(event.target.value) })}
+          className="h-8 font-mono text-caption-1-regular"
+        />
+        <Input
+          type="number"
+          step="any"
+          min={0}
+          value={model.cacheWritePricePerMillion ?? ""}
+          placeholder={t("settings.providers.cacheWritePriceShort")}
+          aria-label={t("settings.providers.cacheWritePriceShort")}
+          title={t("settings.providers.pricePerMillionHint")}
+          onChange={(event) => onPatch({ cacheWritePricePerMillion: priceOrEmpty(event.target.value) })}
+          className="h-8 font-mono text-caption-1-regular"
+        />
+      </div>
     </div>
   )
 }
@@ -87,4 +137,12 @@ function numberOrEmpty(value: string): number | undefined {
   if (!next) return undefined
   const parsed = Number(next)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+}
+
+/** 单价允许 0（免费档）；空串清掉覆盖。 */
+function priceOrEmpty(value: string): number | undefined {
+  const next = value.trim()
+  if (!next) return undefined
+  const parsed = Number(next)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined
 }

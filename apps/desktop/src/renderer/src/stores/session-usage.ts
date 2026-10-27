@@ -1,7 +1,9 @@
 /**
  * 每个会话最后一次 usage.updated。没有事件就不造数字。
  * 仅窗口广告会留下 inputTokens: 0，不能当成实测。
+ * COST-P3：顺带记住 estimatedCost，给 ledger 用量行。
  */
+import type { EstimatedCost } from "@enjoy-agents/ipc-contract/estimated-cost"
 
 export type SessionUsage = {
   inputTokens: number
@@ -13,6 +15,8 @@ export type SessionUsage = {
   contextWindow?: number
   /** 和 contextWindow 一起记下，换引擎后不再拿上一台的 size。 */
   contextRuntimeId?: string
+  /** 本轮 usage.updated 带来的估算；没有就不编。 */
+  estimatedCost?: EstimatedCost
 }
 
 export type SessionUsagePatch = {
@@ -20,6 +24,7 @@ export type SessionUsagePatch = {
   outputTokens?: number
   totalTokens?: number
   contextWindow?: number
+  estimatedCost?: EstimatedCost
 }
 
 const bySession = new Map<string, SessionUsage>()
@@ -39,13 +44,17 @@ export function rememberSessionUsage(
 ): void {
   const tokens = pickReportedTokens(usage)
   const windowOk = typeof usage.contextWindow === "number" && usage.contextWindow > 0
-  if (!tokens && !windowOk) return
+  const costOk = Boolean(usage.estimatedCost?.status)
+  if (!tokens && !windowOk && !costOk) return
   const prev = bySession.get(sessionId)
   const sameEngine = !runtimeId || !prev?.contextRuntimeId || prev.contextRuntimeId === runtimeId
-  bySession.set(sessionId, {
+  const next: SessionUsage = {
     ...mergeTokenFields(prev, tokens),
     ...keptWindow(windowOk ? usage.contextWindow : undefined, sameEngine ? prev : undefined, runtimeId)
-  })
+  }
+  if (costOk) next.estimatedCost = usage.estimatedCost
+  else if (prev?.estimatedCost) next.estimatedCost = prev.estimatedCost
+  bySession.set(sessionId, next)
   bump()
 }
 

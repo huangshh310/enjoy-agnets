@@ -31,17 +31,25 @@ export function visibleLedgerEntries(entries: readonly RunLedgerEntry[]): RunLed
   return entries.filter((entry) => entry.kind !== "command" || keep.has(entry))
 }
 
+export type CollectRunLedgerUsage = {
+  tokens?: number
+  estimatedCost?: RunLedgerEntry["estimatedCost"]
+  costEngineLabel?: string
+}
+
 export function collectRunLedger(
   message: Pick<ThreadMessage, "tools" | "id"> | null,
-  usageTokens?: number
+  usage?: number | CollectRunLedgerUsage
 ): RunLedgerEntry[] {
-  if (!message) return usageRow(usageTokens)
+  const bag: CollectRunLedgerUsage =
+    typeof usage === "number" ? { tokens: usage } : (usage ?? {})
+  if (!message) return usageRow(bag)
   const rows: RunLedgerEntry[] = []
   for (const tool of message.tools ?? []) {
     const entry = entryFromTool(tool)
     if (entry) rows.push(entry)
   }
-  return [...collapseLedgerEntries(rows), ...usageRow(usageTokens)]
+  return [...collapseLedgerEntries(rows), ...usageRow(bag)]
 }
 
 export function groupRunLedger(entries: readonly RunLedgerEntry[]): {
@@ -56,13 +64,16 @@ export function groupRunLedger(entries: readonly RunLedgerEntry[]): {
   return { groups, usage }
 }
 
-function usageRow(usageTokens?: number): RunLedgerEntry[] {
+function usageRow(usage: CollectRunLedgerUsage): RunLedgerEntry[] {
+  const usageTokens = usage.tokens
   if (usageTokens == null || usageTokens <= 0) return []
   return [
     {
       id: "ledger:usage",
       kind: "usage",
-      title: String(usageTokens)
+      title: String(usageTokens),
+      ...(usage.estimatedCost ? { estimatedCost: usage.estimatedCost } : {}),
+      ...(usage.costEngineLabel ? { costEngineLabel: usage.costEngineLabel } : {})
     }
   ]
 }

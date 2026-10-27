@@ -38,6 +38,12 @@ export type EditorModel = {
   source: CatalogSource
   contextWindow?: number
   maxOutputTokens?: number
+  /** 用户填的每百万 token USD 单价；缺项未知，不要当 0。 */
+  inputPricePerMillion?: number
+  outputPricePerMillion?: number
+  cacheReadPricePerMillion?: number
+  cacheWritePricePerMillion?: number
+  reasoningPricePerMillion?: number
 }
 
 export type EditorState = {
@@ -171,6 +177,11 @@ export function toEditorModel(model: {
   source?: string
   contextWindow?: number
   maxOutputTokens?: number
+  inputPricePerMillion?: number
+  outputPricePerMillion?: number
+  cacheReadPricePerMillion?: number
+  cacheWritePricePerMillion?: number
+  reasoningPricePerMillion?: number
 }): EditorModel {
   return {
     id: model.id,
@@ -178,7 +189,22 @@ export function toEditorModel(model: {
     enabled: model.enabled !== false,
     source: isSource(model.source) ? model.source : "manual",
     contextWindow: model.contextWindow,
-    maxOutputTokens: model.maxOutputTokens
+    maxOutputTokens: model.maxOutputTokens,
+    ...(typeof model.inputPricePerMillion === "number"
+      ? { inputPricePerMillion: model.inputPricePerMillion }
+      : {}),
+    ...(typeof model.outputPricePerMillion === "number"
+      ? { outputPricePerMillion: model.outputPricePerMillion }
+      : {}),
+    ...(typeof model.cacheReadPricePerMillion === "number"
+      ? { cacheReadPricePerMillion: model.cacheReadPricePerMillion }
+      : {}),
+    ...(typeof model.cacheWritePricePerMillion === "number"
+      ? { cacheWritePricePerMillion: model.cacheWritePricePerMillion }
+      : {}),
+    ...(typeof model.reasoningPricePerMillion === "number"
+      ? { reasoningPricePerMillion: model.reasoningPricePerMillion }
+      : {})
   }
 }
 

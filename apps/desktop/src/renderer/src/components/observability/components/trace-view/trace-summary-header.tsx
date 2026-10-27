@@ -12,13 +12,28 @@ import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import type { TraceSummaryData } from "../../types/trace-span.types"
+import { formatEstimatedCost } from "@renderer/components/ai-chat/usage/format-estimated-cost"
+import { useT } from "@renderer/i18n"
 
 export function TraceSummaryHeader(props: {
   data: TraceSummaryData
   onBack: () => void
 }) {
   const { data, onBack } = props
+  const t = useT()
   const [copied, setCopied] = useState(false)
+  const costChrome = formatEstimatedCost(
+    data.costStatus
+      ? {
+          status: data.costStatus,
+          ...(typeof data.estimatedCost === "number" ? { usd: data.estimatedCost } : {}),
+          ...(data.costMissing?.length ? { missing: data.costMissing } : {})
+        }
+      : typeof data.estimatedCost === "number"
+        ? { status: "estimated" as const, usd: data.estimatedCost }
+        : undefined,
+    t
+  )
 
   const isSuccess = data.status === "success"
 
@@ -99,7 +114,7 @@ export function TraceSummaryHeader(props: {
       </div>
 
       {/* 核心指标矩阵网格 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 font-mono text-caption-2-regular">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 font-mono text-caption-2-regular">
         {/* 1. 总耗时 */}
         <div className="flex flex-col gap-0.5">
           <span className="text-caption-2-regular text-text-tertiary uppercase">Duration (总耗时)</span>
@@ -129,7 +144,24 @@ export function TraceSummaryHeader(props: {
           ) : null}
         </div>
 
-        {/* 4. 模型架构 */}
+        {/* 4. COST-P3 花费 */}
+        <div className="flex flex-col gap-0.5" data-testid="trace-summary-cost" title={costChrome.title || undefined}>
+          <span className="text-caption-2-regular text-text-tertiary uppercase">{t("chat.usage.traceCostLabel")}</span>
+          {costChrome.text ? (
+            <span className="text-body-medium font-bold text-text-primary">
+              {costChrome.prefix ? (
+                <span className="mr-1 font-sans text-caption-2-regular font-normal text-text-tertiary">
+                  {costChrome.prefix}
+                </span>
+              ) : null}
+              {costChrome.text}
+            </span>
+          ) : (
+            <span className="text-body-medium font-bold text-text-tertiary">—</span>
+          )}
+        </div>
+
+        {/* 5. 模型架构 */}
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-caption-2-regular text-text-tertiary uppercase">Model (执行架构)</span>
           <div className="flex items-center gap-1.5 text-body-medium font-bold text-text-primary truncate">
@@ -144,7 +176,7 @@ export function TraceSummaryHeader(props: {
           </div>
         </div>
 
-        {/* 5. 跨度 Spans */}
+        {/* 6. 跨度 Spans */}
         <div className="flex flex-col gap-0.5">
           <span className="text-caption-2-regular text-text-tertiary uppercase">Spans (执行阶段)</span>
           <div className="flex items-center gap-1 text-body-medium font-bold text-text-primary">
@@ -157,7 +189,7 @@ export function TraceSummaryHeader(props: {
           </div>
         </div>
 
-        {/* 6. Trace ID */}
+        {/* 7. Trace ID */}
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-caption-2-regular text-text-tertiary uppercase">Trace ID</span>
           <div className="flex items-center gap-1 text-text-secondary truncate">
