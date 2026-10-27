@@ -1,6 +1,8 @@
 /**
  * M-D 本轮账本行。只读；文件行打开同一张「本轮来源」sheet。
  */
+import type { EstimatedCost } from "@enjoy-agents/ipc-contract/estimated-cost"
+
 export const RUN_LEDGER_KINDS = ["read", "edit", "command", "error", "usage"] as const
 
 export type RunLedgerKind = (typeof RUN_LEDGER_KINDS)[number]
@@ -31,6 +33,10 @@ export type RunLedgerEntry = {
   failed?: boolean
   /** 已有耗时才写；没有就不编造。 */
   durationMs?: number
+  /** COST-P3：用量行花费；没有就不画花费位。 */
+  estimatedCost?: EstimatedCost
+  /** reported 态引擎人话名。 */
+  costEngineLabel?: string
 }
 
 export type RunLedgerGroup = {

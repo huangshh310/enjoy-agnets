@@ -10,6 +10,7 @@ import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
 import { formatLedgerErrorUserText } from "./ledger-error-copy"
 import { ledgerOpensSources } from "./format-ledger-entry"
 import type { RunLedgerEntry } from "./run-ledger.types"
+import { formatEstimatedCost } from "../usage/format-estimated-cost"
 
 export function RunLedgerRow({
   entry,
@@ -135,11 +136,35 @@ function UsageRow({ entry }: { entry: RunLedgerEntry }) {
   const t = useT()
   const tokens = Number(entry.title)
   if (!Number.isFinite(tokens) || tokens <= 0) return null
+  const chrome = formatEstimatedCost(entry.estimatedCost, t, {
+    engineLabel: entry.costEngineLabel
+  })
+  const notReportedNote =
+    entry.estimatedCost?.status === "not_reported"
+      ? t("sessionOps.ledgerUsageNotReported")
+      : null
   return (
     <div data-testid="run-ledger-row" data-kind="usage" className="px-3 py-2">
-      <p className="font-mono text-caption-2-regular tabular-nums text-text-tertiary">
-        {t("sessionOps.ledgerUsageTokens", { n: formatTokenCount(tokens) })}
+      <p
+        className="flex items-baseline justify-between gap-2 font-mono text-caption-2-regular tabular-nums text-text-tertiary"
+        title={chrome.title || undefined}
+      >
+        <span>{t("sessionOps.ledgerUsageTokens", { n: formatTokenCount(tokens) })}</span>
+        {chrome.text ? (
+          <span
+            data-testid="run-ledger-usage-cost"
+            className="shrink-0 font-sans text-caption-2-regular text-text-secondary"
+          >
+            {chrome.prefix ? (
+              <span className="mr-1 text-caption-2-regular text-text-tertiary">{chrome.prefix}</span>
+            ) : null}
+            {chrome.text}
+          </span>
+        ) : null}
       </p>
+      {notReportedNote ? (
+        <p className="mt-1 font-sans text-caption-2-regular text-text-tertiary">{notReportedNote}</p>
+      ) : null}
     </div>
   )
 }
