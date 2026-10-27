@@ -1,6 +1,6 @@
 /**
- * 遥测开发者档：指标大盘 / 路由 / 链路 / 本机记录 / OTEL。
- * 默认面不渲染；打开 localStorage enjoy-agents-dev-copy=1。
+ * 遥测页指标区：监控 / 路由 / 链路 / 本机记录 / 导出。
+ * 挂在收集说明和记录开关下面。
  */
 import { useState } from "react"
 import {

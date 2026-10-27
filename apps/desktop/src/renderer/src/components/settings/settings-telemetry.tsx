@@ -1,10 +1,9 @@
 /**
- * Settings → 遥测与隐私：默认面只留收集说明与记录开关。
- * 指标大盘（Local APM / TTFO / P95）只在开发者文案档出现。
+ * Settings → 遥测与隐私：收集说明、记录开关，下面是指标页签。
+ * 开关右侧若出数字，只走人话「平均首字时间 N 秒」。
  */
 import { RiShieldKeyholeLine } from "@remixicon/react"
 import { Switch } from "@/components/ui/switch"
-import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { useObservabilityPage } from "@renderer/components/observability/use-observability-page"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { SettingsHub } from "./settings-hub"
@@ -54,7 +53,7 @@ export function TelemetrySettings() {
 
       {/* TODO(kai): 跟进 PR 补 observability.clear 后再放「清除本地记录」。现在没有接口，不画假按钮。 */}
 
-      {isDevCopyEnabled() ? <TelemetryDevPanel /> : null}
+      <TelemetryDevPanel />
     </div>
   )
 }
