@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, type ElectronApplication, type Locator, type Page } from "@playwright/test"
-import { mutateAppDbWalSafe, wipeWaitingReviewCheckpoint } from "./app-db-wal-safe"
+import { mutateAppDbWalSafe, wipeWaitingReviewCheckpoint } from "../src/main/services/app-db-wal-safe"
 import { sendComposer } from "./send-composer"
 
 export const mainEntry = join(process.cwd(), "out/main/index.js")
