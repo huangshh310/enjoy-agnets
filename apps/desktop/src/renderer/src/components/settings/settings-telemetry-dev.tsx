@@ -29,9 +29,10 @@ type TelemetryTab = "dashboard" | "routing" | "traces" | "cli" | "config"
 
 export function TelemetryDevPanel() {
   const t = useT()
-  const obs = useObservabilityPage()
-  const { preferences, update } = usePrefUpdate()
   const [tab, setTab] = useState<TelemetryTab>("dashboard")
+  // 家目录 jsonl 扫描只在「本机记录」页签。监控页签不带上它。
+  const obs = useObservabilityPage({ includeCliUsage: tab === "cli" })
+  const { preferences, update } = usePrefUpdate()
   const policy = preferences?.telemetryPolicy ?? "local"
 
   return (

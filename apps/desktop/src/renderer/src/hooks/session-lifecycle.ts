@@ -53,6 +53,8 @@ import { flushComposerDomToStore } from "./composer-dom"
 import { leaveStateSnapshot } from "./leave-state-snapshot"
 import { setComposerWritebackHeld } from "./composer-sync-lock"
 import { reportSessionFocus } from "./report-session-focus"
+import { messagesForSessionSwitch } from "./thread-paint-cache"
+import { markSessionHistoryHydrated } from "./session-history-pending"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -126,26 +128,8 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   const mainRunning = mainSays === true
   const parkIsStale = staleParkedRun(sessionId, mainSays)
   const sessionRunning = mainRunning || (parkedRunning && !parkIsStale)
-  if (!sameSession) {
-    useAttentionStore.getState().clearCompletes()
-    if (store.sessionId) {
-      // luna P3：离开的是空「新对话」就删掉（判定在 park / 存稿之前取快照）。
-      // leo BLOCK ④(c)：先把输入框 DOM 刷进 store（写回锁期间 store 可能落后于 DOM）。
-      flushComposerDomToStore()
-      discardEmptySessionOnLeave(leaveStateSnapshot(), sessionId, () => useChatStore.getState().sessionId)
-      parkForegroundRun()
-      saveCurrentSessionDraft()
-    }
-    store.setSession(sessionId, title)
-    store.setMessages([])
-    store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
-    applyComposerModel(store, sessionId)
-    useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
-    useEngineHandoffStore.getState().resetPending()
-    restoreComposerForSession(sessionId, { mainIdle: parkIsStale })
-  } else {
-    store.setSession(sessionId, title)
-  }
+  if (!sameSession) switchForegroundSession(sessionId, title, parkIsStale)
+  else store.setSession(sessionId, title)
   let rows: MessageRow[]
   try {
     rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
@@ -171,6 +155,37 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   useAttentionStore.getState().clearCompleteIfErrored(sessionId)
   reportSessionFocus(sessionId)
   queueComposerFocus()
+}
+
+/**
+ * 换到另一个会话：先停车、存稿，再和会话 id 一起写入上次离开时的转录。
+ * 没看过的会话写入空数组，舞台继续画空白占位，不闪空态问候。
+ */
+function switchForegroundSession(sessionId: string, title: string, parkIsStale: boolean): void {
+  const store = useChatStore.getState()
+  useAttentionStore.getState().clearCompletes()
+  if (store.sessionId) {
+    // luna P3：离开的是空「新对话」就删掉（判定在 park / 存稿之前取快照）。
+    // leo BLOCK ④(c)：先把输入框 DOM 刷进 store（写回锁期间 store 可能落后于 DOM）。
+    flushComposerDomToStore()
+    discardEmptySessionOnLeave(leaveStateSnapshot(), sessionId, () => useChatStore.getState().sessionId)
+    parkForegroundRun()
+    saveCurrentSessionDraft()
+  }
+  const leaving = useChatStore.getState()
+  const nextMessages = messagesForSessionSwitch({
+    leavingSessionId: leaving.sessionId,
+    leavingMessages: leaving.messages,
+    nextSessionId: sessionId
+  })
+  leaving.setSession(sessionId, title, [...nextMessages])
+  if (nextMessages.length > 0) markSessionHistoryHydrated(sessionId)
+  const next = useChatStore.getState()
+  next.setRuntimeId(pickSessionRuntime(sessionId, next.sessionRuntimes, next.preferredRuntimeId))
+  applyComposerModel(next, sessionId)
+  useChatStore.setState({ mode: modeForLoadedSession(next.sessionModes[sessionId]) })
+  useEngineHandoffStore.getState().resetPending()
+  restoreComposerForSession(sessionId, { mainIdle: parkIsStale })
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {

@@ -391,13 +391,15 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       expandedIds: [workspace.id]
     })
   },
-  setSession: (sessionId, sessionTitle) => {
+  setSession: (sessionId, sessionTitle, messages) => {
     // 换到这个会话：之前的「已回灌」标记作废，等本次回灌（luna/leo #157：A→B→A、A→空首页/创建窗→A 都不闪空态）。
     // 例外：publishCreatedComposer 先打过标的新建会话（beforeOpen），保留。
+    // 传入 messages 时和会话 id 同一次写入，避免先闪上一会话的转录。
     if (get().sessionId !== sessionId) noteSessionOpened(sessionId)
     set((state) => ({
       sessionId,
       sessionTitle,
+      ...(messages !== undefined ? { messages } : {}),
       ...(state.sessionId === sessionId ? {} : { notice: null, errorRetry: null }), // 换会话：目标属于旧会话
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node

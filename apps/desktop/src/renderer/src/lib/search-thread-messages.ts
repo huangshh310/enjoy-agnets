@@ -1,6 +1,7 @@
 /**
  * ⌘L 搜当前线程消息。满 2 个字符才搜，最近的在前。
  */
+import { requestTurnReveal } from "./thread-turn-reveal.ts"
 
 export type ThreadMessageHit = {
   id: string
@@ -31,7 +32,12 @@ export function searchThreadMessages(
 }
 
 export function revealThreadMessage(messageId: string) {
-  document
-    .querySelector(`[data-thread-message="${CSS.escape(messageId)}"]`)
-    ?.scrollIntoView({ block: "center" })
+  requestTurnReveal(messageId)
+  const scroll = () => {
+    document
+      .querySelector(`[data-thread-message="${CSS.escape(messageId)}"]`)
+      ?.scrollIntoView({ block: "center" })
+  }
+  scroll()
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(scroll)
 }

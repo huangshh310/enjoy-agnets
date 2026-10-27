@@ -24,6 +24,7 @@ const { useChatStore } = await import("../stores/chat-store.ts")
 const { useAttentionStore } = await import("../stores/attention/attention-store.ts")
 const { dispatchAgentEvent } = await import("../stores/attention/dispatch-agent-event.ts")
 const { loadSession } = await import("./session-lifecycle.ts")
+const { clearThreadPaintCache } = await import("./thread-paint-cache.ts")
 const toolPart = { type: "tool-write_file", toolCallId: "tc1", state: "input-available", input: { path: "a.txt" } }
 const rows = () => [
   { id: "u1", role: "user", content: "写个文件", createdAt: 3 },
@@ -35,6 +36,7 @@ function mainSays(sessionId: string, runId: string | null, onMessages?: () => vo
   over[".inbox.listPendingApprovals"] = () => ({ items: [], restoreSettled: true })
 }
 function freshRenderer() {
+  clearThreadPaintCache()
   useAttentionStore.setState({ items: [], parks: {}, runSessions: {} } as never)
   useChatStore.setState({ sessionId: null, running: false, runId: null, messages: [], pendingApproval: null, error: null, notice: null, pendingStreamEvents: [] } as never)
 }

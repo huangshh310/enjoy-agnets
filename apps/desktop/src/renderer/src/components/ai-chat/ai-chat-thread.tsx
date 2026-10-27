@@ -15,6 +15,7 @@ import {
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { DeferredThreadTurn } from "./thread/deferred-thread-turn"
 import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"
@@ -69,6 +70,8 @@ export function AiChatThread({
               previous={visible[index - 1]}
               cutAt={handoffCut}
               withNotice={message.id === anchorId}
+              index={index}
+              count={visible.length}
             />
           ))}
           {last && isLegacyHandoffTurn(last.createdAt, handoffCut) ? <HandoffLegacyDivider /> : null}
@@ -108,25 +111,29 @@ function ThreadTurnBlock(props: {
   previous?: ThreadMessage
   cutAt: number | undefined
   withNotice?: boolean
+  index: number
+  count: number
 }) {
-  const { message, previous, cutAt, withNotice } = props
+  const { message, previous, cutAt, withNotice, index, count } = props
   const showCut =
     previous != null &&
     isLegacyHandoffTurn(previous.createdAt, cutAt) &&
     !isLegacyHandoffTurn(message.createdAt, cutAt)
   const legacy = isLegacyHandoffTurn(message.createdAt, cutAt)
-  const turn =
-    message.role === "user" ? (
-      <UserTurn message={message} />
-    ) : (
-      <AssistantTurn message={message} />
-    )
+  const turn = message.role === "user" ? <UserTurn message={message} /> : <AssistantTurn message={message} />
   return (
-    <div className={legacy ? "opacity-70" : undefined}>
-      {showCut ? <HandoffLegacyDivider /> : null}
-      {turn}
-      {withNotice ? <ThreadNoticeBanner /> : null}
-    </div>
+    <DeferredThreadTurn
+      messageId={message.id}
+      index={index}
+      count={count}
+      streaming={Boolean(message.streaming)}
+    >
+      <div className={legacy ? "opacity-70" : undefined}>
+        {showCut ? <HandoffLegacyDivider /> : null}
+        {turn}
+        {withNotice ? <ThreadNoticeBanner /> : null}
+      </div>
+    </DeferredThreadTurn>
   )
 }
 

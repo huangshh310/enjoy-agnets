@@ -5,6 +5,7 @@
 import { watch, type FSWatcher } from "node:fs"
 import { BrowserWindow } from "electron"
 import { WorkspaceChangedEvent } from "@enjoy-agents/ipc-contract"
+import { isIgnoredWorkspaceEventPath } from "@enjoy-agents/ipc-contract/workspace-event-path"
 import { getWorkspace } from "./workspace"
 import { shouldPollWorkspaceWatch, workspaceFingerprint } from "./workspace-watch-fingerprint.ts"
 
@@ -20,7 +21,10 @@ export async function watchWorkspace(workspaceId: string): Promise<{ ok: true }>
   if (workspace.kind === "ssh") return { ok: true }
   const watcher = watch(workspace.rootPath, { recursive: true }, (_event, filename) => {
     if (!filename) return
-    emitWorkspaceChanged(workspaceId, String(filename).replaceAll("\\", "/"))
+    const relativePath = String(filename).replaceAll("\\", "/")
+    // 依赖目录和构建产物的变更不进渲染进程。
+    if (isIgnoredWorkspaceEventPath(relativePath)) return
+    emitWorkspaceChanged(workspaceId, relativePath)
   })
   watcher.on("error", () => stopWorkspaceWatch(workspaceId))
   watchers.set(workspaceId, watcher)

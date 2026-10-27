@@ -42,7 +42,8 @@ export function CliUsagePieChart({
   return (
     <div className="flex items-center gap-5">
       <div className="relative size-[9.5rem] shrink-0">
-        <ResponsiveContainer width="100%" height="100%">
+        {/* 父级 size-[9.5rem] = 152。百分比高度会让测量来回变。 */}
+        <ResponsiveContainer width="100%" height={152}>
           <PieChart>
             <Pie
               data={slices}

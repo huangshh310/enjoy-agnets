@@ -97,6 +97,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-io.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/workspace-event-path",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-event-path.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/host-inject",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/host-inject.ts")
         },
@@ -218,6 +222,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/workspace-io",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-io.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/workspace-event-path",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-event-path.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/host-inject",

@@ -1,12 +1,12 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-27（遥测页开关下恢复指标页签；trace 的 not_reported 不留花费格）；2026-10-10（默认面不承诺「不上传」；otel 才说发到配置地址）
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-27（本机记录扫描只在该页签；遥测页开关下恢复指标页签；trace 的 not_reported 不留花费格）；2026-10-10（默认面不承诺「不上传」；otel 才说发到配置地址）
 
 ## 当前真相
 
 默认 `telemetryPolicy=local`。记录 kind / status / token / 耗时 / TTFO / tokens/s / 错误分类。prompt、文件内容、工具完整参数、API Key、`runtimeContext` 经 `redactMetric` 脱敏。外部 OTEL 默认关，需用户显式 `observability.setPolicy` 并配置合法 `http(s)` endpoint 才会 POST OTLP JSON。CSV 导出含 `ttfoMs` / `tokensPerSecond`。诊断页展示 TTFO。
 
-`#/settings/telemetry` 默认面（jojo）：两块——收集说明 + 记录开关。开关「记录运行数据」，说明「默认记录在这台电脑上。」接线 `telemetryPolicy`：开=`local`（若已是 `otel` 则保持）、关=`off`。kai **尚未**用测试钉死 `local` 零出站，默认面**禁止**写「不上传 / 只存在本机」当承诺（TODO kai 跟进 PR）。`policy=otel` 时收集说明加一句「同时发送到你配置的地址」，端点原文只在导出页。**没有**匿名上传到 Enjoy 的独立设置，禁止写「帮助改进 / 匿名使用统计」。没有 `observability.clear` IPC，默认面**不画**「清除本地记录」（TODO kai 跟进 PR）。默认面若出数字，收集说明右侧只走「平均首字时间 {n} 秒」。开关下面是指标页签：监控、模型路由、链路、本机记录、导出。端点原文在导出页，且只在 `policy=otel` 时出现。页面本身不藏，开关始终可见。不要再把整面板藏进 `enjoy-agents-dev-copy`。
+`#/settings/telemetry` 默认面（jojo）：两块——收集说明 + 记录开关。开关「记录运行数据」，说明「默认记录在这台电脑上。」接线 `telemetryPolicy`：开=`local`（若已是 `otel` 则保持）、关=`off`。kai **尚未**用测试钉死 `local` 零出站，默认面**禁止**写「不上传 / 只存在本机」当承诺（TODO kai 跟进 PR）。`policy=otel` 时收集说明加一句「同时发送到你配置的地址」，端点原文只在导出页。**没有**匿名上传到 Enjoy 的独立设置，禁止写「帮助改进 / 匿名使用统计」。没有 `observability.clear` IPC，默认面**不画**「清除本地记录」（TODO kai 跟进 PR）。默认面若出数字，收集说明右侧只走「平均首字时间 {n} 秒」。开关下面是指标页签：监控、模型路由、链路、本机记录、导出。端点原文在导出页，且只在 `policy=otel` 时出现。页面本身不藏，开关始终可见。不要再把整面板藏进 `enjoy-agents-dev-copy`。平均首字时间只读 `observability.metrics`。`observability.cliUsage` 扫家目录，只在打开「本机记录」页签时请求。环形图用显式像素高度，不用 `height="100%"`。
 
 路由：`#/observability` 进 `#/settings/telemetry`。页签是监控、模型路由、链路、本机记录、导出。事件流回放组件还在，这一页没有单独页签。视图内容：
 1. **监控与图表大盘 (Dashboard)**：支持时间范围窗口切片（1h / 6h / 24h / 7d / 全部）与本地实时探针状态指示；顶栏提供快捷状态分段胶囊（全部/成功/异常/慢调用）与模型联动筛选；4 大核心 KPI 指标卡嵌入原生 SVG Sparkline 迷你时序走势微图并集成 P50/P95 延迟、峰值速率与 Token 输入输出细分；配备 **AI APM 智能性能洞察与优化诊断卡片 (ObservabilityInsightsCard)**，基于采样自动诊断长尾瓶颈、异常归因与流式效率；全面采用 Recharts `ResponsiveContainer` 矢量自适应渲染带 P95 阈值标线的耗时与 TTFO 双轨平滑贝塞尔面积图、带平均基准线的 Prompt/Completion 堆叠柱与 TPS 吞吐复合图；多维分布矩阵重构为平衡 Bento 网格，包含模型负载与 Token 消耗全景（支持交互过滤）、系统健康度 Donut 环形图、异常根因分析排行、工作负载场景与延迟 SLA 阶梯分布；底部配备**慢调用与异常瓶颈聚焦看板 (ObservabilitySlowTraces)**，支持双视角（慢调用异常聚焦 / 最近执行流）与一键直达火焰图时间线（`Flame Chart`）与 Span 甘特树全景诊断；
@@ -46,6 +46,8 @@
 - Ping 必须打 `settings.pingProvider`（已存供应商 id + kind），禁止用 `observability.metrics` 耗时或 `Math.max(ms, 45)` 假装连通。没有 `providerId` 就禁用探测，不要报假成功。
 - 侧栏模型数量用 `store.models.length`，0 就是 0，禁止 `|| 10`。上游列没有协议信息时只显示模型 id，禁止拼 `Endpoint/{id}`。
 - 健康态看该行是否已配置模型 + 调用成功率，不要用全局 `hasKey` 一刀切。
+- 打开遥测页不得顺手调 `observability.cliUsage`。那条会在主进程同步扫家目录 jsonl。只有「本机记录」页签挂上才请求。平均首字时间走 `useTelemetryMetrics`（query `["metrics"]`）。
+- `CliUsagePieChart` 的 `ResponsiveContainer` 用 `height={152}`。`height="100%"` 会让测量高度来回变，渲染进程一直重绘。
 - `observability.cliUsage` 不得把 prompt、jsonl 原文或绝对路径交给 renderer。目录不存在是空态，不是 0 填充条。导轨 CLI 都扫盘；没有用量字段是 scanned-empty，不要写「本版本不扫描」。Cursor 禁止读 `store.db` / 禁止扫 `node_modules`。Grok 只接受 `sessions/<group>/<id>/usage.json`。OMP 只累加 `message.usage` 数字，不把 `cost` 美元当账单。Codex 拆分全 0 画 `—`。混合有/无拆分时脉冲行不画输入/输出/缓存。过滤走 client-side：KPI 用源级字段，表行按 `sourceIds` 筛选。贡献列费用 / token / 占比定宽对齐；脉冲行合计与会话同一栅格。
 - 本机记录滚动与 Recharts 规范：`observability-page.tsx` 中 `cliUsage` 视图必须由外层 `<div className="min-h-0 flex-1 overflow-y-auto">` 统一承担滚动，内部组件不得嵌套第二层 `overflow-y-auto` 以免外层剪裁导致无法滚动；CSS Grid 内的 Recharts 组件（如 `CliUsageAreaChart`、`CliUsageGallery`）必须设置显式像素高度（如 `height={210}` / `height={240}`），禁止在 Grid 单元中使用 `height="100%"` 导致高度测量坍塌；环形图图例禁止添加 `overflow-hidden` 以免多源被截断。
 

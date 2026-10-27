@@ -4,6 +4,7 @@
 import type { TranslateFn } from "@renderer/i18n"
 import { personasForSubagents } from "../thinking/subagent-persona"
 import { subagentPersonaLabel } from "../thinking/delegate-step"
+import { requestTurnReveal } from "@renderer/lib/thread-turn-reveal"
 import { focusDelegate } from "./delegate-focus"
 import type { DelegatePillItem } from "./select-current-delegates"
 
@@ -42,6 +43,7 @@ export function SubagentPillList({
 }
 
 function openDelegate(item: DelegatePillItem, close: () => void): void {
+  requestTurnReveal(item.messageId)
   document.querySelector(`[data-thread-message="${item.messageId}"]`)?.scrollIntoView({ block: "center" })
   focusDelegate(item.id)
   close()

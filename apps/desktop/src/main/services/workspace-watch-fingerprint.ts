@@ -3,8 +3,8 @@
  */
 import { readdir, stat } from "node:fs/promises"
 import { join } from "node:path"
+import { isIgnoredWorkspaceDirName } from "@enjoy-agents/ipc-contract/workspace-event-path"
 
-const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
 const WALK_LIMIT = 200
 
 export function shouldPollWorkspaceWatch(platform = process.platform): boolean {
@@ -25,7 +25,7 @@ export async function workspaceFingerprint(rootPath: string, limit = WALK_LIMIT)
       continue
     }
     for (const entry of entries) {
-      if (IGNORED.has(entry.name)) continue
+      if (isIgnoredWorkspaceDirName(entry.name)) continue
       const child = rel === "." ? entry.name : `${rel}/${entry.name}`
       try {
         const info = await stat(join(rootPath, child))

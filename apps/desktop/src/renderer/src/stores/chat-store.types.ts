@@ -333,6 +333,6 @@ export type ChatStore = {
       recap?: string | null
     }>
   ) => void
-  setSession: (sessionId: string, title: string) => void
+  setSession: (sessionId: string, title: string, messages?: ThreadMessage[]) => void
   setMessages: (messages: ThreadMessage[]) => void
 }

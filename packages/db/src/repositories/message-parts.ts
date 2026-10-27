@@ -35,3 +35,31 @@ export function listMessageParts(db: AppDatabase, messageId: string): MessagePar
     )
     .all(messageId) as MessagePartRow[]
 }
+
+/**
+ * 一次取出某个会话的全部 parts。
+ * 按消息逐条查会在切换时长会话时打满主进程；消息顺序由调用方的 messages 查询决定，这里只保证同一条消息内 idx 升序。
+ */
+export function listMessagePartsForSession(db: AppDatabase, sessionId: string): MessagePartRow[] {
+  return db
+    .prepare(
+      `SELECT p.id as id, p.message_id as messageId, p.idx as idx, p.type as type,
+              p.payload as payload, p.created_at as createdAt
+       FROM message_parts p
+       INNER JOIN messages m ON m.id = p.message_id
+       WHERE m.session_id = ?
+       ORDER BY p.message_id ASC, p.idx ASC`
+    )
+    .all(sessionId) as MessagePartRow[]
+}
+
+/** 把会话级 parts 按 messageId 归组，组内保持查询给出的 idx 顺序。 */
+export function groupMessageParts(rows: readonly MessagePartRow[]): Map<string, MessagePartRow[]> {
+  const grouped = new Map<string, MessagePartRow[]>()
+  for (const row of rows) {
+    const list = grouped.get(row.messageId)
+    if (list) list.push(row)
+    else grouped.set(row.messageId, [row])
+  }
+  return grouped
+}

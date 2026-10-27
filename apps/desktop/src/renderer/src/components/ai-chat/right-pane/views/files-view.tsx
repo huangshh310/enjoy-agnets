@@ -7,6 +7,11 @@ import { RiFolder3Line } from "@remixicon/react"
 import { remapAfterMove } from "@enjoy-agents/ipc-contract"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { getIde } from "@renderer/lib/ide"
+import {
+  createChangeInvalidator,
+  isIgnoredWorkspaceEventPath,
+  WORKSPACE_CHANGE_DEBOUNCE_MS
+} from "@renderer/hooks/workspace-change-invalidation"
 import { readWorkspaceFile } from "@renderer/lib/read-workspace-file"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { SourceFilePreview } from "../../source-file-preview"
@@ -45,12 +50,18 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
   useEffect(() => {
     if (!workspaceId) return
     // 工作区级已在 useWorkspaceChangeInvalidation watch；这里幂等重订，只刷新树。
+    // 噪声目录丢掉，连续保存合并成一次，避免整棵树按文件数拆掉重建。
     void getIde().workspace.watch({ workspaceId })
+    const invalidator = createChangeInvalidator({
+      debounceMs: WORKSPACE_CHANGE_DEBOUNCE_MS,
+      invalidate: () => setTreeEpoch((value) => value + 1)
+    })
     const unsubscribe = getIde().workspace.onChanged((event) => {
-      if (event.workspaceId !== workspaceId) return
-      setTreeEpoch((value) => value + 1)
+      if (event.workspaceId !== workspaceId || isIgnoredWorkspaceEventPath(event.path)) return
+      invalidator.schedule()
     })
     return () => {
+      invalidator.cancel()
       unsubscribe()
     }
   }, [workspaceId])

@@ -16,7 +16,16 @@ import type {
 } from "./types/observability-ui.types"
 import { useAdaptivePageSize } from "./use-adaptive-page-size"
 
-export function useObservabilityPage() {
+/** 平均首字时间只用指标，不顺手扫家目录 jsonl。 */
+export function useTelemetryMetrics() {
+  return useQuery({
+    queryKey: ["metrics"],
+    enabled: hasIde(),
+    queryFn: () => getIde().observability.metrics({ limit: 200 }) as Promise<TelemetryMetric[]>
+  })
+}
+
+export function useObservabilityPage(options?: { includeCliUsage?: boolean }) {
   const t = useT()
   const queryClient = useQueryClient()
   const [activeView, setActiveView] = useState<ActiveObservabilityView>("dashboard")
@@ -29,15 +38,13 @@ export function useObservabilityPage() {
   const [page, setPage] = useState(1)
   const { pageSize, setPageSize } = useAdaptivePageSize()
 
-  const metricsQuery = useQuery({
-    queryKey: ["metrics"],
-    enabled: hasIde(),
-    queryFn: () => getIde().observability.metrics({ limit: 200 }) as Promise<TelemetryMetric[]>
-  })
+  const metricsQuery = useTelemetryMetrics()
   const metrics = metricsQuery.data ?? []
+  // 本机记录要扫家目录。只有打开该页签，或旧舞台切到 cliUsage 时才请求。
+  const cliUsageEnabled = options?.includeCliUsage === true || activeView === "cliUsage"
   const cliUsageQuery = useQuery({
     queryKey: ["cliUsage"],
-    enabled: hasIde(),
+    enabled: hasIde() && cliUsageEnabled,
     queryFn: () => getIde().observability.cliUsage() as Promise<CliTranscriptUsage>
   })
   const cliUsage = cliUsageQuery.data

@@ -9,6 +9,11 @@ test("只认当前工作区的 onChanged", () => {
   assert.equal(shouldInvalidateChange({ workspaceId: "ws-a", path: "a.ts" }, "ws-a"), true)
   assert.equal(shouldInvalidateChange({ workspaceId: "ws-b", path: "a.ts" }, "ws-a"), false)
   assert.equal(shouldInvalidateChange({ workspaceId: "ws-a", path: "a.ts" }, null), false)
+  assert.equal(
+    shouldInvalidateChange({ workspaceId: "ws-a", path: "node_modules/vite/dist/client.js" }, "ws-a"),
+    false
+  )
+  assert.equal(shouldInvalidateChange({ workspaceId: "ws-a", path: ".git/index" }, "ws-a"), false)
 })
 
 test("连续 schedule 只 invalidate 一次", async () => {

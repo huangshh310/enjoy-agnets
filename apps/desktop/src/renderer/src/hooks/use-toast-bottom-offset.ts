@@ -27,7 +27,8 @@ function readToastBottomOffset(): number {
 }
 
 function subscribeToastClearance(setOffset: (value: number) => void): () => void {
-  const ro = new ResizeObserver(() => setOffset(readToastBottomOffset()))
+  let last = Number.NaN
+  const ro = new ResizeObserver(() => schedule())
   let watched = new Set<Element>()
   const syncTargets = () => {
     const next = new Set<Element>([
@@ -38,6 +39,9 @@ function subscribeToastClearance(setOffset: (value: number) => void): () => void
     for (const node of next) if (!watched.has(node)) ro.observe(node)
     watched = next
     const nextOffset = readToastBottomOffset()
+    // 数字没变就停。否则写 CSS 变量会再触发 ResizeObserver，把主线程占满。
+    if (nextOffset === last) return
+    last = nextOffset
     applyToastBottomCssVar(nextOffset, document.documentElement)
     setOffset(nextOffset)
   }

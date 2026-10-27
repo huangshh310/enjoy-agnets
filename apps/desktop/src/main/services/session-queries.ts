@@ -1,5 +1,5 @@
 import type { SessionPatchInput, SessionSummary } from "@enjoy-agents/ipc-contract"
-import { listMessageParts } from "@enjoy-agents/db"
+import { groupMessageParts, listMessagePartsForSession } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
 import { getWorkspace } from "./workspace"
@@ -101,9 +101,11 @@ export async function listMessages(sessionId: string) {
   }>
   // jojo P1：列消息只读。旧的按导入时间窗补 file part（backfillUserFileParts）会把别的会话 / 草稿里的图
   // 写进本会话纯文本用户轮（切换、重启时触发），已删除。附件只在发送时随消息落库。
+  // parts 按会话一次取出。逐条查会让长会话的切换停在主进程上。
+  const partsByMessage = groupMessageParts(listMessagePartsForSession(getDatabase(), sessionId))
   return rows.map((row) => ({
     ...row,
-    parts: listMessageParts(getDatabase(), row.id).map((part) => JSON.parse(part.payload) as unknown)
+    parts: (partsByMessage.get(row.id) ?? []).map((part) => JSON.parse(part.payload) as unknown)
   }))
 }
 

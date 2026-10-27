@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档结清 cancelled；无项目空态；stale last 按 MRU）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-27（监视丢掉 node_modules 等噪声目录；文件树防抖刷新）；2026-10-10（归档结清 cancelled；无项目空态；stale last 按 MRU）
 
 ## 当前真相
 
@@ -53,7 +53,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 删除入口布局：`app-shell/chrome/context-column.tsx`（Chat=`AiChatSidebar`，其它=`ModuleNav`）、`activity-bar.tsx` / `module-registry.ts`（对话轨 `#/`，设置轨 `#/settings/general`）、`sidebar/project-popover.tsx`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`；renderer `right-pane/views/workspace-terminal.tsx` + `views/terminal/`（addons / WebGL 回落 / 查找 / 外链）
-- 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
+- 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`。噪声路径：`@enjoy-agents/ipc-contract/workspace-event-path`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`
 - 系统浏览器预览：`workspace-open-preview.ts`、`composer/session-review/preview-open/`
 
@@ -62,7 +62,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - **隐患**：终端 WebGL context loss 不解掉 addon 会留下白画布。正确做法：`onContextLoss` 立刻 `dispose`，回落 xterm DOM renderer；`loadAddon` 抛错同样回落，不要重试死循环。
 - **隐患**：终端查找条聚焦后 `activeElement` 不再是 `.xterm`，⌘F 会被 `chat.find`（`!terminalFocus`）抢走，甚至冒出 Chromium 页内查找。正确做法：`data-terminal-pane` 也算终端焦点；查找热键 capture + `preventDefault`。
 
-- Files 预览已接 `WorkspaceEditor`（本地 monaco，不走 CDN）+ `workspace.writeFile`。⌘/Ctrl+S 与顶栏保存同一条路径。这是单文件编辑，不是多标签 LSP IDE。`workspace.watch` 用 `fs.watch` recursive；Windows 另开指纹轮询（最多 200 条）补漏事件，不要假装 inotify。
+- Files 预览已接 `WorkspaceEditor`（本地 monaco，不走 CDN）+ `workspace.writeFile`。⌘/Ctrl+S 与顶栏保存同一条路径。这是单文件编辑，不是多标签 LSP IDE。`workspace.watch` 用 `fs.watch` recursive；Windows 另开指纹轮询（最多 200 条）补漏事件，不要假装 inotify。`node_modules`、`.git`、`dist`、`out`、`.next`、`.turbo`、`coverage`、`build` 不发 `workspace.changed`，Git 失效和文件树也不吃这些路径。文件树连续变更合并成一次（250ms），不要每条事件用新 `key` 拆掉整棵树。
 - Files 树拖拽走 `workspace.move`（`workspace-move.ts` / `workspace-rename.ts` + `workspace-move-plan.ts`）。renderer 不 `fs.rename`。不要和 Review 改宽分隔条、也不要和 Composer 附件 drop 搞混。
 - Agent `git_log`（`workspace-git-agent-log.ts`）是线性 porcelain 文本，limit 默认 20、上限 100，path jail。`git_diff` 的 path 同样走 `resolveInsideWorkspace`。不要和 Review `workspace.gitLog` 的 structured `commits[]` 混用。
 - **隐患**：路径 jail 只做字符串相对检查时，工作区内指向外部的符号链接会跟着写出去。正确做法：`resolveInsideWorkspace` 对已存在前缀 `realpath`。`toWorkspaceRelative` 必须 **两边** 都跟 realpath：macOS `/tmp` → `/private/tmp`，只解析根会把工作区文件显示成 `../../../tmp/...`。

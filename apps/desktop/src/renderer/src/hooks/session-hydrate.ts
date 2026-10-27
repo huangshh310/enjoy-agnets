@@ -1,7 +1,6 @@
 /**
  * 把库行折进前台 store。世代计数在 session-hydrate-generation.ts，避免测试加载合约入口。
  */
-import { migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../stores/chat-store"
 import { takeHeldApprovalResolved } from "../stores/held-approval-resolved"
 import { useAttentionStore } from "../stores/attention/attention-store"
@@ -12,6 +11,7 @@ import { applyFinishedHydrate } from "./session-hydrate-finish"
 import { noticeAfterRestartHydrate } from "./hydrate-restart-notice"
 import { shouldClearErrorOnSwitch } from "./session-switch-error"
 import { markSessionHistoryHydrated } from "./session-history-pending"
+import { rememberThread, shouldReplaceThreadPaint } from "./thread-paint-cache"
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]
@@ -42,8 +42,7 @@ export function applySessionHydrate(input: {
       running
     },
     (next) => {
-      restoreUiMessages(input.dbRows)
-      latest.setMessages(next)
+      publishHydratedMessages(input.sessionId, input.sameSession, next)
     }
   )
   if (!ok) return false
@@ -80,13 +79,20 @@ function tailStillRunning(sessionId: string, mainRunning: boolean): boolean {
   return live.sessionId === sessionId && live.running === true
 }
 
-function restoreUiMessages(rows: SessionMessageRow[]) {
-  safeValidateUIMessages(
-    rows.map((row) => ({
-      id: row.id,
-      role: row.role,
-      parts: row.parts && row.parts.length > 0 ? row.parts : migrateContentToParts(row.content),
-      createdAt: row.createdAt
-    }))
-  )
+/**
+ * 切会话且正文、工具状态都没变：留着已经画上的那份，不再 setMessages。
+ * 同会话回灌（乐观气泡、附件合并）始终写入。
+ */
+function publishHydratedMessages(
+  sessionId: string,
+  sameSession: boolean,
+  next: ReturnType<typeof useChatStore.getState>["messages"]
+): void {
+  const live = useChatStore.getState()
+  if (!sameSession && !shouldReplaceThreadPaint(live.messages, next)) {
+    rememberThread(sessionId, live.messages)
+    return
+  }
+  rememberThread(sessionId, next)
+  live.setMessages(next)
 }

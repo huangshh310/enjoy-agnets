@@ -4,7 +4,7 @@
  */
 import { RiShieldKeyholeLine } from "@remixicon/react"
 import { Switch } from "@/components/ui/switch"
-import { useObservabilityPage } from "@renderer/components/observability/use-observability-page"
+import { useTelemetryMetrics } from "@renderer/components/observability/use-observability-page"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { SettingsHub } from "./settings-hub"
 import { usePrefUpdate } from "./settings-pref"
@@ -14,11 +14,11 @@ import { useT } from "@renderer/i18n"
 
 export function TelemetrySettings() {
   const t = useT()
-  const obs = useObservabilityPage()
+  const metrics = useTelemetryMetrics()
   const { preferences, update } = usePrefUpdate()
   const policy = preferences?.telemetryPolicy ?? "local"
   const recording = policy !== "off"
-  const avgTtfo = formatAvgTtfoSeconds(obs.metrics)
+  const avgTtfo = formatAvgTtfoSeconds(metrics.data ?? [])
   const face = telemetryFaceKeys(policy)
   const collectDesc = t(`settings.telemetry.${face.collect}`)
 
