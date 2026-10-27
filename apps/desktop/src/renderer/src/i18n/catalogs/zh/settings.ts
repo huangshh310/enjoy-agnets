@@ -1263,6 +1263,7 @@ export const zhSettings = {
     outputPriceShort: "输出 $/M",
     cacheReadPriceShort: "缓存读 $/M",
     cacheWritePriceShort: "缓存写 $/M",
+    reasoningPriceShort: "推理 $/M",
     pricePerMillionHint: "美元 / 百万 tokens；留空则用快照或视为未知",
     reasoningFamily: "推理家族",
     familyInferred: "推断为 {family}",

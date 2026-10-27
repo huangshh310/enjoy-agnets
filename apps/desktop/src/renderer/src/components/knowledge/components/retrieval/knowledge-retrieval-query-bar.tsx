@@ -28,7 +28,7 @@ export function KnowledgeRetrievalQueryBar({
     <div className="relative flex items-center gap-2">
       <BorderBeam
         size="md"
-        colorVariant="ocean"
+        colorVariant="colorful"
         theme="auto"
         active={isSearching}
         strength={isSearching ? 0.75 : 0}

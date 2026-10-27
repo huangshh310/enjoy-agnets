@@ -6,6 +6,7 @@ import {
   collectRunLedger,
   groupRunLedger,
   lastAssistantTurn,
+  turnHasLedger,
   visibleLedgerEntries
 } from "./collect-run-ledger.ts"
 import { ledgerGroupDefaultOpen, ledgerOpensSources } from "./format-ledger-entry.ts"
@@ -211,6 +212,20 @@ test("只读的文件保留；同一 path 既读又改时只留改", () => {
       ["read", "keep.ts"],
       ["edit", "app.css"]
     ]
+  )
+})
+
+test("纯用量轮没有工具也能打开账本；没报 token 则不能", () => {
+  const message = { id: "a", tools: [] as const }
+  assert.equal(turnHasLedger(message), false)
+  assert.equal(turnHasLedger(message, 0), false)
+  assert.equal(turnHasLedger(message, { tokens: 840 }), true)
+  assert.equal(
+    turnHasLedger(null, {
+      tokens: 12,
+      estimatedCost: { status: "local_unbilled" }
+    }),
+    true
   )
 })
 

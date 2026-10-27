@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（macOS 关光窗口不 flush）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-27（gpu-info-update 不再回叫 getGPUInfo；加载中不排 executeJavaScript；macOS 关光窗口不 flush）
 
 ## 当前真相
 
@@ -10,7 +10,7 @@
 - `backgroundColor: "#00000000"`。macOS 注入 `vibrancy: "fullscreen-ui"`。Windows **不要** `backgroundMaterial: "acrylic"`：acrylic 铺满矩形 HWND，CSS `rounded-2xl` 切不掉四角。磨砂只走 `WindowFrame` + `skins/glass.css`。
 - 默认 1440×920，最小 1100×720。`ENJOY_E2E_STUB=1` 且未打包时最小降到 400×300，便于 733×480 巡检；正式包仍是 1100×720
 - `autoHideMenuBar: true`
-- `webPreferences.additionalArguments` 带 `--enjoy-gpu-compositing=on|off`。`app.whenReady` 后读 `app.getGPUFeatureStatus()` **和** `app.getGPUInfo("complete")`：`gpu_compositing` / `webgl` 必须是硬件 `enabled*` 才写 `on`。`disableHardwareAcceleration` / `--disable-gpu` / SwiftShader / LLVMpipe / `--use-gl=disabled` / `--use-angle=swiftshader` 一律 `off`。`child-process-gone` type=GPU 立刻 off；`gpu-info-update` 再读 info。preload 启动时写到 `html[data-gpu-compositing]`，不新开 IPC。e2e stub 默认仍 `disableHardwareAcceleration()`；`ENJOY_E2E_ALLOW_GPU=1` 才跳过。
+- `webPreferences.additionalArguments` 带 `--enjoy-gpu-compositing=on|off`。`app.whenReady` 后读 `app.getGPUFeatureStatus()` **和** `app.getGPUInfo("complete")`：`gpu_compositing` / `webgl` 必须是硬件 `enabled*` 才写 `on`。`disableHardwareAcceleration` / `--disable-gpu` / SwiftShader / LLVMpipe / `--use-gl=disabled` / `--use-angle=swiftshader` 一律 `off`。`child-process-gone` type=GPU 立刻 off；`gpu-info-update` 只读已经更新的 `getGPUFeatureStatus()`，不再在回调里调用 `getGPUInfo("complete")`。页面 `isLoading` 时不 `executeJavaScript`。`dom-ready` 用当时旗标写一次；加载过程中旗标又变了，同一 `webContents` 只挂一次 `did-finish-load`，加载结束后补写最新旗标。禁止改挂 `did-stop-loading`。preload 启动时写到 `html[data-gpu-compositing]`，不新开 IPC。e2e stub 默认仍 `disableHardwareAcceleration()`；`ENJOY_E2E_ALLOW_GPU=1` 才跳过。
 
 路由根用 `WindowFrame` 包一层：外框 `rounded-2xl` + `border-border-button-default` + `bg-background-full`；最大化时 `rounded-none border-0` 贴边。`html` / `body` / `#root` 必须透明，否则四角会露出方底。顶栏 `WindowTitleBar`（高 36px）；内容区可选择文本。
 
@@ -55,6 +55,7 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 
 ## 已知坑
 
+- **隐患**：`gpu-info-update` 里再调 `app.getGPUInfo("complete")` 会把同一事件打回来。每次发布都 `executeJavaScript`，页面还在加载时 Electron 用 `once('did-stop-loading')` 排队，启动日志出现 `11 did-stop-loading listeners`，随后监听一直涨，窗口转不动。正确做法：这个事件只读 `getGPUFeatureStatus()`；`getGPUInfo("complete")` 只在启动时拉一次，且进行中不重入。`isLoading()` 为真时不排脚本。`dom-ready` 写当时的旗标；若 complete info 在 `dom-ready` 之后、加载结束之前才到，不能把这次发布丢掉，否则硬件合成会停在 off。加载中记住最新旗标，`did-finish-load` 补写一次。不要在加载中 `executeJavaScript`，也不要改用 `did-stop-loading`。
 - `transparent: true` + 无阴影时，圆角靠 `WindowFrame` 的 `overflow-hidden` + `rounded-2xl` 裁切。`html`/`body` 若再铺 `background-full`，四角会露出方块。Windows 不要开 acrylic 抢 HWND。
 - Windows 透明无边框上 `isMaximized()` 常为 false，`unmaximize()` 空操作，标题栏 drag 双击也不会还原。按钮仍显示 □。切换必须按 workArea 记忆 bounds，不要只调用 `maximize()`/`unmaximize()`。
 - 在 drag 区域里放输入框 / 下拉必须单独标 `no-drag`，否则无法聚焦。

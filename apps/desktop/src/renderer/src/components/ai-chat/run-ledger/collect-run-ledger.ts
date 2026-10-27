@@ -37,6 +37,27 @@ export type CollectRunLedgerUsage = {
   costEngineLabel?: string
 }
 
+/** 顶栏开关和账本共用这一袋。没报 token 就不放 tokens，用量行自然不出现。 */
+export function ledgerUsageBag(input: {
+  tokens: number | null
+  estimatedCost?: CollectRunLedgerUsage["estimatedCost"]
+  costEngineLabel?: string
+}): CollectRunLedgerUsage {
+  return {
+    ...(input.tokens != null ? { tokens: input.tokens } : {}),
+    ...(input.estimatedCost ? { estimatedCost: input.estimatedCost } : {}),
+    ...(input.costEngineLabel ? { costEngineLabel: input.costEngineLabel } : {})
+  }
+}
+
+/** 顶栏开关和账本同一份：无工具但有实测用量时也要能打开。 */
+export function turnHasLedger(
+  message: Pick<ThreadMessage, "tools" | "id"> | null,
+  usage?: number | CollectRunLedgerUsage
+): boolean {
+  return collectRunLedger(message, usage).length > 0
+}
+
 export function collectRunLedger(
   message: Pick<ThreadMessage, "tools" | "id"> | null,
   usage?: number | CollectRunLedgerUsage

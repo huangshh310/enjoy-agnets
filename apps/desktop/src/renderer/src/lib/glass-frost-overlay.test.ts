@@ -96,6 +96,10 @@ test("无 GPU 旗标关掉棱镜 ::after 和 liquid-glass 滤镜", () => {
     join(dir, "../../../main/index.ts"),
     join(dir, "../../../../main/index.ts")
   ])
+  const gpuRuntime = readFirst([
+    join(dir, "../../../main/services/gpu-compositing-runtime.ts"),
+    join(dir, "../../../../main/services/gpu-compositing-runtime.ts")
+  ])
   const watch = readFirst([
     join(dir, "../../../main/services/gpu-compositing-watch.ts"),
     join(dir, "../../../../main/services/gpu-compositing-watch.ts")
@@ -114,9 +118,9 @@ test("无 GPU 旗标关掉棱镜 ::after 和 liquid-glass 滤镜", () => {
   assert.match(glass, /\[data-gpu-compositing="off"\][\s\S]*filter:\s*none/)
   assert.match(glass, /\[data-testid="right-pane-shell"\]::after/)
   assert.match(glass, /url\(#skin-liquid-glass\)/)
-  assert.match(main, /getGPUFeatureStatus/)
-  assert.match(main, /child-process-gone/)
-  assert.match(main, /attachGpuCompositingWatch/)
+  assert.match(gpuRuntime, /getGPUFeatureStatus/)
+  assert.match(gpuRuntime, /child-process-gone/)
+  assert.match(gpuRuntime, /attachGpuCompositingWatch/)
   assert.match(watch, /gpu-info-update/)
   assert.match(watch, /child-process-gone/)
   assert.match(main, /additionalArguments/)

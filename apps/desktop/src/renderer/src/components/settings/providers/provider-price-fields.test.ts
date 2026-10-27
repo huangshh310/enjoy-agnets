@@ -3,7 +3,24 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { modelRowShowsPrices, visibleModelPriceFields } from "./model-row-prices.ts"
 import { providerUpsertPayload, toEditorModel, type EditorState } from "./providers.types.ts"
+
+test("Ollama / LM Studio 不露单价栏，custom 与云端仍露", () => {
+  assert.equal(modelRowShowsPrices("ollama"), false)
+  assert.equal(modelRowShowsPrices("lmstudio"), false)
+  assert.equal(modelRowShowsPrices("custom"), true)
+  assert.equal(modelRowShowsPrices("deepseek"), true)
+})
+
+test("计费行含推理单价，本地行一栏都不露", () => {
+  const keys = (kind: string) => visibleModelPriceFields(kind).map((field) => field.key)
+  assert.deepEqual(keys("ollama"), [])
+  assert.deepEqual(keys("lmstudio"), [])
+  assert.ok(keys("custom").includes("reasoningPricePerMillion"))
+  assert.ok(keys("deepseek").includes("reasoningPricePerMillion"))
+  assert.equal(keys("deepseek").length, 5)
+})
 
 test("toEditorModel 保留 *PricePerMillion", () => {
   const model = toEditorModel({

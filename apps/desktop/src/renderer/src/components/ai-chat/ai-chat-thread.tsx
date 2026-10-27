@@ -25,7 +25,7 @@ import { ThreadNoticeBanner } from "./thread/thread-notice-banner"
 import { noticeAnchorId } from "./thread/notice-anchor"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
-import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
+import { useTurnHasLedger } from "./run-ledger/use-turn-has-ledger"
 import { displayThinkingLabel } from "./thread/thinking-label"
 import { lastUserMessageId, shouldScrollOnSend, takeSkipSendScroll, type SendScrollMark } from "./thread/scroll-on-send"
 import { useT } from "@renderer/i18n"
@@ -49,8 +49,7 @@ export function AiChatThread({
   const visible = visibleThreadMessages(messages)
   const last = visible.at(-1)
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
-  const assistant = lastAssistantTurn(messages)
-  const hasLedger = Boolean(assistant && collectRunLedger(assistant).length > 0)
+  const hasLedger = useTurnHasLedger(messages)
   const findOpen = useThreadFindOpen()
   const notice = useChatStore((state) => state.notice)
   const anchorId = noticeAnchorId(visible, notice)

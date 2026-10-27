@@ -23,6 +23,7 @@ import { sessionReviewMigration } from "./session-review.ts"
 import { runDiscardedPreOutputMigration } from "./run-discarded-pre-output.ts"
 import { sessionImportedFromMigration } from "./session-imported-from.ts"
 import { ensureCuratedPresetIdColumn, repairClaimedV14, tableExists } from "./column-guard.ts"
+import { releaseOrphanLedger } from "./orphan-ledger.ts"
 import type { Migration } from "./types.ts"
 
 // 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
@@ -111,6 +112,8 @@ export function assertMigrationIdentity(sqlite: DatabaseSync, migrations: Migrat
 export function applyMigrations(sqlite: DatabaseSync, migrations = MIGRATIONS): number[] {
   ensureMigrationTable(sqlite)
   backfillBaselineIfNeeded(sqlite)
+  // 已知占位（本地 retention-indexes）先腾出版本号；其它同号异名仍在下面拦住。
+  releaseOrphanLedger(sqlite, migrations)
   assertMigrationIdentity(sqlite, migrations)
   const done = new Set(appliedVersions(sqlite))
   const applied: number[] = []

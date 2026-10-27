@@ -150,11 +150,10 @@ export function AiChatComposer({
       >
         <BorderBeam
           size="md"
-          colorVariant="ocean"
+          colorVariant="colorful"
           theme="auto"
           active={isFocused || running || hasDraft}
           strength={isFocused || running || hasDraft ? 0.75 : 0}
-          borderRadius={22}
           className="w-full min-w-0"
         >
           <div

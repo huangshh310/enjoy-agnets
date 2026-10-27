@@ -7,7 +7,7 @@
 import { QueuedFollowups } from "@renderer/components/ai-chat/thread/queued-followups"
 import { DockRuntimeHint } from "@renderer/components/ai-chat/thread/dock-runtime-hint"
 import { sessionScopedCount, useSessionChanges } from "@renderer/hooks/session-changes"
-import { useEffect, useLayoutEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
 import { isComposerRailNotice } from "@renderer/components/ai-chat/composer/runtime-interact/composer-previous-preparing-rail"
@@ -21,7 +21,7 @@ import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { holdEmptyForResend } from "@renderer/stores/resend-notice"
 import { reviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate-phase"
 import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledger-rail"
-import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
+import { useTurnHasLedger } from "@renderer/components/ai-chat/run-ledger/use-turn-has-ledger"
 import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
 import { EnvironmentPanel } from "@renderer/components/ai-chat/environment/environment-panel"
 import { useEnvironmentDismiss } from "@renderer/components/ai-chat/environment/use-environment-dismiss"
@@ -190,8 +190,7 @@ function ChatThreadBody(props: {
   useLayoutEffect(() => {
     queueComposerFocus()
   }, [sessionId, pathname])
-  const assistant = lastAssistantTurn(messages)
-  const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
+  const hasLedger = useTurnHasLedger(messages)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

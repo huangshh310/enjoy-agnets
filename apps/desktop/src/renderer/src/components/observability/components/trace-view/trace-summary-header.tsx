@@ -144,10 +144,10 @@ export function TraceSummaryHeader(props: {
           ) : null}
         </div>
 
-        {/* 4. COST-P3 花费 */}
-        <div className="flex flex-col gap-0.5" data-testid="trace-summary-cost" title={costChrome.title || undefined}>
-          <span className="text-caption-2-regular text-text-tertiary uppercase">{t("chat.usage.traceCostLabel")}</span>
-          {costChrome.text ? (
+        {/* 4. COST-P3 花费。not_reported / 无 status 的 text 为 null，整格不留。未知仍是「—」。 */}
+        {costChrome.text ? (
+          <div className="flex flex-col gap-0.5" data-testid="trace-summary-cost" title={costChrome.title || undefined}>
+            <span className="text-caption-2-regular text-text-tertiary uppercase">{t("chat.usage.traceCostLabel")}</span>
             <span className="text-body-medium font-bold text-text-primary">
               {costChrome.prefix ? (
                 <span className="mr-1 font-sans text-caption-2-regular font-normal text-text-tertiary">
@@ -156,10 +156,8 @@ export function TraceSummaryHeader(props: {
               ) : null}
               {costChrome.text}
             </span>
-          ) : (
-            <span className="text-body-medium font-bold text-text-tertiary">—</span>
-          )}
-        </div>
+          </div>
+        ) : null}
 
         {/* 5. 模型架构 */}
         <div className="flex flex-col gap-0.5 min-w-0">

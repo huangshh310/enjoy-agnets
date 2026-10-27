@@ -15,7 +15,7 @@ import {
 import { useSessionEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
 import { openSourcesSheet, useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
-import { collectRunLedger, groupRunLedger, lastAssistantTurn } from "./collect-run-ledger"
+import { collectRunLedger, groupRunLedger, lastAssistantTurn, ledgerUsageBag } from "./collect-run-ledger"
 import { ledgerOpensSources } from "./format-ledger-entry"
 import { RunLedgerGroup } from "./run-ledger-group"
 import { RunLedgerRow } from "./run-ledger-row"
@@ -40,11 +40,14 @@ export function RunLedgerRail({
   const { face } = useSessionEngineFace(sessionId)
   const entries = useMemo(
     () =>
-      collectRunLedger(assistant, {
-        ...(tokens != null ? { tokens } : {}),
-        ...(turnUsage?.estimatedCost ? { estimatedCost: turnUsage.estimatedCost } : {}),
-        costEngineLabel: face
-      }),
+      collectRunLedger(
+        assistant,
+        ledgerUsageBag({
+          tokens,
+          estimatedCost: turnUsage?.estimatedCost,
+          costEngineLabel: face
+        })
+      ),
     [assistant, tokens, turnUsage?.estimatedCost, face]
   )
   const { groups, usage } = useMemo(() => groupRunLedger(entries), [entries])

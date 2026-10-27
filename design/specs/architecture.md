@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（macOS 关窗不 flush；will-quit fail-closed 走 settle restart；renderer bash 会话允许走 ipc-contract 叶子（整条命令完全相同）；isE2eStub 自读 app.isPackaged；读不到 app 当打包；打包态忽略隔离 userData；读不到 app 只让 stub 当打包；明确已打包才忽略隔离 userData；018 `run-discarded-pre-output`：首字前失败回滚标记）
+> 进程边界与安全基线。最后更新：2026-10-27（stderr `EPIPE` 不弹主进程对话框；v13 占位 `retention-indexes` 在成本列都缺失时放行现行 `run-usage-cost`；macOS 关窗不 flush；will-quit fail-closed 走 settle restart；renderer bash 会话允许走 ipc-contract 叶子（整条命令完全相同）；isE2eStub 自读 app.isPackaged；读不到 app 当打包；打包态忽略隔离 userData；读不到 app 只让 stub 当打包；明确已打包才忽略隔离 userData；018 `run-discarded-pre-output`：首字前失败回滚标记）
 
 ## 当前真相
 
@@ -99,7 +99,7 @@ Main Process（可信）
 
 ## 代码入口
 
-- 窗口与生命周期：`apps/desktop/src/main/index.ts`。`requestSingleInstanceLock` 在 `whenReady` 之前；失败者 `app.exit(0)`，不启动 automations 调度 / 回看 / 补跑，退出钩子不碰共享库。`second-instance` 聚焦已有窗，未 ready 不新建（macOS Dock 仍走 `activate`）。
+- 窗口与生命周期：`apps/desktop/src/main/index.ts`（第一条 import 装 `stdio-epipe-install`）。玻璃旗标的 complete info 与 `gpu-info-update` 在 `services/gpu-compositing-runtime.ts`。`requestSingleInstanceLock` 在 `whenReady` 之前；失败者 `app.exit(0)`，不启动 automations 调度 / 回看 / 补跑，退出钩子不碰共享库。`second-instance` 聚焦已有窗，未 ready 不新建（macOS Dock 仍走 `activate`）。
 - IPC 注册：`apps/desktop/src/main/ipc.ts`（胶水）+ `ipc-session.ts` / `ipc-shell.ts` / `ipc-settings.ts` / `ipc-ai.ts`
 - 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`
 - preload：`apps/desktop/src/preload/index.ts`
@@ -137,5 +137,7 @@ Main Process（可信）
 - `flushActiveRuns` 与泵的 `parkForApproval` 都顶层静态 import `persistWaitingRun`。will-quit fail-closed 走 `settlePendingApprovalsForRun(..., "restart")`，不得直接 `setApprovalDecision`。macOS `window-all-closed` 不调用 flush。
 - SQLite：`PRAGMA busy_timeout = 5000` + `core-indexes` 迁移（sessions/messages/message_parts/runs）。
 - **隐患**：旧库把 v14 记成 `cost-missing` 时，裸 `ALTER TABLE … ADD COLUMN` 会炸。正确做法：`addColumnIfMissing` / `ensureApprovalSdkColumns`；`schema_migrations` 已有 version=14（无论 name）时走 `repairClaimedV14` 补列，不要再插一条 014。`cost_missing` 走 015，列已在就跳过。`repairClaimedV14` 每次启动都会尝试建 UNIQUE；库里若已有重复三元组，`CREATE UNIQUE INDEX` 会抛并把启动卡死。正确做法：`ensureApprovalsSdkIdentityIndex` 包 try，打日志后继续启动，不要让重复行挡住 boot。
+- **隐患**：pnpm 用管道接主进程 stderr。读端关掉或缓冲被打满后，`webFrameMain.send` 失败时内部 `console.error` 写出 `EPIPE`。Node 默认只留 10 帧栈，对话框只看见 `write EPIPE` / `s.send`，真正的发送错误被截掉。Electron 把它当成未捕获异常，弹出 “A JavaScript error occurred in the main process”。正确做法：启动最先在 stdout/stderr 上常驻 `error` 监听，只吞 `EPIPE` 和 `ERR_STREAM_DESTROYED`；其它写错误下一拍再抛，仍走原来的对话框。不要再加 `uncaughtException` 把所有崩溃对话框一起关掉。
+- **隐患**：本机库若把 v13 记成 `retention-indexes`（仓库里从未有过这条迁移，只在本地建过索引），现行 v13 是 `run-usage-cost`，启动弹「打不开本地数据」且不改库。正确做法：`runs` / `telemetry_metrics` 都在、且成本六列（`usage_json`、`cache_read_tokens`、`cache_write_tokens`、`reasoning_tokens`、`estimated_cost_usd`、`cost_status`）都还不在时，删掉这条占位记账，索引保留，再照常跑 `run-usage-cost` 及之后的迁移。列已经在、或名字不在这份名单里，仍然冲突并原样不动。
 - **隐患**：`turbo` 的 `typecheck.dependsOn: ["^typecheck"]` 会让 desktop 等 ipc-contract。上游一红，下游 `formatToolName` 未定义这种 renderer 错根本不跑；CI 的 `pnpm typecheck` 接着失败，`pnpm test` 也被跳过。渲染层源文件在 `tsconfig.web.json` 里（只排除 `*.test.ts`），tsc 能抓，但要等它跑到。正确做法：typecheck / test 不要 `^typecheck`；renderer 开 `no-undef`，让 lint（typecheck 之前）先拦未定义标识符。
 - 泵 / 审批 / 检查点测试不要用 `sleep` 或「队列空了」当 idle。排队自启用 `DrainableQueue.drain()`；`agent.run` 必带 `commandId`，收据在 `holdAgentRun` 之后、`persistUserTurn` 之前写入。

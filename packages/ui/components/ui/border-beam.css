@@ -1,0 +1,76 @@
+/**
+ * 彩色流光只画在边框环上：一截青、蓝、紫、粉、琥珀沿圆角走。
+ * 简写必须写在 composite 前面：Chromium 里 -webkit-mask 就是 mask，
+ * 简写若写在后面会把合成重置成 add，锥形会铺进卡片。
+ */
+
+@property --composer-beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+[data-beam] {
+  position: relative;
+  /* 不裁子节点。裁切会把圆角上的光和卡片投影切掉；@ 面板另挂到 body。 */
+  overflow: visible;
+}
+
+[data-beam][data-on]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--composer-beam-angle),
+    transparent 0deg,
+    transparent 238deg,
+    rgba(0, 188, 220, 0) 252deg,
+    rgb(0, 188, 220) 272deg,
+    rgb(46, 110, 255) 294deg,
+    rgb(150, 70, 255) 314deg,
+    rgb(230, 60, 160) 332deg,
+    rgb(255, 150, 30) 348deg,
+    rgba(255, 150, 30, 0) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: var(--beam-strength, 0.75);
+  animation: composer-beam-spin 2.4s linear infinite;
+}
+
+[data-beam][data-beam-theme="dark"][data-on]::after {
+  background: conic-gradient(
+    from var(--composer-beam-angle),
+    transparent 0deg,
+    transparent 238deg,
+    rgba(110, 235, 255, 0) 252deg,
+    rgb(110, 235, 255) 272deg,
+    rgb(150, 190, 255) 294deg,
+    rgb(200, 160, 255) 314deg,
+    rgb(255, 160, 210) 332deg,
+    rgb(255, 210, 130) 348deg,
+    rgba(255, 210, 130, 0) 360deg
+  );
+}
+
+@keyframes composer-beam-spin {
+  to {
+    --composer-beam-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-beam][data-on]::after {
+    animation: none;
+  }
+}

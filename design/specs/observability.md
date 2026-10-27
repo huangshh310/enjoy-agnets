@@ -1,6 +1,6 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-10（默认面不承诺「不上传」；otel 才说发到配置地址）
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-10-27（trace 的 not_reported 不留花费格）；2026-10-10（默认面不承诺「不上传」；otel 才说发到配置地址）
 
 ## 当前真相
 
@@ -33,6 +33,7 @@
 
 ## 已知坑
 
+- Trace 标头花费格：`formatEstimatedCost` 对 `not_reported` 或没有 `costStatus` 返回 `text: null`，整格不画，不要再占一个「—」。`unknown` 的 text 仍是「—」，禁止写成 `$0.00`。
 - 没有 `observability.clear` IPC。默认面不得画「清除本地记录」确认钮假装能删。等 kai 跟进 PR 补频道后再放。
 - 资料页花费只认本年有限的 `estimatedCostUsd` 求和。条数不当美元；没有费用来源整行不画，禁止 `$0` 占位。kai 跟进 PR 会给本年 `estimatedCostUsd` + `unknownCount`，未知花费仍不得画 `$0`。
 - kai 尚未验证 `telemetryPolicy=local` 零出站。默认面禁止把「不上传 / 只存在本机」写成承诺，等跟进 PR 补代码级测试后再改口。

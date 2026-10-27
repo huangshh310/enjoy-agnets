@@ -1270,6 +1270,7 @@ export const enSettings = {
     outputPriceShort: "Out $/M",
     cacheReadPriceShort: "Cache read $/M",
     cacheWritePriceShort: "Cache write $/M",
+    reasoningPriceShort: "Reasoning $/M",
     pricePerMillionHint: "USD per million tokens; leave blank to use snapshot or stay unknown",
     reasoningFamily: "Reasoning family",
     familyInferred: "Inferred: {family}",

@@ -1,11 +1,13 @@
 /**
  * 模型目录的一行：品牌标、id、启用、设为主模型、窗口，以及单价（COST-P3）。
+ * 本地 Ollama / LM Studio 不画单价；计费行含推理单价。
  */
 import { RiCloseLine } from "@remixicon/react"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import { ModelBrandIcon } from "./provider-icons"
 import type { EditorModel } from "./providers.types"
+import { ProviderModelPriceFields } from "./provider-model-price-fields"
 import { useT } from "@renderer/i18n"
 
 export function ProviderModelRow({
@@ -25,7 +27,6 @@ export function ProviderModelRow({
   onPrimary: () => void
   onDelete: () => void
 }) {
-  const t = useT()
   return (
     <div
       className={cx(
@@ -33,101 +34,97 @@ export function ProviderModelRow({
         isPrimary ? "border-accent-500/50 bg-accent-50/40" : "border-border-button-default"
       )}
     >
-      <div className="flex items-center gap-2">
-        <ModelBrandIcon modelId={model.id} providerKind={kind} apiStyle={apiStyle} size={16} />
-        <span className="min-w-0 flex-1 truncate font-mono text-caption-1-medium text-text-primary">{model.id}</span>
-        <button
-          type="button"
-          aria-pressed={model.enabled}
-          onClick={() => onPatch({ enabled: !model.enabled })}
-          className="rounded-lg border border-border-button-default px-2 py-0.5 text-caption-2-medium text-text-secondary"
-        >
-          {model.enabled ? t("settings.providers.modelEnabled") : t("settings.providers.disable")}
-        </button>
-        <button
-          type="button"
-          onClick={onPrimary}
-          className="rounded-lg px-2 py-0.5 text-caption-2-medium text-accent-600"
-        >
-          {isPrimary ? t("settings.providers.primaryBadge") : t("settings.providers.setPrimary")}
-        </button>
-        <button
-          type="button"
-          aria-label={t("settings.providers.removeModel")}
-          onClick={onDelete}
-          className="inline-flex size-6 items-center justify-center text-text-tertiary hover:text-text-error-primary"
-        >
-          <RiCloseLine className="size-3.5" />
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Input
-          type="number"
-          value={model.contextWindow ?? ""}
-          placeholder={t("settings.providers.contextShort")}
-          aria-label={t("settings.providers.contextShort")}
-          onChange={(event) => onPatch({ contextWindow: numberOrEmpty(event.target.value) })}
-          className="h-8 font-mono text-caption-1-regular"
-        />
-        <Input
-          type="number"
-          value={model.maxOutputTokens ?? ""}
-          placeholder={t("settings.providers.maxOutShort")}
-          aria-label={t("settings.providers.maxOutShort")}
-          onChange={(event) => onPatch({ maxOutputTokens: numberOrEmpty(event.target.value) })}
-          className="h-8 font-mono text-caption-1-regular"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Input
-          type="number"
-          step="any"
-          min={0}
-          value={model.inputPricePerMillion ?? ""}
-          placeholder={t("settings.providers.inputPriceShort")}
-          aria-label={t("settings.providers.inputPriceShort")}
-          title={t("settings.providers.pricePerMillionHint")}
-          onChange={(event) => onPatch({ inputPricePerMillion: priceOrEmpty(event.target.value) })}
-          className="h-8 font-mono text-caption-1-regular"
-          data-testid="provider-model-input-price"
-        />
-        <Input
-          type="number"
-          step="any"
-          min={0}
-          value={model.outputPricePerMillion ?? ""}
-          placeholder={t("settings.providers.outputPriceShort")}
-          aria-label={t("settings.providers.outputPriceShort")}
-          title={t("settings.providers.pricePerMillionHint")}
-          onChange={(event) => onPatch({ outputPricePerMillion: priceOrEmpty(event.target.value) })}
-          className="h-8 font-mono text-caption-1-regular"
-          data-testid="provider-model-output-price"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Input
-          type="number"
-          step="any"
-          min={0}
-          value={model.cacheReadPricePerMillion ?? ""}
-          placeholder={t("settings.providers.cacheReadPriceShort")}
-          aria-label={t("settings.providers.cacheReadPriceShort")}
-          title={t("settings.providers.pricePerMillionHint")}
-          onChange={(event) => onPatch({ cacheReadPricePerMillion: priceOrEmpty(event.target.value) })}
-          className="h-8 font-mono text-caption-1-regular"
-        />
-        <Input
-          type="number"
-          step="any"
-          min={0}
-          value={model.cacheWritePricePerMillion ?? ""}
-          placeholder={t("settings.providers.cacheWritePriceShort")}
-          aria-label={t("settings.providers.cacheWritePriceShort")}
-          title={t("settings.providers.pricePerMillionHint")}
-          onChange={(event) => onPatch({ cacheWritePricePerMillion: priceOrEmpty(event.target.value) })}
-          className="h-8 font-mono text-caption-1-regular"
-        />
-      </div>
+      <ModelRowHead
+        model={model}
+        kind={kind}
+        apiStyle={apiStyle}
+        isPrimary={isPrimary}
+        onPatch={onPatch}
+        onPrimary={onPrimary}
+        onDelete={onDelete}
+      />
+      <ModelWindowFields model={model} onPatch={onPatch} />
+      <ProviderModelPriceFields model={model} kind={kind} onPatch={onPatch} />
+    </div>
+  )
+}
+
+function ModelRowHead({
+  model,
+  kind,
+  apiStyle,
+  isPrimary,
+  onPatch,
+  onPrimary,
+  onDelete
+}: {
+  model: EditorModel
+  kind: string
+  apiStyle: string
+  isPrimary: boolean
+  onPatch: (patch: Partial<EditorModel>) => void
+  onPrimary: () => void
+  onDelete: () => void
+}) {
+  const t = useT()
+  return (
+    <div className="flex items-center gap-2">
+      <ModelBrandIcon modelId={model.id} providerKind={kind} apiStyle={apiStyle} size={16} />
+      <span className="min-w-0 flex-1 truncate font-mono text-caption-1-medium text-text-primary">{model.id}</span>
+      <button
+        type="button"
+        aria-pressed={model.enabled}
+        onClick={() => onPatch({ enabled: !model.enabled })}
+        className="rounded-lg border border-border-button-default px-2 py-0.5 text-caption-2-medium text-text-secondary"
+      >
+        {model.enabled ? t("settings.providers.modelEnabled") : t("settings.providers.disable")}
+      </button>
+      <button
+        type="button"
+        onClick={onPrimary}
+        className="rounded-lg px-2 py-0.5 text-caption-2-medium text-accent-600"
+      >
+        {isPrimary ? t("settings.providers.primaryBadge") : t("settings.providers.setPrimary")}
+      </button>
+      <button
+        type="button"
+        aria-label={t("settings.providers.removeModel")}
+        onClick={onDelete}
+        className="inline-flex size-6 items-center justify-center text-text-tertiary hover:text-text-error-primary"
+      >
+        <RiCloseLine className="size-3.5" />
+      </button>
+    </div>
+  )
+}
+
+/** 上下文和最大输出。本地模型也保留，和单价无关。 */
+function ModelWindowFields({
+  model,
+  onPatch
+}: {
+  model: EditorModel
+  onPatch: (patch: Partial<EditorModel>) => void
+}) {
+  const t = useT()
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <Input
+        type="number"
+        value={model.contextWindow ?? ""}
+        placeholder={t("settings.providers.contextShort")}
+        aria-label={t("settings.providers.contextShort")}
+        onChange={(event) => onPatch({ contextWindow: numberOrEmpty(event.target.value) })}
+        className="h-8 font-mono text-caption-1-regular"
+      />
+      <Input
+        type="number"
+        value={model.maxOutputTokens ?? ""}
+        placeholder={t("settings.providers.maxOutShort")}
+        aria-label={t("settings.providers.maxOutShort")}
+        onChange={(event) => onPatch({ maxOutputTokens: numberOrEmpty(event.target.value) })}
+        className="h-8 font-mono text-caption-1-regular"
+      />
     </div>
   )
 }
@@ -137,12 +134,4 @@ function numberOrEmpty(value: string): number | undefined {
   if (!next) return undefined
   const parsed = Number(next)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
-}
-
-/** 单价允许 0（免费档）；空串清掉覆盖。 */
-function priceOrEmpty(value: string): number | undefined {
-  const next = value.trim()
-  if (!next) return undefined
-  const parsed = Number(next)
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined
 }
