@@ -4,8 +4,8 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { DatabaseSync } from "node:sqlite"
 import { expect, type ElectronApplication, type Locator, type Page } from "@playwright/test"
+import { mutateAppDbWalSafe, wipeWaitingReviewCheckpoint } from "./app-db-wal-safe"
 import { sendComposer } from "./send-composer"
 
 export const mainEntry = join(process.cwd(), "out/main/index.js")
@@ -147,14 +147,12 @@ export async function crashKill(app: ElectronApplication): Promise<void> {
 
 /** 不可回挂：抹掉 waiting_review 检查点。库路径 `$ENJOY_E2E_USERDATA/app.db`。 */
 export function wipeWaitingCheckpoints(userData: string): void {
-  mutateAppDb(userData, (db) => {
-    db.exec("UPDATE runs SET checkpoint = NULL WHERE status = 'waiting_review'")
-  })
+  wipeWaitingReviewCheckpoint(userData)
 }
 
 /** 不可回挂：篡 HMAC，启动时 partitionHmacPending 失败并结清停止。 */
 export function tamperWaitingHmac(userData: string): void {
-  mutateAppDb(userData, (db) => {
+  mutateAppDbWalSafe(userData, (db) => {
     db.exec("UPDATE approvals SET hmac = 'tampered' WHERE decision IS NULL")
   })
 }
@@ -170,17 +168,6 @@ export async function openInbox(window: Page): Promise<void> {
     window.location.hash = "#/inbox"
   })
   await window.locator('[data-testid="page-inbox"]').waitFor({ timeout: 10_000 })
-}
-
-function mutateAppDb(userData: string, fn: (db: DatabaseSync) => void): void {
-  const dbPath = join(userData, "app.db")
-  if (!existsSync(dbPath)) return
-  const db = new DatabaseSync(dbPath)
-  try {
-    fn(db)
-  } finally {
-    db.close()
-  }
 }
 
 async function launchElectron(env: NodeJS.ProcessEnv): Promise<ElectronApplication> {
@@ -226,7 +213,7 @@ export function readStub(workspace: string): string {
 
 /** 终态 run 不得再 waiting_review / running；助手工具必须是收工态。 */
 export function expectFinishedRunsSettled(userData: string): void {
-  mutateAppDb(userData, (db) => {
+  mutateAppDbWalSafe(userData, (db) => {
     const open = db
       .prepare("SELECT id, status FROM runs WHERE status IN ('running', 'waiting_review')")
       .all() as Array<{ id: string; status: string }>
