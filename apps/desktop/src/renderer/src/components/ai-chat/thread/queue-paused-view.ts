@@ -52,7 +52,8 @@ const REASON_KEY: Record<FollowupPausedReason, string> = {
   engineSwitched: "chat.queuePausedEngineSwitched",
   held: "chat.queuePausedHeld",
   error: "chat.queuePausedError",
-  quota: "chat.queuePausedQuota"
+  quota: "chat.queuePausedQuota",
+  midTurn: "chat.queuePausedMidTurn"
 }
 
 /** 有定稿窄句的句尾（luna #170 / P2）；不在表里的句尾窄时照说全句。 */

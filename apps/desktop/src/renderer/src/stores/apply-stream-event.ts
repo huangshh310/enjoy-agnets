@@ -40,6 +40,8 @@ export type StreamPatch = {
   running?: boolean
   runId?: string | null
   error?: string | null
+  /** 中途失败（已有产出）：卡文案 / 勿还稿；缺省 = 出字前 / 未发出。 */
+  errorStage?: "mid_turn" | null
   notice?: string | null
   composer?: string
   /**
@@ -145,6 +147,8 @@ function applyTerminalEvent(
     if (shouldRollbackPreOutput({ preOutput: event.preOutput, code }, messages)) {
       return rolledPreOutputPatch(messages, code ?? event.message, event.keptUserMessage === true)
     }
+    // patrol-4df2：工具 / 文本已产出后的续跑失败 ≠「消息没发出去」——勿还回原句。
+    const midTurn = event.midTurn === true || !lastTurnHasNoOutput(messages)
     const lastUser = lastUserText(messages)
     return {
       messages: finalizeRun(messages),
@@ -152,7 +156,8 @@ function applyTerminalEvent(
       running: false,
       runId: null,
       error: code ?? event.message,
-      ...(code && lastUser ? { composer: lastUser } : {})
+      ...(midTurn ? { errorStage: "mid_turn" as const } : { errorStage: null }),
+      ...(!midTurn && code && lastUser ? { composer: lastUser } : {})
     }
   }
   return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }

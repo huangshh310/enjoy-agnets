@@ -146,6 +146,11 @@ export const StreamEvent = z.discriminatedUnion("type", [
     /** 首字前回滚保留了本轮之前就有的用户句（重新生成 / 编辑重发只 UPDATE）。renderer 只撤空助手。 */
     keptUserMessage: z.boolean().optional().catch(undefined),
     /**
+     * 中途失败（本轮已有工具 / 文本 / 思考产出）：renderer 勿还回输入框、卡说「做到一半停了」。
+     * 只认 `true`；缺省 / 坏字段都不算。
+     */
+    midTurn: z.boolean().optional().catch(undefined),
+    /**
      * 这一轮实际走的引擎（luna P2-1）：失败卡说谁、「改密钥」开哪份跟它走，不跟默认路线猜。
      * 缺省 / 坏字段 = 旧事件，renderer 回落当前档案。
      */

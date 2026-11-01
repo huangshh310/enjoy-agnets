@@ -332,3 +332,35 @@ test("host #169 ③ / leo soft 2（C1 / C2）：run.start 的 clientRequestId �
   )
   assert.equal(StreamEvent.safeParse(base).success, true, "不带照收")
 })
+
+test("run.error.midTurn 只认 true；缺省 / 坏字段不算", () => {
+  const missing = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "provider_unreachable"
+  })
+  assert.equal(missing.success, true)
+  if (missing.success && missing.data.type === "run.error") {
+    assert.notEqual(missing.data.midTurn, true)
+  }
+  const bad = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "provider_unreachable",
+    midTurn: "yes"
+  })
+  assert.equal(bad.success, true)
+  if (bad.success && bad.data.type === "run.error") {
+    assert.notEqual(bad.data.midTurn, true)
+  }
+  const ok = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "provider_unreachable",
+    midTurn: true
+  })
+  assert.equal(ok.success, true)
+  if (ok.success && ok.data.type === "run.error") {
+    assert.equal(ok.data.midTurn, true)
+  }
+})

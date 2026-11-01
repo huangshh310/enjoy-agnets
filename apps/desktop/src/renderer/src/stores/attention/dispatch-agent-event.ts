@@ -68,7 +68,12 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   }
 
   // E1：出错 / 停止先停住这个会话的排队，再让 store / 停车放 running=false（自启看不到空档）。
-  noteFollowupRunEvent(sessionId, event, isNonAgentRunKind(event, rememberedKind))
+  // patrol-4df2：排队句 midTurn 只认 main 的 midTurn（producedOutput）；线程消息判定留给 apply-stream-event 还稿。
+  const midTurnHint =
+    event.type === "run.error" &&
+    !isNonAgentRunKind(event, rememberedKind) &&
+    event.midTurn === true
+  noteFollowupRunEvent(sessionId, event, isNonAgentRunKind(event, rememberedKind), midTurnHint)
   // luna P2-1：失败卡说谁、改密钥开哪份，跟这一轮实际走的（main 在 run.error 上带回）。
   if (!isNonAgentRunKind(event, rememberedKind)) noteSendFailureRouteFromEvent(sessionId, event)
   if (sessionId && event.type === "run.start") clearSessionUsage(sessionId)

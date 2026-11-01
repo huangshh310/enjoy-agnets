@@ -1137,3 +1137,28 @@ test("中文空格规则（对称）：失败卡和排队行同一个函数（fi
     assert.ok(!/face\.name|kind === "named"/.test(src), `${file} 绕开了 fillProviderFace`)
   }
 })
+
+test("midTurn：工具后失败暂停句说做到一半，可继续，不说没发出去", () => {
+  enqueue("ses_mid", "queued after tool")
+  pause.noteFollowupRunEvent(
+    "ses_mid",
+    { type: "run.error", message: "provider_unreachable", code: "provider_unreachable", midTurn: true },
+    false,
+    true
+  )
+  assert.equal(queue.followupPausedReason("ses_mid"), "midTurn")
+  assert.equal(pause.autoResumesAfterSuccess("midTurn"), true)
+  const zh = tr(zhChat as never)
+  const en = tr(enChat as never)
+  const base = { reason: "midTurn" as const, count: 1, composerHasContent: false, pendingFailed: null, provider: named("OpenAI") }
+  const zhView = view.queuePausedView({ ...base, t: zh })
+  const enView = view.queuePausedView({ ...base, t: en })
+  assert.match(zhView.text, /做到一半停了/)
+  assert.doesNotMatch(zhView.text, /没发出去/)
+  assert.equal(zhView.showContinue, true)
+  assert.match(enView.text, /stopped partway/)
+  assert.doesNotMatch(enView.text, /didn't go through|was not sent/i)
+  assert.equal(zhChat.credentialNetworkMidTurnNotice.includes("做到一半"), true)
+  assert.equal(zhChat.midTurnFailedDetail.includes("不用再发一遍"), true)
+})
+
