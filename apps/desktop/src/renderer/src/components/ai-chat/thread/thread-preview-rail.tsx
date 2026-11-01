@@ -10,7 +10,7 @@ import { PreviewRail } from "@/components/ai-elements/preview-rail"
 import { useT } from "@renderer/i18n"
 import { previewItemsFromMessages, railItemSize } from "./thread-preview-rail-items"
 import { promptScaleItems } from "./prompt-scale"
-import { requestTurnReveal } from "@renderer/lib/thread-turn-reveal"
+import { revealThreadMessage } from "@renderer/lib/search-thread-messages"
 import { visibleUserText } from "@renderer/lib/user-message-text"
 
 const MESSAGE_ATTR = "data-thread-message"
@@ -30,6 +30,7 @@ export function ThreadPreviewRail({
 
   return (
     <div
+      data-testid="thread-preview-rail"
       className={cx(
         "pointer-events-none absolute inset-y-8 right-2 z-20 hidden min-[768px]:flex w-64 items-center justify-end",
         hasLedger && "min-[1100px]:hidden"
@@ -45,7 +46,7 @@ export function ThreadPreviewRail({
         className="pointer-events-none h-[min(28rem,72%)] w-full"
         railClassName="pointer-events-none [&>[data-slot=preview-rail-item]]:pointer-events-auto"
         onActiveChange={setActiveId}
-        onItemSelect={(item) => scrollToThreadMessage(item.id)}
+        onItemSelect={(item) => revealThreadMessage(item.id)}
       />
     </div>
   )
@@ -91,10 +92,4 @@ function userScaleItems(
       empty: t("chat.previewRailEmpty")
     }
   )
-}
-
-function scrollToThreadMessage(id: string) {
-  requestTurnReveal(id)
-  const node = document.querySelector<HTMLElement>(`[${MESSAGE_ATTR}="${CSS.escape(id)}"]`)
-  node?.scrollIntoView({ behavior: "smooth", block: "center" })
 }

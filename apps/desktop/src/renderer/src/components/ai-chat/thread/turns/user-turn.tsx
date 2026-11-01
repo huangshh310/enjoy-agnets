@@ -76,7 +76,6 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
     <Message
       from="user"
       id={message.id}
-      data-thread-message={message.id}
       className="ml-auto flex max-w-[min(32rem,88%)] flex-col items-end gap-1.5"
     >
       {message.assets && message.assets.length > 0 ? (
