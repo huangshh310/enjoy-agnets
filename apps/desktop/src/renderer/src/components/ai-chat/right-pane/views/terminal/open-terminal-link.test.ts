@@ -40,21 +40,25 @@ test("Unicode11 必须开 allowProposedApi，否则终端白屏", () => {
   assert.ok(mount.includes("allowProposedApi: true"))
 })
 
-test("源码不写 window.open，接线走 window.openExternal", () => {
+test("源码不写 window.open，接线走 open-safe-external", () => {
   const src = readFileSync(join(dir, "open-terminal-link.ts"), "utf8")
   const attach = readFileSync(join(dir, "attach-xterm-addons.ts"), "utf8")
+  const helper = readFileSync(join(dir, "../../../../../lib/open-safe-external.ts"), "utf8")
   assert.doesNotMatch(src, /window\.open\s*\(/)
   assert.doesNotMatch(attach, /window\.open\s*\(/)
-  assert.ok(attach.includes("window.openExternal"))
+  assert.doesNotMatch(helper, /window\.open\s*\(/)
   assert.ok(attach.includes("requestOpenExternalQuiet"))
+  assert.ok(attach.includes("open-safe-external"))
   assert.ok(attach.includes("openTerminalLink("))
   assert.ok(attach.includes("onTerminalLinkActivate"))
   assert.ok(attach.includes("new WebLinksAddon(onTerminalLinkActivate)"))
-  assert.ok(attach.includes(".then("))
+  assert.ok(helper.includes("window.openExternal"))
+  assert.ok(helper.includes(".then("))
   assert.ok(!attach.includes("showAppToast"))
+  assert.ok(!helper.includes("showAppToast"))
 })
 
-test("renderer 只有终端点击回调调用 window.openExternal", () => {
+test("renderer 只有 open-safe-external 调用 window.openExternal", () => {
   const rendererRoot = join(dir, "../../../../..")
   const hits: string[] = []
   function walk(folder: string): void {
@@ -74,5 +78,5 @@ test("renderer 只有终端点击回调调用 window.openExternal", () => {
     }
   }
   walk(rendererRoot)
-  assert.deepEqual(hits, ["components/ai-chat/right-pane/views/terminal/attach-xterm-addons.ts"])
+  assert.deepEqual(hits, ["lib/open-safe-external.ts"])
 })

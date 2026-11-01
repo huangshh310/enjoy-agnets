@@ -19,7 +19,14 @@ import { CHAT_READINESS_QUERY_KEY, useChatReadiness } from "@renderer/hooks/use-
 
 /** main 校验超时 6s，再留 1s 落盘余量。 */
 const CREDENTIAL_RECHECK_REFRESH_MS = 7_000
+import type { DeleteKeychainNoticeHint } from "@renderer/lib/delete-keychain-notice"
 import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
+import {
+  SecretWriteUiError,
+  secretWriteErrorMessage,
+  unwrapSettingsWrite
+} from "@renderer/lib/secret-write"
+import { showAppToast } from "@renderer/lib/app-toast"
 import { useT } from "@renderer/i18n"
 
 export type PingStateMap = Record<
@@ -144,10 +151,23 @@ function useProviderWrites(
       if (!hasIde()) return
       await persistSnapshot(queryClient, (await getIde().settings.activateProvider({ id })) as SettingsSnapshot)
     },
-    remove: async (id: string) => {
-      if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.removeProvider({ id })) as SettingsSnapshot)
-      if (editor?.id === id) closeEditor()
+    remove: async (id: string): Promise<ProviderRemoveResult> => {
+      if (!hasIde()) return { ok: false, kind: "other" }
+      try {
+        await persistSnapshot(queryClient, unwrapSettingsWrite(await getIde().settings.removeProvider({ id })))
+        if (editor?.id === id) closeEditor()
+        return { ok: true }
+      } catch (error) {
+        if (error instanceof SecretWriteUiError && error.code === "KEYCHAIN_UNAVAILABLE") {
+          return {
+            ok: false,
+            kind: "keychain",
+            hint: { revokeUrl: error.revokeUrl, providerLabel: error.providerLabel }
+          }
+        }
+        showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
+        return { ok: false, kind: "other" }
+      }
     },
     duplicate: async (profile: ProviderPublic) => {
       if (!hasIde()) return
@@ -219,3 +239,8 @@ function useAutoFetchModels(editor: EditorState | null, fetchModels: () => Promi
     void fetchRef.current()
   }, [editor?.id, editor?.kind, editor?.baseAPI])
 }
+
+export type ProviderRemoveResult =
+  | { ok: true }
+  | { ok: false; kind: "keychain"; hint: DeleteKeychainNoticeHint }
+  | { ok: false; kind: "other" }

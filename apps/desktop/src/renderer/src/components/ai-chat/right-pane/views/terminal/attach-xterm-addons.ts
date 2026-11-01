@@ -7,9 +7,11 @@ import { Unicode11Addon } from "@xterm/addon-unicode11"
 import { WebLinksAddon } from "@xterm/addon-web-links"
 import { WebglAddon } from "@xterm/addon-webgl"
 import type { Terminal } from "@xterm/xterm"
-import { getIde } from "@renderer/lib/ide"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
 import { openTerminalLink } from "./open-terminal-link"
 import { attachWebglOrDom } from "./xterm-webgl"
+
+export { requestOpenExternalQuiet }
 
 export type TerminalSearchApi = {
   findNext: (query: string) => boolean
@@ -24,20 +26,10 @@ export type AttachedXtermAddons = {
 
 /**
  * 只给 WebLinksAddon 的用户点击回调。不要从 effect / 定时器 / 自动扫描调用。
- * leo 复核此频道：renderer 唯一 `window.openExternal` 出口。
+ * leo 复核：点击经 open-safe-external 出站；renderer 唯一 openExternal 调用点在该 helper。
  */
 export function onTerminalLinkActivate(_event: MouseEvent, uri: string): void {
   openTerminalLink(uri, requestOpenExternalQuiet)
-}
-
-/** 失败回 `{ ok: false, code }` 或 reject 都吞掉，不 toast。 */
-export function requestOpenExternalQuiet(url: string): void {
-  void getIde()
-    .window.openExternal({ url })
-    .then(
-      () => undefined,
-      () => undefined
-    )
 }
 
 export function attachXtermAddons(term: Terminal): AttachedXtermAddons {

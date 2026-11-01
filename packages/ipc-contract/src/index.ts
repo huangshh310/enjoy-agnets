@@ -108,3 +108,5 @@ export * from "./keybindings"
 export * from "./computer-use-slash"
 export * from "./appsnap"
 export * from "./keybinding-resolve"
+
+export * from "./secret-write"

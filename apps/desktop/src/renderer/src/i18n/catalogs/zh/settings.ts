@@ -1089,6 +1089,11 @@ export const zhSettings = {
     speedTest: "测速",
     inUse: "使用中",
     usedBy: "被引用",
+    deleteKeychainUnavailable:
+      "没删掉：系统钥匙串现在用不了，这把密钥暂时删不了，其他密钥不受影响。请确认钥匙串已解锁后再试。",
+    deleteRevokeHint: "如果担心这把密钥泄露，可以先到 {provider} 后台作废它。",
+    deleteRevokeLink: "去作废",
+    deleteRevokeHintGeneric: "如果担心这把密钥泄露，可以先到服务商后台作废它。",
     removeBoundTitle: "删除 {name}？",
     removeBoundDesc: "这些助手会回到官方登录：{agents}。其它档案的密钥不受影响。",
     use: "使用",
