@@ -27,6 +27,8 @@ const paused = new Map<string, FollowupPausedReason>()
 const startedSincePause = new Set<string>()
 let hint: RuntimeHintCode = null
 let hintSessionId: string | null = null
+/** imageSteerQueued 提示按图数选单复数（luna 定稿 en 分 1 张 / 多张）。 */
+let hintImageCount = 0
 const listeners = new Set<() => void>()
 
 function notify() {
@@ -91,6 +93,7 @@ export function resetFollowupsForTest(): void {
   startedSincePause.clear()
   hint = null
   hintSessionId = null
+  hintImageCount = 0
   notify()
 }
 
@@ -202,10 +205,16 @@ export function moveFollowup(id: string, delta: -1 | 1) {
   notify()
 }
 
-export function setRuntimeHint(code: RuntimeHintCode, sessionId?: string | null) {
+export function setRuntimeHint(code: RuntimeHintCode, sessionId?: string | null, imageCount = 0) {
   hint = code
   hintSessionId = code ? (sessionId ?? null) : null
+  hintImageCount = code ? imageCount : 0
   notify()
+}
+
+/** 当前提示涉及的图数（只有 imageSteerQueued 用来选单复数）。 */
+export function runtimeHintImageCount(): number {
+  return hintImageCount
 }
 
 export function getRuntimeHint(): RuntimeHintCode {

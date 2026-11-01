@@ -175,7 +175,7 @@ test("主线决定（#136）：模型看不了图时「马上发给它」——�
     await queueWithImage(window, "带图插话", "noVision.png")
     const item = window.locator('[data-testid="queued-user-turn"]')
     await item.getByRole("button", { name: "马上发给它" }).click()
-    await expect(window.getByText("这个 Agent 运行中收不了图，带图的这条排在下一轮发出")).toBeVisible({ timeout: 10_000 })
+    await expect(window.getByText("它运行中收不了图，这条连图一起排到下一轮发。")).toBeVisible({ timeout: 10_000 })
     await expect(item.first()).toBeVisible()
     await expect(item.first()).toContainText("带图插话")
     await expect(window.getByText(/agent\.steer|model_needs_vision|Error invoking remote method/)).toHaveCount(0)

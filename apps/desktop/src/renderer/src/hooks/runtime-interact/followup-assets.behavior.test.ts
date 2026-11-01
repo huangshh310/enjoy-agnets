@@ -113,6 +113,7 @@ test("leo MUST 2：ACP 运行中带图不纠偏——留在队列 + 可见提示
   assert.equal(steers.length, before)
   assert.equal(queue.listFollowups("ses_q5")[0]?.id, item.id)
   assert.equal(queue.getRuntimeHint("ses_q5"), "imageSteerQueued")
+  assert.equal(queue.runtimeHintImageCount(), 1, "luna 定稿 en 按图数选单复数：这条 1 张")
 })
 
 test("主线决定：非 ACP、模型看不了图——agent.steer 回「收不了图」：这条带图原样留在队首、锁定提示，不弹红卡", async () => {
@@ -129,6 +130,7 @@ test("主线决定：非 ACP、模型看不了图——agent.steer 回「收不�
   assert.deepEqual(back[0]!.assets.map((a) => a.id), ["ast_q"])
   assert.deepEqual(rows("ses_q6").map((r) => r.queued?.itemId), [item.id], "草稿排队标记还在")
   assert.equal(queue.getRuntimeHint(), "imageSteerQueued")
+  assert.equal(queue.runtimeHintImageCount(), 1)
   assert.equal(useChatStore.getState().error, null, "不弹原始报错红卡")
 })
 

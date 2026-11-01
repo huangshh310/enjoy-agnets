@@ -59,7 +59,7 @@ export async function sendFollowupNow(item: FollowupItem) {
 
 function requeueImageSteer(item: FollowupItem) {
   restoreFollowup(item)
-  setRuntimeHint("imageSteerQueued", item.sessionId)
+  setRuntimeHint("imageSteerQueued", item.sessionId, item.assets?.length ?? 0)
 }
 
 /** × 删排队项：图随这项一起丢（草稿里的排队标记行一并清）。 */
