@@ -39,5 +39,7 @@ export function revealThreadMessage(messageId: string) {
       ?.scrollIntoView({ block: "center" })
   }
   scroll()
+  // deferred 挂载要等一帧；再补一次短延时，避免刻度点名时只滚到占位高度。
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(scroll)
+  if (typeof setTimeout === "function") setTimeout(scroll, 50)
 }

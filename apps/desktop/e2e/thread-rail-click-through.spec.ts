@@ -2,6 +2,7 @@
  * luna main-155 巡检 P2（patrol-16/17）：会话右侧刻度 ThreadPreviewRail 外框约 256×256、pointer-events:auto，
  * 透明处也吃掉点击。1100 宽下用户消息的编辑 / 从这里重来 / 复制、编辑框的保存 / 取消，真实鼠标点都没反应。
  * 出现条件：会话里 ≥2 条带文字的用户消息、且没有本轮账本（没改文件）。
+ * 视口用 1099：stub 会报 token → hasLedger 为真，产品在 ≥1100 藏刻度给账本腾位；1099 仍能测到刻度外框吃点击。
  * 断言：真实鼠标 page.mouse.click 坐标点击（不 force）都生效；elementFromPoint 命中的就是按钮本身；
  * 刻度按钮不与消息操作按钮 / 编辑框重叠；刻度自己仍能悬停出预览、点击滚到对应消息。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘。
@@ -16,7 +17,7 @@ import { sendComposer } from "./send-composer"
 const shotsDir = process.env.ENJOY_E2E_SHOTS_DIR
 type Box = { x: number; y: number; width: number; height: number }
 
-test("1100 宽、两条带字用户消息、无账本：右侧刻度不吃点击，编辑/复制/保存/取消真实鼠标都生效", async () => {
+test("1099 宽、两条带字用户消息、无文件账本：右侧刻度不吃点击，编辑/复制/保存/取消真实鼠标都生效", async () => {
   test.setTimeout(180_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-rail-ws-"))
@@ -32,7 +33,8 @@ test("1100 宽、两条带字用户消息、无账本：右侧刻度不吃点击
   })
   try {
     const window = await firstWindow(app)
-    await window.setViewportSize({ width: 1100, height: 720 })
+    // 1099：避开 hasLedger 时 min-[1100px]:hidden；内容区仍够宽让编辑按钮落在刻度外框下。
+    await window.setViewportSize({ width: 1099, height: 720 })
     const composer = window.locator('[data-testid="composer-input"]')
     for (const text of ["第一句 alpha", "第二句 beta"]) {
       await sendComposer(window, composer, text)
@@ -127,7 +129,7 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
   })
   try {
     const window = await firstWindow(app)
-    await window.setViewportSize({ width: 1100, height: 720 })
+    await window.setViewportSize({ width: 1099, height: 720 })
     const composer = window.locator('[data-testid="composer-input"]')
     const filler = "，这一句故意写长一点好把会话撑出一屏".repeat(12)
     const prompts = ["刻度一号 alpha", "刻度二号 beta", "刻度三号 gamma", "刻度四号 delta", "刻度五号 epsilon"]
@@ -140,12 +142,11 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
     }
     const ticks = window.locator('[data-slot="preview-rail-item"]')
     await expect(ticks).toHaveCount(prompts.length, { timeout: 10_000 })
+    await expect(window.locator('[data-testid="thread-preview-rail"]')).toBeVisible()
     await window.waitForTimeout(800)
-    const first = window
-      .locator("[data-thread-message]")
-      .filter({ has: window.locator(".is-user") })
-      .filter({ hasText: prompts[0] })
-    await expect(first).toHaveCount(1)
+    // 长线程首轮可能已 deferred 卸成占位（无 .is-user / 无正文）；锚点仍在 wrapper 上。
+    const first = window.locator("[data-thread-message]").first()
+    await expect(first).toHaveAttribute("data-thread-message", /.+/)
     // 前提：第一句已经滚出可视区，否则测不出「点刻度滚过去」。贴底滚动可能还没落定，先滚到最后一句再等。
     const last = window.locator("[data-thread-message]").last()
     await last.scrollIntoViewIfNeeded()
@@ -170,7 +171,7 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
     await snap(window, "1100x720-rail-tick-hover")
 
     await window.mouse.click(t.x + t.width / 2, t.y + t.height / 2)
-    await expect.poll(() => inViewport(first), { timeout: 5_000 }).toBe(true)
+    await expect.poll(() => inViewport(first), { timeout: 8_000 }).toBe(true)
     await expect(tick).toHaveAttribute("aria-current", "location")
     await snap(window, "1100x720-rail-tick-click-scrolled")
 
