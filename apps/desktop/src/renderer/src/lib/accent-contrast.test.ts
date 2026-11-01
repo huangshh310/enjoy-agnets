@@ -503,6 +503,18 @@ function checks(ctx: Ctx): Check[] {
   const icon = col(ctx, "main", iconTok!)
   add("P3-9", "排队·上移/下移箭头", GRAPHIC, icon, dock)
   add("P3-9", `排队·箭头禁用态（opacity-${disabledOp}，WCAG 不要求，仅记录）`, null, over({ ...icon, a: Number(disabledOp) / 100 }, dock), dock)
+
+  // soft 4df2：state-success-text（设置 hub「已开 N 项」、侧栏 +N）。亮色 lime-800；暗色须 .dark 覆盖到 lime-500（对 neutral-800 ≥ 4.5）。
+  const successFg = col(ctx, "main", "state-success-text")
+  add("P2-soft", "state-success-text vs 主栏", TEXT, successFg, surface(ctx, "main"))
+  add("P2-soft", "state-success-text vs 卡片", TEXT, successFg, card(ctx))
+  if (dark) {
+    add("P2-soft", "state-success-text vs neutral-800（暗）", TEXT, successFg, col(ctx, "main", "neutral-800"))
+    assert.equal(toHex(successFg), toHex(col(ctx, "main", "lime-500")), "暗色 state-success-text 应对齐 lime-500 / status-lime-text")
+  } else {
+    assert.equal(toHex(successFg), toHex(col(ctx, "main", "lime-800")), "亮色 state-success-text 保持 lime-800")
+  }
+
   return out
 }
 
