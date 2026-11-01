@@ -198,6 +198,18 @@ test("luna r5 规则 2：边看卡边改——改字 / 删 chip 立刻隐藏，�
   assert.deepEqual(retryCardView({ canRetry: true, running: false, restoredDetail: restored, editThenSend: edit }), { showRetry: true, detail: restored })
   assert.deepEqual(retryCardView({ canRetry: false, running: false, restoredDetail: null, editThenSend: edit }), { showRetry: false, detail: edit }, "受限卡没有还稿行：接在原因下")
   assert.deepEqual(retryCardView({ canRetry: false, running: true, restoredDetail: null, editThenSend: edit }), { showRetry: true, detail: null }, "重发进行中照常显示（禁用态）")
+  assert.deepEqual(
+    retryCardView({
+      canRetry: true,
+      running: false,
+      restoredDetail: restored,
+      editThenSend: edit,
+      midTurn: true,
+      midTurnDetail: "已经做的都留着"
+    }),
+    { showRetry: false, detail: "已经做的都留着" },
+    "中途失败：不给再发一次"
+  )
 })
 
 test("leo r5 MUST 2：切走再切回（hydrate setError(null)）→ 快照还在，再发一次照常只发那一句", async () => {

@@ -111,6 +111,7 @@ function emitFailedRun(
     message,
     ...(code ? { code } : {}),
     preOutput: false,
+    ...(run.producedOutput ? { midTurn: true } : {}),
     ...failedTurnRoute(run, readAgentToolOverrides),
     turn
   })

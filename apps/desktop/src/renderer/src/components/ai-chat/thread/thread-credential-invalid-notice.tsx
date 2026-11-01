@@ -2,6 +2,7 @@
  * 发送被 credential_invalid 挡住：白卡片 + 红点 + 改密钥，打开**这一轮实际用的**档案的密钥框（luna P2-1）；
  * ACP 引擎没绑档案 → 打开它自己的设置卡；解析不出档案时打开添加密钥；免密钥档案不给改密钥。
  * luna P2（m211）：密钥没改好又按了发送（被闸拦下 / main 拒掉）→ 第二行补「先改好密钥再发。」，不静默。
+ * 中途失败：说「做到一半停了」，仍给「改密钥」，不暗示再发一遍。
  */
 import { useSyncExternalStore } from "react"
 import { RiKey2Line } from "@remixicon/react"
@@ -31,6 +32,7 @@ export function ThreadCredentialInvalidNotice({
   const t = useT()
   const restoredDetail = useRestoredImagesDetail()
   const sessionId = useChatStore((state) => state.sessionId)
+  const midTurn = useChatStore((state) => state.errorStage === "mid_turn")
   const blockedAll = useSyncExternalStore(subscribeCredentialSendBlocked, getCredentialSendBlocked)
   // 落地页（没有会话）也认：从落地页发被拦下时提醒记在空名下（luna P2）。
   const nudge = blockedAll.has(credentialNudgeKey(sessionId)) ? t("chat.credentialFixKeyFirst") : null
@@ -42,8 +44,8 @@ export function ThreadCredentialInvalidNotice({
       testId="thread-credential-invalid-notice"
       kind="credential_invalid"
       tone="danger"
-      message={fillProviderFace(t, "chat.credentialInvalidNotice", face)}
-      detail={credentialInvalidDetail(nudge, restoredDetail)}
+      message={fillProviderFace(t, midTurn ? "chat.credentialInvalidMidTurnNotice" : "chat.credentialInvalidNotice", face)}
+      detail={midTurn ? t("chat.midTurnFailedDetail") : credentialInvalidDetail(nudge, restoredDetail)}
       actionLabel={fixKey ? t("chat.goFixKey") : undefined}
       actionIcon={<RiKey2Line className="size-3" />}
       onAction={fixKey ? () => void navigate(fixKeyTargetNavigation(fixKey) as never) : undefined}

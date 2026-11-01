@@ -1,5 +1,6 @@
 /**
  * 发送回 provider_unreachable：还差一步同款白卡片 + 中性点 + 再发一次。
+ * 中途失败（errorStage=mid_turn）：说「做到一半停了」，不给再发一次、不还稿。
  * 重复失败只换同一条，不叠层。
  */
 import { RiRefreshLine } from "@remixicon/react"
@@ -22,12 +23,15 @@ export function ThreadCredentialNetworkNotice({
   const t = useT()
   const restoredDetail = useRestoredImagesDetail()
   const running = useChatStore((state) => state.running)
+  const midTurn = useChatStore((state) => state.errorStage === "mid_turn")
   // leo r5 / jojo：那一句不在原样 / 没有还稿快照 → 隐藏「再发一次」，第二行改说下一步（重发进行中照常显示禁用态）。
   const view = retryCardView({
     canRetry: useRetryKeptDraftAvailable(),
     running,
     restoredDetail,
-    editThenSend: t("chat.sendFailedEditThenSend")
+    editThenSend: t("chat.sendFailedEditThenSend"),
+    midTurn,
+    midTurnDetail: t("chat.midTurnFailedDetail")
   })
   // 跟前台引擎走：Amp / 自定义助手失败说引擎名，不说聊天密钥档案名（luna m136b-62）。
   const face = useSendFailureProviderName()
@@ -36,7 +40,7 @@ export function ThreadCredentialNetworkNotice({
       testId="thread-credential-network-notice"
       kind="provider_unreachable"
       tone="neutral"
-      message={fillProviderFace(t, "chat.credentialNetworkNotice", face)}
+      message={fillProviderFace(t, midTurn ? "chat.credentialNetworkMidTurnNotice" : "chat.credentialNetworkNotice", face)}
       detail={view.detail}
       actionLabel={view.showRetry ? (running ? t("chat.resendingDraft") : t("chat.resendDraft")) : undefined}
       actionIcon={<RiRefreshLine className="size-3" />}

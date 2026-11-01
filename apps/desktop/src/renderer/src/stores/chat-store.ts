@@ -105,6 +105,7 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   sessionReviewDismissedKey: null,
   pendingApproval: null,
   error: null,
+  errorStage: null,
   errorRetry: null,
   preparingHint: false,
   preparingSessionId: null,
@@ -226,11 +227,13 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
       ...(patch.pendingApproval !== undefined ? { pendingApproval: patch.pendingApproval } : {}),
       ...(patch.running !== undefined ? { running: patch.running } : {}),
-      ...(patch.running === true ? { runStartedAt: get().runStartedAt ?? Date.now() } : {}),
+      ...(patch.running === true ? { runStartedAt: get().runStartedAt ?? Date.now(), errorStage: null } : {}),
       ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
       ...(typeof patch.runId === "string" ? { lastRunId: patch.runId } : {}),
-      ...(error !== undefined ? { error } : {}),
+      ...(error !== undefined
+        ? { error, errorRetry: null, errorStage: patch.errorStage ?? null }
+        : {}),
       ...(patch.notice !== undefined ? { notice: patch.notice } : {}),
       ...(composer !== undefined ? { composer } : {})
     })
@@ -254,7 +257,13 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
         ...(assets?.length ? { assets } : {})
       }
     ]
-    set({ messages, composer: "", error: errorAfterOptimisticSend(get().error), notice: null })
+    set({
+      messages,
+      composer: "",
+      error: errorAfterOptimisticSend(get().error),
+      errorStage: null,
+      notice: null
+    })
     // leo r5 MUST 2：记下这一句（后台回滚时拿它拍还稿快照）。
     noteSentUserTurn(get().sessionId, content, assets, first)
     return messages
@@ -278,7 +287,11 @@ export const useChatStore = create<ChatStore>()(withErrorRetryInvariant((set, ge
   setError: (error, retryTarget) => {
     // leo r5 MUST 2：不在这里清还稿快照——切会话会 setError(null)，卡切回来还在，快照不能丢。
     // 闸拦发送不带「…已放回」由 sendComposerOnce 在发起这一发时清本会话快照保证（luna 锁定文案）。
-    set({ error, errorRetry: error && retryTarget ? { error, target: retryTarget } : null })
+    set({
+      error,
+      errorStage: null,
+      errorRetry: error && retryTarget ? { error, target: retryTarget } : null
+    })
   },
   setPreparingHint: (preparingHint, sessionId) => set({ preparingHint, preparingSessionId: preparingHint ? (sessionId === undefined ? get().sessionId : sessionId) : null }),
   setNotice: (notice) => {

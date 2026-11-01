@@ -21,7 +21,7 @@ let items: FollowupItem[] = []
  * held：停止 / 换助手之后同会话又有一轮正常跑完（比如「改一下再发」发出去了）——「你停止了上一轮」已经过时，
  * 只说「排队的 N 条先不发」；行为同停止（只认「继续」，luna P3 m211-14）。
  */
-export type FollowupPausedReason = "stopped" | "engineSwitched" | "held" | "error" | "quota"
+export type FollowupPausedReason = "stopped" | "engineSwitched" | "held" | "error" | "quota" | "midTurn"
 const paused = new Map<string, FollowupPausedReason>()
 /** 暂停之后这个会话开跑过新的一轮（run.start）。被停的那一轮迟到的 run.end 不算（luna P3：只有之后真发过一轮才改说 held）。 */
 const startedSincePause = new Set<string>()
@@ -50,11 +50,15 @@ export function pauseFollowups(sessionId: string | null | undefined, reason: Fol
   if (!sessionId || !items.some((item) => item.sessionId === sessionId)) return false
   const current = paused.get(sessionId)
   if (current === reason) return true
-  // 同一次失败常常两头都报（run.error 带额度码、发送链再按通用失败报一次）：通用的「出错」不盖掉「额度用完」。
-  if (current === "quota" && reason === "error") return true
+  // 同一次失败常常两头都报（run.error 带额度码、发送链再按通用失败报一次）：通用的「出错」/中途失败不盖掉「额度用完」。
+  if (current === "quota" && (reason === "error" || reason === "midTurn")) return true
   // leo BLOCK #163 ②：用户自己停的（停止 / 换助手）优先级最高——之后被停那一轮再报出错 / 额度，也不改成会自动解除的原因，
   // 否则随后任一轮 run.end 就把它放开，排队的自己发出去。
-  if ((current === "stopped" || current === "engineSwitched" || current === "held") && (reason === "error" || reason === "quota")) return true
+  if (
+    (current === "stopped" || current === "engineSwitched" || current === "held") &&
+    (reason === "error" || reason === "quota" || reason === "midTurn")
+  )
+    return true
   // 换助手时先记 engineSwitched，随后被停那一轮的「用户停止」run.error 回来：不改回普通「停止」。
   if (current === "engineSwitched" && reason === "stopped") return true
   paused.set(sessionId, reason)

@@ -4,6 +4,7 @@
  * - 能安全重发（那一句原样在、chip 一个不少、有还稿快照）或正在重发 → 给按钮，第二行照旧（「…已放回输入框，可以直接再发。」）；
  * - 否则隐藏按钮（不是置灰），第二行**替换**成「改好后点发送就行，不会自动发出。」；原因行和 × 不变；
  * - 受限卡（无权限 / 余额）本没有还稿行时，这句就接在原因下。
+ * - 中途失败（midTurn）：已产出工具/字，不给「再发一次」，第二行换 midTurnDetail。
  */
 export type RetryCardView = { showRetry: boolean; detail: string | null }
 
@@ -12,7 +13,10 @@ export function retryCardView(input: {
   running: boolean
   restoredDetail: string | null
   editThenSend: string
+  midTurn?: boolean
+  midTurnDetail?: string | null
 }): RetryCardView {
+  if (input.midTurn) return { showRetry: false, detail: input.midTurnDetail ?? null }
   const showRetry = input.canRetry || input.running
   return { showRetry, detail: showRetry ? input.restoredDetail : input.editThenSend }
 }

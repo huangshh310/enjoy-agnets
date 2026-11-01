@@ -236,6 +236,11 @@ export type ChatStore = {
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
   /**
+   * 失败阶段：mid_turn = 本轮已有产出后的中途失败（勿还稿、卡说「做到一半」）。
+   * setError / 下一发 / run.start 清掉。
+   */
+  errorStage: "mid_turn" | null
+  /**
    * leo #147 MF-2：这条错误自带的重试目标（截断闸挡下的重新生成 / 编辑重发）。
    * 只在 `error` 仍是同一句时有效；任何不带目标的 setError / 新发送 / 切会话都会盖掉。
    */

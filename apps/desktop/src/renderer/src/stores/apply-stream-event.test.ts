@@ -565,7 +565,7 @@ test("尚未认领 runId 的出字前失败也撕泡还草稿", () => {
   assert.equal(patch.running, false)
 })
 
-test("已经出字后即使闸码也不回滚气泡", () => {
+test("已经出字后即使闸码也不回滚气泡，也不还回输入框（中途失败）", () => {
   const messages: ThreadMessage[] = [
     { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },
     {
@@ -589,7 +589,9 @@ test("已经出字后即使闸码也不回滚气泡", () => {
   )
   assert.equal(patch.messages.length, 2)
   assert.equal(patch.messages.at(-1)?.content, "partial")
-  assert.equal(patch.composer, "hello draft")
+  // patrol-4df2：已出字 = 中途失败，原句留在线程，勿放回输入框以免重复干活。
+  assert.equal(patch.composer, undefined)
+  assert.equal(patch.errorStage, "mid_turn")
   assert.equal(patch.error, "provider_unreachable")
 })
 
@@ -604,4 +606,69 @@ test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行
   assert.equal(patch.pendingApproval, null)
   assert.equal(patch.heldResolved?.type, "approval.resolved")
   assert.equal(patch.heldResolved?.toolCallId, "tool_catchup_4")
+})
+
+test("中途失败（工具已跑）：不还回输入框，errorStage=mid_turn", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user", role: "user", content: "write a file", createdAt: 1 },
+    {
+      id: "msg_asst",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: true,
+      tools: [
+        {
+          id: "tool_1",
+          name: "write_file",
+          state: "output-available",
+          args: { path: "e2e-stub.txt" },
+          result: { ok: true }
+        }
+      ]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: false,
+      midTurn: true
+    },
+    "run_1"
+  )
+  assert.equal(patch.error, "provider_unreachable")
+  assert.equal(patch.errorStage, "mid_turn")
+  assert.equal(patch.composer, undefined)
+  assert.equal(patch.messages.some((row) => row.role === "user" && row.content === "write a file"), true)
+  assert.equal(patch.running, false)
+})
+
+test("中途失败仅靠本地产出判定（无 midTurn 字段）也不还稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user", role: "user", content: "write a file", createdAt: 1 },
+    {
+      id: "msg_asst",
+      role: "assistant",
+      content: "partial",
+      createdAt: 2,
+      streaming: true
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: false
+    },
+    "run_1"
+  )
+  assert.equal(patch.errorStage, "mid_turn")
+  assert.equal(patch.composer, undefined)
 })

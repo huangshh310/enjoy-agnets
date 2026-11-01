@@ -48,7 +48,7 @@ export function isNeutralPause(reason: FollowupPausedReason | null): boolean {
 
 /** 这种暂停在同会话一轮正常跑完后自动解除吗。 */
 export function autoResumesAfterSuccess(reason: FollowupPausedReason | null): boolean {
-  return reason === "error" || reason === "quota"
+  return reason === "error" || reason === "quota" || reason === "midTurn"
 }
 
 /**
@@ -57,8 +57,10 @@ export function autoResumesAfterSuccess(reason: FollowupPausedReason | null): bo
  */
 export function noteFollowupRunEvent(
   sessionId: string | undefined,
-  event: { type: string; message?: string; code?: string },
-  nonAgentRun: boolean
+  event: { type: string; message?: string; code?: string; midTurn?: boolean },
+  nonAgentRun: boolean,
+  /** 调用方在 apply 前根据线程产出 / event.midTurn 判定；中途失败换 midTurn 文案。 */
+  midTurnHint = false
 ): void {
   if (!sessionId || nonAgentRun) return
   if (event.type === "run.start") {
@@ -68,7 +70,9 @@ export function noteFollowupRunEvent(
   if (event.type === "run.error") {
     settlePendingFailedSendOnRunError(sessionId)
     const reason = followupPauseReasonForRunError({ message: event.message ?? "", code: event.code })
-    if (reason) pauseFollowups(sessionId, reason)
+    if (!reason) return
+    const mid = midTurnHint || event.midTurn === true
+    pauseFollowups(sessionId, mid && (reason === "error" || reason === "quota") ? "midTurn" : reason)
     return
   }
   if (event.type !== "run.end") return
