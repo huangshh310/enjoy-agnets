@@ -32,6 +32,7 @@ import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
 import { AttentionNeedsBar } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStageHeader } from "./chat-stage-header"
+import { SessionTabStrip } from "@renderer/components/ai-chat/session-tabs/session-tab-strip"
 import { useTaskbarTitle } from "./use-taskbar-title"
 import { EmptySessionStart } from "./empty-session-start"
 import { EmptyStatePills } from "@renderer/components/ai-chat/empty-state/empty-state-pills"
@@ -218,6 +219,7 @@ function ChatThreadBody(props: {
           })
         }}
       />
+      <SessionTabStrip />
       <AttentionNeedsBar />
       <div
         className={

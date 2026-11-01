@@ -5,9 +5,9 @@ import { AiChatSidebar } from "@renderer/components/ai-chat/ai-chat-sidebar"
 import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import {
   openFolder,
-  selectPersistedSession,
   startPersistedSession
 } from "@renderer/hooks/use-agent-session"
+import { selectSessionFromSidebarClick } from "@renderer/hooks/session-tabs/session-tabs-actions"
 import { formatNodeTime, useChatStore } from "@renderer/stores/chat-store"
 import { useMinuteTick } from "@renderer/hooks/use-minute-tick"
 import { useT } from "@renderer/i18n"
@@ -32,7 +32,7 @@ export function ContextColumn({ isChat }: { isChat: boolean }) {
         expandedIds={expandedIds}
         sessionId={sessionId}
         onToggleExpanded={toggleExpanded}
-        onSelectSession={(id) => void selectPersistedSession(id)}
+        onSelectSession={(id, opts) => void selectSessionFromSidebarClick(id, opts)}
         onNewSession={() => void startPersistedSession()}
         onOpenWorkspace={() => void openFolder()}
         formatTime={(timestamp) => formatNodeTime(timestamp, t)}

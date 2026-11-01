@@ -23,6 +23,7 @@ import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-
 import type { WorkspaceRow } from "./workspace-row"
 import { readDeniedApprovals } from "./session-archive-result"
 import { forgetPendingRewinds } from "./rewind-pending"
+import { syncTabsAfterSessionRemoved } from "./session-tabs/session-tabs-actions"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
@@ -42,7 +43,8 @@ export async function archiveCurrentSession(sessionId: string) {
   forgetPendingRewinds([sessionId])
   useAttentionStore.getState().clearSession(sessionId)
   useAttentionStore.getState().takePark(sessionId)
-  if (wasCurrent) await landAfterArchive(adjacentId)
+  const tabNext = await syncTabsAfterSessionRemoved(sessionId)
+  if (wasCurrent) await landAfterArchive(tabNext ?? adjacentId)
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })

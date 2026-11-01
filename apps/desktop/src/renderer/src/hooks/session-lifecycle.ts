@@ -55,6 +55,7 @@ import { setComposerWritebackHeld } from "./composer-sync-lock"
 import { reportSessionFocus } from "./report-session-focus"
 import { messagesForSessionSwitch } from "./thread-paint-cache"
 import { markSessionHistoryHydrated } from "./session-history-pending"
+import { applyNewChatToTabs } from "./session-tabs/session-tabs-actions"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -194,10 +195,19 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
   if (isDefaultSessionTitle(customTitle) && isReusableEmptySession(useChatStore.getState(), workspaceId)) {
     cancelQueuedComposerSend()
     useAttentionStore.getState().clearCompletes()
+    const current = useChatStore.getState().sessionId
+    if (current) {
+      applyNewChatToTabs({
+        newSessionId: current,
+        previousActiveId: current,
+        reusedEmpty: true
+      })
+    }
     focusComposerAfterNewSession()
     return
   }
   cancelQueuedComposerSend()
+  const previousActiveId = useChatStore.getState().sessionId
   const { token } = beginNewSessionCreate()
   parkForegroundRun()
   saveCurrentSessionDraft()
@@ -233,6 +243,11 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "�
     // jojo P1（#155 gate2）：排队首发（A）的附件在按 Enter 时已快照；建好会话时不再把输入框里后贴的图并进 A。
     // 输入框里留着的图（还没发的下一条）绑到新会话的草稿上。
     publishCreatedSession(store, session, runtimeId)
+    applyNewChatToTabs({
+      newSessionId: session.id,
+      previousActiveId,
+      reusedEmpty: false
+    })
     finishNewSessionCreate(token, session.id)
     if (!hasQueuedComposerSend()) setComposerWritebackHeld(false)
     await bindSessionRuntime(session.id, runtimeId)

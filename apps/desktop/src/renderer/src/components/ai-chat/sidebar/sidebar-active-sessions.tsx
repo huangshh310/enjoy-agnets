@@ -22,7 +22,7 @@ export function SidebarActiveSessions({
   sessions: Array<{ id: string; name: string; updatedAt: number }>
   sessionId: string | null
   clickedRow: SessionRowClick | null
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
@@ -60,7 +60,9 @@ export function SidebarActiveSessions({
               : null
           }
           className="rounded-xl"
-          onSelect={() => onSelectSession(session.id)}
+          onSelect={(event) =>
+            onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
+          }
         />
       ))}
     </div>
