@@ -133,7 +133,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
         <>
           <UserSentQuotes chips={view.chips} />
           {view.text ? (
-            <MessageContent data-testid="user-bubble" className="dark:!bg-background-tertiary-default dark:ring-1 dark:ring-border-button-default">
+            <MessageContent data-testid="user-bubble" className="!bg-accent-500/15 dark:!bg-accent-500/25 dark:ring-1 dark:ring-accent-500/40">
               <p className="whitespace-pre-wrap break-words">{view.text}</p>
             </MessageContent>
           ) : null}

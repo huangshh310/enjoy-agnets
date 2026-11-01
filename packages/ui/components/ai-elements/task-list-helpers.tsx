@@ -34,6 +34,8 @@ export function isLiveProgress(status: TaskStatus | undefined, live: boolean): b
 
 export function taskStatusLabel(status: TaskStatus, live: boolean): string {
   if (status === "completed") return uiT("完成", "Done")
+  if (status === "failed") return uiT("失败", "Failed")
+  if (status === "cancelled") return uiT("已停止", "Stopped")
   if (status === "in_progress" && live) return uiT("运行中", "Running now")
   if (status === "in_progress") return uiT("已停止", "Stopped")
   return uiT("待办", "Pending")
@@ -65,6 +67,12 @@ export function TaskRadio({ status, live = true }: { status: TaskStatus; live?: 
   }
   if (status === "in_progress" && live) {
     return <span className="size-3.5 shrink-0 rounded-full bg-accent-500" />
+  }
+  if (status === "failed") {
+    return <span className="size-3.5 shrink-0 rounded-full bg-text-error-primary" />
+  }
+  if (status === "cancelled") {
+    return <span className="size-3.5 shrink-0 rounded-full border-2 border-text-tertiary" />
   }
   if (status === "in_progress") {
     return <span className="size-3.5 shrink-0 rounded-full border-2 border-text-tertiary" />

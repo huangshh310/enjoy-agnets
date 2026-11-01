@@ -74,10 +74,13 @@ const STREAMDOWN_CONTROLS = {
 
 export function MarkdownResponse({
   children,
-  className
+  className,
+  streaming = false
 }: {
   children: string
   className?: string
+  /** #117：streaming 态句末薄光标；半截语法靠 Streamdown 不闪 */
+  streaming?: boolean
 }) {
   if (!children.trim()) return null
   return (
@@ -86,6 +89,10 @@ export function MarkdownResponse({
       components={FENCE_COMPONENTS}
       controls={STREAMDOWN_CONTROLS}
       lineNumbers={false}
+      mode={streaming ? "streaming" : "static"}
+      isAnimating={streaming}
+      caret={streaming ? "block" : undefined}
+      parseIncompleteMarkdown
     >
       {children}
     </MessageResponse>

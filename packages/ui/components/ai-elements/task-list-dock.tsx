@@ -96,8 +96,9 @@ function TaskRow({ task, live }: { task: NormalizedTask; live: boolean }) {
         className={cx(
           "min-w-0 flex-1 truncate text-caption-1-medium",
           task.status === "completed" && "text-text-tertiary",
+          task.status === "failed" && "text-text-error-primary",
           running && "text-text-primary",
-          !running && task.status !== "completed" && "text-text-secondary"
+          !running && task.status !== "completed" && task.status !== "failed" && "text-text-secondary"
         )}
       >
         {task.title}
@@ -117,6 +118,7 @@ function formatTaskHeading(title?: string): string {
 }
 
 function statusTone(status: TaskStatus, live: boolean): string {
+  if (status === "failed") return "text-text-error-primary"
   if (status === "in_progress" && live) return "text-accent-500"
   return "text-text-tertiary"
 }

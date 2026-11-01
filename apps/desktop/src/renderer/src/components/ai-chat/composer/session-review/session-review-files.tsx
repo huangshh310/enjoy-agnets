@@ -5,6 +5,8 @@ import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
 import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import type { SessionReviewFile } from "./session-review.types"
+import { FileDiffActions } from "../../diff/file-diff-actions"
+import type { FileDiffDecision } from "../../diff/file-diff-decision"
 
 export function SessionFileTrigger({
   file,
@@ -36,29 +38,50 @@ export function SessionFileTrigger({
 
 export function SessionFileRow({
   file,
-  onOpen
+  onOpen,
+  decision = "pending",
+  decidable = true,
+  busy = false,
+  onKeep,
+  onDiscard
 }: {
   file: SessionReviewFile
   onOpen: (path: string) => void
+  decision?: FileDiffDecision
+  decidable?: boolean
+  busy?: boolean
+  onKeep?: () => void
+  onDiscard?: () => void
 }) {
   return (
-    <button
-      type="button"
-      title={file.path}
-      onClick={() => onOpen(file.path)}
-      className="group flex h-7.5 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-text-primary/80 transition-all hover:bg-background-primary-default/90 hover:text-text-primary"
-    >
-      <FileTypeIcon name={file.name} kind={file.kind} size={15} />
-      <span className="min-w-0 truncate font-mono text-caption-1-medium text-text-primary group-hover:text-accent-500">
-        {file.name}
-      </span>
-      {file.dir ? (
-        <span className="max-w-[200px] truncate font-mono text-caption-2-regular text-text-tertiary/70">{file.dir}</span>
+    <div className="group flex h-7.5 w-full min-w-0 items-center gap-2 rounded-md px-2 text-text-primary/80 transition-all hover:bg-background-primary-default/90 hover:text-text-primary">
+      <button
+        type="button"
+        title={file.path}
+        onClick={() => onOpen(file.path)}
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+      >
+        <FileTypeIcon name={file.name} kind={file.kind} size={15} />
+        <span className="min-w-0 truncate font-mono text-caption-1-medium text-text-primary group-hover:text-accent-500">
+          {file.name}
+        </span>
+        {file.dir ? (
+          <span className="max-w-[200px] truncate font-mono text-caption-2-regular text-text-tertiary/70">{file.dir}</span>
+        ) : null}
+        <span className="ml-auto shrink-0">
+          <DiffCounts additions={file.additions} deletions={file.deletions} />
+        </span>
+      </button>
+      {onKeep && onDiscard ? (
+        <FileDiffActions
+          decision={decision}
+          disabled={!decidable}
+          busy={busy}
+          onKeep={onKeep}
+          onDiscard={onDiscard}
+        />
       ) : null}
-      <span className="ml-auto shrink-0">
-        <DiffCounts additions={file.additions} deletions={file.deletions} />
-      </span>
-    </button>
+    </div>
   )
 }
 

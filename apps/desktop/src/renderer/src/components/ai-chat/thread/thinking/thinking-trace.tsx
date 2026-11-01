@@ -56,10 +56,11 @@ export function ThinkingTrace({
         )}
         <span
           className={cx(
-            "text-caption-1-medium whitespace-nowrap",
+            "max-w-[min(28rem,70vw)] truncate text-caption-1-medium",
             streaming ? "bui-agent-thinking-label" : "text-text-primary"
           )}
           style={streaming ? SHIMMER_TONE : undefined}
+          title={thinkingHeadline(streaming, tools, seconds, t) ?? undefined}
         >
           {thinkingHeadline(streaming, tools, seconds, t)}
         </span>
