@@ -14,6 +14,8 @@ export type RepoOutlineToolOptions = {
   /** 单测强制 wasm init 失败。 */
   forceWasmInitFailure?: boolean
   assetsDir?: string
+  /** 解析缓存分区 + git/mtime 相关度。 */
+  workspaceRoot?: string
 }
 
 export function createRepoOutlineTool(host: AgentWorkspaceHost, options?: RepoOutlineToolOptions) {
@@ -34,6 +36,7 @@ export function createRepoOutlineTool(host: AgentWorkspaceHost, options?: RepoOu
           {
             maxDepth,
             forceDirectoryMode,
+            workspaceRoot: options?.workspaceRoot,
             wasm: {
               forceInitFailure: options?.forceWasmInitFailure === true,
               assetsDir: options?.assetsDir

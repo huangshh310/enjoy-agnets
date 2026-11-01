@@ -18,6 +18,8 @@ export type CodingToolsOptions = {
   includeAskUser?: boolean
   mode?: AgentMode
   skills?: SkillHost
+  /** 传给 repo_outline：解析缓存分区 + git/mtime 相关度。 */
+  workspaceRoot?: string
 }
 
 /**
@@ -27,7 +29,7 @@ export type CodingToolsOptions = {
 export function createCodingTools(host: AgentWorkspaceHost, options?: CodingToolsOptions) {
   const readOnly = isReadOnlyAgentMode(options?.mode ?? "agent")
   return {
-    ...createReadTools(host),
+    ...createReadTools(host, { workspaceRoot: options?.workspaceRoot }),
     ...createSkillTool(options?.skills),
     ...createTodoWriteTool(),
     ...(options?.includeAskUser === false ? {} : createAskUserQuestionsTool(host)),

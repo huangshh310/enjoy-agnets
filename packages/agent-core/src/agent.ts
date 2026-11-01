@@ -76,7 +76,7 @@ function codingAgentTools(
   options: CodingAgentOptions
 ) {
   const tools = {
-    ...createCodingTools(options.runtimeContext.host, { mode, skills: options.skills }),
+    ...createCodingTools(options.runtimeContext.host, { mode, skills: options.skills, workspaceRoot: options.runtimeContext.workspaceRoot }),
     ...createSessionHeartbeatTool(
       options.runtimeContext.sessionId,
       options.runtimeContext.setSessionHeartbeat

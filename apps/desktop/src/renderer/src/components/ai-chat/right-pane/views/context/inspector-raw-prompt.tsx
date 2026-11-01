@@ -53,6 +53,25 @@ export function InspectorRawPrompt({
           {t("chat.inspectorPromptTools")}: {view.payload.toolNames.join(", ")}
         </p>
       ) : null}
+      {view.payload?.repoMapOccupancy ? (
+        <p
+          className="text-caption-2-regular text-text-tertiary"
+          data-testid="inspect-repo-map-occupancy"
+        >
+          {view.payload.repoMapOccupancy.note
+            ? t("chat.inspectorRepoMapOccupancyNote", {
+                mode: view.payload.repoMapOccupancy.mode,
+                tokens: view.payload.repoMapOccupancy.approxTokens,
+                budget: view.payload.repoMapOccupancy.tokenBudget,
+                note: view.payload.repoMapOccupancy.note
+              })
+            : t("chat.inspectorRepoMapOccupancy", {
+                mode: view.payload.repoMapOccupancy.mode,
+                tokens: view.payload.repoMapOccupancy.approxTokens,
+                budget: view.payload.repoMapOccupancy.tokenBudget
+              })}
+        </p>
+      ) : null}
       <RawSearch
         value={view.searchQuery}
         placeholder={t("chat.inspectorRawSearch")}
