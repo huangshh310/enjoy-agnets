@@ -15,12 +15,12 @@ export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) 
   const visible = collapsed ? lines.slice(0, 16) : lines
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border-button-default bg-[#1A1612] text-[#F5F0E8] shadow-card">
+    <div className="overflow-hidden rounded-2xl border border-border-button-default bg-neutral-925 text-background shadow-card">
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
-        <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-caption-1-semibold text-[#F5F0E8]/90">
+        <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-caption-1-semibold text-background/90">
           {attachment.language}
         </span>
-        <span className="flex-1 truncate text-caption-1-medium text-[#F5F0E8]/70">
+        <span className="flex-1 truncate text-caption-1-medium text-background/70">
           {attachment.filename}
         </span>
         <span className="text-caption-1-medium text-state-success-text">
@@ -35,10 +35,10 @@ export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) 
           onClick={() => navigator.clipboard.writeText(attachment.code)}
         />
       </div>
-      <pre className="overflow-x-auto p-3 font-mono text-body-2-regular leading-6 text-[#F5F0E8]">
+      <pre className="overflow-x-auto p-3 font-mono text-body-2-regular leading-6 text-background">
         {visible.map((line, index) => (
           <div key={`${attachment.filename}-${index}`} className="flex gap-4">
-            <span className="w-4 shrink-0 text-right tabular-nums text-[#F5F0E8]/40">
+            <span className="w-4 shrink-0 text-right tabular-nums text-background/40">
               {index + 1}
             </span>
             <code className="whitespace-pre-wrap break-words">{highlightLine(line)}</code>
@@ -49,7 +49,7 @@ export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) 
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="w-full cursor-pointer border-t border-white/10 px-3 py-1.5 text-left text-caption-2-medium text-[#F5F0E8]/70 hover:bg-white/5"
+          className="w-full cursor-pointer border-t border-white/10 px-3 py-1.5 text-left text-caption-2-medium text-background/70 hover:bg-white/5"
         >
           {expanded ? t("chat.collapseLines") : t("chat.showAllLines")}
         </button>
