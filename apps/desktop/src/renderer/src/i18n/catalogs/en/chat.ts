@@ -890,6 +890,8 @@ export const enChat = {
   humanRead: "Read {name}",
   humanEdit: "Edited {name}",
   humanWrite: "Wrote {name}",
+  humanSearch: "Searched {query}",
+  humanSearchMore: "Searched {query}...",
   humanRunning: "Running {name}",
   humanRunningGeneric: "Running a check",
   humanDeniedCommand: "You denied this command",
