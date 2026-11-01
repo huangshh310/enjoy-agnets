@@ -2,7 +2,7 @@
  * 模型行要不要画单价。Ollama / LM Studio 本地不计费，整段不画。
  * custom 仍可填；推理单价只出现在计费行，留空仍按输出计。
  */
-import { LOCAL_PRESET_KINDS } from "@renderer/lib/provider-official-domains"
+import { LOCAL_PRESET_KINDS } from "../../../lib/provider-official-domains.ts"
 
 export type ModelPriceField = {
   key:

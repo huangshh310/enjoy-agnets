@@ -26,7 +26,7 @@ export function createSshWorkspaceHost(conn: SshConnectionLayer, remotePath: str
       if (conn.status !== "connected") throw disconnectedError("io")
     }
   }
-  return { ...fileOps(ctx), ...searchOps(ctx), ...gitOps(ctx) }
+  return { ...fileOps(ctx), ...searchOps(ctx), ...gitOps(ctx), isRemote: true }
 }
 
 function fileOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "readFile" | "writeFile" | "editFile" | "listDir" | "bash"> {

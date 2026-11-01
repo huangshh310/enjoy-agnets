@@ -22,6 +22,11 @@ export type AgentWorkspaceHost = {
   gitBranch?: (name: string, checkout?: boolean) => Promise<string>;
   /** 审批放行后取出 ask_user_questions 的答案。 */
   takeQuestionAnswers?: () => AskUserAnswers | undefined;
+  /**
+   * SSH / 非本地工作区：repo_outline 保持目录骨架，并注明「符号地图不可用 · 目录模式」。
+   * 本地 host 不设或为 false。
+   */
+  isRemote?: boolean;
 };
 
 export type SaveSessionHeartbeat = (

@@ -24,6 +24,7 @@ export function createDisconnectedHost(status: SshStatus = "disconnected"): Agen
     gitLog: async () => fail(),
     gitCommit: async () => fail(),
     gitPush: async () => fail(),
-    gitBranch: async () => fail()
+    gitBranch: async () => fail(),
+    isRemote: true
   }
 }

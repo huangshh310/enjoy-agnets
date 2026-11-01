@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-15（#136 r5：「再发一次」fail closed、快照按会话、后台回滚拍快照与标题复原、跨会话还稿不串；#136 r4：「再发一次」只重发留下的那一句；#136 gate2：出字前回滚附件回草稿、首句自动标题复原；#136 重放到 #135：#136：闸码即撕泡，不只认 `preOutput===true`；迟到 `run.start` 不补泡；#135：首字前失败回滚本轮气泡；`clientRequestId`；will-quit fail-closed 走 settle restart；助手行先认信封 runId；立即运行不伪造 scheduledAt；本会话允许：分表 / 缺 origin 失败关闭 / 解释器拒表 / 会话标记 / 范围 list+revoke / 叶子给 renderer / 水位对库 / 显式截断；leo MF-A/B/C：截断重试只认原尾巴并带编辑内容，bash 会话允许改为整条命令完全相同；jojo P1：名单先对成库 id，非最后一条重新生成先确认；luna P2/P3：截断后重算待验收、保守只读 bash 不进待验收；#135：首字前失败回滚本轮气泡（只删本轮新插入行，续跑 / 回挂不删）；`preOutput`；`clientRequestId`）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-11-01（④ repo_outline 符号地图 PR A：wasm 懒加载 + 预算 + 目录降级；此前 2026-10-15（#136 r5：「再发一次」fail closed、快照按会话、后台回滚拍快照与标题复原、跨会话还稿不串；#136 r4：「再发一次」只重发留下的那一句；#136 gate2：出字前回滚附件回草稿、首句自动标题复原；#136 重放到 #135：#136：闸码即撕泡，不只认 `preOutput===true`；迟到 `run.start` 不补泡；#135：首字前失败回滚本轮气泡；`clientRequestId`；will-quit fail-closed 走 settle restart；助手行先认信封 runId；立即运行不伪造 scheduledAt；本会话允许：分表 / 缺 origin 失败关闭 / 解释器拒表 / 会话标记 / 范围 list+revoke / 叶子给 renderer / 水位对库 / 显式截断；leo MF-A/B/C：截断重试只认原尾巴并带编辑内容，bash 会话允许改为整条命令完全相同；jojo P1：名单先对成库 id，非最后一条重新生成先确认；luna P2/P3：截断后重算待验收、保守只读 bash 不进待验收；#135：首字前失败回滚本轮气泡（只删本轮新插入行，续跑 / 回挂不删）；`preOutput`；`clientRequestId`）
 
 ## 当前真相
 
@@ -17,7 +17,7 @@
 | `list_dir` | 否 | |
 | `glob` | 否 | 最多 400 条 |
 | `grep` | 否 | 最多 200 条；单行正文约 2_000 字符，头尾都留 |
-| `repo_outline` | 否 | 深度/条数受限的目录骨架。开流也会注入一份进 system |
+| `repo_outline` | 否 | 优先符号地图（web-tree-sitter 懒加载 grammar，~1k token 预算）；SSH / wasm 失败时诚实降级为目录骨架并注明「符号地图不可用 · 目录模式」。开流仍可注入目录骨架进 system |
 | `skill` | 否 | 按名加载 SKILL.md；全局技能由宿主代读，不走工作区 jail |
 | `todo_write` | 否 | 整表替换对话内 Todo List，不写盘 |
 | `ask_user_questions` | 是（停车取答案，不是写盘） | 向用户提问；plan/ask 也放行。抄 Fluid AskUserQuestions 交互、BoardUI 皮 |
