@@ -8,10 +8,19 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import { followupPausedReason, listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import {
+  followupPausedReason,
+  listFollowups,
+  runtimeHintImageCount,
+  setRuntimeHint,
+  subscribeFollowups,
+  visibleRuntimeHint,
+  type RuntimeHintCode
+} from "@renderer/hooks/followup-queue"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { hintLabel, nextQueuedText } from "../composer/runtime-interact/composer-followup-rail"
+import { nextQueuedText } from "../composer/runtime-interact/composer-followup-rail"
+import { hintLabel } from "../composer/runtime-interact/runtime-hint-label"
 import { dockHintCrowded, runtimeHintPlacement } from "../composer/runtime-interact/runtime-hint-placement"
 import { approvalBodySqueeze, approvalOverflow } from "./queued-followups"
 
@@ -24,11 +33,13 @@ export function DockRuntimeHint() {
   const [hint, setHint] = useState<RuntimeHintCode>(() => visibleRuntimeHint(sessionId))
   const [queuedCount, setQueuedCount] = useState(() => listFollowups(sessionId).length)
   const [paused, setPaused] = useState(() => followupPausedReason(sessionId) != null)
+  const [imageCount, setImageCount] = useState(() => runtimeHintImageCount())
   useEffect(() => {
     const sync = () => {
       setHint(visibleRuntimeHint(sessionId))
       setQueuedCount(listFollowups(sessionId).length)
       setPaused(followupPausedReason(sessionId) != null)
+      setImageCount(runtimeHintImageCount())
     }
     sync()
     return subscribeFollowups(sync)
@@ -56,7 +67,7 @@ export function DockRuntimeHint() {
       )}
     >
       <p className="min-w-0 flex-1 truncate text-caption-2-regular text-text-secondary">
-        {hintLabel(hint, t, nextQueuedText(sessionId))}
+        {hintLabel(hint, t, nextQueuedText(sessionId), imageCount)}
       </p>
       <button
         type="button"

@@ -31,7 +31,8 @@ test("Enter 与发送钮走 submitComposer；运行中 Enter 排队也 takeCompo
   assert.match(submit, /if \(intent === "send"\) return sendComposerMessage\(undefined, typed\)/)
   assert.match(submit, /const content = await takeComposerText\(typed\)/)
   assert.match(submit, /enqueueFollowup/)
-  assert.match(submit, /steerPreparedText\(content\)/)
+  // kai send-p2 A：插话把托盘里的图一并带上（steerPreparedText(content, { assets })）。
+  assert.match(submit, /steerPreparedText\(content[,)]/)
 })
 
 test("发送闸拦下仍还全文草稿，不盖掉 no_chat_route / NEED_MODEL", () => {
