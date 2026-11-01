@@ -2,7 +2,6 @@
  * 会话多标签动作：开 / 切 / 关 / 新对话 / 归档摘除。
  * 前台切换一律走 selectPersistedSession / showEmptyHistoryChat，草稿与审批契约不变。
  */
-import { showAppToast } from "@renderer/lib/app-toast"
 import { readPersistedDraft } from "@renderer/lib/session-draft-storage"
 import { useChatStore } from "@renderer/stores/chat-store"
 import {
@@ -21,6 +20,8 @@ import { clearComposerAssets } from "../composer-assets"
 export async function openSessionInTab(sessionId: string): Promise<boolean> {
   const result = useSessionTabsStore.getState().openInTab(sessionId)
   if (!result.ok) {
+    // 动态加载：lifecycle/node 测不该被 sonner 的 document CSS 插入拖垮
+    const { showAppToast } = await import("@renderer/lib/app-toast")
     showAppToast(result.message || SESSION_TAB_OVERFLOW_MESSAGE, {
       id: "session-tab-cap",
       testId: "session-tab-cap-toast"
