@@ -15,7 +15,7 @@ export function canDecideFileDiff(input: {
 }
 
 export function nextDecision(
-  current: FileDiffDecision,
+  _current: FileDiffDecision,
   action: "keep" | "discard"
 ): FileDiffDecision {
   if (action === "keep") return "kept"
