@@ -17,6 +17,11 @@ export type KeyHint =
   /** 去充值 → 系统浏览器打开 url；没有 url 只显示文案。 */
   | { kind: "billing"; url?: string }
 
+/** 官方端点才给充值链接；代理 / 仿冒 / 无官方 billingURL 返回 undefined（luna #164）。 */
+export function officialTopUpUrl(presetKind: string | undefined, baseURL?: string): string | undefined {
+  return endpointIsOfficial(presetKind, baseURL) ? presetBillingUrl(presetKind) : undefined
+}
+
 /** baseURL：档案的端点。指到代理 / 中转（不是这家官方地址）时不给「去充值」链接（那边的额度不在这家控制台充）。 */
 export function keyHintOf(
   check: CheckLike | null | undefined,
@@ -26,7 +31,7 @@ export function keyHintOf(
   if (!check || keyStatusOf(check) !== "unverified") return undefined
   if (check.code === "forbidden") return { kind: "forbidden" }
   if (check.code === "billing") {
-    const url = endpointIsOfficial(presetKind, baseURL) ? presetBillingUrl(presetKind) : undefined
+    const url = officialTopUpUrl(presetKind, baseURL)
     return url ? { kind: "billing", url } : { kind: "billing" }
   }
   return undefined

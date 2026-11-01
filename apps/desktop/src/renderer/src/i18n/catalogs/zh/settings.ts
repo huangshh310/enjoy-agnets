@@ -107,6 +107,7 @@ export const zhSettings = {
     readyNeedSummary: "已装 {count} 个引擎 · 还没连模型",
     readyUnverifiedTitle: "可以开始了 · 密钥还没验证",
     readyUnverifiedHint: "发第一句时会再试一次",
+    readyBillingTitle: "余额不足，先充值再开始",
     engineSummary: "{ready} 个就绪 · {missing} 个未安装",
     redetect: "重新探测",
     readyState: "就绪",

@@ -143,7 +143,16 @@ test("接线：失败卡的 hook 取 sendFailureTarget（这一轮的路线 → 
 test("接线：连不上 / 密钥没通过 / 拒绝·额度 三张卡的 {name} 都跟前台引擎走", () => {
   for (const file of ["thread-credential-network-notice.tsx", "thread-credential-invalid-notice.tsx", "thread-credential-restricted-notice.tsx"]) {
     const src = readFileSync(new URL(`../components/ai-chat/thread/${file}`, import.meta.url), "utf8").replace(/\/\/.*$/gm, "")
-    assert.match(src, file === "thread-credential-invalid-notice.tsx" ? /const \{ face, fixKey \} = useSendFailureTarget\(\)/ : /const face = useSendFailureProviderName\(\)/, file)
+    if (file === "thread-credential-invalid-notice.tsx") {
+      assert.match(src, /const \{ face, fixKey \} = useSendFailureTarget\(\)/, file)
+    } else if (file === "thread-credential-restricted-notice.tsx") {
+      assert.match(src, /const \{ face, topUpUrl \} = useSendFailureTarget\(\)/, file)
+      assert.match(src, /settings\.providers\.topUp/, `${file} 官方额度卡应接线「去充值」`)
+      assert.match(src, /requestOpenExternalQuiet\(topUpUrl\)/, `${file} 去充值应打开外链`)
+      assert.match(src, /topUpLabel=\{showTopUp/, `${file} 非官方不展示去充值`)
+    } else {
+      assert.match(src, /const face = useSendFailureProviderName\(\)/, file)
+    }
     assert.match(src, /fillProviderFace\(t, /, `${file} 没走 fillProviderFace（通用说法句首大写）`)
     assert.ok(!/name = defaultProviderLabel\(/.test(src), `${file} 又拿密钥档案名当 {name}`)
   }

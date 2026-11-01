@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { readyGuideFinishes, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face.ts"
+import { readyGuideFinishes, readyGuidePrimaryKey, readyGuideSecondaryKey, readyGuideTitleKey } from "./ready-face.ts"
 
 test("有可对话路线才写可以开始了", () => {
   assert.equal(readyGuideTitleKey(true), "settings.setupGuide.readyTitle")
@@ -62,4 +62,54 @@ test("末屏图标：ready+unverified 用中性图标，不配绿✓", async () 
   assert.equal(readyMarkKind(true, undefined), "ok")
   assert.equal(readyMarkKind(true, "unverified"), "unverified")
   assert.equal(readyMarkKind(false, "invalid"), "pending")
+})
+
+
+test("ready + 余额不足：不写可以开始了，主钮仍可进应用，次钮先逛逛", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [{ kind: "api_key", providerId: "p", presetId: "deepseek" }],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    credentialCheck: { state: "unverified", code: "billing" }
+  })
+  assert.equal(snap.ready, true)
+  assert.equal(
+    readyGuideTitleKey(snap.ready, snap.credentialCheck?.state, undefined, snap.credentialCheck?.code),
+    "settings.setupGuide.readyBillingTitle"
+  )
+  assert.equal(readyGuidePrimaryKey(snap.ready), "settings.setupGuide.start")
+  assert.equal(readyGuideSecondaryKey(snap.ready, snap.credentialCheck?.code), "settings.setupGuide.browseFirst")
+  assert.equal(readyGuideFinishes(snap.ready), true)
+})
+
+test("ready + unverified 非余额：仍走密钥还没验证，无次钮", () => {
+  assert.equal(
+    readyGuideTitleKey(true, "unverified", undefined, "timeout"),
+    "settings.setupGuide.readyUnverifiedTitle"
+  )
+  assert.equal(readyGuideSecondaryKey(true, "timeout"), undefined)
+  assert.equal(readyGuideSecondaryKey(true, "forbidden"), undefined)
+  assert.equal(readyGuideSecondaryKey(false), "settings.setupGuide.browseFirst")
+})
+
+
+test("完成页余额：摘要走 guideKeyHint / renderKeyHint；对话框传 credential code", async () => {
+  const { readFileSync } = await import("node:fs")
+  const { dirname, join } = await import("node:path")
+  const { fileURLToPath } = await import("node:url")
+  const dir = dirname(fileURLToPath(import.meta.url))
+  const summary = readFileSync(join(dir, "ready-summary.tsx"), "utf8")
+  const dialog = readFileSync(join(dir, "setup-guide-dialog.tsx"), "utf8")
+  assert.match(summary, /guideKeyHint\(/)
+  assert.match(summary, /renderKeyHint\(/)
+  assert.match(summary, /ready-billing-summary/)
+  assert.match(summary, /requestOpenExternalQuiet/)
+  assert.match(dialog, /readyGuideSecondaryKey\(chatReady, readiness\?\.credentialCheck\?\.code\)/)
+  const { zhSettings } = await import("../../i18n/catalogs/zh/settings.ts")
+  const { enSettings } = await import("../../i18n/catalogs/en/settings.ts")
+  assert.equal(zhSettings.setupGuide.readyBillingTitle, "余额不足，先充值再开始")
+  assert.equal(enSettings.setupGuide.readyBillingTitle, "Out of credit — top up before you start")
+  assert.ok(!/可以开始了/.test(zhSettings.setupGuide.readyBillingTitle))
 })

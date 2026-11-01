@@ -18,7 +18,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { EngineInstallList } from "./engine-install-list"
 import { IntroPoints } from "./intro-points"
 import { markSetupGuideComplete } from "./mark-setup-guide-complete"
-import { readyGuidePrimaryAction, readyMarkKind, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face"
+import { readyGuidePrimaryAction, readyMarkKind, readyGuidePrimaryKey, readyGuideSecondaryKey, readyGuideTitleKey } from "./ready-face"
 import { fillSetupProviderText, guideKeyStatus } from "@renderer/lib/credential/key-status"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ReadyShortcuts, ReadySummary } from "./ready-summary"
@@ -133,12 +133,26 @@ export function SetupGuideDialog() {
       >
         <SetupGuideHeader
           step={step}
-          titleKey={step === "ready" ? readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus?.status) : undefined}
+          titleKey={
+            step === "ready"
+              ? readyGuideTitleKey(
+                  chatReady,
+                  readiness?.credentialCheck?.state,
+                  keyStatus?.status,
+                  readiness?.credentialCheck?.code
+                )
+              : undefined
+          }
           title={
             step === "ready" && keyStatus
               ? fillSetupProviderText(
                   t as Parameters<typeof fillSetupProviderText>[0],
-                  readyGuideTitleKey(chatReady, readiness?.credentialCheck?.state, keyStatus.status),
+                  readyGuideTitleKey(
+                    chatReady,
+                    readiness?.credentialCheck?.state,
+                    keyStatus.status,
+                    readiness?.credentialCheck?.code
+                  ),
                   keyStatus.providerName
                 )
               : undefined
@@ -161,7 +175,7 @@ export function SetupGuideDialog() {
           step={step}
           hasWorkspace={Boolean(workspaceName)}
           primaryKey={step === "ready" ? readyGuidePrimaryKey(chatReady, keyStatus?.status) : undefined}
-          secondaryKey={step === "ready" && !chatReady ? "settings.setupGuide.browseFirst" : undefined}
+          secondaryKey={step === "ready" ? readyGuideSecondaryKey(chatReady, readiness?.credentialCheck?.code) : undefined}
           autoFocusPrimary={step === "intro"}
           onBack={() => setStep(previousSetupGuideStep(step))}
           onNext={onNext}

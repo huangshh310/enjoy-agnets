@@ -1,14 +1,16 @@
 /**
  * 发送回 provider_forbidden / provider_billing：白卡 + 琥珀点 + 换个模型 / 再试一次。
+ * 官方额度不足再补「去充值」（与第 4 步 / 设置行同一 officialTopUpUrl 口径）；代理 / 仿冒不给。
  * 草稿留下，不摊状态码或服务英文，不当密钥无效。
  */
-import { RiCpuLine, RiRefreshLine } from "@remixicon/react"
+import { RiCpuLine, RiRefreshLine, RiWallet3Line } from "@remixicon/react"
 import { retryKeptDraft, useRetryKeptDraftAvailable } from "@renderer/hooks/retry-kept-draft"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
-import { useSendFailureProviderName } from "@renderer/hooks/use-send-failure-provider-name"
+import { useSendFailureTarget } from "@renderer/hooks/use-send-failure-provider-name"
 import { fillProviderFace } from "@renderer/lib/provider-face"
 import { isProviderBilling } from "@renderer/lib/send-gate-codes"
+import { requestOpenExternalQuiet } from "@renderer/components/ai-chat/right-pane/views/terminal/attach-xterm-addons"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 import { retryCardView } from "./retry-card-view"
 import { useRestoredImagesDetail } from "./use-restored-images-detail"
@@ -33,8 +35,9 @@ export function ThreadCredentialRestrictedNotice({
     editThenSend: t("chat.sendFailedEditThenSend")
   })
   // 跟前台引擎走：Amp / 自定义助手失败说引擎名，不说聊天密钥档案名（luna m136b-62）。
-  const face = useSendFailureProviderName()
+  const { face, topUpUrl } = useSendFailureTarget()
   const billing = isProviderBilling(code)
+  const showTopUp = billing && Boolean(topUpUrl)
   return (
     <ThreadSendGateNotice
       testId="thread-credential-restricted-notice"
@@ -42,6 +45,15 @@ export function ThreadCredentialRestrictedNotice({
       tone="warning"
       message={fillProviderFace(t, billing ? "chat.credentialBillingNotice" : "chat.credentialForbiddenNotice", face)}
       detail={view.detail}
+      topUpLabel={showTopUp ? t("settings.providers.topUp") : undefined}
+      topUpIcon={showTopUp ? <RiWallet3Line className="size-3" /> : undefined}
+      onTopUp={
+        showTopUp && topUpUrl
+          ? () => {
+              requestOpenExternalQuiet(topUpUrl)
+            }
+          : undefined
+      }
       actionLabel={t("chat.switchModel")}
       actionIcon={<RiCpuLine className="size-3" />}
       onAction={() => {
