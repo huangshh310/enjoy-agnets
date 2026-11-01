@@ -33,6 +33,12 @@ export {
   type FileDiffModel
 } from "./diff";
 export type { AgentRuntimeContext, AgentWorkspaceHost } from "./runtime-context";
+export {
+  getLastRepoMapOccupancy,
+  REPO_MAP_TOKEN_BUDGET,
+  SYMBOL_MAP_UNAVAILABLE_NOTE
+} from "./context/repo-map/index";
+export type { RepoMapOccupancy } from "./context/repo-map/index";
 export type { AiRuntime, GenerationRequest, RuntimeAdapters, RuntimeEvent } from "./runtime/types";
 export {
   RuntimeError,

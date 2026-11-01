@@ -13,12 +13,16 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\""
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
+    "vendor:tree-sitter-wasm": "node ../../scripts/vendor-tree-sitter-wasm.mjs",
+    "pretest": "node ../../scripts/vendor-tree-sitter-wasm.mjs"
   },
   "dependencies": {
     "ai": "catalog:",
     "zod": "catalog:",
-    "@enjoy-agents/ipc-contract": "workspace:*"
+    "@enjoy-agents/ipc-contract": "workspace:*",
+    "web-tree-sitter": "0.27.1",
+    "@repomix/tree-sitter-wasms": "0.1.16"
   },
   "devDependencies": {
     "typescript": "catalog:",

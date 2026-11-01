@@ -13,6 +13,8 @@ files:
 asarUnpack:
   - resources/**
   - node_modules/node-pty/**
+  - "**/*.wasm"
+  - "**/assets/tree-sitter/**"
 extraResources:
   - from: native/computer-use/pack
     to: bin
