@@ -1094,6 +1094,11 @@ export const enSettings = {
     speedTest: "Speed test",
     inUse: "In use",
     usedBy: "Used by",
+    deleteKeychainUnavailable:
+      "Couldn't delete: the system keychain is not usable right now, so this key cannot be removed yet. Your other keys are unchanged. Unlock the keychain, then try again.",
+    deleteRevokeHint: "If you are worried this key leaked, revoke it on the {provider} site first.",
+    deleteRevokeLink: "Revoke",
+    deleteRevokeHintGeneric: "If you are worried this key leaked, revoke it on the provider site first.",
     removeBoundTitle: "Delete {name}?",
     removeBoundDesc: "These assistants will go back to official login: {agents}. Enjoy keys for other profiles stay.",
     use: "Use",

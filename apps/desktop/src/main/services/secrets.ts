@@ -12,9 +12,8 @@ import {
   type ProfileUpsertInput,
   type ProviderKind
 } from "@enjoy-agents/providers"
-import { unbindProviderFromAgentTools } from "./agent-tools-vault"
 import { credentialFingerprint } from "./credential-fingerprint.ts"
-import { clearCredentialCheck, publicCredentialCheck, readCredentialChecks } from "./credential-check-store.ts"
+import { publicCredentialCheck, readCredentialChecks } from "./credential-check-store.ts"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
@@ -126,16 +125,7 @@ export async function setProfileEnabled(id: string, enabled: boolean): Promise<P
   return toPublic(profile, vault.activeId)
 }
 
-export async function removeProfile(id: string): Promise<void> {
-  unbindProviderFromAgentTools(id)
-  clearCredentialCheck(id)
-  const vault = await readVault()
-  vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
-  if (vault.activeId === id) {
-    vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
-  }
-  await writeVault(vault)
-}
+export { removeProfile } from "./profile-remove.ts"
 
 export async function activateProfile(id: string): Promise<ProviderPublic> {
   const vault = await readVault()

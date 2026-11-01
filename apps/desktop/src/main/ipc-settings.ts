@@ -29,6 +29,9 @@ import { getSetting, setSetting } from "./services/database"
 import { parseRecentWorkspaceIds, RECENT_WORKSPACE_SETTING } from "./services/workspace-mru.ts"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
+import { revokeHintForProfileId } from "./services/profile-revoke-lookup.ts"
+import { SecretWriteFailure } from "./services/secret-storage.ts"
+import { secretWriteBlocked } from "@enjoy-agents/ipc-contract"
 import { listAgentTools } from "./services/agent-tools-service"
 import { scheduleChatReadinessPush } from "./services/chat-readiness"
 import {
@@ -212,7 +215,16 @@ function registerProviderIpc() {
     return recheckProviderCredential(RecheckProviderInput.parse(raw).id)
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
-    await removeProfile(ProviderIdInput.parse(raw).id)
+    // 不走预检吞错：删完一张都不剩才整行清掉；还剩档案则 KEYCHAIN_UNAVAILABLE。
+    const id = ProviderIdInput.parse(raw).id
+    try {
+      await removeProfile(id)
+    } catch (error) {
+      if (error instanceof SecretWriteFailure) {
+        return secretWriteBlocked(error.code, await revokeHintForProfileId(id))
+      }
+      throw error
+    }
     scheduleChatReadinessPush()
     return settingsSnapshot()
   })
