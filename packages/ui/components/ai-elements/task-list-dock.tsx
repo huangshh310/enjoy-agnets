@@ -7,6 +7,7 @@ import { cx } from "@/utils/cx"
 import { uiT } from "@/i18n/ui-locale"
 import {
   ContinueButton,
+  dockHonestyCounts,
   isLiveProgress,
   TaskProgressBar,
   TaskRadio,
@@ -39,6 +40,7 @@ export function TaskListDock({
 }) {
   const total = rows.length
   const completedCount = rows.filter((task) => task.status === "completed").length
+  const honesty = dockHonestyCounts(rows, live)
   const heading = formatTaskHeading(title)
   const showContinue = Boolean(onContinue && !live && completedCount < total)
 
@@ -64,6 +66,22 @@ export function TaskListDock({
         </span>
         <span className="shrink-0 text-caption-2-regular text-text-tertiary tabular-nums">
           {completedCount}/{total} {uiT("完成", "complete")}
+          {honesty.failed > 0 ? (
+            <>
+              {" · "}
+              <span className="text-text-error-primary">
+                {honesty.failed} {uiT("失败", "Failed")}
+              </span>
+            </>
+          ) : null}
+          {honesty.stopped > 0 ? (
+            <>
+              {" · "}
+              <span className="text-text-secondary">
+                {honesty.stopped} {uiT("已停止", "Stopped")}
+              </span>
+            </>
+          ) : null}
         </span>
         <TaskProgressBar completed={completedCount} total={total} />
         {action ? <div className="shrink-0">{action}</div> : null}
@@ -120,5 +138,8 @@ function formatTaskHeading(title?: string): string {
 function statusTone(status: TaskStatus, live: boolean): string {
   if (status === "failed") return "text-text-error-primary"
   if (status === "in_progress" && live) return "text-accent-500"
+  if (status === "cancelled" || (status === "in_progress" && !live)) {
+    return "text-text-secondary"
+  }
   return "text-text-tertiary"
 }

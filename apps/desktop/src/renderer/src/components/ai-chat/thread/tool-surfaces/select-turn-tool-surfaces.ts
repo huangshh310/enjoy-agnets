@@ -11,7 +11,7 @@ import { isTodoWriteName } from "../thinking/agent-step-kind.ts"
 export type TurnTodoItem = {
   id?: string
   title: string
-  status: "pending" | "in_progress" | "completed"
+  status: "pending" | "in_progress" | "completed" | "failed" | "cancelled"
 }
 
 export type TurnTodoList = {
@@ -106,9 +106,12 @@ function asTodoItem(value: unknown): TurnTodoItem | null {
 }
 
 function todoStatusOf(value: string): TurnTodoItem["status"] {
-  if (value === "completed" || value === "done") return "completed"
-  if (value === "in_progress" || value === "in-progress" || value === "running") {
-    return "in_progress"
+  const raw = value.trim().toLowerCase().replace(/-/g, "_")
+  if (raw === "completed" || raw === "done") return "completed"
+  if (raw === "in_progress" || raw === "running") return "in_progress"
+  if (raw === "failed" || raw === "error") return "failed"
+  if (raw === "cancelled" || raw === "canceled" || raw === "stopped" || raw === "aborted") {
+    return "cancelled"
   }
   return "pending"
 }

@@ -20,6 +20,28 @@ function tool(partial: Partial<ThreadToolCall> & Pick<ThreadToolCall, "id" | "na
   }
 }
 
+
+test("latestTodoList 保留 failed / cancelled，不收成 pending", () => {
+  const list = latestTodoList([
+    tool({
+      id: "td",
+      name: "todo_write",
+      result: {
+        title: "本轮",
+        todos: [
+          { title: "读登录相关", status: "completed" },
+          { title: "写预览页", status: "failed" },
+          { title: "跑测试", status: "cancelled" },
+          { title: "收尾说明", status: "in_progress" },
+          { title: "别名失败", status: "error" },
+          { title: "别名停止", status: "stopped" }
+        ]
+      }
+    })
+  ])
+  assert.equal(list?.tasks.map((task) => task.status).join(","), "completed,failed,cancelled,in_progress,failed,cancelled")
+})
+
 test("latestTodoList 用最后一次 todo_write，流式 args 也能画", () => {
   const list = latestTodoList([
     tool({
