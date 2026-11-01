@@ -1049,6 +1049,8 @@ export const zhChat = {
   inspectorPromptContextPreview: "上下文载荷预览",
   inspectorPromptPreview: "尚未开跑 · 预览",
   inspectorPromptTools: "已注册工具",
+  inspectorRepoMapOccupancy: "Repo map · {mode} · ~{tokens} tokens / {budget}",
+  inspectorRepoMapOccupancyNote: "Repo map · {mode} · ~{tokens} tokens / {budget} · {note}",
   inspectorChipExclude: "从本轮模型上下文中排除",
   inspectorChipInclude: "重新加入模型上下文",
   inspectorTokenWindow: "Token 视窗",

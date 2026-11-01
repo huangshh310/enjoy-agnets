@@ -1060,6 +1060,8 @@ export const enChat = {
   inspectorPromptContextPreview: "Context payload preview",
   inspectorPromptPreview: "Preview · no run yet",
   inspectorPromptTools: "Registered tools",
+  inspectorRepoMapOccupancy: "Repo map · {mode} · ~{tokens} tokens / {budget}",
+  inspectorRepoMapOccupancyNote: "Repo map · {mode} · ~{tokens} tokens / {budget} · {note}",
   inspectorChipExclude: "Exclude from this turn's model context",
   inspectorChipInclude: "Include in model context again",
   inspectorTokenWindow: "Token window",

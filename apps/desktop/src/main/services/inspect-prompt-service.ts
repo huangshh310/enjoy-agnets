@@ -1,7 +1,7 @@
 /**
  * agent.inspectPrompt：优先返回泵时快照，否则按库内消息做 preview。
  */
-import { codingToolNamesFor } from "@enjoy-agents/agent-core"
+import { codingToolNamesFor, getLastRepoMapOccupancy } from "@enjoy-agents/agent-core"
 import {
   InspectPromptInput,
   type AgentMode,
@@ -69,9 +69,30 @@ export async function inspectPrompt(raw: unknown): Promise<InspectPromptResult> 
   const input = InspectPromptInput.parse(raw)
   const snapshot = getInspectPromptSnapshot(input.sessionId)
   if (snapshot && (await isSnapshotCurrent(input.sessionId, snapshot.capturedAt))) {
-    return snapshot
+    return withRepoMapOccupancy(snapshot)
   }
-  return previewPrompt(input)
+  return withRepoMapOccupancy(await previewPrompt(input))
+}
+
+/** C：把最近一次 repo_outline 占用挂到 Inspect（无则省略字段）。无新 StreamEvent。 */
+function withRepoMapOccupancy(result: InspectPromptResult): InspectPromptResult {
+  const occupancy = getLastRepoMapOccupancy()
+  if (!occupancy) {
+    if (result.repoMapOccupancy === undefined) return result
+    const { repoMapOccupancy: _ignored, ...rest } = result
+    void _ignored
+    return rest
+  }
+  return {
+    ...result,
+    repoMapOccupancy: {
+      mode: occupancy.mode,
+      chars: occupancy.chars,
+      approxTokens: occupancy.approxTokens,
+      tokenBudget: occupancy.tokenBudget,
+      ...(occupancy.note ? { note: occupancy.note } : {})
+    }
+  }
 }
 
 /** 压缩时间晚于快照时，快照已过期，走 preview 注入 SUMMARY。 */
