@@ -555,6 +555,10 @@
   --color-separator-border:        var(--color-neutral-800);
   --color-separator-border-strong: color-mix(in srgb, var(--color-neutral-700) 60%, transparent);
 
+  /* soft 4df2：暗色补 state-success（亮色 lime-800/200 对 neutral-800 ≈2.1:1；与 status-lime 暗色对齐）。 */
+  --color-state-success-text: var(--color-lime-500);
+  --color-state-success-base: color-mix(in srgb, var(--color-lime-950) 60%, transparent);
+
   /* Figma's dark table status pairs. */
   --color-status-lime-background:   color-mix(in srgb, var(--color-lime-950) 60%, transparent);
   --color-status-lime-text:         var(--color-lime-500);
