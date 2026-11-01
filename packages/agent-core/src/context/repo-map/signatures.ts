@@ -58,7 +58,7 @@ function collectTsLike(source: string, root: TreeSitterNode, jsOnly: boolean): s
   for (const child of root.namedChildren) {
     if (child.type === "export_statement") {
       for (const inner of child.namedChildren) {
-        if (isTsDecl(inner.type, jsOnly)) out.push(signatureLine(source, preferExportLine(source, child, inner)))
+        if (isTsDecl(inner.type, jsOnly)) out.push(signatureLine(source, preferExportLine(child, inner)))
       }
       // export default function/class 等可能直接挂在 export_statement
       if (child.namedChildren.every((n) => !isTsDecl(n.type, jsOnly))) {
@@ -80,7 +80,7 @@ function isTsDecl(type: string, jsOnly: boolean): boolean {
   return true
 }
 
-function preferExportLine(source: string, exportNode: TreeSitterNode, inner: TreeSitterNode): TreeSitterNode {
+function preferExportLine(exportNode: TreeSitterNode, inner: TreeSitterNode): TreeSitterNode {
   // 取 export 节点以保留 `export` 前缀；签名仍截首行。
   return exportNode.startIndex <= inner.startIndex ? exportNode : inner
 }
