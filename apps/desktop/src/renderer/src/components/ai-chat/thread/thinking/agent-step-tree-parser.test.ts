@@ -20,7 +20,7 @@ const mockT: TranslateFn = (key: string, params?: Record<string, string | number
   if (key === "chat.batchFilesModified") return `改了 ${String(params?.count ?? 0)} 个文件`
   if (key === "chat.batchFilesRead") return `读了 ${String(params?.count ?? 0)} 个文件`
   if (key === "chat.batchCommandsRun") return `运行 ${String(params?.count ?? 0)} 条命令`
-  if (key === "chat.batchSearches") return `搜索 ${String(params?.count ?? 0)} 次`
+  if (key === "chat.batchSearches") return `搜了 ${String(params?.count ?? 0)} 次`
   if (key === "chat.ranACommand") return "运行命令"
   if (key === "chat.exploringProject") return "正在探索项目"
   if (key === "chat.exploredPages") return `已浏览 ${String(params?.count ?? 0)} 个页面`
@@ -39,6 +39,10 @@ const mockT: TranslateFn = (key: string, params?: Record<string, string | number
   if (key === "chat.verbFind") return "查找"
   if (key === "chat.verbRun") return "运行"
   if (key === "chat.searchingQuery") return `正在搜索 ${String(params?.query ?? "")}`
+  if (key === "chat.searchingQueryMore") return `正在搜索 ${String(params?.query ?? "")}…`
+  if (key === "chat.humanSearch") return `搜了 ${String(params?.query ?? "")}`
+  if (key === "chat.humanSearchMore") return `搜了 ${String(params?.query ?? "")}…`
+  if (key === "chat.batchSearchesOne") return "搜了 1 次"
   if (key === "chat.subagentTitle") return `子智能体 ${String(params?.kind ?? "")} · ${String(params?.title ?? "")}`
   if (key === "chat.subagentFailed") return "执行失败"
   if (key === "chat.subagentExplore") return "Explore"
@@ -259,4 +263,19 @@ test("思考按工具切口拆开，当前段落在工具后面", () => {
   assert.equal(nodes[0]?.rawText, "AAAA")
   assert.equal(nodes[2]?.rawText, "BBBB")
   assert.equal(nodes[4]?.rawText, "CCCC")
+})
+
+test("搜索完成态标题用「搜了」；进行中保留「正在搜索」", () => {
+  const done = parseAgentStepNodes("", [createTool("g1", "grep", { pattern: "accent" })], mockT)
+  assert.equal(done[0]?.kind, "search")
+  assert.equal(done[0]?.title, "搜了 accent")
+
+  const runningTool: ThreadToolCall = {
+    id: "g2",
+    name: "grep",
+    args: { pattern: "theme" },
+    state: "input-available"
+  }
+  const running = parseAgentStepNodes("", [runningTool], mockT)
+  assert.equal(running[0]?.title, "正在搜索 theme")
 })

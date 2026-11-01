@@ -25,7 +25,7 @@ import {
   toolHasResultCode
 } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
-import { humanCommandTitle, humanEditTitle, humanReadTitle } from "./step-tree/tool-human-copy.ts"
+import { humanCommandTitle, humanEditTitle, humanReadTitle, humanSearchTitle } from "./step-tree/tool-human-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -127,16 +127,14 @@ function searchNode(
   t: TranslateFn
 ): AgentStepNode {
   const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
-  const title =
-    query.length > 50
-      ? t("chat.searchingQueryMore", { query: query.slice(0, 50) })
-      : t("chat.searchingQuery", { query })
+  const status = mapToolStatus(tool.state, tool)
+  const title = humanSearchTitle(query, status === "running", t)
   const pills = extractDomainPills(args, result, command)
   return {
     id: tool.id,
     kind: "search",
     title,
-    status: mapToolStatus(tool.state, tool),
+    status,
     domainPills: pills.length > 0 ? pills : undefined
   }
 }

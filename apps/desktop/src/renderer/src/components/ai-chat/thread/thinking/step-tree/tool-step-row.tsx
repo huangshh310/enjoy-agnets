@@ -158,6 +158,30 @@ function FileTitle({ node }: { node: AgentStepNode }) {
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const isSelected = Boolean(selectedFilePath && node.filePath && sameReviewPath(node.filePath, selectedFilePath))
 
+  // #117 follow-up：编辑/写入主行人话「改了/写了 {name}」，不再「编辑/写入」旧壳。
+  if (node.kind === "editing") {
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          if (node.filePath) {
+            event.stopPropagation()
+            void openChangedFile(node.filePath)
+          }
+        }}
+        title={node.filePath ? t("chat.sessionReviewOpenFile", { name: node.filePath }) : undefined}
+        className={cx(
+          "flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 text-left transition-all",
+          isSelected
+            ? "bg-accent-500/15 text-accent-500 font-medium shadow-2xs"
+            : "text-text-primary hover:text-accent-500"
+        )}
+      >
+        <span className="font-sans text-caption-1-medium font-semibold">{node.title}</span>
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"

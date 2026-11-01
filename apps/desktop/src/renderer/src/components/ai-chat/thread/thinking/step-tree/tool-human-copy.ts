@@ -13,6 +13,25 @@ export function humanBatchSearchTitle(count: number, t: TranslateFn): string {
   return count === 1 ? t("chat.batchSearchesOne") : t("chat.batchSearches", { count })
 }
 
+/** 搜索主行：完成「搜了 …」；进行中保留「正在搜索 …」。 */
+export function humanSearchTitle(
+  query: string,
+  running: boolean,
+  t: TranslateFn
+): string {
+  const q = query.trim() || "context"
+  const clipped = q.length > 50
+  const shown = clipped ? q.slice(0, 50) : q
+  if (running) {
+    return clipped
+      ? t("chat.searchingQueryMore", { query: shown })
+      : t("chat.searchingQuery", { query: shown })
+  }
+  return clipped
+    ? t("chat.humanSearchMore", { query: shown })
+    : t("chat.humanSearch", { query: shown })
+}
+
 /** 读文件主行：读了登录页 */
 export function humanReadTitle(leafName: string | undefined, t: TranslateFn): string {
   if (!leafName) return t("chat.readingResources")
