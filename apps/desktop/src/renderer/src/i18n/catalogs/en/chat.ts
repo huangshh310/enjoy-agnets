@@ -665,6 +665,18 @@ export const enChat = {
   addProject: "+ Click to add a project",
   recent: "Recent",
   sessionActive: "In progress",
+  sessionTabs: {
+    label: "Session tabs",
+    empty: "Start a new chat, or pick one on the left.",
+    overflow: "You can open up to 6 tabs. Close one first.",
+    draftConfirm: "This draft hasn't been sent. Keep it or discard it?",
+    draftConfirmHint: "This only closes the tab, not the session. Saved drafts won't show this.",
+    keep: "Keep",
+    discard: "Discard",
+    openInTab: "Open in tab",
+    busy: "In progress",
+    waiting: "Needs your call"
+  },
   sessionNeedsAttention: "Needs attention",
   newChat: "New chat",
   noChats: "No chats yet",

@@ -39,7 +39,7 @@ export function AiChatSidebar({
   expandedIds: string[]
   sessionId: string | null
   onToggleExpanded: (id: string) => void
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   onNewSession: () => void
   onOpenWorkspace: () => void
   formatTime: (timestamp: number) => string
@@ -91,8 +91,8 @@ export function AiChatSidebar({
             expandedIds={expandedIds}
             sessionId={sessionId}
             onToggleExpanded={onToggleExpanded}
-            onSelectSession={(id) => {
-              onSelectSession(id)
+            onSelectSession={(id, opts) => {
+              onSelectSession(id, opts)
               if (pathname !== "/") void navigate({ to: "/" })
             }}
             formatTime={formatTime}

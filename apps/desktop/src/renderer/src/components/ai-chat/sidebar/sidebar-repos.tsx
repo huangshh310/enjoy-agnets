@@ -33,7 +33,7 @@ export function SidebarRepos({
   expandedIds: string[]
   sessionId: string | null
   onToggleExpanded: (id: string) => void
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   formatTime: (timestamp: number) => string
 }) {
   const [clickedRow, setClickedRow] = useState<SessionRowClick | null>(null)
@@ -85,9 +85,9 @@ export function SidebarRepos({
         sessions={allSessions}
         sessionId={sessionId}
         clickedRow={clickedRow}
-        onSelectSession={(id) => {
+        onSelectSession={(id, opts) => {
           setClickedRow({ id, surface: "active" })
-          onSelectSession(id)
+          onSelectSession(id, opts)
         }}
         formatTime={formatTime}
       />
@@ -98,9 +98,9 @@ export function SidebarRepos({
         <SidebarStatusGroups
           sessions={allSessions}
           sessionId={sessionId}
-          onSelectSession={(id) => {
+          onSelectSession={(id, opts) => {
             setClickedRow({ id, surface: "tree" })
-            onSelectSession(id)
+            onSelectSession(id, opts)
           }}
           formatTime={formatTime}
         />
@@ -119,9 +119,9 @@ export function SidebarRepos({
               className="rounded-xl"
               nameClassName="text-body-medium"
               surface="tree"
-              onSelect={() => {
+              onSelect={(event) => {
                 setClickedRow({ id: session.id, surface: "tree" })
-                onSelectSession(session.id)
+                onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
               }}
             />
           ))}
@@ -136,9 +136,9 @@ export function SidebarRepos({
           sessionId={sessionId}
           pinnedIds={pinnedIds}
           onToggleExpanded={onToggleExpanded}
-          onSelectSession={(id) => {
+          onSelectSession={(id, opts) => {
             setClickedRow({ id, surface: "tree" })
-            onSelectSession(id)
+            onSelectSession(id, opts)
           }}
           isRowActive={(id) => isSessionRowActive(id, sessionId, clickedRow, "tree")}
           formatTime={formatTime}
@@ -191,7 +191,7 @@ function ProjectSessionTree({
   sessionId: string | null
   pinnedIds: string[]
   onToggleExpanded: (id: string) => void
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   isRowActive: (id: string) => boolean
   formatTime: (timestamp: number) => string
 }) {
@@ -233,7 +233,9 @@ function ProjectSessionTree({
               workflowStatus={session.workflowStatus}
               className="rounded-xl"
               surface="tree"
-              onSelect={() => onSelectSession(session.id)}
+              onSelect={(event) =>
+                onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
+              }
               onArchive={() => requestArchiveSession(session.id)}
             />
           ))}

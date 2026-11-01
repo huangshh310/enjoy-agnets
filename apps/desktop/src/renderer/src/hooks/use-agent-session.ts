@@ -37,6 +37,7 @@ import { useWorkspaceChangeInvalidation } from "./use-workspace-change-invalidat
 import { useChatReadiness } from "./use-chat-readiness"
 import { useSessionFocus } from "./use-session-focus"
 import { planNewSession } from "./plan-new-session"
+import { hydrateSessionTabsForWorkspace } from "./session-tabs/session-tabs-actions"
 import { rememberWorkspaceOnLoad } from "./unknown-workspace-remember"
 import { landEmptyHome } from "./nav-history/nav-history-controller"
 import { useNoProjectNudge } from "../components/app-shell/chat/no-project-nudge"
@@ -144,6 +145,7 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
   setForegroundSessionPicking(true)
   try {
     store.setWorkspace(workspace)
+    hydrateSessionTabsForWorkspace(workspace.id, useChatStore.getState().sessionId)
     await connectSshIfNeeded(workspace)
     await refreshAllWorkspaces()
     await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
@@ -161,6 +163,7 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
     }
     // 回灌失败时立刻退回空态由 loadSession 自己处理（所有入口共用）。
     await loadSession(picked.id, picked.title)
+    hydrateSessionTabsForWorkspace(workspace.id, picked.id)
   } finally {
     setForegroundSessionPicking(false)
   }

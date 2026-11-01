@@ -38,7 +38,7 @@ export function SidebarWorkspaceRow({
   sessionId: string | null
   isPinned: boolean
   onToggleExpanded: (id: string) => void
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   formatTime: (timestamp: number) => string
   isRowActive?: (id: string) => boolean
 }) {
@@ -156,7 +156,7 @@ function SessionList({
   sessions: RepositoryNode[]
   currentWorkspaceId: string | null
   sessionId: string | null
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   isRowActive?: (id: string) => boolean
   formatTime: (timestamp: number) => string
 }) {
@@ -206,12 +206,13 @@ function SessionList({
                   : null
               }
               className="rounded-lg"
-              onSelect={() => {
+              onSelect={(event) => {
+                const opts = { openInTab: event.metaKey || event.ctrlKey }
                 if (workspace.id !== currentWorkspaceId) {
-                  void switchWorkspace(workspace).then(() => onSelectSession(session.id))
+                  void switchWorkspace(workspace).then(() => onSelectSession(session.id, opts))
                   return
                 }
-                onSelectSession(session.id)
+                onSelectSession(session.id, opts)
               }}
               onArchive={() => requestArchiveSession(session.id)}
             />

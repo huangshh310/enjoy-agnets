@@ -20,7 +20,7 @@ export function SidebarStatusGroups({
 }: {
   sessions: RepositoryNode[]
   sessionId: string | null
-  onSelectSession: (id: string) => void
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
@@ -85,7 +85,7 @@ export function SidebarStatusGroups({
                 }
                 className="rounded-xl"
                 nameClassName="text-body-medium"
-                onSelect={() => onSelectSession(session.id)}
+                onSelect={(event) => onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })}
               />
             ))}
           </div>

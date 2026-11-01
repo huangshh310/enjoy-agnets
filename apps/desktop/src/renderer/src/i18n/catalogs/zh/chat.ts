@@ -660,6 +660,18 @@ export const zhChat = {
   addProject: "+ 点击添加项目",
   recent: "最近",
   sessionActive: "进行中",
+  sessionTabs: {
+    label: "会话标签",
+    empty: "开一个新对话，或从左边选一个。",
+    overflow: "最多开 6 个标签，先关掉一个再开。",
+    draftConfirm: "这段还没发送。留下还是丢掉？",
+    draftConfirmHint: "只关标签，不删会话。若草稿已落盘，不会出现此提示。",
+    keep: "留下",
+    discard: "丢掉",
+    openInTab: "在标签打开",
+    busy: "进行中",
+    waiting: "等你拍板"
+  },
   sessionNeedsAttention: "需处理",
   newChat: "新建对话",
   noChats: "暂无聊天",

@@ -5,6 +5,7 @@ import { RiGitBranchLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
 import { useT } from "@renderer/i18n"
+import { useSessionTabsEmptyCopy } from "@renderer/components/ai-chat/session-tabs/session-tab-empty-state"
 
 interface EmptyStateHeaderProps {
   sessionTitle?: string
@@ -20,13 +21,16 @@ export function EmptyStateHeader({
   className
 }: EmptyStateHeaderProps) {
   const t = useT()
+  const tabsEmpty = useSessionTabsEmptyCopy()
   const place = workspaceName || workspaceRootLabel
-  const spoken = place ? t("chat.emptyAskTitle", { name: place }) : t("chat.emptyAskFallback")
+  const spoken = tabsEmpty ?? (place ? t("chat.emptyAskTitle", { name: place }) : t("chat.emptyAskFallback"))
 
   return (
     <div className={cx("flex flex-col items-center text-center select-none", className)}>
       <h1 aria-label={spoken} className="text-title-1-bold text-text-primary">
-        {place ? (
+        {tabsEmpty ? (
+          tabsEmpty
+        ) : place ? (
           <>
             {t("chat.emptyAskLead")}
             {/* 亮色 500 在琥珀 / 绿只有 2.15 / 2.54，换 700；暗色 500 在深底上够亮，不变 */}

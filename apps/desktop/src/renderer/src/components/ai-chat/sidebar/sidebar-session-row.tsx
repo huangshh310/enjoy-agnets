@@ -52,7 +52,7 @@ export function SidebarSessionRow({
       <button
         type="button"
         onClick={onSelect}
-        title={label}
+        title={`${label} · ⌘/Ctrl ${"在标签打开"}`}
         className={cx(
           "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left",
           // 菜单钮叠在时间位置上，不占位；悬停/聚焦时右侧让出菜单钮的宽度（luna z151-2）。
