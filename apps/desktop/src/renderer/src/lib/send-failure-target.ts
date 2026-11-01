@@ -11,6 +11,7 @@
  * - ACP / CLI 引擎（Amp…）：绑了供应商档案 → 打开那份（免密钥档案不给按钮）；没绑 → 打开这个引擎自己的设置卡。
  */
 import { providerFace, type ProviderFace } from "./provider-face.ts"
+import { officialTopUpUrl } from "./credential/key-hint.ts"
 import { sendFailureProviderName } from "./send-failure-provider-name.ts"
 
 export type FixKeyTarget =
@@ -36,7 +37,12 @@ export type FailureToolRow = {
   providerId?: string
 }
 
-export type SendFailureTarget = { face: ProviderFace; fixKey: FixKeyTarget | null }
+export type SendFailureTarget = {
+  face: ProviderFace
+  fixKey: FixKeyTarget | null
+  /** 官方端点才有；代理 / 仿冒 / 免密钥 / 无档案 → undefined（与第 4 步 / 设置行同口径）。 */
+  topUpUrl?: string
+}
 
 /** 与 main active-profile-pick 同义：已启用且是当前；当前被关了回落第一份已启用。 */
 export function runProfileOf<T extends { enabled?: boolean; active?: boolean }>(rows: readonly T[]): T | undefined {
@@ -58,7 +64,7 @@ export function sendFailureTarget(input: {
     const row = input.route?.providerId
       ? input.providers.find((item) => item.id === input.route?.providerId)
       : runProfileOf(input.providers)
-    return { face: providerFace(row), fixKey: fixKeyForProfile(row) }
+    return { face: providerFace(row), fixKey: fixKeyForProfile(row), topUpUrl: topUpUrlFor(row) }
   }
   const face = sendFailureProviderName({
     runtimeId,
@@ -74,7 +80,15 @@ export function sendFailureTarget(input: {
       : undefined
   if (!boundId) return { face, fixKey: { kind: "agent", toolId: runtimeId } }
   const bound = input.providers.find((item) => item.id === boundId)
-  return { face, fixKey: bound?.requiresKey === false ? null : { kind: "provider", providerId: boundId } }
+  return {
+    face,
+    fixKey: bound?.requiresKey === false ? null : { kind: "provider", providerId: boundId },
+    topUpUrl: topUpUrlFor(bound)
+  }
+}
+
+function topUpUrlFor(row: FailureProviderRow | undefined): string | undefined {
+  return officialTopUpUrl(row?.kind, row?.baseURL)
 }
 
 function fixKeyForProfile(row: FailureProviderRow | undefined): FixKeyTarget | null {

@@ -29,6 +29,9 @@ export function ThreadSendGateNotice({
   secondaryActionIcon,
   secondaryActionDisabled = false,
   onSecondaryAction,
+  topUpLabel,
+  topUpIcon,
+  onTopUp,
   onDismiss,
   className
 }: {
@@ -47,6 +50,10 @@ export function ThreadSendGateNotice({
   secondaryActionIcon?: ReactNode
   secondaryActionDisabled?: boolean
   onSecondaryAction?: () => void
+  /** 官方额度不足：在换模型 / 再试旁补「去充值」（代理 / 仿冒不传）。 */
+  topUpLabel?: string
+  topUpIcon?: ReactNode
+  onTopUp?: () => void
   onDismiss: () => void
   className?: string
 }) {
@@ -72,13 +79,23 @@ export function ThreadSendGateNotice({
           </p>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {topUpLabel && onTopUp ? (
+            <NoticeAction
+              testId={`${testId}-topup`}
+              label={topUpLabel}
+              icon={topUpIcon}
+              disabled={false}
+              variant="primary"
+              onClick={onTopUp}
+            />
+          ) : null}
           {actionLabel && onAction ? (
             <NoticeAction
               testId={`${testId}-action`}
               label={actionLabel}
               icon={actionIcon}
               disabled={actionDisabled}
-              variant="primary"
+              variant={topUpLabel && onTopUp ? "secondary" : "primary"}
               onClick={onAction}
             />
           ) : null}

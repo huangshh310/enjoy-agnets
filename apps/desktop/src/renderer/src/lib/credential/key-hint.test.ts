@@ -398,3 +398,58 @@ test("luna #164 定稿：完成页摘要「换一个 {名字} 密钥再试」/ T
   const summary = readFileSync(join(dir, "../../components/setup-guide/ready-summary.tsx"), "utf8")
   assert.match(summary, /fillSetupProviderText\([^)]*?"settings\.setupGuide\.readyKeyInvalidHint",\s*keyStatus\.providerName\)/)
 })
+
+
+test("officialTopUpUrl：官方才给链接，代理 / 仿冒 / 自定义不给（与 keyHintOf 同口径）", async () => {
+  const { officialTopUpUrl } = await import("./key-hint.ts")
+  const official = new URL(presetFor("deepseek").billingURL!).toString()
+  assert.equal(officialTopUpUrl("deepseek"), official)
+  assert.equal(officialTopUpUrl("deepseek", "https://api.deepseek.com/v1"), official)
+  assert.equal(officialTopUpUrl("deepseek", "https://api.deepseek.com.evil.example/v1"), undefined)
+  assert.equal(officialTopUpUrl("deepseek", "https://proxy.example.com/v1"), undefined)
+  assert.equal(officialTopUpUrl("custom", "https://gw.example.net/v1"), undefined)
+  assert.equal(officialTopUpUrl("openai", "api.openai.com/v1"), undefined, "无协议不算官方")
+})
+
+test("sendFailureTarget.topUpUrl：Enjoy 本地官方档案有链接；仿冒 / 无绑定 Amp 没有", async () => {
+  const { sendFailureTarget } = await import("../send-failure-target.ts")
+  const official = new URL(presetFor("deepseek").billingURL!).toString()
+  const providers = [
+    { id: "prv_ds", kind: "deepseek", name: "DeepSeek", baseURL: "https://api.deepseek.com/v1", enabled: true, active: true, requiresKey: true },
+    { id: "prv_evil", kind: "deepseek", name: "Evil", baseURL: "https://api.deepseek.com.evil.example/v1", enabled: true, active: false, requiresKey: true }
+  ]
+  assert.equal(
+    sendFailureTarget({ route: null, runtimeId: "enjoy-local", tools: [], displayNames: {}, providers }).topUpUrl,
+    official
+  )
+  assert.equal(
+    sendFailureTarget({
+      route: { runtimeId: "enjoy-local", providerId: "prv_evil" },
+      runtimeId: "enjoy-local",
+      tools: [],
+      displayNames: {},
+      providers
+    }).topUpUrl,
+    undefined
+  )
+  assert.equal(
+    sendFailureTarget({
+      route: null,
+      runtimeId: "amp",
+      tools: [{ id: "amp", label: "Amp" }],
+      displayNames: {},
+      providers
+    }).topUpUrl,
+    undefined
+  )
+  assert.equal(
+    sendFailureTarget({
+      route: { runtimeId: "amp", providerId: "prv_ds" },
+      runtimeId: "amp",
+      tools: [{ id: "amp", label: "Amp", useCustomProvider: true, providerId: "prv_ds" }],
+      displayNames: {},
+      providers
+    }).topUpUrl,
+    official
+  )
+})

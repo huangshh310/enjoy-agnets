@@ -107,6 +107,7 @@ export const enSettings = {
     readyNeedSummary: "{count} engines installed · no model yet",
     readyUnverifiedTitle: "You're ready · key not verified yet",
     readyUnverifiedHint: "The first send will try again",
+    readyBillingTitle: "Out of credit — top up before you start",
     engineSummary: "{ready} ready · {missing} not installed",
     redetect: "Re-detect",
     readyState: "Ready",

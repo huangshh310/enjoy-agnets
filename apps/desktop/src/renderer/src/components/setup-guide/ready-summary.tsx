@@ -1,19 +1,27 @@
 /**
  * 完成页摘要：只认 ready；引擎数只读 engineCount，不把引擎就绪写成可以开始。
+ * 余额不足：带上与第 4 步同口径的提示（官方才有「去充值」）。
  */
 import { useThemeMode } from "@/components/application/theme/theme-toggle"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import { fillSetupProviderText, type GuideKeyStatus } from "@renderer/lib/credential/key-status"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { guideKeyHint } from "@renderer/lib/credential/key-hint"
+import { renderKeyHint } from "@renderer/lib/credential/key-hint-view"
+import { fillSetupProviderText, guideKeyStatus, type GuideKeyStatus } from "@renderer/lib/credential/key-status"
+import { requestOpenExternalQuiet } from "@renderer/components/ai-chat/right-pane/views/terminal/attach-xterm-addons"
 
 export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: string; keyStatus?: GuideKeyStatus }) {
   const t = useT()
   const theme = useThemeMode()
   const readiness = useChatReadiness().data
+  const providers = useSettingsSnapshot().data?.providers ?? []
   const ready = readiness?.ready === true
   const engineCount = readiness?.engineCount ?? 0
   const unverified = ready && readiness?.credentialCheck?.state === "unverified"
+  const resolvedKey = keyStatus ?? guideKeyStatus(readiness, providers)
+  const billingHint = unverified ? guideKeyHint(readiness, providers, resolvedKey) : undefined
   if (!ready && keyStatus?.status === "invalid") {
     return (
       <p data-testid="ready-key-invalid-summary" className="text-center text-headline-regular leading-normal text-text-error-primary">
@@ -26,6 +34,19 @@ export function ReadySummary({ workspaceName, keyStatus }: { workspaceName: stri
       <p data-testid="ready-need-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
         {t("settings.setupGuide.readyNeedSummary", { count: engineCount })}
       </p>
+    )
+  }
+  if (billingHint?.hint.kind === "billing") {
+    return (
+      <div data-testid="ready-billing-summary" className="flex flex-col items-center gap-1.5 text-center">
+        {renderKeyHint(
+          billingHint.hint,
+          billingHint.provider,
+          t,
+          { onEdit: () => {}, onOpenUrl: requestOpenExternalQuiet },
+          "ready-billing-key-hint"
+        )}
+      </div>
     )
   }
   if (unverified) {
