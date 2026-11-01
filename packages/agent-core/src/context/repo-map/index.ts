@@ -2,6 +2,7 @@ export {
   buildRepoMap,
   getLastRepoMapOccupancy,
   resetLastRepoMapOccupancyForTests,
+  clearRepoMapParseCache,
   type BuildRepoMapOptions,
   type BuildRepoMapResult,
   type RepoMapOccupancy
@@ -15,3 +16,9 @@ export {
 export { formatSymbolMap } from "./format-symbol-map.ts"
 export { resetWasmHostForTests, ensureWasmReady } from "./wasm-host.ts"
 export { grammarForPath, GRAMMAR_VERSION } from "./languages.ts"
+export { rankByRelevance, identifiersFromSignatures, scoresFromNameOnlyLog } from "./relevance.ts"
+export {
+  getCachedSignatures,
+  makeParseCacheKey,
+  repoMapParseCacheSizeForTests
+} from "./parse-cache.ts"

@@ -8,7 +8,11 @@ import type { AgentWorkspaceHost } from "../runtime-context"
 import { CLIP_FILE_CHARS, CLIP_GREP_LINE_CHARS, clipToolText } from "./clip-tool-text.ts"
 import { createRepoOutlineTool } from "./repo-outline-tool.ts"
 
-export function createReadTools(host: AgentWorkspaceHost) {
+export type ReadToolsOptions = {
+  workspaceRoot?: string
+}
+
+export function createReadTools(host: AgentWorkspaceHost, options?: ReadToolsOptions) {
   return {
     read_file: tool({
       description: "Read a UTF-8 file from the workspace. Path is relative to the workspace root.",
@@ -51,7 +55,7 @@ export function createReadTools(host: AgentWorkspaceHost) {
         return { pattern, matches: clipGrepMatches(matches) }
       }
     }),
-    ...createRepoOutlineTool(host)
+    ...createRepoOutlineTool(host, { workspaceRoot: options?.workspaceRoot })
   }
 }
 

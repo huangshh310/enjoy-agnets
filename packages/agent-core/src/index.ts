@@ -34,7 +34,10 @@ export {
 } from "./diff";
 export type { AgentRuntimeContext, AgentWorkspaceHost } from "./runtime-context";
 export {
+  buildRepoMap,
   getLastRepoMapOccupancy,
+  resetLastRepoMapOccupancyForTests,
+  clearRepoMapParseCache,
   REPO_MAP_TOKEN_BUDGET,
   SYMBOL_MAP_UNAVAILABLE_NOTE
 } from "./context/repo-map/index";
