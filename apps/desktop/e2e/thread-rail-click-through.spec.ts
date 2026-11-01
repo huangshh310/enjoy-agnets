@@ -48,14 +48,17 @@ test("1100 宽、两条带字用户消息、无账本：右侧刻度不吃点击
     await window.waitForTimeout(600)
 
     // 按消息 id 锁定：编辑框里改了字以后 hasText 就对不上了。
-    const messageId = await window
+    // 锚点只在 DeferredThreadTurn；再限定 .is-user，避免 stub-ok 回显把助手轮也滤进来。
+    const messageHit = window
       .locator("[data-thread-message]")
+      .filter({ has: window.locator(".is-user") })
       .filter({ hasText: "第二句 beta" })
-      .first()
-      .getAttribute("data-thread-message")
+    await expect(messageHit).toHaveCount(1)
+    const messageId = await messageHit.getAttribute("data-thread-message")
     expect(messageId).toBeTruthy()
     const message = window.locator(`[data-thread-message="${messageId}"]`)
-    const rail = window.locator('nav[aria-label="会话位置"]').locator("xpath=..")
+    const rail = window.locator('[data-testid="thread-preview-rail"]')
+    await expect(rail).toBeVisible()
     const railBox = await box(rail)
     const edit = message.getByRole("button", { name: "编辑消息" })
     const copy = message.getByRole("button", { name: "复制消息" })
@@ -96,7 +99,12 @@ test("1100 宽、两条带字用户消息、无账本：右侧刻度不吃点击
     await editor.fill("第二句 gamma")
     await clickCenter(window, save)
     await expect(window.locator("body")).toContainText("stub-ok 第二句 gamma", { timeout: 20_000 })
-    await expect(window.locator("[data-thread-message]").filter({ hasText: "第二句 gamma" })).not.toHaveCount(0)
+    await expect(
+      window
+        .locator("[data-thread-message]")
+        .filter({ has: window.locator(".is-user") })
+        .filter({ hasText: "第二句 gamma" })
+    ).toHaveCount(1)
     await snap(window, "1100x720-rail-after-save")
   } finally {
     await closeForRelaunch(app)
@@ -133,10 +141,24 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
     const ticks = window.locator('[data-slot="preview-rail-item"]')
     await expect(ticks).toHaveCount(prompts.length, { timeout: 10_000 })
     await window.waitForTimeout(800)
-    const first = window.locator("[data-thread-message]").filter({ hasText: prompts[0] }).first()
+    const first = window
+      .locator("[data-thread-message]")
+      .filter({ has: window.locator(".is-user") })
+      .filter({ hasText: prompts[0] })
+    await expect(first).toHaveCount(1)
     // 前提：第一句已经滚出可视区，否则测不出「点刻度滚过去」。贴底滚动可能还没落定，先滚到最后一句再等。
-    await window.locator("[data-thread-message]").last().scrollIntoViewIfNeeded()
-    await expect.poll(() => inViewport(first), { timeout: 5_000, message: "first message should start offscreen" }).toBe(false)
+    const last = window.locator("[data-thread-message]").last()
+    await last.scrollIntoViewIfNeeded()
+    await window.evaluate(() => {
+      const scrollers = [...document.querySelectorAll("*")].filter((node) => {
+        if (!(node instanceof HTMLElement)) return false
+        const style = getComputedStyle(node)
+        const oy = style.overflowY
+        return (oy === "auto" || oy === "scroll" || oy === "overlay") && node.scrollHeight > node.clientHeight + 40
+      }) as HTMLElement[]
+      for (const node of scrollers) node.scrollTop = node.scrollHeight
+    })
+    await expect.poll(() => inViewport(first), { timeout: 8_000, message: "first message should start offscreen" }).toBe(false)
 
     const tick = ticks.first()
     expect(await hitsSelf(tick), "tick: elementFromPoint not the tick").toBe(true)

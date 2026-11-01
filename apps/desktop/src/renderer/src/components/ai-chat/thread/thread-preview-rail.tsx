@@ -30,6 +30,7 @@ export function ThreadPreviewRail({
 
   return (
     <div
+      data-testid="thread-preview-rail"
       className={cx(
         "pointer-events-none absolute inset-y-8 right-2 z-20 hidden min-[768px]:flex w-64 items-center justify-end",
         hasLedger && "min-[1100px]:hidden"

@@ -23,6 +23,7 @@ export function DeferredThreadTurn({
   const eager = shouldMountThreadTurn({ index, count, revealed, near: false, streaming })
   const { ref, near } = useNearTurn(!eager)
   const mounted = eager || near
+  // 锚点只挂在这一层：未挂载占位可被刻度/查找定位；挂载后 Message 不再重复打同 attr，避免 Playwright strict 双节点。
   return (
     <div
       ref={ref}
