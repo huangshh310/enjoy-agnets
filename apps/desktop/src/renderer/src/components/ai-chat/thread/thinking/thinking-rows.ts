@@ -57,23 +57,30 @@ export function thinkingHeadline(
     if (tools.length > 0) return t("chat.runningTools")
     return t("chat.thinking")
   }
-  const executed = tools.filter((tool) => !isToolNotExecuted(tool))
-  if (executed.length > 0) return executed.length === 1 ? t("chat.ranToolsOne") : t("chat.ranTools", { count: executed.length })
+  // 特殊中断态优先（Stop / 拒绝 / 重启 / 超时）
   if (tools.length > 0) {
-    if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
-    if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
-    if (tools.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE))) {
-      return t("chat.restartStepUnfinished")
+    const executed = tools.filter((tool) => !isToolNotExecuted(tool))
+    if (executed.length === 0) {
+      if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
+      if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
+      if (tools.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE))) {
+        return t("chat.restartStepUnfinished")
+      }
+      if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
+        return t("studio.automations.catchUpTimeout")
+      }
+      if (tools.every((tool) => readApprovalDecision(tool.result) === "cancelled")) {
+        return tools.length === 1 ? t("chat.ranToolsOne") : t("chat.ranTools", { count: tools.length })
+      }
+      return t("chat.toolDenied")
     }
-    if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
-      return t("studio.automations.catchUpTimeout")
-    }
-    if (tools.every((tool) => readApprovalDecision(tool.result) === "cancelled")) {
-      return tools.length === 1 ? t("chat.ranToolsOne") : t("chat.ranTools", { count: tools.length })
-    }
-    return t("chat.toolDenied")
   }
+  // #117：结束折头优先「想了 n 秒」
   if (seconds) return t("chat.thoughtSeconds", { seconds })
+  const executed = tools.filter((tool) => !isToolNotExecuted(tool))
+  if (executed.length > 0) {
+    return executed.length === 1 ? t("chat.ranToolsOne") : t("chat.ranTools", { count: executed.length })
+  }
   return t("chat.thoughtFew")
 }
 

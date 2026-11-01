@@ -21,6 +21,8 @@ import { TurnModelLabel } from "./turn-model-label"
 import { TurnToolSurfaces } from "../tool-surfaces/turn-tool-surfaces"
 import { hasTurnToolSurfaces } from "../tool-surfaces/select-turn-tool-surfaces"
 import { PlanCard } from "../../composer/plan-card"
+import { ArtifactCard } from "../artifact-card"
+import { pickArtifactCard } from "../pick-artifact-card"
 
 export function AssistantTurn({ message }: { message: ThreadMessage }) {
   const prompt = usePrecedingUserPrompt(message.id)
@@ -39,6 +41,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
       ) : null}
       {surface.hasToolSurfaces ? <TurnToolSurfaces tools={surface.tools} /> : null}
       <TurnChangedFiles message={message} />
+      <TurnArtifactCard message={message} />
       <PlanCard messageId={message.id} />
       {surface.mcpApps.length > 0 ? <TurnMcpApps apps={surface.mcpApps} /> : null}
       {surface.showGenerating ? (
@@ -53,7 +56,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
 
       {surface.hasBody ? (
         <MessageContent>
-          <MarkdownResponse>{stripEnjoyActionsBlock(message.content)}</MarkdownResponse>
+          <MarkdownResponse streaming={Boolean(message.streaming)}>{stripEnjoyActionsBlock(message.content)}</MarkdownResponse>
           {message.attachment ? <AiChatCodeBlock attachment={message.attachment} /> : null}
           <TurnExtras message={message} prompt={prompt} />
           <TurnModelLabel message={message} />
@@ -97,4 +100,13 @@ function assistantSurface(message: ThreadMessage) {
       !message.content.trim() &&
       (turnKind === "image" || turnKind === "video")
   }
+}
+
+function TurnArtifactCard({ message }: { message: ThreadMessage }) {
+  const model = pickArtifactCard({
+    tools: message.tools ?? [],
+    streaming: Boolean(message.streaming)
+  })
+  if (!model) return null
+  return <ArtifactCard model={model} />
 }

@@ -97,19 +97,23 @@ function SnippetFence({
   code: string
   filename?: string
 }) {
+  const t = useT()
   const lines = code.split("\n")
   const showLines = lines.length > 2
+  const [expanded, setExpanded] = useState(false)
+  const collapsed = lines.length > 16 && !expanded
+  const visible = collapsed ? lines.slice(0, 16) : lines
 
   return (
-    <div className="my-3 overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default">
-      <div className="flex items-center gap-2 border-b border-separator-border px-3 py-2">
+    <div className="my-3 overflow-hidden rounded-2xl border border-border-button-default bg-neutral-925 text-background">
+      <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
         {language ? (
-          <span className="rounded-md bg-background-tertiary-default px-1.5 py-0.5 text-caption-1-semibold lowercase text-text-secondary">
+          <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-caption-1-semibold lowercase text-background/90">
             {language}
           </span>
         ) : null}
         {filename ? (
-          <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-secondary">
+          <span className="min-w-0 flex-1 truncate text-caption-1-medium text-background/70">
             {filename}
           </span>
         ) : (
@@ -117,18 +121,27 @@ function SnippetFence({
         )}
         <FenceCopyButton code={code} />
       </div>
-      <pre className="overflow-x-auto p-3 font-mono text-body-2-regular leading-6 text-text-primary">
-        {lines.map((line, index) => (
+      <pre className="overflow-x-auto p-3 font-mono text-body-2-regular leading-6 text-background">
+        {visible.map((line, index) => (
           <div key={`${index}-${line.slice(0, 24)}`} className="flex gap-4">
             {showLines ? (
-              <span className="w-4 shrink-0 text-right tabular-nums text-text-tertiary">
+              <span className="w-4 shrink-0 text-right tabular-nums text-background/40">
                 {index + 1}
               </span>
             ) : null}
-            <code className="whitespace-pre">{highlightLine(line)}</code>
+            <code className="whitespace-pre-wrap break-words">{highlightLine(line)}</code>
           </div>
         ))}
       </pre>
+      {lines.length > 16 ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full cursor-pointer border-t border-white/10 px-3 py-1.5 text-left text-caption-2-medium text-background/70 hover:bg-white/5"
+        >
+          {expanded ? t("chat.collapseLines") : t("chat.showAllLines")}
+        </button>
+      ) : null}
     </div>
   )
 }

@@ -25,6 +25,7 @@ import {
   toolHasResultCode
 } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
+import { humanCommandTitle, humanEditTitle, humanReadTitle } from "./step-tree/tool-human-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -98,8 +99,11 @@ function commandNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
-  const display = shellTitle(shell, t)
   const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
+  const status = exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state, tool)
+  const titleStatus =
+    status === "running" ? "running" : status === "denied" ? "denied" : status === "error" ? "error" : "done"
+  const display = shellTitle(shell, t, titleStatus)
   const pills = extractDomainPills(args, result, shell)
   return {
     id: tool.id,
@@ -107,13 +111,12 @@ function commandNode(
     title: display,
     ...ioFields(tool, shell, result, t),
     domainPills: pills.length > 0 ? pills : undefined,
-    status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state, tool)
+    status
   }
 }
 
-function shellTitle(shell: string | undefined, t: TranslateFn): string {
-  if (!shell) return t("chat.ranACommand")
-  return shell.length > 70 ? `$ ${shell.slice(0, 68)}...` : `$ ${shell}`
+function shellTitle(shell: string | undefined, t: TranslateFn, status: "running" | "denied" | "error" | "done" | "other" = "done"): string {
+  return humanCommandTitle(shell, status, t)
 }
 
 function searchNode(
@@ -151,11 +154,16 @@ function editNode(
   const fileName = leaf && !isGenericVerb(leaf) ? leaf : ""
   const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
   const writing = tool.name.toLowerCase().includes("write")
-  const verb = writing ? t("chat.verbWrite") : t("chat.verbEdit")
+  const status = mapToolStatus(tool.state, tool)
+  const displayName = fileName || (path ? path.split(/[\\/]/).pop() || path : "")
+  const title =
+    status === "error" && displayName
+      ? t("chat.humanFailedEdit", { name: displayName })
+      : humanEditTitle(displayName || undefined, writing, t)
   return {
     id: tool.id,
     kind: "editing",
-    title: fileName ? `${verb} ${fileName}` : path ? `${verb} ${path}` : verb,
+    title,
     filePath: path || undefined,
     fileName: fileName || "",
     fileDir: fileDir || undefined,
@@ -163,7 +171,7 @@ function editNode(
     ...ioFields(tool, command, result, t),
     additions: typeof result.additions === "number" ? result.additions : undefined,
     deletions: typeof result.deletions === "number" ? result.deletions : undefined,
-    status: mapToolStatus(tool.state, tool)
+    status
   }
 }
 
@@ -185,7 +193,7 @@ function readNode(
   return {
     id: tool.id,
     kind: "reading",
-    title: path ? t("chat.readName", { name: leafName }) : t("chat.readingResources"),
+    title: humanReadTitle(path ? leafName : undefined, t),
     filePath: path || undefined,
     fileName: leafName || undefined,
     fileDir: fileDir || undefined,

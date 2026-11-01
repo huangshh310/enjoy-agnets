@@ -15,10 +15,9 @@ test("英文单数：Ran 1 tool / Ran 1 command / Edited 1 file 等（luna P3）
 })
 test("调用处 count === 1 走 One 键", () => {
   const dir = new URL("./", import.meta.url)
+  // #117：tryBatch 只合并 reading/search；command/editing 不 batch，故不再扫 batchCommandsRun / batchFilesModified
   for (const [file, key] of [
     ["thinking-rows.ts", "ranTools"],
-    ["agent-step-group.ts", "batchCommandsRun"],
-    ["agent-step-group.ts", "batchFilesModified"],
     ["agent-step-group.ts", "batchFilesRead"],
     ["agent-step-group.ts", "batchSearches"],
     ["step-tree/subagent-row.tsx", "subagentStepCount"],

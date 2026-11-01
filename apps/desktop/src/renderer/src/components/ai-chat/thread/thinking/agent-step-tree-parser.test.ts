@@ -17,14 +17,22 @@ const parserSrc = readFileSync(
 )
 
 const mockT: TranslateFn = (key: string, params?: Record<string, string | number>) => {
-  if (key === "chat.batchFilesModified") return `编辑 ${String(params?.count ?? 0)} 个文件`
-  if (key === "chat.batchFilesRead") return `读取 ${String(params?.count ?? 0)} 个文件`
+  if (key === "chat.batchFilesModified") return `改了 ${String(params?.count ?? 0)} 个文件`
+  if (key === "chat.batchFilesRead") return `读了 ${String(params?.count ?? 0)} 个文件`
   if (key === "chat.batchCommandsRun") return `运行 ${String(params?.count ?? 0)} 条命令`
   if (key === "chat.batchSearches") return `搜索 ${String(params?.count ?? 0)} 次`
   if (key === "chat.ranACommand") return "运行命令"
   if (key === "chat.exploringProject") return "正在探索项目"
   if (key === "chat.exploredPages") return `已浏览 ${String(params?.count ?? 0)} 个页面`
-  if (key === "chat.readName") return `已读取 ${String(params?.name ?? "")}`
+  if (key === "chat.readName") return `读了 ${String(params?.name ?? "")}`
+  if (key === "chat.humanRead") return `读了 ${String(params?.name ?? "")}`
+  if (key === "chat.humanEdit") return `改了 ${String(params?.name ?? "")}`
+  if (key === "chat.humanWrite") return `写了 ${String(params?.name ?? "")}`
+  if (key === "chat.humanRunning") return `正在跑 ${String(params?.name ?? "")}`
+  if (key === "chat.humanRunningGeneric") return "正在跑检查"
+  if (key === "chat.humanDeniedCommand") return "这条命令你拒绝了"
+  if (key === "chat.humanFailedCommand") return `没跑成 ${String(params?.name ?? "")}`
+  if (key === "chat.humanFailedEdit") return `没改成 ${String(params?.name ?? "")}`
   if (key === "chat.verbWrite") return "写入"
   if (key === "chat.verbEdit") return "编辑"
   if (key === "chat.verbRead") return "读取"
@@ -70,14 +78,14 @@ test("单个 editing 节点去除副标题重复路径，提取 fileName 与 fil
   assert.equal(nodes.length, 1)
   const node = nodes[0]
   assert.equal(node.kind, "editing")
-  assert.equal(node.title, "写入 error.rs")
+  assert.equal(node.title, "写了 error.rs")
   assert.equal(node.fileName, "error.rs")
   assert.equal(node.fileDir, "login-rs/src/")
   assert.equal(node.detail, undefined) // 彻底杜绝副标题重复
   assert.equal(node.additions, 41)
 })
 
-test("连续 3 个及以上文件写入自动聚合成单一批量节点", () => {
+test("连续写入不合并：改/命令各自一行（#117）", () => {
   const tools: ThreadToolCall[] = [
     createTool("t1", "write_file", { path: "login-rs/Cargo.toml" }, { additions: 15, deletions: 0 }),
     createTool("t2", "write_file", { path: "login-rs/src/error.rs" }, { additions: 41, deletions: 0 }),
@@ -86,14 +94,10 @@ test("连续 3 个及以上文件写入自动聚合成单一批量节点", () =>
   ]
 
   const nodes = parseAgentStepNodes("", tools, mockT)
-  assert.equal(nodes.length, 1)
-  const batchNode = nodes[0]
-  assert.equal(batchNode.isBatch, true)
-  assert.equal(batchNode.title, "编辑 4 个文件")
-  assert.equal(batchNode.additions, 15 + 41 + 128 + 113)
-  assert.equal(batchNode.batchItems?.length, 4)
-  assert.equal(batchNode.batchItems?.[0]?.fileName, "Cargo.toml")
-  assert.equal(batchNode.batchItems?.[1]?.fileName, "error.rs")
+  assert.equal(nodes.length, 4)
+  assert.equal(nodes.every((n) => n.kind === "editing" && !n.isBatch), true)
+  assert.equal(nodes[0]?.title, "写了 Cargo.toml")
+  assert.equal(nodes[1]?.fileName, "error.rs")
 })
 
 test("连续 2 个读取聚合成 Read N files", () => {
@@ -105,7 +109,7 @@ test("连续 2 个读取聚合成 Read N files", () => {
   assert.equal(nodes.length, 1)
   assert.equal(nodes[0]?.isBatch, true)
   assert.equal(nodes[0]?.kind, "reading")
-  assert.equal(nodes[0]?.title, "读取 2 个文件")
+  assert.equal(nodes[0]?.title, "读了 2 个文件")
   assert.equal(nodes[0]?.batchItems?.[0]?.fileName, "README.md")
   assert.equal(nodes[0]?.batchItems?.[1]?.fileName, "page.tsx")
 })
@@ -130,7 +134,7 @@ test("bash 终端命令精准归位为 command 节点且不被批量编辑合并
   const nodes = parseAgentStepNodes("", tools, mockT)
   assert.equal(nodes.length, 3)
   assert.equal(nodes[0].kind, "command")
-  assert.equal(nodes[0].title, "$ curl -fsSL https://wttr.in/Shanghai")
+  assert.equal(nodes[0].title, "没跑成 curl")
   assert.equal(nodes[0].exitCode, 2)
   assert.equal(nodes[0].status, "error")
 
@@ -202,7 +206,7 @@ test("restart_abandoned 显示重启后已中断，标题走人话不是 write f
   assert.doesNotThrow(() => parseAgentStepNodes("", [tool], mockT))
   const nodes = parseAgentStepNodes("", [tool], mockT)
   assert.equal(nodes[0]?.status, "restart")
-  assert.equal(nodes[0]?.title, "写入 e2e-stub.txt")
+  assert.equal(nodes[0]?.title, "写了 e2e-stub.txt")
   assert.doesNotMatch(nodes[0]?.title ?? "", /write file/i)
   assert.equal(nodes[0]?.errorText, "chat.restartStepUnfinished")
   assert.notEqual(nodes[0]?.errorText, "studio.automations.catchUpTimeout")

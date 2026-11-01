@@ -24,6 +24,8 @@ import { splitReviewPath } from "../path-label"
 import type { ReviewOptions } from "../types/review.types"
 import { STATUS_CONFIG } from "../constants/review-constants"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
+import { FileDiffActions } from "../../../../diff/file-diff-actions"
+import type { FileDiffDecision } from "../../../../diff/file-diff-decision"
 
 export function ReviewFileCard(props: {
   workspaceId: string
@@ -34,6 +36,11 @@ export function ReviewFileCard(props: {
   onToggleExpand: () => void
   onSelectFile: (path: string) => void
   isSelected: boolean
+  decision?: FileDiffDecision
+  decidable?: boolean
+  decisionBusy?: boolean
+  onKeepFile?: () => void
+  onDiscardFile?: () => void
 }) {
   const {
     workspaceId,
@@ -43,7 +50,12 @@ export function ReviewFileCard(props: {
     isExpanded,
     onToggleExpand,
     onSelectFile,
-    isSelected
+    isSelected,
+    decision = "pending",
+    decidable = true,
+    decisionBusy = false,
+    onKeepFile,
+    onDiscardFile
   } = props
 
   const [copiedPath, setCopiedPath] = useState(false)
@@ -131,6 +143,15 @@ export function ReviewFileCard(props: {
             <span className="text-state-success-text">+{file.additions}</span>
             <span className="text-text-error-primary">-{file.deletions}</span>
           </div>
+          {onKeepFile && onDiscardFile ? (
+            <FileDiffActions
+              decision={decision}
+              disabled={!decidable}
+              busy={decisionBusy}
+              onKeep={onKeepFile}
+              onDiscard={onDiscardFile}
+            />
+          ) : null}
 
           <button
             type="button"
