@@ -53,7 +53,6 @@ function bridge(path: string): any {
 ;(globalThis as any).window = { ide: bridge("") }
 
 let dom = ""
-let shown = ""
 const el = {
   get value() {
     return dom
@@ -81,7 +80,6 @@ storage.installSessionDraftPersistence()
 
 function userTypes(text: string) {
   dom = text
-  shown = text
   useChatStore.getState().setComposer(text)
 }
 
@@ -95,7 +93,6 @@ afterEach(() => {
   steers.length = 0
   steerImpl = () => ({ ok: true })
   dom = ""
-  shown = ""
 })
 
 const IMG = { id: "ast_orange", name: "orange.png", mediaType: "image/png" }
