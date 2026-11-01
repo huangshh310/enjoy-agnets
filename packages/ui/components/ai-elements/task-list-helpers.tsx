@@ -1,10 +1,18 @@
 /**
- * TaskList 纯函数与状态圆点。交互对标 T3 Tasks：圆点 + 右侧状态字，不用时钟/转圈。
+ * TaskList 交互件与归一化。状态文案见 task-list-status。
  */
 import { RiCheckLine } from "@remixicon/react"
 import { uiT } from "@/i18n/ui-locale"
 import { cx } from "@/utils/cx"
 import type { NormalizedTask, TaskItem, TaskStatus } from "./task-list.types"
+import { statusFromIndex } from "./task-list-status"
+
+export {
+  dockHonestyCounts,
+  isLiveProgress,
+  statusFromIndex,
+  taskStatusLabel
+} from "./task-list-status"
 
 export function normalizeTasks(
   tasks: Array<TaskItem | string>,
@@ -19,26 +27,6 @@ export function normalizeTasks(
       status: task.status ?? statusFromIndex(index, currentIndex)
     }
   })
-}
-
-export function statusFromIndex(index: number, currentIndex?: number): TaskStatus {
-  if (currentIndex === undefined) return "pending"
-  if (index < currentIndex) return "completed"
-  if (index === currentIndex) return "in_progress"
-  return "pending"
-}
-
-export function isLiveProgress(status: TaskStatus | undefined, live: boolean): boolean {
-  return status === "in_progress" && live
-}
-
-export function taskStatusLabel(status: TaskStatus, live: boolean): string {
-  if (status === "completed") return uiT("完成", "Done")
-  if (status === "failed") return uiT("失败", "Failed")
-  if (status === "cancelled") return uiT("已停止", "Stopped")
-  if (status === "in_progress" && live) return uiT("运行中", "Running now")
-  if (status === "in_progress") return uiT("已停止", "Stopped")
-  return uiT("待办", "Pending")
 }
 
 export function ContinueButton({ onContinue }: { onContinue: () => void }) {

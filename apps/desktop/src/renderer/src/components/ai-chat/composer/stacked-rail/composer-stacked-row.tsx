@@ -45,6 +45,7 @@ export function ComposerStackedRow({
           <button
             type="button"
             onClick={onToggle}
+            aria-expanded={Boolean(open)}
             className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left"
           >
             <span data-testid={peekTestId} className={STACKED_LABEL_CLASS_NAME}>
