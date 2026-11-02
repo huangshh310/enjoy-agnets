@@ -4,12 +4,13 @@
  * - × 删：图随项丢。退回：图回草稿。马上发成功：图进纠偏、标记摘掉。
  * - 马上发失败：原样放回队首（字 + 图），草稿标记还在。
  * - ACP 运行中：带图不纠偏，留在队列 + 可见提示。
- * - 重启（队列没了）：带标记的图连同字退回草稿，不悄悄丢。
+ * - t3-b 重启：队列从 followup_queue 回灌，带图项仍在队里。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
 let dbAssets: Record<string, Array<Record<string, unknown>>> = {}
+let fqStore: { items: unknown[]; paused: Record<string, string> } = { items: [], paused: {} }
 let steerImpl: (input: { text: string; attachments?: string[] }) => Promise<unknown> = async () => ({ ok: true })
 const steers: Array<{ text: string; attachments?: string[] }> = []
 ;(globalThis as { window?: unknown }).window = {
@@ -22,6 +23,12 @@ const steers: Array<{ text: string; attachments?: string[] }> = []
         saveAssets: (input: { sessionId: string; assets: Array<Record<string, unknown>> }) => {
           if (input.assets.length) dbAssets[input.sessionId] = input.assets
           else delete dbAssets[input.sessionId]
+        }
+      },
+      followupQueue: {
+        loadSync: () => JSON.parse(JSON.stringify(fqStore)),
+        save: (input: { items: unknown[]; paused: Record<string, string> }) => {
+          fqStore = { items: input.items, paused: { ...input.paused } }
         }
       }
     },
@@ -45,6 +52,7 @@ const off = storage.installSessionDraftPersistence()
 
 function reset() {
   dbAssets = {}
+  fqStore = { items: [], paused: {} }
   storage.resetPersistedDraftAssetsForTest()
   for (const item of queue.listFollowups()) queue.removeFollowup(item.id)
   assets.clearComposerAssets()
@@ -141,15 +149,14 @@ test("退回输入框：图回草稿（普通行，不再带排队标记）", as
   assert.deepEqual(assets.listComposerAssets().map((a) => a.id), ["ast_q"])
 })
 
-test("重启后队列没了：带标记的图连同那条字退回草稿，不悄悄丢", async () => {
-  await queueWithImage("ses_q7")
-  for (const item of queue.listFollowups()) queue.removeFollowup(item.id) // 模拟进程重启：内存队列清空
-  storage.resetPersistedDraftAssetsForTest()
-  useChatStore.setState({ sessionDrafts: {} } as never)
-  const draft = storage.composerDraftForSession("ses_q7")
-  assert.equal(draft?.text, "看这张")
-  assert.deepEqual(draft?.assets?.map((a: { id: string }) => a.id), ["ast_q"])
-  assert.equal(rows("ses_q7")[0]?.queued, undefined, "库里也改回普通草稿")
+test("t3-b：重启后队列回灌——带图排队项仍在队里，草稿排队标记保留", async () => {
+  const item = await queueWithImage("ses_q7")
+  queue.resetFollowupHydrationForTest()
+  const restored = queue.listFollowups("ses_q7")
+  assert.equal(restored.length, 1)
+  assert.equal(restored[0]?.id, item.id)
+  assert.deepEqual(restored[0]?.assets.map((a: { id: string }) => a.id), ["ast_q"])
+  assert.deepEqual(rows("ses_q7").map((r) => r.queued?.itemId), [item.id])
 })
 
 test.after(() => off())

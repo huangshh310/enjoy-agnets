@@ -94,6 +94,12 @@ const ide = {
       saveAssets: (input: { sessionId: string; assets: Array<{ id: string; name: string; mediaType?: string; size?: number }> }) =>
         ipcRenderer.send("session.drafts.saveAssets", input)
     },
+    followupQueue: {
+      loadSync: (): { items: unknown[]; paused: Record<string, string> } =>
+        ipcRenderer.sendSync("session.followupQueue.loadSync") ?? { items: [], paused: {} },
+      save: (input: { items: unknown[]; paused: Record<string, string> }) =>
+        ipcRenderer.send("session.followupQueue.save", input)
+    },
     lastError: (input: unknown) => ipcRenderer.invoke("session.lastError", input),
     changes: (input: unknown) => ipcRenderer.invoke("session.changes", input),
     dismissError: (input: unknown) => ipcRenderer.invoke("session.dismissError", input),
