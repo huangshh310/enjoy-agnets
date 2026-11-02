@@ -1085,6 +1085,8 @@ export const enChat = {
   inspectorPromptTools: "Registered tools",
   inspectorRepoMapOccupancy: "Repo map · {mode} · ~{tokens} tokens / {budget}",
   inspectorRepoMapOccupancyNote: "Repo map · {mode} · ~{tokens} tokens / {budget} · {note}",
+  inspectorRepoMapModeSymbol: "symbol",
+  inspectorRepoMapModeDirectory: "directory",
   inspectorChipExclude: "Exclude from this turn's model context",
   inspectorChipInclude: "Include in model context again",
   inspectorTokenWindow: "Token window",

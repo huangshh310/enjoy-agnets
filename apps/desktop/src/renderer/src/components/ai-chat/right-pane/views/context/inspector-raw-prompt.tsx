@@ -35,6 +35,10 @@ export function InspectorRawPrompt({
       : view.messageCount > 0
         ? t("chat.inspectorPromptContextPreview")
         : t("chat.inspectorPromptPreview")
+  const repoMapModeLabel =
+    view.payload?.repoMapOccupancy?.mode === "directory"
+      ? t("chat.inspectorRepoMapModeDirectory")
+      : t("chat.inspectorRepoMapModeSymbol")
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2.5 font-mono">
       <RawToolbar
@@ -60,13 +64,13 @@ export function InspectorRawPrompt({
         >
           {view.payload.repoMapOccupancy.note
             ? t("chat.inspectorRepoMapOccupancyNote", {
-                mode: view.payload.repoMapOccupancy.mode,
+                mode: repoMapModeLabel,
                 tokens: view.payload.repoMapOccupancy.approxTokens,
                 budget: view.payload.repoMapOccupancy.tokenBudget,
                 note: view.payload.repoMapOccupancy.note
               })
             : t("chat.inspectorRepoMapOccupancy", {
-                mode: view.payload.repoMapOccupancy.mode,
+                mode: repoMapModeLabel,
                 tokens: view.payload.repoMapOccupancy.approxTokens,
                 budget: view.payload.repoMapOccupancy.tokenBudget
               })}
