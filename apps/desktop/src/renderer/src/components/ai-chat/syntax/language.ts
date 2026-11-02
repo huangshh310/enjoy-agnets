@@ -88,3 +88,66 @@ export function languageFromPath(path: string): SyntaxLanguage {
   const ext = extensionOf(name)
   return (ext && BY_EXT[ext]) || "plaintext"
 }
+
+/** Fence info-string 别名 → Shiki 语言（ts/js/py/sh…）。 */
+const BY_FENCE: Record<string, SyntaxLanguage> = {
+  html: "html",
+  css: "css",
+  scss: "scss",
+  less: "less",
+  js: "javascript",
+  javascript: "javascript",
+  mjs: "javascript",
+  cjs: "javascript",
+  jsx: "jsx",
+  ts: "typescript",
+  typescript: "typescript",
+  mts: "typescript",
+  cts: "typescript",
+  tsx: "tsx",
+  json: "json",
+  jsonc: "jsonc",
+  md: "markdown",
+  markdown: "markdown",
+  mdx: "mdx",
+  yml: "yaml",
+  yaml: "yaml",
+  py: "python",
+  python: "python",
+  go: "go",
+  golang: "go",
+  rs: "rust",
+  rust: "rust",
+  sh: "bash",
+  bash: "bash",
+  shell: "bash",
+  zsh: "bash",
+  shellscript: "bash",
+  console: "bash",
+  fish: "bash",
+  ps1: "powershell",
+  powershell: "powershell",
+  bat: "bash",
+  cmd: "bash",
+  vue: "vue",
+  xml: "xml",
+  svg: "xml",
+  sql: "sql",
+  toml: "toml",
+  svelte: "svelte",
+  dockerfile: "dockerfile",
+  docker: "dockerfile",
+  ini: "ini",
+  conf: "ini",
+  txt: "plaintext",
+  text: "plaintext",
+  plain: "plaintext",
+  plaintext: "plaintext"
+}
+
+/** Markdown 围栏语言标签；未知回退 plaintext。 */
+export function languageFromFenceLang(lang: string): SyntaxLanguage {
+  const key = lang.trim().toLowerCase()
+  if (!key) return "plaintext"
+  return BY_FENCE[key] ?? "plaintext"
+}
