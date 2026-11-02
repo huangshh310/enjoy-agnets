@@ -11,7 +11,8 @@ import {
   createHighlighter,
   type BundledLanguage,
   type Highlighter,
-  type ShikiTransformer
+  type ShikiTransformer,
+  type SpecialLanguage
 } from "shiki"
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
 import type { SyntaxLanguage } from "./language"
@@ -37,9 +38,11 @@ const BOOT_LANGS: BundledLanguage[] = [
   "markdown",
   "yaml",
   "html",
-  "css",
-  "plaintext"
+  "css"
 ]
+
+/** plaintext 属 SpecialLanguage，不在 BundledLanguage 里。 */
+const BOOT_SPECIAL_LANGS: SpecialLanguage[] = ["plaintext"]
 
 let highlighterPromise: Promise<Highlighter> | null = null
 
@@ -47,7 +50,7 @@ function getHighlighter(): Promise<Highlighter> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
       themes: [cssVariablesTheme],
-      langs: BOOT_LANGS,
+      langs: [...BOOT_LANGS, ...BOOT_SPECIAL_LANGS],
       engine: createJavaScriptRegexEngine()
     })
   }
@@ -214,7 +217,7 @@ async function highlightOne(
   const transformers: ShikiTransformer[] =
     lineNumbers === false ? [] : [lineNumberTransformer(lineNumbers ?? "pane")]
   const highlighter = await getHighlighter()
-  const lang = (await ensureLang(highlighter, language)) as BundledLanguage
+  const lang = await ensureLang(highlighter, language)
   return highlighter.codeToHtml(source, {
     lang,
     theme: "css-variables",
@@ -222,12 +225,15 @@ async function highlightOne(
   })
 }
 
-async function ensureLang(highlighter: Highlighter, language: SyntaxLanguage): Promise<string> {
+async function ensureLang(
+  highlighter: Highlighter,
+  language: SyntaxLanguage
+): Promise<BundledLanguage | SpecialLanguage> {
   const loaded = highlighter.getLoadedLanguages()
-  if (loaded.includes(language)) return language
+  if (loaded.includes(language)) return language as BundledLanguage | SpecialLanguage
   try {
     await highlighter.loadLanguage(language as BundledLanguage)
-    return language
+    return language as BundledLanguage
   } catch {
     if (!loaded.includes("plaintext")) {
       await highlighter.loadLanguage("plaintext")
