@@ -35,7 +35,7 @@ const LANGUAGE_RE = /language-([^\s]+)/
 const FILENAME_RE = /(?:title|filename)=["']([^"']+)["']/
 
 const FENCE_PRE_CLASS =
-  "[&>pre]:m-0 [&>pre]:bg-transparent [&>pre]:p-0 [&>pre]:font-mono [&>pre]:text-body-2-regular [&>pre]:leading-6 [&_code]:font-mono [&_code]:text-[length:inherit] [&_code]:leading-[inherit]"
+  "[&>pre]:m-0 [&>pre]:bg-transparent [&>pre]:p-0 [&>pre]:font-mono [&>pre]:text-body-2-regular [&>pre]:leading-6 [&_code]:font-mono"
 
 type FenceProps = HTMLAttributes<HTMLElement> & {
   node?: { properties?: Record<string, unknown> }
