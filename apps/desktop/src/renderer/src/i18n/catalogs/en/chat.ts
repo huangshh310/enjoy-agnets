@@ -102,6 +102,8 @@ export const enChat = {
   runtimeEditFollowup: "Edit",
   runtimeMoveUp: "Move queued item up",
   runtimeMoveDown: "Move queued item down",
+  runtimeQueueChip: "{n} waiting",
+  runtimeQueueChipHint: "Open to edit, remove, or reorder",
   runtimeQueueCount: "{n} queued",
   runtimeQueueMore: "{n} more",
   queuePausedStopped: "You stopped the last turn, so {n} queued messages are on hold.",

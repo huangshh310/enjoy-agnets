@@ -55,6 +55,11 @@ import {
   saveSessionDraftAssets,
   type DraftAsset
 } from "./services/session-drafts"
+import {
+  loadFollowupQueue,
+  saveFollowupQueue,
+  type FollowupQueueSnapshot
+} from "./services/followup-queue-store"
 import { z } from "zod"
 import { handleDismissError } from "./services/session-dismiss-error-ipc"
 import { isE2eStub } from "./services/e2e-stub-gate"
@@ -99,6 +104,7 @@ export const SESSION_CHANNELS = [
 
 export function registerSessionIpc() {
   registerSessionDraftIpc()
+  registerFollowupQueueIpc()
   registerSessionCatalogIpc()
   registerSessionEditIpc()
   registerSessionLifecycleIpc()
@@ -243,6 +249,24 @@ function registerSessionDraftIpc() {
       saveSessionDraft(input.sessionId, input.text)
     } catch {
       // 落盘失败只丢持久化，不影响内存草稿
+    }
+  })
+}
+
+/** t3-b：followup 队列落 DB。启动同步读一次回灌；写走 fire-and-forget。 */
+function registerFollowupQueueIpc() {
+  ipcMain.removeAllListeners("session.followupQueue.loadSync")
+  ipcMain.removeAllListeners("session.followupQueue.save")
+  ipcMain.on("session.followupQueue.loadSync", (event) => {
+    event.returnValue = loadFollowupQueue()
+  })
+  ipcMain.on("session.followupQueue.save", (_event, raw: unknown) => {
+    const input = (raw ?? {}) as Partial<FollowupQueueSnapshot>
+    if (!Array.isArray(input.items) || typeof input.paused !== "object" || input.paused == null) return
+    try {
+      saveFollowupQueue({ items: input.items, paused: input.paused as FollowupQueueSnapshot["paused"] })
+    } catch {
+      // 落盘失败只丢持久化
     }
   })
 }

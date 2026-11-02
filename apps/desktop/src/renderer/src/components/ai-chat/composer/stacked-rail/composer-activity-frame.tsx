@@ -9,6 +9,7 @@ import { ComposerLiveChanges } from "./composer-live-changes"
 import { ComposerTaskStack } from "./composer-task-stack"
 import { ComposerContextRail } from "./composer-context-rail"
 import { ComposerFollowupRail } from "../runtime-interact/composer-followup-rail"
+import { ComposerQueueChip } from "../runtime-interact/composer-queue-chip"
 import { ComposerPreviousPreparingRail } from "../runtime-interact/composer-previous-preparing-rail"
 
 export function ComposerActivityFrame() {
@@ -26,6 +27,9 @@ export function ComposerActivityFrame() {
       <div className={`${STACKED_FRAME_CLASS_NAME} isolate shrink-0`}>
         <ComposerTaskStack />
         <ComposerContextRail />
+        <div className="flex items-center gap-1.5 px-3 empty:hidden">
+          <ComposerQueueChip />
+        </div>
         <ComposerFollowupRail />
         <ComposerPreviousPreparingRail />
       </div>

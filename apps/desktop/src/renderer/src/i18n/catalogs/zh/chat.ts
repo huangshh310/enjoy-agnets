@@ -101,6 +101,8 @@ export const zhChat = {
   runtimeEditFollowup: "编辑",
   runtimeMoveUp: "上移排队项",
   runtimeMoveDown: "下移排队项",
+  runtimeQueueChip: "排队 {n} 项",
+  runtimeQueueChipHint: "点开可改、删或调整排队顺序",
   runtimeQueueCount: "排队 {n} 条",
   runtimeQueueMore: "还有 {n} 条",
   queuePausedStopped: "你停止了上一轮，排队的 {n} 条先不发。",

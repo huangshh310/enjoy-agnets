@@ -1,16 +1,24 @@
 /**
  * 排队后续任务：当前 run 回 idle 后自动取出再开一轮。
  * 只在用户回车或点击引导词入队时产生，禁止倒计时自动入队。
+ * t3-b：会话级账本写穿 main（followup_queue），停跑/重启不丢；暂停 reason 一并持久。
  */
 import type {
   EnqueueFollowupInput,
   FollowupItem,
   RuntimeHintCode
 } from "./runtime-interact/followup-queue.types"
+import {
+  loadFollowupQueueSnapshot,
+  persistFollowupQueueSnapshot,
+  resetFollowupQueueStorageForTest
+} from "../lib/followup-queue-storage"
 
 export type { EnqueueFollowupInput, FollowupItem, FollowupStatus, RuntimeHintCode } from "./runtime-interact/followup-queue.types"
 
 let items: FollowupItem[] = []
+let hydrated = false
+let persistEnabled = true
 /**
  * E1：按会话记队列为什么停着（停止 / 出错 / 额度用完）。停着时不自启，等用户点「继续」。
  * 按 sessionId 记在模块里，前台 / 后台停车都是同一份：后台那轮出错，切回来也不会自己发。
@@ -36,17 +44,61 @@ function notify() {
   for (const sessionId of paused.keys()) {
     if (!items.some((item) => item.sessionId === sessionId)) paused.delete(sessionId)
   }
+  if (persistEnabled && hydrated) {
+    persistFollowupQueueSnapshot({
+      items: [...items],
+      paused: Object.fromEntries(paused.entries())
+    })
+  }
+  for (const listener of listeners) listener()
+}
+
+/** 启动时从 main 回灌一次（幂等）。须在 UI 挂载前调用。 */
+export function hydrateFollowupQueueFromMain(): void {
+  if (hydrated) return
+  hydrated = true
+  const snap = loadFollowupQueueSnapshot()
+  items = snap.items.map((item) => ({ ...item, status: item.status === "elevated_to_steer" ? "elevated_to_steer" : "pending" }))
+  paused.clear()
+  for (const [sessionId, reason] of Object.entries(snap.paused)) {
+    paused.set(sessionId, reason)
+  }
+  startedSincePause.clear()
+  // 回灌不写回（内容相同）；只通知订阅方。
+  for (const listener of listeners) listener()
+}
+
+function ensureHydrated(): void {
+  if (!hydrated) hydrateFollowupQueueFromMain()
+}
+
+/** 测试：关掉落盘，避免互相污染。 */
+export function setFollowupPersistEnabledForTest(enabled: boolean): void {
+  persistEnabled = enabled
+}
+
+/** 测试：模拟进程重启——清内存并允许再次从 storage 回灌（不碰落盘）。 */
+export function resetFollowupHydrationForTest(): void {
+  items = []
+  paused.clear()
+  startedSincePause.clear()
+  hint = null
+  hintSessionId = null
+  hintImageCount = 0
+  hydrated = false
   for (const listener of listeners) listener()
 }
 
 /** 这个会话的队列为什么停着；没停为 null。 */
 export function followupPausedReason(sessionId: string | null | undefined): FollowupPausedReason | null {
+  ensureHydrated()
   if (!sessionId) return null
   return paused.get(sessionId) ?? null
 }
 
 /** 停住这个会话的队列。队列是空的就不记（没什么可停的）。返回是否停住。 */
 export function pauseFollowups(sessionId: string | null | undefined, reason: FollowupPausedReason): boolean {
+  ensureHydrated()
   if (!sessionId || !items.some((item) => item.sessionId === sessionId)) return false
   const current = paused.get(sessionId)
   if (current === reason) return true
@@ -69,6 +121,7 @@ export function pauseFollowups(sessionId: string | null | undefined, reason: Fol
 
 /** 停止 / 换助手的暂停在一轮正常跑完后改说「排队的 N 条先不发」（held）；别的原因不动。 */
 export function settleNeutralPause(sessionId: string | null | undefined): void {
+  ensureHydrated()
   if (!sessionId) return
   const current = paused.get(sessionId)
   if (current !== "stopped" && current !== "engineSwitched") return
@@ -79,11 +132,13 @@ export function settleNeutralPause(sessionId: string | null | undefined): void {
 
 /** 这个会话开跑了一轮（run.start）：暂停中才记。 */
 export function noteFollowupSessionRunStarted(sessionId: string | null | undefined): void {
+  ensureHydrated()
   if (sessionId && paused.has(sessionId)) startedSincePause.add(sessionId)
 }
 
 /** 解除暂停（「继续」、重发成功）。订阅方（自启）随 notify 再试一次。 */
 export function resumeFollowups(sessionId: string | null | undefined): void {
+  ensureHydrated()
   if (!sessionId || !paused.has(sessionId)) return
   paused.delete(sessionId)
   startedSincePause.delete(sessionId)
@@ -98,16 +153,24 @@ export function resetFollowupsForTest(): void {
   hint = null
   hintSessionId = null
   hintImageCount = 0
-  notify()
+  hydrated = true
+  resetFollowupQueueStorageForTest()
+  // 清空也写穿，免得下次 hydrate 又冒出来。
+  if (persistEnabled) {
+    persistFollowupQueueSnapshot({ items: [], paused: {} })
+  }
+  for (const listener of listeners) listener()
 }
 
 export function listFollowups(sessionId?: string | null): FollowupItem[] {
+  ensureHydrated()
   if (!sessionId) return items
   return items.filter((item) => item.sessionId === sessionId)
 }
 
 /** 入队。prompt / text 任填一个，写入时两者同值。 */
 export function enqueueFollowup(item: EnqueueFollowupInput): FollowupItem {
+  ensureHydrated()
   const prompt = item.prompt ?? item.text ?? ""
   const next: FollowupItem = {
     ...item,
@@ -124,6 +187,7 @@ export function enqueueFollowup(item: EnqueueFollowupInput): FollowupItem {
 
 /** leo MUST 1（#155）：马上发失败 / 不能带图纠偏——原样放回队首（id、字、图、Chip 都不变）。 */
 export function restoreFollowup(item: FollowupItem) {
+  ensureHydrated()
   if (items.some((row) => row.id === item.id)) return
   items = [{ ...item, status: "pending" }, ...items]
   notify()
@@ -134,6 +198,7 @@ export function restoreFollowup(item: FollowupItem) {
  * pausedReason：放回的同时就停住（同一次 notify 里），自启不会抢在暂停前把第一条发出去。
  */
 export function restoreFollowups(list: readonly FollowupItem[], pausedReason?: FollowupPausedReason) {
+  ensureHydrated()
   const fresh = list.filter((item) => !items.some((row) => row.id === item.id))
   if (fresh.length === 0) return
   items = [...fresh.map((item) => ({ ...item, status: "pending" as const })), ...items]
@@ -147,6 +212,7 @@ export function restoreFollowups(list: readonly FollowupItem[], pausedReason?: F
 
 /** E1「全部清空」：一次取走这个会话的全部排队项（原顺序）。 */
 export function takeAllFollowups(sessionId: string): FollowupItem[] {
+  ensureHydrated()
   const taken = items.filter((item) => item.sessionId === sessionId)
   if (taken.length === 0) return []
   items = items.filter((item) => item.sessionId !== sessionId)
@@ -155,17 +221,20 @@ export function takeAllFollowups(sessionId: string): FollowupItem[] {
 }
 
 export function removeFollowup(id: string) {
+  ensureHydrated()
   items = items.filter((item) => item.id !== id)
   notify()
 }
 
 export function takeFollowup(id: string): FollowupItem | null {
+  ensureHydrated()
   const found = items.find((item) => item.id === id) ?? null
   if (found) removeFollowup(id)
   return found
 }
 
 export function takeNextFollowup(sessionId: string): FollowupItem | null {
+  ensureHydrated()
   const index = items.findIndex((item) => item.sessionId === sessionId)
   if (index < 0) return null
   const next = items[index]
@@ -188,6 +257,7 @@ export function elevateToSteer(id: string): FollowupItem | null {
 
 /** 同一会话内调整顺序；delta 为 -1 上移、+1 下移。 */
 export function moveFollowup(id: string, delta: -1 | 1) {
+  ensureHydrated()
   const current = items.find((item) => item.id === id)
   if (!current) return
   const sessionIds = items.filter((item) => item.sessionId === current.sessionId).map((item) => item.id)
