@@ -2,15 +2,18 @@
  * 按语言高亮源码。用 css-variables 主题，颜色走 BoardUI token，不跟彩虹皮肤。
  * 右栏文件预览与气泡 MarkdownFence 共用；结果带轻量缓存，流式更新时保留上一帧防闪。
  *
- * Shiki 4 不再内置 `"css-variables"` 字符串主题，需 createCssVariablesTheme。
+ * Shiki 4：createCssVariablesTheme + JS regex 引擎（Electron CSP 无 wasm-unsafe-eval，
+ * 不能 instantiate oniguruma WASM）。
  */
 import { useEffect, useState } from "react"
 import {
-  codeToHtml,
   createCssVariablesTheme,
+  createHighlighter,
   type BundledLanguage,
+  type Highlighter,
   type ShikiTransformer
 } from "shiki"
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
 import type { SyntaxLanguage } from "./language"
 
 const cssVariablesTheme = createCssVariablesTheme({
@@ -18,6 +21,38 @@ const cssVariablesTheme = createCssVariablesTheme({
   variablePrefix: "--shiki-",
   fontStyle: true
 })
+
+/** 启动时预载常用语言；其余按需 loadLanguage。 */
+const BOOT_LANGS: BundledLanguage[] = [
+  "typescript",
+  "tsx",
+  "javascript",
+  "jsx",
+  "python",
+  "json",
+  "jsonc",
+  "bash",
+  "go",
+  "rust",
+  "markdown",
+  "yaml",
+  "html",
+  "css",
+  "plaintext"
+]
+
+let highlighterPromise: Promise<Highlighter> | null = null
+
+function getHighlighter(): Promise<Highlighter> {
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
+      themes: [cssVariablesTheme],
+      langs: BOOT_LANGS,
+      engine: createJavaScriptRegexEngine()
+    })
+  }
+  return highlighterPromise
+}
 
 function lineNumberTransformer(variant: "pane" | "fence"): ShikiTransformer {
   const gutterClass =
@@ -178,17 +213,25 @@ async function highlightOne(
   const source = code.length > 0 ? code : " "
   const transformers: ShikiTransformer[] =
     lineNumbers === false ? [] : [lineNumberTransformer(lineNumbers ?? "pane")]
+  const highlighter = await getHighlighter()
+  const lang = (await ensureLang(highlighter, language)) as BundledLanguage
+  return highlighter.codeToHtml(source, {
+    lang,
+    theme: "css-variables",
+    transformers
+  })
+}
+
+async function ensureLang(highlighter: Highlighter, language: SyntaxLanguage): Promise<string> {
+  const loaded = highlighter.getLoadedLanguages()
+  if (loaded.includes(language)) return language
   try {
-    return await codeToHtml(source, {
-      lang: language as BundledLanguage,
-      theme: cssVariablesTheme,
-      transformers
-    })
+    await highlighter.loadLanguage(language as BundledLanguage)
+    return language
   } catch {
-    return codeToHtml(source, {
-      lang: "plaintext",
-      theme: cssVariablesTheme,
-      transformers
-    })
+    if (!loaded.includes("plaintext")) {
+      await highlighter.loadLanguage("plaintext")
+    }
+    return "plaintext"
   }
 }
