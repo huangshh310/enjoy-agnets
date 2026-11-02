@@ -51,6 +51,10 @@ import {
   stubShellToolCallPart,
   type StubShellFixture
 } from "./e2e-stub-shell.ts"
+import {
+  isMdShikiFencePrompt,
+  STUB_MD_SHIKI_MARKDOWN
+} from "./e2e-stub-md-shiki.ts"
 
 export {
   STUB_LONG_COMMAND,
@@ -247,6 +251,10 @@ export async function* createE2eStubStream(
     yield* emitText("stub-ok allowed write", signal)
     return
   }
+  if (isMdShikiFencePrompt(prompt)) {
+    yield* emitRawMarkdown(STUB_MD_SHIKI_MARKDOWN, signal)
+    return
+  }
   if (isVerySlowPrompt(prompt)) {
     yield* emitText(verySlowHead(), signal, verySlowDelayMs())
     yield* emitStubWriteTurn(signal, opts)
@@ -308,6 +316,17 @@ async function* emitStubWriteTurn(
     return
   }
   yield stubWriteApprovalPart(stubWriteSeq)
+}
+
+/** 整段 Markdown 一次吐出，避免按空格切开破坏围栏。 */
+async function* emitRawMarkdown(
+  text: string,
+  signal: AbortSignal
+): AsyncGenerator<Record<string, unknown>> {
+  yield { type: "text-start", id: "text" }
+  if (!signal.aborted) yield { type: "text-delta", text }
+  yield { type: "text-end", id: "text" }
+  yield { type: "finish", usage: { inputTokens: 4, outputTokens: 8, totalTokens: 12 } }
 }
 
 async function* emitText(
