@@ -34,6 +34,7 @@ import {
   setSessionAttachedPrs
 } from "./services/session-attached-prs.ts"
 import { assertPrSameRepo } from "./services/workspace-io-dispatch.ts"
+import { stopPrBabysitForSession } from "./services/workspace-pr-babysit"
 import { loadSessionEstimatedCost } from "./services/session-estimated-cost"
 import {
   createSession,
