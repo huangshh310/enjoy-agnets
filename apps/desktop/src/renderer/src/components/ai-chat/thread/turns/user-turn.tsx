@@ -18,8 +18,6 @@ import { extractHostModeFence, stripHostModePrefix } from "../../composer/mentio
 import { visibleUserText } from "@renderer/lib/user-message-text"
 import { AssetPreview } from "../asset-preview"
 import { CopyMessageButton } from "../copy-message-button"
-import { canRewindConversation } from "@renderer/hooks/rewind-from-here"
-import { RewindFromHereAction } from "./rewind-from-here-dialog"
 import { UserSentQuotes } from "./user-sent-quotes"
 import { composerCanSend } from "@renderer/hooks/runtime-interact/composer-can-send"
 
@@ -32,8 +30,6 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const running = useChatStore((s) => s.running)
-  const runtimeId = useChatStore((s) => s.runtimeId)
-  const canRewind = canRewindConversation(runtimeId)
 
   useEffect(() => {
     setDraftContent(visibleUserText(message.content) || message.content)
@@ -148,10 +144,6 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 <RiEditLine className="size-3.5" />
               </MessageAction>
             ) : null}
-            {!running ? (
-              <RewindFromHereAction messageId={message.id} disabled={running} canRewind={canRewind} />
-            ) : null}
-
             {canCopy ? <CopyMessageButton message={{ ...message, content: copyText }} /> : null}
           </MessageActions>
         </>

@@ -10,6 +10,9 @@ import {
 } from "@remixicon/react"
 import { extractObjectFromMessage } from "@renderer/hooks/extract-object"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { canRewindConversation } from "@renderer/hooks/rewind-from-here"
+import { usePrecedingUserMessageId } from "@renderer/hooks/preceding-user-prompt"
+import { RewindFromHereMenuItem } from "./rewind-from-here-dialog"
 import { laterTurnCount } from "@renderer/hooks/regenerate-retry-target"
 import { RegenerateConfirmDialog } from "./regenerate-confirm-dialog"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
@@ -31,6 +34,11 @@ export function AssistantActions({
   const [extracting, setExtracting] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const running = useChatStore((s) => s.running)
+  const pendingApproval = useChatStore((s) => s.pendingApproval)
+  const runtimeId = useChatStore((s) => s.runtimeId)
+  const canRewind = canRewindConversation(runtimeId)
+  const userMessageId = usePrecedingUserMessageId(message.id)
+  const rewindBlockReason = running ? "running" : pendingApproval ? "pending" : null
   const laterTurns = useChatStore((s) => laterTurnCount(s.messages, message.id))
   const [confirmOpen, setConfirmOpen] = useState(false)
   const vote = message.feedback
@@ -80,6 +88,13 @@ export function AssistantActions({
       <CopyMessageButton message={message} prompt={prompt} label={t("chat.copyResponse")} />
       {canForkTurn(message) ? <ForkTurnButton messageId={message.id} /> : null}
       <MessageMoreMenu>
+        {userMessageId ? (
+          <RewindFromHereMenuItem
+            messageId={userMessageId}
+            canRewind={canRewind}
+            blockReason={rewindBlockReason}
+          />
+        ) : null}
         <DropdownMenuItem
           data-testid="extract-object"
           disabled={extracting}

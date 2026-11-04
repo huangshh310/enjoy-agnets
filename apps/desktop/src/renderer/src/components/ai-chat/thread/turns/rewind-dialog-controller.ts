@@ -1,19 +1,11 @@
 /**
- * 「从这里重来」弹窗的运行逻辑（从 rewind-from-here-dialog.tsx 抽出来，好在 node --test 里直接测接线，leo MUST-FIX）：
- * - run：同一时间只跑一次（同步 busy 标记，不等 React 重渲染）；一律经 settleRewind，抛错收成 REWIND_THREW →
- *   通用句「从这里重来失败」，原始错误只在 settleRewind 里进一次日志（leo S7 / soft：不重复打日志）。
- * - goReview：跑着的时候什么都不做（leo S1：否则会在弹窗背后打开右栏）。
- * - model()：组件渲染只照这里给的东西——文案、按钮的 disabled / onClick 都从这里出，组件不自己拼。
- * - 卡住兜底（#159 F1，leo）：重来的 IPC 一直不回，busy 不能永远挂着——REWIND_HANG_TIMEOUT_MS 后收成
- *   REWIND_TIMEOUT（通用失败句），按钮恢复、弹窗能关；晚到的结果若是成功就顺手收窗，失败则不再改界面。
- *   超时之后、第一次调用真正回来之前（pending）：只有「取消」能点——不能再点一次重来 / 去审查，
- *   免得两次文件还原并发（leo #167）。
- * - 同会话正在输入、原话稍后放回（writebackPending）：收窗 + 中性 toast，不等写回、不显示失败句（leo #167 r3）。
- * - REWIND_FINISH_FAILED（截断已成功、写回抛错，原话已存好会继续放回）：收窗 + toast（luna n167 P2：延迟约 300ms；
- *   期间已放回则不弹），不显示「从这里重来失败」（会话重读在 rewind-from-here 里做，leo #167 ③）。晚到的同样处理。
- * - 30s 超时后迟到的成功（原话已写回输入框）：收窗 + toast「已经回到这里，原话放回输入框了。」（luna n167 P2）。
- * - 原话进了原来那个会话的草稿（前台已换会话）：收窗 + 小 toast 告诉用户（onSavedToOtherDraft）。
- * - 跑着的时候：点的那颗按钮转圈 +「正在还原…」，其余按钮 disabled（luna g159 ⑪）。
+ * 「改到这里」弹窗运行逻辑（从 rewind-from-here-dialog.tsx 抽出来，好在 node --test 里直接测接线）：
+ * - run：同一时间只跑一次；一律经 settleRewind，抛错收成 REWIND_THREW → 通用句，原始错误只进一次日志。
+ * - 确认卡：单主钮 + 勾选「连本轮文件一起还原」默认关；主钮按勾选态决定 restoreFiles。
+ * - goReview：跑着的时候什么都不做。
+ * - model()：组件渲染只照这里给的东西。
+ * - 卡住兜底：REWIND_HANG_TIMEOUT_MS 后收成 REWIND_TIMEOUT；超时后 pending 时只有取消能点。
+ * - 入口：引擎不支持整项不出；跑着 / 坞待批 → 灰 + 专用 tooltip（不静默丢审批）。
  */
 import {
   clearRewindFinishFailedToast,
@@ -26,6 +18,7 @@ import {
   settleRewind,
   type RewindButton,
   type RewindButtonId,
+  type RewindCheckboxView,
   type RewindFailure,
   type RewindRunResult
 } from "./rewind-dialog-view"
@@ -33,7 +26,7 @@ import {
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export type RewindDialogDeps = {
-  /** 真正去重来（组件里是 rewindFromUserTurn），可能抛错。 */
+  /** 真正去改到这里（组件里是 rewindFromUserTurn），可能抛错。 */
   rewind: (input: { restoreFiles: boolean; confirmDeleteUntracked?: boolean }) => Promise<RewindRunResult>
   /** 收窗（清回第一步之后调用）。 */
   onClose: () => void
@@ -47,7 +40,7 @@ export type RewindDialogDeps = {
   onSavedToOtherDraft?: () => void
   /** 同会话正在输入：原话已存好、稍后放回输入框：toast（中性，不是失败）。 */
   onWritebackPending?: () => void
-  /** 30s 超时后迟到的成功（原话已写回输入框）：toast（luna n167 P2）。 */
+  /** 30s 超时后迟到的成功（原话已写回输入框）：toast。 */
   onLateRestored?: () => void
 }
 
@@ -66,6 +59,10 @@ export type RewindDialogSnapshot = {
   busyButton: RewindButtonId | null
   /** 卡住超时后第一次调用还没回来：只有「取消」能点。 */
   pending: boolean
+  /** 「连本轮文件一起还原」勾选；默认关。 */
+  restoreFilesChecked: boolean
+  /** 本轮是否有可还原文件记录；null = 未预检。 */
+  fileRestoreAvailable: boolean | null
 }
 
 /** 按钮要的属性：组件直接展开到 <button> / <Button> 上。 */
@@ -76,6 +73,7 @@ export type RewindDialogModel = {
   title: string
   body: string
   hint: string | null
+  checkbox: (RewindCheckboxView & { onCheckedChange: (checked: boolean) => void }) | null
   files: string[]
   moreCount: number
   failure: {
@@ -95,13 +93,27 @@ export type RewindDialogController = {
   subscribe: (listener: () => void) => () => void
   setDeps: (deps: RewindDialogDeps) => void
   close: () => void
+  setRestoreFilesChecked: (checked: boolean) => void
+  setFileRestoreAvailable: (available: boolean | null) => void
   run: (restoreFiles: boolean, confirmDeleteUntracked?: boolean, via?: RewindButtonId) => Promise<void>
   goReview: () => void
   onButton: (id: RewindButtonId) => void
-  model: (input: { canRestoreFiles: boolean; gitRepo: boolean | null; t: Translate }) => RewindDialogModel
+  model: (input: {
+    canRestoreFiles: boolean
+    gitRepo: boolean | null
+    t: Translate
+    /** 竞态漏网：确认卡已开而转跑/待批 → 主钮 disabled。 */
+    blockReason?: RewindEntryBlockReason | null
+  }) => RewindDialogModel
 }
 
-const FIRST_STEP: Omit<RewindDialogSnapshot, "busy" | "busyButton" | "pending"> = { untracked: undefined, failure: null, errorKey: null }
+const FIRST_STEP: Omit<RewindDialogSnapshot, "busy" | "busyButton" | "pending"> = {
+  untracked: undefined,
+  failure: null,
+  errorKey: null,
+  restoreFilesChecked: false,
+  fileRestoreAvailable: null
+}
 
 export function createRewindDialogController(initialDeps: RewindDialogDeps): RewindDialogController {
   let deps = initialDeps
@@ -126,6 +138,19 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
     deps.onClose()
   }
 
+  function setRestoreFilesChecked(checked: boolean) {
+    if (snapshot.busy || snapshot.pending) return
+    if (snapshot.fileRestoreAvailable === false) return
+    set({ restoreFilesChecked: checked, errorKey: null })
+  }
+
+  function setFileRestoreAvailable(available: boolean | null) {
+    set({
+      fileRestoreAvailable: available,
+      ...(available === false ? { restoreFilesChecked: false } : {})
+    })
+  }
+
   /** 一次结果 → 界面。late = 超时之后才回来的（只认成功和「已截断、原话在草稿里」，其余不改界面）。 */
   function apply(result: RewindRunResult, restoreFiles: boolean, late: boolean) {
     const outcome = rewindOutcome(result, restoreFiles)
@@ -142,7 +167,11 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
     } else if (outcome.kind === "untracked") {
       set({ untracked: outcome.files })
     } else if (outcome.kind === "failure") {
-      set({ untracked: undefined, failure: outcome.failure })
+      set({
+        untracked: undefined,
+        failure: outcome.failure,
+        ...(outcome.failure === "missing" ? { fileRestoreAvailable: false, restoreFilesChecked: false } : {})
+      })
     } else {
       set({ errorKey: outcome.messageKey })
     }
@@ -157,15 +186,12 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
     let timer: ReturnType<typeof setTimeout> | undefined
     let hung = false
     try {
-      // 抛错也收成通用失败（REWIND_THREW），不留未处理的 rejection，原始错误不进界面。
       const settled = settleRewind(() => deps.rewind({ restoreFiles, confirmDeleteUntracked }))
-      // IPC 卡住：到点收成 REWIND_TIMEOUT，busy 放开、弹窗能关（leo #159 F1）。
       const timedOut = new Promise<RewindRunResult>((resolve) => {
         timer = setTimeout(() => resolve({ ok: false, code: REWIND_TIMEOUT }), deps.timeoutMs ?? REWIND_HANG_TIMEOUT_MS)
       })
       const result = await Promise.race([settled, timedOut])
       if (!result.ok && result.code === REWIND_TIMEOUT) {
-        // 第一次调用还在跑：只放开「取消」，别的按钮等它真正回来（不能并发两次文件还原）。
         hung = true
         set({ pending: true })
         void settled.then((lateResult) => {
@@ -173,11 +199,9 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
           set({ pending: false })
           if (seq !== runSeq) return
           if (!lateResult.ok) console.warn(`[rewind] late result: ${lateResult.code}`)
-          // 晚到的成功：对话已经截了、原话已写回 → 收窗；已截断但原话在草稿里 → 收窗 + toast；其余不改界面。
           apply(lateResult, restoreFiles, true)
         })
       }
-      // 抛错那条 settleRewind 已经连原始错误打过一次日志，这里不再重复。
       if (!result.ok && result.code !== "CHECKPOINT_CONFIRM_REQUIRED" && result.code !== REWIND_THREW) {
         console.warn(`[rewind] failed: ${result.code}`)
       }
@@ -193,7 +217,6 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
   }
 
   function goReview() {
-    // 重试跑着的时候不去审查：close() 不收窗，右栏会在弹窗背后打开（leo S1）。
     if (running) return
     close()
     deps.revealReview()
@@ -201,23 +224,49 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
 
   function onButton(id: RewindButtonId) {
     if (id === "cancel") close()
-    else if (id === "restore-files") void run(true, undefined, id)
     else if (id === "delete-and-restore") void run(true, true, id)
-    else void run(false, undefined, id)
+    else void run(Boolean(snapshot.restoreFilesChecked), undefined, id)
   }
 
-  function model({ canRestoreFiles, gitRepo, t }: { canRestoreFiles: boolean; gitRepo: boolean | null; t: Translate }) {
-    const { busy, busyButton, untracked, failure, errorKey, pending } = snapshot
+  function model({
+    canRestoreFiles,
+    gitRepo,
+    t,
+    blockReason
+  }: {
+    canRestoreFiles: boolean
+    gitRepo: boolean | null
+    t: Translate
+    blockReason?: RewindEntryBlockReason | null
+  }) {
+    const { busy, busyButton, untracked, failure, errorKey, pending, restoreFilesChecked, fileRestoreAvailable } =
+      snapshot
     const view = rewindDialogView(
-      untracked !== undefined ? { kind: "untracked", files: untracked } : { kind: "confirm", canRestoreFiles, gitRepo, failure },
+      untracked !== undefined
+        ? { kind: "untracked", files: untracked }
+        : {
+            kind: "confirm",
+            canRestoreFiles,
+            gitRepo,
+            failure,
+            restoreFilesChecked,
+            fileRestoreAvailable
+          },
       t,
       busy || pending
     )
+    const blocked = Boolean(blockReason) && untracked === undefined
     const result: RewindDialogModel = {
       stateKind: untracked !== undefined ? "untracked" : "confirm",
       title: view.title,
       body: view.body,
       hint: view.hint,
+      checkbox: view.checkbox
+        ? {
+            ...view.checkbox,
+            onCheckedChange: (checked) => setRestoreFilesChecked(checked)
+          }
+        : null,
       files: view.files,
       moreCount: view.moreCount,
       failure: view.failure
@@ -233,15 +282,23 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
                 : null
           }
         : null,
-      error: errorKey ? t(errorKey) : null,
+      error: errorKey
+        ? t(errorKey)
+        : blocked
+          ? t(blockReason === "pending" ? "chat.rewindBlockedPending" : "chat.rewindBlockedRunning")
+          : null,
       buttons: view.buttons.map((button) => {
-        const spinning = busy && busyButton === button.id
+        const spinningBtn = busy && busyButton === button.id
+        const isPrimary = button.id === "confirm" || button.id === "delete-and-restore"
         return {
           ...button,
-          label: spinning ? t("chat.rewindRestoring") : button.label,
-          busy: spinning,
-          // 超时后第一次调用还没回来：只有「取消」能点。
-          buttonProps: { disabled: busy || (pending && button.id !== "cancel"), onClick: () => onButton(button.id) }
+          label: spinningBtn ? t("chat.rewindRestoring") : button.label,
+          busy: spinningBtn,
+          // 超时后第一次调用还没回来：只有「取消」能点。竞态跑着/待批：主钮 disabled。
+          buttonProps: {
+            disabled: busy || (pending && button.id !== "cancel") || (blocked && isPrimary),
+            onClick: () => onButton(button.id)
+          }
         }
       })
     }
@@ -258,6 +315,8 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
       deps = next
     },
     close,
+    setRestoreFilesChecked,
+    setFileRestoreAvailable,
     run,
     goReview,
     onButton,
@@ -266,8 +325,8 @@ export function createRewindDialogController(initialDeps: RewindDialogDeps): Rew
 }
 
 /**
- * 组件用的 deps：把弹窗的 rewind 接到「这一条消息」的重来上（userMessageId 固定为 messageId，参数原样透传），
- * 收窗 = onOpenChange(false)。单独拿出来好在 node --test 里测接线（leo soft 7）。
+ * 组件用的 deps：把弹窗的 rewind 接到「这一条用户消息」的重来上（userMessageId 固定为 messageId，参数原样透传），
+ * 收窗 = onOpenChange(false)。
  */
 export function rewindDialogDeps(input: {
   messageId: string
@@ -290,30 +349,41 @@ export function rewindDialogDeps(input: {
       input.rewindFromUserTurn({ userMessageId: input.messageId, restoreFiles, confirmDeleteUntracked }),
     onClose: () => input.onOpenChange(false),
     revealReview: input.revealReview,
-    // luna n167 P2：延迟约 300ms；期间放回则不弹。切会话 / 卸载清理由 dialog 调 disposeRewindDialogToasts。
-    onRewoundNotRestored: () =>
-      scheduleRewindFinishFailedToast(() => toast("chat.rewindFinishFailedToast")),
+    onRewoundNotRestored: () => scheduleRewindFinishFailedToast(() => toast("chat.rewindFinishFailedToast")),
     onSavedToOtherDraft: () => toast("chat.rewindSavedToOtherDraft"),
     onWritebackPending: () => toast("chat.rewindWritebackPending"),
     onLateRestored: () => toast("chat.rewindLateRestoredToast")
   }
 }
 
-/** 弹窗卸载时清掉尚未弹出的「还没能放回」延迟 toast（luna n167 P2）。 */
+/** 弹窗卸载时清掉尚未弹出的「还没能放回」延迟 toast。 */
 export function disposeRewindDialogToasts(): void {
   clearRewindFinishFailedToast()
 }
 
+/** 入口灰掉原因：跑着 / 坞待批。引擎不支持则整项不出（不是灰）。 */
+export type RewindEntryBlockReason = "running" | "pending"
+
 /**
- * 消息上的「从这里重来」入口：引擎不支持回滚就整个不出（不是置灰、没有提示，luna）。
- * 返回 null = 不渲染；否则是入口按钮要的属性。
+ * 助手气泡 ⋯「改到这里」入口：引擎不支持回滚就整个不出（不是置灰）。
+ * 跑着 / 坞待批 → disabled + 专用 tooltip。
  */
 export function rewindEntryAction(input: {
   canRewind: boolean
-  disabled: boolean
+  /** @deprecated 用 blockReason；true 等价 running。 */
+  disabled?: boolean
+  blockReason?: RewindEntryBlockReason | null
   t: Translate
-}): { tooltip: string; label: string; disabled: boolean } | null {
+}): { tooltip: string; label: string; disabled: boolean; blockReason: RewindEntryBlockReason | null } | null {
   if (!input.canRewind) return null
+  const blockReason: RewindEntryBlockReason | null =
+    input.blockReason ?? (input.disabled ? "running" : null)
   const label = input.t("chat.rewindTitle")
-  return { tooltip: label, label, disabled: input.disabled }
+  const tooltip =
+    blockReason === "running"
+      ? input.t("chat.rewindBlockedRunning")
+      : blockReason === "pending"
+        ? input.t("chat.rewindBlockedPending")
+        : label
+  return { tooltip, label, disabled: Boolean(blockReason), blockReason }
 }

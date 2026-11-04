@@ -33,7 +33,7 @@ const catalogs = {
 const tFor = (lang: "zh" | "en") => (key: string, vars?: Record<string, string | number>) =>
   translate(catalogs[lang], key, vars)
 
-const GENERIC = { zh: "从这里重来失败", en: "Could not rewind from here" } as const
+const GENERIC = { zh: "改到这里失败", en: "Could not edit from here" } as const
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -100,8 +100,9 @@ test("S1 重试跑着的时候：「去审查」disabled，点它 / 直接调 go
       return pending.promise
     })
 
-    // 第一次：还原中途出错 → 琥珀色 +「去审查」，可点。
-    footer(gitModel(controller), "restore-files").buttonProps.onClick()
+    // 第一次：勾选连文件后点主钮 → 还原中途出错 → 琥珀色 +「去审查」，可点。
+    controller.setRestoreFilesChecked(true)
+    footer(gitModel(controller), "confirm").buttonProps.onClick()
     await new Promise((r) => setImmediate(r))
     let m = gitModel(controller)
     assert.equal(m.failure?.kind, "partial")
@@ -109,7 +110,7 @@ test("S1 重试跑着的时候：「去审查」disabled，点它 / 直接调 go
     assert.equal(m.failure?.review?.buttonProps.disabled, false, "idle: go-review enabled")
 
     // 重试：在跑。
-    footer(m, "restore-files").buttonProps.onClick()
+    footer(m, "confirm").buttonProps.onClick()
     m = gitModel(controller)
     assert.equal(controller.getSnapshot().busy, true)
     assert.equal(m.failure?.kind, "partial", "partial line stays while retrying")
@@ -124,7 +125,7 @@ test("S1 重试跑着的时候：「去审查」disabled，点它 / 直接调 go
     assert.equal(calls.review, 0, "retrying: review pane not opened")
     assert.equal(calls.close, 0, "retrying: dialog not closed")
     // 跑着的时候再点也不会再跑一次。
-    footer(m, "restore-files").buttonProps.onClick()
+    footer(m, "confirm").buttonProps.onClick()
     assert.equal(calls.rewind, 2)
 
     // 结果回来（又是部分还原）→ 恢复可点，点了收窗 + 开右栏审查。
@@ -153,16 +154,16 @@ test("S7 重来抛错：只显示通用句「从这里重来失败」，原始�
     ] as const) {
       await quietly(async (warns) => {
         const { controller, calls } = harness(rewind as () => Promise<RewindRunResult>)
-        for (const id of ["chat-only", "restore-files"] as const) {
+        for (const restoreFiles of [false, true] as const) {
           // 不会变成未处理的 rejection：run 正常结束。
-          await controller.run(id === "restore-files")
+          await controller.run(restoreFiles)
           const m = gitModel(controller, lang)
-          assert.equal(m.error, GENERIC[lang], `${lang} ${label} ${id}: generic copy`)
-          assert.equal(m.failure, null, `${lang} ${label} ${id}: no failure line`)
+          assert.equal(m.error, GENERIC[lang], `${lang} ${label} restoreFiles=${restoreFiles}: generic copy`)
+          assert.equal(m.failure, null, `${lang} ${label} restoreFiles=${restoreFiles}: no failure line`)
           assert.equal(m.stateKind, "confirm")
           const rendered = JSON.stringify(m)
-          assert.ok(!rendered.includes("EACCES"), `${lang} ${label} ${id}: raw error not rendered`)
-          assert.ok(!/secret|permission denied/i.test(rendered), `${lang} ${label} ${id}: raw error not rendered`)
+          assert.ok(!rendered.includes("EACCES"), `${lang} ${label}: raw error not rendered`)
+          assert.ok(!/secret|permission denied/i.test(rendered), `${lang} ${label}: raw error not rendered`)
           for (const b of m.buttons) assert.equal(b.buttonProps.disabled, false)
         }
         assert.equal(calls.close, 0, "dialog stays open")
@@ -199,7 +200,7 @@ test("成功：清回第一步并收窗；取消在跑的时候不收窗", async
   pending.resolve({ ok: true })
   await run
   assert.equal(calls.close, 1)
-  assert.deepEqual(controller.getSnapshot(), { busy: false, busyButton: null, pending: false, untracked: undefined, failure: null, errorKey: null })
+  assert.deepEqual(controller.getSnapshot(), { busy: false, busyButton: null, pending: false, untracked: undefined, failure: null, errorKey: null, restoreFilesChecked: false, fileRestoreAvailable: null })
 })
 
 test("引擎不支持回滚：消息上的「从这里重来」入口不出（不是置灰、没有提示）；支持时出且可点", () => {
@@ -225,8 +226,9 @@ test("组件接线：按钮的 disabled / onClick 来自 controller，入口按 
   assert.match(src, /\{view\.error\}/)
   assert.doesNotMatch(src, /settleRewind|rewindDialogView|rewindOutcome|busyRef/, "run logic lives in the controller")
   assert.doesNotMatch(src, /disabled=\{busy\}|onClick=\{goReview\}/)
-  // 入口：不支持就 return null，不再有「当前引擎不能回滚对话」的置灰提示。
-  assert.match(src, /const entry = rewindEntryAction\(\{ canRewind, disabled, t \}\)\s*\n\s*if \(!entry\) return null/)
+  // 入口：不支持就 return null；跑着/待批走 blockReason。
+  assert.match(src, /rewindEntryAction\(\{ canRewind, blockReason/)
+  assert.match(src, /if \(!entry\) return null/)
   assert.doesNotMatch(src, /rewindUnsupported/)
 })
 
@@ -301,7 +303,8 @@ test("deps.rewind：userMessageId 固定为这条消息，restoreFiles / confirm
       revealReview: () => undefined
     })
   )
-  footer(gitModel(controller), "restore-files").buttonProps.onClick()
+  controller.setRestoreFilesChecked(true)
+  footer(gitModel(controller), "confirm").buttonProps.onClick()
   await new Promise((r) => setImmediate(r))
   footer(gitModel(controller), "delete-and-restore").buttonProps.onClick()
   await new Promise((r) => setImmediate(r))
@@ -314,19 +317,17 @@ test("deps.rewind：userMessageId 固定为这条消息，restoreFiles / confirm
 test("跑着的时候：点的那颗按钮转圈 +「正在还原…」/ Restoring…，其余按钮 disabled 且不转圈；结束后复原", async () => {
   const pending = deferred<RewindRunResult>()
   const { controller } = harness(() => pending.promise)
-  footer(gitModel(controller), "restore-files").buttonProps.onClick()
+  footer(gitModel(controller), "confirm").buttonProps.onClick()
   for (const [lang, label] of [["zh", "正在还原…"], ["en", "Restoring…"]] as const) {
     const m = gitModel(controller, lang)
-    const restore = footer(m, "restore-files")
+    const restore = footer(m, "confirm")
     assert.equal(restore.busy, true, `${lang} clicked button busy`)
     assert.equal(restore.label, label)
     assert.equal(restore.buttonProps.disabled, true)
-    for (const id of ["cancel", "chat-only"]) {
-      const b = footer(m, id)
-      assert.equal(b.busy, false, `${lang} ${id} not spinning`)
-      assert.equal(b.buttonProps.disabled, true, `${lang} ${id} disabled`)
-      assert.notEqual(b.label, label)
-    }
+    const cancel = footer(m, "cancel")
+    assert.equal(cancel.busy, false, `${lang} cancel not spinning`)
+    assert.equal(cancel.buttonProps.disabled, true, `${lang} cancel disabled`)
+    assert.notEqual(cancel.label, label)
   }
   pending.resolve({ ok: false, code: "CHECKPOINT_CONFIRM_REQUIRED", untrackedToDelete: ["a.txt"] })
   await new Promise((r) => setImmediate(r))
@@ -340,7 +341,7 @@ test("重来的 IPC 卡住不回：超时后 busy 放开、显示通用失败句
   await quietly(async (warns) => {
     const hang = deferred<RewindRunResult>()
     const { controller, calls } = harness(() => hang.promise, 20)
-    const run = controller.run(false, undefined, "chat-only")
+    const run = controller.run(false, undefined, "confirm")
     assert.equal(controller.getSnapshot().busy, true)
     controller.close()
     assert.equal(calls.close, 0, "busy: cannot close yet")
@@ -377,7 +378,7 @@ test("卡住超时之后晚到的成功：对话已截、原话已写回 → 收
   })
 })
 
-test("luna n167 P2：30s 超时后迟到的成功 → 收窗 + toast「已经回到这里，原话放回输入框了。」", async () => {
+test("luna n167 P2：30s 超时后迟到的成功 → 收窗 + toast「已回到这里，原话放回输入框」", async () => {
   for (const lang of ["zh", "en"] as const) {
     await quietly(async () => {
       const hang = deferred<RewindRunResult>()
@@ -399,25 +400,28 @@ test("luna n167 P2：普通成功（未超时）不弹迟到成功 toast", async
   assert.deepEqual(calls.toasts, [])
 })
 
-test("消息上的入口（leo E5）：user-turn 按当前会话引擎的能力算 canRewind，不准写死", () => {
-  const src = readFileSync(new URL("./user-turn.tsx", import.meta.url), "utf8")
+test("消息上的入口（leo E5）：助手 ⋯ 按当前会话引擎的能力算 canRewind，不准写死；user-turn 不再挂入口", () => {
+  const user = readFileSync(new URL("./user-turn.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(user, /RewindFromHereAction|canRewindConversation/)
+  const src = readFileSync(new URL("./assistant-actions.tsx", import.meta.url), "utf8")
   assert.match(src, /const runtimeId = useChatStore\(\(s\) => s\.runtimeId\)/)
   assert.match(src, /const canRewind = canRewindConversation\(runtimeId\)/)
-  const entries = [...src.matchAll(/<RewindFromHereAction[^>]*>/g)].map((m) => m[0])
+  const entries = [...src.matchAll(/<RewindFromHereMenuItem[\s\S]*?\/>/g)].map((m) => m[0])
   assert.equal(entries.length, 1)
   assert.match(entries[0]!, /canRewind=\{canRewind\}/)
-  assert.doesNotMatch(src, /canRewind=\{(true|!0|1)\}|canRewind\s*\/?>|canRewind=\{[^}]*\|\|/, "no hard-coded / defaulted canRewind")
+  assert.match(entries[0]!, /blockReason=\{rewindBlockReason\}/)
+  assert.doesNotMatch(src, /canRewind=\{(true|!0|1)\}/)
   assert.doesNotMatch(src, /const canRewind = (true|!0)/)
 })
 
 // r3（leo）：写回抛错时原话还在「待放回」记录里、不在草稿里——toast 不能说「原话在草稿里」。
 const FINISH_TOAST = {
   zh: "已回到这里，但还没能放回输入框。原话已保存，会放回这个对话的输入框或草稿。",
-  en: "Rewound to here, but your message isn't back in the message box yet. It's saved and will go back into this chat's message box or draft."
+  en: "Back here, but your message isn't in the message box yet. It's saved and will go back into this chat's message box or draft."
 } as const
 const LATE_RESTORED = {
-  zh: "已经回到这里，原话放回输入框了。",
-  en: "You're back here. Your message is in the message box again."
+  zh: "已回到这里，原话放回输入框",
+  en: "Back here — your message is in the message box again"
 } as const
 
 afterEach(() => {
@@ -452,7 +456,7 @@ test("#167 ③ / luna n167 P2：REWIND_FINISH_FAILED → 收窗；「还没能�
   for (const lang of ["zh", "en"] as const) {
     await quietly(async () => {
       const { controller, calls } = wiredHarness(async () => ({ ok: false, code: "REWIND_FINISH_FAILED" }), lang)
-      await controller.run(false, undefined, "chat-only")
+      await controller.run(false, undefined, "confirm")
       assert.equal(calls.close, 1, `${lang}: dialog closed`)
       assert.deepEqual(calls.toasts, [], `${lang}: no toast before ${REWIND_FINISH_FAILED_TOAST_DELAY_MS}ms`)
       assert.equal(rewindFinishFailedToastPendingForTest(), true)
@@ -473,7 +477,7 @@ test("luna n167 P2：300ms 内已成功放回 → 「还没能放回」不弹", 
   t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   await quietly(async () => {
     const { controller, calls } = wiredHarness(async () => ({ ok: false, code: "REWIND_FINISH_FAILED" }), "zh")
-    await controller.run(false, undefined, "chat-only")
+    await controller.run(false, undefined, "confirm")
     assert.equal(calls.close, 1)
     assert.equal(rewindFinishFailedToastPendingForTest(), true)
     t.mock.timers.tick(100)
@@ -517,9 +521,9 @@ test("#167：超时后第一次调用没回来前，再点「连文件一起还�
   await quietly(async () => {
     const hang = deferred<RewindRunResult>()
     const { controller, calls } = harness(() => hang.promise, 10)
-    await controller.run(true, undefined, "restore-files")
+    await controller.run(true, undefined, "confirm")
     assert.equal(calls.rewind, 1)
-    for (const id of ["restore-files", "chat-only", "delete-and-restore", "start-over"] as const) controller.onButton(id)
+    for (const id of ["confirm", "delete-and-restore"] as const) controller.onButton(id)
     await controller.run(true, true, "delete-and-restore")
     controller.goReview()
     await new Promise((r) => setImmediate(r))
@@ -528,12 +532,12 @@ test("#167：超时后第一次调用没回来前，再点「连文件一起还�
     const m = gitModel(controller)
     assert.deepEqual(
       m.buttons.map((b) => [b.id, b.buttonProps.disabled]),
-      [["cancel", false], ["restore-files", true], ["chat-only", true]]
+      [["cancel", false], ["confirm", true]]
     )
     // 第一次回来之后才能再跑。
     hang.resolve({ ok: false, code: "TRUNCATE_RUN_ACTIVE" })
     await new Promise((r) => setImmediate(r))
-    const again = controller.run(false, undefined, "chat-only")
+    const again = controller.run(false, undefined, "confirm")
     assert.equal(calls.rewind, 2)
     await again
     controller.onButton("cancel")
@@ -545,7 +549,7 @@ test("#167：超时后第一次没回来前点取消能关窗", async () => {
   await quietly(async () => {
     const hang = deferred<RewindRunResult>()
     const { controller, calls } = harness(() => hang.promise, 10)
-    await controller.run(false, undefined, "chat-only")
+    await controller.run(false, undefined, "confirm")
     controller.onButton("cancel")
     assert.equal(calls.close, 1)
     hang.resolve({ ok: true })
@@ -556,10 +560,10 @@ test("#167：超时后第一次没回来前点取消能关窗", async () => {
 test("#167 r3：同会话正在输入、原话稍后放回（writebackPending）→ 立刻收窗 + 中性 toast，不显示失败句", async () => {
   for (const [lang, copy] of [
     ["zh", "已回到这里，原话稍后放回输入框。"],
-    ["en", "Rewound to here. Your message will go back into the message box in a moment."]
+    ["en", "Back here. Your message will go back into the message box in a moment."]
   ] as const) {
     const { controller, calls } = wiredHarness(async () => ({ ok: true, writebackPending: true }), lang)
-    await controller.run(false, undefined, "chat-only")
+    await controller.run(false, undefined, "confirm")
     assert.equal(calls.close, 1, `${lang}: closed`)
     assert.deepEqual(calls.toasts, [copy])
     assert.equal(controller.model({ canRestoreFiles: true, gitRepo: true, t: tFor(lang) }).error, null)
@@ -588,3 +592,34 @@ test("luna n167 P2：rewind 范围 en 文案统一 message box，不含 the inpu
   assert.match(enChat.rewindFinishFailedToast, /message box/)
   assert.match(enChat.rewindBody, /message box/)
 })
+
+test("跑着 / 坞待批：入口灰掉 + 专用 tooltip；引擎不支持仍整项不出", () => {
+  const t = tFor("zh")
+  assert.equal(rewindEntryAction({ canRewind: false, blockReason: "running", t }), null)
+  const running = rewindEntryAction({ canRewind: true, blockReason: "running", t })
+  assert.ok(running)
+  assert.equal(running.disabled, true)
+  assert.equal(running.tooltip, "等这轮停下来再改到这里")
+  const pending = rewindEntryAction({ canRewind: true, blockReason: "pending", t })
+  assert.ok(pending)
+  assert.equal(pending.disabled, true)
+  assert.equal(pending.tooltip, "先处理完待批，再改到这里")
+  const idle = rewindEntryAction({ canRewind: true, blockReason: null, t })
+  assert.ok(idle)
+  assert.equal(idle.disabled, false)
+  assert.equal(idle.tooltip, "改到这里")
+})
+
+test("勾选默认关；勾选后主钮文案变为「改到这里并还原文件」", () => {
+  const { controller } = harness(async () => ({ ok: true }))
+  let m = gitModel(controller)
+  assert.equal(controller.getSnapshot().restoreFilesChecked, false)
+  assert.equal(m.checkbox?.checked, false)
+  assert.equal(footer(m, "confirm").label, "改到这里")
+  controller.setRestoreFilesChecked(true)
+  m = gitModel(controller)
+  assert.equal(m.checkbox?.checked, true)
+  assert.equal(footer(m, "confirm").label, "改到这里并还原文件")
+  assert.ok(m.checkbox?.risk)
+})
+

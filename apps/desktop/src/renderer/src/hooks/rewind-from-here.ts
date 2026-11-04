@@ -52,7 +52,8 @@ export async function rewindFromUserTurn(input: {
   confirmDeleteUntracked?: boolean
 }): Promise<RewindResult> {
   const store = useChatStore.getState()
-  if (store.running || !hasIde() || !store.sessionId) {
+  // 跑着或坞待批：禁止执行（入口应已灰掉；这里硬门，禁静默丢审批）。
+  if (store.running || store.pendingApproval || !hasIde() || !store.sessionId) {
     return { ok: false, code: "REWIND_BUSY" }
   }
   if (!canRewindConversation(store.runtimeId)) {
@@ -67,7 +68,8 @@ export async function rewindFromUserTurn(input: {
   const sessionTitle = store.sessionTitle ?? ""
   // jojo P1 / leo #147 MF-1：名单只用权威 id（库 id / persistedId / 按 runId 严格绑上的库行）；库里多出来就 STALE →「有新内容」。
   const expectedTailIds = await resolveTruncateTail({ sessionId, messages, anchorId: target.id, mode: "from" })
-  if (useChatStore.getState().running || useChatStore.getState().sessionId !== sessionId) {
+  const afterTail = useChatStore.getState()
+  if (afterTail.running || afterTail.pendingApproval || afterTail.sessionId !== sessionId) {
     return { ok: false, code: "REWIND_BUSY" }
   }
   const guarded = (dryRun: boolean) =>

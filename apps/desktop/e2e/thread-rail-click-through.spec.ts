@@ -1,6 +1,6 @@
 /**
  * luna main-155 巡检 P2（patrol-16/17）：会话右侧刻度 ThreadPreviewRail 外框约 256×256、pointer-events:auto，
- * 透明处也吃掉点击。1100 宽下用户消息的编辑 / 从这里重来 / 复制、编辑框的保存 / 取消，真实鼠标点都没反应。
+ * 透明处也吃掉点击。1100 宽下用户消息的编辑 / 改到这里 / 复制、编辑框的保存 / 取消，真实鼠标点都没反应。
  * 出现条件：会话里 ≥2 条带文字的用户消息、且没有本轮账本（没改文件）。
  * 视口用 1099：stub 会报 token → hasLedger 为真，产品在 ≥1100 藏刻度给账本腾位；1099 仍能测到刻度外框吃点击。
  * 断言：真实鼠标 page.mouse.click 坐标点击（不 force）都生效；elementFromPoint 命中的就是按钮本身；
@@ -64,7 +64,8 @@ test("1099 宽、两条带字用户消息、无文件账本：右侧刻度不吃
     const railBox = await box(rail)
     const edit = message.getByRole("button", { name: "编辑消息" })
     const copy = message.getByRole("button", { name: "复制消息" })
-    const rewind = message.getByRole("button", { name: /从这里重来|重来/ })
+    // P1 入口迁到助手 ⋯；本测只覆盖用户气泡编辑/复制可点。
+    const rewind = message.locator("[data-testid=rewind-from-here]")
     await message.hover()
     // 前提：这些按钮确实落在刻度外框里，否则测不到被吃点击。
     const editBox = await box(edit)
