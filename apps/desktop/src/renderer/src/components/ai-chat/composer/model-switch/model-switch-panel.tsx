@@ -14,6 +14,7 @@ export function ModelSwitchPanel({
   engineLabel,
   models,
   currentId,
+  busy = false,
   onPick,
   onRetry
 }: {
@@ -22,6 +23,7 @@ export function ModelSwitchPanel({
   engineLabel: string
   models: SwitchableModel[]
   currentId: string
+  busy?: boolean
   onPick: (model: SwitchableModel) => void
   onRetry: () => void
 }) {
@@ -45,9 +47,15 @@ export function ModelSwitchPanel({
               <button
                 type="button"
                 data-testid={`model-switch-item-${model.id}`}
-                onClick={() => onPick(model)}
+                disabled={busy}
+                aria-busy={busy || undefined}
+                onClick={() => {
+                  if (busy) return
+                  onPick(model)
+                }}
                 className={cx(
                   "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-caption-1-regular transition-colors",
+                  busy ? "cursor-wait opacity-70" : null,
                   current
                     ? "bg-accent-500/10 text-text-primary"
                     : "text-text-primary hover:bg-background-secondary-hover"

@@ -13,6 +13,7 @@ test("顶栏只留探索/执行分段，模型与思考下沉至底栏", () => {
   assert.equal(src.includes("<ComposerModelChip"), false)
   assert.equal(src.includes("<SessionGoalChip"), false)
   assert.ok(footerSrc.includes("<AgentPicker"))
+  assert.ok(footerSrc.includes("<ComposerModelChip"), "I1 同引擎换模芯片在底栏")
   assert.ok(footerSrc.includes("<ComposerThinkingChrome"))
 })
 
@@ -34,5 +35,7 @@ test("底栏次要预览入口在附件与模型之间", () => {
   const attach = footerSrc.indexOf("<ComposerAttachMenu")
   const preview = footerSrc.indexOf("<ComposerPreviewToggle")
   const picker = footerSrc.indexOf("<AgentPicker")
+  const modelChip = footerSrc.indexOf("<ComposerModelChip")
   assert.ok(attach >= 0 && preview > attach && picker > preview)
+  assert.ok(modelChip > picker, "I1 模型芯片在引擎芯片之后")
 })

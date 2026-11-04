@@ -32,13 +32,15 @@ test("I1 源码不含换引擎 / 交接成功句", () => {
 
 test("I1 中文短句贴预览", () => {
   assert.equal(zhChat.modelSwitch.badge, "已切换")
+  assert.equal(zhChat.modelSwitch.nextTurn, "下一轮才用新模型")
+  assert.equal(enChat.modelSwitch.nextTurn, "New model applies on the next turn")
   assert.equal(zhChat.modelSwitch.toast, "已切换到 {model}")
   assert.equal(zhChat.modelSwitch.footnote, "同一个助手，只换模型")
   // luna #170：「引擎」清理——副标题、提示、额度说明都不再说「引擎」。
   assert.equal(zhChat.modelSwitch.menuSubtitle, "{engine} 官方列出的模型")
   assert.equal(enChat.modelSwitch.menuSubtitle, "{engine} · Listed models")
-  for (const text of [zhChat.modelSwitch.hint, zhChat.modelSwitch.footnote, zhChat.modelSwitch.footnoteSession, zhChat.modelSwitch.menuSubtitle, zhChat.usage.creditDesc]) assert.doesNotMatch(text, /引擎/)
-  for (const text of [enChat.modelSwitch.hint, enChat.modelSwitch.footnote, enChat.modelSwitch.footnoteSession, enChat.usage.creditDesc]) assert.doesNotMatch(text, /engine/i)
+  for (const text of [zhChat.modelSwitch.hint, zhChat.modelSwitch.nextTurn, zhChat.modelSwitch.footnote, zhChat.modelSwitch.footnoteSession, zhChat.modelSwitch.menuSubtitle, zhChat.usage.creditDesc]) assert.doesNotMatch(text, /引擎/)
+  for (const text of [enChat.modelSwitch.hint, enChat.modelSwitch.nextTurn, enChat.modelSwitch.footnote, enChat.modelSwitch.footnoteSession, enChat.usage.creditDesc]) assert.doesNotMatch(text, /engine/i)
   // mike P3：去掉「引擎 / 导轨」工程词（luna 待锁）。
   assert.equal(zhChat.modelSwitch.unsupported, "这个助手不支持中途换模型。")
   assert.equal(zhChat.modelSwitch.notLoggedIn, "还没登录这个助手，换不了模型")
@@ -47,3 +49,15 @@ test("I1 中文短句贴预览", () => {
   assert.doesNotMatch(enChat.modelSwitch.toast, /engine|handoff|handed off/i)
   assert.equal(enChat.modelSwitch.badge, "Switched")
 })
+
+test("模型弹层不含引擎导轨 / AgentPicker / 换引擎入口", () => {
+  const panel = readFileSync(join(dir, "model-switch-panel.tsx"), "utf8")
+  const chip = readFileSync(join(dir, "composer-model-chip.tsx"), "utf8")
+  assert.equal(panel.includes("ComposerModelFlyout"), false)
+  assert.equal(panel.includes("EngineIconRail"), false)
+  assert.equal(panel.includes("换引擎"), false)
+  assert.match(chip, /requestModelSwitch/)
+  assert.match(chip, /aria-busy/)
+  assert.match(chip, /ModelSwitchChipBadge/)
+})
+
