@@ -50,6 +50,32 @@ const ide = {
     prCreate: (input: unknown) => ipcRenderer.invoke("workspace.prCreate", input),
     prAuthStatus: (input: unknown) => ipcRenderer.invoke("workspace.prAuthStatus", input),
     prList: (input: unknown) => ipcRenderer.invoke("workspace.prList", input),
+    prCheck: (input: unknown) => ipcRenderer.invoke("workspace.prCheck", input),
+    prBabysitStart: (input: unknown) => ipcRenderer.invoke("workspace.prBabysitStart", input),
+    prBabysitStop: (input: unknown) => ipcRenderer.invoke("workspace.prBabysitStop", input),
+    prBabysitStatus: (input: unknown) => ipcRenderer.invoke("workspace.prBabysitStatus", input),
+    onPrBabysit: (callback: (event: {
+      type: string
+      sessionId: string
+      number: number
+      watching: boolean
+      wakeKind?: string
+      stub?: boolean
+    }) => void) => {
+      const listener = (
+        _event: unknown,
+        payload: {
+          type: string
+          sessionId: string
+          number: number
+          watching: boolean
+          wakeKind?: string
+          stub?: boolean
+        }
+      ) => callback(payload)
+      ipcRenderer.on("workspace.prBabysit", listener)
+      return () => ipcRenderer.off("workspace.prBabysit", listener)
+    },
     listCheckpoints: (input: unknown) => ipcRenderer.invoke("workspace.listCheckpoints", input),
     previewCheckpoint: (input: unknown) =>
       ipcRenderer.invoke("workspace.previewCheckpoint", input),

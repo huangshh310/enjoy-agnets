@@ -24,6 +24,10 @@ import {
   WorkspaceChangesResult,
   WorkspaceConnectInput,
   WorkspaceIdInput,
+  WorkspacePrCheckInput,
+  WorkspacePrBabysitStartInput,
+  WorkspacePrBabysitStatusInput,
+  WorkspacePrBabysitStopInput,
   WorkspacePrCreateInput,
   WorkspacePrProbeInput,
   WriteFileInput
@@ -52,6 +56,13 @@ import {
 import { openWorkspacePreview } from "./services/workspace-open-preview"
 import { watchWorkspace } from "./services/workspace-watch"
 import { writeWorkspaceFile } from "./services/workspace-write"
+import {
+  resumePrBabysitPollers,
+  startPrBabysit,
+  statusPrBabysit,
+  stopPrBabysit
+} from "./services/workspace-pr-babysit"
+import { checkWorkspacePrStatus } from "./services/workspace-pr"
 import {
   getWorkspace,
   listEnjoyCheckpointItems,
@@ -186,6 +197,34 @@ function registerWorkspaceGitIpc() {
   ipcMain.handle("workspace.prList", async (_event, raw) => {
     return dispatchPrList(WorkspacePrProbeInput.parse(raw).workspaceId)
   })
+  ipcMain.handle("workspace.prCheck", async (_event, raw) => {
+    const input = WorkspacePrCheckInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    if (ws.kind === "ssh") {
+      return {
+        ok: false,
+        number: input.number,
+        checksState: "unknown",
+        commentCount: 0,
+        mergeable: "",
+        message: "ssh-unsupported"
+      }
+    }
+    return checkWorkspacePrStatus(ws.rootPath, input.number)
+  })
+  ipcMain.handle("workspace.prBabysitStart", async (_event, raw) => {
+    const input = WorkspacePrBabysitStartInput.parse(raw)
+    return startPrBabysit(input)
+  })
+  ipcMain.handle("workspace.prBabysitStop", async (_event, raw) => {
+    const input = WorkspacePrBabysitStopInput.parse(raw)
+    return stopPrBabysit(input.sessionId, input.number)
+  })
+  ipcMain.handle("workspace.prBabysitStatus", async (_event, raw) => {
+    const input = WorkspacePrBabysitStatusInput.parse(raw)
+    return statusPrBabysit(input.sessionId)
+  })
+  resumePrBabysitPollers()
   registerCheckpointIpc()
 }
 
