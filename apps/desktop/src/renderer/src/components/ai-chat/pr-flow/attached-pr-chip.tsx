@@ -1,6 +1,6 @@
 /**
  * 会话挂 PR 芯片：「已挂 PR #n」+ 旁注「+N」小面板（可切主挂）。
- * 点主芯片 → 打开 PR URL（window.openExternal）；不挡 Dock / 权限 / 发送。
+ * 点主芯片 → 打开 PR URL（requestOpenExternalQuiet）；不挡 Dock / 权限 / 发送。
  */
 import { useState } from "react"
 import { RiGitPullRequestLine } from "@remixicon/react"
@@ -10,7 +10,7 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover"
 import { cx } from "@/utils/cx"
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
 import { useT } from "@renderer/i18n"
 import { useAttachedPrs } from "./use-attached-prs"
 
@@ -25,9 +25,8 @@ export function AttachedPrChip(props: {
 
   if (!primaryItem) return null
 
-  async function openUrl(url: string) {
-    if (!hasIde()) return
-    await getIde().window.openExternal({ url })
+  function openUrl(url: string) {
+    requestOpenExternalQuiet(url)
   }
 
   const chip = (

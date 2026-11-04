@@ -15,7 +15,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog"
 import { SETTINGS_DRAWER_Z_CLASS } from "@renderer/components/settings/settings-overlay"
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
 import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 
@@ -39,9 +39,8 @@ export function ConnectGithubCard(props: {
     }
   }
 
-  async function openDocs() {
-    if (!hasIde()) return
-    await getIde().window.openExternal({ url: GH_AUTH_DOCS })
+  function openDocs() {
+    requestOpenExternalQuiet(GH_AUTH_DOCS)
   }
 
   return (

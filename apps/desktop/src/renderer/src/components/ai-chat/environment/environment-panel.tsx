@@ -23,7 +23,7 @@ import {
 import { formatTokens } from "../agent-limits/format-tokens"
 import { useEnvironmentPanel } from "./use-environment-panel"
 import { useAttachedPrs } from "@renderer/components/ai-chat/pr-flow"
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
 import { useChatStore } from "@renderer/stores/chat-store"
 
 export function EnvironmentPanel({ open }: { open: boolean }) {
@@ -100,10 +100,7 @@ export function EnvironmentPanel({ open }: { open: boolean }) {
             <EnvironmentRow
               icon={<RiGitPullRequestLine className="size-4" />}
               label={t("chat.prEnvEcho", { n: primaryItem.number })}
-              onClick={() => {
-                if (!hasIde()) return
-                void getIde().window.openExternal({ url: primaryItem.url })
-              }}
+              onClick={() => requestOpenExternalQuiet(primaryItem.url)}
             />
           ) : null}
           <EnvironmentDivider />
