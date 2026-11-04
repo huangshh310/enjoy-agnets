@@ -27,3 +27,12 @@ test("Composer 脚注是 远程 · host:path，不叠远程≠引擎", () => {
   assert.match(src, /settings\.workspace\.remoteFootnote/)
   assert.equal(src.includes("remoteNotEngine"), false)
 })
+
+test("底栏次要预览入口在附件与模型之间", () => {
+  const footerSrc = readFileSync(join(dir, "composer-footer.tsx"), "utf8")
+  assert.match(footerSrc, /ComposerPreviewToggle/)
+  const attach = footerSrc.indexOf("<ComposerAttachMenu")
+  const preview = footerSrc.indexOf("<ComposerPreviewToggle")
+  const picker = footerSrc.indexOf("<AgentPicker")
+  assert.ok(attach >= 0 && preview > attach && picker > preview)
+})

@@ -2,6 +2,7 @@
  * Composer 外壳：拖拽/粘贴附件、自适应输入、引用 Chip 与底栏。工作区名在状态栏，不进输入框顶。
  */
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
 import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
@@ -15,6 +16,11 @@ import { ExploreDesktopBanner } from "./composer/explore-execute/explore-desktop
 import { ExploreInterceptBanner } from "./composer/explore-execute/explore-intercept-banner"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
+import { ComposerPreviewPane } from "./composer/composer-preview-pane"
+import {
+  isComposerPreviewOpen,
+  setComposerPreviewOpen
+} from "./composer/composer-preview-mode"
 import { ComposerFooter } from "./composer/composer-footer"
 import { ComposerTopChrome } from "./composer/composer-top-chrome"
 import { ComposerActivityFrame } from "./composer/stacked-rail/composer-activity-frame"
@@ -54,15 +60,24 @@ export function AiChatComposer({
   const hasDraft = useComposerHasDraft(composer)
   const capabilities = models.find((model) => model.id === modelId)?.capabilities ?? []
   const canRealtime = capabilities.includes("realtime")
+  const sessionId = useChatStore((state) => state.sessionId)
+  const [previewOpen, setPreviewOpen] = useState(() => isComposerPreviewOpen(sessionId))
+  const cursorOffsetRef = useRef<number | null>(null)
 
   useEffect(() => {
+    setPreviewOpen(isComposerPreviewOpen(sessionId))
+  }, [sessionId])
+
+  useEffect(() => {
+    if (previewOpen) return
     const textarea = textareaRef.current
     if (!textarea) return
     textarea.style.height = "auto"
     textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 180)}px`
-  }, [composer])
+  }, [composer, previewOpen])
 
   useLayoutEffect(() => {
+    if (previewOpen) return
     const unregister = registerComposerFocus(() => {
       const textarea = textareaRef.current
       if (!textarea) return
@@ -81,7 +96,38 @@ export function AiChatComposer({
       queueComposerFocus()
     }
     return unregister
-  }, [autoFocus])
+  }, [autoFocus, previewOpen])
+
+  function setPreview(open: boolean) {
+    if (open) {
+      const textarea = textareaRef.current
+      cursorOffsetRef.current = textarea?.selectionStart ?? composer.length
+    }
+    setComposerPreviewOpen(sessionId, open)
+    setPreviewOpen(open)
+    if (!open) {
+      requestAnimationFrame(() => {
+        const textarea = textareaRef.current
+        if (!textarea) return
+        textarea.focus()
+        const offset = cursorOffsetRef.current
+        if (offset != null) {
+          const clamped = Math.max(0, Math.min(offset, textarea.value.length))
+          textarea.setSelectionRange(clamped, clamped)
+        }
+      })
+    }
+  }
+
+  function togglePreview() {
+    setPreview(!previewOpen)
+  }
+
+  function handleSend() {
+    setComposerPreviewOpen(sessionId, false)
+    setPreviewOpen(false)
+    onSend()
+  }
 
   function pickFiles() {
     fileRef.current?.click()
@@ -129,7 +175,7 @@ export function AiChatComposer({
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
-    onSend()
+    handleSend()
   }
 
   return (
@@ -193,18 +239,22 @@ export function AiChatComposer({
           <ComposerHostModeChip />
           <ComposerQuoteChips />
           <ComposerSkillChipBar />
-          <ComposerInput
-            value={composer}
-            onChange={onComposerChange}
-            onSend={onSend}
-            onSteer={onSteer}
-            running={running}
-            autoFocus={autoFocus}
-            textareaRef={textareaRef}
-            onPaste={handlePaste}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-          />
+          {previewOpen ? (
+            <ComposerPreviewPane markdown={composer} onExitPreview={() => setPreview(false)} />
+          ) : (
+            <ComposerInput
+              value={composer}
+              onChange={onComposerChange}
+              onSend={handleSend}
+              onSteer={onSteer}
+              running={running}
+              autoFocus={autoFocus}
+              textareaRef={textareaRef}
+              onPaste={handlePaste}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+            />
+          )}
           <ExploreCapabilityRail />
 
           <ComposerFooter
@@ -217,11 +267,13 @@ export function AiChatComposer({
             models={models}
             onModelChange={onModelChange}
             onStop={onStop}
-            onSend={onSend}
+            onSend={handleSend}
             canRealtime={canRealtime}
             voiceOpen={voiceOpen}
             onVoiceToggle={() => void toggleRealtimeMic().then(() => setVoiceOpen(isRealtimeOpen()))}
             onPickFiles={pickFiles}
+            previewOpen={previewOpen}
+            onPreviewToggle={togglePreview}
           />
           </div>
         </BorderBeam>
