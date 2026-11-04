@@ -127,7 +127,7 @@ async function writeTurn(page: Page) {
   await expect(page.getByText("stub-ok", { exact: false }).first()).toBeVisible({ timeout: 15_000 })
 }
 
-async function openDialog(page: Page, lang: Lang): Promise<Locator> {
+async function openDialog(page: Page, _lang: Lang): Promise<Locator> {
   // P1 主入口：助手气泡 ⋯ →「改到这里」
   const assistant = page.locator(".is-assistant").first()
   await assistant.hover()

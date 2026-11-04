@@ -200,11 +200,15 @@ test("二次确认拿不到 N：标题仍是固定人话", () => {
 test("找不到记录（什么都没改）：灰色兜底句，没有「去审查」", () => {
   const zh = rewindDialogView({ ...git(), failure: "missing" }, tFor("zh"))
   assert.deepEqual(zh.failure, { kind: "missing", text: MISSING_ZH, reviewLabel: null, reviewDisabled: false })
+  const en = rewindDialogView({ ...git(), failure: "missing" }, tFor("en"))
+  assert.deepEqual(en.failure, { kind: "missing", text: MISSING_EN, reviewLabel: null, reviewDisabled: false })
 })
 
 test("还原中途出错：琥珀色 +「去审查」", () => {
   const zh = rewindDialogView({ ...git(), failure: "partial" }, tFor("zh"))
   assert.deepEqual(zh.failure, { kind: "partial", text: PARTIAL_ZH, reviewLabel: "去审查", reviewDisabled: false })
+  const en = rewindDialogView({ ...git(), failure: "partial" }, tFor("en"))
+  assert.deepEqual(en.failure, { kind: "partial", text: PARTIAL_EN, reviewLabel: "Go to Review", reviewDisabled: false })
   assert.equal(rewindFailureKind("REWIND_RESTORE_FAILED"), "partial")
   for (const code of ["REWIND_NO_CHECKPOINT", "REWIND_NO_WORKSPACE", "REWIND_LIST_FAILED", "CHECKPOINT_RESTORE_FAILED"]) {
     assert.equal(rewindFailureKind(code), "missing", code)
