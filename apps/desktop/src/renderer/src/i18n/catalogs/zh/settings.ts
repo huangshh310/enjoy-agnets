@@ -26,6 +26,27 @@ export const zhSettings = {
     autoRunValue: "已开 {count} 项（共 3 项）"
   },
 
+
+  about: {
+    hubTitle: "关于 Enjoy",
+    hubDesc: "版本信息，以及本机跑、异地控的诚实边界说明。"
+  },
+
+  remoteSoft: {
+    title: "本机跑、异地控",
+    lead: "工作与凭证仍在你的机器上。另一台桌面或浏览器只是遥控器——本机 Enjoy 须在线，关掉电脑就控不了。",
+    boundaryOnline: "本机 Enjoy 须在线 · 不对标「电脑关着也能遥控」",
+    boundaryNoMobile: "无手机 App 第一波",
+    boundaryTrend: "可参照 Remote Control 趋势 · 不承诺自建隧道 · 不对标商业 Connect 卖点",
+    boundaryNotSsh: "≠ P0-R SSH 远程工作区（那边是 cwd 在远端）",
+    trendLabel: "趋势旁注",
+    trendAside: "类似 Remote Control 趋势 · 本波不承诺自建隧道 · 不对标商业 Connect 卖点",
+    footnote: "本卡 = 叙事边界 · 不宣称已交付遥控产品 · 本波无隧道 / pairing 实现",
+    collapsedSummary: "本机跑、异地控 · 了解边界",
+    collapse: "收起",
+    expand: "展开"
+  },
+
   setupGuide: {
     introTitle: "欢迎使用 Enjoy Agents",
     introBody: "本机优先的编程工作台。设置大约一分钟。",

@@ -3,6 +3,7 @@
  */
 export const SETTINGS_SECTIONS = [
   "general",
+  "about",
   "appearance",
   "shortcuts",
   "providers",

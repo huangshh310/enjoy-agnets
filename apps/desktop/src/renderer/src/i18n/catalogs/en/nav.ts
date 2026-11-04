@@ -13,6 +13,7 @@ export const enNav = {
   observability: "Observability",
   inbox: "Inbox",
   general: "General",
+  about: "About Enjoy",
   appearance: "Appearance",
   shortcuts: "Keyboard shortcuts",
   providers: "Providers",
