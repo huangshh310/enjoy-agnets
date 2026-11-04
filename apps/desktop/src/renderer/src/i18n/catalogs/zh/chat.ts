@@ -624,6 +624,7 @@ export const zhChat = {
   modelSwitch: {
     badge: "已切换",
     hint: "同一个助手，只换模型。下一轮才生效。",
+    nextTurn: "下一轮才用新模型",
     toast: "已切换到 {model}",
     footnote: "同一个助手，只换模型",
     footnoteSession: "同一个助手，只换模型 · 会话仍是 {sessionId}",
@@ -636,7 +637,9 @@ export const zhChat = {
     notLoggedIn: "还没登录这个助手，换不了模型",
     empty: "这个助手还没有可换的模型",
     emptyHint: "没有可点的名单，也没有成功条。",
-    retry: "重试"
+    retry: "重试",
+    switching: "写入中…",
+    persistFailed: "没换成功，还是原来的模型。"
   },
 
   projects: "项目",

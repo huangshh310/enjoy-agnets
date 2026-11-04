@@ -90,3 +90,10 @@ test("瘦身预览锁住勿画反例", () => {
   assert.ok(preview.includes("设置目标"))
   assert.ok(preview.includes("strike"))
 })
+
+test("I1 底栏模型芯片只换模型，与引擎芯片并存；顶栏仍禁止模型芯片", () => {
+  assert.equal(chrome.includes("<ComposerModelChip"), false)
+  assert.ok(footer.includes("<ComposerModelChip"))
+  assert.ok(footer.includes("<AgentPicker"))
+})
+

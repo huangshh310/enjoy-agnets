@@ -1,21 +1,22 @@
 /**
- * I1 反馈：成功微条「已切换到 {model}」独占改动条上方一行，脚注「同一个助手，只换模型」。
- * 成功句不写换引擎或交接。微条不盖改动条，也不盖底栏芯片。
+ * I1 反馈：芯片旁「已切换」+ 可选短浮层「已切换到 {model}」；
+ * 跑着副句「下一轮才用新模型」。禁止 Composer 上方常驻微条。
  */
 import { useSyncExternalStore } from "react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { shortSessionId } from "@renderer/lib/model-switch-state"
-import { modelSwitchNoticeLabel, subscribeModelSwitchNotice } from "./model-switch-notice"
+import {
+  modelSwitchBadgeVisible,
+  modelSwitchNextTurnVisible,
+  modelSwitchNoticeLabel,
+  subscribeModelSwitchNotice
+} from "./model-switch-notice"
 
 export function ModelSwitchNotice() {
   const label = useSyncExternalStore(subscribeModelSwitchNotice, modelSwitchNoticeLabel, modelSwitchNoticeLabel)
   if (!label) return null
-  return (
-    <div className="mx-auto mb-2 flex w-[calc(100%-1.25rem)]">
-      <ModelSwitchToast modelLabel={label} />
-    </div>
-  )
+  return <ModelSwitchToast modelLabel={label} />
 }
 
 export function ModelSwitchToast({ modelLabel }: { modelLabel: string }) {
@@ -25,11 +26,39 @@ export function ModelSwitchToast({ modelLabel }: { modelLabel: string }) {
     <div
       role="status"
       data-testid="model-switch-toast"
-      className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-primary shadow-card"
+      className="pointer-events-none absolute bottom-[calc(100%+0.35rem)] right-0 z-20 inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-primary shadow-card"
     >
       <span className="size-1.5 rounded-full bg-state-success-text" />
       <span className="font-medium">{t("chat.modelSwitch.toast", { model: modelLabel })}</span>
     </div>
+  )
+}
+
+export function ModelSwitchChipBadge({ nextTurn }: { nextTurn?: boolean }) {
+  const t = useT()
+  const show = useSyncExternalStore(subscribeModelSwitchNotice, modelSwitchBadgeVisible, modelSwitchBadgeVisible)
+  const showNext = useSyncExternalStore(
+    subscribeModelSwitchNotice,
+    modelSwitchNextTurnVisible,
+    modelSwitchNextTurnVisible
+  )
+  if (!show && !nextTurn && !showNext) return null
+  return (
+    <span className="inline-flex min-w-0 flex-col items-start gap-0.5" data-testid="model-switch-badge-cluster">
+      {show ? (
+        <span
+          data-testid="model-switch-badge"
+          className="rounded-full bg-state-success-text/10 px-1.5 py-px text-caption-2-medium text-state-success-text ring-1 ring-state-success-text/20"
+        >
+          {t("chat.modelSwitch.badge")}
+        </span>
+      ) : null}
+      {showNext || nextTurn ? (
+        <span data-testid="model-switch-next-turn" className="text-caption-2-regular text-text-tertiary">
+          {t("chat.modelSwitch.nextTurn")}
+        </span>
+      ) : null}
+    </span>
   )
 }
 

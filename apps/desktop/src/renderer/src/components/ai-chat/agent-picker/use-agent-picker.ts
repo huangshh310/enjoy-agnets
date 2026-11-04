@@ -175,7 +175,9 @@ function useAgentPickerActions(base: ReturnType<typeof useAgentPickerBase>) {
       return
     }
     if (result === "applied") await queryClient.invalidateQueries({ queryKey: ["settings"] })
-    if (result === "applied" && nextModelId && id === from && nextLabel) showModelSwitchNotice(nextLabel)
+    if (result === "applied" && nextModelId && id === from && nextLabel) {
+      showModelSwitchNotice(nextLabel, { nextTurn: useChatStore.getState().running })
+    }
   }
   async function onTab(id: string) {
     setTabId(id)

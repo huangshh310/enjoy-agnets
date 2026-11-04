@@ -31,7 +31,6 @@ import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
 import { clipboardModifiers, isPasteInlineShortcut, planComposerPaste } from "@renderer/lib/pasted-text"
 import type { ComposerProps } from "./composer/composer.types"
 import { EngineHandoffDock } from "./agent-picker/handoff/engine-handoff-dock"
-import { ModelSwitchNotice } from "./composer/model-switch/model-switch-feedback"
 import { useT } from "@renderer/i18n"
 
 
@@ -184,7 +183,6 @@ export function AiChatComposer({
       <ExploreDesktopBanner />
       <ExploreInterceptBanner />
       <ComposerBranchMismatch />
-      <ModelSwitchNotice />
       <ComposerActivityFrame />
       {/* 附件托盘必须紧挨输入框：它靠 -mb 把底边塞进输入框下面，放在别的条上方会把下一条拉上来盖住缩略图。 */}
       <ComposerQueue />

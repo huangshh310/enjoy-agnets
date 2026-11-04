@@ -10,6 +10,7 @@ import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentPicker } from "../agent-picker"
+import { ComposerModelChip } from "./model-switch/composer-model-chip"
 import { ComposerThinkingChrome } from "./thinking/composer-thinking-chrome"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
@@ -93,6 +94,7 @@ export function ComposerFooter({
           models={models}
           onModelChange={onModelChange}
         />
+        <ComposerModelChip modelId={modelId} modelLabel={modelLabel} models={models} />
         <ComposerThinkingChrome compact modelId={modelId} modelLabel={modelLabel} models={models} />
         <ComputerUseChip />
         <HostInjectBar />

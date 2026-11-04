@@ -629,6 +629,7 @@ export const enChat = {
   modelSwitch: {
     badge: "Switched",
     hint: "Same assistant, only the model changes. Takes effect on the next turn.",
+    nextTurn: "New model applies on the next turn",
     toast: "Switched to {model}",
     footnote: "Same assistant, only the model changes",
     footnoteSession: "Same assistant, only the model changes · session still {sessionId}",
@@ -641,7 +642,9 @@ export const enChat = {
     notLoggedIn: "Sign in to this assistant before changing models",
     empty: "This assistant has no models to switch to",
     emptyHint: "No list to pick, and no success toast.",
-    retry: "Retry"
+    retry: "Retry",
+    switching: "Saving…",
+    persistFailed: "Couldn't switch. Still on the previous model."
   },
 
   projects: "Projects",
