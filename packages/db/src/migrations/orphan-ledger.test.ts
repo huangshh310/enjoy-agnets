@@ -7,6 +7,10 @@ import { DatabaseSync } from "node:sqlite"
 import { test } from "node:test"
 import { applyMigrations, MIGRATIONS } from "./runner.ts"
 
+/** 从 min 起至当前 MIGRATIONS 末版的版本号列表（随 v21+ 自动对齐）。 */
+const versionsFrom = (min: number) =>
+  MIGRATIONS.filter((migration) => migration.version >= min).map((migration) => migration.version)
+
 const COST: Array<[string, string, string]> = [
   ["runs", "usage_json", "TEXT"],
   ["telemetry_metrics", "cache_read_tokens", "INTEGER"],
@@ -38,7 +42,7 @@ test("v13=retention-indexes 且成本列缺失：放行现行迁移，索引还�
   const db = legacyV13()
   db.exec("INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES ('w','w','/w',1,1)")
   db.exec("INSERT INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES ('s','w','t',1,1)")
-  assert.deepEqual(applyMigrations(db), [13, 14, 15, 16, 17, 18, 19, 20])
+  assert.deepEqual(applyMigrations(db), versionsFrom(13))
   const row = db.prepare("SELECT name FROM schema_migrations WHERE version = 13").get() as { name: string }
   assert.equal(row.name, "run-usage-cost")
   const index = db
