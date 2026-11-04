@@ -1,14 +1,10 @@
 /**
- * 「从这里重来」弹窗的文案与按钮（luna 定稿，按实际行为写）：
- * - Git 工作区（gitRepo === true）且引擎能回滚：取消 · 连文件一起还原（次级描边）· 只改聊天（主按钮，最右）；正文下一行灰字提示。
- * - 明确不是 Git（gitRepo === false）：不给还原按钮，取消 · 从这里重来，正文保留「这个文件夹没用 Git 管理…」。
- * - 不知道是不是 Git（gitRepo === null）或引擎不支持回滚：按不安全处理，隐藏还原按钮（不是置灰），中性正文（luna ②）。
- * - 还原要删本轮开始后新出现的文件：二次确认，最多列 5 个，其余折成「还有 N 个」；拿不到 N 换不带数字的标题（luna ③）。
- * - 还原失败分两种：
- *   - missing：找不到本轮开始前的记录 / 列记录出错，什么都没改 → 灰色兜底句（和正文下的提示灰字样式拉开）。
- *   - partial：还原中途出错（REWIND_RESTORE_FAILED），文件可能只还原了一部分 → 琥珀色提示 +「去审查」（luna ①）。
- * - 「结果 → 弹窗下一步」由 rewindOutcome 纯函数决定；任何 code 都只映射到固定文案键，原始错误文本进不了界面。
- * 全文不出现 检查点 / HEAD / commit / 快照 / checkpoint。
+ * 「改到这里」确认卡文案与按钮（luna rewind-here 定稿）：
+ * - Git 且可还原：单主钮 +「连本轮文件一起还原」勾选（默认关）；勾选后同层风险句，主钮文案变「改到这里并还原文件」。
+ * - 非 Git / 不知道 / 引擎不支持文件还原：不给勾选，单主钮「改到这里」；非 Git 正文带诚实说明。
+ * - 删未跟踪二次确认：固定人话标题 + 文件名单；主钮「删掉并还原」。
+ * - 还原失败：missing 灰兜底 / partial 琥珀 +「去审查」。
+ * 全文不出现 检查点 / HEAD / commit / 快照 / checkpoint / rewind / rollback。
  */
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -25,10 +21,17 @@ export type RewindDialogState =
       gitRepo: boolean | null
       /** 上一次「连文件一起还原」没成功的种类。 */
       failure: RewindFailure | null
+      /** 勾选「连本轮文件一起还原」；默认关。 */
+      restoreFilesChecked: boolean
+      /**
+       * 本轮是否有可还原的文件记录。true = 勾选可点；false = 勾选禁用 + 诚实说明；
+       * null = 尚未预检（Git 下先当可点，失败仍走 missing）。
+       */
+      fileRestoreAvailable: boolean | null
     }
   | { kind: "untracked"; files: string[] | null }
 
-export type RewindButtonId = "cancel" | "restore-files" | "chat-only" | "start-over" | "delete-and-restore"
+export type RewindButtonId = "cancel" | "confirm" | "delete-and-restore"
 
 export type RewindButton = {
   id: RewindButtonId
@@ -45,11 +48,23 @@ export type RewindFailureView = {
   reviewDisabled: boolean
 }
 
+export type RewindCheckboxView = {
+  checked: boolean
+  label: string
+  hint: string
+  /** 勾选开后才出现的风险句。 */
+  risk: string | null
+  disabled: boolean
+  /** 勾选禁用时的诚实说明（无本轮记录）。 */
+  note: string | null
+}
+
 export type RewindDialogView = {
   title: string
   body: string
-  /** 正文下的灰字（Git 工作区的「也可以连文件还原」）。 */
+  /** 非 Git / 中性态不再用独立 hint；Git 勾选副文在 checkbox.hint。 */
   hint: string | null
+  checkbox: RewindCheckboxView | null
   /** 还原失败的提示（missing 灰色兜底 / partial 琥珀色 + 去审查）。 */
   failure: RewindFailureView | null
   files: string[]
@@ -78,9 +93,9 @@ export function rewindDialogView(state: RewindDialogState, t: Translate, busy = 
     const shown = files.slice(0, REWIND_FILES_SHOWN)
     return {
       title,
-      // 英文单个文件用单数句（luna 定稿）；中文同一句。
       body: n === 1 ? t("chat.rewindConfirmUntrackedBodyOne") : t("chat.rewindConfirmUntrackedBody"),
       hint: null,
+      checkbox: null,
       failure: null,
       files: shown,
       moreCount: n - shown.length,
@@ -98,29 +113,46 @@ export function rewindDialogView(state: RewindDialogState, t: Translate, busy = 
       : state.failure === "missing"
         ? { kind: "missing", text: t("chat.rewindNoCheckpoint"), reviewLabel: null, reviewDisabled: busy }
         : null
+
   if (rewindCanRestoreFiles(state.canRestoreFiles, state.gitRepo)) {
+    const available = state.fileRestoreAvailable
+    const checkboxDisabled = available === false
+    const checked = checkboxDisabled ? false : state.restoreFilesChecked
     return {
       title: t("chat.rewindDialogTitle"),
       body: t("chat.rewindBody"),
-      hint: t("chat.rewindBodyRestoreHint"),
+      hint: null,
+      checkbox: {
+        checked,
+        label: t("chat.rewindRestoreFiles"),
+        hint: t("chat.rewindBodyRestoreHint"),
+        risk: checked ? t("chat.rewindRestoreFilesRisk") : null,
+        disabled: checkboxDisabled,
+        note: checkboxDisabled ? t("chat.rewindNoCheckpointNote") : null
+      },
       failure,
       files: [],
       moreCount: 0,
       buttons: [
         cancel,
-        { id: "restore-files", label: t("chat.rewindRestoreFiles"), variant: "outline" },
-        { id: "chat-only", label: t("chat.rewindChatOnly"), variant: "default" }
+        {
+          id: "confirm",
+          label: checked ? t("chat.rewindConfirmWithFiles") : t("chat.rewindChatOnly"),
+          variant: "default"
+        }
       ]
     }
   }
+
   return {
     title: t("chat.rewindDialogTitle"),
     body: state.gitRepo === false ? t("chat.rewindBodyNotGit") : t("chat.rewindBodyChatOnly"),
     hint: null,
+    checkbox: null,
     failure,
     files: [],
     moreCount: 0,
-    buttons: [cancel, { id: "start-over", label: t("chat.rewindStartOver"), variant: "default" }]
+    buttons: [cancel, { id: "confirm", label: t("chat.rewindStartOver"), variant: "default" }]
   }
 }
 
@@ -159,7 +191,7 @@ export type RewindRunResult =
 
 /**
  * 截断已成功、写回输入框抛错（与 rewind-from-here.ts 的 REWIND_FINISH_FAILED 同值）：原话已存好、会继续放回。
- * 不显示「从这里重来失败」——弹窗收掉 + toast（leo #167 ③ / r3：不说「已在草稿里」）。
+ * 不显示「改到这里失败」——弹窗收掉 + toast。
  */
 export const REWIND_FINISH_FAILED_CODE = "REWIND_FINISH_FAILED"
 
@@ -194,7 +226,6 @@ export function rewindOutcome(result: RewindRunResult, restoreFiles: boolean): R
   }
   if (result.code === REWIND_FINISH_FAILED_CODE) return { kind: "rewound-not-restored" }
   if (result.code === "CHECKPOINT_CONFIRM_REQUIRED") {
-    // 拿不到名单时 N 未知：标题换成不带数字的说法。
     const files = result.untrackedToDelete && result.untrackedToDelete.length > 0 ? result.untrackedToDelete : null
     return { kind: "untracked", files }
   }

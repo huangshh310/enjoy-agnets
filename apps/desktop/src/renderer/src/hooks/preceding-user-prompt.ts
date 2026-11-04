@@ -17,3 +17,19 @@ export function useComposerRunKind(): ComposerRunKind {
     composerRunKind(state.modelId, state.models.find((model) => model.id === state.modelId)?.capabilities)
   )
 }
+
+/** 助手回合对应的上一条用户消息 id（改到这里截断锚点）。 */
+export function precedingUserMessageId(
+  messages: Array<{ id: string; role: string }>,
+  assistantMessageId: string
+): string | null {
+  const index = messages.findIndex((message) => message.id === assistantMessageId)
+  if (index <= 0) return null
+  const previous = messages[index - 1]
+  return previous?.role === "user" ? previous.id : null
+}
+
+export function usePrecedingUserMessageId(assistantMessageId: string): string | null {
+  return useChatStore((state) => precedingUserMessageId(state.messages, assistantMessageId))
+}
+

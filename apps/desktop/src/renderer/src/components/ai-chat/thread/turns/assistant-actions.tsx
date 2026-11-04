@@ -10,6 +10,9 @@ import {
 } from "@remixicon/react"
 import { extractObjectFromMessage } from "@renderer/hooks/extract-object"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
+import { canRewindConversation } from "@renderer/hooks/rewind-from-here"
+import { usePrecedingUserMessageId } from "@renderer/hooks/preceding-user-prompt"
+import { RewindFromHereDialog, RewindFromHereMenuItem } from "./rewind-from-here-dialog"
 import { laterTurnCount } from "@renderer/hooks/regenerate-retry-target"
 import { RegenerateConfirmDialog } from "./regenerate-confirm-dialog"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
@@ -31,8 +34,14 @@ export function AssistantActions({
   const [extracting, setExtracting] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const running = useChatStore((s) => s.running)
+  const pendingApproval = useChatStore((s) => s.pendingApproval)
+  const runtimeId = useChatStore((s) => s.runtimeId)
+  const canRewind = canRewindConversation(runtimeId)
+  const userMessageId = usePrecedingUserMessageId(message.id)
+  const rewindBlockReason = pendingApproval ? "pending" : running ? "running" : null
   const laterTurns = useChatStore((s) => laterTurnCount(s.messages, message.id))
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [rewindOpen, setRewindOpen] = useState(false)
   const vote = message.feedback
   const regenerate = () => {
     setRegenerating(true)
@@ -80,6 +89,14 @@ export function AssistantActions({
       <CopyMessageButton message={message} prompt={prompt} label={t("chat.copyResponse")} />
       {canForkTurn(message) ? <ForkTurnButton messageId={message.id} /> : null}
       <MessageMoreMenu>
+        {userMessageId ? (
+          <RewindFromHereMenuItem
+            messageId={userMessageId}
+            canRewind={canRewind}
+            blockReason={rewindBlockReason}
+            onOpen={() => setRewindOpen(true)}
+          />
+        ) : null}
         <DropdownMenuItem
           data-testid="extract-object"
           disabled={extracting}
@@ -93,6 +110,15 @@ export function AssistantActions({
           <span>{extracting ? t("chat.extracting") : t("chat.viewRawJson")}</span>
         </DropdownMenuItem>
       </MessageMoreMenu>
+      {userMessageId && canRewind ? (
+        <RewindFromHereDialog
+          open={rewindOpen}
+          messageId={userMessageId}
+          canRestoreFiles={canRewind}
+          blockReason={rewindBlockReason}
+          onOpenChange={setRewindOpen}
+        />
+      ) : null}
     </MessageActions>
   )
 }

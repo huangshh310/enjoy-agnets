@@ -1,5 +1,5 @@
 /**
- * 「从这里重来」弹窗按 luna 定稿（= 实际行为）：
+ * 「改到这里」弹窗按 luna 定稿（= 实际行为）：
  * - Git 工作区：取消 · 连文件一起还原（描边）· 只改聊天（主按钮最右），正文下灰字。
  * - 二次确认删本轮新文件：N≤5 全列；N>5 列 5 个 +「还有 N 个」；拿不到 N 换不带数字的标题；删掉并还原是 danger。
  *   点「删掉并还原」后：新文件真的删了、这条消息和之后的对话移除、原话回到输入框。
@@ -7,11 +7,11 @@
  * - 还原中途出错（restoreCheckpoint 抛带原文的错）：琥珀色一句 +「去审查」，界面上看不到原文；截断抛原文只显示通用句。
  *   重试跑着的时候「去审查」置灰，硬点也不收窗（leo S1）。
  * - 取消 / Esc 后重开回到第一步；跑着的时候 Esc 不收窗。
- * - 非 Git 工作区：没有还原按钮，取消 · 从这里重来；点了只清对话，文件不动。
+ * - 非 Git 工作区：没有还原按钮，取消 · 改到这里；点了只清对话，文件不动。
  * - 不知道是不是 Git（workspace.changes 不带 gitRepo）：同样隐藏还原按钮，中性正文。
  * - setComposer 与 #136 按会话保存草稿：重来后原话在输入框，切到新对话是空的，切回来原话还在。
  * - 跑着的时候：点的那颗按钮转圈 +「正在还原…」，置灰的「取消」看得出置灰（#159 F1 / luna g159 ⑪）。
- * - ACP 会话（会话绑 Amp）：消息上没有「从这里重来」入口，也没有置灰的（#159 F1 / leo soft 8）。
+ * - ACP 会话（会话绑 Amp）：消息上没有「改到这里」入口，也没有置灰的（#159 F1 / leo soft 8）。
  * 中英文都断言不出现 检查点 / HEAD / commit / 快照 / checkpoint。
  * 截图：设 ENJOY_E2E_SHOTS_DIR 时落盘（1440x900 与 733x480），文件名前缀 ENJOY_E2E_SHOT_TAG（默认 after）。
  */
@@ -31,54 +31,59 @@ const BANNED = /检查点|HEAD|commit|快照|checkpoint/i
 
 const COPY = {
   zh: {
-    action: "从这里重来",
-    title: "从这条消息重来？",
-    gitBody: "这条消息和它之后的对话会移除，这条消息的内容会放回输入框，改好再发。",
-    gitHint: "文件也可以一起还原到这一轮开始前的样子。",
-    gitButtons: ["取消", "连文件一起还原", "只改聊天"],
-    notGitBody: "这条消息和它之后的对话会移除，内容放回输入框。这个文件夹没用 Git 管理，改过的文件不会还原。",
-    notGitButtons: ["取消", "从这里重来"],
-    untrackedTitle: (n: number) => `还要删掉 ${n} 个新文件？`,
-    untrackedUnknown: "还要删掉这一轮开始后新出现的文件？",
-    untrackedBody: "这些文件是这一轮开始后新出现的，包括你自己新建的。还原会把它们删掉，删了找不回。",
+    action: "改到这里",
+    title: "改到这里？",
+    gitBody: "该点之后的对话会移除。这条助手回合对应的用户原话（若有）会放回输入框，改好再发。",
+    gitHint: "只动本轮相关改动，不是整仓回退。",
+    gitCheckbox: "连本轮文件一起还原",
+    gitRisk: "会按本轮记录还原相关文件；新建的未跟踪文件可能被删掉（删前还会再问）。",
+    gitButtons: ["取消", "改到这里"],
+    gitButtonsWithFiles: ["取消", "改到这里并还原文件"],
+    notGitBody: "该点之后的对话会移除。这条助手回合对应的用户原话（若有）会放回输入框。这个文件夹没用 Git 管理，改过的文件不会还原。",
+    notGitButtons: ["取消", "改到这里"],
+    untrackedTitle: (_n: number) => `这些新文件会删掉，删了找不回`,
+    untrackedUnknown: "这些新文件会删掉，删了找不回",
+    untrackedBody: "本轮开始后新出现的文件（含你自己新建的），还原时会删掉：",
     more: (n: number) => `还有 ${n} 个`,
     untrackedButtons: ["取消", "删掉并还原"],
     failure: "没能还原文件：找不到这一轮开始前的记录。聊天没有改动。",
     partial: "文件可能只还原了一部分。聊天没有改动，请到「审查」里核对。",
     goReview: "去审查",
-    neutralBody: "这条消息和它之后的对话会移除，内容放回输入框。改过的文件不会还原。",
-    genericError: "从这里重来失败",
+    neutralBody: "该点之后的对话会移除。这条助手回合对应的用户原话（若有）会放回输入框。改过的文件不会还原。",
+    genericError: "改到这里失败",
     restoring: "正在还原…",
     review: "审查",
-    // 修前（main）的按钮名，只用来在修前截图时走到同一个状态。
-    oldRestore: "连文件一起还原",
-    oldChatOnly: "只改聊天"
+    oldRestore: "改到这里并还原文件",
+    oldChatOnly: "改到这里"
   },
   en: {
-    action: "Start over from here",
-    title: "Start over from this message?",
-    gitBody: "This message and everything after it will be removed. Its text goes back into the message box so you can edit and resend.",
-    gitHint: "You can also restore files to how they were before this turn.",
-    gitButtons: ["Cancel", "Restore files too", "Chat only"],
+    action: "Edit from here",
+    title: "Edit from here?",
+    gitBody: "Everything after this point will be removed. The user message for this assistant turn (if any) goes back into the message box so you can edit and resend.",
+    gitHint: "Only this turn's related changes — not a full-repo rollback.",
+    gitCheckbox: "Also restore this turn's files",
+    gitRisk: "Related files will be restored from this turn's record. New untracked files may be deleted (you'll be asked first).",
+    gitButtons: ["Cancel", "Edit from here"],
+    gitButtonsWithFiles: ["Cancel", "Edit from here and restore files"],
     notGitBody:
-      "This message and everything after it will be removed. Its text goes back into the message box. This folder isn't tracked by Git, so file changes won't be undone.",
-    notGitButtons: ["Cancel", "Start over"],
-    untrackedTitle: (n: number) => (n === 1 ? "Also delete 1 new file?" : `Also delete ${n} new files?`),
-    untrackedUnknown: "Also delete files that appeared after this turn started?",
+      "Everything after this point will be removed. The user message for this assistant turn (if any) goes back into the message box. This folder isn't tracked by Git, so file changes won't be undone.",
+    notGitButtons: ["Cancel", "Edit from here"],
+    untrackedTitle: (_n: number) => "These new files will be deleted and can't be recovered",
+    untrackedUnknown: "These new files will be deleted and can't be recovered",
     untrackedBody:
-      "These files appeared after this turn started, including any you created yourself. Restoring will delete them, and they can't be recovered.",
+      "Files that appeared after this turn started (including any you created) will be deleted on restore:",
     more: (n: number) => `${n} more`,
     untrackedButtons: ["Cancel", "Delete and restore"],
     failure: "Couldn't restore files: there's no record of how they looked before this turn. The chat wasn't changed.",
     partial: "Files may have been only partly restored. The chat wasn't changed. Check Review to see where things stand.",
     goReview: "Go to Review",
     neutralBody:
-      "This message and everything after it will be removed, and its text goes back into the message box. File changes won't be undone.",
-    genericError: "Could not rewind from here",
+      "Everything after this point will be removed. The user message for this assistant turn (if any) goes back into the message box. File changes won't be undone.",
+    genericError: "Could not edit from here",
     restoring: "Restoring…",
     review: "Review",
-    oldRestore: "Revert files too",
-    oldChatOnly: "Revert chat only"
+    oldRestore: "Edit from here and restore files",
+    oldChatOnly: "Edit from here"
   }
 } as const
 
@@ -122,14 +127,23 @@ async function writeTurn(page: Page) {
   await expect(page.getByText("stub-ok", { exact: false }).first()).toBeVisible({ timeout: 15_000 })
 }
 
-async function openDialog(page: Page, lang: Lang): Promise<Locator> {
-  const bubble = page.locator('[data-testid="user-bubble"]').first()
-  await bubble.hover()
-  await page.getByRole("button", { name: COPY[lang].action, exact: true }).first().click()
+async function openDialog(page: Page, _lang: Lang): Promise<Locator> {
+  // P1 主入口：助手气泡 ⋯ →「改到这里」
+  const assistant = page.locator(".is-assistant").first()
+  await assistant.hover()
+  await page.getByTestId("message-more").first().click()
+  await page.getByTestId("rewind-from-here").click()
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
   await page.waitForTimeout(350)
   return dialog
+}
+
+/** 勾选「连本轮文件一起还原」并点主钮。 */
+async function confirmWithFiles(dialog: Locator, lang: Lang) {
+  const box = dialog.getByTestId("rewind-restore-files-checkbox")
+  await box.check()
+  await button(dialog, "confirm", COPY[lang].oldRestore).click()
 }
 
 /** 1440x900 与 733x480 各截一张，回到 1440。 */
@@ -203,7 +217,9 @@ async function expectFirstStep(page: Page, dialog: Locator, lang: Lang, tag: str
   await expect(dialog.getByTestId("rewind-files"), `${tag} no file list`).toHaveCount(0)
   await expect(dialog.getByTestId("rewind-failure"), `${tag} no failure line`).toHaveCount(0)
   await expect(dialog.getByTestId("rewind-error"), `${tag} no error line`).toHaveCount(0)
-  await expectFooter(page, dialog, tag, c.gitButtons, ["outline", "outline", "default"])
+  await expect(dialog.getByTestId("rewind-restore-files-checkbox")).toBeVisible()
+  await expect(dialog.getByTestId("rewind-restore-files-checkbox")).not.toBeChecked()
+  await expectFooter(page, dialog, tag, c.gitButtons, ["outline", "default"])
 }
 
 for (const lang of ["zh", "en"] as const) {
@@ -222,11 +238,12 @@ for (const lang of ["zh", "en"] as const) {
       await shots(page, `git-${lang}`)
       await expect.soft(dialog.getByRole("heading").first()).toHaveText(c.title)
       await expect.soft(dialog).toContainText(c.gitBody)
-      await expect.soft(dialog.getByTestId("rewind-hint")).toHaveText(c.gitHint)
-      await expectFooter(page, dialog, `${lang} git`, c.gitButtons, ["outline", "outline", "default"])
+      await expect.soft(dialog.getByTestId("rewind-restore-files")).toContainText(c.gitHint)
+      await expect.soft(dialog.getByTestId("rewind-restore-files")).toContainText(c.gitCheckbox)
+      await expectFooter(page, dialog, `${lang} git`, c.gitButtons, ["outline", "default"])
       await expectNoBanned(dialog, `${lang} git`)
 
-      await button(dialog, "restore-files", c.oldRestore).click()
+      await confirmWithFiles(dialog, lang)
       await page.waitForTimeout(500)
       await shots(page, `untracked3-${lang}`)
       await expect.soft(dialog.getByRole("heading").first()).toHaveText(c.untrackedTitle(3))
@@ -241,7 +258,7 @@ for (const lang of ["zh", "en"] as const) {
       // 再补 5 个 → 8 个：列 5 个 +「还有 3 个」。
       for (const name of ["c", "d", "e", "f", "g"]) writeFileSync(join(ws, `new-${name}.txt`), `${name}\n`)
       dialog = await openDialog(page, lang)
-      await button(dialog, "restore-files", c.oldRestore).click()
+      await confirmWithFiles(dialog, lang)
       await page.waitForTimeout(500)
       await shots(page, `untracked8-${lang}`)
       await expect.soft(dialog.getByRole("heading").first()).toHaveText(c.untrackedTitle(8))
@@ -271,7 +288,7 @@ for (const lang of ["zh", "en"] as const) {
       // 拿不到名单：主进程这次只回「要确认」不带文件。
       await overrideRestore(app, { ok: false, code: "CHECKPOINT_CONFIRM_REQUIRED", untrackedToDelete: [] })
       let dialog = await openDialog(page, lang)
-      await button(dialog, "restore-files", c.oldRestore).click()
+      await confirmWithFiles(dialog, lang)
       await page.waitForTimeout(500)
       await shots(page, `untracked-unknown-${lang}`)
       await expect.soft(dialog.getByRole("heading").first()).toHaveText(c.untrackedUnknown)
@@ -290,7 +307,7 @@ for (const lang of ["zh", "en"] as const) {
       }
       const before = await page.locator('[data-testid="user-bubble"]').count()
       dialog = await openDialog(page, lang)
-      await button(dialog, "restore-files", c.oldRestore).click()
+      await confirmWithFiles(dialog, lang)
       await page.waitForTimeout(600)
       await shots(page, `restore-failed-${lang}`)
       await expect.soft(dialog.getByTestId("rewind-failure")).toHaveText(c.failure)
@@ -303,7 +320,7 @@ for (const lang of ["zh", "en"] as const) {
     }
   })
 
-  test(`非 Git 工作区：没有还原按钮，从这里重来只清对话（${lang}）`, async () => {
+  test(`非 Git 工作区：没有还原按钮，改到这里只清对话（${lang}）`, async () => {
     test.setTimeout(180_000)
     const ws = makeWorkspace(false)
     const { app, page } = await launch(lang, ws)
@@ -316,7 +333,7 @@ for (const lang of ["zh", "en"] as const) {
       await expect.soft(dialog.getByTestId("rewind-hint")).toHaveCount(0)
       await expectFooter(page, dialog, `${lang} notgit`, c.notGitButtons, ["outline", "default"])
       await expectNoBanned(dialog, `${lang} notgit`)
-      await button(dialog, "start-over", c.oldChatOnly).click()
+      await button(dialog, "confirm", c.oldChatOnly).click()
       await expect(dialog).toBeHidden({ timeout: 10_000 })
       await expect(page.locator('[data-testid="user-bubble"]')).toHaveCount(0)
       await expect(page.locator('[data-testid="composer-input"]')).toContainText("please write a note")
@@ -335,7 +352,7 @@ for (const lang of ["zh", "en"] as const) {
       writeFileSync(join(ws, "new-a.txt"), "a\n")
       // 确认页 → 取消 → 重开 → 第一步。
       let dialog = await openDialog(page, lang)
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       await expect(dialog).toHaveAttribute("data-state-kind", "untracked", { timeout: 10_000 })
       await expect(dialog.getByTestId("rewind-files")).toBeVisible()
       await dialog.getByTestId("rewind-cancel").click()
@@ -345,7 +362,7 @@ for (const lang of ["zh", "en"] as const) {
       await expectFirstStep(page, dialog, lang, `${lang} after cancel`)
 
       // 确认页 → Esc → 重开 → 第一步。
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       await expect(dialog).toHaveAttribute("data-state-kind", "untracked", { timeout: 10_000 })
       await page.keyboard.press("Escape")
       await expect(dialog).toBeHidden()
@@ -354,7 +371,7 @@ for (const lang of ["zh", "en"] as const) {
 
       // 失败提示 → 取消 → 重开：提示不残留。
       await throwFrom(app, "workspace.restoreCheckpoint", "RAW-RESTORE-ERROR at /tmp/secret")
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       await expect(dialog.getByTestId("rewind-failure")).toBeVisible({ timeout: 10_000 })
       await dialog.getByTestId("rewind-cancel").click()
       await expect(dialog).toBeHidden()
@@ -372,10 +389,10 @@ for (const lang of ["zh", "en"] as const) {
         })
       })
       dialog = await openDialog(page, lang)
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       await page.waitForTimeout(300)
       // luna g159 ⑪：点的那颗转圈 +「正在还原…」；置灰的「取消」看得出置灰（半透明）。
-      const restoring = dialog.getByTestId("rewind-restore-files")
+      const restoring = dialog.getByTestId("rewind-confirm")
       await expect.soft(restoring, `${lang} busy button`).toHaveAttribute("data-busy", "true")
       await expect.soft(restoring, `${lang} busy label`).toHaveText(c.restoring)
       await expect.soft(restoring.getByTestId("rewind-spinner"), `${lang} spinner`).toBeVisible()
@@ -405,7 +422,7 @@ for (const lang of ["zh", "en"] as const) {
       const rawRestore = "RAW-RESTORE-ERROR fatal: cannot lock ref refs/enjoy/abc /Users/me/secret"
       await throwFrom(app, "workspace.restoreCheckpoint", rawRestore)
       let dialog = await openDialog(page, lang)
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       const partial = dialog.getByTestId("rewind-failure")
       await expect(partial).toBeVisible({ timeout: 10_000 })
       await shots(page, `restore-partial-${lang}`)
@@ -430,7 +447,7 @@ for (const lang of ["zh", "en"] as const) {
           throw new Error(raw)
         })
       }, rawRestore)
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       await expect(partial.getByTestId("rewind-go-review"), `${lang} retrying: go-review disabled`).toBeDisabled({ timeout: 2_000 })
       await shots(page, `restore-partial-retrying-${lang}`)
       await partial.getByTestId("rewind-go-review").click({ force: true })
@@ -450,7 +467,7 @@ for (const lang of ["zh", "en"] as const) {
       // ② listCheckpoints 抛原文 → 还没碰文件：灰色兜底句（和提示灰字样式不同）。
       await throwFrom(app, "workspace.listCheckpoints", "RAW-LIST-ERROR SQLITE_CORRUPT /tmp/secret.db")
       dialog = await openDialog(page, lang)
-      await dialog.getByTestId("rewind-restore-files").click()
+      await confirmWithFiles(dialog, lang)
       const missing = dialog.getByTestId("rewind-failure")
       await expect(missing).toBeVisible({ timeout: 10_000 })
       await shots(page, `list-failed-${lang}`)
@@ -471,7 +488,7 @@ for (const lang of ["zh", "en"] as const) {
       // ③ truncateFrom 抛原文（只改聊天）→ 只显示通用句。
       await throwFrom(app, "session.truncateFrom", "RAW-TRUNCATE-ERROR SQLITE_BUSY database is locked /tmp/secret.db")
       dialog = await openDialog(page, lang)
-      await dialog.getByTestId("rewind-chat-only").click()
+      await dialog.getByTestId("rewind-confirm").click()
       const error = dialog.getByTestId("rewind-error")
       await expect(error).toBeVisible({ timeout: 10_000 })
       await shots(page, `truncate-raw-error-${lang}`)
@@ -485,7 +502,7 @@ for (const lang of ["zh", "en"] as const) {
     }
   })
 
-  test(`不知道是不是 Git（gitRepo 为 null）：隐藏还原按钮，中性正文，从这里重来只清对话（${lang}）`, async () => {
+  test(`不知道是不是 Git（gitRepo 为 null）：隐藏还原按钮，中性正文，改到这里只清对话（${lang}）`, async () => {
     test.setTimeout(180_000)
     const ws = makeWorkspace(true)
     const { app, page } = await launch(lang, ws)
@@ -498,7 +515,7 @@ for (const lang of ["zh", "en"] as const) {
       await writeTurn(page)
       await page.evaluate(() => window.dispatchEvent(new Event("focus")))
       const dialog = await openDialog(page, lang)
-      await expect(dialog.getByTestId("rewind-start-over")).toBeVisible({ timeout: 15_000 })
+      await expect(dialog.getByTestId("rewind-confirm")).toBeVisible({ timeout: 15_000 })
       await shots(page, `unknown-git-${lang}`)
       await expect.soft(dialog.getByRole("heading").first()).toHaveText(c.title)
       await expect.soft(dialog.getByTestId("rewind-body")).toHaveText(c.neutralBody)
@@ -506,7 +523,7 @@ for (const lang of ["zh", "en"] as const) {
       await expect(dialog.getByTestId("rewind-restore-files"), `${lang} restore hidden, not disabled`).toHaveCount(0)
       await expectFooter(page, dialog, `${lang} unknown-git`, c.notGitButtons, ["outline", "default"])
       await expectNoBanned(dialog, `${lang} unknown-git`)
-      await dialog.getByTestId("rewind-start-over").click()
+      await dialog.getByTestId("rewind-confirm").click()
       await expect(dialog).toBeHidden({ timeout: 10_000 })
       await expect(page.locator('[data-testid="user-bubble"]')).toHaveCount(0)
       await expect(page.locator('[data-testid="composer-input"]')).toContainText("please write a note")
@@ -526,7 +543,7 @@ test("重来写回输入框 × #136 按会话保存草稿：切到新对话是�
     const original = await page.locator('[data-testid="sidebar-session-row"][data-active="true"]').first().getAttribute("data-session-id")
     expect(original).toBeTruthy()
     const dialog = await openDialog(page, "zh")
-    await dialog.getByTestId("rewind-chat-only").click()
+    await dialog.getByTestId("rewind-confirm").click()
     await expect(dialog).toBeHidden({ timeout: 10_000 })
     const composer = page.locator('[data-testid="composer-input"]')
     await expect(composer).toContainText("please write a note")
@@ -555,7 +572,7 @@ test("重来写回输入框 × #136 按会话保存草稿：切到新对话是�
   }
 })
 
-test("ACP 会话（绑 Amp）：消息上没有「从这里重来」入口，也没有置灰的；Enjoy 本地会话有（zh）", async () => {
+test("ACP 会话（绑 Amp）：消息上没有「改到这里」入口，也没有置灰的；Enjoy 本地会话有（zh）", async () => {
   test.setTimeout(240_000)
   const ws = makeWorkspace(true)
   const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-rwd-acp-ud-"))
@@ -604,7 +621,7 @@ test("ACP 会话（绑 Amp）：消息上没有「从这里重来」入口，也
     await expect(bubble).toBeVisible({ timeout: 15_000 })
     await bubble.hover()
     await page.waitForTimeout(300)
-    // 「编辑消息」还在（不是死路），「从这里重来」整个不出（不是置灰）。
+    // 「编辑消息」还在（不是死路），「改到这里」整个不出（不是置灰）。
     await expect(page.getByRole("button", { name: "编辑消息", exact: true }).first()).toBeVisible()
     await expect(page.getByRole("button", { name: COPY.zh.action, exact: true })).toHaveCount(0)
     await expect(page.getByRole("dialog")).toHaveCount(0)

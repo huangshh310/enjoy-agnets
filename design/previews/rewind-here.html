@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>「改到这里」会话 rewind P1 · Luna · Enjoy Agents</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        soft: "#EFF4FF",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Inter", "ui-sans-serif", "system-ui", "PingFang SC", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+        modal: "0 16px 48px rgba(15,20,25,0.18)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .desk {
+    width: min(1100px, 100%);
+    min-height: 720px;
+  }
+  .bubble-assist {
+    max-width: 78%;
+  }
+  .menu-item-disabled {
+    color: #9AA3AD;
+    cursor: not-allowed;
+  }
+  .gate-pill {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews · luna</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">「改到这里」会话 rewind P1 · 确认层 + 诚实态</h1>
+    <p class="mt-2 max-w-4xl text-[13px] leading-relaxed text-mute">
+      对照 <code class="rounded bg-paper px-1.5 py-0.5 text-[12px]">rewind-here-product.md</code> 7 屏 ·
+      拍板 1：单主钮 + 勾选默认关 + 风险同层 / 删未跟踪二次确认（否决多等权钮）·
+      拍板 2：跑着/坞待批 → ⋯ 项灰 + tooltip，不进卡再拦。
+      Agents 色板 ink/mute/line/paper/card/accent · <strong class="text-ink">不是</strong>旅行 App Paper/Clay。
+    </p>
+    <p class="mt-2 text-[12px] text-mute">I3 / ink / ⑤ / #188 soft 仍停 · 先不派 mike · 不启 Electron · 不占 CDP</p>
+  </header>
+
+  <main class="mx-auto max-w-[1180px] space-y-10 px-6 py-8">
+
+    <!-- legend -->
+    <aside class="rounded-2xl border border-line bg-card px-5 py-4 text-[12px] text-mute shadow-sm">
+      <p class="font-semibold text-ink">一页七态 · 每态小标注过门点</p>
+      <p class="mt-1">A ⋯菜单 · B 确认默认（勾选关）· C 勾选开+风险 · D 二次确认删未跟踪 · E 跑着灰 · F 坞待批灰 · G 非 Git / 无文件勾选。桌面窗感约 1100×720。</p>
+    </aside>
+
+    <!-- ========== A ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">A · ⋯ 菜单含「改到这里」</h2>
+          <p class="mt-1 text-[13px] text-mute">空闲、无待批。产品名收敛自「从这里重来」→「改到这里」；无工程词主标签。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-okSoft px-2.5 py-1 text-ok">门 1 · 入口</span>
+      </div>
+
+      <div class="desk mx-auto overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <!-- faux app chrome -->
+        <div class="flex h-10 items-center gap-2 border-b border-line bg-card px-4">
+          <span class="size-2.5 rounded-full bg-line"></span><span class="size-2.5 rounded-full bg-line"></span><span class="size-2.5 rounded-full bg-line"></span>
+          <span class="ml-3 text-[12px] font-medium text-mute">enjoy · demo-session</span>
+        </div>
+        <div class="grid min-h-[640px] grid-cols-[200px_1fr]">
+          <aside class="border-r border-line bg-card p-3 text-[11px] text-mute">
+            <p class="mb-2 font-semibold text-ink">会话</p>
+            <p class="rounded-lg bg-soft px-2 py-1.5 text-accent">改登录校验</p>
+            <p class="mt-1 px-2 py-1.5">昨日草稿</p>
+          </aside>
+          <div class="relative flex flex-col bg-paper">
+            <div class="flex-1 space-y-4 p-5">
+              <div class="ml-auto max-w-[70%] rounded-2xl bg-accent/10 px-3.5 py-2.5 text-[13px]">对照 src/auth/login.ts 补无障碍。</div>
+              <div class="bubble-assist relative rounded-2xl border border-line bg-card px-3.5 py-3 text-[13px] shadow-sm">
+                <p>已在 <code class="rounded bg-paper px-1 text-[12px]">login.ts</code> 补上早退；单测过了。</p>
+                <div class="mt-2 flex items-center gap-1">
+                  <button type="button" class="rounded-md px-1.5 py-0.5 text-[11px] text-mute hover:bg-paper">复制</button>
+                  <div class="relative">
+                    <button type="button" class="rounded-md bg-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent ring-1 ring-accent/25">⋯</button>
+                    <!-- open menu -->
+                    <div class="absolute left-0 top-[calc(100%+6px)] z-20 w-[168px] overflow-hidden rounded-xl border border-line bg-card shadow-modal">
+                      <p class="px-3 py-2 text-[12px] text-ink">编辑消息</p>
+                      <p class="border-t border-line px-3 py-2 text-[12px] text-ink">复制消息</p>
+                      <p class="border-t border-line bg-soft px-3 py-2 text-[12px] font-semibold text-accent">改到这里</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="ml-auto max-w-[70%] rounded-2xl bg-accent/10 px-3.5 py-2.5 text-[13px] text-mute">再补一下错误码映射。</div>
+              <div class="bubble-assist rounded-2xl border border-dashed border-line bg-card/60 px-3.5 py-3 text-[13px] text-mute">（该点之后 · 将随「改到这里」移除）</div>
+            </div>
+            <!-- composer untouched -->
+            <div class="border-t border-line bg-card p-3">
+              <div class="rounded-xl border border-line bg-paper px-3 py-2 text-[12px] text-mute">写点什么…</div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex gap-1.5">
+                  <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">+</span>
+                  <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">Grok · 4.6</span>
+                  <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">读取</span>
+                </div>
+                <span class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：⋯ 可见「改到这里」· 中文 · 无 rewind/checkpoint 主标签 · Composer 底栏完整不挡发送/权限芯片。</p>
+    </section>
+
+    <!-- ========== B ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">B · 确认默认（勾选关 · 只撤对话）</h2>
+          <p class="mt-1 text-[13px] text-mute">居中 modal；单主钮「改到这里」；勾选默认关。否决「只改聊天 | 连文件」双行动并排。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-okSoft px-2.5 py-1 text-ok">门 2 · 确认默认</span>
+      </div>
+
+      <div class="desk relative mx-auto overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <div class="pointer-events-none absolute inset-0 bg-ink/35"></div>
+        <div class="relative flex min-h-[640px] items-center justify-center p-6">
+          <div class="w-full max-w-[420px] rounded-2xl border border-line bg-card p-5 shadow-modal">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="text-[15px] font-semibold">改到这里？</h3>
+              <span class="text-[14px] text-mute">✕</span>
+            </div>
+            <p class="mt-2 text-[13px] leading-relaxed text-mute">
+              该点之后的对话会移除。这条助手回合对应的用户原话（若有）会放回输入框，改好再发。
+            </p>
+            <label class="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-paper px-3 py-2.5">
+              <input type="checkbox" class="mt-0.5 size-4 rounded border-line" disabled />
+              <span>
+                <span class="block text-[13px] font-medium text-ink">连本轮文件一起还原</span>
+                <span class="mt-0.5 block text-[11px] leading-relaxed text-mute">只动本轮相关改动，不是整仓回退。</span>
+              </span>
+            </label>
+            <p class="mt-2 text-[10px] text-mute">↑ 预览示意：勾选默认<strong class="text-ink">关</strong>（本卡未勾）</p>
+            <div class="mt-4 flex gap-2">
+              <button type="button" class="flex-1 rounded-lg border border-line bg-card px-3 py-2.5 text-[13px] font-medium">取消</button>
+              <button type="button" class="flex-[1.35] rounded-lg bg-accent px-3 py-2.5 text-[13px] font-medium text-white shadow-sm">改到这里</button>
+            </div>
+          </div>
+        </div>
+        <!-- toast hint -->
+        <div class="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-[12px] text-white shadow-dock opacity-90">
+          成功后 toast 味：已回到这里，原话放回输入框
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：默认=只撤对话 · 勾选可选且默认关 · 单主钮 · 不抬 Composer 铬 · 门 3 结果态真机验「之后对话消失 + 原话回填」。</p>
+    </section>
+
+    <!-- ========== C ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">C · 勾选开 + 同层风险句</h2>
+          <p class="mt-1 text-[13px] text-mute">主钮文案变为「改到这里并还原文件」；风险同卡明示；仍单主钮。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-warnSoft px-2.5 py-1 text-warn">门 4 · 勾选连文件</span>
+      </div>
+
+      <div class="desk relative mx-auto flex min-h-[640px] items-center justify-center overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <div class="pointer-events-none absolute inset-0 bg-ink/35"></div>
+        <div class="relative w-full max-w-[420px] rounded-2xl border border-line bg-card p-5 shadow-modal">
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="text-[15px] font-semibold">改到这里？</h3>
+            <span class="text-[14px] text-mute">✕</span>
+          </div>
+          <p class="mt-2 text-[13px] leading-relaxed text-mute">
+            该点之后的对话会移除。这条助手回合对应的用户原话（若有）会放回输入框，改好再发。
+          </p>
+          <label class="mt-4 flex items-start gap-2.5 rounded-xl border border-accent/30 bg-soft px-3 py-2.5">
+            <input type="checkbox" checked class="mt-0.5 size-4 rounded border-accent text-accent" disabled />
+            <span>
+              <span class="block text-[13px] font-medium text-ink">连本轮文件一起还原</span>
+              <span class="mt-0.5 block text-[11px] leading-relaxed text-mute">只动本轮相关改动，不是整仓回退。</span>
+            </span>
+          </label>
+          <div class="mt-2.5 rounded-xl border border-warn/25 bg-warnSoft/70 px-3 py-2.5 text-[12px] leading-relaxed text-warn">
+            会按本轮记录还原相关文件；新建的未跟踪文件可能被删掉（删前还会再问）。
+          </div>
+          <div class="mt-4 flex gap-2">
+            <button type="button" class="flex-1 rounded-lg border border-line bg-card px-3 py-2.5 text-[13px] font-medium">取消</button>
+            <button type="button" class="flex-[1.55] rounded-lg bg-accent px-3 py-2.5 text-[13px] font-medium text-white shadow-sm">改到这里并还原文件</button>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：同层明示风险 · 还原范围=本轮相关（复用 checkpoint，非 HEAD）· 禁「撤销全部」。</p>
+    </section>
+
+    <!-- ========== D ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">D · 二次确认 · 删未跟踪</h2>
+          <p class="mt-1 text-[13px] text-mute">勾选且存在将删新文件 → 叠二次确认；禁止静默删。沿用 gate-159 味，文案人话化。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-dangerSoft px-2.5 py-1 text-danger">门 4 · 二次确认</span>
+      </div>
+
+      <div class="desk relative mx-auto flex min-h-[640px] items-center justify-center overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <div class="pointer-events-none absolute inset-0 bg-ink/40"></div>
+        <div class="relative w-full max-w-[420px] rounded-2xl border border-line bg-card p-5 shadow-modal">
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dangerSoft text-[13px] font-bold text-danger">!</span>
+            <div>
+              <h3 class="text-[15px] font-semibold leading-snug">这些新文件会删掉，删了找不回</h3>
+              <p class="mt-1.5 text-[12px] leading-relaxed text-mute">
+                本轮开始后新出现的文件（含你自己新建的），还原时会删掉：
+              </p>
+            </div>
+          </div>
+          <ul class="mt-3 space-y-1 rounded-xl border border-line bg-paper px-3 py-2.5 text-[12px]">
+            <li class="flex items-center gap-2"><span class="text-mute">·</span><code class="text-[12px]">e2e-stub.txt</code></li>
+            <li class="flex items-center gap-2"><span class="text-mute">·</span><code class="text-[12px]">notes/new-draft.md</code></li>
+          </ul>
+          <div class="mt-4 flex gap-2">
+            <button type="button" class="flex-1 rounded-lg border border-line bg-card px-3 py-2.5 text-[13px] font-medium">取消</button>
+            <button type="button" class="flex-[1.35] rounded-lg bg-danger px-3 py-2.5 text-[13px] font-medium text-white shadow-sm">删掉并还原</button>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：有列表 · 主钮「删掉并还原」· 取消不改盘 · 禁静默删。</p>
+    </section>
+
+    <!-- ========== E ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">E · 跑着 · 菜单项灰 + tooltip</h2>
+          <p class="mt-1 text-[13px] text-mute">入口层门禁：不打开确认卡再拦。tooltip：「等这轮停下来再改到这里」。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-okSoft px-2.5 py-1 text-ok">门 5 · 跑着</span>
+      </div>
+
+      <div class="desk mx-auto overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <div class="flex h-10 items-center gap-2 border-b border-line bg-card px-4">
+          <span class="size-2.5 rounded-full bg-line"></span><span class="size-2.5 rounded-full bg-line"></span><span class="size-2.5 rounded-full bg-line"></span>
+          <span class="ml-3 inline-flex items-center gap-1.5 text-[12px] text-mute">
+            <span class="size-1.5 animate-pulse rounded-full bg-accent"></span> 本会话跑着…
+          </span>
+        </div>
+        <div class="relative min-h-[560px] p-6">
+          <div class="bubble-assist rounded-2xl border border-line bg-card px-3.5 py-3 text-[13px] shadow-sm">
+            <p>正在改 login.ts…</p>
+            <div class="relative mt-2 inline-block">
+              <button type="button" class="rounded-md bg-paper px-1.5 py-0.5 text-[11px] ring-1 ring-line">⋯</button>
+              <div class="absolute left-0 top-[calc(100%+6px)] z-20 w-[200px] overflow-hidden rounded-xl border border-line bg-card shadow-modal">
+                <p class="px-3 py-2 text-[12px]">编辑消息</p>
+                <p class="border-t border-line px-3 py-2 text-[12px]">复制消息</p>
+                <p class="menu-item-disabled border-t border-line bg-paper px-3 py-2 text-[12px]">改到这里</p>
+              </div>
+              <!-- tooltip -->
+              <div class="absolute left-[210px] top-[42px] z-30 max-w-[200px] rounded-lg bg-ink px-2.5 py-1.5 text-[11px] leading-snug text-white shadow-dock">
+                等这轮停下来再改到这里
+                <span class="absolute -left-1 top-2 size-2 rotate-45 bg-ink"></span>
+              </div>
+            </div>
+          </div>
+          <div class="absolute bottom-4 left-4 right-4 rounded-xl border border-line bg-card p-3">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-mute">排队 0 · 权限「读取」· 停止可达</span>
+              <span class="rounded-full bg-ink px-3 py-1 font-medium text-white">停止</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：灰项 + tooltip · 未开确认卡 · 不挡停止/发送路径铬。</p>
+    </section>
+
+    <!-- ========== F ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">F · 坞待批 · 菜单项灰 + tooltip</h2>
+          <p class="mt-1 text-[13px] text-mute">Dock 有待批时灰掉；tooltip：「先处理完待批，再改到这里」。禁止静默丢审批。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-okSoft px-2.5 py-1 text-ok">门 5 · 坞待批</span>
+      </div>
+
+      <div class="desk mx-auto overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <div class="flex min-h-[640px] flex-col">
+          <div class="flex-1 p-5">
+            <div class="bubble-assist relative rounded-2xl border border-line bg-card px-3.5 py-3 text-[13px] shadow-sm">
+              <p>准备写入 <code class="rounded bg-paper px-1 text-[12px]">login.ts</code>…</p>
+              <div class="relative mt-2 inline-block">
+                <button type="button" class="rounded-md bg-paper px-1.5 py-0.5 text-[11px] ring-1 ring-line">⋯</button>
+                <div class="absolute left-0 top-[calc(100%+6px)] z-20 w-[200px] overflow-hidden rounded-xl border border-line bg-card shadow-modal">
+                  <p class="px-3 py-2 text-[12px]">复制消息</p>
+                  <p class="menu-item-disabled border-t border-line bg-paper px-3 py-2 text-[12px]">改到这里</p>
+                </div>
+                <div class="absolute left-[210px] top-[8px] z-30 max-w-[210px] rounded-lg bg-ink px-2.5 py-1.5 text-[11px] leading-snug text-white shadow-dock">
+                  先处理完待批，再改到这里
+                  <span class="absolute -left-1 top-2 size-2 rotate-45 bg-ink"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- PermissionDock faux — must stay clickable / not covered by rewind chrome -->
+          <div class="border-t border-line bg-card p-3">
+            <div class="mx-auto max-w-[440px] rounded-2xl border border-amber-200/80 bg-card p-4 shadow-dock">
+              <p class="text-[13px] font-semibold">允许写入 login.ts？</p>
+              <p class="mt-1 text-[11px] text-mute">PermissionDock 待批 · 运行 / 拒绝 / 本会话允许 · rewind 不得静默丢</p>
+              <div class="mt-3 flex gap-2">
+                <button type="button" class="flex-1 rounded-lg border border-line px-3 py-2 text-[12px] font-medium">拒绝</button>
+                <button type="button" class="flex-1 rounded-lg border border-line px-3 py-2 text-[12px] font-medium">本会话允许</button>
+                <button type="button" class="flex-[1.2] rounded-lg bg-accent px-3 py-2 text-[12px] font-medium text-white">运行</button>
+              </div>
+            </div>
+            <div class="mt-2 flex items-center justify-between px-1">
+              <div class="flex gap-1.5">
+                <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">读取</span>
+                <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">Grok · 4.6</span>
+              </div>
+              <span class="text-[10px] text-mute">发送区仍在 · 不挡芯片</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：灰项 + tooltip · Dock 三钮仍可达 · 门 6 不挡 Dock/权限芯片/发送。</p>
+    </section>
+
+    <!-- ========== G ========== -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">G · 非 Git / 无文件勾选</h2>
+          <p class="mt-1 text-[13px] text-mute">勾选隐藏或禁用 + 同层诚实说明；主钮仍「改到这里」（只撤对话）。Amp 类无 rewind：不画菜单项（见旁注）。</p>
+        </div>
+        <span class="gate-pill rounded-full bg-soft px-2.5 py-1 text-accent">空态 · 诚实</span>
+      </div>
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div class="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-2xl border border-line bg-paper p-4 shadow-dock">
+          <div class="pointer-events-none absolute inset-0 bg-ink/30"></div>
+          <div class="relative w-full max-w-[380px] rounded-2xl border border-line bg-card p-5 shadow-modal">
+            <h3 class="text-[15px] font-semibold">改到这里？</h3>
+            <p class="mt-2 text-[13px] leading-relaxed text-mute">
+              该点之后的对话会移除。这条助手回合对应的用户原话（若有）会放回输入框，改好再发。
+            </p>
+            <p class="mt-3 rounded-xl border border-line bg-paper px-3 py-2.5 text-[12px] leading-relaxed text-mute">
+              这个文件夹没用 Git 管理，改过的文件不会还原。
+            </p>
+            <p class="mt-2 text-[10px] text-mute">（勾选「连本轮文件一起还原」隐藏 · 非 Git）</p>
+            <div class="mt-4 flex gap-2">
+              <button type="button" class="flex-1 rounded-lg border border-line px-3 py-2.5 text-[13px] font-medium">取消</button>
+              <button type="button" class="flex-[1.35] rounded-lg bg-accent px-3 py-2.5 text-[13px] font-medium text-white">改到这里</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-dashed border-line bg-card p-5 text-[12px] text-mute">
+          <p class="font-semibold text-ink">旁注 · 引擎不支持 / Amp</p>
+          <p class="mt-2 leading-relaxed">⋯ 菜单<strong class="text-ink">不画</strong>「改到这里」（沿用现状：无置灰假入口）。只留编辑 / 复制等现有项。</p>
+          <div class="mt-4 w-[180px] overflow-hidden rounded-xl border border-line bg-paper shadow-sm">
+            <p class="bg-card px-3 py-2 text-[12px] text-ink">编辑消息</p>
+            <p class="border-t border-line bg-card px-3 py-2 text-[12px] text-ink">复制消息</p>
+            <p class="border-t border-dashed border-line px-3 py-2 text-[11px] text-mute">（无「改到这里」）</p>
+          </div>
+          <p class="mt-4 font-semibold text-ink">门 7 · soft 后排</p>
+          <p class="mt-1 leading-relaxed">Changes 顶「按本轮文件撤」= <strong class="text-ink">后排 / soft</strong>，本刀<strong class="text-ink">不做</strong>；不得假装已交付。</p>
+        </div>
+      </div>
+      <p class="mt-3 text-[11px] text-mute">过门：非 Git 诚实句 · 无假还原钮 · Amp 无入口 · Changes 次要标后排。</p>
+    </section>
+
+    <footer class="rounded-2xl border border-line bg-card px-5 py-4 text-[12px] text-mute">
+      <p class="font-semibold text-ink">给 host</p>
+      <p class="mt-1">两拍板已锁并画入本页。canonical：<code class="rounded bg-paper px-1">/workspace/enjoy-docs/rewind-here-design.md</code> · 本预览：<code class="rounded bg-paper px-1">/workspace/enjoy-agnets/design/previews/rewind-here.html</code>（副本 enjoy-wt/base）。先不派 mike。</p>
+    </footer>
+  </main>
+</body>
+</html>

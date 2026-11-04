@@ -1,7 +1,7 @@
 /**
  * leo r3（#136）真机路径：
  * - M1：出字前失败回滚时，发送后又打的字不被覆盖（mergeComposerText 合并后写回）。
- * - M2：第一轮已出字、标题站住后「从这里重来」再发，出字前失败不回滚标题。
+ * - M2：第一轮已出字、标题站住后「改到这里」再发，出字前失败不回滚标题。
  * - M4：发出后立刻切走，后台回滚的正文写回 session_drafts，切回来输入框里有。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
@@ -67,7 +67,7 @@ test("M1：发送后接着打的字，出字前失败回滚时不被覆盖", asy
   }
 })
 
-test("M2：第一轮出字后从这里重来再发，出字前失败不回滚已站住的标题", async () => {
+test("M2：第一轮出字后改到这里再发，出字前失败不回滚已站住的标题", async () => {
   test.setTimeout(180_000)
   const { app, window } = await boot({ ...dirs(), ENJOY_E2E_SEND: "unreachable", ENJOY_E2E_SEND_SKIP: "1" })
   try {
@@ -80,9 +80,11 @@ test("M2：第一轮出字后从这里重来再发，出字前失败不回滚已
     await window.screenshot({ path: join(shots, "03-first-turn-title.png") })
     const userTurn = window.getByText("整理一下发布清单").first()
     await userTurn.hover()
-    await window.getByRole("button", { name: "从这里重来" }).first().click()
-    // 临时目录不是 Git 仓库：#159 定稿后弹窗只有「取消 · 从这里重来」（不给还原按钮），点它就是只改聊天。
-    await window.getByRole("dialog").getByRole("button", { name: "从这里重来", exact: true }).click()
+    const assistant = window.locator('[data-testid="message-more"]').first()
+    await assistant.click()
+    await window.getByTestId("rewind-from-here").click()
+    // 临时目录不是 Git 仓库：弹窗只有「取消 · 改到这里」（不给文件勾选），点主钮只撤对话。
+    await window.getByRole("dialog").getByTestId("rewind-confirm").click()
     await expect(composer).toHaveValue(/整理一下发布清单/, { timeout: 8_000 })
     await composer.press("Enter")
     await expect(window.getByTestId("thread-credential-network-notice")).toBeVisible({ timeout: 20_000 })
