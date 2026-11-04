@@ -172,9 +172,18 @@ function registerSessionEditIpc() {
     const input = SessionAttachedPrsGetInput.parse(raw)
     return getSessionAttachedPrs(input.sessionId)
   })
-  ipcMain.handle("session.attachedPrs.set", async (_event, raw: unknown) => {
+  const safeStopPrBabysit = (sessionId: string) => {
+    try {
+      stopPrBabysitForSession(sessionId)
+    } catch (error) {
+      console.warn("[pr-babysit] tip C stop failed", error)
+    }
+  }
+    ipcMain.handle("session.attachedPrs.set", async (_event, raw: unknown) => {
     const input = SessionAttachedPrsSetInput.parse(raw)
-    return setSessionAttachedPrs(input.sessionId, input.attached)
+    const next = setSessionAttachedPrs(input.sessionId, input.attached)
+    safeStopPrBabysit(input.sessionId)
+    return next
   })
   ipcMain.handle("session.attachedPrs.attach", async (_event, raw: unknown) => {
     const input = SessionAttachedPrAttachInput.parse(raw)
@@ -187,11 +196,15 @@ function registerSessionEditIpc() {
       { number: input.number, url: input.url, title: input.title },
       input.makePrimary
     )
+    // tip C：主挂可能变 → 停盯清 SoT（不静默迁盯）
+    if (input.makePrimary) safeStopPrBabysit(input.sessionId)
     return { ok: true as const, attached }
   })
   ipcMain.handle("session.attachedPrs.setPrimary", async (_event, raw: unknown) => {
     const input = SessionAttachedPrSetPrimaryInput.parse(raw)
-    return setPrimaryAttachedPr(input.sessionId, input.number)
+    const next = setPrimaryAttachedPr(input.sessionId, input.number)
+    safeStopPrBabysit(input.sessionId)
+    return next
   })
   ipcMain.handle("session.recap", async (_event, raw: unknown) => {
     const input = SessionRecapInput.parse(raw)

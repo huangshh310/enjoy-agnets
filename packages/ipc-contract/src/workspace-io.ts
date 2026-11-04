@@ -456,3 +456,93 @@ export const SessionAttachedPrSetPrimaryInput = z
   })
   .strict()
 export type SessionAttachedPrSetPrimaryInput = z.infer<typeof SessionAttachedPrSetPrimaryInput>
+
+
+/** P2 切片② · 盯 PR：本机最小轮询；禁云 7×24 / 自动 merge。 */
+export const PrBabysitWakeKind = z.enum(["checks-failed", "new-comments", "conflict"])
+export type PrBabysitWakeKind = z.infer<typeof PrBabysitWakeKind>
+
+export const WorkspacePrBabysitStartInput = z
+  .object({
+    sessionId: z.string().min(1),
+    workspaceId: z.string().min(1),
+    number: z.number().int().positive(),
+    url: z.string().min(1).default("")
+  })
+  .strict()
+export type WorkspacePrBabysitStartInput = z.infer<typeof WorkspacePrBabysitStartInput>
+
+export const WorkspacePrBabysitStopInput = z
+  .object({
+    sessionId: z.string().min(1),
+    number: z.number().int().positive()
+  })
+  .strict()
+export type WorkspacePrBabysitStopInput = z.infer<typeof WorkspacePrBabysitStopInput>
+
+export const WorkspacePrBabysitStatusInput = z
+  .object({
+    sessionId: z.string().min(1)
+  })
+  .strict()
+export type WorkspacePrBabysitStatusInput = z.infer<typeof WorkspacePrBabysitStatusInput>
+
+export const PrBabysitWatchItem = z.object({
+  sessionId: z.string().min(1),
+  workspaceId: z.string().min(1),
+  number: z.number().int().positive(),
+  url: z.string().default(""),
+  startedAt: z.number().int().nonnegative(),
+  lastPolledAt: z.number().int().nonnegative().nullable().optional(),
+  lastWakeKind: PrBabysitWakeKind.nullable().optional()
+})
+export type PrBabysitWatchItem = z.infer<typeof PrBabysitWatchItem>
+
+export const WorkspacePrBabysitStatusResult = z.object({
+  watching: z.array(PrBabysitWatchItem).default([])
+})
+export type WorkspacePrBabysitStatusResult = z.infer<typeof WorkspacePrBabysitStatusResult>
+
+export const WorkspacePrBabysitStartResult = z.discriminatedUnion("ok", [
+  z.object({
+    ok: z.literal(true),
+    item: PrBabysitWatchItem,
+    stub: z.boolean().optional()
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.enum(["not-authed", "not-attached", "not-git", "start-failed"]),
+    message: z.string().default("")
+  })
+])
+export type WorkspacePrBabysitStartResult = z.infer<typeof WorkspacePrBabysitStartResult>
+
+export const WorkspacePrBabysitEvent = z.object({
+  type: z.enum(["status", "wake"]),
+  sessionId: z.string().min(1),
+  number: z.number().int().positive(),
+  watching: z.boolean(),
+  wakeKind: PrBabysitWakeKind.optional(),
+  stub: z.boolean().optional()
+})
+export type WorkspacePrBabysitEvent = z.infer<typeof WorkspacePrBabysitEvent>
+
+
+export const WorkspacePrCheckInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    number: z.number().int().positive()
+  })
+  .strict()
+export type WorkspacePrCheckInput = z.infer<typeof WorkspacePrCheckInput>
+
+export const WorkspacePrCheckResult = z.object({
+  ok: z.boolean(),
+  number: z.number().int().positive(),
+  checksState: z.enum(["success", "failure", "pending", "unknown"]).default("unknown"),
+  commentCount: z.number().int().nonnegative().default(0),
+  mergeable: z.string().default(""),
+  message: z.string().optional(),
+  stub: z.boolean().optional()
+})
+export type WorkspacePrCheckResult = z.infer<typeof WorkspacePrCheckResult>

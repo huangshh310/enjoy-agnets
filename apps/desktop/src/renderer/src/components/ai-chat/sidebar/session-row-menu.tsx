@@ -35,7 +35,14 @@ import {
   sessionMenuMaxHeight,
   type SessionMenuAlign
 } from "./session-menu-placement"
-import { AttachPrDialog } from "@renderer/components/ai-chat/pr-flow"
+import {
+  AttachPrDialog,
+  BabysitStartConfirmDialog,
+  BabysitStopConfirmDialog,
+  ConnectGithubCard,
+  useAttachedPrs,
+  usePrBabysit
+} from "@renderer/components/ai-chat/pr-flow"
 import {
   WORKFLOW_STATUS_LIST,
   WORKFLOW_STATUSES,
@@ -66,6 +73,14 @@ export function SessionRowMenu({
   const patchSessionNode = useChatStore((state) => state.patchSessionNode)
   const workspaceId = useChatStore((state) => state.workspaceId)
   const [attachOpen, setAttachOpen] = useState(false)
+  const [babysitStartOpen, setBabysitStartOpen] = useState(false)
+  const [babysitStopOpen, setBabysitStopOpen] = useState(false)
+  const [connectOpen, setConnectOpen] = useState(false)
+  const [babysitBusy, setBabysitBusy] = useState(false)
+  const [babysitError, setBabysitError] = useState<string | null>(null)
+  const { primaryItem } = useAttachedPrs(sessionId)
+  const { isWatching, start: startBabysit, stop: stopBabysit } = usePrBabysit(sessionId)
+  const watchingPrimary = primaryItem ? isWatching(primaryItem.number) : false
 
   const handleOpenChange = (next: boolean) => {
     if (next) {
@@ -204,6 +219,25 @@ export function SessionRowMenu({
           <span>{t("chat.prAttachTitle")}</span>
         </DropdownMenuItem>
 
+        {primaryItem ? (
+          <DropdownMenuItem
+            data-testid="session-row-menu-babysit"
+            onClick={(e) => {
+              e.stopPropagation()
+              setBabysitError(null)
+              if (watchingPrimary) setBabysitStopOpen(true)
+              else setBabysitStartOpen(true)
+              setOpen(false)
+            }}
+            className="cursor-pointer"
+          >
+            <RiGitPullRequestLine className="mr-2 size-4" />
+            <span>
+              {watchingPrimary ? t("chat.prBabysitStopAction") : t("chat.prBabysitStartTitle")}
+            </span>
+          </DropdownMenuItem>
+        ) : null}
+
         {onArchive ? (
           <>
             <DropdownMenuSeparator />
@@ -228,6 +262,52 @@ export function SessionRowMenu({
         sessionId={sessionId}
         workspaceId={workspaceId}
       />
+      <BabysitStartConfirmDialog
+        open={babysitStartOpen}
+        onOpenChange={setBabysitStartOpen}
+        busy={babysitBusy}
+        error={babysitError}
+        onConfirm={async () => {
+          if (!workspaceId || !primaryItem) return
+          setBabysitBusy(true)
+          setBabysitError(null)
+          try {
+            const res = await startBabysit({
+              workspaceId,
+              number: primaryItem.number,
+              url: primaryItem.url
+            })
+            if (!res.ok) {
+              if (res.reason === "not-authed") {
+                setBabysitStartOpen(false)
+                setConnectOpen(true)
+                return
+              }
+              setBabysitError(res.message || t("chat.prBabysitStartFailed"))
+              return
+            }
+            setBabysitStartOpen(false)
+          } finally {
+            setBabysitBusy(false)
+          }
+        }}
+      />
+      <BabysitStopConfirmDialog
+        open={babysitStopOpen}
+        onOpenChange={setBabysitStopOpen}
+        busy={babysitBusy}
+        onConfirm={async () => {
+          if (!primaryItem) return
+          setBabysitBusy(true)
+          try {
+            await stopBabysit(primaryItem.number)
+            setBabysitStopOpen(false)
+          } finally {
+            setBabysitBusy(false)
+          }
+        }}
+      />
+      <ConnectGithubCard open={connectOpen} onOpenChange={setConnectOpen} />
     </>
   )
 }

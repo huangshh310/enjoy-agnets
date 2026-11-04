@@ -3,11 +3,11 @@ import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, appliedVersions } from "./runner.ts"
 
-test("空库依次跑全部迁移至 21（含会话挂 PR 旁表）", () => {
+test("空库依次跑全部迁移至 22（含会话盯 PR 旁表）", () => {
   const db = new DatabaseSync(":memory:")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21])
+  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .all() as Array<{ name: string }>
@@ -38,6 +38,7 @@ test("空库依次跑全部迁移至 21（含会话挂 PR 旁表）", () => {
   assert.ok(sColNames.includes("imported_from"))
   assert.ok(names.includes("session_heartbeats"))
   assert.ok(names.includes("session_attached_prs"))
+  assert.ok(names.includes("session_pr_babysit"))
 
   // 验证 run_steps 新字段
   const stepCols = db.prepare("PRAGMA table_info(run_steps)").all() as Array<{ name: string }>
@@ -72,8 +73,8 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
     );
   `)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21])
+  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
   const mcpCols = db.prepare("PRAGMA table_info(mcp_servers)").all() as Array<{ name: string }>
   assert.ok(mcpCols.some((col) => col.name === "curated_preset_id"))
   const runCols = db.prepare("PRAGMA table_info(runs)").all() as Array<{ name: string }>

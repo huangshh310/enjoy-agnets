@@ -313,3 +313,108 @@ export function prUrlMatchesRepo(url: string, owner: string, repo: string): bool
 function escapeRe(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
+
+
+/** P2 切片② Must#1：只读检查快照（checks / comments / mergeable）。禁 create/merge/push。 */
+export type WorkspacePrCheckSnapshot = {
+  ok: boolean
+  number: number
+  checksState: "success" | "failure" | "pending" | "unknown"
+  commentCount: number
+  mergeable: string
+  message?: string
+  stub?: boolean
+}
+
+export async function checkWorkspacePrStatus(
+  workspaceRoot: string,
+  number: number
+): Promise<WorkspacePrCheckSnapshot> {
+  if (process.env.ENJOY_E2E_PR_STUB === "1") {
+    const raw = process.env.ENJOY_E2E_PR_BABYSIT_WAKE?.trim()
+    if (raw === "checks" || raw === "checks-failed") {
+      return { ok: true, number, checksState: "failure", commentCount: 0, mergeable: "MERGEABLE", stub: true }
+    }
+    if (raw === "comments" || raw === "new-comments") {
+      return { ok: true, number, checksState: "success", commentCount: 3, mergeable: "MERGEABLE", stub: true }
+    }
+    if (raw === "conflict") {
+      return { ok: true, number, checksState: "success", commentCount: 0, mergeable: "CONFLICTING", stub: true }
+    }
+    return { ok: true, number, checksState: "success", commentCount: 0, mergeable: "MERGEABLE", stub: true }
+  }
+
+  const auth = await readGithubAuthStatus(workspaceRoot)
+  if (!auth.authed) {
+    return {
+      ok: false,
+      number,
+      checksState: "unknown",
+      commentCount: 0,
+      mergeable: "",
+      message: "not-authed"
+    }
+  }
+
+  const res = await runExecutable(
+    workspaceRoot,
+    "gh",
+    [
+      "pr",
+      "view",
+      String(number),
+      "--json",
+      "statusCheckRollup,comments,reviews,mergeable,mergeStateStatus"
+    ],
+    25_000
+  )
+  if (res.exitCode !== 0) {
+    return {
+      ok: false,
+      number,
+      checksState: "unknown",
+      commentCount: 0,
+      mergeable: "",
+      message: (res.stderr || res.stdout || "pr check failed").trim().slice(0, 400)
+    }
+  }
+  try {
+    const parsed = JSON.parse(res.stdout) as {
+      statusCheckRollup?: Array<{ state?: string; conclusion?: string }>
+      comments?: Array<unknown> | { totalCount?: number }
+      reviews?: Array<unknown>
+      mergeable?: string
+      mergeStateStatus?: string
+    }
+    const rollup = Array.isArray(parsed.statusCheckRollup) ? parsed.statusCheckRollup : []
+    let checksState: WorkspacePrCheckSnapshot["checksState"] = "success"
+    if (rollup.length === 0) checksState = "unknown"
+    const failed = rollup.some((row) => {
+      const state = String(row.state || row.conclusion || "").toUpperCase()
+      return state === "FAILURE" || state === "FAILED" || state === "ERROR" || state === "CANCELLED"
+    })
+    const pending = rollup.some((row) => {
+      const state = String(row.state || row.conclusion || "").toUpperCase()
+      return state === "PENDING" || state === "QUEUED" || state === "IN_PROGRESS" || state === "EXPECTED"
+    })
+    if (failed) checksState = "failure"
+    else if (pending) checksState = "pending"
+
+    const commentCount = Array.isArray(parsed.comments)
+      ? parsed.comments.length + (Array.isArray(parsed.reviews) ? parsed.reviews.length : 0)
+      : typeof parsed.comments?.totalCount === "number"
+        ? parsed.comments.totalCount
+        : 0
+    const mergeable = String(parsed.mergeable || parsed.mergeStateStatus || "")
+    return { ok: true, number, checksState, commentCount, mergeable }
+  } catch {
+    return {
+      ok: false,
+      number,
+      checksState: "unknown",
+      commentCount: 0,
+      mergeable: "",
+      message: "bad check json"
+    }
+  }
+}

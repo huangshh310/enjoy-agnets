@@ -49,3 +49,31 @@ test("Must#3/C：旁表 migration v21 含 session_attached_prs 列，非 JSON �
   assert.match(mig, /is_primary/)
   assert.doesNotMatch(mig, /json_extract|attached_prs_json/)
 })
+
+test("Must#1 切片②：只读检查走 checkWorkspacePrStatus / workspace.prCheck；禁写 IPC 冒充盯", () => {
+  const babysit = readFileSync(join(dir, "workspace-pr-babysit.ts"), "utf8")
+  const pr = readFileSync(join(dir, "workspace-pr.ts"), "utf8")
+  const shell = readFileSync(join(dir, "../ipc-shell.ts"), "utf8")
+  assert.match(pr, /export async function checkWorkspacePrStatus/)
+  assert.match(pr, /gh[\s\S]*pr[\s\S]*view/)
+  assert.match(babysit, /checkWorkspacePrStatus/)
+  assert.match(shell, /workspace\.prCheck/)
+  assert.doesNotMatch(babysit, /prCreate|gitPush|\bauto[- ]?merge\b|\bsquash\b/i)
+  assert.doesNotMatch(babysit, /setInterval\s*\(/)
+})
+
+test("Must#3 tip A/C：SQLite SoT + 60s 退避 + 主挂切换停盯", () => {
+  const mig = readFileSync(
+    join(root, "packages/db/src/migrations/session-pr-babysit.ts"),
+    "utf8"
+  )
+  const babysit = readFileSync(join(dir, "workspace-pr-babysit.ts"), "utf8")
+  const sessionIpc = readFileSync(join(dir, "../ipc-session.ts"), "utf8")
+  assert.match(mig, /version:\s*22/)
+  assert.match(mig, /session_pr_babysit/)
+  assert.match(babysit, /POLL_MS = 60_000/)
+  assert.match(babysit, /BACKOFF_CAP_MS = 5 \* 60_000/)
+  assert.match(babysit, /persistMessage/)
+  assert.match(babysit, /stopPrBabysitForSession/)
+  assert.match(sessionIpc, /stopPrBabysitForSession/)
+})

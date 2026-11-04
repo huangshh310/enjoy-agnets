@@ -23,6 +23,7 @@ import { sessionReviewMigration } from "./session-review.ts"
 import { runDiscardedPreOutputMigration } from "./run-discarded-pre-output.ts"
 import { sessionImportedFromMigration } from "./session-imported-from.ts"
 import { sessionAttachedPrsMigration } from "./session-attached-prs.ts"
+import { sessionPrBabysitMigration } from "./session-pr-babysit.ts"
 import { ensureCuratedPresetIdColumn, repairClaimedV14, tableExists } from "./column-guard.ts"
 import { releaseOrphanLedger } from "./orphan-ledger.ts"
 import type { Migration } from "./types.ts"
@@ -49,7 +50,8 @@ export const MIGRATIONS: Migration[] = [
   sessionReviewMigration,
   runDiscardedPreOutputMigration,
   sessionImportedFromMigration,
-  sessionAttachedPrsMigration
+  sessionAttachedPrsMigration,
+  sessionPrBabysitMigration
 ]
 
 function ensureMigrationTable(sqlite: DatabaseSync): void {
