@@ -71,47 +71,39 @@ export function RewindFromHereAction({
   )
 }
 
-/** 助手气泡 ⋯ 菜单项「改到这里」（P1 主入口）。 */
+/** 助手气泡 ⋯ 菜单项「改到这里」（P1 主入口）。确认卡由外层挂载，避免菜单卸载带走 Dialog。 */
 export function RewindFromHereMenuItem({
-  messageId,
   blockReason,
-  canRewind
+  canRewind,
+  onOpen
 }: {
-  messageId: string
+  messageId?: string
   blockReason?: RewindEntryBlockReason | null
   canRewind: boolean
+  onOpen: () => void
 }) {
   const t = useT()
-  const [open, setOpen] = useState(false)
   const entry = rewindEntryAction({ canRewind, blockReason, t })
   if (!entry) return null
   return (
-    <>
-      <span title={entry.tooltip} className="block w-full">
-        <DropdownMenuItem
-          data-testid="rewind-from-here"
-          disabled={entry.disabled}
-          onSelect={(event) => {
-            if (entry.disabled) {
-              event.preventDefault()
-              return
-            }
-            setOpen(true)
-          }}
-          className="flex cursor-pointer items-center gap-2 py-1.5 px-2 text-caption-1-medium"
-        >
-          <RiHistoryLine className="size-4 shrink-0" />
-          <span>{entry.label}</span>
-        </DropdownMenuItem>
-      </span>
-      <RewindFromHereDialog
-        open={open}
-        messageId={messageId}
-        canRestoreFiles={canRewind}
-        blockReason={entry.blockReason}
-        onOpenChange={setOpen}
-      />
-    </>
+    <span title={entry.tooltip} className="block w-full">
+      <DropdownMenuItem
+        data-testid="rewind-from-here"
+        disabled={entry.disabled}
+        onSelect={(event) => {
+          if (entry.disabled) {
+            event.preventDefault()
+            return
+          }
+          // 等 Dropdown 卸完再开确认卡（状态在 AssistantActions）。
+          window.setTimeout(onOpen, 0)
+        }}
+        className="flex cursor-pointer items-center gap-2 py-1.5 px-2 text-caption-1-medium"
+      >
+        <RiHistoryLine className="size-4 shrink-0" />
+        <span>{entry.label}</span>
+      </DropdownMenuItem>
+    </span>
   )
 }
 
