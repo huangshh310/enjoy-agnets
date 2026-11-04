@@ -12,6 +12,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { CONVENTIONAL_PREFIXES } from "../constants/review-constants"
 import { generateCommitMessage } from "./generate-commit-message"
+import { OpenPrActions } from "@renderer/components/ai-chat/pr-flow"
 
 export type ReviewCommitDockHandle = {
   focus: () => void
@@ -158,6 +159,7 @@ export const ReviewCommitDock = forwardRef<
               <span data-testid="review-push">{t("chat.reviewPushAction")}</span>
             </Button>
           ) : null}
+          <OpenPrActions disabled={locked} />
           <Button
             type="submit"
             size="xs"

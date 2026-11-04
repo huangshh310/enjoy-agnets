@@ -24,6 +24,8 @@ import {
   WorkspaceChangesResult,
   WorkspaceConnectInput,
   WorkspaceIdInput,
+  WorkspacePrCreateInput,
+  WorkspacePrProbeInput,
   WriteFileInput
 } from "@enjoy-agents/ipc-contract"
 import { rememberWorkspaceOpened } from "./services/workspace-remember.ts"
@@ -41,7 +43,11 @@ import {
   dispatchGitRestore,
   dispatchGitStage,
   dispatchGitSwitch,
-  dispatchMove
+  dispatchMove,
+  dispatchPrAuthStatus,
+  dispatchPrCreate,
+  dispatchPrList,
+  dispatchPrProbe
 } from "./services/workspace-io-dispatch.ts"
 import { openWorkspacePreview } from "./services/workspace-open-preview"
 import { watchWorkspace } from "./services/workspace-watch"
@@ -166,6 +172,19 @@ function registerWorkspaceGitIpc() {
   ipcMain.handle("workspace.gitSwitch", async (_event, raw) => {
     const input = GitSwitchInput.parse(raw)
     return dispatchGitSwitch(input.workspaceId, input.name)
+  })
+  ipcMain.handle("workspace.prProbe", async (_event, raw) => {
+    return dispatchPrProbe(WorkspacePrProbeInput.parse(raw).workspaceId)
+  })
+  ipcMain.handle("workspace.prCreate", async (_event, raw) => {
+    const input = WorkspacePrCreateInput.parse(raw)
+    return dispatchPrCreate(input.workspaceId, input.title, input.body)
+  })
+  ipcMain.handle("workspace.prAuthStatus", async (_event, raw) => {
+    return dispatchPrAuthStatus(WorkspacePrProbeInput.parse(raw).workspaceId)
+  })
+  ipcMain.handle("workspace.prList", async (_event, raw) => {
+    return dispatchPrList(WorkspacePrProbeInput.parse(raw).workspaceId)
   })
   registerCheckpointIpc()
 }

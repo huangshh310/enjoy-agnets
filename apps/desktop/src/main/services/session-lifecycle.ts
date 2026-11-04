@@ -118,7 +118,8 @@ export const SESSION_KEYED_DELETES = [
   "DELETE FROM session_heartbeats WHERE session_id = ?",
   "DELETE FROM session_drafts WHERE session_id = ?",
   "DELETE FROM session_draft_assets WHERE session_id = ?",
-  "DELETE FROM session_error_dismissed WHERE session_id = ?"
+  "DELETE FROM session_error_dismissed WHERE session_id = ?",
+  "DELETE FROM session_attached_prs WHERE session_id = ?"
 ] as const
 
 function deleteIfTable(db: ReturnType<typeof getDatabase>, sql: string, sessionId: string): void {

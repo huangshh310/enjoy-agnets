@@ -30,6 +30,14 @@ import {
 } from "./workspace-ssh-io.ts"
 import type { WorkspaceRecord } from "./workspace-record.ts"
 import type { WorkspaceChangesSnapshot } from "./workspace-git.ts"
+import {
+  createWorkspacePr,
+  listWorkspacePullRequests,
+  probeWorkspacePr,
+  readGithubAuthStatus,
+  readOriginOwnerRepo,
+  prUrlMatchesRepo
+} from "./workspace-pr.ts"
 
 function hostForWorkspace(record: WorkspaceRecord) {
   return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
@@ -139,4 +147,55 @@ export async function dispatchMove(workspaceId: string, from: string, toDir: str
     return sshWorkspaceMove(hostForWorkspace(ws), ws.remotePath || ".", from, toDir)
   }
   return moveLocal({ workspaceId, from, toDir })
+}
+
+export async function dispatchPrProbe(workspaceId: string) {
+  const ws = await getWorkspace(workspaceId)
+  assertConnected(ws, "git")
+  if (ws.kind === "ssh") {
+    return {
+      reason: "ssh-unsupported" as const,
+      branch: "",
+      upstream: "",
+      aheadCount: 0,
+      draftTitle: "",
+      draftBody: ""
+    }
+  }
+  return probeWorkspacePr(ws.rootPath)
+}
+
+export async function dispatchPrCreate(workspaceId: string, title: string, body: string) {
+  const ws = await getWorkspace(workspaceId)
+  assertConnected(ws, "git")
+  if (ws.kind === "ssh") {
+    return {
+      ok: false as const,
+      reason: "ssh-unsupported" as const,
+      message: "SSH workspaces cannot open a pull request from this slice."
+    }
+  }
+  return createWorkspacePr(ws.rootPath, title, body)
+}
+
+export async function dispatchPrAuthStatus(workspaceId: string) {
+  const ws = await getWorkspace(workspaceId)
+  assertConnected(ws, "git")
+  if (ws.kind === "ssh") return { authed: false }
+  return readGithubAuthStatus(ws.rootPath)
+}
+
+export async function dispatchPrList(workspaceId: string) {
+  const ws = await getWorkspace(workspaceId)
+  assertConnected(ws, "git")
+  if (ws.kind === "ssh") return { ok: false, items: [], message: "ssh-unsupported" }
+  return listWorkspacePullRequests(ws.rootPath)
+}
+
+export async function assertPrSameRepo(workspaceId: string, url: string): Promise<boolean> {
+  const ws = await getWorkspace(workspaceId)
+  if (ws.kind === "ssh") return false
+  const origin = await readOriginOwnerRepo(ws.rootPath)
+  if (!origin) return false
+  return prUrlMatchesRepo(url, origin.owner, origin.repo)
 }
