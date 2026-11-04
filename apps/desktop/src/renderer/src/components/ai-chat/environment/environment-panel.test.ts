@@ -14,6 +14,10 @@ test("Environment 点行打开已有审查栏，不造 GitHub PR", () => {
   assert.ok(panel.includes("environmentChanges"))
   assert.equal(panel.includes("github.com"), false)
   assert.equal(panel.includes("worktree"), false)
+  // 弱回显已挂 PR；禁把「开拉取请求」做成 Environment 主 CTA（Must#6）
+  assert.ok(panel.includes("prEnvEcho"))
+  assert.equal(panel.includes("prOpenAction"), false)
+  assert.equal(panel.includes("OpenPrActions"), false)
 })
 
 test("对话舞台挂 Environment，默认收起、审批时让位、与账本互斥", () => {

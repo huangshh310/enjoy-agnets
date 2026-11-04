@@ -5,6 +5,7 @@ import { RiBookmarkFill } from "@remixicon/react"
 import { LoadingStateGlyph } from "@/components/ai-elements/loading-state"
 import { cx } from "@/utils/cx"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
+import { AttachedPrChip } from "@renderer/components/ai-chat/pr-flow"
 import { SessionRowMenu } from "./session-row-menu"
 import { getWorkflowStatusMeta } from "./session-workflow"
 import { WorkflowStatusGlyph } from "./workflow-status-glyph"
@@ -67,6 +68,7 @@ export function SidebarSessionRow({
         ) : null}
         {statusMeta ? <WorkflowStatusGlyph status={statusMeta.status} className={statusMeta.colorClass} /> : null}
         <SessionRowIdentity label={label} nameClassName={nameClassName} />
+        <AttachedPrChip sessionId={sessionId} compact className="max-w-16" />
         {changesSummary && (changesSummary.additions > 0 || changesSummary.deletions > 0) ? (
           <span
             title="工作区未提交"

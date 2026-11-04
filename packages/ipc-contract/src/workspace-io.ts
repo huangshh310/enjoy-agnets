@@ -332,3 +332,127 @@ export const RestoreCheckpointResult = z.discriminatedUnion("ok", [
   })
 ])
 export type RestoreCheckpointResult = z.infer<typeof RestoreCheckpointResult>
+
+/** P2 切片①：开拉取请求探针 / 创建 / 会话挂 PR。 */
+
+export const PrProbeReason = z.enum([
+  "ok",
+  "not-git",
+  "no-upstream",
+  "no-commits",
+  "not-authed",
+  "ssh-unsupported"
+])
+export type PrProbeReason = z.infer<typeof PrProbeReason>
+
+export const WorkspacePrProbeInput = z
+  .object({
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type WorkspacePrProbeInput = z.infer<typeof WorkspacePrProbeInput>
+
+export const PrAuthStatus = z.enum(["logged-in", "logged-out", "unknown"])
+export type PrAuthStatus = z.infer<typeof PrAuthStatus>
+
+export const WorkspacePrProbeResult = z.object({
+  reason: PrProbeReason,
+  branch: z.string().default(""),
+  upstream: z.string().default(""),
+  aheadCount: z.number().int().nonnegative().default(0),
+  draftTitle: z.string().default(""),
+  draftBody: z.string().default(""),
+  existingPrNumber: z.number().int().positive().optional(),
+  existingPrUrl: z.string().optional(),
+  authStatus: PrAuthStatus.default("unknown"),
+  authLogin: z.string().optional(),
+  stub: z.boolean().optional()
+})
+export type WorkspacePrProbeResult = z.infer<typeof WorkspacePrProbeResult>
+
+export const WorkspacePrCreateInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    title: z.string().trim().min(1).max(200),
+    body: z.string().max(20000).default("")
+  })
+  .strict()
+export type WorkspacePrCreateInput = z.infer<typeof WorkspacePrCreateInput>
+
+export const WorkspacePrCreateResult = z.discriminatedUnion("ok", [
+  z.object({
+    ok: z.literal(true),
+    number: z.number().int().positive(),
+    url: z.string().min(1),
+    title: z.string().default(""),
+    stub: z.boolean().optional()
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.enum(["not-git", "no-upstream", "no-commits", "not-authed", "ssh-unsupported", "create-failed"]),
+    message: z.string().default("")
+  })
+])
+export type WorkspacePrCreateResult = z.infer<typeof WorkspacePrCreateResult>
+
+export const AttachedPrItem = z.object({
+  number: z.number().int().positive(),
+  url: z.string().min(1),
+  title: z.string().default("")
+})
+export type AttachedPrItem = z.infer<typeof AttachedPrItem>
+
+export const SessionAttachedPrs = z.object({
+  primary: z.number().int().positive().nullable(),
+  items: z.array(AttachedPrItem).default([])
+})
+export type SessionAttachedPrs = z.infer<typeof SessionAttachedPrs>
+
+export const SessionAttachedPrsGetInput = z
+  .object({
+    sessionId: z.string().min(1)
+  })
+  .strict()
+export type SessionAttachedPrsGetInput = z.infer<typeof SessionAttachedPrsGetInput>
+
+export const SessionAttachedPrsSetInput = z
+  .object({
+    sessionId: z.string().min(1),
+    attached: SessionAttachedPrs
+  })
+  .strict()
+export type SessionAttachedPrsSetInput = z.infer<typeof SessionAttachedPrsSetInput>
+
+export const WorkspacePrAuthStatusResult = z.object({
+  authed: z.boolean(),
+  login: z.string().optional(),
+  stub: z.boolean().optional()
+})
+export type WorkspacePrAuthStatusResult = z.infer<typeof WorkspacePrAuthStatusResult>
+
+export const WorkspacePrListResult = z.object({
+  ok: z.boolean(),
+  items: z.array(AttachedPrItem).default([]),
+  message: z.string().optional()
+})
+export type WorkspacePrListResult = z.infer<typeof WorkspacePrListResult>
+
+export const SessionAttachedPrAttachInput = z
+  .object({
+    sessionId: z.string().min(1),
+    workspaceId: z.string().min(1),
+    number: z.number().int().positive(),
+    url: z.string().min(1),
+    title: z.string().default(""),
+    makePrimary: z.boolean().default(true)
+  })
+  .strict()
+export type SessionAttachedPrAttachInput = z.infer<typeof SessionAttachedPrAttachInput>
+
+export const SessionAttachedPrSetPrimaryInput = z
+  .object({
+    sessionId: z.string().min(1),
+    number: z.number().int().positive()
+  })
+  .strict()
+export type SessionAttachedPrSetPrimaryInput = z.infer<typeof SessionAttachedPrSetPrimaryInput>

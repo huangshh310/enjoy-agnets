@@ -15,6 +15,10 @@ import {
   SessionArchiveResult,
   SessionDeleteInput,
   SessionIdInput,
+  SessionAttachedPrAttachInput,
+  SessionAttachedPrSetPrimaryInput,
+  SessionAttachedPrsGetInput,
+  SessionAttachedPrsSetInput,
   SessionPatchInput,
   SessionRecapInput,
   SessionRecapResult,
@@ -23,6 +27,13 @@ import {
   SessionTruncateFromInput,
   WorkspaceIdInput
 } from "@enjoy-agents/ipc-contract"
+import {
+  attachPrToSession,
+  getSessionAttachedPrs,
+  setPrimaryAttachedPr,
+  setSessionAttachedPrs
+} from "./services/session-attached-prs.ts"
+import { assertPrSameRepo } from "./services/workspace-io-dispatch.ts"
 import { loadSessionEstimatedCost } from "./services/session-estimated-cost"
 import {
   createSession,
@@ -156,6 +167,31 @@ function registerSessionEditIpc() {
   ipcMain.handle("session.patch", async (_event, raw: unknown) => {
     const input = SessionPatchInput.parse(raw)
     return patchSession(input)
+  })
+  ipcMain.handle("session.attachedPrs.get", async (_event, raw: unknown) => {
+    const input = SessionAttachedPrsGetInput.parse(raw)
+    return getSessionAttachedPrs(input.sessionId)
+  })
+  ipcMain.handle("session.attachedPrs.set", async (_event, raw: unknown) => {
+    const input = SessionAttachedPrsSetInput.parse(raw)
+    return setSessionAttachedPrs(input.sessionId, input.attached)
+  })
+  ipcMain.handle("session.attachedPrs.attach", async (_event, raw: unknown) => {
+    const input = SessionAttachedPrAttachInput.parse(raw)
+    const same = await assertPrSameRepo(input.workspaceId, input.url)
+    if (!same) {
+      return { ok: false as const, reason: "repo-mismatch" as const, attached: getSessionAttachedPrs(input.sessionId) }
+    }
+    const attached = attachPrToSession(
+      input.sessionId,
+      { number: input.number, url: input.url, title: input.title },
+      input.makePrimary
+    )
+    return { ok: true as const, attached }
+  })
+  ipcMain.handle("session.attachedPrs.setPrimary", async (_event, raw: unknown) => {
+    const input = SessionAttachedPrSetPrimaryInput.parse(raw)
+    return setPrimaryAttachedPr(input.sessionId, input.number)
   })
   ipcMain.handle("session.recap", async (_event, raw: unknown) => {
     const input = SessionRecapInput.parse(raw)

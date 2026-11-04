@@ -16,6 +16,8 @@ import { ReviewGateHeader } from "@renderer/components/ai-chat/review-gate/revie
 import type { ReviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate.types"
 import { useT } from "@renderer/i18n"
 import { displaySessionTitle } from "@renderer/lib/session-title"
+import { AttachedPrChip } from "@renderer/components/ai-chat/pr-flow"
+import { useChatStore } from "@renderer/stores/chat-store"
 
 export function ChatStageHeader({
   workspaceName,
@@ -41,6 +43,7 @@ export function ChatStageHeader({
   onToggleEnvironment?: () => void
 }) {
   const t = useT()
+  const sessionId = useChatStore((state) => state.sessionId)
   const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
     <header className="@container/header flex h-12 shrink-0 items-center gap-2 px-5">
@@ -71,6 +74,7 @@ export function ChatStageHeader({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+      <AttachedPrChip sessionId={sessionId} className="hidden @[28rem]/header:inline-flex" />
       {/* 窄头部（768 宽、侧栏停靠时只剩 ~450）：「已完成」小签先藏，不然状态区把改动面板开关挤到 x≈781（窗外）。 */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <div className="hidden @[36rem]/header:contents">

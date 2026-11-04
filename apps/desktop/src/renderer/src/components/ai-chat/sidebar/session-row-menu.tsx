@@ -8,6 +8,7 @@ import {
   RiBookmarkLine,
   RiCheckboxCircleLine,
   RiErrorWarningLine,
+  RiGitPullRequestLine,
   RiInboxArchiveLine,
   RiMoreFill,
   RiPlayCircleLine,
@@ -34,6 +35,7 @@ import {
   sessionMenuMaxHeight,
   type SessionMenuAlign
 } from "./session-menu-placement"
+import { AttachPrDialog } from "@renderer/components/ai-chat/pr-flow"
 import {
   WORKFLOW_STATUS_LIST,
   WORKFLOW_STATUSES,
@@ -62,6 +64,8 @@ export function SessionRowMenu({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const openedByPointer = useRef(false)
   const patchSessionNode = useChatStore((state) => state.patchSessionNode)
+  const workspaceId = useChatStore((state) => state.workspaceId)
+  const [attachOpen, setAttachOpen] = useState(false)
 
   const handleOpenChange = (next: boolean) => {
     if (next) {
@@ -103,6 +107,7 @@ export function SessionRowMenu({
   }
 
   return (
+    <>
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
@@ -186,6 +191,19 @@ export function SessionRowMenu({
           })}
         </DropdownMenuRadioGroup>
 
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          data-testid="session-row-menu-attach-pr"
+          onClick={(e) => {
+            e.stopPropagation()
+            setAttachOpen(true)
+          }}
+          className="cursor-pointer"
+        >
+          <RiGitPullRequestLine className="mr-2 size-4" />
+          <span>{t("chat.prAttachTitle")}</span>
+        </DropdownMenuItem>
+
         {onArchive ? (
           <>
             <DropdownMenuSeparator />
@@ -204,6 +222,13 @@ export function SessionRowMenu({
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
+      <AttachPrDialog
+        open={attachOpen}
+        onOpenChange={setAttachOpen}
+        sessionId={sessionId}
+        workspaceId={workspaceId}
+      />
+    </>
   )
 }
 

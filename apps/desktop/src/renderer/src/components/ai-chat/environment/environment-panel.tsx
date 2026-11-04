@@ -7,6 +7,7 @@ import {
   RiFolder6Line,
   RiGitBranchLine,
   RiGitCommitLine,
+  RiGitPullRequestLine,
   RiGitRepositoryLine,
   RiPushpin2Line
 } from "@remixicon/react"
@@ -21,10 +22,15 @@ import {
 } from "./environment-row"
 import { formatTokens } from "../agent-limits/format-tokens"
 import { useEnvironmentPanel } from "./use-environment-panel"
+import { useAttachedPrs } from "@renderer/components/ai-chat/pr-flow"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
+import { useChatStore } from "@renderer/stores/chat-store"
 
 export function EnvironmentPanel({ open }: { open: boolean }) {
   const t = useT()
   const data = useEnvironmentPanel(open)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const { primaryItem } = useAttachedPrs(open ? sessionId : null)
   if (!open) return null
 
   const changeTrail =
@@ -90,6 +96,13 @@ export function EnvironmentPanel({ open }: { open: boolean }) {
             label={data.workspaceName}
             onClick={() => expandInspector("files")}
           />
+          {primaryItem ? (
+            <EnvironmentRow
+              icon={<RiGitPullRequestLine className="size-4" />}
+              label={t("chat.prEnvEcho", { n: primaryItem.number })}
+              onClick={() => requestOpenExternalQuiet(primaryItem.url)}
+            />
+          ) : null}
           <EnvironmentDivider />
           <EnvironmentSectionLabel>{t("chat.environmentEditor")}</EnvironmentSectionLabel>
           <EnvironmentRow
