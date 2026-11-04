@@ -14,6 +14,7 @@ import { ComposerThinkingChrome } from "./thinking/composer-thinking-chrome"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
+import { ComposerPreviewToggle } from "./composer-preview-toggle"
 import { ComposerOverflowMenu } from "./composer-overflow-menu"
 import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
@@ -36,7 +37,9 @@ export function ComposerFooter({
   canRealtime,
   voiceOpen,
   onVoiceToggle,
-  onPickFiles
+  onPickFiles,
+  previewOpen = false,
+  onPreviewToggle
 }: Pick<
   ComposerProps,
   | "composer"
@@ -54,6 +57,8 @@ export function ComposerFooter({
   voiceOpen: boolean
   onVoiceToggle: () => void
   onPickFiles: () => void
+  previewOpen?: boolean
+  onPreviewToggle?: () => void
 }) {
   const t = useT()
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
@@ -79,6 +84,9 @@ export function ComposerFooter({
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
       <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         <ComposerAttachMenu onPickFiles={onPickFiles} />
+        {onPreviewToggle ? (
+          <ComposerPreviewToggle previewOpen={previewOpen} onToggle={onPreviewToggle} />
+        ) : null}
         <AgentPicker
           modelId={modelId}
           modelLabel={modelLabel}
