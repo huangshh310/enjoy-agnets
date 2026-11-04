@@ -13,6 +13,7 @@ export const zhNav = {
   observability: "可观测性",
   inbox: "消息",
   general: "通用",
+  about: "关于 Enjoy",
   appearance: "外观",
   shortcuts: "键盘快捷键",
   providers: "模型供应商",

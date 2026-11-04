@@ -1,5 +1,5 @@
 /**
- * Settings → General：权限预设、界面语言、当前版本与检查更新。
+ * Settings → General：权限预设、界面语言。版本与更新见「关于 Enjoy」。
  * 顶部看板与 Workspace / MCP 同构，下方仍是 SettingsCard 行。
  * 从智能体发现条进来时顶栏可返回，并滚到已有权限卡。
  */
@@ -24,7 +24,6 @@ import { SettingsHub } from "./settings-hub"
 import { SettingsNotificationsCard } from "./general/settings-notifications-card"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsRow } from "./settings-row"
-import { SettingsUpdateCard } from "./settings-update-card"
 import { parseSettingsSectionSearch } from "./settings-section-search"
 import { SetupGuideReplay } from "@renderer/components/setup-guide/setup-guide-replay"
 import { usePrefUpdate } from "./settings-pref"
@@ -103,7 +102,6 @@ export function GeneralSettings() {
         onUsageNumber={(value) => void update({ usageNumber: value })}
       />
       <SetupGuideReplay />
-      <SettingsUpdateCard />
     </div>
   )
 }

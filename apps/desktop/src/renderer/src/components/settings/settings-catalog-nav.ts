@@ -8,6 +8,7 @@ import {
   RiApps2Line,
   RiFolder6Line,
   RiInboxArchiveLine,
+  RiInformationLine,
   RiKeyboardBoxLine,
   RiPaletteLine,
   RiPulseLine,
@@ -32,6 +33,12 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         labelKey: "nav.general",
         icon: RiSettings4Line,
         keywords: ["permissions", "approval", "language", "defaults", "权限", "语言", "通用", "自动放行", "向导", "入门", "引导"]
+      },
+      {
+        id: "about",
+        labelKey: "nav.about",
+        icon: RiInformationLine,
+        keywords: ["about", "version", "update", "remote", "boundary", "关于", "版本", "更新", "本机跑", "异地控", "边界"]
       },
       {
         id: "appearance",

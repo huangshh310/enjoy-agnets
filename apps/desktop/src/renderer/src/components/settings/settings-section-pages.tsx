@@ -20,6 +20,7 @@ import { SettingsToolsPage } from "./tools/settings-tools-page"
 import { AppearanceSettings } from "./settings-appearance"
 import type { SettingsSectionId } from "./settings-catalog"
 import { GeneralSettings } from "./settings-general"
+import { AboutSettings } from "./settings-about"
 import { GitSettings } from "./settings-git"
 import { SettingsComingSoon } from "./settings-row"
 import { ShortcutSettings } from "./settings-shortcuts"
@@ -56,6 +57,7 @@ function WorkspaceSection() {
 
 const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
   general: GeneralSettings,
+  about: AboutSettings,
   appearance: AppearanceSettings,
   shortcuts: ShortcutSettings,
   providers: ProviderSettings,

@@ -15,6 +15,7 @@ import {
   RiGroupLine,
   RiImageLine,
   RiInboxArchiveLine,
+  RiInformationLine,
   RiKeyboardBoxLine,
   RiNotification3Line,
   RiPaletteLine,
@@ -56,6 +57,7 @@ export function getSettingsNav(t: TranslateFn): SettingsNavGroup[] {
 
 const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: SettingsNavIcon }> = {
   general: { labelKey: "nav.general", icon: RiSettings4Line },
+  about: { labelKey: "nav.about", icon: RiInformationLine },
   appearance: { labelKey: "nav.appearance", icon: RiPaletteLine },
   shortcuts: { labelKey: "nav.shortcuts", icon: RiKeyboardBoxLine },
   providers: { labelKey: "nav.providers", icon: RiShieldKeyholeLine },

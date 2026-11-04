@@ -26,6 +26,27 @@ export const enSettings = {
     autoRunValue: "{count} of 3 on"
   },
 
+
+  about: {
+    hubTitle: "About Enjoy",
+    hubDesc: "Version details and an honest boundary card for local-run, remote-control."
+  },
+
+  remoteSoft: {
+    title: "Runs locally, controlled remotely",
+    lead: "Work and credentials stay on your machine. Another desktop or browser is only a remote — Enjoy on this computer must stay online; shut it down and control stops.",
+    boundaryOnline: "Enjoy on this computer must stay online · not “control while the PC is off”",
+    boundaryNoMobile: "No mobile app in the first wave",
+    boundaryTrend: "Similar to Remote Control trends · no promise of a self-hosted tunnel · not matching commercial Connect pitches",
+    boundaryNotSsh: "≠ P0-R SSH remote workspace (cwd lives on the remote there)",
+    trendLabel: "Trend note",
+    trendAside: "Similar to Remote Control trends · this wave does not promise a self-hosted tunnel · not matching commercial Connect pitches",
+    footnote: "This card = narrative boundary · does not claim a shipped remote-control product · no tunnel / pairing in this wave",
+    collapsedSummary: "Runs locally, controlled remotely · learn the boundaries",
+    collapse: "Collapse",
+    expand: "Expand"
+  },
+
   setupGuide: {
     introTitle: "Welcome to Enjoy Agents",
     introBody: "A local-first coding workspace. Setup takes about a minute.",

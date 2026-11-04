@@ -12,7 +12,7 @@
 2. 有新版本：标题栏出现「有更新」芯片（按钮自身 `no-drag`，高度不变，标题栏不加第二条进度条）。`status === "downloading"` 时文案改为现有下载文案加整数百分比（`snapshot.percent ?? 0`）。其它状态仍是「有更新」。点芯片打开同一个说明对话框；对话框里的进度条保留。开发态不联网时芯片不出现。
 3. 点芯片打开应用内 Dialog，展示版本号与 Release body（更新内容）。禁止 `window.confirm`。
 4. 点「立即更新」：下载（进度条）→ `update-downloaded` 后 main `quitAndInstall` 重启。UI 在 `ready` 再调 `install` 是幂等兜底。不要第三次确认。
-5. 设置 → 通用：当前版本（说明里带状态）+「检查更新」。有新版本同一行变成打开说明。
+5. 设置 → 关于 Enjoy：当前版本（说明里带状态）+「检查更新」。有新版本同一行变成打开说明。
 
 IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.update`（整份 `AppUpdateSnapshot`）。renderer 只走 `window.ide.app`。`release.yml` 在 tag 上校验 `v*` 去掉 v 后等于 `apps/desktop/package.json` 的 `version`；`workflow_dispatch` 也必须在该 tag 上跑。
 

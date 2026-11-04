@@ -1,5 +1,5 @@
 /**
- * 设置 → 通用：当前版本与检查更新。有新版本时打开发行说明对话框。
+ * 设置 → 关于 Enjoy：当前版本与检查更新。有新版本时打开发行说明对话框。
  */
 import { Button } from "@/components/ui/button"
 import { parseAppUpdateSnapshot, type AppUpdateSnapshot } from "@enjoy-agents/ipc-contract"
