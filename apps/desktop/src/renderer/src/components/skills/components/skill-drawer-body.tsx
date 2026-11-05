@@ -3,6 +3,7 @@
  */
 import { RiCheckLine } from "@remixicon/react"
 import type { InstalledSkillItem, SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { skillFrontmatterIssueChip } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { AGENT_ARMORY_PROFILES } from "../constants/agent-armory.constants"
@@ -36,6 +37,33 @@ export function SkillDrawerBody({
         <p className="text-body-regular text-text-secondary leading-relaxed">
           {skill.description}
         </p>
+      ) : null}
+
+      {(skill.issues?.length || skill.allowedTools) ? (
+        <div
+          data-testid="skill-drawer-norm"
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-[#E8E4DE] bg-[#F7F5F2]/80 px-3 py-2"
+        >
+          <span className="text-[10px] text-text-tertiary font-medium">{t("pages.skills.docInspector.normLabel")}</span>
+          {(skill.issues ?? []).map((row) => (
+            <span
+              key={`${row.path}:${row.code}`}
+              data-testid="skill-norm-chip"
+              className="inline-flex items-center rounded-md bg-[#FFF7ED] px-2 py-0.5 text-[10px] font-medium text-[#C2410C] ring-1 ring-[#C2410C]/25"
+            >
+              {skillFrontmatterIssueChip(row)}
+            </span>
+          ))}
+          {skill.allowedTools ? (
+            <span
+              data-testid="skill-allowed-tools-chip"
+              title={t("pages.skills.docInspector.allowedToolsHint")}
+              className="inline-flex items-center gap-1 rounded-md bg-[#F7F5F2] px-2 py-0.5 text-[10px] font-medium text-[#6B645C] ring-1 ring-[#E8E4DE]"
+            >
+              {t("pages.skills.docInspector.allowedToolsLabel")}
+            </span>
+          ) : null}
+        </div>
       ) : null}
 
       {source ? (

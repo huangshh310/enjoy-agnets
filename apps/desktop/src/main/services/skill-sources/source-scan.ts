@@ -62,7 +62,9 @@ export function findSkillPackagesInDirectory(checkoutPath: string): SkillSourceS
         relativeDir: ".",
         skillFilePath: rootFile,
         trigger: parsed.trigger,
-        content: parsed.content
+        content: parsed.content,
+        issues: parsed.issues.length > 0 ? parsed.issues : undefined,
+        allowedTools: parsed.allowedTools
       })
       break
     }
@@ -171,7 +173,9 @@ function collectDirectChildren(
             relativeDir,
             skillFilePath: file,
             trigger: parsed.trigger,
-            content: parsed.content
+            content: parsed.content,
+            issues: parsed.issues.length > 0 ? parsed.issues : undefined,
+            allowedTools: parsed.allowedTools
           })
           break
         }
@@ -209,7 +213,9 @@ function walkTree(
             relativeDir,
             skillFilePath: file,
             trigger: parsed.trigger,
-            content: parsed.content
+            content: parsed.content,
+            issues: parsed.issues.length > 0 ? parsed.issues : undefined,
+            allowedTools: parsed.allowedTools
           })
           break
         }

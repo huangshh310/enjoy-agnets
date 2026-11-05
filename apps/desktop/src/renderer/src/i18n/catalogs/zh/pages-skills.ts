@@ -159,6 +159,10 @@ export const zhSkillsPages = {
   },
 
   itemCard: {
+    localCallsign: "本地呼号",
+    nameInvalid: "名称不合规",
+    missingDescription: "缺描述",
+    descriptionTooLong: "描述过长",
     details: "详情 →"
   },
 
@@ -197,6 +201,10 @@ export const zhSkillsPages = {
   },
 
   docInspector: {
+    normLabel: "规范",
+    normOk: "frontmatter 规范 OK",
+    allowedToolsLabel: "工具名单（仅展示）",
+    allowedToolsHint: "不会自动批准工具",
     copied: "已复制",
     userInvocable: "用户可直接调用"
   },
@@ -215,7 +223,16 @@ export const zhSkillsPages = {
     needWorkspace: "请先打开一个项目工作区后再创建工作区技能",
     title: "新建助手专属技能",
     subtitle: "为你的 AI 助手定制领域规范、上下文指引与触发指令，即插即用自动挂载",
-    footerHint: "创建后将自动完成规范校验并同步至对应 Agent 运行环境",
+    localCallsign: "本地呼号",
+    nameHintEmpty: "请填写技能英文标识",
+    nameHintCharset: "名称只能用小写字母、数字和连字符",
+    nameHintEdge: "名称不能以连字符开头或结尾",
+    nameHintDouble: "名称里不能有连续两个连字符",
+    nameHintMax: "名称最多 64 个字符",
+    descHintEmpty: "请填写功能描述",
+    descHintMax: "描述最多 1024 个字符",
+    validateHint: "名称和描述会按规范检查",
+    footerHint: "名称和描述会按规范检查；工具名单仅展示，不会自动批准",
     cancel: "取消",
     create: "立即创建技能包"
   },

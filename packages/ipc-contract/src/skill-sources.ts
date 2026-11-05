@@ -3,6 +3,7 @@
  * 与 skills.list/create 分离；频道前缀 skills.sources.*。
  */
 import { z } from "zod"
+import { AllowedToolsDisplay, SkillFrontmatterIssue } from "./skill-frontmatter.ts"
 
 export const SkillSourceKind = z.enum(["local", "git"])
 export type SkillSourceKind = z.infer<typeof SkillSourceKind>
@@ -55,8 +56,12 @@ export const SkillSourceSkill = z
     description: z.string().optional(),
     relativeDir: z.string(),
     skillFilePath: z.string().optional(),
+    /** 非标本地呼号 —— 不进标准必填/授权。 */
     trigger: z.string().optional(),
-    content: z.string().optional()
+    content: z.string().optional(),
+    issues: z.array(SkillFrontmatterIssue).optional(),
+    /** 仅展示；绝不预批。 */
+    allowedTools: AllowedToolsDisplay
   })
   .strict()
 export type SkillSourceSkill = z.infer<typeof SkillSourceSkill>
@@ -171,8 +176,12 @@ export const InstalledSkillItem = z
     description: z.string().optional(),
     relativeDir: z.string(),
     skillFilePath: z.string().optional(),
+    /** 非标本地呼号。 */
     trigger: z.string().optional(),
-    content: z.string().optional()
+    content: z.string().optional(),
+    issues: z.array(SkillFrontmatterIssue).optional(),
+    /** 仅展示；绝不预批。 */
+    allowedTools: AllowedToolsDisplay
   })
   .strict()
 export type InstalledSkillItem = z.infer<typeof InstalledSkillItem>
