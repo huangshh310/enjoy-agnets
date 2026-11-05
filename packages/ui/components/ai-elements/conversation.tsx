@@ -8,6 +8,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { uiT, useUiLocale } from "@/i18n/ui-locale";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
+export { useStickToBottomContext };
+
 export type ConversationProps = ComponentProps<typeof StickToBottom>;
 
 export const Conversation = ({ className, ...props }: ConversationProps) => (

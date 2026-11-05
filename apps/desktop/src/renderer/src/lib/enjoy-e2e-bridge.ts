@@ -22,6 +22,7 @@ import { useRightPaneStore } from "@renderer/stores/right-pane-store"
 import { addQuotedContext } from "@renderer/hooks/quoted-context"
 import { forceArchivePrompt } from "@renderer/hooks/deny-then-archive"
 import type { SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
+import { setThreadFindOpen } from "@renderer/components/ai-chat/thread/thread-find/thread-find-store"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
@@ -65,6 +66,12 @@ export type EnjoyE2eBridge = {
   runWithClientRequestId?: (text: string, clientRequestId: string) => Promise<AgentRunResult>
   /** Xvfb 窗常常没有真实 focus，直接上报当前会话。 */
   focusSession?: () => Promise<void>
+  /** P2 list-virtua 自门：灌入足够长的 turn 列表（不经 IPC）。 */
+  seedLongThread?: (count?: number) => { total: number }
+  /** P2 list-virtua 自门：注入一条待批（Dock 外置验收）。 */
+  injectPendingApproval?: () => void
+  clearPendingApproval?: () => void
+  openThreadFind?: () => void
 }
 
 declare global {
@@ -195,6 +202,63 @@ export function createEnjoyE2eBridge(): EnjoyE2eBridge {
       const setFocused = getIde().session.setFocused
       if (typeof setFocused !== "function") return
       await setFocused({ sessionId })
+    },
+    seedLongThread(count = 40) {
+      const store = useChatStore.getState()
+      const n = Math.max(4, Math.min(120, Math.floor(count)))
+      const now = Date.now()
+      const messages = []
+      for (let i = 0; i < n; i += 1) {
+        const createdAt = now - (n - i) * 60_000
+        if (i % 2 === 0) {
+          messages.push({
+            id: `e2e-virtua-u-${i}`,
+            role: "user" as const,
+            content: `长线程用户句 #${i} · 找条锚点 VIRTUA_FIND_${i}_END · ${"正文 ".repeat(12)}`,
+            createdAt
+          })
+        } else {
+          messages.push({
+            id: `e2e-virtua-a-${i}`,
+            role: "assistant" as const,
+            content: `长线程助手句 #${i} · 工具行示意\n\n${"段落内容。".repeat(8)}`,
+            createdAt,
+            tools:
+              i % 6 === 1
+                ? [
+                    {
+                      id: `e2e-tool-${i}`,
+                      name: "read_file",
+                      state: "output-available" as const,
+                      args: { path: `src/demo-${i}.ts` }
+                    }
+                  ]
+                : undefined
+          })
+        }
+      }
+      store.setMessages(messages)
+      if (store.sessionId) markSessionHistoryHydrated(store.sessionId)
+      return { total: messages.length }
+    },
+    injectPendingApproval() {
+      const store = useChatStore.getState()
+      const event = {
+        type: "approval.required" as const,
+        runId: "e2e-virtua-run",
+        sessionId: store.sessionId ?? "e2e-session",
+        approvalId: "e2e-virtua-approval",
+        toolCallId: "e2e-virtua-tc",
+        name: "bash",
+        args: { command: "echo p2-list-virtua-dock" }
+      }
+      store.setPendingApproval(event as never)
+    },
+    clearPendingApproval() {
+      useChatStore.getState().setPendingApproval(null)
+    },
+    openThreadFind() {
+      setThreadFindOpen(true)
     },
     async runWithClientRequestId(text, clientRequestId) {
       if (!hasIde()) throw new Error("ide unavailable")

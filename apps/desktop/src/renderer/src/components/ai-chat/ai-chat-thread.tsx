@@ -1,7 +1,8 @@
 "use client"
 
 import { isComposerRailNotice } from "@renderer/components/ai-chat/composer/runtime-interact/composer-previous-preparing-rail"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { Virtualizer, type VirtualizerHandle } from "virtua"
 import { ThreadFindBar } from "./thread/thread-find/thread-find-bar"
 import { useThreadFindOpen } from "./thread/thread-find/use-thread-find-hotkey"
 import { TranscriptSelectionAction } from "./thread/transcript-selection-action"
@@ -11,7 +12,8 @@ import {
   ConversationContent,
   ConversationScrollButton,
   ConversationScrollOnChange,
-  ConversationViewportStick
+  ConversationViewportStick,
+  useStickToBottomContext
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -29,6 +31,7 @@ import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
 import { useTurnHasLedger } from "./run-ledger/use-turn-has-ledger"
 import { displayThinkingLabel } from "./thread/thinking-label"
 import { lastUserMessageId, shouldScrollOnSend, takeSkipSendScroll, type SendScrollMark } from "./thread/scroll-on-send"
+import { registerThreadVirtuaScroller } from "@renderer/lib/thread-virtua-scroll"
 import { useT } from "@renderer/i18n"
 
 export function AiChatThread({
@@ -57,23 +60,18 @@ export function AiChatThread({
   const sendTick = useSendScrollTick(sessionId, lastUserMessageId(visible))
 
   return (
-    <div data-thread-root="" className="relative flex min-h-6 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
+    <div data-thread-root="" data-thread-virtua="true" className="relative flex min-h-6 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
       <ThreadFindBar open={findOpen} messages={visible} />
       <TranscriptSelectionAction />
       <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">
-        {/* 矮窗收紧上下留白：滚到底时末尾的中断小卡整张露出、× 不被页头一侧裁掉（luna #146 P1）。 */}
-        <ConversationContent className="gap-8 px-8 py-6 pr-16 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:py-1">
-          {visible.map((message, index) => (
-            <ThreadTurnBlock
-              key={message.id}
-              message={message}
-              previous={visible[index - 1]}
-              cutAt={handoffCut}
-              withNotice={message.id === anchorId}
-              index={index}
-              count={visible.length}
-            />
-          ))}
+        {/* 矮窗收紧上下留白：滚到底时末尾的中断小卡整张露出、× 不被页头一侧裁掉（luna #146 P1）。
+            turn 间距改由 virtua item padding 等价 gap-8 / 窄高 gap-2，Content 自身不再 gap。 */}
+        <ConversationContent className="gap-0 px-8 py-6 pr-16 [@media(max-height:640px)]:py-1">
+          <ThreadTurnVirtualList
+            visible={visible}
+            handoffCut={handoffCut}
+            anchorId={anchorId}
+          />
           {last && isLegacyHandoffTurn(last.createdAt, handoffCut) ? <HandoffLegacyDivider /> : null}
 
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
@@ -104,6 +102,79 @@ function useSendScrollTick(sessionId: string | null, lastUserId: string | null):
     markRef.current = next
   }, [sessionId, lastUserId])
   return tick
+}
+
+/**
+ * 仅 ThreadTurnBlock 进 virtua；动态行高（不写死 itemSize）；scroll 容器仍喂 StickToBottom。
+ * PermissionDock / QueuedFollowups / banner / #thread-turn-end 保持虚拟区外。
+ */
+function ThreadTurnVirtualList({
+  visible,
+  handoffCut,
+  anchorId
+}: {
+  visible: ThreadMessage[]
+  handoffCut: number | undefined
+  anchorId: string | null
+}) {
+  const { scrollRef } = useStickToBottomContext()
+  const virtuaRef = useRef<VirtualizerHandle>(null)
+  const idToIndex = useMemo(() => {
+    const map = new Map<string, number>()
+    for (let index = 0; index < visible.length; index += 1) {
+      const message = visible[index]
+      if (message) map.set(message.id, index)
+    }
+    return map
+  }, [visible])
+
+  const keepMounted = useMemo(() => {
+    const indexes: number[] = []
+    for (let index = 0; index < visible.length; index += 1) {
+      if (visible[index]?.streaming) indexes.push(index)
+    }
+    return indexes.length > 0 ? indexes : undefined
+  }, [visible])
+
+  useLayoutEffect(() => {
+    registerThreadVirtuaScroller({
+      scrollToMessageId(messageId) {
+        const index = idToIndex.get(messageId)
+        if (index == null || !virtuaRef.current) return false
+        virtuaRef.current.scrollToIndex(index, { align: "center" })
+        return true
+      }
+    })
+    return () => registerThreadVirtuaScroller(null)
+  }, [idToIndex])
+
+  if (visible.length === 0) return null
+
+  return (
+    <Virtualizer
+      ref={virtuaRef}
+      scrollRef={scrollRef}
+      data={visible}
+      keepMounted={keepMounted}
+    >
+      {(message, index) => (
+        <div
+          key={message.id}
+          data-thread-virtua-item={message.id}
+          className="pb-8 [@media(max-height:640px)]:pb-2"
+        >
+          <ThreadTurnBlock
+            message={message}
+            previous={visible[index - 1]}
+            cutAt={handoffCut}
+            withNotice={message.id === anchorId}
+            index={index}
+            count={visible.length}
+          />
+        </div>
+      )}
+    </Virtualizer>
+  )
 }
 
 function ThreadTurnBlock(props: {
