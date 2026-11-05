@@ -165,11 +165,7 @@ test.describe("P2 diff pierre gate", () => {
             window.evaluate(() => {
               const host = document.querySelector('[data-diff-engine="pierre-shiki-js"]')
               if (!host) return { ok: false, reason: "no-host" }
-              // pierre 可能用 shadow；穿透采样
-              const roots: ParentNode[] = [host]
-              const shadow = (host.querySelector("pierre-file-diff, [class*=pierre]") as HTMLElement | null)
-                ?.shadowRoot
-              // PatchDiff 渲染到 light DOM 或自定义元素
+              // PatchDiff 渲染到 light DOM 或自定义元素（shadow 穿透本刀不强制）
               const all = host.querySelectorAll("span, code, pre")
               let tokenish = 0
               all.forEach((el) => {
