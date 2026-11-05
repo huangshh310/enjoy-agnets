@@ -58,6 +58,8 @@ catalog:
   "@internationalized/date": ^3.12.1
   motion: ^12.42.2
   virtua: 0.49.3
+  "@headless-tree/core": 1.8.0
+  "@headless-tree/react": 1.8.0
   tailwindcss: ^4.1.12
   "@tailwindcss/vite": ^4.1.12
   tailwind-merge: ^3.3.1
