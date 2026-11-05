@@ -45,9 +45,17 @@ test("Must3 · 找条走 messageId→virtua scrollToIndex；短高亮 ≤~400ms"
   assert.match(registry, /scrollToMessageId/)
   assert.match(reveal, /scrollThreadVirtuaToMessage|hasThreadVirtuaScroller/)
   assert.match(reveal, /hasThreadVirtuaScroller\(\)/)
-  assert.match(findBar, /data-thread-find-active/)
-  assert.match(findBar, /400/)
-  assert.match(findBar, /prefers-reduced-motion:\s*reduce/)
+  // 共用 rim：reveal 路径写入；找条只调同一 API，禁双实现
+  assert.match(reveal, /flashThreadFindActive/)
+  assert.match(reveal, /data-thread-find-active/)
+  assert.match(reveal, /ring-2/)
+  assert.match(reveal, /ring-accent-500/)
+  assert.match(reveal, /400/)
+  assert.match(reveal, /prefers-reduced-motion:\s*reduce/)
+  assert.match(reveal, /flashThreadFindActive\(messageId\)/)
+  assert.match(findBar, /clearThreadFindActive|flashThreadFindActive/)
+  assert.match(findBar, /revealThreadFindMatch/)
+  assert.doesNotMatch(findBar, /setAttribute\(\s*["']data-thread-find-active/)
 })
 
 test("Must4 · stick-to-bottom 外壳保留；scroll 容器喂 stick 上下文", () => {

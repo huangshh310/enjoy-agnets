@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } 
 import { RiArrowDownSLine, RiArrowUpSLine, RiCloseLine, RiSearchLine } from "@remixicon/react"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { clearThreadFindActive } from "../../../../lib/search-thread-messages.ts"
 import {
   collectThreadFindMatches,
   revealThreadFindMatch,
@@ -63,52 +64,13 @@ function useFindFocus(open: boolean, inputRef: RefObject<HTMLInputElement | null
   }, [open, inputRef])
 }
 
-/** 滚定后共用 accent rim ≤~400ms；减动偏好下静帧 rim（仍可辨，直到下一条/关闭）。 */
+/** 滚定后共用 accent rim：走 revealThreadMessage → flashThreadFindActive；关闭/切条清 rim。 */
 function useFindHighlight(open: boolean, activeId: string | null) {
   useEffect(() => {
     if (!open || !activeId) return
-    let cancelled = false
-    let clearTimer: ReturnType<typeof setTimeout> | undefined
-    let tries = 0
-    let activeNode: HTMLElement | null = null
-
-    const clear = (node: HTMLElement | null) => {
-      if (!node) return
-      node.removeAttribute("data-thread-find-active")
-      node.classList.remove("ring-2", "ring-accent-500")
-    }
-
-    const apply = (): boolean => {
-      revealThreadFindMatch(activeId)
-      const node = document.querySelector(`[data-thread-message="${CSS.escape(activeId)}"]`)
-      if (!(node instanceof HTMLElement)) return false
-      activeNode = node
-      node.setAttribute("data-thread-find-active", "true")
-      node.classList.add("ring-2", "ring-accent-500")
-      const reduce =
-        typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
-      if (!reduce) {
-        clearTimer = setTimeout(() => {
-          if (!cancelled) clear(node)
-        }, 400)
-      }
-      return true
-    }
-
-    const tick = () => {
-      if (cancelled) return
-      if (apply()) return
-      tries += 1
-      if (tries > 24) return
-      if (typeof requestAnimationFrame === "function") requestAnimationFrame(tick)
-      else setTimeout(tick, 16)
-    }
-    tick()
-
+    revealThreadFindMatch(activeId)
     return () => {
-      cancelled = true
-      if (clearTimer) clearTimeout(clearTimer)
-      clear(activeNode)
+      clearThreadFindActive()
     }
   }, [open, activeId])
 }
