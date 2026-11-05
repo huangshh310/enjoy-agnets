@@ -18,6 +18,8 @@ export const KEYBINDING_CATALOG: readonly KeybindingCommandMeta[] = [
   { command: "nav.back", actionKey: "settings.shortcuts.backWorkspace", descKey: "settings.shortcuts.backWorkspaceDesc", category: "global" },
   { command: "pane.files", actionKey: "settings.shortcuts.filesTree", descKey: "settings.shortcuts.filesTreeDesc", category: "views" },
   { command: "pane.review", actionKey: "settings.shortcuts.reviewDiff", descKey: "settings.shortcuts.reviewDiffDesc", category: "views" },
+  { command: "review.file.next", actionKey: "settings.shortcuts.reviewFileNext", descKey: "settings.shortcuts.reviewFileNextDesc", category: "views" },
+  { command: "review.file.prev", actionKey: "settings.shortcuts.reviewFilePrev", descKey: "settings.shortcuts.reviewFilePrevDesc", category: "views" },
   { command: "pane.terminal", actionKey: "settings.shortcuts.terminal", descKey: "settings.shortcuts.terminalDesc", category: "views" },
   { command: "pane.browser", actionKey: "settings.shortcuts.browser", descKey: "settings.shortcuts.browserDesc", category: "views" },
   { command: "pane.context", actionKey: "settings.shortcuts.context", descKey: "settings.shortcuts.contextDesc", category: "views" },
