@@ -93,7 +93,7 @@ export const enChat = {
   presetNote: "When to use",
   presetRemove: "Remove",
   presetPrompt: "Prompt",
-  presetPromptPlaceholder: "Optional · fills the Composer draft on apply",
+  presetPromptPlaceholder: "Optional · fills the current draft on apply",
   presetHasPrompt: "Has prompt",
   presetDesktopBias: "Prefer desktop control",
   presetDesktopBiasHint: "Only nudges assistant preference — does not auto-approve any action",

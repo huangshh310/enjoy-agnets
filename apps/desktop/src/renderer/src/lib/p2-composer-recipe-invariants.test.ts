@@ -73,7 +73,7 @@ test("Must4 · migrate 软兼容 ≤12；旧无 prompt 零回归路径仍在", (
 test("Must5 · 诚实文案；禁全面 Recipe / Goose / 技能自动批准 / 已批准桌面", () => {
   const zh = read("apps/desktop/src/renderer/src/i18n/catalogs/zh/chat.ts")
   assert.match(zh, /presetPrompt:\s*"提示词"/)
-  assert.match(zh, /presetPromptPlaceholder:\s*"可选 · 套用时填入 Composer 草稿"/)
+  assert.match(zh, /presetPromptPlaceholder:\s*"可选 · 套用时填入当前草稿"/)
   assert.match(zh, /presetDesktopBias:\s*"更倾向桌面操控"/)
   assert.match(zh, /presetDesktopBiasHint:\s*"只影响助手偏好，不会自动批准任何操作"/)
   assert.match(zh, /presetAppliedToast:\s*"已套用「\{name\}」"/)

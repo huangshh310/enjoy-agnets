@@ -92,7 +92,7 @@ export const zhChat = {
   presetNote: "何时使用",
   presetRemove: "删除",
   presetPrompt: "提示词",
-  presetPromptPlaceholder: "可选 · 套用时填入 Composer 草稿",
+  presetPromptPlaceholder: "可选 · 套用时填入当前草稿",
   presetHasPrompt: "有提示词",
   presetDesktopBias: "更倾向桌面操控",
   presetDesktopBiasHint: "只影响助手偏好，不会自动批准任何操作",
