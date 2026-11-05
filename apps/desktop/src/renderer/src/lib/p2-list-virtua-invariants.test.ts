@@ -10,7 +10,7 @@ import { test } from "node:test"
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, "../../../../../..")
 
-function read(...parts) {
+function read(...parts: string[]) {
   return readFileSync(join(root, ...parts), "utf8")
 }
 
