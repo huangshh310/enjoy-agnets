@@ -73,7 +73,9 @@
     "virtua": "catalog:",
     "ws": "catalog:",
     "zod": "catalog:",
-    "zustand": "catalog:"
+    "zustand": "catalog:",
+    "@headless-tree/core": "catalog:",
+    "@headless-tree/react": "catalog:"
   },
   "devDependencies": {
     "@electron-toolkit/tsconfig": "catalog:",

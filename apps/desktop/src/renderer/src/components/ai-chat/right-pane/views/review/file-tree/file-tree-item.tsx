@@ -1,7 +1,8 @@
 /**
- * 文件树单节点：目录可折叠并按列出的叶子暂存；文件行保留单路径 +/−。
+ * 审查文件树行皮：接 @headless-tree item API；选中真源仍是 selectedFilePath。
+ * Git mark / stage +/− 保留；焦点环压成 Agents accent 细环。
  */
-import { useEffect, useMemo, useState } from "react"
+import type { ItemInstance } from "@headless-tree/core"
 import { RiArrowDownSLine, RiArrowRightSLine, RiFolderLine, RiFolderOpenLine } from "@remixicon/react"
 import type { FileTreeNode } from "../types/review.types"
 import { STATUS_CONFIG } from "../constants/review-constants"
@@ -11,78 +12,29 @@ import { FileKindMark } from "@renderer/components/ai-chat/file-kind-mark"
 import { listedStagePaths } from "./listed-stage-paths"
 
 export function FileTreeItem(props: {
-  node: FileTreeNode
-  depth?: number
+  item: ItemInstance<FileTreeNode>
   selectedFilePath: string | null
-  onSelectFile: (path: string) => void
-  defaultExpanded?: boolean
+  treeRoots: FileTreeNode[]
   onStage?: (path: string, action: "add" | "unstage") => void
 }) {
-  const { node, depth = 0, selectedFilePath, onSelectFile, defaultExpanded = true } = props
-  const hasSelectedChild = useMemo(
-    () => containsSelected(node, selectedFilePath),
-    [node, selectedFilePath]
-  )
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded || hasSelectedChild)
-
-  useEffect(() => {
-    if (hasSelectedChild) setIsExpanded(true)
-  }, [hasSelectedChild])
+  const { item, selectedFilePath, treeRoots, onStage } = props
+  const node = item.getItemData()
+  const depth = item.getItemMeta().level
+  const focused = item.isFocused()
+  const itemProps = item.getProps()
 
   if (node.isDir) {
+    const expanded = item.isExpanded()
     return (
-      <DirectoryTreeItem
-        node={node}
-        depth={depth}
-        expanded={isExpanded}
-        onToggle={() => setIsExpanded((prev) => !prev)}
-        selectedFilePath={selectedFilePath}
-        onSelectFile={onSelectFile}
-        defaultExpanded={defaultExpanded}
-        onStage={props.onStage}
-      />
-    )
-  }
-
-  const selected = selectedFilePath != null && sameReviewPath(node.path, selectedFilePath)
-  return (
-    <FileTreeFile
-      node={node}
-      depth={depth}
-      selected={selected}
-      onSelectFile={onSelectFile}
-      onStage={props.onStage}
-    />
-  )
-}
-
-function containsSelected(node: FileTreeNode, selectedFilePath: string | null): boolean {
-  if (!node.isDir || !selectedFilePath) return false
-  const check = (current: FileTreeNode): boolean => {
-    if (!current.isDir) return sameReviewPath(current.path, selectedFilePath)
-    return (current.children ?? []).some(check)
-  }
-  return (node.children ?? []).some(check)
-}
-
-function DirectoryTreeItem(props: {
-  node: FileTreeNode
-  depth: number
-  expanded: boolean
-  onToggle: () => void
-  selectedFilePath: string | null
-  onSelectFile: (path: string) => void
-  defaultExpanded: boolean
-  onStage?: (path: string, action: "add" | "unstage") => void
-}) {
-  const { node, depth, expanded, onToggle, selectedFilePath, onSelectFile, defaultExpanded, onStage } = props
-  return (
-    <div className="flex flex-col select-none">
       <button
+        {...itemProps}
         type="button"
-        onClick={onToggle}
+        data-testid="review-file-tree-folder"
+        data-path={node.path}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
-        className="group flex min-h-7 w-full items-center gap-1.5 py-0.5 pr-2 text-left text-caption-1-medium text-text-secondary hover:bg-background-secondary-hover cursor-pointer transition-colors"
+        className={`group flex min-h-7 w-full items-center gap-1.5 py-0.5 pr-2 text-left text-caption-1-medium text-text-secondary hover:bg-background-secondary-hover cursor-pointer transition-colors outline-none ${
+          focused ? "ring-2 ring-inset ring-accent/35" : ""
+        }`}
       >
         <FolderGlyph expanded={expanded} />
         <span
@@ -91,61 +43,32 @@ function DirectoryTreeItem(props: {
         >
           {node.name}
         </span>
-        <FolderStage node={node} onStage={onStage} />
+        <FolderStage node={node} treeRoots={treeRoots} onStage={onStage} />
       </button>
-      {expanded && node.children ? (
-        <div className="flex flex-col">
-          {node.children.map((child) => (
-            <FileTreeItem
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              selectedFilePath={selectedFilePath}
-              onSelectFile={onSelectFile}
-              defaultExpanded={defaultExpanded}
-              onStage={onStage}
-            />
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
-}
+    )
+  }
 
-function FolderGlyph(props: { expanded: boolean }) {
-  const Arrow = props.expanded ? RiArrowDownSLine : RiArrowRightSLine
-  const Folder = props.expanded ? RiFolderOpenLine : RiFolderLine
-  return (
-    <>
-      <Arrow className="size-3.5 text-text-tertiary" />
-      <Folder className="size-4 text-text-tertiary group-hover:text-accent-500" />
-    </>
-  )
-}
-
-function FileTreeFile(props: {
-  node: FileTreeNode
-  depth: number
-  selected: boolean
-  onSelectFile: (path: string) => void
-  onStage?: (path: string, action: "add" | "unstage") => void
-}) {
-  const { node, depth, selected, onSelectFile, onStage } = props
+  const selected = selectedFilePath != null && sameReviewPath(node.path, selectedFilePath)
   const statusConfig = node.status ? STATUS_CONFIG[node.status] : null
   return (
     <button
+      {...itemProps}
       type="button"
-      onClick={() => onSelectFile(node.path)}
+      data-testid="review-file-tree-file"
+      data-path={node.path}
       style={{ paddingLeft: `${depth * 14 + 14}px` }}
-      className={`group flex min-h-7 w-full items-center justify-between gap-2 py-0.5 pr-2.5 text-left text-caption-1-regular cursor-pointer transition-colors ${
+      className={`group flex min-h-7 w-full items-center justify-between gap-2 py-0.5 pr-2.5 text-left text-caption-1-regular cursor-pointer transition-colors outline-none ${
         selected
           ? "bg-accent-500/12 text-accent-500 font-semibold"
           : "text-text-secondary hover:bg-background-secondary-hover"
-      }`}
+      } ${focused ? "ring-2 ring-inset ring-accent/35" : ""}`}
     >
       <div className="flex min-w-0 items-center gap-1.5">
         <FileKindMark name={node.name} />
-        <span title={node.name} className="min-w-0 truncate leading-5 py-px text-text-primary group-hover:text-accent-500">
+        <span
+          title={node.name}
+          className="min-w-0 truncate leading-5 py-px text-text-primary group-hover:text-accent-500"
+        >
           {node.name}
         </span>
       </div>
@@ -161,15 +84,27 @@ function FileTreeFile(props: {
   )
 }
 
+function FolderGlyph(props: { expanded: boolean }) {
+  const Arrow = props.expanded ? RiArrowDownSLine : RiArrowRightSLine
+  const Folder = props.expanded ? RiFolderOpenLine : RiFolderLine
+  return (
+    <>
+      <Arrow className="size-3.5 text-text-tertiary" />
+      <Folder className="size-4 text-text-tertiary group-hover:text-accent-500" />
+    </>
+  )
+}
+
 function FolderStage(props: {
   node: FileTreeNode
+  treeRoots: FileTreeNode[]
   onStage?: (path: string, action: "add" | "unstage") => void
 }) {
   const t = useT()
-  const { node, onStage } = props
+  const { node, treeRoots, onStage } = props
   if (!onStage) return null
-  const canUnstage = listedStagePaths([node], node.path, "unstage").length > 0
-  const canAdd = listedStagePaths([node], node.path, "add").length > 0
+  const canUnstage = listedStagePaths(treeRoots, node.path, "unstage").length > 0
+  const canAdd = listedStagePaths(treeRoots, node.path, "add").length > 0
   if (!canUnstage && !canAdd) return null
   return (
     <span className="flex shrink-0 items-center gap-1 font-mono text-caption-2-regular">
