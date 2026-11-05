@@ -17,7 +17,9 @@ function read(...parts: string[]) {
 }
 
 function sha256(...parts: string[]) {
-  return createHash("sha256").update(read(...parts)).digest("hex")
+  // Windows checkout 可能 CRLF；与 tip@da7a27a0 LF blob 对齐后再 hash（壳零改）
+  const normalized = read(...parts).replace(/\r\n/g, "\n")
+  return createHash("sha256").update(normalized).digest("hex")
 }
 
 const ON_ARCHIVE = /onArchive=\{\(\)\s*=>\s*requestArchiveSession\(session\.id\)\}/
@@ -98,7 +100,7 @@ test("Must4 · 零壳改：virt-list / virtua-scroll 关键符号与 tip 基线�
   assert.match(virt, /registerSessionListVirtuaScroller/)
   assert.match(scroll, /scrollToIndex|registerSessionListVirtuaScroller/)
   assert.match(scroll, /revealSidebarSession/)
-  // tip 基线 tip@da7a27a0 壳 hash（本刀禁改）
+  // tip 基线 tip@da7a27a0 壳 hash（LF 归一化；本刀禁改）
   assert.equal(
     sha256("apps/desktop/src/renderer/src/components/ai-chat/sidebar/sidebar-session-virt-list.tsx"),
     "4964c65de11ba3e7b667000cf4db5d5c5e01b411ec14cb9b1440a8d36a7bd899"
