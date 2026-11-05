@@ -70,6 +70,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* P2 perf soft Must: decorative spin → static frame; live work still readable via frozen accent rim */
   [data-beam][data-on]::after {
     animation: none;
   }

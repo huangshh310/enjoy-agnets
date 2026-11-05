@@ -102,18 +102,21 @@
 }
 
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__shooting-star {
-  opacity: 1;
-  animation: theme-switch-shooting-star 2s linear infinite;
+  /* P2 perf soft: idle settings chrome still — no night infinite */
+  opacity: 0;
+  animation: none;
 }
 
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__shooting-star-2 {
-  opacity: 1;
-  animation: theme-switch-shooting-star 3s linear infinite 1s;
+  /* P2 perf soft: idle settings chrome still */
+  opacity: 0;
+  animation: none;
 }
 
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__meteor {
-  opacity: 1;
-  animation: theme-switch-meteor 4s linear infinite 2s;
+  /* P2 perf soft: idle settings chrome still */
+  opacity: 0;
+  animation: none;
 }
 
 .theme-switch__stars-cluster {
@@ -135,31 +138,36 @@
 .theme-switch__stars-cluster .star:nth-child(1) {
   top: 20%;
   left: 20%;
-  animation: theme-switch-twinkle 1s infinite ease-in-out;
+  animation: none;
+  opacity: 0.7;
 }
 
 .theme-switch__stars-cluster .star:nth-child(2) {
   top: 30%;
   left: 55%;
-  animation: theme-switch-twinkle 1s infinite ease-in-out 0.3s;
+  animation: none;
+  opacity: 0.7;
 }
 
 .theme-switch__stars-cluster .star:nth-child(3) {
   top: 40%;
   left: 80%;
-  animation: theme-switch-twinkle 1s infinite ease-in-out 0.6s;
+  animation: none;
+  opacity: 0.7;
 }
 
 .theme-switch__stars-cluster .star:nth-child(4) {
   top: 60%;
   left: 30%;
-  animation: theme-switch-twinkle 1s infinite ease-in-out 0.9s;
+  animation: none;
+  opacity: 0.7;
 }
 
 .theme-switch__stars-cluster .star:nth-child(5) {
   top: 70%;
   left: 65%;
-  animation: theme-switch-twinkle 1s infinite ease-in-out 1.2s;
+  animation: none;
+  opacity: 0.7;
 }
 
 .theme-switch__aurora {
@@ -202,13 +210,15 @@
 .theme-switch__comets .comet:nth-child(1) {
   top: 30%;
   left: -10%;
-  animation: theme-switch-comet 4s linear infinite;
+  animation: none;
+  opacity: 0;
 }
 
 .theme-switch__comets .comet:nth-child(2) {
   top: 50%;
   left: -10%;
-  animation: theme-switch-comet 6s linear infinite 2s;
+  animation: none;
+  opacity: 0;
 }
 
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-cluster,
@@ -217,8 +227,10 @@
 }
 
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__aurora {
-  opacity: 1;
-  animation: theme-switch-aurora 8s linear infinite;
+  /* P2 perf soft: idle settings chrome still — static wash ok, no infinite */
+  opacity: 0.35;
+  animation: none;
+  transform: translateY(-100%) translateX(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
