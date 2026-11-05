@@ -1,10 +1,12 @@
 /**
  * 新建技能创作工坊向导 (Create Skill Studio Dialog)。
  * 宽体工坊：工程模版、Markdown 规则编辑与 SKILL.md 实时预览。
+ * 名称/描述按 Agent Skills 规则可感校验；合法才写入。
  */
 import { useEffect, useMemo, useRef, useState } from "react"
 import { RiCheckLine, RiLoader4Line, RiSparklingLine } from "@remixicon/react"
 import type { SkillScope } from "@enjoy-agents/ipc-contract"
+import { skillDescriptionHint, skillNameHint, validateSkillFrontmatter } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useT } from "@renderer/i18n"
@@ -69,13 +71,18 @@ export function CreateSkillDialog({
   }
 
   function handleNameChange(raw: string) {
-    const next = raw.toLowerCase().replace(/[^a-z0-9_-]/g, "")
+    // 新建仅允许 [a-z0-9-]；禁 `_` / 大写（对齐 Agent Skills）
+    const next = raw.toLowerCase().replace(/[^a-z0-9-]/g, "")
     const autoTrigger = `/${name}`
     setName(next)
     if (!trigger || trigger === autoTrigger) {
       setTrigger(next ? `/${next}` : "")
     }
   }
+
+  const nameHint = skillNameHint(name)
+  const descriptionHint = skillDescriptionHint(description)
+  const canCreate = validateSkillFrontmatter({ name, description }).ok
 
   const liveMarkdownContent = useMemo(
     () =>
@@ -96,7 +103,7 @@ export function CreateSkillDialog({
   }
 
   async function handleCreate() {
-    if (!hasIde() || !name.trim()) return
+    if (!hasIde() || !canCreate) return
     if (scope === "workspace" && !workspacePath) {
       setError(t("pages.skills.createDialog.needWorkspace"))
       return
@@ -106,7 +113,7 @@ export function CreateSkillDialog({
     try {
       await getIde().skills.create({
         name: name.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         scope,
         workspacePath: scope === "workspace" ? workspacePath : undefined,
         content: liveMarkdownContent
@@ -122,7 +129,10 @@ export function CreateSkillDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl md:max-w-6xl w-[94vw] max-w-[1080px] h-[640px] max-h-[90vh] gap-0 overflow-hidden rounded-3xl p-0 border border-separator-border/80 bg-background-primary-default shadow-card flex flex-col">
+      <DialogContent
+        data-testid="create-skill-dialog"
+        className="sm:max-w-5xl md:max-w-6xl w-[94vw] max-w-[1080px] h-[640px] max-h-[90vh] gap-0 overflow-hidden rounded-3xl p-0 border border-separator-border/80 bg-background-primary-default shadow-card flex flex-col"
+      >
         <div className="flex items-center justify-between border-b border-separator-border/70 px-6 py-4 bg-background-secondary-default/30 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-600 dark:text-accent-400 border border-accent-500/20 shadow-2xs">
@@ -149,6 +159,8 @@ export function CreateSkillDialog({
             scope={scope}
             hasWorkspace={hasWorkspace}
             error={error}
+            nameHint={nameHint}
+            descriptionHint={descriptionHint}
             onSelectPreset={applyPreset}
             onNameChange={handleNameChange}
             onTriggerChange={setTrigger}
@@ -178,7 +190,8 @@ export function CreateSkillDialog({
             </Button>
             <Button
               size="sm"
-              disabled={!name.trim() || busy}
+              data-testid="create-skill-submit"
+              disabled={!canCreate || busy}
               onClick={() => void handleCreate()}
               className="h-8 px-4 text-caption-2-medium gap-1.5 shadow-xs"
             >

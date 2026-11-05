@@ -159,6 +159,10 @@ export const enSkillsPages = {
   },
 
   itemCard: {
+    localCallsign: "Local callsign",
+    nameInvalid: "Invalid name",
+    missingDescription: "Missing description",
+    descriptionTooLong: "Description too long",
     details: "Details →"
   },
 
@@ -197,6 +201,10 @@ export const enSkillsPages = {
   },
 
   docInspector: {
+    normLabel: "Spec",
+    normOk: "frontmatter OK",
+    allowedToolsLabel: "Tool list (display only)",
+    allowedToolsHint: "Does not auto-approve tools",
     copied: "Copied",
     userInvocable: "User-invocable"
   },
@@ -215,7 +223,16 @@ export const enSkillsPages = {
     needWorkspace: "Open a project workspace before creating a workspace skill",
     title: "Create agent superpowers (Create Skill Studio)",
     subtitle: "Craft domain specs, context guidance, and triggers for your AI assistants — plug and play, auto-mounted",
-    footerHint: "Specs are validated and synced to the target agent runtime after creation",
+    localCallsign: "Local callsign",
+    nameHintEmpty: "Enter a skill id",
+    nameHintCharset: "Use lowercase letters, digits, and hyphens only",
+    nameHintEdge: "Name cannot start or end with a hyphen",
+    nameHintDouble: "Name cannot contain consecutive hyphens",
+    nameHintMax: "Name is at most 64 characters",
+    descHintEmpty: "Enter a description",
+    descHintMax: "Description is at most 1024 characters",
+    validateHint: "Name and description are checked against the spec",
+    footerHint: "Name and description are checked against the spec; tool lists are display-only and never auto-approve",
     cancel: "Cancel",
     create: "Create skill pack"
   },

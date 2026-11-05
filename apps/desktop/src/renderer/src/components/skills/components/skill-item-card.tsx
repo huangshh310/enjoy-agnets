@@ -1,12 +1,13 @@
 /**
  * 单个技能能力卡片 (Skill Item Card)：对标 Raycast / App Store 的独立扩展卡片。
- * 将 189+ 个技能平铺为直观、可搜索、可直接交互的能力单元，告别文件夹式嵌套。
+ * 不合规 mute 旁注；trigger 注「本地呼号」；卡片仍可打开；不删。
  */
 import {
   RiCheckLine,
   RiTerminalBoxLine
 } from "@remixicon/react"
 import type { InstalledSkillItem } from "@enjoy-agents/ipc-contract"
+import { skillFrontmatterListNotes } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import { SKILLS_UI_COPY, TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
@@ -27,9 +28,12 @@ export function SkillItemCard({
   const hostTargets = hostEnabledTargetIds(skill.enabledTargetIds)
   const enabledCount = hostTargets.length
   const trigger = skill.trigger || (skill.name.includes(" ") ? undefined : `@${skill.name}`)
+  const notes = skillFrontmatterListNotes(skill.issues ?? [])
 
   return (
     <div
+      data-testid="skill-item-card"
+      data-skill-name={skill.name}
       onClick={onSelect}
       className={cx(
         "group relative flex flex-col justify-between rounded-2xl border p-4 transition-all cursor-pointer",
@@ -37,7 +41,6 @@ export function SkillItemCard({
       )}
     >
       <div className="flex flex-col gap-2.5">
-        {/* 卡片头部：图标微标 + 技能名称 + 触发词 */}
         <div className="flex items-start justify-between gap-2.5">
           <div className="flex items-center gap-3 min-w-0">
             <div
@@ -62,20 +65,34 @@ export function SkillItemCard({
           </div>
 
           {trigger ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-mono font-medium text-accent-600 dark:text-accent-400 shrink-0 border border-accent-500/20">
+            <span
+              data-testid="skill-local-callsign"
+              title={t("pages.skills.itemCard.localCallsign")}
+              className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-mono font-medium text-accent-600 dark:text-accent-400 shrink-0 border border-accent-500/20"
+            >
               <RiTerminalBoxLine className="size-3" />
               <span>{trigger}</span>
+              <span className="text-caption-2-regular font-sans font-normal text-text-tertiary ml-0.5">
+                {t("pages.skills.itemCard.localCallsign")}
+              </span>
             </span>
           ) : null}
         </div>
 
-        {/* 技能描述 */}
         <p className="text-caption-2-regular text-text-secondary leading-relaxed line-clamp-2 min-h-[32px]">
           {displaySkillDescription(skill.description, SKILLS_UI_COPY.emptySkillDesc)}
         </p>
+
+        {notes.length > 0 ? (
+          <p
+            data-testid="skill-norm-notes"
+            className="text-caption-2-regular text-text-tertiary"
+          >
+            {notes.join(" · ")}
+          </p>
+        ) : null}
       </div>
 
-      {/* 底栏：已生效的 Agent 徽标 */}
       <div className="mt-3.5 pt-2.5 border-t border-separator-border/40 flex items-center justify-between gap-2 text-caption-2-regular">
         <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           {enabledCount === 0 ? (

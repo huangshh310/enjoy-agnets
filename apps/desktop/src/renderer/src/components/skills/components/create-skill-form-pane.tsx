@@ -1,9 +1,17 @@
 /**
  * 新建技能工坊左栏：模版、标识、作用域与 Markdown 规则编辑。
+ * 字数角 + 非法 hint；合法才可创建（按钮门在 dialog）。
  */
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { SkillScope } from "@enjoy-agents/ipc-contract"
+import {
+  AGENT_SKILL_DESCRIPTION_MAX,
+  AGENT_SKILL_DESCRIPTION_WARN_AT,
+  AGENT_SKILL_NAME_MAX,
+  AGENT_SKILL_NAME_WARN_AT
+} from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { CREATE_SKILL_PRESETS } from "../constants/create-skill-presets"
 
 export function CreateSkillFormPane({
@@ -15,6 +23,8 @@ export function CreateSkillFormPane({
   scope,
   hasWorkspace,
   error,
+  nameHint,
+  descriptionHint,
   onSelectPreset,
   onNameChange,
   onTriggerChange,
@@ -30,6 +40,8 @@ export function CreateSkillFormPane({
   scope: SkillScope
   hasWorkspace: boolean
   error: string | null
+  nameHint: string | null
+  descriptionHint: string | null
   onSelectPreset: (id: string) => void
   onNameChange: (value: string) => void
   onTriggerChange: (value: string) => void
@@ -37,6 +49,10 @@ export function CreateSkillFormPane({
   onBodyChange: (value: string) => void
   onScopeChange: (value: SkillScope) => void
 }) {
+  const t = useT()
+  const nameWarn = name.length >= AGENT_SKILL_NAME_WARN_AT
+  const descWarn = description.length >= AGENT_SKILL_DESCRIPTION_WARN_AT
+
   return (
     <div className="md:col-span-7 flex flex-col gap-4 p-6 overflow-y-auto border-r border-separator-border/60">
       {error ? (
@@ -70,21 +86,43 @@ export function CreateSkillFormPane({
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-caption-2-medium font-semibold text-text-primary">
-            技能英文标识 (Slug)
-          </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption-2-medium font-semibold text-text-primary">
+              技能英文标识 (Slug)
+            </span>
+            <span
+              data-testid="create-skill-name-count"
+              className={cx(
+                "text-caption-2-regular tabular-nums",
+                nameWarn ? "text-status-yellow-text" : "text-text-tertiary"
+              )}
+            >
+              {name.length}/{AGENT_SKILL_NAME_MAX}
+            </span>
+          </div>
           <Input
+            data-testid="create-skill-name"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="如: api-doc-writer"
             className="h-8.5 text-caption-2-medium font-mono"
+            aria-invalid={Boolean(nameHint)}
           />
+          {nameHint ? (
+            <span data-testid="create-skill-name-hint" className="text-caption-2-regular text-status-yellow-text">
+              {nameHint}
+            </span>
+          ) : null}
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-caption-2-medium font-semibold text-text-primary">
-            触发指令 (Command)
-          </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption-2-medium font-semibold text-text-primary">
+              触发指令 (Command)
+            </span>
+            <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.createDialog.localCallsign")}</span>
+          </div>
           <Input
+            data-testid="create-skill-trigger"
             value={trigger}
             onChange={(e) => onTriggerChange(e.target.value)}
             placeholder="如: /api-doc"
@@ -94,15 +132,33 @@ export function CreateSkillFormPane({
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-caption-2-medium font-semibold text-text-primary">
-          功能描述 (Description)
-        </span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-caption-2-medium font-semibold text-text-primary">
+            功能描述 (Description)
+          </span>
+          <span
+            data-testid="create-skill-desc-count"
+            className={cx(
+              "text-caption-2-regular tabular-nums",
+              descWarn ? "text-status-yellow-text" : "text-text-tertiary"
+            )}
+          >
+            {description.length}/{AGENT_SKILL_DESCRIPTION_MAX}
+          </span>
+        </div>
         <Input
+          data-testid="create-skill-description"
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="概述此能力在何种场景被 Agent 调度使用…"
           className="h-8.5 text-caption-2-medium"
+          aria-invalid={Boolean(descriptionHint)}
         />
+        {descriptionHint ? (
+          <span data-testid="create-skill-desc-hint" className="text-caption-2-regular text-status-yellow-text">
+            {descriptionHint}
+          </span>
+        ) : null}
       </label>
 
       <div className="flex flex-col gap-1.5">
