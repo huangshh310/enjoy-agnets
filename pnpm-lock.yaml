@@ -191,6 +191,9 @@ catalogs:
     '@monaco-editor/react':
       specifier: ^4.7.0
       version: 4.7.0
+    '@pierre/diffs':
+      specifier: 1.6.4
+      version: 1.6.4
     '@playwright/test':
       specifier: ^1.56.1
       version: 1.62.1
@@ -314,9 +317,6 @@ catalogs:
     recharts:
       specifier: ^2.15.4
       version: 2.15.4
-    shiki:
-      specifier: ^4.4.3
-      version: 4.4.3
     sonner:
       specifier: ^2.0.8
       version: 2.0.8
@@ -359,6 +359,12 @@ catalogs:
 
 overrides:
   '@electron/get': 3.1.0
+  shiki: 4.4.3
+  '@shikijs/core': 4.4.3
+  '@shikijs/engine-javascript': 4.4.3
+  '@shikijs/types': 4.4.3
+  '@shikijs/langs': 4.4.3
+  '@shikijs/themes': 4.4.3
 
 importers:
 
@@ -441,6 +447,9 @@ importers:
       '@lobehub/icons':
         specifier: 'catalog:'
         version: 5.16.0(@lobehub/ui@5.36.1)(@types/react@19.2.18)(antd@6.6.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@7.1.0)
+      '@pierre/diffs':
+        specifier: 'catalog:'
+        version: 1.6.4(@shikijs/themes@4.4.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@remixicon/react':
         specifier: 'catalog:'
         version: 4.9.0(react@19.2.8)
@@ -505,7 +514,7 @@ importers:
         specifier: 'catalog:'
         version: 2.15.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       shiki:
-        specifier: 'catalog:'
+        specifier: 4.4.3
         version: 4.4.3
       sonner:
         specifier: 'catalog:'
@@ -834,7 +843,7 @@ importers:
         specifier: 'catalog:'
         version: 19.2.8(react@19.2.8)
       shiki:
-        specifier: 'catalog:'
+        specifier: 4.4.3
         version: 4.4.3
       sonner:
         specifier: 'catalog:'
@@ -2410,18 +2419,56 @@ packages:
       react: ^18.3.1 || ^19.0.0
       react-dom: ^18.3.1 || ^19.0.0
 
+  '@pierre/diffs@1.6.4':
+    resolution: {integrity: sha512-RsKoruCOp50qaDM3a7BQan5K77xMkGWT1NF01fiYP1PfT3v4CvIjwytNk5WjZG0BesBkMOP2UbrBIDigB1k0ug==}
+    peerDependencies:
+      react: ^18.3.1 || ^19.0.0
+      react-dom: ^18.3.1 || ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
+  '@pierre/highlights@0.4.0':
+    resolution: {integrity: sha512-2a38H7ep3KweGi1fGQpJk+Krod2OMpDIXagKPlqBd1Y9P460T7zQmc66Wm2JAH1SpIG93wCyyhZVrkc5dnAJVQ==}
+
   '@pierre/theme@1.1.0':
     resolution: {integrity: sha512-GC2OWTAfTIIWWYhPCygwG8t2EtePQkRfON4MI2rwIkJylmiyqIttJID2dCL8sUD8cNdEvYkEyfEHHKMeCiDLoQ==}
+    engines: {vscode: ^1.0.0}
+
+  '@pierre/theme@2.0.0':
+    resolution: {integrity: sha512-yNDd9GYLQl1mEUJR8AneJ5e4ohLIHQd/wZLWr4fagt78vS2RwwZNW530vVgHqXFAyFVcFlRmGUD5ramXH46OXw==}
     engines: {vscode: ^1.0.0}
 
   '@pierre/theming@0.0.2':
     resolution: {integrity: sha512-QM1M4stXfnzfaE8I8YbjXSApV8c+2dBsXJj8eYg9WTpBR/cTmCZIcfGnN4p13iRrYu2Br/R/OJfEL7uR8Qjctw==}
     peerDependencies:
       '@pierre/theme': ^1.1.0
-      '@shikijs/themes': ^3.0.0 || ^4.0.0
+      '@shikijs/themes': 4.4.3
       react: ^18.3.1 || ^19.0.0
       react-dom: ^18.3.1 || ^19.0.0
-      shiki: ^3.0.0 || ^4.0.0
+      shiki: 4.4.3
+    peerDependenciesMeta:
+      '@pierre/theme':
+        optional: true
+      '@shikijs/themes':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+      shiki:
+        optional: true
+
+  '@pierre/theming@1.0.2':
+    resolution: {integrity: sha512-RmXLLqtx31UGcR8kZyO5hGAQ1EXz6loT1Cu0BFAGsbnBboIxp2BlomkLfWyvdT4WZXnBGyu25onL1gKpFQuSUw==}
+    peerDependencies:
+      '@pierre/theme': ^1.1.0 || ^2.0.0
+      '@shikijs/themes': 4.4.3
+      react: ^18.3.1 || ^19.0.0
+      react-dom: ^18.3.1 || ^19.0.0
+      shiki: 4.4.3
     peerDependenciesMeta:
       '@pierre/theme':
         optional: true
@@ -9585,11 +9632,38 @@ snapshots:
     transitivePeerDependencies:
       - '@shikijs/themes'
 
+  '@pierre/diffs@1.6.4(@shikijs/themes@4.4.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      '@pierre/highlights': 0.4.0
+      '@pierre/theme': 2.0.0
+      '@pierre/theming': 1.0.2(@pierre/theme@2.0.0)(@shikijs/themes@4.4.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.4.3)
+      diff: 9.0.0
+      hast-util-to-html: 9.0.5
+      lru_map: 0.4.1
+      shiki: 4.4.3
+    optionalDependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+    transitivePeerDependencies:
+      - '@shikijs/themes'
+
+  '@pierre/highlights@0.4.0': {}
+
   '@pierre/theme@1.1.0': {}
+
+  '@pierre/theme@2.0.0': {}
 
   '@pierre/theming@0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.4.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.4.3)':
     optionalDependencies:
       '@pierre/theme': 1.1.0
+      '@shikijs/themes': 4.4.3
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      shiki: 4.4.3
+
+  '@pierre/theming@1.0.2(@pierre/theme@2.0.0)(@shikijs/themes@4.4.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.4.3)':
+    optionalDependencies:
+      '@pierre/theme': 2.0.0
       '@shikijs/themes': 4.4.3
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)

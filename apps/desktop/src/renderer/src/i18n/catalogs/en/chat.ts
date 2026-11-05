@@ -1275,6 +1275,8 @@ export const enChat = {
   reviewDiffPaletteDefault: "Default",
   reviewDiffPaletteDistinct: "Distinct",
   reviewFoldLargeFiles: "Collapse large files",
+  diffFoldLargeHint: "Lots of changes — showing the beginning first.",
+  diffFoldLargeExpand: "Show the rest of the changes",
   reviewRichPreview: "Toggle rich preview",
   reviewWordDiff: "Toggle word diff",
   reviewHideWhitespace: "Hide whitespace",

@@ -1,10 +1,26 @@
 /**
  * Diff 显示选项：隐藏纯空白变动、大文件只留第一块 hunk。
+ * LARGE_FILE_LINES=400 与 foldLargeFiles 语义是本仓大文件折叠真源（勿用 pierre 上下文折叠冒充）。
  */
 
 import type { DiffHunk, FileDiffModel } from "@enjoy-agents/agent-core/diff"
 
-const LARGE_FILE_LINES = 400
+/** 开折叠且总行数超过此阈值 → 只留第一块 hunk（现网语义）。 */
+export const LARGE_FILE_LINES = 400
+
+export function countDiffLines(hunks: DiffHunk[]): number {
+  let total = 0
+  for (const hunk of hunks) total += hunk.lines.length
+  return total
+}
+
+/** 当前 model 在 foldLargeFiles 开启时是否会触发「只留首 hunk」。 */
+export function wouldFoldLargeFile(
+  model: FileDiffModel,
+  foldLargeFiles: boolean
+): boolean {
+  return Boolean(foldLargeFiles) && countDiffLines(model.hunks) > LARGE_FILE_LINES
+}
 
 export function applyDiffViewOptions(
   model: FileDiffModel,
@@ -19,16 +35,10 @@ export function applyDiffViewOptions(
       }))
       .filter((hunk) => hunk.lines.some((line) => line.kind !== "context"))
   }
-  if (options.foldLargeFiles && countLines(hunks) > LARGE_FILE_LINES) {
+  if (options.foldLargeFiles && countDiffLines(hunks) > LARGE_FILE_LINES) {
     hunks = hunks.slice(0, 1)
   }
   return { ...model, hunks }
-}
-
-function countLines(hunks: DiffHunk[]): number {
-  let total = 0
-  for (const hunk of hunks) total += hunk.lines.length
-  return total
 }
 
 /** 相邻删/增行的公共前后缀，用于行内高亮。 */
