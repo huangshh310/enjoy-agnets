@@ -57,6 +57,9 @@ export function AiChatComposer({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const hasDraft = useComposerHasDraft(composer)
+  /* needs_review / 审批等待 = live work（luna §1.1）；approval.required 通常 running=true，显式 OR 防漏 */
+  const pendingApproval = useChatStore((state) => state.pendingApproval)
+  const liveAgentWork = Boolean(running || pendingApproval)
   const capabilities = models.find((model) => model.id === modelId)?.capabilities ?? []
   const canRealtime = capabilities.includes("realtime")
   const sessionId = useChatStore((state) => state.sessionId)
@@ -192,12 +195,13 @@ export function AiChatComposer({
         onSubmit={onSubmit}
         className="relative z-10 w-full min-w-0"
       >
+        {/* P2 perf soft: perpetual beam only for live agent work; focus/draft keep static accent ring */}
         <BorderBeam
           size="md"
           colorVariant="colorful"
           theme="auto"
-          active={isFocused || running || hasDraft}
-          strength={isFocused || running || hasDraft ? 0.75 : 0}
+          active={liveAgentWork}
+          strength={liveAgentWork ? 0.75 : 0}
           className="w-full min-w-0"
         >
           <div

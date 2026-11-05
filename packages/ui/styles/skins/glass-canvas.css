@@ -68,7 +68,8 @@ html[data-skin="glass"] .skin-glass-orb-nw {
   width: 44rem;
   height: 44rem;
   background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-400) 50%, transparent), transparent 80%);
-  animation: glassOrbFloat1 20s ease-in-out infinite alternate;
+  /* P2 perf soft: idle chrome still — freeze perpetual float */
+  animation: none;
 }
 
 html[data-skin="glass"] .skin-glass-orb-ne {
@@ -77,7 +78,8 @@ html[data-skin="glass"] .skin-glass-orb-ne {
   width: 40rem;
   height: 40rem;
   background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-300) 42%, transparent), transparent 80%);
-  animation: glassOrbFloat2 24s ease-in-out infinite alternate-reverse;
+  /* P2 perf soft: idle chrome still — freeze perpetual float */
+  animation: none;
 }
 
 html[data-skin="glass"] .skin-glass-orb-s {
@@ -86,7 +88,8 @@ html[data-skin="glass"] .skin-glass-orb-s {
   width: 46rem;
   height: 46rem;
   background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-500) 32%, transparent), transparent 80%);
-  animation: glassOrbFloat3 22s ease-in-out infinite alternate;
+  /* P2 perf soft: idle chrome still — freeze perpetual float */
+  animation: none;
 }
 
 html.dark[data-skin="glass"] .skin-glass-orb-nw {
@@ -117,7 +120,7 @@ html.dark[data-skin="glass"] .skin-glass-orb-s {
 
 @media (prefers-reduced-motion: reduce) {
   html[data-skin="glass"] .skin-glass-orb {
-    animation-duration: 80s;
+    animation: none;
   }
 }
 
