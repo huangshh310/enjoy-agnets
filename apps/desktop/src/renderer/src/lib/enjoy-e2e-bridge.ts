@@ -15,6 +15,7 @@ import { CREDENTIAL_INVALID, PROVIDER_UNREACHABLE } from "@renderer/lib/send-gat
 import { queryClient } from "@renderer/lib/query-client"
 import { useCrashProbeStore } from "@renderer/components/layout/crash-fallback/crash-probe"
 import { useChatStore } from "@renderer/stores/chat-store"
+import type { ThreadMessage } from "@renderer/stores/chat-store.types"
 import { useSourceFileReveal } from "@renderer/components/ai-chat/thread/sources/source-file-reveal"
 import type { TurnSourceChip } from "@renderer/components/ai-chat/thread/sources/source-chip"
 import { useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
@@ -207,7 +208,7 @@ export function createEnjoyE2eBridge(): EnjoyE2eBridge {
       const store = useChatStore.getState()
       const n = Math.max(4, Math.min(120, Math.floor(count)))
       const now = Date.now()
-      const messages = []
+      const messages: ThreadMessage[] = []
       for (let i = 0; i < n; i += 1) {
         const createdAt = now - (n - i) * 60_000
         if (i % 2 === 0) {
