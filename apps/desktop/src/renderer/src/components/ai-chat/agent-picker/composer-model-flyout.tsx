@@ -96,6 +96,7 @@ function PresetRailButton({ pressed, onPress }: { pressed: boolean; onPress: () 
       title={t("chat.presetTitle")}
       aria-label={t("chat.presetTitle")}
       aria-pressed={pressed}
+      data-testid="composer-preset-rail"
       onClick={onPress}
       className={cx(
         "mt-auto grid size-8 shrink-0 place-items-center rounded-md",

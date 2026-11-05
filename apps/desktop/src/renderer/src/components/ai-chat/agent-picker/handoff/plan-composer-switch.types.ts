@@ -23,10 +23,12 @@ export type EngineHandoffState = {
   draftSummary: string
   filePaths: string[]
   banner: EngineHandoffBanner | null
-  /** 预设换引擎时先挂着，确认交接后再写入探索/执行和思考档。 */
+  /** 预设换引擎时先挂着，确认交接后再写入探索/执行、思考档、提示词与叙事偏置。 */
   pendingPreset: {
     surface: "explore" | "execute"
     reasoningEffort?: "low" | "medium" | "high" | "xhigh"
     acpThoughtLevel?: string
+    promptTemplate?: string
+    desktopBias?: boolean
   } | null
 }

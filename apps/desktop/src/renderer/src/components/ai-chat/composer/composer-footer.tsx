@@ -23,6 +23,7 @@ import { formatComposerRemoteFootnote } from "@renderer/components/settings/work
 import { displayThinkingLabel } from "../thread/thinking-label"
 import { ModelSwitchFootnoteSlot } from "./model-switch/model-switch-footnote-slot"
 import { ComputerUseChip } from "./computer-use-chip"
+import { PresetDesktopBiasPill } from "./preset-desktop-bias-pill"
 import { HostInjectBar } from "./host-inject/host-inject-bar"
 import { useT } from "@renderer/i18n"
 
@@ -97,6 +98,7 @@ export function ComposerFooter({
         <ComposerModelChip modelId={modelId} modelLabel={modelLabel} models={models} />
         <ComposerThinkingChrome compact modelId={modelId} modelLabel={modelLabel} models={models} />
         <ComputerUseChip />
+        <PresetDesktopBiasPill />
         <HostInjectBar />
         <SessionMeter />
       </div>
