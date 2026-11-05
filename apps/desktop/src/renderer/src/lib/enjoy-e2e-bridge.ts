@@ -24,6 +24,7 @@ import { addQuotedContext } from "@renderer/hooks/quoted-context"
 import { forceArchivePrompt } from "@renderer/hooks/deny-then-archive"
 import type { SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import { setThreadFindOpen } from "@renderer/components/ai-chat/thread/thread-find/thread-find-store"
+import { revealSidebarSession as revealSidebarSessionVirtua } from "@renderer/lib/session-list-virtua-scroll"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
@@ -69,6 +70,16 @@ export type EnjoyE2eBridge = {
   focusSession?: () => Promise<void>
   /** P2 list-virtua 自门：灌入足够长的 turn 列表（不经 IPC）。 */
   seedLongThread?: (count?: number) => { total: number }
+  /** P2 sessionlist-virtua 自门：灌入多会话超出侧栏一屏。 */
+  seedManySessions?: (count?: number) => { total: number; grouping: string }
+  /** 切侧栏分组：flat / project / status。 */
+  setSidebarGrouping?: (grouping: "project" | "flat" | "status") => void
+  /** 标当前会话 running，逼出钉住组。 */
+  setRunningForPin?: (running: boolean) => void
+  /** sessionId→virtua scrollToIndex + 短高亮。 */
+  revealSidebarSession?: (sessionId: string) => boolean
+  /** 直接选中会话（树高亮 / 跳转自门）。 */
+  selectSessionById?: (sessionId: string) => void
   /** P2 list-virtua 自门：注入一条待批（Dock 外置验收）。 */
   injectPendingApproval?: () => void
   clearPendingApproval?: () => void
@@ -241,6 +252,51 @@ export function createEnjoyE2eBridge(): EnjoyE2eBridge {
       store.setMessages(messages)
       if (store.sessionId) markSessionHistoryHydrated(store.sessionId)
       return { total: messages.length }
+    },
+    seedManySessions(count = 40) {
+      const store = useChatStore.getState()
+      const n = Math.max(12, Math.min(80, Math.floor(count)))
+      const workspace = store.repositories.find((node) => node.kind === "workspace")
+      if (!workspace) return { total: 0, grouping: store.sidebarGrouping }
+      const now = Date.now()
+      const currentId = store.sessionId
+      const sessions = [] as Array<{
+        id: string
+        title: string
+        updatedAt: number
+        workspaceId: string
+        workflowStatus?: SessionWorkflowStatus
+      }>
+      for (let i = 0; i < n; i += 1) {
+        const id = i === 0 && currentId ? currentId : `e2e-sess-virtua-${i}`
+        sessions.push({
+          id,
+          title: `多会话侧栏 #${i}`,
+          updatedAt: now - i * 45_000,
+          workspaceId: workspace.id,
+          workflowStatus: i === 1 ? ("in_progress" as SessionWorkflowStatus) : undefined
+        })
+      }
+      store.hydrateSessions(
+        { id: workspace.id, name: workspace.name },
+        sessions
+      )
+      store.setSidebarGrouping("flat")
+      return { total: sessions.length, grouping: "flat" }
+    },
+    setSidebarGrouping(grouping) {
+      useChatStore.getState().setSidebarGrouping(grouping)
+    },
+    setRunningForPin(running) {
+      useChatStore.getState().setRunning(running)
+    },
+    revealSidebarSession(sessionId) {
+      return revealSidebarSessionVirtua(sessionId)
+    },
+    selectSessionById(sessionId) {
+      const store = useChatStore.getState()
+      const node = store.repositories.find((n) => n.kind === "session" && n.id === sessionId)
+      store.setSession(sessionId, node?.name ?? sessionId)
     },
     injectPendingApproval() {
       const store = useChatStore.getState()

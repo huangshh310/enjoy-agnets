@@ -1,7 +1,8 @@
 /**
  * 侧栏项目与会话列表：按项目 / 单列表 / 状态组。按项目不复用「最近」。
  */
-import { useMemo, useState } from "react"
+import { useLayoutEffect, useMemo, useState } from "react"
+import { revealSidebarSession } from "@renderer/lib/session-list-virtua-scroll"
 import { isSessionRowActive, type SessionRowClick } from "@renderer/components/ai-chat/sidebar/session-row-highlight"
 import { RiAddLine, RiFolder6Line } from "@remixicon/react"
 import { SidebarActiveSessions } from "@renderer/components/ai-chat/sidebar/sidebar-active-sessions"
@@ -9,6 +10,7 @@ import { SidebarOrganizeMenu } from "@renderer/components/ai-chat/sidebar/sideba
 import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
 import { SidebarStatusGroups } from "@renderer/components/ai-chat/sidebar/sidebar-status-groups"
+import { SidebarSessionVirtList } from "@renderer/components/ai-chat/sidebar/sidebar-session-virt-list"
 import {
   orphanSessions,
   sessionsForWorkspace,
@@ -61,6 +63,10 @@ export function SidebarRepos({
     [allSessions, repositories]
   )
 
+  useLayoutEffect(() => {
+    if (sessionId) revealSidebarSession(sessionId)
+  }, [sessionId])
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex items-center justify-between px-2 pt-2">
@@ -105,10 +111,11 @@ export function SidebarRepos({
           formatTime={formatTime}
         />
       ) : grouping === "flat" ? (
-        <div className="flex flex-col gap-0.5">
-          {allSessions.map((session) => (
+        <SidebarSessionVirtList
+          listTestId="sidebar-session-virt-flat"
+          sessions={allSessions}
+          renderRow={(session) => (
             <SidebarSessionRow
-              key={session.id}
               sessionId={session.id}
               name={session.name}
               active={isSessionRowActive(session.id, sessionId, clickedRow, "tree")}
@@ -124,8 +131,8 @@ export function SidebarRepos({
                 onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
               }}
             />
-          ))}
-        </div>
+          )}
+        />
       ) : (
         <ProjectSessionTree
           workspaces={workspaces}
@@ -221,24 +228,27 @@ function ProjectSessionTree({
           <span className="px-2 text-caption-2-medium font-semibold text-text-tertiary">
             {t("chat.otherChats")}
           </span>
-          {looseSessions.map((session) => (
-            <SidebarSessionRow
-              key={session.id}
-              sessionId={session.id}
-              name={session.name}
-              active={isRowActive(session.id)}
-              updatedAt={session.updatedAt}
-              formatTime={formatTime}
-              flagged={session.flagged}
-              workflowStatus={session.workflowStatus}
-              className="rounded-xl"
-              surface="tree"
-              onSelect={(event) =>
-                onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
-              }
-              onArchive={() => requestArchiveSession(session.id)}
-            />
-          ))}
+          <SidebarSessionVirtList
+            listTestId="sidebar-session-virt-loose"
+            sessions={looseSessions}
+            renderRow={(session) => (
+              <SidebarSessionRow
+                sessionId={session.id}
+                name={session.name}
+                active={isRowActive(session.id)}
+                updatedAt={session.updatedAt}
+                formatTime={formatTime}
+                flagged={session.flagged}
+                workflowStatus={session.workflowStatus}
+                className="rounded-xl"
+                surface="tree"
+                onSelect={(event) =>
+                  onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
+                }
+                onArchive={() => requestArchiveSession(session.id)}
+              />
+            )}
+          />
         </div>
       ) : null}
     </div>

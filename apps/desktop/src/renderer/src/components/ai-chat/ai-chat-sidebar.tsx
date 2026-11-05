@@ -15,6 +15,9 @@ import { openQuickSearch } from "@renderer/components/search/quick-search-dialog
 import { chordGlyphs } from "@renderer/components/settings/keybindings/keybinding-format"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { useMemo, useRef } from "react"
+import { SidebarScrollProvider } from "@renderer/components/ai-chat/sidebar/sidebar-scroll-context"
+import { revealSidebarSession } from "@renderer/lib/session-list-virtua-scroll"
 
 const QUICK_SEARCH_CHORD = "mod+l"
 
@@ -48,6 +51,8 @@ export function AiChatSidebar({
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const initials = userName.slice(0, 1).toUpperCase()
+  const sidebarScrollRef = useRef<HTMLDivElement>(null)
+  const scrollContext = useMemo(() => ({ scrollRef: sidebarScrollRef }), [])
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2.5 py-2">
@@ -85,18 +90,25 @@ export function AiChatSidebar({
       {collapsed ? (
         <div className="min-h-0 flex-1" />
       ) : (
-        <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none]">
-          <SidebarRepos
-            repositories={repositories}
-            expandedIds={expandedIds}
-            sessionId={sessionId}
-            onToggleExpanded={onToggleExpanded}
-            onSelectSession={(id, opts) => {
-              onSelectSession(id, opts)
-              if (pathname !== "/") void navigate({ to: "/" })
-            }}
-            formatTime={formatTime}
-          />
+        <div
+          ref={sidebarScrollRef}
+          data-testid="sidebar-session-scroll"
+          className="mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none]"
+        >
+          <SidebarScrollProvider value={scrollContext}>
+            <SidebarRepos
+              repositories={repositories}
+              expandedIds={expandedIds}
+              sessionId={sessionId}
+              onToggleExpanded={onToggleExpanded}
+              onSelectSession={(id, opts) => {
+                onSelectSession(id, opts)
+                revealSidebarSession(id)
+                if (pathname !== "/") void navigate({ to: "/" })
+              }}
+              formatTime={formatTime}
+            />
+          </SidebarScrollProvider>
         </div>
       )}
       <SidebarFooter

@@ -28,6 +28,7 @@ import { cx } from "@/utils/cx"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { setOpenSessionMenuId } from "@renderer/lib/session-menu-keep-mounted"
 import {
   applySessionMenuCloseFocus,
   SESSION_MENU_COLLISION,
@@ -90,6 +91,9 @@ export function SessionRowMenu({
         setAlign(nextAlign)
         setMaxHeight(sessionMenuMaxHeight(rect, window.innerHeight, SESSION_MENU_COLLISION, nextAlign))
       }
+      setOpenSessionMenuId(sessionId)
+    } else {
+      setOpenSessionMenuId(null)
     }
     setOpen(next)
   }

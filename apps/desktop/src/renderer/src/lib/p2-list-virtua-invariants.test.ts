@@ -69,18 +69,26 @@ test("Must4 · stick-to-bottom 外壳保留；scroll 容器喂 stick 上下文",
   assert.match(conversation, /export \{ useStickToBottomContext \}/)
 })
 
-test("Must5 · 单一 virtua；无 tanstack-virtual；用户面无空成功", () => {
+test("Must5 · 单一 virtua；无 tanstack-virtual；侧栏有且仍单库；用户面无空成功", () => {
   const thread = read("apps/desktop/src/renderer/src/components/ai-chat/ai-chat-thread.tsx")
   const pkg = read("apps/desktop/package.json")
-  const sidebar = read(
-    "apps/desktop/src/renderer/src/components/ai-chat/sidebar/sidebar-workspace-row.tsx"
+  const virtList = read(
+    "apps/desktop/src/renderer/src/components/ai-chat/sidebar/sidebar-session-virt-list.tsx"
+  )
+  const active = read(
+    "apps/desktop/src/renderer/src/components/ai-chat/sidebar/sidebar-active-sessions.tsx"
   )
   assert.match(thread, /from ["']virtua["']/)
   assert.doesNotMatch(thread, /@tanstack\/react-virtual/)
   assert.match(pkg, /"virtua"/)
   assert.doesNotMatch(pkg, /@tanstack\/react-virtual/)
-  assert.doesNotMatch(sidebar, /from ["']virtua["']|Virtualizer|VList/)
+  // 本刀合法专开侧栏会话行 virtua：同库路径，钉住组仍无 virt
+  assert.match(virtList, /from ["']virtua["']/)
+  assert.match(virtList, /Virtualizer/)
+  assert.doesNotMatch(virtList, /@tanstack\/react-virtual/)
+  assert.doesNotMatch(active, /from ["']virtua["']|Virtualizer|VList/)
   assert.doesNotMatch(thread, /全面不卡|事件总线已优化|性能大升级/)
+  assert.doesNotMatch(virtList, /全面 virtua|性能大升级|性能翻倍/)
 })
 
 test("Ban · #212 闲置铬静止不回退（Composer live 闸仍在）", () => {

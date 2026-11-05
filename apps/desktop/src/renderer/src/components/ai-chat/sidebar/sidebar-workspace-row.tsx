@@ -10,6 +10,8 @@ import {
   shouldSwitchWorkspaceOnFolderClick
 } from "@renderer/components/ai-chat/sidebar/sidebar-expand"
 import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
+import { SidebarSessionVirtList } from "@renderer/components/ai-chat/sidebar/sidebar-session-virt-list"
+import { useMemo } from "react"
 import { requestArchiveSession } from "@renderer/hooks/deny-then-archive"
 import {
   createAndOpenSession,
@@ -182,43 +184,85 @@ function SessionList({
           </button>
         </div>
       ) : (
-        [...sessions]
-          .sort((a, b) => {
-            const aFlag = a.flagged ? 1 : 0
-            const bFlag = b.flagged ? 1 : 0
-            if (aFlag !== bFlag) return bFlag - aFlag
-            return b.updatedAt - a.updatedAt
-          })
-          .map((session) => (
-            <SidebarSessionRow
-              key={session.id}
-              sessionId={session.id}
-              name={session.name}
-              active={isRowActive ? isRowActive(session.id) : session.id === sessionId}
-              surface="tree"
-              updatedAt={session.updatedAt}
-              formatTime={formatTime}
-              flagged={session.flagged}
-              workflowStatus={session.workflowStatus}
-              changesSummary={
-                session.id === sessionId && (additions > 0 || deletions > 0)
-                  ? { additions, deletions }
-                  : null
-              }
-              className="rounded-lg"
-              onSelect={(event) => {
-                const opts = { openInTab: event.metaKey || event.ctrlKey }
-                if (workspace.id !== currentWorkspaceId) {
-                  void switchWorkspace(workspace).then(() => onSelectSession(session.id, opts))
-                  return
-                }
-                onSelectSession(session.id, opts)
-              }}
-              onArchive={() => requestArchiveSession(session.id)}
-            />
-          ))
+        <WorkspaceSessionVirt
+          workspace={workspace}
+          sessions={sessions}
+          currentWorkspaceId={currentWorkspaceId}
+          sessionId={sessionId}
+          onSelectSession={onSelectSession}
+          isRowActive={isRowActive}
+          formatTime={formatTime}
+          additions={additions}
+          deletions={deletions}
+        />
       )}
     </div>
+  )
+}
+
+function WorkspaceSessionVirt({
+  workspace,
+  sessions,
+  currentWorkspaceId,
+  sessionId,
+  onSelectSession,
+  isRowActive,
+  formatTime,
+  additions,
+  deletions
+}: {
+  workspace: RepositoryNode
+  sessions: RepositoryNode[]
+  currentWorkspaceId: string | null
+  sessionId: string | null
+  onSelectSession: (id: string, opts?: { openInTab?: boolean }) => void
+  isRowActive?: (id: string) => boolean
+  formatTime: (timestamp: number) => string
+  additions: number
+  deletions: number
+}) {
+  const sorted = useMemo(
+    () =>
+      [...sessions].sort((a, b) => {
+        const aFlag = a.flagged ? 1 : 0
+        const bFlag = b.flagged ? 1 : 0
+        if (aFlag !== bFlag) return bFlag - aFlag
+        return b.updatedAt - a.updatedAt
+      }),
+    [sessions]
+  )
+  return (
+    <SidebarSessionVirtList
+      listTestId="sidebar-session-virt-workspace"
+      sessions={sorted}
+      renderRow={(session) => (
+        <SidebarSessionRow
+          sessionId={session.id}
+          name={session.name}
+          active={isRowActive ? isRowActive(session.id) : session.id === sessionId}
+          surface="tree"
+          updatedAt={session.updatedAt}
+          formatTime={formatTime}
+          flagged={session.flagged}
+          workflowStatus={session.workflowStatus}
+          changesSummary={
+            session.id === sessionId && (additions > 0 || deletions > 0)
+              ? { additions, deletions }
+              : null
+          }
+          className="rounded-lg"
+          onSelect={(event) => {
+            const opts = { openInTab: event.metaKey || event.ctrlKey }
+            if (workspace.id !== currentWorkspaceId) {
+              void switchWorkspace(workspace).then(() => onSelectSession(session.id, opts))
+              return
+            }
+            onSelectSession(session.id, opts)
+          }}
+          onArchive={() => requestArchiveSession(session.id)}
+        />
+      )}
+    />
   )
 }
 
