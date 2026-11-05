@@ -4,6 +4,7 @@
  * sonner 2 用 ol mouseenter → expanded 暂停计时，ol/toast 必须能点到。
  */
 import { Toaster as SonnerToaster } from "sonner"
+import "./sonner-reduce-motion.css"
 import { cn } from "@/lib/utils"
 
 /** 没有贴底 Composer 时的回落：状态栏 / 自动化页脚。归档撤销同一条。 */

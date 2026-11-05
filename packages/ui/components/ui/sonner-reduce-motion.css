@@ -1,0 +1,17 @@
+/**
+ * P2 前端收口 · toast 减动诚实（luna）：
+ * prefers-reduced-motion: reduce → 静帧可读，无滑动入场/退场，无持续动画。
+ * sonner@2 自带同类闸；本文件钉仓内契约，避免只靠库注入 CSS。
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toast],
+  [data-sonner-toast] > * {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* 已挂载：直接在锚点可读，禁止仍停在入场位移/透明 */
+  [data-sonner-toast][data-mounted="true"] {
+    opacity: 1 !important;
+  }
+}
