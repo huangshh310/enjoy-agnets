@@ -144,7 +144,7 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   assert.equal((zh as { chat: { overlayEscHint: string } }).chat.overlayEscHint, "按 Esc 停止")
 })
 
-test("侧栏快速搜索用平台键位，不写死 ⌘L", () => {
+test("侧栏快速搜索跟 resolveKeybindings(search.quick)，不写死 ⌘L / mod+l", () => {
   const here = dirname(fileURLToPath(import.meta.url))
   const sidebar = readFileSync(join(here, "../components/ai-chat/ai-chat-sidebar.tsx"), "utf8")
   const glyphs = readFileSync(
@@ -153,7 +153,9 @@ test("侧栏快速搜索用平台键位，不写死 ⌘L", () => {
   )
   assert.equal(sidebar.includes("⌘L"), false)
   assert.equal(sidebar.includes("chordGlyphs"), true)
-  assert.equal(sidebar.includes('QUICK_SEARCH_CHORD = "mod+l"'), true)
+  assert.equal(sidebar.includes("resolveKeybindings"), true)
+  assert.equal(sidebar.includes('QUICK_SEARCH_CHORD = "mod+l"'), false)
+  assert.equal(sidebar.includes('"mod+l"'), false)
   assert.equal(glyphs.includes('if (part === "mod") return mac ? "⌘" : "Ctrl"'), true)
 })
 

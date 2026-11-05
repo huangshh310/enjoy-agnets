@@ -13,13 +13,13 @@ import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos
 import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
 import { chordGlyphs } from "@renderer/components/settings/keybindings/keybinding-format"
+import { resolveKeybindings } from "@enjoy-agents/ipc-contract"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { useMemo, useRef } from "react"
 import { SidebarScrollProvider } from "@renderer/components/ai-chat/sidebar/sidebar-scroll-context"
 import { revealSidebarSession } from "@renderer/lib/session-list-virtua-scroll"
-
-const QUICK_SEARCH_CHORD = "mod+l"
 
 
 export function AiChatSidebar({
@@ -141,7 +141,12 @@ function SidebarHeader({
 
 function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand?: () => void }) {
   const t = useT()
-  const searchKeys = chordGlyphs(QUICK_SEARCH_CHORD).join(" ")
+  const { data } = useSettingsSnapshot()
+  const searchKeys = useMemo(() => {
+    const resolved = resolveKeybindings(data?.preferences.keybindings ?? [])
+    const hit = resolved.find((rule) => rule.command === "search.quick" && rule.key !== "unassigned")
+    return hit ? chordGlyphs(hit.key).join(" ") : ""
+  }, [data?.preferences.keybindings])
   return (
     <button
       type="button"

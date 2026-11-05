@@ -17,6 +17,7 @@ import { SettingsCard } from "./settings-row"
 import { KEYBINDING_CATALOG, labelKeysForBinding, metaFor, type KeybindingCategory } from "./keybindings/keybinding-catalog"
 import { isApplePlatform, keybindingPlatform } from "./keybindings/keybinding-format"
 import { KeybindingRow } from "./keybindings/keybinding-row"
+import { showAppToast } from "@renderer/lib/app-toast"
 
 type EditState = { command: KeybindingCommand; fromKey: string | null; rowKey: string }
 
@@ -32,7 +33,7 @@ export function ShortcutSettings() {
   const issues = data?.keybindingIssues ?? []
   const rows = useMemo(() => visibleRows(userRules, search, t), [userRules, search, t])
 
-  async function save(rules: KeybindingRule[]) {
+  async function save(rules: KeybindingRule[], toastCommand?: KeybindingCommand) {
     if (rules.length > 256) {
       setError(t("settings.shortcuts.tooMany"))
       return
@@ -41,6 +42,11 @@ export function ShortcutSettings() {
     setEdit(null)
     await patchPreferences({ keybindings: rules })
     await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    if (toastCommand) {
+      showAppToast(t("settings.shortcuts.updated", { name: t(metaFor(toastCommand).actionKey) }), {
+        testId: "keybinding-updated-toast"
+      })
+    }
   }
 
   function removeChord(command: KeybindingCommand, chord: string) {
@@ -73,7 +79,7 @@ export function ShortcutSettings() {
         onEdit={setEdit}
         onDelete={removeChord}
         onReset={(command) => void save(resetKeybindingCommand(userRules, command))}
-        onSave={(rules) => void save(rules)}
+        onSave={(rules, toastCommand) => void save(rules, toastCommand)}
         onCancel={() => setEdit(null)}
       />
       {rows.length === 0 ? <EmptyShortcuts /> : null}
@@ -89,7 +95,7 @@ function ShortcutGroups(props: {
   onEdit: (edit: EditState) => void
   onDelete: (command: KeybindingCommand, chord: string) => void
   onReset: (command: KeybindingCommand) => void
-  onSave: (rules: KeybindingRule[]) => void
+  onSave: (rules: KeybindingRule[], toastCommand?: KeybindingCommand) => void
   onCancel: () => void
 }) {
   const t = useT()
@@ -115,7 +121,7 @@ function ShortcutGroups(props: {
                 onAdd={() => props.onEdit({ command: row.command, fromKey: null, rowKey: row.chord })}
                 onDelete={() => props.onDelete(row.command, row.chord)}
                 onReset={() => props.onReset(row.command)}
-                onSave={props.onSave}
+                onSave={(rules) => props.onSave(rules, row.command)}
                 onCancel={props.onCancel}
               />
             ))}
@@ -206,6 +212,9 @@ function ShortcutHeader({
         </div>
       </div>
       <p className="text-caption-2-regular text-text-tertiary">{t("settings.shortcuts.fixedHint")}</p>
+      <p className="text-caption-2-regular text-text-tertiary" data-testid="shortcuts-session-apply-hint">
+        {t("settings.shortcuts.sessionApplyHint")}
+      </p>
     </div>
   )
 }

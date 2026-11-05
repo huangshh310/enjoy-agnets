@@ -16,7 +16,9 @@ export const KEYBINDING_COMMANDS = [
   "pane.desktop",
   "chat.find",
   "chat.permission.cycle",
-  "shortcuts.sheet"
+  "shortcuts.sheet",
+  "review.file.next",
+  "review.file.prev"
 ] as const
 
 export const KeybindingCommand = z.enum(KEYBINDING_COMMANDS)
@@ -49,7 +51,9 @@ export const KEYBINDING_LIMIT = 256
 const WHEN_BY_COMMAND: Partial<Record<KeybindingCommand, KeybindingWhen>> = {
   "nav.back": "settingsOrInbox",
   "chat.find": "!terminalFocus",
-  "shortcuts.sheet": "!inputFocus"
+  "shortcuts.sheet": "!inputFocus",
+  "review.file.next": "!inputFocus",
+  "review.file.prev": "!inputFocus"
 }
 
 /** 命令自带的 when。用户规则没写 when 时用这份，设置页不能改 when。 */
@@ -71,7 +75,10 @@ export const DEFAULT_KEYBINDINGS: readonly KeybindingRule[] = [
   { key: "mod+f", command: "chat.find", when: "!terminalFocus" },
   // chat.permission.cycle 默认未绑定：Shift+Tab 留给焦点后退，避免空 Composer 悄悄放宽审批（#173）。
   // 命令仍在 KEYBINDING_COMMANDS，可在设置 → 快捷键自行绑定。
-  { key: "?", command: "shortcuts.sheet", when: "!inputFocus" }
+  { key: "?", command: "shortcuts.sheet", when: "!inputFocus" },
+  // Review 前台 j/k：迁入登记表；when=!inputFocus，审查未挂载时 handler 返回 false 不吞键。
+  { key: "j", command: "review.file.next", when: "!inputFocus" },
+  { key: "k", command: "review.file.prev", when: "!inputFocus" }
 ]
 
 const MODIFIER_ORDER = ["mod", "ctrl", "alt", "shift"] as const
