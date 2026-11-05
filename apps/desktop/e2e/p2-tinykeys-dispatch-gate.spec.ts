@@ -123,7 +123,6 @@ test.describe("P2 tinykeys-dispatch gate", () => {
       })
       await waitComposer(window)
       // 侧栏 Kbd 应含 Shift（mod+shift+l）
-      const kbd = window.locator("button[aria-label] kbd, button kbd").first()
       await expect
         .poll(async () => {
           const text = await window.locator("aside kbd, [class*='sidebar'] kbd, button kbd").first().innerText().catch(() => "")
