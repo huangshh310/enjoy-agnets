@@ -59,6 +59,11 @@ test("三处入口遵守停留规则：成功 2400，漏更是错误驻留", () 
   assert.ok(toaster.includes("pointer-events-auto"))
   assert.ok(toaster.includes("h-10 min-h-10"))
   assert.ok(toaster.includes("expand={false}"))
+  assert.ok(toaster.includes('position="bottom-center"'))
+  assert.ok(toaster.includes("visibleToasts={3}"))
+  assert.ok(toaster.includes("gap={8}"))
+  assert.ok(toaster.includes("duration={2400}"))
+  assert.ok(toaster.includes('import "./sonner-reduce-motion.css"'))
 })
 
 test("三处入口走 showAppToast，手写实现已删", () => {

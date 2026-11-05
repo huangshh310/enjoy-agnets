@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P2 · 前端收口 soft · Luna · Enjoy Agents</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#1A1612",
+        mute: "#6B645C",
+        line: "#E8E4DE",
+        paper: "#F7F5F2",
+        card: "#FFFFFF",
+        accent: "#2563EB",
+        soft: "#EFF4FF",
+        ok: "#16A34A",
+        okSoft: "#F0FDF4",
+        danger: "#B42318",
+        dangerSoft: "#FEF3F2",
+        term: "#0F0E0C",
+        termFg: "#E8E4DE",
+        termMute: "#9A9288",
+        termLink: "#7DD3FC",
+      },
+      fontFamily: {
+        sans: ["Inter", "ui-sans-serif", "system-ui", "PingFang SC", "Noto Sans SC", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(26,22,18,0.10)",
+        pop: "0 12px 32px rgba(26,22,18,0.14)",
+        toast: "0 4px 16px rgba(26,22,18,0.12)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEEBE6; }
+  .toast-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: 9999px;
+    border: 1px solid #E8E4DE;
+    background: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(26,22,18,0.12);
+    font-size: 12px;
+    font-weight: 500;
+    color: #1A1612;
+  }
+  .toast-stack { display: flex; flex-direction: column-reverse; align-items: center; gap: 8px; }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .toast-motion { animation: toast-in 180ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .toast-motion { animation: none !important; transition: none !important; }
+  }
+  .reduce-demo .toast-motion { animation: none !important; }
+  .xterm-link { color: #7DD3FC; text-decoration: underline; cursor: pointer; }
+  .narrow-phone { width: 390px; max-width: 100%; }
+  .strike-panel { position: relative; }
+  .strike-panel::after {
+    content: "";
+    position: absolute;
+    inset: 28% 8%;
+    border-top: 2px solid rgba(180, 35, 24, 0.55);
+    transform: rotate(-8deg);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews · luna · 【视觉真源】</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">P2 · 前端收口 soft · sonner + xterm addon</h1>
+    <p class="mt-2 max-w-4xl text-[13px] leading-relaxed text-mute">
+      对照 <code class="rounded bg-paper px-1.5 py-0.5 text-[12px]">p2-frontend-polish-design.md</code> /
+      <code class="rounded bg-paper px-1.5 py-0.5 text-[12px]">p2-frontend-polish-product.md</code> ·
+      拍板 ①：Toast <strong class="text-ink">底中锚</strong> + clearance · 堆叠 3 · ≥3 套同皮 ·
+      ② 终端 search/links/CJK/webgl · 外链走 main ·
+      ③ reduce 静帧 · ④ Agents ink/paper/accent · <strong class="text-ink">禁 Clay</strong> ·
+      ⑤ 零扩张。
+      <strong class="text-ink">不宣称应用 1:1 · 非真机过门</strong>。
+    </p>
+    <p class="mt-2 text-[12px] text-mute">基线 main@9b6d57b2 · I3 / ink / ⑤ 仍停 · 先不派 mike · 不启 Electron · 不占 CDP · leo 并行钉包版本 · 无 arch</p>
+  </header>
+
+  <main class="mx-auto max-w-6xl space-y-10 px-6 py-8">
+    <section class="rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <p class="font-semibold text-ink">一页四屏 + 三入口附录 · 对齐产品门 1–4 · 真机自拍见设计 §4.2</p>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <span class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/25">① Toast 统一堆叠</span>
+        <span class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/25">② 终端 addon 可感</span>
+        <span class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/25">③ reduce 静帧</span>
+        <span class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/25">④ 零扩张/不挡</span>
+        <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] font-medium text-mute ring-1 ring-line">⑤ 三入口同皮</span>
+      </div>
+      <p class="mt-3 text-[12px] text-mute">用户面只可「提示更干净 / 终端更好用」· 禁空成功营销。</p>
+    </section>
+
+    <!-- ========== ① Toast 统一堆叠 ========== -->
+    <section class="space-y-3">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">屏 ① · 产品门 #1 · 拍板 ①</p>
+          <h2 class="text-lg font-semibold text-ink">Toast 统一 · 底中锚 · 堆叠上限 3</h2>
+        </div>
+        <p class="rounded-full bg-soft px-2.5 py-0.5 text-[11px] font-medium text-accent ring-1 ring-accent/25">bottom-center · clearance</p>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+        <div class="relative overflow-hidden rounded-2xl border border-line bg-card shadow-dock">
+          <!-- chrome -->
+          <div class="flex h-[420px]">
+            <aside class="flex w-14 shrink-0 flex-col items-center gap-3 border-r border-line bg-paper/80 py-3">
+              <div class="size-7 rounded-lg bg-ink/90"></div>
+              <div class="size-6 rounded-md bg-line"></div>
+              <div class="size-6 rounded-md bg-line"></div>
+              <div class="mt-auto size-6 rounded-full bg-line"></div>
+            </aside>
+            <div class="relative flex min-w-0 flex-1 flex-col">
+              <header class="flex items-center justify-between border-b border-line px-3 py-2">
+                <p class="text-[12px] font-semibold text-ink">会话 · 提示更干净</p>
+                <p class="text-[10px] text-mute">右栏 Diff / 终端不抢 toast 角</p>
+              </header>
+              <div class="flex-1 space-y-3 bg-paper/40 p-4">
+                <div class="rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">用户：帮我更新技能源并打开预览</div>
+                <div class="rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-ink">助手：好的，已处理完这几步。</div>
+                <div class="h-16 rounded-xl border border-dashed border-line bg-card/60"></div>
+              </div>
+              <!-- toast stack -->
+              <div class="pointer-events-none absolute inset-x-0 bottom-[72px] z-20 flex justify-center px-3">
+                <div class="toast-stack">
+                  <div class="toast-pill toast-motion">更新了 2 个</div>
+                  <div class="toast-pill toast-motion">已写入 Enjoy · 下一轮可注入</div>
+                  <div class="toast-pill toast-motion relative pr-8">
+                    有源未更新
+                    <span class="absolute -left-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-line bg-card text-[10px] text-mute">×</span>
+                  </div>
+                </div>
+              </div>
+              <!-- composer clearance -->
+              <div class="border-t border-line bg-card px-3 py-2" data-toast-clearance>
+                <div class="flex items-center gap-2 rounded-xl border border-line bg-paper px-3 py-2">
+                  <span class="flex-1 text-[12px] text-mute">写消息…</span>
+                  <span class="rounded-lg bg-accent px-2.5 py-1 text-[11px] font-medium text-white">发送</span>
+                </div>
+                <p class="mt-1 text-center text-[9px] text-mute">clearance ↑ toast 贴 Composer 上沿 · 不挡发送</p>
+              </div>
+            </div>
+            <aside class="hidden w-36 shrink-0 border-l border-line bg-paper/50 p-2 sm:block">
+              <p class="text-[10px] font-semibold text-mute">Diff / 终端</p>
+              <div class="mt-2 space-y-1 font-mono text-[9px] text-mute">
+                <div class="rounded bg-okSoft px-1 text-ok">+ readable</div>
+                <div class="rounded bg-dangerSoft px-1 text-danger">- clutter</div>
+              </div>
+              <p class="mt-3 text-[9px] leading-snug text-mute">右下若放 toast 会与此抢角 → 故锁底中</p>
+            </aside>
+          </div>
+        </div>
+        <div class="space-y-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[12px] font-semibold text-ink">拍板要点</p>
+          <ul class="space-y-2 text-[12px] leading-relaxed text-mute">
+            <li>· 锚点 <strong class="text-ink">底中</strong>（Stage 中线），非右下 / 非顶边</li>
+            <li>· 堆叠上限 <strong class="text-ink">3</strong> · gap 8 · expand 关</li>
+            <li>· 成功 2400ms · 错误/带动作驻留</li>
+            <li>· 皮：胶囊 · paper/ink · <span class="text-danger line-through">Clay</span></li>
+            <li>· ≥3 套入口同皮（见帧 ⑤）</li>
+          </ul>
+          <div class="rounded-xl bg-soft px-3 py-2 text-[11px] text-accent">不挡 Composer / Dock / Diff 主阅读</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ② 终端 addon ========== -->
+    <section class="space-y-3">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">屏 ② · 产品门 #2 · 拍板 ②</p>
+          <h2 class="text-lg font-semibold text-ink">终端 · search / links / CJK / webgl 可感</h2>
+        </div>
+        <p class="rounded-full bg-soft px-2.5 py-0.5 text-[11px] font-medium text-accent ring-1 ring-accent/25">外链 → main</p>
+      </div>
+      <div class="overflow-hidden rounded-2xl border border-line bg-card shadow-dock">
+        <div class="flex h-[380px]">
+          <aside class="flex w-12 shrink-0 flex-col items-center gap-2 border-r border-line bg-paper/80 py-3">
+            <div class="size-6 rounded-md bg-ink/80"></div>
+            <div class="size-5 rounded-md bg-line"></div>
+          </aside>
+          <div class="flex min-w-0 flex-1 flex-col border-r border-line">
+            <div class="border-b border-line px-3 py-2 text-[11px] text-mute">线程区（示意）· 本帧焦点在右栏终端</div>
+            <div class="flex-1 bg-paper/30 p-3 text-[11px] text-mute">…</div>
+            <div class="border-t border-line px-3 py-2 text-[11px] text-mute">Composer · 不受终端查找条影响</div>
+          </div>
+          <div class="relative flex w-[52%] min-w-[240px] flex-col bg-term">
+            <div class="flex items-center gap-2 border-b border-white/10 px-3 py-2">
+              <span class="rounded bg-white/10 px-2 py-0.5 text-[10px] text-termFg">终端</span>
+              <span class="text-[10px] text-termMute">webgl · unicode11</span>
+              <span class="ml-auto text-[9px] text-termMute">xterm 5 · 禁升 6</span>
+            </div>
+            <!-- search bar -->
+            <div class="absolute right-2 top-10 z-20 flex w-56 items-center gap-1 rounded-xl border border-line bg-card px-2 py-1.5 shadow-pop">
+              <span class="text-[11px] text-mute">⌕</span>
+              <span class="flex-1 text-[11px] text-ink">路径</span>
+              <span class="size-5 rounded text-center text-[10px] text-mute">↑</span>
+              <span class="size-5 rounded text-center text-[10px] text-mute">↓</span>
+              <span class="size-5 rounded text-center text-[10px] text-mute">×</span>
+            </div>
+            <div class="flex-1 overflow-hidden p-3 font-mono text-[11px] leading-relaxed text-termFg">
+              <p><span class="text-termMute">$</span> cat README.md</p>
+              <p class="mt-2">Enjoy Agents · 终端更好用</p>
+              <p class="mt-1">中文宽度：你好世界 · 全角「测试」对齐</p>
+              <p class="mt-1">文档：<span class="xterm-link" title="点击打开链接">https://example.com/docs</span></p>
+              <p class="mt-3 text-[10px] text-termMute">查找条 = pane 内右上 · 不与左栏/Composer 死撞</p>
+              <p class="mt-1 text-[10px] text-termMute">点链 → main openExternal · 默认无全局 toast</p>
+              <div class="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[9px] text-termMute">
+                <span class="size-1.5 rounded-full bg-ok"></span> webgl 开 · 不花屏
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div class="rounded-xl border border-line bg-card px-3 py-2 text-[11px] text-mute"><strong class="text-ink">search</strong> · ⌘F · 上/下一条 · Esc 关</div>
+        <div class="rounded-xl border border-line bg-card px-3 py-2 text-[11px] text-mute"><strong class="text-ink">links</strong> · http(s) · 禁 window.open</div>
+        <div class="rounded-xl border border-line bg-card px-3 py-2 text-[11px] text-mute"><strong class="text-ink">CJK / webgl</strong> · u11 · 失败回落 DOM</div>
+      </div>
+    </section>
+
+    <!-- ========== ③ reduce 静帧 ========== -->
+    <section class="space-y-3 reduce-demo">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">屏 ③ · 产品门 #3 · 拍板 ③</p>
+          <h2 class="text-lg font-semibold text-ink">reduce · 静帧 toast 可读 · 主流程无死路</h2>
+        </div>
+        <p class="rounded-full bg-paper px-2.5 py-0.5 text-[11px] font-medium text-mute ring-1 ring-line">prefers-reduced-motion</p>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div class="relative overflow-hidden rounded-2xl border border-line bg-card shadow-dock">
+          <div class="border-b border-line bg-paper/70 px-3 py-2 text-[11px] font-medium text-ink">减动开 · 无滑动入场</div>
+          <div class="relative h-56 bg-paper/40 p-4">
+            <div class="rounded-xl border border-line bg-card p-3 text-[12px] text-mute">线程可读 · 无装饰循环</div>
+            <div class="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center">
+              <div class="toast-pill">已在浏览器打开</div>
+            </div>
+            <div class="absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-xl border border-line bg-card px-3 py-2">
+              <span class="flex-1 text-[11px] text-mute">Composer 可点</span>
+              <span class="rounded-md bg-accent px-2 py-1 text-[10px] font-medium text-white">发送</span>
+            </div>
+          </div>
+          <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静帧条在锚点 · 关钮/动作仍可点 · 禁长循环</p>
+        </div>
+        <div class="space-y-3 rounded-2xl border border-line bg-card p-4">
+          <p class="text-[12px] font-semibold text-ink">主流程抽验（不挡）</p>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="rounded-lg border border-ok/30 bg-okSoft px-2 py-2 text-ok">Composer ✓</div>
+            <div class="rounded-lg border border-ok/30 bg-okSoft px-2 py-2 text-ok">新建会话 ✓</div>
+            <div class="rounded-lg border border-ok/30 bg-okSoft px-2 py-2 text-ok">Dock / 审批 ✓</div>
+            <div class="rounded-lg border border-ok/30 bg-okSoft px-2 py-2 text-ok">设置 / 自动化 ✓</div>
+          </div>
+          <p class="text-[11px] leading-relaxed text-mute">默认允许短距单次入场；reduce 下取消滑动，瞬时可读。不新增长驻彩虹。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ④ 零扩张 ========== -->
+    <section class="space-y-3">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">屏 ④ · 产品门 #4 · 拍板 ⑤</p>
+          <h2 class="text-lg font-semibold text-ink">零扩张 · 主流程不挡 · 禁空成功</h2>
+        </div>
+        <p class="rounded-full bg-dangerSoft px-2.5 py-0.5 text-[11px] font-medium text-danger ring-1 ring-danger/20">扩张 = FAIL</p>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[12px] font-semibold text-ink">本刀只做</p>
+          <ul class="mt-2 space-y-1.5 text-[12px] text-mute">
+            <li>· sonner Toast 统一（提示更干净）</li>
+            <li>· xterm 5 addon 可感（终端更好用）</li>
+            <li>· reduce 诚实 · 外链走 main</li>
+          </ul>
+          <p class="mt-4 text-[12px] font-semibold text-ink">用户面可写</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span class="rounded-full bg-soft px-2.5 py-1 text-[11px] text-accent">提示更干净</span>
+            <span class="rounded-full bg-soft px-2.5 py-1 text-[11px] text-accent">终端更好用</span>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-danger/25 bg-dangerSoft/40 p-4">
+          <p class="text-[12px] font-semibold text-danger">禁（做了 = 扩张 FAIL）</p>
+          <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">tinykeys 大翻</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">headless-tree</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">SessionList virtua</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">事件批 RAF</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">I3 · ink · ⑤</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">升 xterm 6</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">renderer 直开外链</div>
+            <div class="strike-panel rounded-lg border border-danger/20 bg-card px-2 py-2 text-[11px] text-mute">Queue / Steer / Diff 主路径</div>
+          </div>
+          <p class="mt-3 text-[11px] text-danger">禁：「前端全面升级 / 性能翻倍 / 已全面重构」</p>
+        </div>
+      </div>
+      <div class="narrow-phone mx-auto rounded-2xl border border-line bg-card p-3 shadow-dock sm:mx-0">
+        <p class="text-[10px] font-semibold text-mute">窄窗抽验 · toast 仍底中抬高 · 发送可点</p>
+        <div class="relative mt-2 h-40 rounded-xl bg-paper/50">
+          <div class="absolute inset-x-0 bottom-12 flex justify-center">
+            <div class="toast-pill text-[11px]">更新了 1 个</div>
+          </div>
+          <div class="absolute inset-x-2 bottom-2 rounded-lg border border-line bg-card px-2 py-1.5 text-[10px] text-mute">发送区 clearance ✓</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ⑤ 三入口同皮 ========== -->
+    <section class="space-y-3">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">附录帧 ⑤ · 拍板 ① 入口对照</p>
+          <h2 class="text-lg font-semibold text-ink">≥3 套入口 · 同一胶囊皮</h2>
+        </div>
+      </div>
+      <div class="grid gap-3 md:grid-cols-3">
+        <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">skills</p>
+          <p class="mt-1 text-[12px] text-mute">技能源更新</p>
+          <div class="mt-4 flex justify-center"><div class="toast-pill">更新了 2 个</div></div>
+          <p class="mt-3 text-center text-[10px] text-mute">漏更驻留：有源未更新</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">curated</p>
+          <p class="mt-1 text-[12px] text-mute">精选写入</p>
+          <div class="mt-4 flex justify-center"><div class="toast-pill">已写入 Enjoy · 下一轮可注入</div></div>
+          <p class="mt-3 text-center text-[10px] text-mute">tone success · 2400ms</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">session-preview</p>
+          <p class="mt-1 text-[12px] text-mute">在浏览器打开</p>
+          <div class="mt-4 flex justify-center"><div class="toast-pill">已在浏览器打开</div></div>
+          <p class="mt-3 text-center text-[10px] text-mute">人话 · 无工程词</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="border-t border-line pb-10 pt-6 text-[12px] text-mute">
+      <p>luna · Asia/Shanghai 2026-11-05 · 对照 product · 基 main@9b6d57b2 · 先不派 mike · 不启 Electron/CDP · I3/ink/⑤ 仍停</p>
+      <p class="mt-1">Agents ink/paper/accent · 禁旅行 Clay · 真机过门 ≠ 本 HTML</p>
+    </footer>
+  </main>
+</body>
+</html>
