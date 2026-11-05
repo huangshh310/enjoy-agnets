@@ -9,6 +9,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import { SidebarSessionRow } from "./sidebar-session-row"
+import { SidebarSessionVirtList } from "./sidebar-session-virt-list"
 import { WORKFLOW_STATUSES } from "./session-workflow"
 import { WORKFLOW_STATUS_ICONS } from "./workflow-status-glyph"
 
@@ -68,26 +69,30 @@ export function SidebarStatusGroups({
                 {group.items.length}
               </span>
             </div>
-            {group.items.map((session) => (
-              <SidebarSessionRow
-                key={session.id}
-                sessionId={session.id}
-                name={session.name}
-                active={session.id === sessionId}
-                updatedAt={session.updatedAt}
-                formatTime={formatTime}
-                flagged={session.flagged}
-                workflowStatus={session.workflowStatus}
-                changesSummary={
-                  session.id === sessionId && (additions > 0 || deletions > 0)
-                    ? { additions, deletions }
-                    : null
-                }
-                className="rounded-xl"
-                nameClassName="text-body-medium"
-                onSelect={(event) => onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })}
-              />
-            ))}
+            <SidebarSessionVirtList
+              listTestId={`sidebar-session-virt-status-${group.key}`}
+              sessions={group.items}
+              renderRow={(session) => (
+                <SidebarSessionRow
+                  sessionId={session.id}
+                  name={session.name}
+                  active={session.id === sessionId}
+                  updatedAt={session.updatedAt}
+                  formatTime={formatTime}
+                  flagged={session.flagged}
+                  workflowStatus={session.workflowStatus}
+                  changesSummary={
+                    session.id === sessionId && (additions > 0 || deletions > 0)
+                      ? { additions, deletions }
+                      : null
+                  }
+                  className="rounded-xl"
+                  nameClassName="text-body-medium"
+                  surface="tree"
+                  onSelect={(event) => onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })}
+                />
+              )}
+            />
           </div>
         )
       })}
