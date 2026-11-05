@@ -60,6 +60,7 @@ import {
   preparedSendSnapshot
 } from "./composer-send-snapshot"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
+import { recordRecentPrompt } from "../../components/ai-chat/composer/prompt-library/record-recent-prompt"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
 import {
@@ -304,6 +305,7 @@ async function sendComposerOnce(
         : null
     const messages = beginOptimisticTurn(store, payload)
     optimisticContent = payload.content
+    recordRecentPrompt(payload.content)
     if (laterTyped !== null) {
       if (useChatStore.getState().composer !== laterTyped) useChatStore.getState().setComposer(laterTyped)
       // 框里没有后打的字：这个会话的草稿（内存 + 落盘）不能还留着 A。
