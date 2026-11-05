@@ -18,7 +18,6 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "test": "node --experimental-strip-types --import ./src/main/services/test-hooks/register.mjs --test \"src/**/*.test.ts\"",
-
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test:e2e": "playwright test -c e2e/playwright.config.ts",
     "postinstall": "electron-builder install-app-deps",
@@ -70,6 +69,7 @@
     "sonner": "catalog:",
     "tailwind-merge": "catalog:",
     "electron-updater": "^6.6.2",
+    "virtua": "catalog:",
     "ws": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"

@@ -1,7 +1,9 @@
 /**
  * ⌘L 搜当前线程消息。满 2 个字符才搜，最近的在前。
+ * 找条 / 刻度 / 引用跳转：优先 messageId → virtua scrollToIndex（虚拟化后 DOM 可能未挂）。
  */
 import { requestTurnReveal } from "./thread-turn-reveal.ts"
+import { hasThreadVirtuaScroller, scrollThreadVirtuaToMessage } from "./thread-virtua-scroll.ts"
 
 export type ThreadMessageHit = {
   id: string
@@ -34,12 +36,17 @@ export function searchThreadMessages(
 export function revealThreadMessage(messageId: string) {
   requestTurnReveal(messageId)
   const scroll = () => {
+    // Must：有 virtua 注册时必须走 index scrollTo；未注册（空壳）才退回 DOM。
+    if (hasThreadVirtuaScroller()) {
+      scrollThreadVirtuaToMessage(messageId)
+      return
+    }
     document
       .querySelector(`[data-thread-message="${CSS.escape(messageId)}"]`)
       ?.scrollIntoView({ block: "center" })
   }
   scroll()
-  // deferred 挂载要等一帧；再补一次短延时，避免刻度点名时只滚到占位高度。
+  // deferred / virtua 挂载要等一帧；再补一次短延时，避免刻度点名时只滚到占位高度。
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(scroll)
   if (typeof setTimeout === "function") setTimeout(scroll, 50)
 }
