@@ -115,7 +115,7 @@ test("P2 前端收口 soft · 4 屏自门", async () => {
       const g = window as unknown as { open: typeof window.open; __windowOpenHits?: number }
       g.__windowOpenHits = 0
       const original = g.open.bind(window)
-      g.open = ((...args: Parameters<typeof window.open>) => {
+      g.open = ((..._args: Parameters<typeof window.open>) => {
         g.__windowOpenHits = (g.__windowOpenHits ?? 0) + 1
         return null
       }) as typeof window.open
