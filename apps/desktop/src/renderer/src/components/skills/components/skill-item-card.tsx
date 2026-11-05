@@ -72,7 +72,7 @@ export function SkillItemCard({
             >
               <RiTerminalBoxLine className="size-3" />
               <span>{trigger}</span>
-              <span className="text-[9px] font-sans font-normal text-text-tertiary ml-0.5">
+              <span className="text-caption-2-regular font-sans font-normal text-text-tertiary ml-0.5">
                 {t("pages.skills.itemCard.localCallsign")}
               </span>
             </span>

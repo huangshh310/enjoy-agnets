@@ -93,8 +93,8 @@ export function CreateSkillFormPane({
             <span
               data-testid="create-skill-name-count"
               className={cx(
-                "text-[10px] tabular-nums",
-                nameWarn ? "text-[#C2410C]" : "text-text-tertiary"
+                "text-caption-2-regular tabular-nums",
+                nameWarn ? "text-status-yellow-text" : "text-text-tertiary"
               )}
             >
               {name.length}/{AGENT_SKILL_NAME_MAX}
@@ -109,7 +109,7 @@ export function CreateSkillFormPane({
             aria-invalid={Boolean(nameHint)}
           />
           {nameHint ? (
-            <span data-testid="create-skill-name-hint" className="text-caption-2-regular text-[#C2410C]">
+            <span data-testid="create-skill-name-hint" className="text-caption-2-regular text-status-yellow-text">
               {nameHint}
             </span>
           ) : null}
@@ -119,7 +119,7 @@ export function CreateSkillFormPane({
             <span className="text-caption-2-medium font-semibold text-text-primary">
               触发指令 (Command)
             </span>
-            <span className="text-[10px] text-text-tertiary">{t("pages.skills.createDialog.localCallsign")}</span>
+            <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.createDialog.localCallsign")}</span>
           </div>
           <Input
             data-testid="create-skill-trigger"
@@ -139,8 +139,8 @@ export function CreateSkillFormPane({
           <span
             data-testid="create-skill-desc-count"
             className={cx(
-              "text-[10px] tabular-nums",
-              descWarn ? "text-[#C2410C]" : "text-text-tertiary"
+              "text-caption-2-regular tabular-nums",
+              descWarn ? "text-status-yellow-text" : "text-text-tertiary"
             )}
           >
             {description.length}/{AGENT_SKILL_DESCRIPTION_MAX}
@@ -155,7 +155,7 @@ export function CreateSkillFormPane({
           aria-invalid={Boolean(descriptionHint)}
         />
         {descriptionHint ? (
-          <span data-testid="create-skill-desc-hint" className="text-caption-2-regular text-[#C2410C]">
+          <span data-testid="create-skill-desc-hint" className="text-caption-2-regular text-status-yellow-text">
             {descriptionHint}
           </span>
         ) : null}

@@ -115,7 +115,7 @@ export function SkillDocInspector({
               >
                 <RiTerminalBoxLine className="size-3" />
                 {skill.trigger}
-                <span className="text-[9px] font-sans font-normal text-text-tertiary">
+                <span className="text-caption-2-regular font-sans font-normal text-text-tertiary">
                   {t("pages.skills.itemCard.localCallsign")}
                 </span>
               </span>
@@ -185,19 +185,19 @@ export function SkillDocInspector({
       {/* 规范软条带：叠在 Frontmatter 条下方；禁绿已批徽 */}
       <div
         data-testid="skill-norm-strip"
-        className="flex flex-wrap items-center gap-2 border-b border-[#E8E4DE] bg-[#F7F5F2]/80 px-5 py-2 text-caption-2-regular"
+        className="flex flex-wrap items-center gap-2 border-b border-separator-border bg-background-secondary-default/80 px-5 py-2 text-caption-2-regular"
       >
-        <span className="text-text-tertiary text-[10px] font-medium tracking-wide">
+        <span className="text-caption-2-medium text-text-tertiary tracking-wide">
           {t("pages.skills.docInspector.normLabel")}
         </span>
         {issues.length === 0 ? (
-          <span className="text-text-tertiary text-[10px]">{t("pages.skills.docInspector.normOk")}</span>
+          <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.docInspector.normOk")}</span>
         ) : (
           issues.map((row) => (
             <span
               key={`${row.path}:${row.code}`}
               data-testid="skill-norm-chip"
-              className="inline-flex items-center rounded-md bg-[#FFF7ED] px-2 py-0.5 text-[10px] font-medium text-[#C2410C] ring-1 ring-[#C2410C]/25"
+              className="inline-flex items-center rounded-md bg-status-yellow-background/15 px-2 py-0.5 text-caption-2-medium font-medium text-status-yellow-text ring-1 ring-status-yellow-text/25"
             >
               {skillFrontmatterIssueChip(row)}
             </span>
@@ -207,7 +207,7 @@ export function SkillDocInspector({
           <span
             data-testid="skill-allowed-tools-chip"
             title={t("pages.skills.docInspector.allowedToolsHint")}
-            className="inline-flex max-w-full items-center gap-1 rounded-md bg-[#F7F5F2] px-2 py-0.5 text-[10px] font-medium text-[#6B645C] ring-1 ring-[#E8E4DE]"
+            className="inline-flex max-w-full items-center gap-1 rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary ring-1 ring-separator-border"
           >
             <span>{t("pages.skills.docInspector.allowedToolsLabel")}</span>
             <span className="truncate font-mono text-text-tertiary max-w-[12rem]">{allowedTools}</span>

@@ -42,14 +42,14 @@ export function SkillDrawerBody({
       {(skill.issues?.length || skill.allowedTools) ? (
         <div
           data-testid="skill-drawer-norm"
-          className="flex flex-wrap items-center gap-2 rounded-xl border border-[#E8E4DE] bg-[#F7F5F2]/80 px-3 py-2"
+          className="flex flex-wrap items-center gap-2 rounded-xl border border-separator-border bg-background-secondary-default/80 px-3 py-2"
         >
-          <span className="text-[10px] text-text-tertiary font-medium">{t("pages.skills.docInspector.normLabel")}</span>
+          <span className="text-caption-2-medium text-text-tertiary font-medium">{t("pages.skills.docInspector.normLabel")}</span>
           {(skill.issues ?? []).map((row) => (
             <span
               key={`${row.path}:${row.code}`}
               data-testid="skill-norm-chip"
-              className="inline-flex items-center rounded-md bg-[#FFF7ED] px-2 py-0.5 text-[10px] font-medium text-[#C2410C] ring-1 ring-[#C2410C]/25"
+              className="inline-flex items-center rounded-md bg-status-yellow-background/15 px-2 py-0.5 text-caption-2-medium font-medium text-status-yellow-text ring-1 ring-status-yellow-text/25"
             >
               {skillFrontmatterIssueChip(row)}
             </span>
@@ -58,7 +58,7 @@ export function SkillDrawerBody({
             <span
               data-testid="skill-allowed-tools-chip"
               title={t("pages.skills.docInspector.allowedToolsHint")}
-              className="inline-flex items-center gap-1 rounded-md bg-[#F7F5F2] px-2 py-0.5 text-[10px] font-medium text-[#6B645C] ring-1 ring-[#E8E4DE]"
+              className="inline-flex items-center gap-1 rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary ring-1 ring-separator-border"
             >
               {t("pages.skills.docInspector.allowedToolsLabel")}
             </span>
