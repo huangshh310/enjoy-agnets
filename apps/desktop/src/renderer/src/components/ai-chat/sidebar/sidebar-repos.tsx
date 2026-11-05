@@ -130,6 +130,7 @@ export function SidebarRepos({
                 setClickedRow({ id: session.id, surface: "tree" })
                 onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })
               }}
+              onArchive={() => requestArchiveSession(session.id)}
             />
           )}
         />

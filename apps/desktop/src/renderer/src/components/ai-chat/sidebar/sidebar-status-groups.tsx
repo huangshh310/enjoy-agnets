@@ -9,6 +9,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import { SidebarSessionRow } from "./sidebar-session-row"
+import { requestArchiveSession } from "@renderer/hooks/deny-then-archive"
 import { SidebarSessionVirtList } from "./sidebar-session-virt-list"
 import { WORKFLOW_STATUSES } from "./session-workflow"
 import { WORKFLOW_STATUS_ICONS } from "./workflow-status-glyph"
@@ -90,6 +91,7 @@ export function SidebarStatusGroups({
                   nameClassName="text-body-medium"
                   surface="tree"
                   onSelect={(event) => onSelectSession(session.id, { openInTab: event.metaKey || event.ctrlKey })}
+                  onArchive={() => requestArchiveSession(session.id)}
                 />
               )}
             />
