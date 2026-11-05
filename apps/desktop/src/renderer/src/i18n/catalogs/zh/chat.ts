@@ -1262,6 +1262,8 @@ export const zhChat = {
   reviewDiffPaletteDefault: "默认",
   reviewDiffPaletteDistinct: "易辨认",
   reviewFoldLargeFiles: "不加载完整文件",
+  diffFoldLargeHint: "改动较多，先显示开头一段。",
+  diffFoldLargeExpand: "展开其余改动",
   reviewRichPreview: "启用富文本预览",
   reviewWordDiff: "启用文字差异",
   reviewHideWhitespace: "隐藏空白字符",

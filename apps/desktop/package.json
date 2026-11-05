@@ -52,6 +52,7 @@
     "@fontsource-variable/jetbrains-mono": "catalog:",
     "@internationalized/date": "catalog:",
     "@lobehub/icons": "catalog:",
+    "@pierre/diffs": "catalog:",
     "@remixicon/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
