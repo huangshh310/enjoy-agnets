@@ -7,6 +7,8 @@ import {
   RecheckProviderInput,
   RemoveComposerPresetInput,
   SaveComposerPresetInput,
+  SavePromptLibraryEntryInput,
+  RemovePromptLibraryEntryInput,
   SaveSecretInput,
   SetActiveModelInput,
   SetDefaultModelInput,
@@ -25,6 +27,12 @@ import {
   setStoredProviderEnabled
 } from "./ipc-provider-probe"
 import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
+import {
+  listPromptLibrary,
+  removePromptLibraryEntry,
+  savePromptLibraryEntry,
+  upsertRecentPrompt
+} from "./services/composer-prompt-library"
 import { getSetting, setSetting } from "./services/database"
 import { parseRecentWorkspaceIds, RECENT_WORKSPACE_SETTING } from "./services/workspace-mru.ts"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
@@ -76,6 +84,10 @@ export const SETTINGS_CHANNELS = [
   "settings.composerPresets",
   "settings.saveComposerPreset",
   "settings.removeComposerPreset",
+  "settings.promptLibrary",
+  "settings.savePromptLibraryEntry",
+  "settings.removePromptLibraryEntry",
+  "settings.upsertRecentPrompt",
   "automations.list",
   "automations.upsert",
   "automations.setEnabled",
@@ -170,6 +182,17 @@ function registerCoreSettingsIpc() {
   ipcMain.handle("settings.removeComposerPreset", async (_event, raw) =>
     removeComposerPreset(RemoveComposerPresetInput.parse(raw).id)
   )
+  ipcMain.handle("settings.promptLibrary", async () => listPromptLibrary())
+  ipcMain.handle("settings.savePromptLibraryEntry", async (_event, raw) =>
+    savePromptLibraryEntry(SavePromptLibraryEntryInput.parse(raw))
+  )
+  ipcMain.handle("settings.removePromptLibraryEntry", async (_event, raw) =>
+    removePromptLibraryEntry(RemovePromptLibraryEntryInput.parse(raw).id)
+  )
+  ipcMain.handle("settings.upsertRecentPrompt", async (_event, raw) => {
+    const text = typeof raw === "string" ? raw : (raw as { text?: string })?.text
+    return upsertRecentPrompt(typeof text === "string" ? text : "")
+  })
 }
 
 function registerProviderIpc() {

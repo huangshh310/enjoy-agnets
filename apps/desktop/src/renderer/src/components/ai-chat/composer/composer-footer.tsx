@@ -16,6 +16,7 @@ import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
 import { ComposerPreviewToggle } from "./composer-preview-toggle"
+import { ComposerPromptLibraryButton } from "./prompt-library/composer-prompt-library-button"
 import { ComposerOverflowMenu } from "./composer-overflow-menu"
 import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
@@ -89,6 +90,7 @@ export function ComposerFooter({
         {onPreviewToggle ? (
           <ComposerPreviewToggle previewOpen={previewOpen} onToggle={onPreviewToggle} />
         ) : null}
+        <ComposerPromptLibraryButton />
         <AgentPicker
           modelId={modelId}
           modelLabel={modelLabel}
