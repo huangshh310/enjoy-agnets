@@ -58,14 +58,9 @@ test("P2 E8 提示收藏 soft · 4 屏自门", async () => {
         text: "跨会话旧提示：整理本周待办",
         starred: false
       })
-      // 注入本会话消息，供「最近」区
-      const store = (window as unknown as { __ENJOY_CHAT_STORE__?: { setState: Function } }).__ENJOY_CHAT_STORE__
-      // fallback：直接改 zustand 若暴露；否则用 composer 发 stub
     })
 
-    // 若 store 未暴露，用 setComposer 无关；改走 evaluate 写消息到 chat-store 模块路径难。
-    // 用 IPC 种子 + 打开面板即可验星标区；再往 composer 打字后不清。
-    // 补充：通过 evaluate 访问页面内模块不现实；改为发送一条 stub 消息。
+    // 本会话「最近」：发一条 stub 用户消息进入召回源
     await window.getByTestId("composer-input").fill("会话最近一句：帮我看这段 diff")
     await window.getByTestId("composer-send").click()
     await window.waitForTimeout(1200)
