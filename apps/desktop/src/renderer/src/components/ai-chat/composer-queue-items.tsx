@@ -104,6 +104,7 @@ export function ImageAttachmentItem({
         </div>
       ) : null}
 
+      {/* 删除钮平时透明且不吃命中（悬停芯片才可点），否则缩略图右上角内收 5px 处命中的是这颗隐形钮而不是 IMG。 */}
       <button
         type="button"
         aria-label={t("chat.removeItem", { name: item.name })}
@@ -111,7 +112,7 @@ export function ImageAttachmentItem({
           event.stopPropagation()
           removeComposerAsset(item.id)
         }}
-        className="absolute -right-1 -top-1 z-10 flex size-4.5 cursor-pointer items-center justify-center rounded-full border border-border-button-default/80 bg-background-primary-default text-text-secondary opacity-0 shadow-2xs transition-all hover:scale-110 hover:text-text-primary group-hover:opacity-100"
+        className="absolute -right-1 -top-1 z-10 flex size-4.5 cursor-pointer items-center justify-center rounded-full border border-border-button-default/80 bg-background-primary-default text-text-secondary pointer-events-none opacity-0 shadow-2xs transition-all hover:scale-110 hover:text-text-primary group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <RiCloseLine className="size-3" />
       </button>

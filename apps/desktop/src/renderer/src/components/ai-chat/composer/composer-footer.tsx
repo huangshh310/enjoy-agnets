@@ -63,7 +63,7 @@ export function ComposerFooter({
   onPickFiles: () => void
   previewOpen?: boolean
   onPreviewToggle?: () => void
-  /** 仅 leftover 低于展开最矮时收回底栏垂直余量；不改发送尺寸。 */
+  /** 仅托盘转单行条（slot<108）时收回底栏垂直余量；不改发送尺寸。 */
   compactVerticalSlack?: boolean
 }) {
   const t = useT()
@@ -90,7 +90,7 @@ export function ComposerFooter({
     <div
       className={cx(
         "flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5",
-        compactVerticalSlack && "gap-y-0.5 pt-0 pb-1"
+        compactVerticalSlack && "gap-y-0.5 pt-0 pb-2"
       )}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-1.5">

@@ -44,13 +44,11 @@ export function ComposerQueue({
   const [items, setItems] = useState<QueuedComposerAsset[]>(() => listComposerAssets())
   const [isExpanded, setIsExpanded] = useState(false)
   const trayRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLDivElement>(null)
   const fallbackFormRef = useRef<HTMLElement | null>(null)
   const budget = useComposerTrayBudget({
     enabled: items.length > 0 && formRef != null,
     formRef: formRef ?? fallbackFormRef,
-    trayRef,
-    titleRef
+    trayRef
   })
   const [activePreview, setActivePreview] = useState<{
     src: string
@@ -84,6 +82,10 @@ export function ComposerQueue({
   const visibleFiles = files.slice(0, 2)
   const hiddenFilesCount = files.length - visibleFiles.length
 
+  // 矮视口（运行时 slot < 108）：展开 / 紧凑都走横向单行条；展开态的顶栏并进同一行、全部附件横向滚动。
+  const strip = budget.strip
+  const showAll = strip && isExpanded
+
   return (
     <>
       {/* 顶部探出式层叠附件托盘 (Layered Shelf) */}
@@ -91,26 +93,25 @@ export function ComposerQueue({
         ref={trayRef}
         data-testid="composer-attachment-tray"
         data-frost="tile"
-        style={budget.trayMaxHeight != null ? { maxHeight: budget.trayMaxHeight } : undefined}
+        data-tray-strip={strip ? "true" : undefined}
+        data-tray-slot={budget.slot ?? undefined}
         className={cx(
-          // 只在 Composer 正上方：-mb 只让底部留白（pb-4）藏到输入框下，缩略图本身不被任何条盖住。
-          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] flex-col gap-2",
-          budget.trayMaxHeight != null ? "min-h-0 overflow-hidden" : "shrink-0",
-          "-mb-3.5 rounded-t-2xl border-x border-t border-border-button-default/80",
+          // 舒适态：-mb 只让底部留白（pb-4）藏到输入框下，缩略图本身不被任何条盖住。
+          // 单行条：mb=0，托盘底边落在 form.y 之上，不再叠进卡片。
+          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] shrink-0 flex-col gap-2",
+          strip ? "mb-0" : "-mb-3.5",
+          "rounded-t-2xl border-x border-t border-border-button-default/80",
           "bg-background-secondary-default/95 px-3.5 shadow-2xs backdrop-blur-md",
-          budget.tightenChrome ? "pt-1 pb-1" : "pt-2 pb-4",
+          strip ? "pt-1 pb-1" : "pt-2 pb-4",
           "animate-in fade-in-50 slide-in-from-bottom-2 duration-200 select-none",
           className
         )}
       >
-        {isExpanded ? (
+        {isExpanded && !strip ? (
           /* 展开态：一体化紧凑检视抽屉（无重复渲染，紧凑流式布局） */
-          <div className={cx("flex w-full min-h-0 flex-col", budget.tightenChrome ? "gap-1" : "gap-2.5")}>
-            {/* 顶栏：标题 + 收起 + 清空。shrink-0：折叠/清空入口不得被滚走。 */}
-            <div
-              ref={titleRef}
-              className="flex shrink-0 items-center justify-between border-b border-border-button-default/60 pb-1.5 text-caption-2-medium"
-            >
+          <div className="flex flex-col gap-2.5 w-full">
+            {/* 顶栏：标题 + 收起 + 清空 */}
+            <div className="flex items-center justify-between border-b border-border-button-default/60 pb-1.5 text-caption-2-medium">
               <div className="inline-flex items-center gap-1 font-semibold text-text-primary">
                 <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
                 <span>{t("chat.attachedAssets", { count: items.length })}</span>
@@ -137,13 +138,7 @@ export function ComposerQueue({
             </div>
 
             {/* 展开内容区：图片紧凑画廊 + 文件紧凑流 */}
-            <div
-              className={cx(
-                "flex min-h-0 flex-col gap-2 overflow-y-auto no-scrollbar [scrollbar-width:none] pr-0.5",
-                budget.galleryMaxHeight == null && "max-h-48"
-              )}
-              style={budget.galleryMaxHeight != null ? { maxHeight: budget.galleryMaxHeight } : undefined}
-            >
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto no-scrollbar [scrollbar-width:none] pr-0.5">
               {images.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {images.map((item) => (
@@ -177,14 +172,14 @@ export function ComposerQueue({
             </div>
           </div>
         ) : (
-          /* 紧凑态：单行紧凑自适应横排 */
-          <div className="flex items-center justify-between gap-2.5 w-full">
+          /* 紧凑态 / 单行条：单行横排（单行条展开时附件全量横向滚动，顶栏并进右侧） */
+          <div data-testid={strip ? "composer-attachment-strip" : undefined} className="flex items-center justify-between gap-2.5 w-full">
             {/* 左侧：紧凑平铺区 */}
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5">
+            <div className={cx("flex min-w-0 flex-1 items-center gap-2.5 overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", !strip && "py-0.5")}>
               {/* 1. 图片分组 */}
               {images.length > 0 ? (
                 <div className="flex shrink-0 items-center gap-2">
-                  {(images.length <= 3 ? images : visibleImages).map((item) => (
+                  {(showAll || images.length <= 3 ? images : visibleImages).map((item) => (
                     <ImageAttachmentItem
                       key={item.id}
                       item={item}
@@ -200,7 +195,7 @@ export function ComposerQueue({
                   ))}
 
                   {/* 折叠徽标 */}
-                  {images.length > 3 ? (
+                  {!showAll && images.length > 3 ? (
                     <button
                       type="button"
                       onClick={() => setIsExpanded(true)}
@@ -221,12 +216,12 @@ export function ComposerQueue({
               {/* 3. 文件分组 */}
               {files.length > 0 ? (
                 <div className="flex min-w-0 items-center gap-2 overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {(files.length <= 3 ? files : visibleFiles).map((item) => (
+                  {(showAll || files.length <= 3 ? files : visibleFiles).map((item) => (
                     <FileAttachmentItem key={item.id} item={item} />
                   ))}
 
                   {/* 折叠徽标 */}
-                  {files.length > 3 ? (
+                  {!showAll && files.length > 3 ? (
                     <button
                       type="button"
                       onClick={() => setIsExpanded(true)}
@@ -240,18 +235,35 @@ export function ComposerQueue({
               ) : null}
             </div>
 
-            {/* 右侧：汇总与展开 */}
+            {/* 右侧：汇总与展开；单行条展开时为「N 张图片 · 收起」 */}
             <div className="flex shrink-0 items-center gap-1.5 border-l border-border-button-default/70 pl-2 text-caption-2-medium text-text-tertiary">
-              <button
-                type="button"
-                onClick={() => setIsExpanded(true)}
-                title={t("chat.expandAttachments")}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-text-secondary transition-colors hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer"
-              >
-                <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
-                <span>{summaryLabel}</span>
-                <RiArrowDownSLine className="size-3.5 text-text-tertiary" aria-hidden />
-              </button>
+              {showAll ? (
+                <>
+                  <span className="inline-flex items-center gap-1 font-medium text-text-secondary">
+                    <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
+                    <span>{summaryLabel}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(false)}
+                    className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-1 text-text-secondary hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer transition-colors"
+                  >
+                    <span>{t("chat.collapseQueue")}</span>
+                    <RiArrowUpSLine className="size-3.5" aria-hidden />
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  title={t("chat.expandAttachments")}
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-text-secondary transition-colors hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer"
+                >
+                  <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
+                  <span>{summaryLabel}</span>
+                  <RiArrowDownSLine className="size-3.5 text-text-tertiary" aria-hidden />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={clearComposerAssets}

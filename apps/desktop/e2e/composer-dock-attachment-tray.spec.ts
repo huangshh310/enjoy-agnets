@@ -79,6 +79,7 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
         await expectTrayClear(window, label, size)
         await expectDockButtons(window, label, GATE_BUTTONS)
         await expectSendAboveStatusBar(window, label)
+        if (size.width === 733 && size.height === 480) await expectThumbHitsImg(window, `${label} compact`)
         if (theme === "light" || size.width === 1024) {
           await snap(window, `${size.width}x${size.height}-dock-tray-${theme}`)
         }
@@ -97,6 +98,7 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
     await expectTrayClear(window, "733x480 expanded", small)
     await expectDockButtons(window, "733x480 expanded", GATE_BUTTONS)
     await expectSendAboveStatusBar(window, "733x480 expanded")
+    await expectThumbHitsImg(window, "733x480 expanded")
     await snap(window, "733x480-dock-tray-expanded-light")
     await tray.getByRole("button", { name: /收起/ }).click()
 
@@ -155,6 +157,50 @@ async function expectSendAboveStatusBar(window: Page, label: string): Promise<vo
   ).toBeLessThanOrEqual((geom.barTop ?? 0) + 0.5)
   expect(geom.hitBar, `${label}: send center hit status bar (${geom.hitBy})`).toBe(false)
   expect(geom.hitSend, `${label}: send center hit ${geom.hitBy}`).toBe(true)
+}
+
+/**
+ * 733×480 待验收（展开 / 紧凑）：托盘转横向单行条（毛高 52–56、mb=0），缩略图 ≥36，
+ * 四角（各向内收 5px）与中心 elementFromPoint 都命中缩略图里的 IMG，不是表单卡片或模式切换。
+ */
+async function expectThumbHitsImg(window: Page, label: string): Promise<void> {
+  const geom = await window.evaluate(() => {
+    const tray = document.querySelector('[data-testid="composer-attachment-tray"]')
+    const chip = document.querySelector('[data-testid="composer-asset-chip"]')
+    if (!tray || !chip) return { missing: true as const }
+    const t = tray.getBoundingClientRect()
+    const r = chip.getBoundingClientRect()
+    const inset = 5
+    const points = [
+      [r.left + inset, r.top + inset],
+      [r.right - inset, r.top + inset],
+      [r.left + inset, r.bottom - inset],
+      [r.right - inset, r.bottom - inset],
+      [r.left + r.width / 2, r.top + r.height / 2]
+    ]
+    const hits = points.map(([x, y]) => {
+      const hit = document.elementFromPoint(x, y)
+      return { x, y, ok: !!hit && hit.tagName === "IMG" && chip.contains(hit), hit: hit ? `${hit.tagName}.${hit.getAttribute("data-testid") ?? ""}` : "none" }
+    })
+    return {
+      missing: false as const,
+      strip: tray.getAttribute("data-tray-strip") === "true",
+      trayHeight: t.height,
+      marginBottom: parseFloat(getComputedStyle(tray).marginBottom),
+      thumb: Math.min(r.width, r.height),
+      hits
+    }
+  })
+  expect(geom.missing, `${label}: tray or chip missing`).toBe(false)
+  if (geom.missing) return
+  expect(geom.strip, `${label}: tray should switch to single-row strip`).toBe(true)
+  expect(geom.trayHeight, `${label}: strip height ${geom.trayHeight}`).toBeGreaterThanOrEqual(52)
+  expect(geom.trayHeight, `${label}: strip height ${geom.trayHeight}`).toBeLessThanOrEqual(56)
+  expect(geom.marginBottom, `${label}: strip must not overlap form (mb=${geom.marginBottom})`).toBe(0)
+  expect(geom.thumb, `${label}: thumbnail too small`).toBeGreaterThanOrEqual(36)
+  for (const hit of geom.hits) {
+    expect(hit.ok, `${label}: thumbnail IMG not hit at (${hit.x},${hit.y}) by ${hit.hit}`).toBe(true)
+  }
 }
 
 /** 审核条上的按钮：可见、整颗在视口内、中心 elementFromPoint 命中按钮本身（没被托盘或别的层盖住）。 */
