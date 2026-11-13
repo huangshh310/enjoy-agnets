@@ -20,7 +20,7 @@ import {
   setSessionContextChips,
   type SessionContextChip
 } from "../../../../hooks/session-context-chips.ts"
-import { useChatStore } from "../../../../stores/chat-store.ts"
+import { useChatStore } from "./insert-prompt-library-keeps-knowledge-chip.store.ts"
 import { insertPromptLibraryText } from "./insert-prompt-library.ts"
 
 const SEEDED: SessionContextChip = {
