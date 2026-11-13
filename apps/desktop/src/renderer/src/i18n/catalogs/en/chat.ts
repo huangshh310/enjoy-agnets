@@ -101,6 +101,18 @@ export const enChat = {
   presetDesktopBiasPill: "Prefer desktop",
   presetAppliedToast: "Applied 「{name}」",
   presetSavedToast: "Saved 「{name}」",
+
+  promptLibraryTitle: "Saved prompts",
+  promptLibrarySearch: "Search what you wrote…",
+  promptLibraryStarred: "Starred",
+  promptLibraryRecent: "Recent",
+  promptLibraryEmpty: "No prompts yet · they show up after you send",
+  promptLibraryNoMatch: "No matches",
+  promptLibraryInserted: "Inserted",
+  promptLibraryPrefillRunning: "Prefilled next · this turn still running",
+  promptLibraryStar: "Star",
+  promptLibraryUnstar: "Unstar",
+  promptLibraryClose: "Close",
   runtimeSteeredHint: "Got it. It'll see this at its next step.",
   // luna 定稿：ACP / 模型看不了图同一句；按图数选单复数（runtimeImageSteerQueuedHintKey）。
   runtimeImageSteerQueuedHint: "It can't take images while running, so this message and its images will be sent next turn.",

@@ -100,6 +100,18 @@ export const zhChat = {
   presetDesktopBiasPill: "更倾向桌面",
   presetAppliedToast: "已套用「{name}」",
   presetSavedToast: "已保存「{name}」",
+
+  promptLibraryTitle: "提示收藏",
+  promptLibrarySearch: "搜索以前写过的…",
+  promptLibraryStarred: "已收藏",
+  promptLibraryRecent: "最近",
+  promptLibraryEmpty: "还没有提示 · 发送后会出现在这里",
+  promptLibraryNoMatch: "没有匹配",
+  promptLibraryInserted: "已插入",
+  promptLibraryPrefillRunning: "已预填下一句 · 本轮仍在跑",
+  promptLibraryStar: "收藏",
+  promptLibraryUnstar: "取消收藏",
+  promptLibraryClose: "关闭",
   runtimeSteeredHint: "已收到，它下一步就会看到。",
   // luna 定稿：ACP / 模型看不了图同一句；zh 不分单复数，两键同文。
   runtimeImageSteerQueuedHint: "它运行中收不了图，这条连图一起排到下一轮发。",
