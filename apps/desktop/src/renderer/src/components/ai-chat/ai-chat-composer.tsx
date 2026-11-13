@@ -2,6 +2,10 @@
  * Composer 外壳：拖拽/粘贴附件、自适应输入、引用 Chip 与底栏。工作区名在状态栏，不进输入框顶。
  */
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react"
+import {
+  IDLE_COMPOSER_TRAY_BUDGET,
+  type ComposerTrayBudget
+} from "./composer/use-composer-tray-budget.ts"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
@@ -56,6 +60,8 @@ export function AiChatComposer({
   const [voiceOpen, setVoiceOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
+  const [trayBudget, setTrayBudget] = useState<ComposerTrayBudget>(IDLE_COMPOSER_TRAY_BUDGET)
   const hasDraft = useComposerHasDraft(composer)
   /* needs_review / 审批等待 = live work（luna §1.1）；approval.required 通常 running=true，显式 OR 防漏 */
   const pendingApproval = useChatStore((state) => state.pendingApproval)
@@ -188,12 +194,14 @@ export function AiChatComposer({
       <ComposerBranchMismatch />
       <ComposerActivityFrame />
       {/* 附件托盘必须紧挨输入框：它靠 -mb 把底边塞进输入框下面，放在别的条上方会把下一条拉上来盖住缩略图。 */}
-      <ComposerQueue />
+      <ComposerQueue formRef={formRef} onBudgetChange={setTrayBudget} />
       <form
+        ref={formRef}
         data-composer="true"
         data-toast-clearance=""
+        {...(trayBudget.reclaimSlack ? { "data-composer-tray-slack": "" } : {})}
         onSubmit={onSubmit}
-        className="relative z-10 w-full min-w-0"
+        className="relative z-10 w-full min-w-0 shrink-0"
       >
         {/* P2 perf soft: perpetual beam only for live agent work; focus/draft keep static accent ring */}
         <BorderBeam
@@ -212,6 +220,7 @@ export function AiChatComposer({
           data-frost="chip"
           className={cx(
             "@container relative flex min-w-0 flex-col overflow-visible rounded-3xl pt-2",
+            trayBudget.reclaimSlack && "pt-0.5",
             "border border-border-button-default bg-background-secondary-default dark:bg-background-tertiary-default",
             "shadow-card backdrop-blur-md transition-all duration-300 ease-out",
             "hover:border-border-button-hover hover:shadow-dropdown",
@@ -260,6 +269,7 @@ export function AiChatComposer({
           <ExploreCapabilityRail />
 
           <ComposerFooter
+            compactVerticalSlack={trayBudget.reclaimSlack}
             composer={composer}
             hasDraft={hasDraft}
             onComposerChange={onComposerChange}
