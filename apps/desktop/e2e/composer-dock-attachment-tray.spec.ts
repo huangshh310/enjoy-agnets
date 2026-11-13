@@ -78,6 +78,7 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
         await expect(gate).toContainText("1 个文件已改")
         await expectTrayClear(window, label, size)
         await expectDockButtons(window, label, GATE_BUTTONS)
+        await expectSendAboveStatusBar(window, label)
         if (theme === "light" || size.width === 1024) {
           await snap(window, `${size.width}x${size.height}-dock-tray-${theme}`)
         }
@@ -95,6 +96,7 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
     await expect(gate).toContainText("1 个文件已改")
     await expectTrayClear(window, "733x480 expanded", small)
     await expectDockButtons(window, "733x480 expanded", GATE_BUTTONS)
+    await expectSendAboveStatusBar(window, "733x480 expanded")
     await snap(window, "733x480-dock-tray-expanded-light")
     await tray.getByRole("button", { name: /收起/ }).click()
 
@@ -115,6 +117,45 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
     await closeForRelaunch(env.app)
   }
 })
+
+/** 发送整颗在状态栏之上：send.bottom ≤ 状态栏 top，中心命中发送，不得命中状态栏。form.bottom ≤ 视口高必要但不充分。 */
+async function expectSendAboveStatusBar(window: Page, label: string): Promise<void> {
+  const geom = await window.evaluate(() => {
+    const send = document.querySelector('[data-testid="composer-send"]')
+    const form = document.querySelector("form[data-composer]")
+    const meter = document.querySelector('[data-testid="status-context-meter"]')
+    const bar = meter?.closest("[data-toast-clearance]")
+    if (!send || !form) {
+      return { missing: true as const }
+    }
+    const sendBox = send.getBoundingClientRect()
+    const formBox = form.getBoundingClientRect()
+    const barTop = bar ? bar.getBoundingClientRect().top : null
+    const at = document.elementFromPoint(sendBox.left + sendBox.width / 2, sendBox.top + sendBox.height / 2)
+    const hitSend = !!at && (at === send || send.contains(at))
+    const hitBar = !!(bar && at && bar.contains(at) && !send.contains(at))
+    return {
+      missing: false as const,
+      sendBottom: sendBox.bottom,
+      formBottom: formBox.bottom,
+      barTop,
+      hitSend,
+      hitBar,
+      hitBy: at ? `${at.tagName}.${at.getAttribute("data-testid") ?? ""}` : "none",
+      vp: window.innerHeight
+    }
+  })
+  expect(geom.missing, `${label}: send or form missing`).toBe(false)
+  if (geom.missing) return
+  expect(geom.formBottom, `${label}: composer cut off formBottom=${geom.formBottom}`).toBeLessThanOrEqual(geom.vp)
+  expect(geom.barTop, `${label}: status bar present`).toEqual(expect.any(Number))
+  expect(
+    geom.sendBottom,
+    `${label}: send.bottom ${geom.sendBottom} must be ≤ statusBar.top ${geom.barTop}`
+  ).toBeLessThanOrEqual((geom.barTop ?? 0) + 0.5)
+  expect(geom.hitBar, `${label}: send center hit status bar (${geom.hitBy})`).toBe(false)
+  expect(geom.hitSend, `${label}: send center hit ${geom.hitBy}`).toBe(true)
+}
 
 /** 审核条上的按钮：可见、整颗在视口内、中心 elementFromPoint 命中按钮本身（没被托盘或别的层盖住）。 */
 async function expectDockButtons(window: Page, label: string, buttons: DockButton[]): Promise<void> {

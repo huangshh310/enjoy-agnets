@@ -4,7 +4,12 @@
  * 2. 展开态：就地变形为轻量紧凑资产抽屉（无重复渲染、紧凑流式自适应排布、大图 Lightbox 与一键清空）。
  */
 import { attachmentSummaryLabel } from "./composer-count-labels"
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
+import {
+  IDLE_COMPOSER_TRAY_BUDGET,
+  useComposerTrayBudget,
+  type ComposerTrayBudget
+} from "./composer/use-composer-tray-budget.ts"
 import {
   RiArrowDownSLine,
   RiArrowUpSLine,
@@ -26,10 +31,27 @@ import {
   ComposerAssetLightbox
 } from "./composer-queue-items"
 
-export function ComposerQueue({ className }: { className?: string }) {
+export function ComposerQueue({
+  className,
+  formRef,
+  onBudgetChange
+}: {
+  className?: string
+  formRef?: RefObject<HTMLElement | null>
+  onBudgetChange?: (budget: ComposerTrayBudget) => void
+}) {
   const t = useT()
   const [items, setItems] = useState<QueuedComposerAsset[]>(() => listComposerAssets())
   const [isExpanded, setIsExpanded] = useState(false)
+  const trayRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const fallbackFormRef = useRef<HTMLElement | null>(null)
+  const budget = useComposerTrayBudget({
+    enabled: items.length > 0 && formRef != null,
+    formRef: formRef ?? fallbackFormRef,
+    trayRef,
+    titleRef
+  })
   const [activePreview, setActivePreview] = useState<{
     src: string
     name: string
@@ -38,6 +60,10 @@ export function ComposerQueue({ className }: { className?: string }) {
   } | null>(null)
 
   useEffect(() => subscribeComposerAssets(setItems), [])
+
+  useLayoutEffect(() => {
+    onBudgetChange?.(items.length > 0 ? budget : IDLE_COMPOSER_TRAY_BUDGET)
+  }, [budget, items.length, onBudgetChange])
 
   if (items.length === 0) return null
 
@@ -62,22 +88,29 @@ export function ComposerQueue({ className }: { className?: string }) {
     <>
       {/* 顶部探出式层叠附件托盘 (Layered Shelf) */}
       <div
+        ref={trayRef}
         data-testid="composer-attachment-tray"
         data-frost="tile"
+        style={budget.trayMaxHeight != null ? { maxHeight: budget.trayMaxHeight } : undefined}
         className={cx(
           // 只在 Composer 正上方：-mb 只让底部留白（pb-4）藏到输入框下，缩略图本身不被任何条盖住。
-          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] shrink-0 flex-col gap-2",
+          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] flex-col gap-2",
+          budget.trayMaxHeight != null ? "min-h-0 overflow-hidden" : "shrink-0",
           "-mb-3.5 rounded-t-2xl border-x border-t border-border-button-default/80",
-          "bg-background-secondary-default/95 px-3.5 pt-2 pb-4 shadow-2xs backdrop-blur-md",
+          "bg-background-secondary-default/95 px-3.5 shadow-2xs backdrop-blur-md",
+          budget.tightenChrome ? "pt-1 pb-1" : "pt-2 pb-4",
           "animate-in fade-in-50 slide-in-from-bottom-2 duration-200 select-none",
           className
         )}
       >
         {isExpanded ? (
           /* 展开态：一体化紧凑检视抽屉（无重复渲染，紧凑流式布局） */
-          <div className="flex flex-col gap-2.5 w-full">
-            {/* 顶栏：标题 + 收起 + 清空 */}
-            <div className="flex items-center justify-between border-b border-border-button-default/60 pb-1.5 text-caption-2-medium">
+          <div className={cx("flex w-full min-h-0 flex-col", budget.tightenChrome ? "gap-1" : "gap-2.5")}>
+            {/* 顶栏：标题 + 收起 + 清空。shrink-0：折叠/清空入口不得被滚走。 */}
+            <div
+              ref={titleRef}
+              className="flex shrink-0 items-center justify-between border-b border-border-button-default/60 pb-1.5 text-caption-2-medium"
+            >
               <div className="inline-flex items-center gap-1 font-semibold text-text-primary">
                 <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
                 <span>{t("chat.attachedAssets", { count: items.length })}</span>
@@ -104,7 +137,13 @@ export function ComposerQueue({ className }: { className?: string }) {
             </div>
 
             {/* 展开内容区：图片紧凑画廊 + 文件紧凑流 */}
-            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto no-scrollbar [scrollbar-width:none] pr-0.5">
+            <div
+              className={cx(
+                "flex min-h-0 flex-col gap-2 overflow-y-auto no-scrollbar [scrollbar-width:none] pr-0.5",
+                budget.galleryMaxHeight == null && "max-h-48"
+              )}
+              style={budget.galleryMaxHeight != null ? { maxHeight: budget.galleryMaxHeight } : undefined}
+            >
               {images.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {images.map((item) => (

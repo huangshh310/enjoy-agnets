@@ -8,7 +8,7 @@ export function ComposerTopChrome() {
   return (
     <div
       // 极矮窗（≤440 高）或窄窗（≤520 宽，底栏会折两行）有审批卡时让出这一行，拒绝 / 运行留在可视区（leo / luna #149、5042 440×480）。
-      className="flex items-center justify-between px-3 pt-1 pb-0.5 [@media(max-height:440px)]:[body:has([data-testid=permission-dock])_&]:hidden [@media(max-width:520px)]:[body:has([data-testid=permission-dock])_&]:hidden"
+      className="flex items-center justify-between px-3 pt-1 pb-0.5 [form[data-composer-tray-slack]_&]:pt-0 [form[data-composer-tray-slack]_&]:pb-0 [@media(max-height:440px)]:[body:has([data-testid=permission-dock])_&]:hidden [@media(max-width:520px)]:[body:has([data-testid=permission-dock])_&]:hidden"
     >
       <ExploreExecuteToggle />
     </div>
