@@ -64,15 +64,17 @@ test("1099 宽、两条带字用户消息、无文件账本：右侧刻度不吃
     const railBox = await box(rail)
     const edit = message.getByRole("button", { name: "编辑消息" })
     const copy = message.getByRole("button", { name: "复制消息" })
-    // P1 入口迁到助手 ⋯；本测只覆盖用户气泡编辑/复制可点。
-    const rewind = message.locator("[data-testid=rewind-from-here]")
+    // #207 起「改到这里」迁到助手 ⋯ 菜单，用户气泡上已没有；本测只覆盖用户气泡编辑/复制可点。
     await message.hover()
     // 前提：这些按钮确实落在刻度外框里，否则测不到被吃点击。
     const editBox = await box(edit)
     expect(intersects(editBox, railBox), `edit not under rail box ${JSON.stringify({ editBox, railBox })}`).toBe(true)
-    await expectTicksClear(ticks, [edit, copy, rewind], "actions")
-    for (const [name, button] of [["edit", edit], ["copy", copy], ["rewind", rewind]] as const) {
-      expect(await hitsSelf(button), `${name}: elementFromPoint not the button`).toBe(true)
+    await expectTicksClear(ticks, [edit, copy], "actions")
+    for (const [name, button] of [["edit", edit], ["copy", copy]] as const) {
+      // 悬停后操作条有淡入过渡：等它落定再测命中（刻度真吃点击时一直是 false，照样红）。
+      await expect
+        .poll(() => hitsSelf(button), { timeout: 3_000, message: `${name}: elementFromPoint not the button` })
+        .toBe(true)
     }
     await snap(window, "1100x720-rail-actions")
 
@@ -134,20 +136,30 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
     const composer = window.locator('[data-testid="composer-input"]')
     const filler = "，这一句故意写长一点好把会话撑出一屏".repeat(12)
     const prompts = ["刻度一号 alpha", "刻度二号 beta", "刻度三号 gamma", "刻度四号 delta", "刻度五号 epsilon"]
+    let firstId: string | null = null
     for (const head of prompts) {
       await sendComposer(window, composer, `${head}${filler}`)
       await expect(window.locator("body")).toContainText(`stub-ok ${head}`, { timeout: 20_000 })
       await expect(window.locator('[data-testid="composer-send"]')).toHaveAttribute("aria-label", /Send|发送/, {
         timeout: 20_000
       })
+      if (!firstId) {
+        // 线程是 virtua 虚拟列表：「第一个 [data-thread-message]」只是第一个已挂载的行，滚动后会变。
+        // 第一句刚发完、一定挂着时按消息 id 锁定，后面都按这个 id 找。
+        const firstHit = window
+          .locator("[data-thread-message]")
+          .filter({ has: window.locator(".is-user") })
+          .filter({ hasText: prompts[0] })
+        await expect(firstHit).toHaveCount(1)
+        firstId = await firstHit.getAttribute("data-thread-message")
+      }
     }
+    expect(firstId).toBeTruthy()
+    const firstSelector = `[data-thread-message="${firstId}"]`
     const ticks = window.locator('[data-slot="preview-rail-item"]')
     await expect(ticks).toHaveCount(prompts.length, { timeout: 10_000 })
     await expect(window.locator('[data-testid="thread-preview-rail"]')).toBeVisible()
     await window.waitForTimeout(800)
-    // 长线程首轮可能已 deferred 卸成占位（无 .is-user / 无正文）；锚点仍在 wrapper 上。
-    const first = window.locator("[data-thread-message]").first()
-    await expect(first).toHaveAttribute("data-thread-message", /.+/)
     // 前提：第一句已经滚出可视区，否则测不出「点刻度滚过去」。贴底滚动可能还没落定，先滚到最后一句再等。
     const last = window.locator("[data-thread-message]").last()
     await last.scrollIntoViewIfNeeded()
@@ -160,7 +172,10 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
       }) as HTMLElement[]
       for (const node of scrollers) node.scrollTop = node.scrollHeight
     })
-    await expect.poll(() => inViewport(first), { timeout: 8_000, message: "first message should start offscreen" }).toBe(false)
+    // 没挂载（被 virtua 卸掉）也算不在可视区。
+    await expect
+      .poll(() => inViewport(window, firstSelector), { timeout: 8_000, message: "first message should start offscreen" })
+      .toBe(false)
 
     const tick = ticks.first()
     expect(await hitsSelf(tick), "tick: elementFromPoint not the tick").toBe(true)
@@ -172,7 +187,9 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
     await snap(window, "1100x720-rail-tick-hover")
 
     await window.mouse.click(t.x + t.width / 2, t.y + t.height / 2)
-    await expect.poll(() => inViewport(first), { timeout: 8_000 }).toBe(true)
+    await expect
+      .poll(() => inViewport(window, firstSelector), { timeout: 8_000, message: "clicked tick should scroll to the first message" })
+      .toBe(true)
     await expect(tick).toHaveAttribute("aria-current", "location")
     await snap(window, "1100x720-rail-tick-click-scrolled")
 
@@ -184,16 +201,36 @@ test("刻度本身仍可用：真实鼠标悬停出预览卡，点击滚到对�
   }
 })
 
-async function inViewport(locator: Locator): Promise<boolean> {
-  return locator.evaluate((el) => {
+/** 按选择器找（不等待）：没挂载 → false；挂着则至少露出 min(40, 半高) 才算在可视区。 */
+async function inViewport(window: Page, selector: string): Promise<boolean> {
+  return window.evaluate((sel) => {
+    const el = document.querySelector(sel)
+    if (!el) return false
     const r = el.getBoundingClientRect()
     const top = Math.max(r.top, 0)
-    const bottom = Math.min(r.bottom, window.innerHeight)
+    const bottom = Math.min(r.bottom, globalThis.innerHeight)
     return bottom - top > Math.min(40, r.height / 2)
-  })
+  }, selector)
 }
 
+/**
+ * 真实鼠标点中心。先等落定：位置稳定（两次量到的框一致）且中心 elementFromPoint 命中自己。
+ * 打开编辑框 / 发完消息后线程还在滚动落位、悬停后操作条还在淡入，量完就点会点偏或点空。
+ * 刻度真吃点击时中心永远命中不到按钮，这里照样超时红。
+ */
 async function clickCenter(window: Page, locator: Locator): Promise<void> {
+  let last = ""
+  await expect
+    .poll(
+      async () => {
+        const now = JSON.stringify(await box(locator))
+        const stable = now === last
+        last = now
+        return stable && (await hitsSelf(locator))
+      },
+      { timeout: 5_000, intervals: [100, 100, 150, 250], message: "click target never settled / never hit itself" }
+    )
+    .toBe(true)
   const b = await box(locator)
   await window.mouse.move(b.x + b.width / 2, b.y + b.height / 2)
   await window.mouse.click(b.x + b.width / 2, b.y + b.height / 2)

@@ -127,11 +127,17 @@ async function writeTurn(page: Page) {
   await expect(page.getByText("stub-ok", { exact: false }).first()).toBeVisible({ timeout: 15_000 })
 }
 
-async function openDialog(page: Page, _lang: Lang): Promise<Locator> {
-  // P1 主入口：助手气泡 ⋯ →「改到这里」
+/** 悬停第一条助手气泡并打开它的 ⋯ 菜单（#207 起「改到这里」的入口）。 */
+async function openAssistantMore(page: Page) {
   const assistant = page.locator(".is-assistant").first()
   await assistant.hover()
   await page.getByTestId("message-more").first().click()
+  await expect(page.getByTestId("extract-object")).toBeVisible()
+}
+
+async function openDialog(page: Page, _lang: Lang): Promise<Locator> {
+  // P1 主入口：助手气泡 ⋯ →「改到这里」
+  await openAssistantMore(page)
   await page.getByTestId("rewind-from-here").click()
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
@@ -429,8 +435,9 @@ for (const lang of ["zh", "en"] as const) {
       await expect(partial).toHaveAttribute("data-failure-kind", "partial")
       await expect(partial).toContainText(c.partial)
       await expect(partial.getByTestId("rewind-go-review")).toHaveText(c.goReview)
+      // #207 起弹窗不再画独立的 rewind-hint（说明并进勾选副文）；琥珀色对照改用灰色正文 rewind-body。
       expect(await partial.evaluate((el) => getComputedStyle(el).color)).not.toBe(
-        await dialog.getByTestId("rewind-hint").evaluate((el) => getComputedStyle(el).color)
+        await dialog.getByTestId("rewind-body").evaluate((el) => getComputedStyle(el).color)
       )
       let shown = await dialog.innerText()
       expect(shown).not.toContain("RAW-RESTORE-ERROR")
@@ -473,12 +480,13 @@ for (const lang of ["zh", "en"] as const) {
       await shots(page, `list-failed-${lang}`)
       await expect(missing).toHaveAttribute("data-failure-kind", "missing")
       await expect(missing).toHaveText(c.failure)
-      const hint = dialog.getByTestId("rewind-hint")
-      const [missingBg, hintBg] = await Promise.all([
+      // 同上：灰色兜底句要有自己的底色，和正文 rewind-body（无底色）区分开。
+      const body = dialog.getByTestId("rewind-body")
+      const [missingBg, bodyBg] = await Promise.all([
         missing.evaluate((el) => getComputedStyle(el).backgroundColor),
-        hint.evaluate((el) => getComputedStyle(el).backgroundColor)
+        body.evaluate((el) => getComputedStyle(el).backgroundColor)
       ])
-      expect(missingBg, `${lang} failure line has its own background`).not.toBe(hintBg)
+      expect(missingBg, `${lang} failure line has its own background`).not.toBe(bodyBg)
       shown = await dialog.innerText()
       expect(shown).not.toContain("RAW-LIST-ERROR")
       expect(shown).not.toMatch(/SQLITE|secret|remote method/i)
@@ -592,9 +600,12 @@ test("ACP 会话（绑 Amp）：消息上没有「改到这里」入口，也没
     await writeTurn(page)
     sessionId = await page.locator('[data-testid="sidebar-session-row"][data-active="true"]').first().getAttribute("data-session-id")
     expect(sessionId).toBeTruthy()
-    // 对照：Enjoy 本地会话的消息上有入口。
-    await page.locator('[data-testid="user-bubble"]').first().hover()
-    await expect(page.getByRole("button", { name: COPY.zh.action, exact: true }).first()).toBeVisible()
+    // 对照：Enjoy 本地会话的助手气泡 ⋯ 菜单里有「改到这里」（#207 起入口在助手 ⋯，用户气泡上不再有）。
+    await openAssistantMore(page)
+    await expect(page.getByTestId("rewind-from-here")).toBeVisible()
+    await expect(page.getByTestId("rewind-from-here")).toContainText(COPY.zh.action)
+    await page.keyboard.press("Escape")
+    await expect(page.getByTestId("rewind-from-here")).toHaveCount(0)
     // 把这条会话绑到 Amp（ACP），走正式 IPC；重启后按会话绑定取引擎。
     await page.evaluate(
       (sid) =>
@@ -624,6 +635,11 @@ test("ACP 会话（绑 Amp）：消息上没有「改到这里」入口，也没
     // 「编辑消息」还在（不是死路），「改到这里」整个不出（不是置灰）。
     await expect(page.getByRole("button", { name: "编辑消息", exact: true }).first()).toBeVisible()
     await expect(page.getByRole("button", { name: COPY.zh.action, exact: true })).toHaveCount(0)
+    // 助手 ⋯ 菜单能打开（有「原始 JSON」项），但里面没有「改到这里」——不出，也不是置灰的。
+    await openAssistantMore(page)
+    await expect(page.getByTestId("extract-object")).toBeVisible()
+    await expect(page.getByTestId("rewind-from-here")).toHaveCount(0)
+    await page.keyboard.press("Escape")
     await expect(page.getByRole("dialog")).toHaveCount(0)
     await shots(page, "acp-no-rewind-zh")
   } finally {

@@ -5,6 +5,8 @@
  * 断言：有已改文件的待验收条 + 一张图片附件时，1024 / 768 / 733×480 下缩略图与条不重叠、整张可见，
  * 输入框完整可见、没被挤没；审核条按钮（去审查/打回/通过、全部撤销/全部保留/审查）可见且 elementFromPoint
  * 命中按钮本身；托盘展开 + 733×480 也一样。截图：设 ENJOY_E2E_SHOTS_DIR 时按尺寸落盘，另截一张深色。
+ * #224 补强：733×480 邻域（733×479 / 733×470 / 732×480 / 734×480）同样断言；对话区 ≥ 保底 min-height（不再是
+ * 恒真的 >40）、发送底边离状态栏 ≥ 8px；第二张图片加进来后每张缩略图都要命中自己的 IMG（待验收 + keep-row 两态）。
  */
 import { existsSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
@@ -22,6 +24,15 @@ const SIZES = [
   { width: 768, height: 654 },
   { width: 733, height: 480 }
 ] as const
+// 733×480 契约的邻域：高再矮 1 / 10px、宽差 ±1px，不能只在恰好 733×480 时成立。
+const NEIGHBOUR_SIZES = [
+  { width: 733, height: 479 },
+  { width: 733, height: 470 },
+  { width: 732, height: 480 },
+  { width: 734, height: 480 }
+] as const
+/** 发送底边与状态栏顶之间至少留这么多（#224：实测 733×480 约 17px）。 */
+const SEND_STATUS_GAP = 8
 const shotsDir = process.env.ENJOY_E2E_SHOTS_DIR
 
 // 160x100 蓝色 PNG（与 first-send-image-only 同一张）。
@@ -86,6 +97,16 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
       }
     }
     await setTheme(window, "light")
+    for (const size of NEIGHBOUR_SIZES) {
+      await window.setViewportSize(size)
+      await window.waitForTimeout(500)
+      const label = `${size.width}x${size.height} neighbour`
+      await expect(gate).toContainText("1 个文件已改")
+      await expectTrayClear(window, label, size)
+      await expectDockButtons(window, label, GATE_BUTTONS)
+      await expectSendAboveStatusBar(window, label)
+      await expectThumbHitsImg(window, `${label} compact`)
+    }
 
     // 展开的附件托盘 + 最小窗 733×480：托盘变高也不能顶到审核条上、按钮照样点得到。
     const small = { width: 733, height: 480 }
@@ -107,14 +128,39 @@ test("有已改文件的待验收条 + 一张图片附件：缩略图不被条�
     await window.evaluate(() => window.__enjoyE2e?.setReviewChrome({ workflowStatus: "in_progress" }))
     const live = window.locator('[data-testid="composer-live-changes"]')
     await expect(live).toBeVisible({ timeout: 15_000 })
-    for (const size of SIZES) {
+    for (const size of [...SIZES, ...NEIGHBOUR_SIZES]) {
       await window.setViewportSize(size)
       await window.waitForTimeout(500)
       const label = `${size.width}x${size.height} keep-row`
       await expectTrayClear(window, label, size)
       await expectDockButtons(window, label, KEEP_BUTTONS)
+      await expectSendAboveStatusBar(window, label)
+      if (size.height <= 480) await expectThumbHitsImg(window, `${label} compact`)
       await snap(window, `${size.width}x${size.height}-dock-tray-keep-row-light`)
     }
+
+    // 多图：再加一张，733×480 下 keep-row 与待验收两态里每张缩略图都整张可见、命中自己的 IMG。
+    await window.locator('[data-testid="composer-attach"]').setInputFiles({
+      name: "blue-2.png",
+      mimeType: "image/png",
+      buffer: PNG
+    })
+    await expect(chip).toHaveCount(2, { timeout: 8_000 })
+    await expect(chip.nth(1).locator("img")).toBeVisible({ timeout: 8_000 })
+    await window.setViewportSize(small)
+    await window.waitForTimeout(500)
+    await expectTrayClear(window, "733x480 keep-row 2 images", small)
+    await expectDockButtons(window, "733x480 keep-row 2 images", KEEP_BUTTONS)
+    await expectSendAboveStatusBar(window, "733x480 keep-row 2 images")
+    await expectThumbHitsImg(window, "733x480 keep-row 2 images", 2)
+    await window.evaluate(() => window.__enjoyE2e?.setReviewChrome({ workflowStatus: "needs_review" }))
+    await expect(gate).toBeVisible({ timeout: 15_000 })
+    await window.waitForTimeout(500)
+    await expectTrayClear(window, "733x480 gate 2 images", small)
+    await expectDockButtons(window, "733x480 gate 2 images", GATE_BUTTONS)
+    await expectSendAboveStatusBar(window, "733x480 gate 2 images")
+    await expectThumbHitsImg(window, "733x480 gate 2 images", 2)
+    await snap(window, "733x480-dock-tray-2-images-light")
   } finally {
     await closeForRelaunch(env.app)
   }
@@ -153,53 +199,64 @@ async function expectSendAboveStatusBar(window: Page, label: string): Promise<vo
   expect(geom.barTop, `${label}: status bar present`).toEqual(expect.any(Number))
   expect(
     geom.sendBottom,
-    `${label}: send.bottom ${geom.sendBottom} must be ≤ statusBar.top ${geom.barTop}`
-  ).toBeLessThanOrEqual((geom.barTop ?? 0) + 0.5)
+    `${label}: send.bottom ${geom.sendBottom} must be ≤ statusBar.top ${geom.barTop} − ${SEND_STATUS_GAP}`
+  ).toBeLessThanOrEqual((geom.barTop ?? 0) - SEND_STATUS_GAP + 0.5)
   expect(geom.hitBar, `${label}: send center hit status bar (${geom.hitBy})`).toBe(false)
   expect(geom.hitSend, `${label}: send center hit ${geom.hitBy}`).toBe(true)
 }
 
 /**
- * 733×480 待验收（展开 / 紧凑）：托盘转横向单行条（毛高 52–56、mb=0），缩略图 ≥36，
- * 四角（各向内收 5px）与中心 elementFromPoint 都命中缩略图里的 IMG，不是表单卡片或模式切换。
+ * 733×480 待验收（展开 / 紧凑）：托盘转横向单行条（毛高 52–56、mb=0），每张缩略图 ≥36，
+ * 四角（各向内收 5px）与中心 elementFromPoint 都命中「这一张」缩略图里的 IMG，不是表单卡片、模式切换或隔壁那张。
+ * expectedChips：附件张数，防止只剩 1 张时空转通过。
  */
-async function expectThumbHitsImg(window: Page, label: string): Promise<void> {
+async function expectThumbHitsImg(window: Page, label: string, expectedChips = 1): Promise<void> {
   const geom = await window.evaluate(() => {
     const tray = document.querySelector('[data-testid="composer-attachment-tray"]')
-    const chip = document.querySelector('[data-testid="composer-asset-chip"]')
-    if (!tray || !chip) return { missing: true as const }
+    const chips = Array.from(document.querySelectorAll('[data-testid="composer-asset-chip"]'))
+    if (!tray || chips.length === 0) return { missing: true as const }
     const t = tray.getBoundingClientRect()
-    const r = chip.getBoundingClientRect()
     const inset = 5
-    const points = [
-      [r.left + inset, r.top + inset],
-      [r.right - inset, r.top + inset],
-      [r.left + inset, r.bottom - inset],
-      [r.right - inset, r.bottom - inset],
-      [r.left + r.width / 2, r.top + r.height / 2]
-    ]
-    const hits = points.map(([x, y]) => {
-      const hit = document.elementFromPoint(x, y)
-      return { x, y, ok: !!hit && hit.tagName === "IMG" && chip.contains(hit), hit: hit ? `${hit.tagName}.${hit.getAttribute("data-testid") ?? ""}` : "none" }
+    const perChip = chips.map((chip, index) => {
+      const r = chip.getBoundingClientRect()
+      const points = [
+        [r.left + inset, r.top + inset],
+        [r.right - inset, r.top + inset],
+        [r.left + inset, r.bottom - inset],
+        [r.right - inset, r.bottom - inset],
+        [r.left + r.width / 2, r.top + r.height / 2]
+      ]
+      const hits = points.map(([x, y]) => {
+        const hit = document.elementFromPoint(x, y)
+        return {
+          x,
+          y,
+          ok: !!hit && hit.tagName === "IMG" && chip.contains(hit),
+          hit: hit ? `${hit.tagName}.${hit.getAttribute("data-testid") ?? ""}` : "none"
+        }
+      })
+      return { index, thumb: Math.min(r.width, r.height), hits }
     })
     return {
       missing: false as const,
       strip: tray.getAttribute("data-tray-strip") === "true",
       trayHeight: t.height,
       marginBottom: parseFloat(getComputedStyle(tray).marginBottom),
-      thumb: Math.min(r.width, r.height),
-      hits
+      perChip
     }
   })
   expect(geom.missing, `${label}: tray or chip missing`).toBe(false)
   if (geom.missing) return
+  expect(geom.perChip.length, `${label}: chip count`).toBe(expectedChips)
   expect(geom.strip, `${label}: tray should switch to single-row strip`).toBe(true)
   expect(geom.trayHeight, `${label}: strip height ${geom.trayHeight}`).toBeGreaterThanOrEqual(52)
   expect(geom.trayHeight, `${label}: strip height ${geom.trayHeight}`).toBeLessThanOrEqual(56)
   expect(geom.marginBottom, `${label}: strip must not overlap form (mb=${geom.marginBottom})`).toBe(0)
-  expect(geom.thumb, `${label}: thumbnail too small`).toBeGreaterThanOrEqual(36)
-  for (const hit of geom.hits) {
-    expect(hit.ok, `${label}: thumbnail IMG not hit at (${hit.x},${hit.y}) by ${hit.hit}`).toBe(true)
+  for (const chip of geom.perChip) {
+    expect(chip.thumb, `${label}: thumbnail #${chip.index} too small`).toBeGreaterThanOrEqual(36)
+    for (const hit of chip.hits) {
+      expect(hit.ok, `${label}: thumbnail #${chip.index} IMG not hit at (${hit.x},${hit.y}) by ${hit.hit}`).toBe(true)
+    }
   }
 }
 
@@ -224,10 +281,39 @@ async function expectDockButtons(window: Page, label: string, buttons: DockButto
 async function expectTrayClear(window: Page, label: string, size: { width: number; height: number }): Promise<void> {
   const dock = await box(window.locator('[data-testid="composer-review-frame"]'))
   const tray = await box(window.locator('[data-testid="composer-attachment-tray"]'))
-  const thumb = await box(window.locator('[data-testid="composer-asset-chip"]'))
   const form = await box(window.locator("form[data-composer]"))
   const input = await box(window.locator('[data-testid="composer-input"]'))
-  const debug = JSON.stringify({ dock, tray, thumb, form, input })
+  const chips = window.locator('[data-testid="composer-asset-chip"]')
+  const chipCount = await chips.count()
+  expect(chipCount, `${label}: no attachment chip`).toBeGreaterThan(0)
+  for (let i = 0; i < chipCount; i += 1) {
+    await expectThumbClear(chips.nth(i), `${label} #${i}`, size, { dock, tray, form, input })
+  }
+
+  // 小窗不能把输入框挤没：整个 Composer 在视口内、不被裁，输入框至少一行半高。
+  const debug = JSON.stringify({ dock, tray, form, input })
+  expect(form.y + form.height, `${label}: composer cut off ${debug}`).toBeLessThanOrEqual(size.height)
+  const formFull = await window.locator("form[data-composer]").evaluate((el) => el.scrollHeight <= el.clientHeight + 1)
+  expect(formFull, `${label}: composer clipped`).toBe(true)
+  expect(input.height, `${label}: input squeezed ${debug}`).toBeGreaterThanOrEqual(40)
+  await expect(window.locator('[data-testid="composer-input"]')).toBeVisible()
+  // 对话区不低于产品给的保底 min-height（min-h-14 = 56；审批时更高）。原来的 >40 低于保底、恒真。
+  const conversation = window.locator('[data-testid="chat-conversation"]')
+  const conv = await box(conversation)
+  const convFloor = await conversation.evaluate((el) => Number.parseFloat(getComputedStyle(el).minHeight) || 0)
+  const floor = Math.max(56, convFloor)
+  expect(conv.height, `${label}: messages squeezed below floor ${floor} (h=${conv.height})`).toBeGreaterThanOrEqual(floor - 0.5)
+}
+
+async function expectThumbClear(
+  chip: Locator,
+  label: string,
+  size: { width: number; height: number },
+  ctx: { dock: Box; tray: Box; form: Box; input: Box }
+): Promise<void> {
+  const { dock, tray, form } = ctx
+  const thumb = await box(chip)
+  const debug = JSON.stringify({ ...ctx, thumb })
 
   // 文档流上下排：条在上、托盘在下，互不覆盖。
   expect(intersects(thumb, dock), `${label}: thumbnail ∩ review dock ${debug}`).toBe(false)
@@ -238,7 +324,7 @@ async function expectTrayClear(window: Page, label: string, size: { width: numbe
   // 缩略图整张可见：四角与中心点命中的都是缩略图自己，没被别的层盖住或被裁掉。
   expect(thumb.y, `${label}: thumbnail above viewport`).toBeGreaterThanOrEqual(0)
   expect(thumb.y + thumb.height, `${label}: thumbnail below viewport`).toBeLessThanOrEqual(size.height)
-  const hits = await window.locator('[data-testid="composer-asset-chip"]').evaluate((el) => {
+  const hits = await chip.evaluate((el) => {
     const r = el.getBoundingClientRect()
     // 圆角 rounded-xl（12px）：角点往里收 5px 才落在圆角内；底边中点收 2px。
     const inset = 5
@@ -260,15 +346,6 @@ async function expectTrayClear(window: Page, label: string, size: { width: numbe
   for (const hit of hits) {
     expect(hit.ok, `${label}: thumbnail covered at (${hit.x},${hit.y}) by ${hit.hit} ${debug}`).toBe(true)
   }
-
-  // 小窗不能把输入框挤没：整个 Composer 在视口内、不被裁，输入框至少一行半高。
-  expect(form.y + form.height, `${label}: composer cut off ${debug}`).toBeLessThanOrEqual(size.height)
-  const formFull = await window.locator("form[data-composer]").evaluate((el) => el.scrollHeight <= el.clientHeight + 1)
-  expect(formFull, `${label}: composer clipped`).toBe(true)
-  expect(input.height, `${label}: input squeezed ${debug}`).toBeGreaterThanOrEqual(40)
-  await expect(window.locator('[data-testid="composer-input"]')).toBeVisible()
-  const conv = await box(window.locator('[data-testid="chat-conversation"]'))
-  expect(conv.height, `${label}: messages squeezed out`).toBeGreaterThan(40)
 }
 
 async function box(locator: Locator): Promise<Box> {
