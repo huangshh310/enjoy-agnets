@@ -8,7 +8,9 @@ import { expect } from "@playwright/test"
 import type { ElectronApplication, Locator, Page } from "playwright"
 
 export const MAIN_ENTRY = join(process.cwd(), "out/main/index.js")
-export const SHOTS = "/opt/cursor/artifacts/screenshots"
+/** 截图目录：默认沿用 CI 的 /opt/cursor/artifacts；本机无写权限时用 ENJOY_E2E_BASE_SHOTS_DIR 覆盖。
+ * 不复用 ENJOY_E2E_SHOTS_DIR——那个变量在别的 spec 里会触发改窗口尺寸的截图分支。 */
+export const SHOTS = process.env.ENJOY_E2E_BASE_SHOTS_DIR || "/opt/cursor/artifacts/screenshots"
 
 export function canLaunchElectron(): string | null {
   if (!existsSync(MAIN_ENTRY)) return "out/main/index.js missing; run desktop build first"

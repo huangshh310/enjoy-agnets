@@ -193,8 +193,15 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     const noteRow = window.locator('[data-testid="turn-source-row"][data-path="note.txt"]')
     await expect(noteRow).toBeVisible()
     await noteRow.click()
-    await expect(window.locator('[data-testid="source-file-diff"]')).toBeVisible({ timeout: 8_000 })
-    await expect(window.locator('[data-testid="source-file-diff"]')).toContainText("@@")
+    const diff = window.locator('[data-testid="source-file-diff"]')
+    await expect(diff).toBeVisible({ timeout: 8_000 })
+    // #215 起 diff 由 @pierre/diffs（pierre-shiki-js）渲染，不再输出统一 diff 的「@@」块头。
+    // 仍要证明打开的是「本轮改动的 diff」而不是文件预览：引擎标记 + 新增行带 change-addition、内容是本轮写入的那行。
+    await expect(diff).toHaveAttribute("data-diff-engine", "pierre-shiki-js")
+    const added = diff.locator('[data-line-type="change-addition"]')
+    await expect(added.first()).toBeVisible({ timeout: 8_000 })
+    await expect(added.filter({ hasText: "changed this turn" })).not.toHaveCount(0)
+    await expect(diff).toContainText("note.txt")
     await expect(window.locator('[data-testid="source-file-preview"]')).toHaveCount(0)
     await snapWindow(window, "knowledge-source-file-diff")
 
