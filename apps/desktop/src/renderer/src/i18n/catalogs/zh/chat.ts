@@ -70,7 +70,7 @@ export const zhChat = {
   stopAgain: "再停一次",
   stopStuckHeader: "没停干净",
   placeholderStopping: "正在停下，稍等…",
-  placeholderStuck: "没能停下，可以再停一次…",
+  placeholderStuck: "可以先写下一句，停干净后再发送",
   toolStoppedNothingWritten: "已停止 · 没有写入",
   toolStoppedMaybePartial: "已停止 · 可能只做了一半",
   stackedTasksProgress: "{done}/{total} 项已完成",
