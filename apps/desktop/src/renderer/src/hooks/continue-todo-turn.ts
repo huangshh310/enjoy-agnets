@@ -17,9 +17,12 @@ import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { prefixHostModeForSend } from "./runtime-interact/composer-draft"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 import { pauseFollowupsAfterFailedStart } from "./followup-pause"
+import { isStopLocked } from "../stores/stop-settle"
 
 export async function continueTodoTurn(): Promise<void> {
   const store = useChatStore.getState()
+  // leo C1b：停止后 Dock 正好显示「已停止＋继续」——收尾没落定时点了不开新一轮，不清错误、不动消息。
+  if (isStopLocked(store.sessionId)) return
   if (store.running || !hasIde()) return
   if (!store.workspaceId || !store.sessionId) return
   const runKind = isAcpComposerRuntime(store.runtimeId)

@@ -48,8 +48,9 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
     if (!canResend || isSubmitting || running) return
     setIsSubmitting(true)
     try {
-      await editAndResendUserTurn(message.id, replaceVisibleUserDraft(message.content, draftContent))
-      setIsEditing(false)
+      const outcome = await editAndResendUserTurn(message.id, replaceVisibleUserDraft(message.content, draftContent))
+      // leo C1b：收尾没落定没发出去——编辑框和改过的字都留着。
+      if (outcome !== "stop-locked") setIsEditing(false)
     } finally {
       setIsSubmitting(false)
     }

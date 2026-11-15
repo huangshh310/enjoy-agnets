@@ -21,6 +21,7 @@ import { useT } from "@renderer/i18n"
 import { CanvasEditor } from "./canvas/canvas-editor"
 import { canvasToWorkflowGraph } from "./lib/canvas-to-workflow-graph"
 import { useCanvasStore } from "./stores/use-canvas-store"
+import { isStopLocked } from "@renderer/stores/stop-settle"
 
 export function WorkflowsPage() {
   const t = useT()
@@ -81,6 +82,8 @@ export function WorkflowsPage() {
 
   async function startPipeline() {
     if (!sessionId || isStarting) return
+    // leo C1b：流水线的每一步都在当前会话里跑 agent.run（workflow-runner → runWorkflowAgentStep）；收尾没落定不起跑。
+    if (isStopLocked(sessionId)) return
     setIsStarting(true)
     setDagError(null)
     setCycleNodeIds([])
