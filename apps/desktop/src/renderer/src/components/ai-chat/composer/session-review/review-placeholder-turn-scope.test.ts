@@ -80,7 +80,7 @@ test("续跑用户句不切断本轮：工具与助手消息仍按上一条真�
 })
 
 test("接线：占位句吃 toolsAfterLastUser，技能 chip 吃 lastAssistantSinceUser，不再用 lastAssistantTurn", () => {
-  const src = readFileSync(new URL("./composer-session-review.tsx", import.meta.url), "utf8")
+  const src = readFileSync(new URL("./composer-session-review.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(src, /reviewPlaceholderKind\(toolsAfterLastUser\(messages\)/)
   assert.match(src, /chipsFromLastAssistant\(lastAssistantSinceUser\(messages\)/)
   assert.doesNotMatch(src, /lastAssistantTurn/)
