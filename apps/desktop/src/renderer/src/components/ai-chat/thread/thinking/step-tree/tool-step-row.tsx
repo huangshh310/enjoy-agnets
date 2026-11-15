@@ -42,7 +42,6 @@ export function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
   return (
     <div className="flex w-full flex-col gap-1.5">
       <StepTitleRow node={node} hasDetail={hasDetail} expanded={expanded} onToggle={() => hasDetail && setExpanded(!expanded)} />
-      {node.status === "stopped" ? <StuckHint toolCallId={node.id} /> : null}
       {node.domainPills && node.domainPills.length > 0 ? <DomainPills pills={node.domainPills} /> : null}
       {!expanded && node.detail && node.kind !== "editing" ? (
         <p className="max-w-xl truncate pl-0.5 font-mono text-caption-2-regular text-text-tertiary">{node.detail}</p>
@@ -149,14 +148,6 @@ function StoppedTitle({ node, title, view }: { node: AgentStepNode; title: strin
       {view === "stopping" ? <RiLoader4Line className="size-3 animate-spin text-text-tertiary" aria-hidden /> : null}
     </span>
   )
-}
-
-/** 卡住时工具行下一行 mute 说明（luna §1.2）。 */
-function StuckHint({ toolCallId }: { toolCallId: string }) {
-  const t = useT()
-  const view = useToolStopView(toolCallId)
-  if (view !== "stuck") return null
-  return <p className="pl-0.5 text-caption-2-regular text-text-tertiary">{t("chat.stopStuckHint")}</p>
 }
 
 function StepOutcomeMark({

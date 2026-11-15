@@ -47,7 +47,7 @@ test("⑥ 禁用词：停止相关新句子里没有 写了/改了/完成/已写
 })
 
 test("工具行：stopped 且归收尾管时用状态标题（对象弱化跟后），通用「已停止」徽标不再叠", () => {
-  const src = readFileSync(new URL("./thread/thinking/step-tree/tool-step-row.tsx", import.meta.url), "utf8")
+  const src = readFileSync(new URL("./thread/thinking/step-tree/tool-step-row.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(src, /node\.status === "stopped" \? stoppedToolTitle\(stopView, node\.kind === "editing", t\) : null/)
   assert.match(src, /node\.status === "stopped" && !stoppedTitle \?/)
 })
@@ -91,6 +91,13 @@ test("收工判定：run.stopped 终态的 turn 生效；stuck / 无 turn 不动
   assert.deepEqual(turnFrom.turnFromEvent(final as never), final.turn)
   assert.equal(phase.workflowAfterStreamEvent("run.stopped", { turn: final.turn as never }), "needs_review")
   assert.equal(phase.workflowAfterStreamEvent("run.stopped", {}), null)
-  const sync = readFileSync(new URL("./review-gate/sync-review-gate.ts", import.meta.url), "utf8")
+  const sync = readFileSync(new URL("./review-gate/sync-review-gate.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(sync, /if \(event\.type === "run\.error" && event\.settling\) return/)
+})
+
+test("luna S2：卡住说明只出现一处——通知条第二行保留（思考折叠时也看得见），工具行下不再重复", () => {
+  const row = readFileSync(new URL("./thread/thinking/step-tree/tool-step-row.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.doesNotMatch(row, /stopStuckHint/)
+  const banner = readFileSync(new URL("./thread/thread-notice-banner.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(banner, /stopPhase === "stuck"\n\s*\? t\("chat\.stopStuckHint"\)/)
 })
