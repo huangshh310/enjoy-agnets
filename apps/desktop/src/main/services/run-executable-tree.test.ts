@@ -14,9 +14,11 @@ import {
   forceKillTree,
   processAlive,
   processGroupAlive,
+  processAliveFromSignalError,
   resetTreeLivenessForTest,
   runExecutableTree,
   setTreeClockForTest,
+  setTreeLivenessPlatformForTest,
   setTreeLivenessProbeForTest,
   TREE_KILL_SLA_MS
 } from "./command.ts"
@@ -230,4 +232,68 @@ test("进入查杀后 2s 仍存活不落 unconfirmed，探活见到死亡才结�
   clock.tick(50)
   const result = await finished
   assert.equal(result.processExit, "killed")
+})
+
+test("Windows 探活遇到 EPERM 当作仍存活", () => {
+  const eperm = Object.assign(new Error("EPERM"), { code: "EPERM" })
+  const esrch = Object.assign(new Error("ESRCH"), { code: "ESRCH" })
+  assert.equal(processAliveFromSignalError(eperm), true)
+  assert.equal(processAliveFromSignalError(esrch), false)
+  assert.equal(processAliveFromSignalError(new Error("other")), false)
+})
+
+test("Windows：子进程退出即判整棵树结束，即使 pid 探活仍为存活（防复用）", async () => {
+  setTreeLivenessPlatformForTest("win32")
+  setTreeLivenessProbeForTest(() => true)
+  const root = await mkdtemp(join(tmpdir(), "enjoy-win-exit-"))
+  const ac = new AbortController()
+  const running = runExecutableTree(root, process.execPath, ["-e", "setInterval(()=>{},1000)"], {
+    timeoutMs: 20_000,
+    signal: ac.signal
+  })
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  ac.abort()
+  const result = await running
+  assert.equal(result.processExit, "killed")
+  if (typeof result.pid === "number") {
+    try {
+      await forceKillTree(result.pid)
+    } catch {
+      // already gone
+    }
+  }
+  await rm(root, { recursive: true, force: true })
+})
+
+test("超时路径（未点停止）到 spawn+timeoutMs+2s 仍存活则按 unconfirmed 结束", async () => {
+  const clock = new FakeClock()
+  setTreeClockForTest(clock)
+  setTreeLivenessProbeForTest(() => true)
+  const root = await mkdtemp(join(tmpdir(), "enjoy-tree-cap-"))
+  const running = runExecutableTree(root, process.execPath, ["-e", "setInterval(()=>{},1000)"], {
+    timeoutMs: 5_000
+  })
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  let done = false
+  const finished = running.then((result) => {
+    done = true
+    return result
+  })
+  clock.tick(5_000)
+  await Promise.resolve()
+  assert.equal(done, false)
+  clock.tick(TREE_KILL_SLA_MS - 1)
+  await Promise.resolve()
+  assert.equal(done, false)
+  clock.tick(1)
+  const result = await finished
+  assert.equal(result.processExit, "unconfirmed")
+  if (typeof result.pid === "number") {
+    try {
+      await forceKillTree(result.pid)
+    } catch {
+      // already gone
+    }
+  }
+  await rm(root, { recursive: true, force: true })
 })

@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { afterEach, test } from "node:test"
-import { mkdtemp, access, rm, readFile } from "node:fs/promises"
+import { mkdtemp, access, rm, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { constants as fsConstants } from "node:fs"
@@ -27,11 +27,16 @@ import {
   waitSettled,
   ledgerSizeForTest,
   reclaimLedgerIfIdle,
-  setKillTreeForTest
+  setKillTreeForTest,
+  markChildExited
 } from "./run-side-effects.ts"
 import { settleRun } from "./agent-run-state.ts"
 import { createWorkspaceHost } from "./workspace-host.ts"
-import { resetTreeLivenessForTest, setTreeLivenessOverride } from "./command.ts"
+import { resetTreeLivenessForTest, setTreeLivenessOverride, setTreeLivenessPlatformForTest } from "./command.ts"
+import { decideStopReceipt } from "./stop-receipt-decide.ts"
+import { createSshWorkspaceHost } from "./ssh/ssh-workspace-host.ts"
+import type { SshConnectionLayer } from "./ssh/ssh.types.ts"
+import { isRemoteDisconnected } from "./ssh/ssh-errors.ts"
 
 const NotificationStub = Notification as unknown as {
   supported: boolean
@@ -309,4 +314,140 @@ test("正常结束且无未结清条目时回收账本", () => {
   const size = ledgerSizeForTest()
   reclaimLedgerIfIdle("run_keep")
   assert.equal(ledgerSizeForTest(), size)
+})
+
+
+function receiptOf(runId: string) {
+  return decideStopReceipt({ entries: summarize(runId), phase: "settled" })
+}
+
+test("写入中途出错后回执是 maybe_partial，证据为 fs_write_error", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-write-err-"))
+  await writeFile(join(root, "afile"), "not a dir")
+  const host = createWorkspaceHost(root, { runId: "run_write_err", sessionId: "ses_write_err" })
+  await assert.rejects(() => host.writeFile("afile/child.txt", "x"))
+  const rows = summarize("run_write_err")
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.op, "write_file")
+  assert.equal(rows[0]?.phase, "settled")
+  assert.equal(rows[0]?.outcome, "error")
+  const receipt = receiptOf("run_write_err")
+  assert.equal(receipt.write, "maybe_partial")
+  assert.ok(receipt.tools.some((tool) => tool.evidence.includes("fs_write_error")))
+  await rm(root, { recursive: true, force: true })
+})
+
+test("git commit / branch / push 开始后失败，回执是 maybe_partial 不是 none_confirmed", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-git-err-"))
+  const host = createWorkspaceHost(root, { runId: "run_git_err", sessionId: "ses_git_err" })
+  await assert.rejects(() => host.gitBranch("feat-n1"))
+  await assert.rejects(() => host.gitPush())
+  const branch = summarize("run_git_err").find((row) => row.op === "git_branch")
+  const push = summarize("run_git_err").find((row) => row.op === "git_push")
+  assert.equal(branch?.phase, "settled")
+  assert.equal(branch?.outcome, "error")
+  assert.equal(push?.phase, "settled")
+  assert.equal(push?.outcome, "error")
+  const receipt = receiptOf("run_git_err")
+  assert.equal(receipt.write, "maybe_partial")
+  assert.notEqual(receipt.write, "none_confirmed")
+
+  const commitRoot = await mkdtemp(join(tmpdir(), "enjoy-git-commit-err-"))
+  const { execFileSync } = await import("node:child_process")
+  execFileSync("git", ["init"], { cwd: commitRoot })
+  const commitHost = createWorkspaceHost(commitRoot, { runId: "run_git_commit", sessionId: "ses_git_commit" })
+  await assert.rejects(() => commitHost.gitCommit("msg", { stageAll: true }))
+  const commit = summarize("run_git_commit")
+  assert.equal(commit[0]?.op, "git_commit")
+  assert.equal(commit[0]?.phase, "settled")
+  assert.equal(commit[0]?.outcome, "error")
+  assert.equal(receiptOf("run_git_commit").write, "maybe_partial")
+  await rm(root, { recursive: true, force: true })
+  await rm(commitRoot, { recursive: true, force: true })
+})
+
+test("MCP 请求发出后报错，回执是 maybe_partial", () => {
+  const entry = begin("mcp", { runId: "run_mcp_err", toolCallId: "mcp1", external: "mcp" })
+  settle(entry.id, "error")
+  const receipt = receiptOf("run_mcp_err")
+  assert.equal(receipt.write, "maybe_partial")
+  assert.ok(receipt.tools.some((tool) => tool.evidence.includes("external_unverifiable")))
+})
+
+test("Windows：子进程已退出的条目 rekill 跳过，避免误杀复用 pid", async () => {
+  setTreeLivenessPlatformForTest("win32")
+  const exited = begin("bash", { runId: "run_win_reuse", toolCallId: "old" })
+  spawned(exited.id, 333)
+  markChildExited(exited.id)
+  const live = begin("bash", { runId: "run_win_reuse", toolCallId: "new" })
+  spawned(live.id, 444)
+  const killed: number[] = []
+  setKillTreeForTest(async (pid) => {
+    killed.push(pid)
+  })
+  await rekill("run_win_reuse")
+  assert.deepEqual(killed, [444])
+  setKillTreeForTest()
+})
+
+test("路径越界之后再停止：账本无在途，与现网立刻停止一致", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-path-escape-"))
+  const events: Array<Record<string, unknown>> = []
+  holdRun("run_path_escape", "ses_path_escape", events)
+  const host = createWorkspaceHost(root, {
+    runId: "run_path_escape",
+    sessionId: "ses_path_escape"
+  })
+  await assert.rejects(() => host.writeFile("../outside.txt", "x"), /Path escapes the workspace/)
+  assert.equal(hasUnsettled("run_path_escape"), false)
+  assert.equal(summarize("run_path_escape").length, 0)
+  abortActiveRunMemory("run_path_escape")
+  const error = events.find((item) => item.type === "run.error")
+  assert.ok(error)
+  assert.equal(error.code, "user_aborted")
+  assert.equal(error.settling, undefined)
+  assert.ok(error.turn)
+  assert.ok(!events.some((item) => item.type === "run.stopped"))
+  await rm(root, { recursive: true, force: true })
+})
+
+function fakeSshConn(status: SshConnectionLayer["status"] = "connected"): SshConnectionLayer {
+  const files = new Map<string, string>([["/home/alice/app/readme.md", "hi"]])
+  const conn: SshConnectionLayer = {
+    status,
+    ping: async () => "ok",
+    exec: async () => ({ stdout: "", stderr: "", exitCode: 0 }),
+    readFile: async (abs) => {
+      const value = files.get(abs)
+      if (value == null) throw new Error(`无此路径: ${abs}`)
+      return value
+    },
+    writeFile: async (abs, content) => {
+      files.set(abs, content)
+    },
+    listDir: async () => [{ name: "readme.md", kind: "file" }],
+    dispose: () => {
+      conn.status = "disconnected"
+    }
+  }
+  return conn
+}
+
+test("SSH 断线之后再停止：账本无在途，与现网立刻停止一致", async () => {
+  const events: Array<Record<string, unknown>> = []
+  holdRun("run_ssh_disc", "ses_ssh_disc", events)
+  const host = createSshWorkspaceHost(fakeSshConn("disconnected"), "/home/alice/app", {
+    runId: "run_ssh_disc",
+    sessionId: "ses_ssh_disc"
+  })
+  await assert.rejects(() => host.writeFile("readme.md", "x"), (error: unknown) => isRemoteDisconnected(error))
+  assert.equal(hasUnsettled("run_ssh_disc"), false)
+  assert.equal(summarize("run_ssh_disc").length, 0)
+  abortActiveRunMemory("run_ssh_disc")
+  const error = events.find((item) => item.type === "run.error")
+  assert.ok(error)
+  assert.equal(error.code, "user_aborted")
+  assert.equal(error.settling, undefined)
+  assert.ok(error.turn)
+  assert.ok(!events.some((item) => item.type === "run.stopped"))
 })

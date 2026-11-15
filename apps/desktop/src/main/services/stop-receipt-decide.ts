@@ -42,6 +42,8 @@ export type ReceiptLedgerEntry = {
   tree?: StopTreeCertainty
   /** SSH / MCP 一旦开始即不可验证。 */
   external?: "ssh" | "mcp"
+  /** Windows：直接子进程已退出，rekill 不再按 pid 杀树。 */
+  childExited?: boolean
 }
 
 export type ReceiptKnownTool = {

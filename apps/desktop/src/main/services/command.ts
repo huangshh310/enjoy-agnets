@@ -130,6 +130,7 @@ export type RunExecutableTreeOptions = {
   timeoutMs?: number
   signal?: AbortSignal
   onSpawn?: (pid: number) => void
+  onChildExit?: (pid: number) => void
   extraEnv?: NodeJS.ProcessEnv
 }
 
@@ -182,6 +183,17 @@ export function setTreeClockForTest(clock?: TreeClock): void {
   treeClock = clock ?? realTreeClock
 }
 
+/** 只影响探活与 rekill 是否按 Windows 子进程退出即结束，不改变真实杀进程路径。 */
+let livenessPlatform: NodeJS.Platform | undefined
+
+export function setTreeLivenessPlatformForTest(platform?: NodeJS.Platform): void {
+  livenessPlatform = platform
+}
+
+export function isWindowsLivenessPlatform(platform = process.platform): boolean {
+  return isWindowsPlatform(livenessPlatform ?? platform)
+}
+
 const treeWaits = new Map<number, () => void>()
 
 /** 硬上限落定时放弃仍在探活的 runExecutableTree，避免句柄泄漏。 */
@@ -194,6 +206,7 @@ export function resetTreeLivenessForTest(): void {
   livenessOverrides.clear()
   livenessProbe = undefined
   treeClock = realTreeClock
+  livenessPlatform = undefined
   for (const stop of treeWaits.values()) {
     try {
       stop()
@@ -216,9 +229,14 @@ export function processAlive(pid: number): boolean {
   try {
     process.kill(pid, 0)
     return true
-  } catch {
-    return false
+  } catch (error) {
+    return processAliveFromSignalError(error)
   }
+}
+
+/** Windows / POSIX 一致：EPERM 视为仍存活（无权限探，不等于进程已死）。 */
+export function processAliveFromSignalError(error: unknown): boolean {
+  return (error as NodeJS.ErrnoException).code === "EPERM"
 }
 
 /**
@@ -362,7 +380,8 @@ export function runExecutableTree(
 
     const treeDead = (): boolean => {
       if (typeof pid !== "number") return childExited
-      if (windows) return childExited && !processAlive(pid)
+      // Windows：子进程一退出就判树已结束（best_effort），避免 pid 复用误判仍存活。
+      if (isWindowsLivenessPlatform(platform)) return childExited
       return childExited && !processGroupAlive(pid, platform)
     }
 
@@ -404,7 +423,7 @@ export function runExecutableTree(
       if (settled || killing) return
       killing = true
       processExit = "killed"
-      const t0 = Date.now()
+      const t0 = treeClock.now()
       const upgrade = treeClock.setTimeout(() => {
         if (settled || treeDead()) return
         if (windows) {
@@ -462,17 +481,23 @@ export function runExecutableTree(
       stderr = appendCapped(stderr, chunk)
     })
 
+    const noteChildExit = () => {
+      if (typeof pid === "number") options.onChildExit?.(pid)
+    }
+
     child.on("error", (error) => {
       if (settled) return
       stderr = appendCapped(stderr, error.message)
       exitCode = 1
       childExited = true
+      noteChildExit()
       if (killing) return
       finish(snapshot("exited"))
     })
 
     child.on("exit", (code, killSignal) => {
       childExited = true
+      noteChildExit()
       exitCode = typeof code === "number" ? code : killSignal ? 1 : 0
       if (settled) return
       if (killing) {
@@ -492,6 +517,17 @@ export function runExecutableTree(
     const timeout = treeClock.setTimeout(() => startKill(), timeoutMs)
     timeout.unref?.()
     timers.push(timeout)
+
+    // 超时路径（未点停止）也必须有上限：起进程 + timeoutMs + 2s，到点按 unconfirmed 结束。
+    const cap = treeClock.setTimeout(() => {
+      if (settled) return
+      processExit = "unconfirmed"
+      if (typeof pid === "number" && !treeDead()) {
+        console.error("[stop] process tree still alive after wait cap", { pid, platform })
+      }
+      finish(snapshot("unconfirmed"))
+    }, timeoutMs + TREE_KILL_SLA_MS)
+    timers.push(cap)
   })
 }
 

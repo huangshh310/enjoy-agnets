@@ -14,6 +14,7 @@ import {
   abandonTreeWait,
   forceKillTree,
   isTreeAlive,
+  isWindowsLivenessPlatform,
   isWindowsPlatform
 } from "./command"
 import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
@@ -218,7 +219,22 @@ export async function rekill(runId: string): Promise<void> {
 function rekillableEntry(entry: SideEffectEntry): boolean {
   if (typeof entry.pid !== "number") return false
   if (entry.phase === "settled" || entry.phase === "blocked_before_start") return false
+  // Windows：子进程已退出就不要再 taskkill 复用后的 pid。
+  if (isWindowsLivenessPlatform() && entry.childExited) return false
   return true
+}
+
+export function markPidChildExited(pid: number): void {
+  for (const ledger of ledgers.values()) {
+    for (const entry of ledger.entries.values()) {
+      if (entry.pid === pid) entry.childExited = true
+    }
+  }
+}
+
+export function markChildExited(id: string): void {
+  const entry = findEntry(id)
+  if (entry) entry.childExited = true
 }
 
 let killTreeFn = forceKillTree
@@ -318,6 +334,10 @@ export function armSettleWatch(ctx: SettleWatchContext): void {
 function settleSpawnedIfDead(ledger: RunLedger): void {
   for (const entry of ledger.entries.values()) {
     if (entry.phase !== "spawned" || typeof entry.pid !== "number") continue
+    if (isWindowsLivenessPlatform() && entry.childExited) {
+      settle(entry.id, "killed")
+      continue
+    }
     if (isTreeAlive(entry.pid)) continue
     settle(entry.id, "killed")
   }

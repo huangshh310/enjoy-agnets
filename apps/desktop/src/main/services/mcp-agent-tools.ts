@@ -16,8 +16,7 @@ import { readPreferences } from "./preferences"
 import {
   begin as beginSideEffect,
   blocked as blockSideEffect,
-  settle as settleSideEffect,
-  settleOrBlock
+  settle as settleSideEffect
 } from "./run-side-effects"
 
 export function createMcpAgentTools(opts?: { mode?: AgentMode }): Record<string, object> {
@@ -68,7 +67,7 @@ export function createMcpAgentTools(opts?: { mode?: AgentMode }): Record<string,
           if (entry) settleSideEffect(entry.id, "ok")
           return clipToolPayload(result, CLIP_COMMAND_CHARS)
         } catch (error) {
-          if (entry) settleOrBlock(entry.id, "error")
+          if (entry) settleSideEffect(entry.id, "error")
           throw error
         }
       }

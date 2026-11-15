@@ -23,6 +23,7 @@ import {
   settle as settleSideEffect,
   settleOrBlock,
   spawned as spawnedSideEffect,
+  markPidChildExited,
   type SideEffectOp
 } from "./run-side-effects"
 
@@ -119,7 +120,7 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched, bound: Bound
         await fs.writeFile(absolute, content, "utf8")
         if (entryId) settleSideEffect(entryId, "ok")
       } catch (error) {
-        if (entryId) settleOrBlock(entryId, "error")
+        if (entryId) settleSideEffect(entryId, "error")
         throw error
       }
       await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot, bound))
@@ -139,7 +140,7 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched, bound: Bound
         await fs.writeFile(absolute, next, "utf8")
         if (entryId) settleSideEffect(entryId, "ok")
       } catch (error) {
-        if (entryId) settleOrBlock(entryId, "error")
+        if (entryId) settleSideEffect(entryId, "error")
         throw error
       }
       await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot, bound))
@@ -190,6 +191,9 @@ async function runWorkspaceBash(
       signal,
       onSpawn: (pid) => {
         if (entryId) spawnedSideEffect(entryId, pid)
+      },
+      onChildExit: (pid) => {
+        markPidChildExited(pid)
       }
     })
     if (entryId) {
@@ -251,7 +255,7 @@ function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
         if (entryId) settleSideEffect(entryId, "ok")
         return result.output
       } catch (error) {
-        if (entryId) settleOrBlock(entryId, "error")
+        if (entryId) settleSideEffect(entryId, "error")
         throw error
       }
     },
@@ -263,7 +267,7 @@ function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
         if (entryId) settleSideEffect(entryId, "ok")
         return result
       } catch (error) {
-        if (entryId) settleOrBlock(entryId, "error")
+        if (entryId) settleSideEffect(entryId, "error")
         throw error
       }
     },
@@ -276,12 +280,15 @@ function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
           timeoutMs: timeoutMs(bound),
           onSpawn: (pid) => {
             if (entryId) spawnedSideEffect(entryId, pid)
+          },
+          onChildExit: (pid) => {
+            markPidChildExited(pid)
           }
         })
         if (entryId) settleSideEffect(entryId, signal?.aborted ? "killed" : "ok")
         return result.output
       } catch (error) {
-        if (entryId) settleOrBlock(entryId, signal?.aborted ? "killed" : "error")
+        if (entryId) settleSideEffect(entryId, signal?.aborted ? "killed" : "error")
         throw error
       }
     }
