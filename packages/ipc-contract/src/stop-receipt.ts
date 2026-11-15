@@ -53,7 +53,12 @@ export type StopReceipt = z.infer<typeof StopReceipt>
 
 /** `run.error` 上的可选收尾标记：只有 abort 时账本里有未 settle 条目才带。 */
 export const RunErrorSettling = z.object({
-  deadlineAt: z.number().int()
+  deadlineAt: z.number().int(),
+  /**
+   * 主进程收到 abort 的时刻（epoch ms）。与 8s stuck 计时起点相同（t0）。
+   * 可选：旧事件没有该字段，渲染端可回落本地计时。
+   */
+  stopRequestedAt: z.number().int().optional().catch(undefined)
 })
 export type RunErrorSettling = z.infer<typeof RunErrorSettling>
 

@@ -58,3 +58,44 @@ test("run.error：settling 可选；坏字段当缺省，不拖垮整条事件",
   assert.ok(bad.success)
   if (bad.success && bad.data.type === "run.error") assert.equal(bad.data.settling, undefined)
 })
+
+
+test("run.error.settling：stopRequestedAt 可选；缺省不影响 deadlineAt", () => {
+  const withAt = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "Aborted by user",
+    code: "user_aborted",
+    settling: { deadlineAt: 200, stopRequestedAt: 100 }
+  })
+  assert.ok(withAt.success)
+  if (withAt.success && withAt.data.type === "run.error") {
+    assert.deepEqual(withAt.data.settling, { deadlineAt: 200, stopRequestedAt: 100 })
+  }
+
+  const withoutAt = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "x",
+    code: "user_aborted",
+    settling: { deadlineAt: 200 }
+  })
+  assert.ok(withoutAt.success)
+  if (withoutAt.success && withoutAt.data.type === "run.error") {
+    assert.deepEqual(withoutAt.data.settling, { deadlineAt: 200 })
+    assert.equal(withoutAt.data.settling?.stopRequestedAt, undefined)
+  }
+
+  const badAt = StreamEvent.safeParse({
+    type: "run.error",
+    runId: "r1",
+    message: "x",
+    code: "user_aborted",
+    settling: { deadlineAt: 200, stopRequestedAt: "now" }
+  })
+  assert.ok(badAt.success)
+  if (badAt.success && badAt.data.type === "run.error") {
+    assert.equal(badAt.data.settling?.deadlineAt, 200)
+    assert.equal(badAt.data.settling?.stopRequestedAt, undefined)
+  }
+})
