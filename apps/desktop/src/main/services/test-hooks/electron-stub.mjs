@@ -44,10 +44,22 @@ export class BrowserWindow {
 }
 
 export class Notification {
+  static supported = false
+  static shown = []
   static isSupported() {
-    return false
+    return Notification.supported
   }
-  show() {}
+  constructor(opts = {}) {
+    this.title = opts.title
+    this.body = opts.body
+  }
+  show() {
+    Notification.shown.push({ title: this.title, body: this.body })
+  }
+  static resetForTest() {
+    Notification.supported = false
+    Notification.shown = []
+  }
 }
 
 export const dialog = { showOpenDialog: async () => ({ canceled: true, filePaths: [] }) }

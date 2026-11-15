@@ -17,6 +17,7 @@ import {
   writeStubApprovedFile
 } from "./e2e-stub.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
+import { hasUnsettled, rekill, resetRunSideEffectsForTest, summarize } from "./run-side-effects.ts"
 
 function approvedWriteMessages(approvalId?: string): ModelMessage[] {
   return [
@@ -101,5 +102,93 @@ test("打包态不写 stub 盘", async () => {
     process.env.ENJOY_E2E_STUB = previousStub
     if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
     else process.env.ENJOY_E2E_USERDATA = previousUd
+  }
+})
+
+
+test("SLOW_TOOL 等待可中断：abort 后不写盘、不吐 tool-result，账本 blocked_before_start", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-stub-abort-"))
+  const previous = process.env.ENJOY_E2E_WORKSPACE
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousSlow = process.env.ENJOY_E2E_SLOW_TOOL
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  process.env.ENJOY_E2E_WORKSPACE = root
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_SLOW_TOOL = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
+  setE2eStubPackagedForTest(false)
+  resetRunSideEffectsForTest()
+  const ac = new AbortController()
+  const parts: Record<string, unknown>[] = []
+  const consume = (async () => {
+    for await (const part of createE2eStubStream(approvedWriteMessages("apr_stub_1"), ac.signal, { runId: "run_slow" })) {
+      parts.push(part)
+    }
+  })()
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  ac.abort()
+  await consume
+  try {
+    assert.equal(parts.some((part) => part.type === "tool-result"), false)
+    const target = resolveInsideWorkspace(root, STUB_WRITE_PATH)
+    await assert.rejects(() => readFile(target, "utf8"))
+    const rows = summarize("run_slow")
+    assert.equal(rows[0]?.phase, "blocked_before_start")
+    assert.equal(rows[0]?.op, "stub_write")
+  } finally {
+    resetRunSideEffectsForTest()
+    setE2eStubPackagedForTest(undefined)
+    process.env.ENJOY_E2E_WORKSPACE = previous
+    process.env.ENJOY_E2E_STUB = previousStub
+    process.env.ENJOY_E2E_SLOW_TOOL = previousSlow
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("STUCK_TOOL：忽略 abort，rekill 立刻 settle 且不写盘", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-stub-stuck-"))
+  const previous = process.env.ENJOY_E2E_WORKSPACE
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousStuck = process.env.ENJOY_E2E_STUCK_TOOL
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  process.env.ENJOY_E2E_WORKSPACE = root
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_STUCK_TOOL = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
+  setE2eStubPackagedForTest(false)
+  resetRunSideEffectsForTest()
+  const ac = new AbortController()
+  const consume = (async () => {
+    for await (const _part of createE2eStubStream(approvedWriteMessages("apr_stub_2"), ac.signal, { runId: "run_stuck" })) {
+      // fixture should not yield a write
+    }
+  })()
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  ac.abort()
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  assert.equal(hasUnsettled("run_stuck"), true)
+  const started = Date.now()
+  await rekill("run_stuck")
+  await consume
+  try {
+    assert.ok(Date.now() - started < 1_000, "rekill should settle immediately")
+    assert.equal(hasUnsettled("run_stuck"), false)
+    const rows = summarize("run_stuck")
+    assert.equal(rows[0]?.op, "bash")
+    assert.equal(rows[0]?.phase, "settled")
+    assert.equal(rows[0]?.outcome, "killed")
+    const target = resolveInsideWorkspace(root, STUB_WRITE_PATH)
+    await assert.rejects(() => readFile(target, "utf8"))
+  } finally {
+    resetRunSideEffectsForTest()
+    setE2eStubPackagedForTest(undefined)
+    process.env.ENJOY_E2E_WORKSPACE = previous
+    process.env.ENJOY_E2E_STUB = previousStub
+    process.env.ENJOY_E2E_STUCK_TOOL = previousStuck
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+    await rm(root, { recursive: true, force: true })
   }
 })

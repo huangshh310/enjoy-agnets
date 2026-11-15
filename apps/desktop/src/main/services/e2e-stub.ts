@@ -69,6 +69,12 @@ export {
   writeStubApprovedFile
 } from "./e2e-stub-write.ts"
 import { e2eSendFixture, e2eSendFixtureDelayMs, e2eSendFixtureError } from "./e2e-send-fixture.ts"
+import {
+  begin as beginSideEffect,
+  markBlocked,
+  onRekill,
+  settle as settleSideEffect
+} from "./run-side-effects.ts"
 
 function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -93,6 +99,8 @@ export type E2eStubStreamOpts = {
   env?: NodeJS.ProcessEnv
   /** 测试注入：隔离 userData 路径。 */
   userData?: string
+  /** 本轮 runId，给慢工具 / STUCK 夹具登记账本。 */
+  runId?: string
 }
 
 export { isE2eStub, setE2eStubPackagedForTest } from "./e2e-stub-gate.ts"
@@ -237,8 +245,25 @@ export async function* createE2eStubStream(
   }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
-    if (process.env.ENJOY_E2E_SLOW_TOOL === "1") await wait(8_000)
-    await writeStubApprovedFile()
+    if (process.env.ENJOY_E2E_STUCK_TOOL === "1") {
+      await runStuckToolFixture(opts?.runId, toolCallId)
+      return
+    }
+    if (process.env.ENJOY_E2E_SLOW_TOOL === "1") {
+      const entry = opts?.runId
+        ? beginSideEffect("stub_write", { runId: opts.runId, toolCallId })
+        : undefined
+      await abortableDelay(8_000, signal)
+      if (signal.aborted) {
+        if (entry) markBlocked(entry.id)
+        return
+      }
+      const written = await writeStubApprovedFile(undefined, { signal })
+      if (entry) settleSideEffect(entry.id, written ? "ok" : "error")
+    } else {
+      await writeStubApprovedFile(undefined, { signal })
+    }
+    if (signal.aborted) return
     yield stubApprovedWriteResult(toolCallId)
     if (isWriteSlowNotePrompt(prompt)) {
       yield* emitText(STUB_VERY_SLOW_WORDS.join(" "), signal, verySlowDelayMs())
@@ -392,4 +417,25 @@ function pushAttachedNames(text: string, names: string[]) {
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+
+/** ENJOY_E2E_STUCK_TOOL：忽略 abort 约 12s，响应 rekill 立刻 settle，不写盘。 */
+async function runStuckToolFixture(runId: string | undefined, toolCallId: string): Promise<void> {
+  const entry = runId ? beginSideEffect("bash", { runId, toolCallId }) : undefined
+  const local = new AbortController()
+  let done = false
+  const finish = (outcome: "killed" | "unconfirmed") => {
+    if (done) return
+    done = true
+    if (entry) settleSideEffect(entry.id, outcome)
+    local.abort()
+  }
+  const off = runId ? onRekill(runId, () => finish("killed")) : () => undefined
+  try {
+    await abortableDelay(12_000, local.signal)
+    if (!done) finish("unconfirmed")
+  } finally {
+    off()
+  }
 }
