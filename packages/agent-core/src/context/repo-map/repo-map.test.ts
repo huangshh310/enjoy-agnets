@@ -254,7 +254,8 @@ test("R6: StreamEvent schema 未新增 type（字面量集合保持）", () => {
   assert.ok(literals.includes("tool.result"))
   assert.ok(!literals.includes("repo_map.occupancy"))
   assert.ok(!literals.includes("symbol.map"))
-  assert.equal(literals.length, 33)
+  // E1 新增 run.stopped（leo arch §4.2 批准）：33 → 34。
+  assert.equal(literals.length, 34)
 })
 
 test("R6b: getLastRepoMapOccupancy 在 symbol/directory 后可读", async () => {

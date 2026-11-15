@@ -11,6 +11,7 @@ import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
 import { SessionAllowScope } from "./session-allow.ts"
 import { TurnOutcome } from "./turn-outcome.ts"
+import { RunErrorSettling, RunStoppedPhase, StopReceipt } from "./stop-receipt.ts"
 
 const Envelope = {
   sequence: z.number().int().optional(),
@@ -158,7 +159,24 @@ export const StreamEvent = z.discriminatedUnion("type", [
     /** 这一轮实际用的供应商档案 id（Enjoy 本地 = 开跑时的当前档案；ACP 绑了档案 = 绑的那份）。没有就不带。 */
     providerId: z.string().min(1).max(120).optional().catch(undefined),
     turn: TurnOutcome.optional(),
+    /**
+     * E1：停止时本轮还有在途副作用（工具进程 / 写盘未 settle）才带。renderer 保持「正在停下…」，
+     * 等 `run.stopped` 终态再落定；缺省 = 无在途，按现网直接落「已停止」。坏字段当缺省。
+     */
+    settling: RunErrorSettling.optional().catch(undefined),
     ...Envelope
+  }),
+  z.object({
+    /** E1：停止收尾回执。stuck 最多一条；settled / final 每轮只有一条终态。 */
+    type: z.literal("run.stopped"),
+    runId: z.string(),
+    sessionId: z.string(),
+    phase: RunStoppedPhase,
+    receipt: StopReceipt,
+    /** 有 settling 的轮次由回执驱动收工判定；只在终态上带。 */
+    turn: TurnOutcome.optional(),
+    sequence: z.number().int().optional(),
+    timestamp: z.number().int().optional()
   }),
   z.object({
     type: z.literal("message.part.start"),
