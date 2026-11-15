@@ -9,6 +9,7 @@ import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
 import { markDraftAssetsQueued } from "../../lib/session-draft-storage"
 import { clearComposerDraft, prefixHostModeForSend } from "./composer-draft"
 import { sendComposerMessage } from "./send-composer-run"
+import { isStopLocked } from "../../stores/stop-settle"
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import type { QueuedComposerAsset } from "../composer-assets"
 import type { ThreadAsset } from "../../stores/chat-store.types"
@@ -41,6 +42,8 @@ async function steerComposer(content: string, opts: SteerOptions): Promise<Steer
     if (!opts.fromQueue) clearComposerDraft()
   }
   if (!store.running) {
+    // leo C1：停止后 running 已落下但收尾没落定（⌘/Ctrl+Enter）：不清草稿、不开新一轮；排队项原样放回。
+    if (isStopLocked(store.sessionId)) return "requeue"
     clearDraft()
     await sendComposerMessage(assets.length ? { content, assets } : { content })
     return "sent"
@@ -80,6 +83,7 @@ async function fallbackSteerWithoutRun(content: string, opts: SteerOptions): Pro
   const store = useChatStore.getState()
   const assets = opts.assets ?? []
   if (steerFallbackWhenNoRun(store.running) === "send") {
+    if (isStopLocked(store.sessionId)) return "requeue"
     if (!opts.fromQueue) clearComposerDraft()
     await sendComposerMessage(assets.length ? { content, assets } : { content })
     return "sent"

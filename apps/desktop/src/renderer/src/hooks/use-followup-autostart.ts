@@ -6,6 +6,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { subscribeFollowups } from "./followup-queue"
 import { tryStartNextFollowup } from "./followup-autostart"
 import { sendComposerMessage } from "./send-composer"
+import { isStopLocked } from "../stores/stop-settle"
 import { lastUserMessageId, runQueuedAutoSend } from "../components/ai-chat/thread/scroll-on-send"
 
 export function useFollowupAutostart() {
@@ -16,6 +17,8 @@ export function useFollowupAutostart() {
   useEffect(() => {
     function kick() {
       const store = useChatStore.getState()
+      // leo C1：收尾没落定不自启（否则排队项被取出后撞上发送锁会丢）。
+      if (isStopLocked(store.sessionId)) return
       tryStartNextFollowup({
         sessionId: store.sessionId,
         running: store.running,
