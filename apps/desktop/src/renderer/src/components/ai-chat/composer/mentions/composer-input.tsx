@@ -15,6 +15,7 @@ import { isApplePlatform } from "@renderer/components/settings/keybindings/keybi
 import { useComposerMentions } from "./use-composer-mentions.ts"
 import { useComposerIme } from "./use-composer-ime.ts"
 import { shouldIgnoreComposerEnter } from "@renderer/hooks/composer-ime"
+import { shouldEscapeStopRun, withEscStopHint } from "@renderer/hooks/composer-escape-stop"
 import { traceSend } from "@renderer/hooks/send-debug"
 import { captureComposerEnter } from "@renderer/hooks/composer-dom"
 import { clearComposerDraftChips, shouldClearComposerChipsOnDelete } from "@renderer/hooks/clear-composer-chips"
@@ -25,6 +26,7 @@ export function ComposerInput({
   onChange,
   onSend,
   onSteer,
+  onStop,
   running,
   autoFocus = false,
   textareaRef,
@@ -36,6 +38,8 @@ export function ComposerInput({
   onChange: (value: string) => void
   onSend: () => void
   onSteer: () => void
+  /** E1 M3：运行中 Esc 停这一轮（草稿不动）；不传则 Esc 不停车。 */
+  onStop?: () => void
   running: boolean
   autoFocus?: boolean
   textareaRef: RefObject<HTMLTextAreaElement | null>
@@ -74,6 +78,21 @@ export function ComposerInput({
       return
     }
     if (handleRecall(event)) return
+    // E1 M3：@ / 面板、IME、历史召回之后才轮到 Esc 停车；只停这一轮，不碰草稿（禁 Esc 清稿）。
+    if (
+      onStop &&
+      shouldEscapeStopRun({
+        key: event.key,
+        running,
+        composing: event.nativeEvent.isComposing,
+        defaultPrevented: event.defaultPrevented,
+        modified: event.metaKey || event.ctrlKey || event.altKey || event.shiftKey
+      })
+    ) {
+      event.preventDefault()
+      onStop()
+      return
+    }
     if (shouldClearComposerChipsOnDelete(event.key, event.currentTarget)) {
       clearComposerDraftChips()
     }
@@ -121,7 +140,11 @@ export function ComposerInput({
         placeholder={
           placeholderKey === "chat.placeholder"
             ? (placeholderHint ?? t("chat.placeholder"))
-            : t(placeholderKey, { mod: isApplePlatform() ? "⌘" : "Ctrl" })
+            : withEscStopHint(
+                t(placeholderKey, { mod: isApplePlatform() ? "⌘" : "Ctrl" }),
+                running && Boolean(onStop),
+                t("chat.placeholderEscStop")
+              )
         }
         className="max-h-48 min-h-[38px] w-full resize-none bg-transparent py-1 text-body-medium text-text-primary outline-none placeholder:text-text-secondary/70 leading-relaxed"
       />

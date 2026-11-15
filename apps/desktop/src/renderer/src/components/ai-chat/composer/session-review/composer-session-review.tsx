@@ -22,7 +22,10 @@ import type { SessionReviewFile } from "./session-review.types"
 import { latestSessionTodoList } from "../../thread/tool-surfaces/select-turn-tool-surfaces"
 import { ReviewGateCard, chipsFromLastAssistant } from "../../review-gate/review-gate-card"
 import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-gate-actions"
-import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
+import {
+  lastAssistantSinceUser,
+  toolsAfterLastUser
+} from "../../right-pane/views/review/last-turn-paths"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { reviewPlaceholderKey, reviewPlaceholderKind } from "./review-placeholder-kind"
 
@@ -45,8 +48,9 @@ export function ComposerSessionReview() {
   const hasTodos = Boolean(todos && todos.tasks.length > 0)
   const showGate = model.needsReview && !running
   const notice = useChatStore((state) => state.notice)
+  // E1 D5：只看最后一条用户消息之后的工具，不越过用户句回溯上一轮（否则停掉的一轮 / 上一轮的写盘算到本轮头上）。
   const placeholderKey = reviewPlaceholderKey(
-    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [], isRestoreFamilyCode(notice))
+    reviewPlaceholderKind(toolsAfterLastUser(messages), isRestoreFamilyCode(notice))
   )
 
   const previewUrl = model.previewTarget?.kind === "url" ? model.previewTarget.url : null
@@ -70,7 +74,7 @@ export function ComposerSessionReview() {
       {showGate ? (
         <ReviewGateCard
           files={model.files}
-          chips={chipsFromLastAssistant(lastAssistantTurn(messages), (name) =>
+          chips={chipsFromLastAssistant(lastAssistantSinceUser(messages), (name) =>
             t("chat.sourceSkillLabel", { name })
           )}
           canOpenPreview={canOpenPreview}
