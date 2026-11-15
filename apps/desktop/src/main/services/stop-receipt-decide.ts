@@ -8,8 +8,10 @@ import type {
   StopReceipt,
   StopReceiptTool,
   StopTreeCertainty,
-  StopWriteVerdict
+  StopWriteVerdict,
+  ThreadToolCall
 } from "@enjoy-agents/ipc-contract"
+import { isWriteTypeToolName } from "@enjoy-agents/ipc-contract/tool-names"
 
 export type ReceiptLedgerPhase = "blocked_before_start" | "started" | "spawned" | "settled"
 
@@ -47,6 +49,19 @@ export type ReceiptKnownTool = {
   name: string
   /** 当时还在审批中 / 未批准，账本没有条目时记 never_reached_executor。 */
   pendingApproval?: boolean
+}
+
+const COMPLETED_TOOL_STATES = new Set(["output-available", "output-error", "output-denied"])
+
+/** 只登记写类且未完成的工具，避免只读 / 已完成工具被判 maybe_partial。 */
+export function selectKnownToolsForReceipt(tools: readonly ThreadToolCall[]): ReceiptKnownTool[] {
+  return tools
+    .filter((tool) => isWriteTypeToolName(tool.name) && !COMPLETED_TOOL_STATES.has(tool.state))
+    .map((tool) => ({
+      toolCallId: tool.id,
+      name: tool.name,
+      pendingApproval: tool.state === "approval-requested"
+    }))
 }
 
 export type DecideStopReceiptInput = {

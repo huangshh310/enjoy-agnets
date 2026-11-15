@@ -17,7 +17,7 @@ function readRepo(rel: string): string {
   return readFileSync(join(repo, rel), "utf8")
 }
 
-test("开放问题结论：主 Agent 批准后 bash 会执行两次——decideApproval 无 waiter 时先 executeStoredTool，审批响应只有 tool-approval-response 没有 tool-result，续泵 SDK 会再 executeToolCall（本刀只确认，不修）", () => {
+test("开放问题静态证据：主 Agent 批准后 bash 会执行两次——decideApproval 无 waiter 时先 executeStoredTool，审批响应只有 tool-approval-response 没有 tool-result，续泵 SDK 会再 executeToolCall（源码形态推断，未跑行为测试；本刀不修）", () => {
   const decide = readFileSync(join(dir, "decide-approval.ts"), "utf8")
   assert.match(decide, /const hadWaiter = run\.approvalGate\.resolve/)
   assert.match(decide, /if \(!hadWaiter && decision\.decision !== "deny"\)/)
@@ -28,7 +28,7 @@ test("开放问题结论：主 Agent 批准后 bash 会执行两次——decideA
   const response = readFileSync(join(dir, "approval-response-message.ts"), "utf8")
   assert.match(response, /tool-approval-response/)
   assert.equal(response.includes("tool-result"), false)
-  // 结论：批准后两条路都会跑。修复另开刀。
+  // 静态证据：批准后两条路都会跑。行为次数需另开刀补测后再修。
 })
 
 test("开放问题结论：sandbox-exec 进程形态在 darwin 上实测；本平台非 darwin，shouldUseOsSandbox 为假，形态未确认（按进程组杀两种情况都成立）", {
@@ -42,7 +42,7 @@ test("开放问题结论：sandbox-exec 进程形态在 darwin 上实测；本�
 
 test("开放问题结论：sandbox-exec 在 darwin 上的进程形态（exec 替换自身 vs fork 子进程）", {
   skip: process.platform !== "darwin"
-}, async () => {
+}, async (t) => {
   const profile = buildSeatbeltProfile({
     workspaceRoot: tmpdir(),
     tmpDir: tmpdir(),
@@ -59,7 +59,7 @@ test("开放问题结论：sandbox-exec 在 darwin 上的进程形态（exec 替
   // exec：pid 的 comm 变成 node；fork：comm 仍是 sandbox-exec。
   // 把实测结果钉在断言消息里，便于报告。
   const shape = comm.includes("sandbox-exec") ? "fork（sandbox-exec 仍为 pid）" : `exec 或已替换（comm=${comm})`
-  assert.ok(comm.length >= 0, `sandbox-exec shape: ${shape}`)
+  t.diagnostic(`sandbox-exec shape: ${shape}`)
 })
 
 test("开放问题结论：ACP cancel 只调用 client.cancel，仓内没有进程树查杀；Codex / Claude Code 收到 cancel 后是否残留进程，未跑引擎故未确认", () => {

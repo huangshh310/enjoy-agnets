@@ -4,13 +4,14 @@
 import { promises as fs } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, extname, join } from "node:path"
-import { assertSandboxCommand, type AgentWorkspaceHost } from "@enjoy-agents/agent-core"
-import type { WorkspaceHostCallOpts } from "@enjoy-agents/agent-core"
+import type { AgentWorkspaceHost, WorkspaceHostCallOpts } from "@enjoy-agents/agent-core"
+import { assertSandboxCommand } from "../../../../../packages/agent-core/src/policies/sandbox.ts"
 import { parseExecutableCommand, runExecutableTree, runGit, toAbortError } from "./command"
 import { buildSeatbeltProfile, seatbeltWrap, shouldUseOsSandbox } from "./os-sandbox"
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths"
 import { gitLogCommandArgs } from "./workspace-git-agent-log"
 import { readPreferences } from "./preferences"
+import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { commitWorkspaceAll } from "./workspace-git"
 import { createWorkspaceBranch } from "./workspace-git-branch"
@@ -20,6 +21,7 @@ import {
   begin as beginSideEffect,
   blocked as blockSideEffect,
   settle as settleSideEffect,
+  settleOrBlock,
   spawned as spawnedSideEffect,
   type SideEffectOp
 } from "./run-side-effects"
@@ -59,7 +61,7 @@ function ledgerOp(raw: string | undefined, fallback: SideEffectOp): SideEffectOp
 }
 
 function timeoutMs(bound?: BoundHost): number {
-  return bound?.toolTimeoutMs ?? readPreferences().toolTimeoutMs
+  return effectiveToolTimeoutMs(bound?.toolTimeoutMs ?? readPreferences().toolTimeoutMs)
 }
 
 function gateOrBegin(
@@ -109,15 +111,15 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched, bound: Bound
     writeFile: async (relativePath: string, content: string, opts?: WorkspaceHostCallOpts) => {
       const signal = mergeHostSignals(bound.signal, opts?.signal)
       const op = ledgerOp(opts?.op, "write_file")
-      const { entryId } = gateOrBegin(op, bound, opts, signal)
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
       note(toWorkspaceRelative(workspaceRoot, absolute), "file")
+      const { entryId } = gateOrBegin(op, bound, opts, signal)
       try {
         await fs.mkdir(dirname(absolute), { recursive: true })
         await fs.writeFile(absolute, content, "utf8")
         if (entryId) settleSideEffect(entryId, "ok")
       } catch (error) {
-        if (entryId) settleSideEffect(entryId, "error")
+        if (entryId) settleOrBlock(entryId, "error")
         throw error
       }
       await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot, bound))
@@ -137,7 +139,7 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched, bound: Bound
         await fs.writeFile(absolute, next, "utf8")
         if (entryId) settleSideEffect(entryId, "ok")
       } catch (error) {
-        if (entryId) settleSideEffect(entryId, "error")
+        if (entryId) settleOrBlock(entryId, "error")
         throw error
       }
       await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot, bound))
@@ -168,34 +170,39 @@ async function runWorkspaceBash(
 ) {
   const prefs = readPreferences()
   const signal = mergeHostSignals(bound.signal, opts?.signal)
-  const { entryId } = gateOrBegin("bash", bound, opts, signal)
   assertSandboxCommand(command, { allowNetwork: prefs.sandboxNetwork })
   const parsed = parseExecutableCommand(command)
-  const launched = shouldUseOsSandbox()
-    ? seatbeltWrap(
-        parsed.executable,
-        parsed.args,
-        buildSeatbeltProfile({
-          workspaceRoot,
-          tmpDir: tmpdir(),
-          allowNetwork: prefs.sandboxNetwork
-        })
-      )
-    : parsed
-  const result = await runExecutableTree(workspaceRoot, launched.executable, launched.args, {
-    timeoutMs: prefs.toolTimeoutMs,
-    signal,
-    onSpawn: (pid) => {
-      if (entryId) spawnedSideEffect(entryId, pid)
-    }
-  })
-  if (entryId) {
-    const outcome = result.processExit === "exited" && !signal?.aborted ? "exited" : result.processExit
-    settleSideEffect(entryId, outcome === "exited" || outcome === "killed" || outcome === "unconfirmed" ? outcome : "exited", {
-      tree: result.tree
+  const { entryId } = gateOrBegin("bash", bound, opts, signal)
+  try {
+    const launched = shouldUseOsSandbox()
+      ? seatbeltWrap(
+          parsed.executable,
+          parsed.args,
+          buildSeatbeltProfile({
+            workspaceRoot,
+            tmpDir: tmpdir(),
+            allowNetwork: prefs.sandboxNetwork
+          })
+        )
+      : parsed
+    const result = await runExecutableTree(workspaceRoot, launched.executable, launched.args, {
+      timeoutMs: timeoutMs(bound),
+      signal,
+      onSpawn: (pid) => {
+        if (entryId) spawnedSideEffect(entryId, pid)
+      }
     })
+    if (entryId) {
+      const outcome = result.processExit === "exited" && !signal?.aborted ? "exited" : result.processExit
+      settleSideEffect(entryId, outcome === "exited" || outcome === "killed" || outcome === "unconfirmed" ? outcome : "exited", {
+        tree: result.tree
+      })
+    }
+    return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode }
+  } catch (error) {
+    if (entryId) settleOrBlock(entryId, "error")
+    throw error
   }
-  return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode }
 }
 
 export async function saveHostHeartbeat(input: import("@enjoy-agents/agent-core").SessionHeartbeatRequest) {
@@ -244,7 +251,7 @@ function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
         if (entryId) settleSideEffect(entryId, "ok")
         return result.output
       } catch (error) {
-        if (entryId) settleSideEffect(entryId, "error")
+        if (entryId) settleOrBlock(entryId, "error")
         throw error
       }
     },
@@ -256,7 +263,7 @@ function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
         if (entryId) settleSideEffect(entryId, "ok")
         return result
       } catch (error) {
-        if (entryId) settleSideEffect(entryId, "error")
+        if (entryId) settleOrBlock(entryId, "error")
         throw error
       }
     },
@@ -274,7 +281,7 @@ function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
         if (entryId) settleSideEffect(entryId, signal?.aborted ? "killed" : "ok")
         return result.output
       } catch (error) {
-        if (entryId) settleSideEffect(entryId, signal?.aborted ? "killed" : "error")
+        if (entryId) settleOrBlock(entryId, signal?.aborted ? "killed" : "error")
         throw error
       }
     }
@@ -340,9 +347,17 @@ async function grepFiles(workspaceRoot: string, pattern: string, glob?: string) 
 
 async function triggerOnSaveForRoot(workspaceRoot: string, bound?: BoundHost): Promise<void> {
   if (bound?.signal?.aborted) return
-  const active = await activeRunForRoot(workspaceRoot)
+  const { getActiveRun, listActiveRuns } = await import("./agent-run-state")
+  const active = bound?.runId
+    ? (() => {
+        const run = getActiveRun(bound.runId!)
+        return run ? { runId: bound.runId as string, run } : undefined
+      })()
+    : listActiveRuns().find((item) => item.run.workspaceRoot === workspaceRoot)
   if (!active) return
   const { fireOnSaveAutomations } = await import("./automations-run")
+  if (bound?.signal?.aborted) return
+  if (bound?.runId && active.runId !== bound.runId) return
   await fireOnSaveAutomations(
     active.run.window,
     active.run.input.workspaceId,

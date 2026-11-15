@@ -6,9 +6,9 @@
  * 「再停一次」复用同一条 ai.abort / agent.abort：activeRuns 里没有、账本仍有未 settle 项时
  * fire-and-forget 调用 rekill，IPC 不等待 settle。
  */
-import { sealAbandonedTools } from "@enjoy-agents/ipc-contract"
+import { sealAbandonedTools } from "@enjoy-agents/ipc-contract/fold-tool-event"
 import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
-import { STOP_KILL_GRACE_MS } from "@enjoy-agents/ipc-contract"
+import { STOP_KILL_GRACE_MS } from "@enjoy-agents/ipc-contract/stop-receipt"
 import { USER_ABORT_MESSAGE } from "./claim-run-end"
 import { persistActiveRun } from "./flush-agent-run"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
@@ -17,6 +17,7 @@ import { deleteActiveRun, emitEvent, getActiveRun, settleRun } from "./agent-run
 import { persistTurnWorkflow, turnOutcomeForRun } from "./apply-turn-outcome"
 import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 import { readPreferences } from "./preferences"
+import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
 import {
   armSettleWatch,
   hasUnsettled,
@@ -24,6 +25,7 @@ import {
   rekill,
   rememberKnownTools
 } from "./run-side-effects"
+import { selectKnownToolsForReceipt } from "./stop-receipt-decide"
 
 export function abortActiveRunMemory(
   runId: string,
@@ -45,16 +47,10 @@ export function abortActiveRunMemory(
     const unsettled = !archived && hasUnsettled(runId)
     const stopRequestedAt = Date.now()
     if (unsettled) {
-      rememberKnownTools(
-        runId,
-        run.tools.map((tool) => ({
-          toolCallId: tool.id,
-          name: tool.name,
-          pendingApproval: tool.state === "approval-requested"
-        }))
-      )
+      rememberKnownTools(runId, selectKnownToolsForReceipt(run.tools))
       const deadlineAt =
-        latestDeadlineAt(runId) ?? stopRequestedAt + (readPreferences().toolTimeoutMs ?? 30_000) + STOP_KILL_GRACE_MS
+        latestDeadlineAt(runId) ??
+        stopRequestedAt + effectiveToolTimeoutMs(readPreferences().toolTimeoutMs ?? 30_000) + STOP_KILL_GRACE_MS
       emitEvent(run.window, {
         type: "run.error",
         runId,

@@ -143,8 +143,76 @@ export function isWindowsPlatform(platform = process.platform): boolean {
   return platform === "win32"
 }
 
-/** 单进程探活：kill(pid, 0) 抛错即不存在。 */
+/** 夹具 / 单测从最底层注入「是否仍存活」，走同一套探活 / rekill / 上限代码。 */
+const livenessOverrides = new Map<number, boolean>()
+let livenessProbe: ((pid: number) => boolean | undefined) | undefined
+
+type TreeClock = {
+  now: () => number
+  setTimeout: typeof setTimeout
+  setInterval: typeof setInterval
+  clearTimeout: typeof clearTimeout
+  clearInterval: typeof clearInterval
+}
+
+const realTreeClock: TreeClock = {
+  now: () => Date.now(),
+  setTimeout,
+  setInterval,
+  clearTimeout,
+  clearInterval
+}
+
+let treeClock: TreeClock = realTreeClock
+
+export function setTreeLivenessOverride(pid: number, alive: boolean): void {
+  livenessOverrides.set(pid, alive)
+}
+
+export function clearTreeLivenessOverride(pid?: number): void {
+  if (typeof pid === "number") livenessOverrides.delete(pid)
+  else livenessOverrides.clear()
+}
+
+export function setTreeLivenessProbeForTest(probe?: (pid: number) => boolean | undefined): void {
+  livenessProbe = probe
+}
+
+export function setTreeClockForTest(clock?: TreeClock): void {
+  treeClock = clock ?? realTreeClock
+}
+
+const treeWaits = new Map<number, () => void>()
+
+/** 硬上限落定时放弃仍在探活的 runExecutableTree，避免句柄泄漏。 */
+export function abandonTreeWait(pid: number): void {
+  const stop = treeWaits.get(pid)
+  if (stop) stop()
+}
+
+export function resetTreeLivenessForTest(): void {
+  livenessOverrides.clear()
+  livenessProbe = undefined
+  treeClock = realTreeClock
+  for (const stop of treeWaits.values()) {
+    try {
+      stop()
+    } catch {
+      // test reset
+    }
+  }
+  treeWaits.clear()
+}
+
+function overriddenAlive(pid: number): boolean | undefined {
+  if (livenessOverrides.has(pid)) return livenessOverrides.get(pid)
+  return livenessProbe?.(pid)
+}
+
+/** 单进程探活：kill(pid, 0) 抛错即不存在。夹具可覆盖。 */
 export function processAlive(pid: number): boolean {
+  const over = overriddenAlive(pid)
+  if (typeof over === "boolean") return over
   try {
     process.kill(pid, 0)
     return true
@@ -158,6 +226,8 @@ export function processAlive(pid: number): boolean {
  * Windows：只能探直接子进程，结论须标 best_effort。
  */
 export function processGroupAlive(pgid: number, platform = process.platform): boolean {
+  const over = overriddenAlive(pgid)
+  if (typeof over === "boolean") return over
   if (isWindowsPlatform(platform)) return processAlive(pgid)
   try {
     process.kill(-pgid, 0)
@@ -165,6 +235,10 @@ export function processGroupAlive(pgid: number, platform = process.platform): bo
   } catch (error) {
     return (error as NodeJS.ErrnoException).code !== "ESRCH"
   }
+}
+
+export function isTreeAlive(pid: number, platform = process.platform): boolean {
+  return isWindowsPlatform(platform) ? processAlive(pid) : processGroupAlive(pid, platform)
 }
 
 export async function taskkillTree(pid: number): Promise<boolean> {
@@ -248,7 +322,7 @@ export function runExecutableTree(
     let processExit: ExecutableTreeResult["processExit"] = "exited"
     let childExited = false
     let exitCode = 1
-    const timers: { unref?: () => void; refresh?: () => void }[] = []
+    const timers: Array<ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>> = []
 
     const child = spawn(executable, args, {
       cwd,
@@ -260,16 +334,27 @@ export function runExecutableTree(
     })
 
     const pid = child.pid
-    if (typeof pid === "number") options.onSpawn?.(pid)
+    if (typeof pid === "number") {
+      options.onSpawn?.(pid)
+      treeWaits.set(pid, () => {
+        if (settled) return
+        processExit = "unconfirmed"
+        finish(snapshot("unconfirmed"))
+      })
+    }
 
     const clearTimers = () => {
-      for (const timer of timers) clearTimeout(timer as ReturnType<typeof setTimeout>)
+      for (const timer of timers) {
+        treeClock.clearTimeout(timer as ReturnType<typeof setTimeout>)
+        treeClock.clearInterval(timer as ReturnType<typeof setInterval>)
+      }
       timers.length = 0
     }
 
     const finish = (result: ExecutableTreeResult) => {
       if (settled) return
       settled = true
+      if (typeof pid === "number") treeWaits.delete(pid)
       clearTimers()
       signal?.removeEventListener("abort", onAbort)
       resolve(result)
@@ -291,27 +376,28 @@ export function runExecutableTree(
     })
 
     const probeUntilDeadOrSla = (t0: number) => {
-      const probe = setInterval(() => {
+      let loggedSla = false
+      const probe = treeClock.setInterval(() => {
         if (settled) {
-          clearInterval(probe)
+          treeClock.clearInterval(probe)
           return
         }
         if (treeDead()) {
-          clearInterval(probe)
+          treeClock.clearInterval(probe)
           processExit = "killed"
           finish(snapshot("killed"))
           return
         }
-        if (Date.now() - t0 >= TREE_KILL_SLA_MS) {
-          clearInterval(probe)
-          processExit = "unconfirmed"
-          if (typeof pid === "number" && (windows ? processAlive(pid) : processGroupAlive(pid, platform))) {
-            console.error("[stop] process tree still alive after kill SLA", { pid, platform })
+        // 满 2s 仍存活：只记日志，继续探活，不落 unconfirmed / maybe_partial。
+        if (!loggedSla && treeClock.now() - t0 >= TREE_KILL_SLA_MS) {
+          loggedSla = true
+          if (typeof pid === "number" && isTreeAlive(pid, platform)) {
+            console.error("[stop] process tree still alive after kill SLA, keep probing", { pid, platform })
           }
-          finish(snapshot("unconfirmed"))
         }
       }, TREE_PROBE_MS)
-      probe.unref?.()
+      // 进入查杀后计时器不得 unref，否则 Linux CI 会在探活未完成时被 cancelled。
+      timers.push(probe)
     }
 
     const startKill = () => {
@@ -319,7 +405,7 @@ export function runExecutableTree(
       killing = true
       processExit = "killed"
       const t0 = Date.now()
-      const upgrade = setTimeout(() => {
+      const upgrade = treeClock.setTimeout(() => {
         if (settled || treeDead()) return
         if (windows) {
           if (typeof pid === "number") {
@@ -347,7 +433,6 @@ export function runExecutableTree(
           }
         }
       }, TREE_KILL_TERM_MS)
-      upgrade.unref?.()
       timers.push(upgrade)
       if (windows) {
         if (typeof pid === "number") void taskkillTree(pid)
@@ -404,7 +489,7 @@ export function runExecutableTree(
     if (signal) signal.addEventListener("abort", onAbort, { once: true })
     if (signal?.aborted) startKill()
 
-    const timeout = setTimeout(() => startKill(), timeoutMs)
+    const timeout = treeClock.setTimeout(() => startKill(), timeoutMs)
     timeout.unref?.()
     timers.push(timeout)
   })

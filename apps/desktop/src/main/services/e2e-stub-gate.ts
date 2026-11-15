@@ -38,3 +38,20 @@ export function isE2eStub(): boolean {
   const isolated = Boolean(process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA)
   return process.env.ENJOY_E2E_STUB === "1" && e2eStubPackaged() !== true && isolated
 }
+
+/**
+ * 仅 stub 未打包夹具可把 toolTimeoutMs 调小（如 ENJOY_E2E_TOOL_TIMEOUT_MS=5000），
+ * 方便产品门截到上限强制落定。生产默认值与取值范围不动。
+ */
+export function e2eToolTimeoutMs(): number | undefined {
+  if (!isE2eStub()) return undefined
+  const raw = process.env.ENJOY_E2E_TOOL_TIMEOUT_MS
+  if (!raw) return undefined
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined
+  return Math.trunc(parsed)
+}
+
+export function effectiveToolTimeoutMs(fallback: number): number {
+  return e2eToolTimeoutMs() ?? fallback
+}

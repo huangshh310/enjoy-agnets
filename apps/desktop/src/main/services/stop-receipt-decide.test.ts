@@ -3,7 +3,8 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { decideStopReceipt, type ReceiptLedgerEntry } from "./stop-receipt-decide.ts"
+import { decideStopReceipt, selectKnownToolsForReceipt, type ReceiptLedgerEntry } from "./stop-receipt-decide.ts"
+import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 
 function entry(partial: Partial<ReceiptLedgerEntry> & Pick<ReceiptLedgerEntry, "op" | "phase">): ReceiptLedgerEntry {
   return {
@@ -153,4 +154,20 @@ test("code_mode 脚本 completed + bash spawned → 该工具 maybe_partial", ()
   assert.equal(receipt.tools.length, 1)
   assert.equal(receipt.tools[0]?.name, "code_mode")
   assert.equal(receipt.write, "maybe_partial")
+})
+
+test("只读工具和已完成的写工具不进入 known，不会把回执抬成 maybe_partial", () => {
+  const tools = [
+    { id: "t_read", name: "read_file", state: "output-available" },
+    { id: "t_done", name: "write_file", state: "output-available" },
+    { id: "t_wait", name: "bash", state: "approval-requested" }
+  ] as ThreadToolCall[]
+  const known = selectKnownToolsForReceipt(tools)
+  assert.deepEqual(known.map((item) => item.toolCallId), ["t_wait"])
+  const receipt = decideStopReceipt({
+    entries: [],
+    knownTools: known,
+    phase: "settled"
+  })
+  assert.equal(receipt.write, "none_confirmed")
 })

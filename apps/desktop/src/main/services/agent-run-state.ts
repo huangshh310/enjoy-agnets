@@ -171,6 +171,12 @@ export function waitForRunSettle(runId: string): Promise<RunSettleResult> {
 }
 
 /** 带摘要的显式收工：completeAgentRun / failPump 在 emit 前调用。 */
+let idleLedgerReclaimer: ((runId: string) => void) | undefined
+
+export function setIdleLedgerReclaimer(fn: ((runId: string) => void) | undefined): void {
+  idleLedgerReclaimer = fn
+}
+
 export function settleRun(runId: string, result: RunSettleResult): void {
   if (settledRuns.has(runId) && !runWaiters.has(runId)) return
   settledRuns.set(runId, result)
@@ -180,9 +186,11 @@ export function settleRun(runId: string, result: RunSettleResult): void {
     settledRuns.delete(oldest)
   }
   const waiters = runWaiters.get(runId)
-  if (!waiters?.length) return
-  runWaiters.delete(runId)
-  for (const resolve of waiters) resolve(result)
+  if (waiters?.length) {
+    runWaiters.delete(runId)
+    for (const resolve of waiters) resolve(result)
+  }
+  idleLedgerReclaimer?.(runId)
 }
 
 /** 兜底：没有显式 settleRun 的发射点（prepare 失败 / 生成类 run）在这里收口。 */

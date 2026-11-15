@@ -15,6 +15,7 @@ import type { WorkspaceHostCallOpts } from "@enjoy-agents/agent-core"
 import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
 import { currentToolRunId } from "./active-run-id"
+import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
 import { isE2eStub } from "./e2e-stub-gate.ts"
 import { isStubShellFixtureInput } from "./e2e-stub-shell.ts"
 import { readPreferences } from "./preferences"
@@ -160,7 +161,7 @@ async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {
     runId: currentToolRunId() ?? undefined,
     sessionId: run.input.sessionId,
     signal: run.abort.signal,
-    toolTimeoutMs: readPreferences().toolTimeoutMs
+    toolTimeoutMs: effectiveToolTimeoutMs(readPreferences().toolTimeoutMs)
   }
   const { createWorkspaceHost, getWorkspace } = await import("./workspace")
   if (run.input.workspaceId) {

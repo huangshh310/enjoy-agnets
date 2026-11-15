@@ -24,9 +24,14 @@ import {
   settle,
   spawned,
   summarize,
-  waitSettled
+  waitSettled,
+  ledgerSizeForTest,
+  reclaimLedgerIfIdle,
+  setKillTreeForTest
 } from "./run-side-effects.ts"
+import { settleRun } from "./agent-run-state.ts"
 import { createWorkspaceHost } from "./workspace-host.ts"
+import { resetTreeLivenessForTest, setTreeLivenessOverride } from "./command.ts"
 
 const NotificationStub = Notification as unknown as {
   supported: boolean
@@ -36,6 +41,7 @@ const NotificationStub = Notification as unknown as {
 
 afterEach(() => {
   resetRunSideEffectsForTest()
+  resetTreeLivenessForTest()
   NotificationStub.resetForTest?.()
 })
 
@@ -121,6 +127,7 @@ test("abortActiveRunMemory：有在途时立刻发 run.error(settling) 且带 st
   holdRun("run_settling", "ses_settling", events)
   const entry = begin("bash", { runId: "run_settling", toolCallId: "c1", toolTimeoutMs: 5_000 })
   spawned(entry.id, 99)
+  setTreeLivenessOverride(99, true)
   const t0 = Date.now()
   abortActiveRunMemory("run_settling")
   assert.equal(getActiveRun("run_settling"), undefined)
@@ -142,6 +149,7 @@ test("再停一次：deleteActiveRun 之后再 abort 走 rekill，不等待 sett
   holdRun("run_rekill", "ses_rekill", events)
   const entry = begin("bash", { runId: "run_rekill", toolCallId: "c1", toolTimeoutMs: 30_000 })
   spawned(entry.id, 99)
+  setTreeLivenessOverride(99, true)
   abortActiveRunMemory("run_rekill")
   assert.equal(getActiveRun("run_rekill"), undefined)
   let hookAt = 0
@@ -250,4 +258,55 @@ test("写盘闸放行时写入成功并记 ok，checkpoint 用绑定的 runId", 
   assert.equal(rows[0]?.phase, "settled")
   assert.equal(rows[0]?.outcome, "ok")
   await rm(root, { recursive: true, force: true })
+})
+
+test("rekill 只杀还没 settle 的已启动条目，不碰已退出的 pid", async () => {
+  const done = begin("bash", { runId: "run_pid_reuse", toolCallId: "old" })
+  spawned(done.id, 111)
+  settle(done.id, "exited")
+  const live = begin("bash", { runId: "run_pid_reuse", toolCallId: "new" })
+  spawned(live.id, 222)
+  const killed: number[] = []
+  setKillTreeForTest(async (pid) => {
+    killed.push(pid)
+  })
+  await rekill("run_pid_reuse")
+  assert.deepEqual(killed, [222])
+  setKillTreeForTest()
+})
+
+test("沙箱拒绝之后再停止：账本无在途，与现网立刻停止一致", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-sandbox-deny-"))
+  const events: Array<Record<string, unknown>> = []
+  holdRun("run_sandbox_deny", "ses_sandbox_deny", events)
+  const host = createWorkspaceHost(root, {
+    runId: "run_sandbox_deny",
+    sessionId: "ses_sandbox_deny"
+  })
+  await assert.rejects(() => host.bash("curl https://example.com"), /Sandbox network is disabled/)
+  assert.equal(hasUnsettled("run_sandbox_deny"), false)
+  const rows = summarize("run_sandbox_deny")
+  assert.equal(rows.length, 0)
+  abortActiveRunMemory("run_sandbox_deny")
+  const error = events.find((item) => item.type === "run.error")
+  assert.ok(error)
+  assert.equal(error.code, "user_aborted")
+  assert.equal(error.settling, undefined)
+  assert.ok(error.turn)
+  assert.ok(!events.some((item) => item.type === "run.stopped"))
+  await rm(root, { recursive: true, force: true })
+})
+
+test("正常结束且无未结清条目时回收账本", () => {
+  const entry = begin("write_file", { runId: "run_reclaim" })
+  settle(entry.id, "ok")
+  assert.equal(ledgerSizeForTest(), 1)
+  settleRun("run_reclaim", { status: "end", summary: "ok" })
+  assert.equal(ledgerSizeForTest(), 0)
+  const busy = begin("bash", { runId: "run_keep" })
+  spawned(busy.id, 9)
+  assert.equal(hasUnsettled("run_keep"), true)
+  const size = ledgerSizeForTest()
+  reclaimLedgerIfIdle("run_keep")
+  assert.equal(ledgerSizeForTest(), size)
 })

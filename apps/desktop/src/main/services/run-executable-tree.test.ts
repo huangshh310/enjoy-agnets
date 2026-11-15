@@ -14,13 +14,22 @@ import {
   forceKillTree,
   processAlive,
   processGroupAlive,
+  resetTreeLivenessForTest,
   runExecutableTree,
+  setTreeClockForTest,
+  setTreeLivenessProbeForTest,
   TREE_KILL_SLA_MS
 } from "./command.ts"
+import { afterEach } from "node:test"
 import { shouldUseOsSandbox, seatbeltWrap, buildSeatbeltProfile } from "./os-sandbox.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 const posix = process.platform !== "win32"
+
+afterEach(() => {
+  resetTreeLivenessForTest()
+})
+
 
 const IGNORE_TERM_CHILD = `
 process.on("SIGTERM", () => {});
@@ -71,7 +80,7 @@ test("POSIX：父+吞 SIGTERM 的孙进程在 abort 后 ≤2s 整组消失，3s 
   const result = await running
   const elapsed = Date.now() - started
   assert.ok(elapsed <= TREE_KILL_SLA_MS + 800, `tree should die within SLA, took ${elapsed}ms`)
-  assert.equal(result.processExit === "killed" || result.processExit === "unconfirmed", true)
+  assert.equal(result.processExit, "killed")
   assert.equal(result.tree, "confirmed")
   if (typeof result.pid === "number") assert.equal(processGroupAlive(result.pid), false)
   for (const pid of pids) assert.equal(processAlive(pid), false)
@@ -88,7 +97,7 @@ test("timeoutMs=1000 时整棵树在 ≤3000ms 内结束", async () => {
   })
   const elapsed = Date.now() - started
   assert.ok(elapsed <= 3_000, `timeout kill took ${elapsed}ms`)
-  assert.ok(result.processExit === "killed" || result.processExit === "unconfirmed" || result.exitCode !== 0)
+  assert.equal(result.processExit, "killed")
   if (typeof result.pid === "number") {
     try {
       await forceKillTree(result.pid)
@@ -149,4 +158,76 @@ test("abortAgent / abortGeneration 复用同一路径，rekill 不 await settle�
   const gen = readFileSync(join(dir, "ai-generation.ts"), "utf8")
   assert.match(gen, /await abortAgent/)
   assert.equal(gen.includes("waitSettled"), false)
+})
+
+class FakeClock {
+  nowMs = 0
+  seq = 0
+  oneshots: Array<{ id: number; due: number; fn: () => void }> = []
+  intervals: Array<{ id: number; due: number; fn: () => void; step: number }> = []
+  now = () => this.nowMs
+  setTimeout = (fn: () => void, ms?: number) => {
+    const id = ++this.seq
+    this.oneshots.push({ id, due: this.nowMs + (ms ?? 0), fn })
+    return id as unknown as ReturnType<typeof setTimeout>
+  }
+  setInterval = (fn: () => void, ms?: number) => {
+    const id = ++this.seq
+    const step = ms ?? 0
+    this.intervals.push({ id, due: this.nowMs + step, fn, step })
+    return id as unknown as ReturnType<typeof setInterval>
+  }
+  clearTimeout = (handle: ReturnType<typeof setTimeout>) => {
+    const id = handle as unknown as number
+    this.oneshots = this.oneshots.filter((item) => item.id !== id)
+  }
+  clearInterval = (handle: ReturnType<typeof setInterval>) => {
+    const id = handle as unknown as number
+    this.intervals = this.intervals.filter((item) => item.id !== id)
+  }
+  tick(ms: number) {
+    const end = this.nowMs + ms
+    while (true) {
+      const next = [...this.oneshots, ...this.intervals].sort((a, b) => a.due - b.due)[0]
+      if (!next || next.due > end) {
+        this.nowMs = end
+        return
+      }
+      this.nowMs = next.due
+      const interval = this.intervals.find((item) => item.id === next.id)
+      if (interval) {
+        interval.due += interval.step
+        interval.fn()
+      } else {
+        this.oneshots = this.oneshots.filter((item) => item.id !== next.id)
+        next.fn()
+      }
+    }
+  }
+}
+
+test("进入查杀后 2s 仍存活不落 unconfirmed，探活见到死亡才结束", async () => {
+  const clock = new FakeClock()
+  setTreeClockForTest(clock)
+  let alive = true
+  setTreeLivenessProbeForTest(() => alive)
+  const ac = new AbortController()
+  const running = runExecutableTree(tmpdir(), process.execPath, ["-e", "setInterval(()=>{}, 1000)"], {
+    signal: ac.signal,
+    timeoutMs: 60_000
+  })
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  ac.abort()
+  let done = false
+  const finished = running.then((result) => {
+    done = true
+    return result
+  })
+  clock.tick(TREE_KILL_SLA_MS)
+  await Promise.resolve()
+  assert.equal(done, false)
+  alive = false
+  clock.tick(50)
+  const result = await finished
+  assert.equal(result.processExit, "killed")
 })

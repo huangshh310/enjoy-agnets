@@ -74,8 +74,8 @@ function fileOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "r
       return ctx.conn.readFile(ctx.jail(relativePath))
     },
     writeFile: async (relativePath, content, opts) => {
-      const { entryId } = sshGate("write_file", extras, opts)
       ctx.requireLive()
+      const { entryId } = sshGate("write_file", extras, opts)
       await sshSettled(entryId, () => ctx.conn.writeFile(ctx.jail(relativePath), content))
     },
     editFile: async (relativePath, oldText, newText, opts) => {
@@ -93,8 +93,8 @@ function fileOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "r
       return (await ctx.conn.listDir(ctx.jail(relativePath))).filter((entry) => !IGNORED.has(entry.name))
     },
     bash: async (command, opts) => {
-      const { entryId } = sshGate("bash", extras, opts)
       ctx.requireLive()
+      const { entryId } = sshGate("bash", extras, opts)
       const result = await sshSettled(entryId, () => ctx.conn.exec(remoteArgvCommand(ctx.remotePath, command)))
       return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode }
     }
@@ -159,8 +159,8 @@ function gitOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "gi
       return (await run(args)).stdout
     },
     gitCommit: async (message, options) => {
-      const { entryId } = sshGate("git_commit", extras, options)
       ctx.requireLive()
+      const { entryId } = sshGate("git_commit", extras, options)
       return sshSettled(entryId, async () => {
         if (options?.stageAll) await run(["add", "-A"])
         const result = await run(["commit", "-m", message])
@@ -169,8 +169,8 @@ function gitOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "gi
       })
     },
     gitPush: async (opts) => {
-      const { entryId } = sshGate("git_push", extras, opts)
       ctx.requireLive()
+      const { entryId } = sshGate("git_push", extras, opts)
       return sshSettled(entryId, async () => {
         const result = await run(["push"])
         if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
@@ -178,8 +178,8 @@ function gitOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "gi
       })
     },
     gitBranch: async (name, checkout, opts) => {
-      const { entryId } = sshGate("git_branch", extras, opts)
       ctx.requireLive()
+      const { entryId } = sshGate("git_branch", extras, opts)
       return sshSettled(entryId, async () => {
         const result = await run(checkout ? ["checkout", "-b", name] : ["branch", name])
         if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)

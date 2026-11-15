@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import { app } from "electron"
 import {
+  effectiveToolTimeoutMs,
   isolatedUserDataOverride,
   isE2eStub,
   setE2eStubPackagedForTest
@@ -106,5 +107,27 @@ test("打包态忽略 ENJOY_E2E_USERDATA / ENJOY_DEV_USERDATA", () => {
     else process.env.ENJOY_E2E_USERDATA = previousUd
     if (previousDev == null) delete process.env.ENJOY_DEV_USERDATA
     else process.env.ENJOY_DEV_USERDATA = previousDev
+  }
+})
+
+test("ENJOY_E2E_TOOL_TIMEOUT_MS 只在 stub 未打包时覆盖，生产回落默认值", () => {
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  const previousTo = process.env.ENJOY_E2E_TOOL_TIMEOUT_MS
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = "/tmp/e2e-ud"
+  process.env.ENJOY_E2E_TOOL_TIMEOUT_MS = "5000"
+  try {
+    setE2eStubPackagedForTest(false)
+    assert.equal(effectiveToolTimeoutMs(30_000), 5_000)
+    setE2eStubPackagedForTest(true)
+    assert.equal(effectiveToolTimeoutMs(30_000), 30_000)
+  } finally {
+    if (previousStub == null) delete process.env.ENJOY_E2E_STUB
+    else process.env.ENJOY_E2E_STUB = previousStub
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+    if (previousTo == null) delete process.env.ENJOY_E2E_TOOL_TIMEOUT_MS
+    else process.env.ENJOY_E2E_TOOL_TIMEOUT_MS = previousTo
   }
 })

@@ -2,6 +2,7 @@
  * Enjoy Local ToolLoop 开流：密钥、Fast 模型、规则/技能/大纲尾巴。
  */
 import type { ModelMessage } from "ai"
+import { effectiveToolTimeoutMs } from "./e2e-stub-gate.ts"
 import { insertRunStep } from "@enjoy-agents/db"
 import {
   collectRepoOutline,
@@ -102,7 +103,7 @@ function localStreamOptions(
     onSubagentToolEvent: input.onSubagentToolEvent,
     maxSteps: input.prefs.maxAgentSteps,
     stepTimeoutMs: input.prefs.stepTimeoutMs,
-    toolTimeoutMs: input.prefs.toolTimeoutMs,
+    toolTimeoutMs: effectiveToolTimeoutMs(input.prefs.toolTimeoutMs),
     onStepFinish: (step: { stepNumber?: number }) =>
       recordLocalModelStep(input.runId, step.stepNumber),
     pullSteeringMessages: input.pullSteeringMessages,
@@ -129,7 +130,7 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
     runId: input.runId,
     sessionId: input.sessionId,
     signal: input.abortSignal,
-    toolTimeoutMs: input.prefs.toolTimeoutMs
+    toolTimeoutMs: effectiveToolTimeoutMs(input.prefs.toolTimeoutMs)
   }
   const record = input.workspaceId ? await getWorkspace(input.workspaceId) : null
   if (!record && looksLikeSshRoot(input.workspaceRoot)) {
