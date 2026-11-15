@@ -11,6 +11,8 @@ import { ThinkingSteps } from "./thinking-steps"
 import { parseAgentStepNodes } from "./agent-step-tree-parser"
 import { useT } from "@renderer/i18n"
 import { useOpenTraceForFocus } from "../subagent-pill/delegate-focus"
+import { useStopSettleStore } from "@renderer/stores/stop-settle"
+import { toolStopView } from "@renderer/stores/stop-settle-reducer"
 
 const SHIMMER_TONE = {
   "--bui-agent-thinking-tone": "var(--color-text-secondary)"
@@ -36,6 +38,16 @@ export function ThinkingTrace({
   const rows = buildTraceRows(reasoning, tools, t)
   const nodes = parseAgentStepNodes(reasoning, tools, t)
   const hasContent = Boolean(reasoning.trim()) || tools.length > 0
+  // E1 M2：这一轮工具还在收尾 / 卡住时，头上不提前说「已停止」。
+  const settling = useStopSettleStore((state) => {
+    for (const tool of tools) {
+      const view = toolStopView(state, tool.id)
+      if (view === "stuck") return "stuck"
+      if (view === "stopping") return "stopping"
+    }
+    return null
+  })
+  const headline = settling === "stuck" ? t("chat.stopStuck") : settling === "stopping" ? t("chat.stopStopping") : thinkingHeadline(streaming, tools, seconds, t)
   const expanded = manualOpen ?? (streaming ? hasContent : isTraceExpanded(streaming, tools, null))
   useEffect(() => {
     if (streaming) setManualOpen(null)
@@ -60,9 +72,9 @@ export function ThinkingTrace({
             streaming ? "bui-agent-thinking-label" : "text-text-primary"
           )}
           style={streaming ? SHIMMER_TONE : undefined}
-          title={thinkingHeadline(streaming, tools, seconds, t) ?? undefined}
+          title={headline ?? undefined}
         >
-          {thinkingHeadline(streaming, tools, seconds, t)}
+          {headline}
         </span>
         {streaming ? <LoadingElapsed startedAt={startedAt} /> : null}
         <RiArrowDownSLine

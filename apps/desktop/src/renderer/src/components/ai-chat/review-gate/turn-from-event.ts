@@ -5,6 +5,8 @@ import type { StreamEvent, TurnOutcome } from "@enjoy-agents/ipc-contract"
 
 export function turnFromEvent(event: StreamEvent): TurnOutcome | undefined {
   if (event.type === "run.end" || event.type === "run.error") return event.turn
+  // E1 M2：有在途工具的停止由 run.stopped 终态带回收工判定（stuck 不带）。
+  if (event.type === "run.stopped") return event.turn
   return undefined
 }
 

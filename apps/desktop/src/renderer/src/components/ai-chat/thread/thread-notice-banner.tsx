@@ -6,6 +6,7 @@
  */
 import { RiCloseLine, RiRefreshLine } from "@remixicon/react"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useStopPhase } from "@renderer/stores/stop-settle"
 import { focusComposerEndAfterPaint } from "@renderer/hooks/composer-focus"
 import { useT } from "@renderer/i18n"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
@@ -17,6 +18,8 @@ export function ThreadNoticeBanner() {
   const notice = useChatStore((state) => state.notice)
   const setNotice = useChatStore((state) => state.setNotice)
   const messages = useChatStore((state) => state.messages)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const stopPhase = useStopPhase(sessionId)
   if (!notice) return null
   const kind = classifyThreadError(notice)
   const stopped = kind === "stopped"
@@ -32,13 +35,20 @@ export function ThreadNoticeBanner() {
     : restoreFamily
     ? t("chat.restartAbandoned")
     : stopped
-      ? t("chat.runStopped")
+      ? // E1 M2：真结束前不说「已停止」——收尾中「正在停下…」，8s 未落定「没能停下」。
+        stopPhase === "stopping"
+        ? t("chat.stopStopping")
+        : stopPhase === "stuck"
+          ? t("chat.stopStuck")
+          : t("chat.runStopped")
       : catchUpTimeout
         ? t("studio.automations.catchUpTimeout")
         : resume
           ? t("chat.acpResumeFallbackTitle")
           : notice
-  const detail = restoreInterrupted
+  const detail = stopped && stopPhase === "stuck"
+    ? t("chat.stopStuckHint")
+    : restoreInterrupted
     ? t("chat.restoreInterrupted")
     : restoreMismatch
       ? t("chat.restoreNoMatching")
@@ -57,6 +67,7 @@ export function ThreadNoticeBanner() {
     <div
       data-testid="thread-notice-banner"
       data-notice-kind={otherChat ? "approval_other_chat" : kind}
+      data-stop-phase={stopped && stopPhase ? stopPhase : undefined}
       className="mt-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2.5 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:py-1"
     >
       <span

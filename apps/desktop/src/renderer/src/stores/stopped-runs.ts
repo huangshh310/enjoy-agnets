@@ -3,7 +3,7 @@
  * 最要命的是迟到的 approval.required——会把审批卡重新挂出来、running 又被置上（#160 巡检第 6 项：
  * 停掉「很慢」那一轮后写入审批卡还在）。
  *
- * 规则：被停的 run 之后的事件一律丢掉，只放行终态和落库类事件（run.end / run.error / message.persisted /
+ * 规则：被停的 run 之后的事件一律丢掉，只放行终态和落库类事件（run.end / run.error / run.stopped / message.persisted /
  * usage.updated），让落库 id、用量、Attention 终态照常对齐；这些事件在 running 已落下时本来就不会把这一轮「复活」。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
@@ -11,7 +11,14 @@ import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 const MAX_PER_SESSION = 8
 const bySession = new Map<string, string[]>()
 
-const PASS_THROUGH = new Set<StreamEvent["type"]>(["run.end", "run.error", "message.persisted", "usage.updated"])
+// E1 M2：run.stopped（收尾回执）也放行，否则被停那一轮的终态被整条丢掉，界面永远停在「正在停下…」。
+const PASS_THROUGH = new Set<StreamEvent["type"]>([
+  "run.end",
+  "run.error",
+  "run.stopped",
+  "message.persisted",
+  "usage.updated"
+])
 
 export function rememberStoppedRun(sessionId: string | null | undefined, runId: string | null | undefined): void {
   if (!sessionId || !runId) return

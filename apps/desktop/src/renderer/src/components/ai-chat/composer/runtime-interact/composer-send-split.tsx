@@ -2,9 +2,13 @@
  * 运行中：停止常在；有草稿时停止 + 排队并排（E1 M3 · luna §1.4）——排队留最右发送位，停止紧挨左侧、间距 8。
  * 空闲：有草稿出发送，空草稿出禁用占位。空草稿运行中只出停止，仍占最右槽（不左移）。
  */
-import { RiArrowUpLine, RiStopLine } from "@remixicon/react"
+import { RiArrowUpLine, RiLoader4Line, RiStopLine } from "@remixicon/react"
 import { composerActionButtons } from "@renderer/hooks/composer-submit-intent"
+import { restopComposerRun } from "@renderer/hooks/composer-run-control"
 import { useT } from "@renderer/i18n"
+import { cx } from "@/utils/cx"
+import { useChatStore } from "@renderer/stores/chat-store"
+import { useStopPhase, type StopPhaseView } from "@renderer/stores/stop-settle"
 
 export function ComposerSendSplit({
   running,
@@ -20,6 +24,9 @@ export function ComposerSendSplit({
   onStop: () => void
 }) {
   const t = useT()
+  const sessionId = useChatStore((state) => state.sessionId)
+  const stopPhase = useStopPhase(sessionId)
+  if (stopPhase) return <SettlingStop phase={stopPhase} hasDraft={hasDraft} onRestop={() => restopComposerRun(sessionId)} />
   const buttons = composerActionButtons(running, hasDraft)
   if (buttons.paired) {
     return (
@@ -64,6 +71,47 @@ export function ComposerSendSplit({
     >
       <RiArrowUpLine className="size-5" aria-hidden />
     </button>
+  )
+}
+
+/**
+ * E1 M2 收尾态（luna §1.1 / §1.2）：停止钮留在原位（32px），收尾中转圈、aria-busy、不可点；
+ * 卡住时恢复可点，aria / title「再停一次」。有草稿时排队位禁用、草稿不动；发送一律禁用到真正落定。
+ */
+function SettlingStop({ phase, hasDraft, onRestop }: { phase: Exclude<StopPhaseView, null>; hasDraft: boolean; onRestop: () => void }) {
+  const t = useT()
+  const stuck = phase === "stuck"
+  const label = stuck ? t("chat.stopAgain") : t("chat.stopStopping")
+  const stop = (
+    <button
+      type="button"
+      data-testid="composer-stop"
+      data-stop-phase={phase}
+      aria-label={label}
+      title={label}
+      aria-busy={stuck ? undefined : true}
+      disabled={!stuck}
+      onClick={stuck ? onRestop : undefined}
+      className={cx(hasDraft ? pairedStopClassName : sendClassName, !stuck && "cursor-default opacity-80 active:scale-100")}
+    >
+      {stuck ? <RiStopLine className="size-5" aria-hidden /> : <RiLoader4Line className="size-4 animate-spin" aria-hidden />}
+    </button>
+  )
+  if (!hasDraft) return stop
+  return (
+    <div className="flex shrink-0 items-center gap-2" data-testid="composer-action-pair">
+      {stop}
+      <button
+        type="button"
+        disabled
+        data-testid="composer-send"
+        aria-label={t("chat.runtimeQueue")}
+        title={label}
+        className={cx(mutedSendClassName, "cursor-not-allowed opacity-40")}
+      >
+        <RiArrowUpLine className="size-5" aria-hidden />
+      </button>
+    </div>
   )
 }
 
