@@ -451,3 +451,42 @@ test("SSH 断线之后再停止：账本无在途，与现网立刻停止一致"
   assert.ok(error.turn)
   assert.ok(!events.some((item) => item.type === "run.stopped"))
 })
+
+test("neo Q4 · SSH 写到一半断线：停止时在途、断线后落定，回执 maybe_partial（外部不可验证）", async () => {
+  const events: Array<Record<string, unknown>> = []
+  holdRun("run_ssh_mid", "ses_ssh_mid", events)
+  const conn = fakeSshConn("connected")
+  let failWrite: (error: unknown) => void = () => {}
+  conn.writeFile = () =>
+    new Promise<void>((_resolve, reject) => {
+      failWrite = reject
+    })
+  const host = createSshWorkspaceHost(conn, "/home/alice/app", {
+    runId: "run_ssh_mid",
+    sessionId: "ses_ssh_mid",
+    toolTimeoutMs: 5_000
+  })
+  const writing = host.writeFile("readme.md", "half", { toolCallId: "tool_ssh_mid" }).then(
+    () => "ok",
+    (error: unknown) => error
+  )
+  await Promise.resolve()
+  assert.equal(hasUnsettled("run_ssh_mid"), true, "写请求已发出，账本在途")
+  abortActiveRunMemory("run_ssh_mid")
+  const error = events.find((item) => item.type === "run.error")
+  assert.ok(error?.settling, "有在途：run.error 带 settling")
+  // 连接中途断开：写请求以断线错误结束。
+  conn.status = "disconnected"
+  const { disconnectedError } = await import("./ssh/ssh-errors.ts")
+  failWrite(disconnectedError("io"))
+  const outcome = await writing
+  assert.ok(isRemoteDisconnected(outcome))
+  await waitSettled("run_ssh_mid")
+  for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setImmediate(resolve))
+  const stoppedEvents = events.filter((item) => item.type === "run.stopped" && item.phase !== "stuck")
+  assert.equal(stoppedEvents.length, 1)
+  const receipt = stoppedEvents[0]?.receipt as { write?: string; tools?: Array<{ toolCallId: string; evidence: string[] }> }
+  assert.equal(receipt.write, "maybe_partial")
+  const tool = receipt.tools?.find((item) => item.toolCallId === "tool_ssh_mid")
+  assert.ok(tool?.evidence.includes("external_unverifiable"))
+})
