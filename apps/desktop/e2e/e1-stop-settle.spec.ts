@@ -130,9 +130,9 @@ test("STUCK ①：8s →「没能停下 / 再停一次」；期间新对话能�
     await expect(window.getByTestId("tool-stop-title").first()).toHaveAttribute("data-stop-view", "stuck")
     await expect(window.getByTestId("review-gate-phases")).toHaveAttribute("data-stop-phase", "stuck")
     await shot(window, "stuck1-2-stuck")
-    // leo C1：卡住期间同一会话打字 + ⌘/Ctrl+Enter 不开新一轮；草稿留着、气泡数不变、仍 stuck；占位是卡住态的说法（S3）。
+    // leo C1：卡住期间同一会话打字 + ⌘/Ctrl+Enter 不开新一轮；草稿留着、气泡数不变、仍 stuck；占位是卡住态的定稿（luna S3）。
     const composerInput = window.getByTestId("composer-input")
-    await expect(composerInput).toHaveAttribute("placeholder", "没能停下，可以再停一次…")
+    await expect(composerInput).toHaveAttribute("placeholder", "可以先写下一句，停干净后再发送")
     const bubblesBefore = await window.getByTestId("user-bubble").count()
     await composerInput.fill("卡住时同会话 Ctrl+Enter")
     await composerInput.press("Control+Enter")

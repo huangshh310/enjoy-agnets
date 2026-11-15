@@ -71,7 +71,7 @@ export const enChat = {
   stopAgain: "Stop again",
   stopStuckHeader: "Not fully stopped",
   placeholderStopping: "Stopping, one moment…",
-  placeholderStuck: "Couldn't stop. You can stop again…",
+  placeholderStuck: "Write your next message. You can send once it stops.",
   toolStoppedNothingWritten: "Stopped · nothing written",
   toolStoppedMaybePartial: "Stopped · may be incomplete",
   stackedTasksProgress: "{done}/{total} tasks completed",
