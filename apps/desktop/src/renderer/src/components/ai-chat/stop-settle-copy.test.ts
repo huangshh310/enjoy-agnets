@@ -37,7 +37,7 @@ test("⑥ 写类工具行标题：五态中英一一对应设计 §1.3.1", () =>
 })
 
 test("⑥ 禁用词：停止相关新句子里没有 写了/改了/完成/已写入/已保存 · wrote/changed/done/completed/saved/edited", () => {
-  const keys = ["stopStopping", "stopStuck", "stopStuckHint", "stopAgain", "stopStuckHeader", "placeholderStopping", "toolStoppedNothingWritten", "toolStoppedMaybePartial", "toolStopped"]
+  const keys = ["stopStopping", "stopStuck", "stopStuckHint", "stopAgain", "stopStuckHeader", "placeholderStopping", "placeholderStuck", "toolStoppedNothingWritten", "toolStoppedMaybePartial", "toolStopped"]
   for (const key of keys) {
     const z = String((zhChat as Record<string, unknown>)[key])
     const e = String((enChat as Record<string, unknown>)[key])
@@ -100,4 +100,15 @@ test("luna S2：卡住说明只出现一处——通知条第二行保留（思�
   assert.doesNotMatch(row, /stopStuckHint/)
   const banner = readFileSync(new URL("./thread/thread-notice-banner.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(banner, /stopPhase === "stuck"\n\s*\? t\("chat\.stopStuckHint"\)/)
+})
+
+test("luna S3：卡住态占位不说「稍等 / one moment」，只换卡住态；正在停下的占位不动", () => {
+  assert.equal(zhChat.placeholderStuck, "没能停下，可以再停一次…")
+  assert.equal(enChat.placeholderStuck, "Couldn't stop. You can stop again…")
+  assert.doesNotMatch(zhChat.placeholderStuck, /稍等|等一下|请等/)
+  assert.doesNotMatch(enChat.placeholderStuck, /one moment|wait|hold on/i)
+  assert.equal(zhChat.placeholderStopping, "正在停下，稍等…")
+  assert.equal(enChat.placeholderStopping, "Stopping, one moment…")
+  const input = readFileSync(new URL("./composer/mentions/composer-input.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(input, /stopPhase\n\s*\? t\(stopPhase === "stuck" \? "chat\.placeholderStuck" : "chat\.placeholderStopping"\)/)
 })

@@ -141,7 +141,7 @@ export function ComposerInput({
         onBlur={onBlur}
         placeholder={
           stopPhase
-            ? t("chat.placeholderStopping")
+            ? t(stopPhase === "stuck" ? "chat.placeholderStuck" : "chat.placeholderStopping")
             : placeholderKey === "chat.placeholder"
             ? (placeholderHint ?? t("chat.placeholder"))
             : withEscStopHint(
