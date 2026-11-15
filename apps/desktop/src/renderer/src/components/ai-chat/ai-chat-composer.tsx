@@ -258,6 +258,7 @@ export function AiChatComposer({
               onChange={onComposerChange}
               onSend={handleSend}
               onSteer={onSteer}
+              onStop={onStop}
               running={running}
               autoFocus={autoFocus}
               textareaRef={textareaRef}

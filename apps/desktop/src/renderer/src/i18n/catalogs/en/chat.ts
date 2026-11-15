@@ -82,6 +82,8 @@ export const enChat = {
   placeholder: "Describe the change, or ask a question…",
   placeholderRunning: "Agent is running. Enter queues, {mod}+Enter sends it right away…",
   placeholderRunningPaused: "Queue paused. Enter adds to it, Continue sends it. {mod}+Enter sends now…",
+  /** E1 M3：运行中占位句尾的 Esc 提示（只在有一轮在跑时接上）。 */
+  placeholderEscStop: ", Esc stops.",
   quoteStep: "Quote this step",
   runtimeQueue: "Queue until this task finishes",
   runtimeSteer: "Send right away ({mod}+Enter)",
@@ -216,6 +218,8 @@ export const enChat = {
   voice: "Voice (experimental)",
   noRealtime: "This model does not advertise Realtime.",
   stop: "Stop",
+  /** E1 M3：停止钮 aria / title（有草稿与排队并排时；空草稿只作 title）。 */
+  stopRunEsc: "Stop this run (Esc)",
   fastMode: "Fast",
   fastModeHint: "Prefer faster results.",
   fastModeOnHint: "Fast is on: prefer low latency.",

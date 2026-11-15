@@ -81,6 +81,8 @@ export const zhChat = {
   placeholder: "描述要做的改动，或直接提问…",
   placeholderRunning: "任务进行中。Enter 排队，{mod}+Enter 马上发给它…",
   placeholderRunningPaused: "排队已暂停：Enter 先排着，点「继续」才发；{mod}+Enter 马上发给它…",
+  /** E1 M3：运行中占位句尾的 Esc 提示（只在有一轮在跑时接上）。 */
+  placeholderEscStop: "，Esc 停止。",
   quoteStep: "引用此步骤",
   runtimeQueue: "排队，完成后执行",
   runtimeSteer: "马上发给它（{mod}+Enter）",
@@ -215,6 +217,8 @@ export const zhChat = {
   voice: "语音（实验性）",
   noRealtime: "当前模型未声明 Realtime 能力。",
   stop: "停止",
+  /** E1 M3：停止钮 aria / title（有草稿与排队并排时；空草稿只作 title）。 */
+  stopRunEsc: "停止这一轮（Esc）",
   fastMode: "快速",
   fastModeHint: "优先更快出结果。",
   fastModeOnHint: "快速已开：优先低延迟。",
