@@ -39,9 +39,10 @@ function editFileTool(host: AgentWorkspaceHost) {
       oldText: z.string(),
       newText: z.string()
     }),
-    execute: async ({ path, oldText, newText }) => {
+    execute: async ({ path, oldText, newText }, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
+      const opts = { signal: options?.abortSignal, toolCallId: options?.toolCallId }
       const before = await host.readFile(path)
-      const after = await host.editFile(path, oldText, newText)
+      const after = await host.editFile(path, oldText, newText, opts)
       const model = diffTexts(before, after, path)
       return fileChange(path, model)
     }
@@ -55,9 +56,10 @@ function writeFileTool(host: AgentWorkspaceHost) {
       path: z.string(),
       content: z.string()
     }),
-    execute: async ({ path, content }) => {
+    execute: async ({ path, content }, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
+      const opts = { signal: options?.abortSignal, toolCallId: options?.toolCallId }
       const before = await readExisting(host, path)
-      await host.writeFile(path, content)
+      await host.writeFile(path, content, opts)
       const model = diffTexts(before, content, path)
       return { ...fileChange(path, model), bytes: content.length }
     }
@@ -70,8 +72,8 @@ function bashTool(host: AgentWorkspaceHost) {
     inputSchema: z.object({
       command: z.string()
     }),
-    execute: async ({ command }, options: { toolCallId?: string }) => {
-      const result = await host.bash(command)
+    execute: async ({ command }, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
+      const result = await host.bash(command, { signal: options?.abortSignal, toolCallId: options?.toolCallId })
       const model = modelCommandText(options?.toolCallId, result.stdout, result.stderr)
       return { command, exitCode: result.exitCode, stdout: model.stdout, stderr: model.stderr }
     }

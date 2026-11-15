@@ -32,7 +32,7 @@ export {
   type DiffLine,
   type FileDiffModel
 } from "./diff";
-export type { AgentRuntimeContext, AgentWorkspaceHost } from "./runtime-context";
+export type { AgentRuntimeContext, AgentWorkspaceHost, WorkspaceHostCallOpts } from "./runtime-context";
 export {
   buildRepoMap,
   getLastRepoMapOccupancy,
