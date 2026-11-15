@@ -3,9 +3,12 @@
  */
 import assert from "node:assert/strict"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
+import { readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { test } from "node:test"
+import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import {
   createE2eStubStream,
@@ -17,7 +20,16 @@ import {
   writeStubApprovedFile
 } from "./e2e-stub.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
-import { hasUnsettled, rekill, resetRunSideEffectsForTest, summarize } from "./run-side-effects.ts"
+import { hasUnsettled, latestDeadlineAt, rekill, resetRunSideEffectsForTest, setSettleClockForTest, summarize } from "./run-side-effects.ts"
+import { abortActiveRunMemory } from "./abort-active-run.ts"
+import { holdAgentRun } from "./agent-run-state.ts"
+import {
+  forceKillTree,
+  resetTreeLivenessForTest,
+  setTreeClockForTest
+} from "./command.ts"
+
+const here = dirname(fileURLToPath(import.meta.url))
 
 function approvedWriteMessages(approvalId?: string): ModelMessage[] {
   return [
@@ -190,5 +202,206 @@ test("STUCK_TOOL：忽略 abort，rekill 立刻 settle 且不写盘", async () =
     if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
     else process.env.ENJOY_E2E_USERDATA = previousUd
     await rm(root, { recursive: true, force: true })
+  }
+})
+
+
+class FakeClock {
+  nowMs = 0
+  seq = 0
+  oneshots: Array<{ id: number; due: number; fn: () => void }> = []
+  intervals: Array<{ id: number; due: number; fn: () => void; step: number }> = []
+  now = () => this.nowMs
+  setTimeout = (fn: () => void, ms?: number) => {
+    const id = ++this.seq
+    this.oneshots.push({ id, due: this.nowMs + (ms ?? 0), fn })
+    return id as unknown as ReturnType<typeof setTimeout>
+  }
+  setInterval = (fn: () => void, ms?: number) => {
+    const id = ++this.seq
+    const step = ms ?? 0
+    this.intervals.push({ id, due: this.nowMs + step, fn, step })
+    return id as unknown as ReturnType<typeof setInterval>
+  }
+  clearTimeout = (handle: ReturnType<typeof setTimeout>) => {
+    const id = handle as unknown as number
+    this.oneshots = this.oneshots.filter((item) => item.id !== id)
+  }
+  clearInterval = (handle: ReturnType<typeof setInterval>) => {
+    const id = handle as unknown as number
+    this.intervals = this.intervals.filter((item) => item.id !== id)
+  }
+  tick(ms: number) {
+    const end = this.nowMs + ms
+    while (true) {
+      const next = [...this.oneshots, ...this.intervals].sort((a, b) => a.due - b.due)[0]
+      if (!next || next.due > end) {
+        this.nowMs = end
+        return
+      }
+      this.nowMs = next.due
+      const interval = this.intervals.find((item) => item.id === next.id)
+      if (interval) {
+        interval.due += interval.step
+        interval.fn()
+      } else {
+        this.oneshots = this.oneshots.filter((item) => item.id !== next.id)
+        next.fn()
+      }
+    }
+  }
+}
+
+function fakeWindow(events: unknown[]): BrowserWindow {
+  return {
+    isDestroyed: () => false,
+    webContents: {
+      send(_ch: string, event: unknown) {
+        events.push(event)
+      }
+    }
+  } as unknown as BrowserWindow
+}
+
+function holdRun(runId: string, sessionId: string, events: unknown[]) {
+  holdAgentRun({
+    runId,
+    window: fakeWindow(events),
+    workspaceRoot: "/tmp",
+    messages: [],
+    input: {
+      sessionId,
+      workspaceId: "ws_stuck_cap",
+      modelId: "m",
+      mode: "agent",
+      attachments: [],
+      messages: [{ role: "user", content: "hi" }]
+    }
+  })
+}
+
+function stoppedEvents(events: unknown[]) {
+  return events.filter((item) => (item as { type?: string }).type === "run.stopped") as Array<{
+    type: string
+    phase: string
+    receipt?: { write?: string }
+  }>
+}
+
+test("STUCK 夹具源码：只在 stub 夹具里给子进程加 ELECTRON_RUN_AS_NODE", () => {
+  const src = readFileSync(join(here, "e2e-stub.ts"), "utf8")
+  const fn = src.split("async function runStuckToolFixture")[1] ?? ""
+  assert.match(fn, /extraEnv:\s*\{\s*ELECTRON_RUN_AS_NODE:\s*"1"\s*\}/)
+  assert.match(fn, /if \(!isE2eStub\(\)\) return/)
+})
+
+test("STUCK 夹具与 N2/N3 上限互不干扰：deadline 强制 final+maybe_partial，树上限不提前落定，rekill 仍立刻 settle", async () => {
+  const root = await mkdtemp(join(tmpdir(), "enjoy-stub-stuck-cap-"))
+  const previous = process.env.ENJOY_E2E_WORKSPACE
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousStuck = process.env.ENJOY_E2E_STUCK_TOOL
+  const previousTimeout = process.env.ENJOY_E2E_TOOL_TIMEOUT_MS
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  process.env.ENJOY_E2E_WORKSPACE = root
+  process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_STUCK_TOOL = "1"
+  process.env.ENJOY_E2E_TOOL_TIMEOUT_MS = "5000"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
+  setE2eStubPackagedForTest(false)
+
+  const restore = async () => {
+    resetRunSideEffectsForTest()
+    resetTreeLivenessForTest()
+    setTreeClockForTest()
+    setSettleClockForTest()
+    setE2eStubPackagedForTest(undefined)
+    process.env.ENJOY_E2E_WORKSPACE = previous
+    process.env.ENJOY_E2E_STUB = previousStub
+    process.env.ENJOY_E2E_STUCK_TOOL = previousStuck
+    if (previousTimeout == null) delete process.env.ENJOY_E2E_TOOL_TIMEOUT_MS
+    else process.env.ENJOY_E2E_TOOL_TIMEOUT_MS = previousTimeout
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+    await rm(root, { recursive: true, force: true })
+  }
+
+  try {
+    // 1) rekill 在探活钉死 + 树 timeout=120s（N3 上限 122s）时仍立刻 settle。
+    resetRunSideEffectsForTest()
+    const acRekill = new AbortController()
+    const consumeRekill = (async () => {
+      for await (const _part of createE2eStubStream(approvedWriteMessages("apr_stub_3"), acRekill.signal, {
+        runId: "run_stuck_rekill"
+      })) {
+        // fixture should not yield
+      }
+    })()
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    acRekill.abort()
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    assert.equal(hasUnsettled("run_stuck_rekill"), true)
+    const rekillStarted = Date.now()
+    await rekill("run_stuck_rekill")
+    await consumeRekill
+    assert.ok(Date.now() - rekillStarted < 1_000, "rekill should settle immediately, not wait for the 122s tree cap")
+    assert.equal(hasUnsettled("run_stuck_rekill"), false)
+    assert.equal(summarize("run_stuck_rekill")[0]?.phase, "settled")
+    assert.equal(summarize("run_stuck_rekill")[0]?.outcome, "killed")
+
+    // 2) 探活钉死后，latestDeadlineAt（5s+2s）强制 final+maybe_partial；
+    //    N3 树上限是 120s+2s，不得在 deadline 之前把回执落成非 stuck 终态。
+    resetRunSideEffectsForTest()
+    resetTreeLivenessForTest()
+    const clock = new FakeClock()
+    clock.nowMs = Date.now()
+    setTreeClockForTest(clock)
+    setSettleClockForTest(clock)
+    const events: unknown[] = []
+    holdRun("run_stuck_deadline", "ses_stuck_deadline", events)
+    const acDeadline = new AbortController()
+    const consumeDeadline = (async () => {
+      for await (const _part of createE2eStubStream(approvedWriteMessages("apr_stub_4"), acDeadline.signal, {
+        runId: "run_stuck_deadline"
+      })) {
+        // fixture should not yield
+      }
+    })()
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    assert.equal(hasUnsettled("run_stuck_deadline"), true)
+    const pid = summarize("run_stuck_deadline")[0]?.pid
+    acDeadline.abort()
+    abortActiveRunMemory("run_stuck_deadline")
+    const deadlineAt = latestDeadlineAt("run_stuck_deadline")
+    assert.ok(typeof deadlineAt === "number")
+    const before = Math.max(0, deadlineAt - clock.now() - 1)
+    clock.tick(before)
+    await Promise.resolve()
+    assert.equal(hasUnsettled("run_stuck_deadline"), true)
+    assert.equal(
+      stoppedEvents(events).some((item) => item.phase === "settled" || item.phase === "final"),
+      false,
+      "N3 tree cap (spawn+120s+2s) must not finalize before latestDeadlineAt"
+    )
+    clock.tick(1)
+    await Promise.resolve()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    assert.equal(hasUnsettled("run_stuck_deadline"), false)
+    const finals = stoppedEvents(events).filter((item) => item.phase === "final")
+    assert.equal(finals.length, 1)
+    assert.equal(finals[0]?.receipt?.write, "maybe_partial")
+    assert.equal(
+      stoppedEvents(events).some((item) => item.phase === "settled"),
+      false
+    )
+    await consumeDeadline
+    if (typeof pid === "number") {
+      try {
+        await forceKillTree(pid)
+      } catch {
+        // already gone
+      }
+    }
+  } finally {
+    await restore()
   }
 })
