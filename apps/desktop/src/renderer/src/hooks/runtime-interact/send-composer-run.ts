@@ -26,6 +26,7 @@ import {
 } from "../../components/ai-chat/review-gate/sync-review-gate"
 import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
 import { isRequestStopped } from "../stopped-runs"
+import { isStopLocked } from "../../stores/stop-settle"
 import { failComposerSend } from "./fail-composer-send"
 import { releaseClientRequestId, takeClientRequestId } from "./client-request-id"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
@@ -113,6 +114,13 @@ async function sendComposerOnce(
   request: { clientRequestId: string; sessionKey: string | null; handoff: boolean }
 ) {
   let store = useChatStore.getState()
+  // E1 M2 / leo C1：发送锁下沉到这里——所有「开新一轮」的入口（发送钮 / Enter / ⌘Enter / 执行计划 / ⌘L ACP 命令 /
+  // 排队「立即发送」/ 自启）都汇到这一个口。目标会话还在收尾（正在停下… / 没能停下）就不发：不取输入框、不清 Chip、
+  // 不出乐观气泡、不挂看门狗；别的会话按 sessionId 分开，照常能发（§2.6）。
+  if (isStopLocked(prepared?.sessionId ?? store.sessionId)) {
+    traceSend("send:stop-locked", { sessionId: prepared?.sessionId ?? store.sessionId })
+    return
+  }
   // 这次发送的原文只取一次：Enter 那一刻的 DOM 全文（或按钮点下时现读 DOM），之后全链路只用它。
   // 只有程序化调用（重试先 setComposer 再发、DOM 还没渲染）且 DOM 为空时才看 store。
   const typed = prepared ? prepared.content : (typedAtEnter ?? (readComposerDomText() || store.composer))

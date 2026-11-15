@@ -37,7 +37,7 @@ test("⑥ 写类工具行标题：五态中英一一对应设计 §1.3.1", () =>
 })
 
 test("⑥ 禁用词：停止相关新句子里没有 写了/改了/完成/已写入/已保存 · wrote/changed/done/completed/saved/edited", () => {
-  const keys = ["stopStopping", "stopStuck", "stopStuckHint", "stopAgain", "stopStuckHeader", "placeholderStopping", "toolStoppedNothingWritten", "toolStoppedMaybePartial", "toolStopped"]
+  const keys = ["stopStopping", "stopStuck", "stopStuckHint", "stopAgain", "stopStuckHeader", "placeholderStopping", "placeholderStuck", "toolStoppedNothingWritten", "toolStoppedMaybePartial", "toolStopped"]
   for (const key of keys) {
     const z = String((zhChat as Record<string, unknown>)[key])
     const e = String((enChat as Record<string, unknown>)[key])
@@ -47,7 +47,7 @@ test("⑥ 禁用词：停止相关新句子里没有 写了/改了/完成/已写
 })
 
 test("工具行：stopped 且归收尾管时用状态标题（对象弱化跟后），通用「已停止」徽标不再叠", () => {
-  const src = readFileSync(new URL("./thread/thinking/step-tree/tool-step-row.tsx", import.meta.url), "utf8")
+  const src = readFileSync(new URL("./thread/thinking/step-tree/tool-step-row.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(src, /node\.status === "stopped" \? stoppedToolTitle\(stopView, node\.kind === "editing", t\) : null/)
   assert.match(src, /node\.status === "stopped" && !stoppedTitle \?/)
 })
@@ -91,6 +91,24 @@ test("收工判定：run.stopped 终态的 turn 生效；stuck / 无 turn 不动
   assert.deepEqual(turnFrom.turnFromEvent(final as never), final.turn)
   assert.equal(phase.workflowAfterStreamEvent("run.stopped", { turn: final.turn as never }), "needs_review")
   assert.equal(phase.workflowAfterStreamEvent("run.stopped", {}), null)
-  const sync = readFileSync(new URL("./review-gate/sync-review-gate.ts", import.meta.url), "utf8")
+  const sync = readFileSync(new URL("./review-gate/sync-review-gate.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(sync, /if \(event\.type === "run\.error" && event\.settling\) return/)
+})
+
+test("luna S2：卡住说明只出现一处——通知条第二行保留（思考折叠时也看得见），工具行下不再重复", () => {
+  const row = readFileSync(new URL("./thread/thinking/step-tree/tool-step-row.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.doesNotMatch(row, /stopStuckHint/)
+  const banner = readFileSync(new URL("./thread/thread-notice-banner.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(banner, /stopPhase === "stuck"\n\s*\? t\("chat\.stopStuckHint"\)/)
+})
+
+test("luna S3：卡住态占位不说「稍等 / one moment」，只换卡住态；正在停下的占位不动", () => {
+  assert.equal(zhChat.placeholderStuck, "没能停下，可以再停一次…")
+  assert.equal(enChat.placeholderStuck, "Couldn't stop. You can stop again…")
+  assert.doesNotMatch(zhChat.placeholderStuck, /稍等|等一下|请等/)
+  assert.doesNotMatch(enChat.placeholderStuck, /one moment|wait|hold on/i)
+  assert.equal(zhChat.placeholderStopping, "正在停下，稍等…")
+  assert.equal(enChat.placeholderStopping, "Stopping, one moment…")
+  const input = readFileSync(new URL("./composer/mentions/composer-input.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(input, /stopPhase\n\s*\? t\(stopPhase === "stuck" \? "chat\.placeholderStuck" : "chat\.placeholderStopping"\)/)
 })

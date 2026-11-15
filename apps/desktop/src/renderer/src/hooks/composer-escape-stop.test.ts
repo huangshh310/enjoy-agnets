@@ -42,7 +42,7 @@ test("jojo ⑦：没有一轮在跑（只是排队暂停）时不补 Esc —— 
 
 test("接线：Esc 排在 @ 面板 / 历史召回之后、Enter 之前；只调 onStop，不碰草稿", async () => {
   const { readFileSync } = await import("node:fs")
-  const input = readFileSync(new URL("../components/ai-chat/composer/mentions/composer-input.tsx", import.meta.url), "utf8")
+  const input = readFileSync(new URL("../components/ai-chat/composer/mentions/composer-input.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   const mention = input.indexOf("mentions.handleKeyDown(event)")
   const recall = input.indexOf("handleRecall(event)")
   const esc = input.indexOf("shouldEscapeStopRun(")
@@ -55,11 +55,11 @@ test("接线：Esc 排在 @ 面板 / 历史召回之后、Enter 之前；只调 
 
 test("接线：并排时停止在排队左侧、testid 不变；并排收起过程 chip", async () => {
   const { readFileSync } = await import("node:fs")
-  const split = readFileSync(new URL("../components/ai-chat/composer/runtime-interact/composer-send-split.tsx", import.meta.url), "utf8")
+  const split = readFileSync(new URL("../components/ai-chat/composer/runtime-interact/composer-send-split.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   const pair = split.slice(split.indexOf("buttons.paired"), split.indexOf("if (buttons.stop)"))
   assert.ok(pair.indexOf('data-testid="composer-stop"') < pair.indexOf("<SendButton"))
   assert.match(pair, /gap-2/)
   assert.match(pair, /t\("chat\.stopRunEsc"\)/)
-  const footer = readFileSync(new URL("../components/ai-chat/composer/composer-footer.tsx", import.meta.url), "utf8")
+  const footer = readFileSync(new URL("../components/ai-chat/composer/composer-footer.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
   assert.match(footer, /showRunChip = running && !composerActionButtons\(running, hasDraft\)\.paired/)
 })

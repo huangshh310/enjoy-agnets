@@ -130,6 +130,17 @@ test("STUCK ①：8s →「没能停下 / 再停一次」；期间新对话能�
     await expect(window.getByTestId("tool-stop-title").first()).toHaveAttribute("data-stop-view", "stuck")
     await expect(window.getByTestId("review-gate-phases")).toHaveAttribute("data-stop-phase", "stuck")
     await shot(window, "stuck1-2-stuck")
+    // leo C1：卡住期间同一会话打字 + ⌘/Ctrl+Enter 不开新一轮；草稿留着、气泡数不变、仍 stuck；占位是卡住态的说法（S3）。
+    const composerInput = window.getByTestId("composer-input")
+    await expect(composerInput).toHaveAttribute("placeholder", "没能停下，可以再停一次…")
+    const bubblesBefore = await window.getByTestId("user-bubble").count()
+    await composerInput.fill("卡住时同会话 Ctrl+Enter")
+    await composerInput.press("Control+Enter")
+    await window.waitForTimeout(1_500)
+    await expect(composerInput).toHaveValue("卡住时同会话 Ctrl+Enter")
+    expect(await window.getByTestId("user-bubble").count()).toBe(bubblesBefore)
+    await expect(window.getByTestId("composer-stop")).toHaveAttribute("data-stop-phase", "stuck")
+    await composerInput.fill("")
     // stuck 期间：新对话 + 发送。
     await window.getByTestId("sidebar-new-session").click()
     const newAt = Date.now() - t0
@@ -184,6 +195,9 @@ test("STUCK ②：不点再停，toolTimeoutMs=10s → stuck 之后到上限强�
     const finalAt = await waitPhase(window, null, t0, 12_000)
     const final = await finalTitle(window)
     await shot(window, "stuck2-2-forced-final")
+    // leo S12：到上限强制落定 = 进程没确认死 → 钉死「可能只做了一半」，不许落成「没有写入」。
+    expect(final.view).toBe("maybe_partial")
+    expect(final.text).toContain("可能只做了一半")
     expect(finalAt).toBeGreaterThan(11_000)
     await noFalseInboxError(window)
     timing.STUCK_forced_10s = { stuckAt, finalAt, final }
@@ -205,6 +219,9 @@ test("上限 ③：toolTimeoutMs=5s → 7s 上限早于 8s，「正在停下…�
     const finalAt = await waitPhase(window, null, t0, 12_000)
     const final = await finalTitle(window)
     await shot(window, "cap5-forced-final")
+    // leo S12：到上限强制落定 = 进程没确认死 → 钉死「可能只做了一半」，不许落成「没有写入」。
+    expect(final.view).toBe("maybe_partial")
+    expect(final.text).toContain("可能只做了一半")
     expect(finalAt).toBeGreaterThan(6_000)
     expect(finalAt).toBeLessThan(9_000)
     await noFalseInboxError(window)
