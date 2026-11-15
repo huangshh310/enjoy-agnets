@@ -218,8 +218,14 @@ export function resetTreeLivenessForTest(): void {
 }
 
 function overriddenAlive(pid: number): boolean | undefined {
-  if (livenessOverrides.has(pid)) return livenessOverrides.get(pid)
+  const pinned = treeLivenessOverride(pid)
+  if (typeof pinned === "boolean") return pinned
   return livenessProbe?.(pid)
+}
+
+/** 仅 pid 级夹具覆盖（不含全局 probe）。STUCK 钉死后，Windows 也不能因 childExited 提前结束。 */
+export function treeLivenessOverride(pid: number): boolean | undefined {
+  return livenessOverrides.has(pid) ? livenessOverrides.get(pid) : undefined
 }
 
 /** 单进程探活：kill(pid, 0) 抛错即不存在。夹具可覆盖。 */
@@ -380,6 +386,11 @@ export function runExecutableTree(
 
     const treeDead = (): boolean => {
       if (typeof pid !== "number") return childExited
+      // pid 级夹具覆盖优先（STUCK 钉活）：全局 probe 仍视为「pid 探活」，不能压过 childExited。
+      if (typeof pid === "number") {
+        const pinned = treeLivenessOverride(pid)
+        if (typeof pinned === "boolean") return !pinned
+      }
       // Windows：子进程一退出就判树已结束（best_effort），避免 pid 复用误判仍存活。
       if (isWindowsLivenessPlatform(platform)) return childExited
       return childExited && !processGroupAlive(pid, platform)

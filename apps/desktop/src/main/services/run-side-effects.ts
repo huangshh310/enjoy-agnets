@@ -15,7 +15,8 @@ import {
   forceKillTree,
   isTreeAlive,
   isWindowsLivenessPlatform,
-  isWindowsPlatform
+  isWindowsPlatform,
+  treeLivenessOverride
 } from "./command"
 import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
 import {
@@ -335,6 +336,8 @@ function settleSpawnedIfDead(ledger: RunLedger): void {
   for (const entry of ledger.entries.values()) {
     if (entry.phase !== "spawned" || typeof entry.pid !== "number") continue
     if (isWindowsLivenessPlatform() && entry.childExited) {
+      // STUCK 夹具仍钉活时不要因 childExited 提前 settle。
+      if (typeof entry.pid === "number" && treeLivenessOverride(entry.pid) === true) continue
       settle(entry.id, "killed")
       continue
     }

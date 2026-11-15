@@ -15,6 +15,8 @@ import {
   processAlive,
   processGroupAlive,
   processAliveFromSignalError,
+  setTreeLivenessOverride,
+  clearTreeLivenessOverride,
   resetTreeLivenessForTest,
   runExecutableTree,
   setTreeClockForTest,
@@ -262,6 +264,48 @@ test("Windows：子进程退出即判整棵树结束，即使 pid 探活仍为�
       // already gone
     }
   }
+  await rm(root, { recursive: true, force: true })
+})
+
+test("Windows：pid 级 STUCK 覆盖在子进程退出后仍视为存活；全局 probe 不能压过 childExited", async () => {
+  setTreeLivenessPlatformForTest("win32")
+  // 全局 probe 模拟 pid 复用仍「存活」——N2：子进程退出即结束。
+  setTreeLivenessProbeForTest(() => true)
+  const root = await mkdtemp(join(tmpdir(), "enjoy-win-pin-"))
+  const acProbe = new AbortController()
+  const probeCase = runExecutableTree(root, process.execPath, ["-e", "setInterval(()=>{},1000)"], {
+    timeoutMs: 20_000,
+    signal: acProbe.signal
+  })
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  acProbe.abort()
+  const probeResult = await probeCase
+  assert.equal(probeResult.processExit, "killed")
+
+  // pid 级覆盖（STUCK 夹具）优先：子进程退出后仍不落定，直到取消覆盖。
+  setTreeLivenessProbeForTest()
+  const acPin = new AbortController()
+  let spawnedPid: number | undefined
+  const pinned = runExecutableTree(root, process.execPath, ["-e", "setInterval(()=>{},1000)"], {
+    timeoutMs: 20_000,
+    signal: acPin.signal,
+    onSpawn: (pid) => {
+      spawnedPid = pid
+      setTreeLivenessOverride(pid, true)
+    }
+  })
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  acPin.abort()
+  let done = false
+  const finished = pinned.then((result) => {
+    done = true
+    return result
+  })
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  assert.equal(done, false, "STUCK override must keep the tree open after child exit")
+  if (typeof spawnedPid === "number") clearTreeLivenessOverride(spawnedPid)
+  const pinResult = await finished
+  assert.equal(pinResult.processExit, "killed")
   await rm(root, { recursive: true, force: true })
 })
 
