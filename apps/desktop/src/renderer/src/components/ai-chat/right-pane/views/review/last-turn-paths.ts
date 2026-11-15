@@ -23,7 +23,7 @@ const PATH_WRITE_TOOLS = new Set<string>([
   "strreplace"
 ])
 
-export function lastUserTurnIndex(messages: ThreadMessage[]): number {
+export function lastUserTurnIndex(messages: readonly ThreadMessage[]): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]
     if (msg?.role === "user" && !isContinueUser(msg.content)) return i
@@ -56,7 +56,8 @@ export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
   return paths
 }
 
-function toolsAfterLastUser(messages: ThreadMessage[]): ThreadToolCall[] {
+/** 最后一条（非续跑）用户消息之后这一轮的全部工具；没有用户消息 → 空。验收条占位句也吃这一口径（E1 D5）。 */
+export function toolsAfterLastUser(messages: readonly ThreadMessage[]): ThreadToolCall[] {
   const lastUser = lastUserTurnIndex(messages)
   if (lastUser < 0) return []
   const tools: ThreadToolCall[] = []
@@ -66,6 +67,23 @@ function toolsAfterLastUser(messages: ThreadMessage[]): ThreadToolCall[] {
     tools.push(...(msg.tools ?? []))
   }
   return tools
+}
+
+/**
+ * 本轮（最后一条用户消息之后）的助手消息：优先有工具的最后一条，否则最后一条。
+ * 与 `lastAssistantTurn` 同一挑法，但**不越过用户消息**回溯上一轮（E1 D5 / jojo ⑧：技能 chip 与文件 chip 同口径）。
+ */
+export function lastAssistantSinceUser(messages: readonly ThreadMessage[]): ThreadMessage | null {
+  const start = lastUserTurnIndex(messages) + 1
+  let last: ThreadMessage | null = null
+  for (let i = messages.length - 1; i >= start; i -= 1) {
+    const message = messages[i]
+    // 区间内的用户句只可能是续跑句（lastUserTurnIndex 已跳过它们），不切断本轮。
+    if (message?.role !== "assistant") continue
+    if (!last) last = message
+    if ((message.tools?.length ?? 0) > 0) return message
+  }
+  return last
 }
 
 /** 单条助手轮里写盘工具的 path，给气泡下改动树。 */

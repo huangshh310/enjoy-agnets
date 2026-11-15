@@ -1,8 +1,9 @@
 /**
- * Stop 与发送互斥：有草稿才出发送，空草稿运行中才出 Stop。
+ * 运行中：停止常在；有草稿时停止 + 排队并排（E1 M3 · luna §1.4）——排队留最右发送位，停止紧挨左侧、间距 8。
+ * 空闲：有草稿出发送，空草稿出禁用占位。空草稿运行中只出停止，仍占最右槽（不左移）。
  */
 import { RiArrowUpLine, RiStopLine } from "@remixicon/react"
-import { composerActionSlot } from "@renderer/hooks/composer-submit-intent"
+import { composerActionButtons } from "@renderer/hooks/composer-submit-intent"
 import { useT } from "@renderer/i18n"
 
 export function ComposerSendSplit({
@@ -19,13 +20,31 @@ export function ComposerSendSplit({
   onStop: () => void
 }) {
   const t = useT()
-  const slot = composerActionSlot(running, hasDraft)
-  if (slot === "stop") {
+  const buttons = composerActionButtons(running, hasDraft)
+  if (buttons.paired) {
+    return (
+      <div className="flex shrink-0 items-center gap-2" data-testid="composer-action-pair">
+        <button
+          type="button"
+          data-testid="composer-stop"
+          aria-label={t("chat.stopRunEsc")}
+          title={t("chat.stopRunEsc")}
+          onClick={onStop}
+          className={pairedStopClassName}
+        >
+          <RiStopLine className="size-5" aria-hidden />
+        </button>
+        <SendButton running={running} ready={ready} onSend={onSend} />
+      </div>
+    )
+  }
+  if (buttons.stop) {
     return (
       <button
         type="button"
         data-testid="composer-stop"
         aria-label={t("chat.stop")}
+        title={t("chat.stopRunEsc")}
         onClick={onStop}
         className={sendClassName}
       >
@@ -33,20 +52,7 @@ export function ComposerSendSplit({
       </button>
     )
   }
-  if (slot === "send") {
-    return (
-      <button
-        type={running ? "button" : "submit"}
-        data-testid="composer-send"
-        aria-label={running ? t("chat.runtimeQueue") : ready ? t("chat.send") : t("chat.sendNotReady")}
-        title={running ? t("chat.runtimeQueuedHint") : ready ? t("chat.send") : t("chat.sendNotReady")}
-        onClick={running ? onSend : undefined}
-        className={ready ? sendClassName : mutedSendClassName}
-      >
-        <RiArrowUpLine className="size-5" aria-hidden />
-      </button>
-    )
-  }
+  if (buttons.send !== "none") return <SendButton running={running} ready={ready} onSend={onSend} />
   return (
     <button
       type="button"
@@ -55,6 +61,23 @@ export function ComposerSendSplit({
       aria-label={t("chat.send")}
       title={t("chat.send")}
       className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background-tertiary-default/80 text-foreground-icon-tertiary/40 transition-all cursor-not-allowed opacity-40 select-none"
+    >
+      <RiArrowUpLine className="size-5" aria-hidden />
+    </button>
+  )
+}
+
+/** 有草稿：空闲是发送（submit），运行中是排队（button）；testid / aria 与现网同一颗。 */
+function SendButton({ running, ready, onSend }: { running: boolean; ready: boolean; onSend: () => void }) {
+  const t = useT()
+  return (
+    <button
+      type={running ? "button" : "submit"}
+      data-testid="composer-send"
+      aria-label={running ? t("chat.runtimeQueue") : ready ? t("chat.send") : t("chat.sendNotReady")}
+      title={running ? t("chat.runtimeQueuedHint") : ready ? t("chat.send") : t("chat.sendNotReady")}
+      onClick={running ? onSend : undefined}
+      className={ready ? sendClassName : mutedSendClassName}
     >
       <RiArrowUpLine className="size-5" aria-hidden />
     </button>
@@ -75,3 +98,10 @@ const sendClassName =
 
 const mutedSendClassName =
   "flex size-8 shrink-0 items-center justify-center rounded-full border border-separator-border bg-background-secondary-default text-text-tertiary transition-all hover:text-text-primary focus-ring"
+
+/**
+ * 并排时的停止：32px 描边圆钮（1px 分隔线描边、主背景、主图标色，悬停淡 warn 底），
+ * 不做成第二颗填充 CTA，避免「两个发送」（luna §1.4）。
+ */
+const pairedStopClassName =
+  "flex size-8 shrink-0 items-center justify-center rounded-full border border-separator-border bg-background-primary-default text-text-primary transition-all hover:bg-status-yellow-background active:scale-95 focus-ring"

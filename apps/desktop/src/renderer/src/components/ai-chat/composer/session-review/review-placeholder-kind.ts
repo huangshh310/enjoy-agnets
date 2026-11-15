@@ -2,7 +2,11 @@
  * 无 path 待验收占位：先从落库 / run.tools 认工具种类，认不出才走未知回退。
  * 未知回退禁止说「运行了命令」。中途中断不说「已改」。
  */
-import { RESTART_ABANDONED_CODE, toolHasResultCode } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RESTART_ABANDONED_CODE,
+  USER_ABORTED_CODE,
+  toolHasResultCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import { BASH_TOOLS, TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
@@ -55,6 +59,8 @@ export function reviewPlaceholderKind(
 function isInterruptedTool(tool: { state?: string; errorText?: string; result?: unknown }): boolean {
   if (tool.state === "approval-requested") return true
   if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return true
+  // E1 D5：用户停掉时被 seal 的工具（result.code=user_aborted）也是中断，不当已执行判成「这一轮改了文件」。
+  if (toolHasResultCode(tool, USER_ABORTED_CODE)) return true
   const text = tool.errorText ?? ""
   return isRestoreFamilyCode(text)
 }
