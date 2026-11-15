@@ -42,7 +42,8 @@ export function ComposerFooter({
   onVoiceToggle,
   onPickFiles,
   previewOpen = false,
-  onPreviewToggle
+  onPreviewToggle,
+  compactVerticalSlack = false
 }: Pick<
   ComposerProps,
   | "composer"
@@ -62,6 +63,8 @@ export function ComposerFooter({
   onPickFiles: () => void
   previewOpen?: boolean
   onPreviewToggle?: () => void
+  /** 仅托盘转单行条（slot<108）时收回底栏垂直余量；不改发送尺寸。 */
+  compactVerticalSlack?: boolean
 }) {
   const t = useT()
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
@@ -84,7 +87,12 @@ export function ComposerFooter({
     ) : (
       <ModelSwitchFootnoteSlot modelId={modelId} modelLabel={modelLabel} models={models} />
     )}
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
+    <div
+      className={cx(
+        "flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5",
+        compactVerticalSlack && "gap-y-0.5 pt-0 pb-2"
+      )}
+    >
       <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         <ComposerAttachMenu onPickFiles={onPickFiles} />
         {onPreviewToggle ? (

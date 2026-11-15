@@ -19,7 +19,7 @@ test("对得上的前提：Composer 外层 px-6、外框 1px 边框、输入区 
   const composer = read("../../ai-chat/ai-chat-composer.tsx")
   assert.match(composer, /cx\("relative flex flex-col w-full min-w-0 px-6 pb-2", className\)/)
   assert.match(composer, /"border border-border-button-default bg-background-secondary-default/)
-  assert.match(read("../../ai-chat/composer/mentions/composer-input.tsx"), /<div ref=\{wrapRef\} className="relative px-3\.5 py-1">/)
+  assert.match(read("../../ai-chat/composer/mentions/composer-input.tsx"), /<div ref=\{wrapRef\} className="relative px-3\.5 py-1/)
   const stage = read("./chat-stage.tsx")
   assert.match(stage, /\? "mx-auto w-full max-w-3xl shrink-0 px-6"/)
   assert.match(stage, /props\.empty \? "px-0 pb-2 \[&_textarea\]:min-h-\[72px\]"/)

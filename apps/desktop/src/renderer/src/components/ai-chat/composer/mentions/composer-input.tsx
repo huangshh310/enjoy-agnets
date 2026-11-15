@@ -86,7 +86,7 @@ export function ComposerInput({
   }
 
   return (
-    <div ref={wrapRef} className="relative px-3.5 py-1">
+    <div ref={wrapRef} className="relative px-3.5 py-1 [form[data-composer-tray-slack]_&]:py-0">
       {mentions.open && mentions.kind ? (
         <ComposerMentionPopover anchorRef={wrapRef}>
           <ComposerMentionList
