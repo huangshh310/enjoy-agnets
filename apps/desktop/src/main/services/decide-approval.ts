@@ -24,6 +24,7 @@ import type { PendingApproval } from "./consume-stream"
 import { getDatabase } from "./database"
 import { getRun } from "@enjoy-agents/db"
 import { isRestoreWaitingSettled } from "./restore-once"
+import { runWasStopped } from "./run-stopped"
 
 export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   const decision = ApprovalDecision.parse(rawInput)
@@ -62,9 +63,17 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   let desktopResume: Record<string, unknown> | undefined
   if (!hadWaiter && decision.decision !== "deny") {
     const { executeStoredTool } = await import("./execute-stored-tool")
-    const outcome = await runWithActiveRunId(decision.runId, () => executeStoredTool(run, pending))
-    if (outcome.kind === "desktop_act") desktopResume = outcome.result
+    try {
+      const outcome = await runWithActiveRunId(decision.runId, () => executeStoredTool(run, pending))
+      if (outcome.kind === "desktop_act") desktopResume = outcome.result
+    } catch (error) {
+      // 工具被停止打断（AbortError 等）：停止已经收尾，不把中止当成审批失败抛回界面。
+      if (!runWasStopped(run)) throw error
+    }
   }
+  // jojo 门 #226@87aa14b0：执行期间用户点了停止。abortActiveRunMemory 已把库写成 cancelled、
+  // 工具封成已停止、移出内存；这里不得再折叠 approval.resolved、写回 running、推事件或续泵。
+  if (runWasStopped(run)) return { ok: true }
   const resolved = {
     type: "approval.resolved" as const,
     runId: decision.runId,
