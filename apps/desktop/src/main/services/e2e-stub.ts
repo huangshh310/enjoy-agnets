@@ -455,6 +455,8 @@ async function runStuckToolFixture(
     const result = await runExecutableTree(tmpdir(), process.execPath, ["-e", "setTimeout(() => {}, 120000)"], {
       signal,
       timeoutMs: 120_000,
+      // Electron 主进程里 execPath 是 electron 本体：不带 ELECTRON_RUN_AS_NODE 会把 -e 当 app 路径，约 0.2s 就退出。
+      extraEnv: { ELECTRON_RUN_AS_NODE: "1" },
       onSpawn: (spawnedPid) => {
         pid = spawnedPid
         setTreeLivenessOverride(spawnedPid, true)
