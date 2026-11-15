@@ -23,8 +23,10 @@ import {
   hasUnsettled,
   latestDeadlineAt,
   rekill,
-  rememberKnownTools
+  rememberKnownTools,
+  startedToolCallIds
 } from "./run-side-effects"
+import { sealStartedAsStopped } from "./seal-started-as-stopped"
 import { selectKnownToolsForReceipt } from "./stop-receipt-decide"
 
 export function abortActiveRunMemory(
@@ -36,7 +38,7 @@ export function abortActiveRunMemory(
   if (run) {
     run.userCancelled = true
     settlePendingApprovalsForRun(runId, run.window)
-    run.tools = sealAbandonedTools(run.tools, { aborted: true }) ?? run.tools
+    run.tools = sealStartedAsStopped(sealAbandonedTools(run.tools, { aborted: true }) ?? run.tools, startedToolCallIds(runId))
     persistActiveRun(run, runId, "cancelled")
     clearSteer(run.input.sessionId)
     const archived = opts?.reason === "archive"

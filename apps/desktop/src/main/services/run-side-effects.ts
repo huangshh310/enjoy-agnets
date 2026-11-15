@@ -86,6 +86,22 @@ export function hasUnsettled(runId: string): boolean {
   return false
 }
 
+/**
+ * 本轮账本里真的过了闸（started / spawned / settled，非 blocked_before_start）的 toolCallId。
+ * 审批放行后 executeStoredTool 已经在跑的工具，在 run.tools 里还停在 approval-requested；
+ * 停止封口时据此把它们封成「已停止」，而不是「未执行（cancelled）」。
+ */
+export function startedToolCallIds(runId: string): Set<string> {
+  const ids = new Set<string>()
+  const ledger = ledgers.get(runId)
+  if (!ledger) return ids
+  for (const entry of ledger.entries.values()) {
+    if (entry.phase === "blocked_before_start" || !entry.toolCallId) continue
+    ids.add(entry.toolCallId)
+  }
+  return ids
+}
+
 export function latestDeadlineAt(runId: string): number | undefined {
   const ledger = ledgers.get(runId)
   if (!ledger || ledger.entries.size === 0) return undefined
@@ -373,7 +389,9 @@ function turnFromReceipt(ledger: RunLedger, receipt: StopReceipt): TurnOutcome |
       readSessionWorkflow(ledger.input.sessionId)
     )
   }
-  return turnOutcomeForRun({ tools: ledger.tools, input: ledger.input }, "abort")
+  // jojo 门 #226@87aa14b0：回执是 maybe_partial / completed 就和有写入一样进待验收，
+  // 不再依赖 run.tools 的封口形态（审批放行后被停的 bash 曾被判成没写）。
+  return turnOutcomeForRun({ tools: ledger.tools, input: ledger.input }, "abort", { mayHaveWritten: true })
 }
 
 function emitStopped(
