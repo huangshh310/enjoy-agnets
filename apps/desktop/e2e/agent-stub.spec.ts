@@ -5,7 +5,7 @@ import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { existsSync } from "node:fs"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "@playwright/test"
 import type { ElectronApplication } from "playwright"
 import { sendComposer } from "./send-composer"
 
@@ -170,7 +170,7 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
     await window.locator('[data-testid="sidebar-new-session"]').click()
     await sendComposer(window, composer, "please write a note")
     await expect(window.locator('[data-testid="approval-session"]')).toBeVisible({ timeout: 20_000 })
-    await window.locator('[data-testid="approval-deny"]').click({ timeout: 8_000, force: true })
+    await window.locator('[data-testid="approval-deny"]').click({ timeout: 8_000 })
     await expect(window.locator('[data-testid="approval-session"]')).toHaveCount(0, { timeout: 12_000 })
 
     // 新会话先关卡再归档：归档必须清掉第一会话的 allow，恢复后再问。
@@ -260,7 +260,7 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     await expect.poll(() => countText("stub-ok hello two")).toBe(1)
     // 等线程内按钮稳定为 2（裸 toHaveCount 会跟页脚第三颗抢）。
     await expect.poll(async () => regen.count(), { timeout: 10_000 }).toBe(2)
-    await regen.first().click({ force: true })
+    await clickThreadAction(regen.first())
     await expect(dialog).toBeVisible({ timeout: 8_000 })
     await expect(dialog).toContainText("1 轮")
     await window.locator('[data-testid="regenerate-confirm"]').click()
@@ -275,7 +275,7 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     await sendComposer(window, composer, "please write a note")
     await allowOnce.click({ timeout: 15_000, force: true })
     await expect.poll(() => countText("stub-ok allowed write"), { timeout: 15_000 }).toBe(1)
-    await regen.last().click({ force: true })
+    await clickThreadAction(regen.last())
     await expect(dialog).toHaveCount(0)
     await expect(allowOnce).toBeVisible({ timeout: 20_000 })
     await expect(banner).toHaveCount(0)
@@ -286,7 +286,7 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     await sendComposer(window, composer, "run bash ls")
     await allowOnce.click({ timeout: 20_000, force: true })
     await waitRanCount(window, "ls", 1)
-    await regen.last().click({ force: true })
+    await clickThreadAction(regen.last())
     await expect(allowOnce).toBeVisible({ timeout: 20_000 })
     await expect(banner).toHaveCount(0)
     await allowOnce.click({ timeout: 8_000, force: true })
@@ -301,7 +301,7 @@ test("重新生成非最后一条：确认删掉后面几轮、重跑点的那�
     for (let i = 0; i < 3; i += 1) await expect(regen.nth(i)).toBeEnabled({ timeout: 20_000 })
     await expect(async () => {
       await expect(regen).toHaveCount(3, { timeout: 1_000 })
-      if (!(await dialog.isVisible())) await writeRegen.click({ force: true })
+      if (!(await dialog.isVisible())) await clickThreadAction(writeRegen, 1_000)
       await expect(dialog).toContainText("1 轮", { timeout: 2_000 })
     }).toPass({ timeout: 20_000 })
     await window.locator('[data-testid="regenerate-confirm"]').click()
@@ -546,10 +546,28 @@ async function readyWindow(app: ElectronApplication): Promise<Page> {
 
 async function sendWriteAndAllowSession(window: Page, composer: ReturnType<Page["locator"]>) {
   await sendComposer(window, composer, "please write a note")
-  await window.locator('[data-testid="approval-session"]').click({ timeout: 15_000, force: true })
+  // 不用 force：force 不做命中检查，卡片还在滚 / 动画时会点到旁边的「允许一次」或空处，
+  // 「本会话允许」没记上，下一轮 sendWriteExpectExecuted 又弹卡 → L558 超时（CI 偶发）。
+  const allowSession = window.locator('[data-testid="approval-session"]')
+  await expect(allowSession).toBeVisible({ timeout: 15_000 })
+  await expect(allowSession).toBeEnabled({ timeout: 8_000 })
+  await allowSession.click({ timeout: 8_000 })
+  await expect(allowSession).toHaveCount(0, { timeout: 8_000 })
   await window.waitForFunction(() => document.body.innerText.includes("allowed write"), undefined, {
     timeout: 15_000
   })
+}
+
+/**
+ * 线程里助手操作条按钮（重新生成等）的真实点击：不用 force。
+ * force 会先自动滚动再盲点坐标；滚动中悬停态丢失、操作条 pointer-events:none，点击穿透到下面的 Composer（#6 / L278）。
+ * 这里等可点 → 滚进视口 → 悬停唤出操作条 → 普通 click（Playwright 会做命中检查，等滚动落定）。
+ */
+async function clickThreadAction(button: Locator, timeout = 10_000) {
+  await expect(button).toBeEnabled({ timeout })
+  await button.scrollIntoViewIfNeeded({ timeout })
+  await button.hover({ timeout })
+  await button.click({ timeout })
 }
 
 async function sendWriteExpectExecuted(window: Page, composer: ReturnType<Page["locator"]>) {
