@@ -152,4 +152,4 @@ const mutedSendClassName =
  * 不做成第二颗填充 CTA，避免「两个发送」（luna §1.4）。
  */
 const pairedStopClassName =
-  "flex size-8 shrink-0 items-center justify-center rounded-full border border-separator-border bg-background-primary-default text-text-primary transition-all hover:bg-status-yellow-background active:scale-95 focus-ring"
+  "flex size-8 shrink-0 items-center justify-center rounded-full border border-separator-border bg-background-primary-default text-text-primary transition-all hover:bg-status-yellow-background/40 active:scale-95 focus-ring"

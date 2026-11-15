@@ -67,7 +67,7 @@ export const enChat = {
   /** E1 M2: stop settling (luna design §1.1–§1.3.1). */
   stopStopping: "Stopping…",
   stopStuck: "Couldn't stop",
-  stopStuckHint: "The work may still be running. Try again, or wait for it to finish on its own.",
+  stopStuckHint: "It may still be running. Try again, or let it finish on its own.",
   stopAgain: "Stop again",
   stopStuckHeader: "Not fully stopped",
   placeholderStopping: "Stopping, one moment…",
