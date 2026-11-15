@@ -111,8 +111,12 @@ export function queuePausedView(input: {
   pendingFailed: "card" | "composer" | null
   provider: ProviderFace
   t: Translate
+  /** E1 ⑨：held 从「停止」转来时说明行仍说「你停止了上一轮…」（只换句子，按钮与暂停逻辑照 held）。 */
+  heldFrom?: "stopped" | "engineSwitched" | null
 }): QueuePausedView {
   const place = input.pendingFailed
+  const textReason: FollowupPausedReason =
+    input.reason === "held" && input.heldFrom === "stopped" ? "stopped" : input.reason
   const fill = (key: string) =>
     fillProviderFace(input.t, pluralKey(key, input.count), input.provider, { varName: "provider", vars: { n: input.count } })
   let text: string
@@ -129,7 +133,7 @@ export function queuePausedView(input: {
       { varName: "provider" }
     )
   } else if (place) {
-    const reasonText = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
+    const reasonText = queuePausedReasonText(input.t, textReason, input.count, input.provider)
     const tailKey = isNeutralPause(input.reason)
       ? place === "card"
         ? "chat.queuePausedResendFirstHeld"
@@ -141,11 +145,11 @@ export function queuePausedView(input: {
     // 窄句句尾（出错 / 额度）：卡上「先发上面这条。」、输入框里「先发输入框里这条。」（P2，按 #169 的长句去掉「发出去后…」）。
     // 中性暂停（停止 / 换助手 / held）的「…发出去后再点继续。」是下一步，窄时照说全句，不删。
     const shortTailKey = SHORT_TAIL_KEY[tailKey] ?? tailKey
-    const reasonShort = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
+    const reasonShort = queuePausedReasonShortText(input.t, textReason, input.count, input.provider)
     shortText = `${reasonShort}${joiner(reasonShort)}${input.t(shortTailKey)}`
   } else {
-    text = queuePausedReasonText(input.t, input.reason, input.count, input.provider)
-    shortText = queuePausedReasonShortText(input.t, input.reason, input.count, input.provider)
+    text = queuePausedReasonText(input.t, textReason, input.count, input.provider)
+    shortText = queuePausedReasonShortText(input.t, textReason, input.count, input.provider)
   }
   return {
     text,

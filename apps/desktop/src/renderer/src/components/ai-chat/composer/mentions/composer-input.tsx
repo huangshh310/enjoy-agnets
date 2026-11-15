@@ -6,6 +6,7 @@ import { useComposerPromptHistory } from "@renderer/hooks/use-composer-prompt-hi
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { useComposerPlaceholderHint } from "@renderer/hooks/composer-placeholder-hint"
 import { composerPlaceholderKey } from "@renderer/hooks/composer-placeholder-state"
+import { useStopPhase } from "@renderer/stores/stop-settle"
 import { useQueuePaused } from "@renderer/hooks/use-queue-paused"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { ComposerDesktopBiasBar } from "./desktop/composer-desktop-bias-bar.tsx"
@@ -52,6 +53,7 @@ export function ComposerInput({
   const placeholderHint = useComposerPlaceholderHint(placeholderSessionId)
   const queuePaused = useQueuePaused(placeholderSessionId)
   const placeholderKey = composerPlaceholderKey({ running, queuePaused })
+  const stopPhase = useStopPhase(placeholderSessionId)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const modeCopy = useMemo(() => modeCopyFromT(t), [t])
   const builtinCopy = useMemo(() => builtinCopyFromT(t), [t])
@@ -138,7 +140,9 @@ export function ComposerInput({
         onFocus={onFocus}
         onBlur={onBlur}
         placeholder={
-          placeholderKey === "chat.placeholder"
+          stopPhase
+            ? t("chat.placeholderStopping")
+            : placeholderKey === "chat.placeholder"
             ? (placeholderHint ?? t("chat.placeholder"))
             : withEscStopHint(
                 t(placeholderKey, { mod: isApplePlatform() ? "⌘" : "Ctrl" }),

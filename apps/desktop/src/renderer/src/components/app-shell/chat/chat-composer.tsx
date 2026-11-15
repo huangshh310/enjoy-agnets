@@ -4,6 +4,7 @@
 import { AiChatComposer } from "@renderer/components/ai-chat/ai-chat-composer"
 import { abortComposerRun, attachComposerFile, submitComposer } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { isStopLocked } from "@renderer/stores/stop-settle"
 
 export function ChatComposer({
   className,
@@ -32,7 +33,11 @@ export function ChatComposer({
       modelId={modelId}
       models={models}
       onModelChange={onModelChange}
-      onSend={onSend}
+      onSend={() => {
+        // E1 M2：本会话还在收尾（正在停下… / 没能停下）时发送一律不走，草稿原样留着；别的会话不受影响。
+        if (isStopLocked(useChatStore.getState().sessionId)) return
+        onSend()
+      }}
       onSteer={() => void submitComposer("steer")}
       onStop={() => void abortComposerRun()}
       onAttach={(file) => void attachComposerFile(file)}

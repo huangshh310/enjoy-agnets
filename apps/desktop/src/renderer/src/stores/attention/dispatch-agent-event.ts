@@ -5,6 +5,7 @@ import { noteFollowupRunEvent } from "../../hooks/followup-pause"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../chat-store"
 import { isLateEventOfStoppedRun } from "../stopped-runs"
+import { noteStopSettleEvent } from "../stop-settle"
 import { bumpsSessionTime, touchSessionUpdatedAt, type BumpProbe } from "../touch-session-time"
 import { generationKindOf, isNonAgentRunKind } from "../stream-run-scope"
 import { belongsToForeground } from "./foreground-event"
@@ -35,6 +36,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   noteInboxPendingEvent(event)
   // #160 巡检 6：用户停掉的那一轮迟到的审批 / 出字，不进 Attention、不停车、不进前台（终态照常放行）。
   if (isLateEventOfStoppedRun(event)) return
+  // E1 M2：收尾状态机按 run.error(settling) / run.stopped 推进（按 sessionId 记，前台后台都走这里）。
+  noteStopSettleEvent(event)
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
   // 用户已停止的一轮：迟到的审批卡 / 开跑整条丢掉（不进 Inbox、不进前台、不停车），

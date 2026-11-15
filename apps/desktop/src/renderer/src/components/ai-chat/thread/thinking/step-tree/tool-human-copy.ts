@@ -76,3 +76,25 @@ function shortCommand(shell: string | undefined): string | undefined {
   const base = first.split(/[\\/]/).pop() ?? first
   return base.slice(0, 24) || undefined
 }
+
+/** E1 M2 停止收尾里某个工具的显示结论（与 stores/stop-settle-reducer 的 ToolStopView 同形，这里不反向依赖 store）。 */
+export type StoppedToolView = "stopping" | "stuck" | "none_confirmed" | "maybe_partial" | "completed"
+
+/**
+ * E1 M2 / luna ⑥（设计 §1.3.1）：停掉的工具行标题只写状态，对象（文件名 / 命令摘要）另行弱化跟在后面。
+ * 写类工具（writeFile / editFile / bash 写文件）同一套句子；禁「写了 / 改了 / 完成 / 已写入 / 已保存」。
+ * 没有收尾记录（无在途工具的停止、或重开应用后）：只说「已停止」，不臆断写没写。
+ * 返回 null = 不归停止收尾管（沿用原标题）。
+ */
+export function stoppedToolTitle(
+  view: StoppedToolView | null,
+  editing: boolean,
+  t: TranslateFn
+): string | null {
+  if (view === "stopping") return t("chat.stopStopping")
+  if (view === "stuck") return t("chat.stopStuck")
+  if (view === "none_confirmed") return t("chat.toolStoppedNothingWritten")
+  if (view === "maybe_partial") return t("chat.toolStoppedMaybePartial")
+  if (view === "completed") return t("chat.toolStopped")
+  return editing ? t("chat.toolStopped") : null
+}

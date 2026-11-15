@@ -22,6 +22,7 @@ export function workflowAfterStreamEvent(
   opts?: { deniedOnly?: boolean; turn?: TurnOutcome }
 ): "in_progress" | "needs_review" | "todo" | null {
   if (opts?.turn) return opts.turn.workflow
+  if (eventType === "run.stopped") return null
   if (eventType === "run.error") return "todo"
   if (eventType === "run.start") return "in_progress"
   if (eventType === "run.end") return opts?.deniedOnly ? "todo" : "needs_review"

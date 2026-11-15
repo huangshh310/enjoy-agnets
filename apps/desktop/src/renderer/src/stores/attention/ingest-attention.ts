@@ -29,10 +29,19 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "run.start") return null
   // 只信 turn：Stop=stopped、归档=neutral 不当出错。禁止把缺 turn 的 run.end 折成 complete。
   if (event.type === "run.error") {
+    // E1 M2：停止时还有在途工具（带 settling）：turn 缺省是设计如此，等 run.stopped 终态，不点「出错」。
+    if (event.settling) return null
     if (isQuietTurn(event.turn?.attention)) return null
     if (isRestoreFamilyCode(event.message) || isRestoreFamilyCode(event.code)) return null
     if (isApprovalNotExecutedMessage(event.message)) return "complete"
     return "error"
+  }
+  if (event.type === "run.stopped") {
+    // stuck 只是快照，不动 Inbox；终态只信 turn（Stop=stopped 是安静的）。
+    if (event.phase === "stuck" || !event.turn) return null
+    if (event.turn.attention === "complete") return "complete"
+    if (event.turn.attention === "error") return "error"
+    return null
   }
   if (event.type === "run.end") {
     if (!event.turn) return null
@@ -302,6 +311,8 @@ function isQuietTurn(attention: string | undefined): boolean {
 
 function isNeutralTurn(input: IngestAttentionInput): boolean {
   const event = input.event
+  if (event.type === "run.error" && event.settling) return true
+  if (event.type === "run.stopped") return event.phase !== "stuck" && isQuietTurn(event.turn?.attention)
   return (event.type === "run.end" || event.type === "run.error") && isQuietTurn(event.turn?.attention)
 }
 

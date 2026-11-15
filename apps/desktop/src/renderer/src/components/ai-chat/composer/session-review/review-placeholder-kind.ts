@@ -40,11 +40,27 @@ function toolMayHaveWritten(tool: { name: string; args?: unknown }): boolean {
   return isWriteTypeToolName(tool.name) && !isReadOnlyBashTool(tool)
 }
 
+type PlaceholderTool = { id?: string; name: string; state?: string; errorText?: string; result?: unknown; args?: unknown }
+
+/** E1 M2：停止收尾回执给出的逐工具结论（只看三种落定；收尾中 / 卡住时验收条本就不出）。 */
+export type StopVerdictOf = (toolCallId: string) => string | null
+
 export function reviewPlaceholderKind(
-  tools: ReadonlyArray<{ name: string; state?: string; errorText?: string; result?: unknown; args?: unknown }>,
-  interrupted = false
+  allTools: ReadonlyArray<PlaceholderTool>,
+  interrupted = false,
+  stopVerdictOf?: StopVerdictOf
 ): ReviewPlaceholderKind {
-  const interruptedNow = interrupted || tools.some(isInterruptedTool)
+  // E1 M2（设计 §1.3）：回执确认「没有写入」的工具不算进这一轮；「这一步已做完再被停」按已执行的写类走；
+  // 只有「可能只做了一半」才保留「可能改了文件，请核对」。
+  const verdictOf = (tool: PlaceholderTool) => (tool.id && stopVerdictOf ? stopVerdictOf(tool.id) : null)
+  const tools = allTools.filter((tool) => verdictOf(tool) !== "none_confirmed")
+  const completed = tools.filter((tool) => verdictOf(tool) === "completed")
+  if (completed.length > 0 && !interrupted && !tools.some((tool) => verdictOf(tool) !== "completed" && isInterruptedTool(tool))) {
+    if (completed.some((tool) => FILE_WRITE_NAMES.has(tool.name)) || tools.some((tool) => !isToolNotExecuted(tool) && FILE_WRITE_NAMES.has(tool.name))) return "files"
+    if (completed.some((tool) => COMMAND_NAMES.has(tool.name))) return "command"
+  }
+  const interruptedNow =
+    interrupted || tools.some((tool) => verdictOf(tool) !== "completed" && isInterruptedTool(tool))
   // luna / #150：中断了但只出现过只读工具（ls 等）→ 不说「可能改了文件」。
   if (interruptedNow) {
     return tools.some(toolMayHaveWritten) ? "maybe" : "unknown"

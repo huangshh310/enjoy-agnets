@@ -8,6 +8,8 @@ import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
 import { rememberStoppedRun } from "../stores/stopped-runs"
+import { beginStopSettle, restopSettle } from "../stores/stop-settle"
+import { toolsAfterLastUser } from "../components/ai-chat/right-pane/views/review/last-turn-paths"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 import { pauseFollowups } from "./followup-queue"
 import { followupSendInFlight } from "./followup-autostart"
@@ -72,6 +74,9 @@ export async function abortComposerRun(opts?: {
   // 否则 main 60s 去重会把新一句当成被停的那一发。
   // leo #169 BLOCK：只动这个会话在路上的那一发，别的会话（切走前发出的）不动。
   if (!runId && inFlight) noteRequestStopped(sessionId, abandonInFlightClientRequestId(sessionId))
+  // E1 M2：进入收尾（「正在停下…」）。没有在途工具的轮次 main 立刻回 run.error 不带 settling，毫秒级清掉，与现网一致；
+  // 带 settling 的等 run.stopped 终态。发送位、工具行、顶部、通知都跟它走；只锁本会话。
+  beginStopSettle(sessionId, runId, toolsAfterLastUser(store.messages).map((tool) => tool.id))
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
@@ -82,6 +87,24 @@ export async function abortComposerRun(opts?: {
     useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
   }
   if (runId) abortOrphanedRun(runId)
+}
+
+/**
+ * E1 M2「再停一次」：卡住（stuck）时同一 runId 再调 ai.abort，main 走 rekill；调用立刻返回，结果只看之后的 run.stopped。
+ * 本地回到「正在停下…」并重新计 8s；收尾中（stopping）不响应。
+ */
+export function restopComposerRun(sessionId: string | null | undefined): boolean {
+  if (!sessionId) return false
+  const entry = restopSettle(sessionId)
+  if (!entry) return false
+  if (hasIde()) {
+    void getIde()
+      .ai.abort(entry.runId)
+      .catch((error: unknown) => {
+        console.warn("[run] REKILL_IPC_FAILED", entry.runId, error)
+      })
+  }
+  return true
 }
 
 /**

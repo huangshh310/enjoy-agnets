@@ -18,6 +18,8 @@ export function syncReviewGateAfterEvent(
   if (!sessionId) return
   // main 已经接手（有流事件）：发送前快照作废，不再回滚。
   composerStartGates.delete(sessionId)
+  // E1 M2：带 settling 的停止还没落定，收工判定等 run.stopped 的 turn（缺 turn 回 todo 会把「待验收」抹掉）。
+  if (event.type === "run.error" && event.settling) return
   const chat = useChatStore.getState()
   const turn = turnFromEvent(event)
   const deniedOnly =
