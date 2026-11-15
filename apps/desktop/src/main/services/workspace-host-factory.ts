@@ -12,6 +12,11 @@ import type { WorkspaceRecord } from "./workspace-record.ts"
 export type HostExtras = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined
   onTouchedPath?: (relativePath: string, kind: "file" | "directory") => void
+  /** 本轮绑定：写盘闸、账本、checkpoint 都认这对值。 */
+  runId?: string
+  sessionId?: string
+  signal?: AbortSignal
+  toolTimeoutMs?: number
 }
 
 export type LocalHostFactory = (root: string, extras?: HostExtras) => AgentWorkspaceHost
@@ -32,5 +37,5 @@ export function resolveWorkspaceHost(
     return createDisconnectedHost(reported === "connected" ? "disconnected" : reported)
   }
   const remote = requireSshRemotePath(record)
-  return createSshWorkspaceHost(live.layer, remote)
+  return createSshWorkspaceHost(live.layer, remote, extras)
 }

@@ -125,7 +125,11 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
   const agents = await loadAgentsMdStream(input)
   const extras = {
     takeQuestionAnswers: input.takeQuestionAnswers,
-    onTouchedPath: agents.onTouchedPath
+    onTouchedPath: agents.onTouchedPath,
+    runId: input.runId,
+    sessionId: input.sessionId,
+    signal: input.abortSignal,
+    toolTimeoutMs: input.prefs.toolTimeoutMs
   }
   const record = input.workspaceId ? await getWorkspace(input.workspaceId) : null
   if (!record && looksLikeSshRoot(input.workspaceRoot)) {

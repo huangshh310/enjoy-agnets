@@ -57,6 +57,7 @@ export async function consumeRun(
 
 function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type: string }): void {
   if (event.type !== "file.changed" || run.checkpointNoted) return
+  if (runWasStopped(run)) return
   run.checkpointNoted = true
   if (looksLikeSshRoot(run.workspaceRoot)) return
   void recordEnjoyCheckpoint(run.workspaceRoot, {

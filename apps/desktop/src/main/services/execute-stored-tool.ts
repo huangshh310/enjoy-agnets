@@ -11,10 +11,19 @@ import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { getApproval } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
+import type { WorkspaceHostCallOpts } from "@enjoy-agents/agent-core"
 import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
+import { currentToolRunId } from "./active-run-id"
 import { isE2eStub } from "./e2e-stub-gate.ts"
 import { isStubShellFixtureInput } from "./e2e-stub-shell.ts"
+import { readPreferences } from "./preferences"
+import {
+  begin as beginSideEffect,
+  blocked as blockSideEffect,
+  settle as settleSideEffect
+} from "./run-side-effects"
+import { toAbortError } from "./command"
 
 export type StoredToolOutcome =
   | { kind: "ok" }
@@ -47,11 +56,12 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
   // stub 命令夹具（run bash ls / run code …）只给假输出，重启无 waiter 时也绝不真跑。
   if (isE2eStub() && isStubShellFixtureInput(pending.name, args)) return { kind: "ok" }
   const host = await hostForRun(run)
+  const callOpts: WorkspaceHostCallOpts = { signal: run.abort.signal, toolCallId: pending.toolCallId }
   const path = typeof args.path === "string" ? args.path : ""
   if (pending.name === "write_file" && path && typeof args.content === "string") {
     // 活泵 stub 常无 waiter：立刻写盘会让 SLOW_TOOL 的 kill-9 打不中 running。
     if (shouldDeferE2eSlowWrite()) return { kind: "ok" }
-    await host.writeFile(path, args.content)
+    await host.writeFile(path, args.content, callOpts)
     return { kind: "ok" }
   }
   if (
@@ -60,28 +70,28 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     typeof args.oldText === "string" &&
     typeof args.newText === "string"
   ) {
-    await host.editFile(path, args.oldText, args.newText)
+    await host.editFile(path, args.oldText, args.newText, callOpts)
     return { kind: "ok" }
   }
   if (pending.name === "bash" && typeof args.command === "string") {
-    await host.bash(args.command)
+    await host.bash(args.command, callOpts)
     return { kind: "ok" }
   }
   if (pending.name === "code_mode" && path) {
-    await resumeCodeMode(host, args)
+    await resumeCodeMode(host, args, callOpts)
     return { kind: "ok" }
   }
   if (pending.name === "git_commit" && typeof args.message === "string") {
-    await host.gitCommit(args.message, { stageAll: args.stageAll === true })
+    await host.gitCommit(args.message, { stageAll: args.stageAll === true, ...callOpts })
     return { kind: "ok" }
   }
   if (pending.name === "git_branch" && typeof args.name === "string") {
     if (!host.gitBranch) throw new Error("git_branch is not available.")
-    await host.gitBranch(args.name, args.checkout === true)
+    await host.gitBranch(args.name, args.checkout === true, callOpts)
     return { kind: "ok" }
   }
   if (pending.name === "git_push") {
-    await host.gitPush()
+    await host.gitPush(callOpts)
     return { kind: "ok" }
   }
   if (pending.name === ASK_USER_QUESTIONS_TOOL) return { kind: "ok" }
@@ -91,8 +101,23 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
   }
   const mcp = await findVisibleMcpTool(pending.name)
   if (mcp) {
-    const { callServerTool } = await import("./mcp-service")
-    await callServerTool(mcp.serverId, mcp.name, args, { fromApprovedAgent: true })
+    const runId = currentToolRunId()
+    const signal = run.abort.signal
+    if (runId && signal.aborted) {
+      blockSideEffect("mcp", { runId, toolCallId: pending.toolCallId, external: "mcp" })
+      throw toAbortError(signal)
+    }
+    const entry = runId
+      ? beginSideEffect("mcp", { runId, toolCallId: pending.toolCallId, external: "mcp" })
+      : undefined
+    try {
+      const { callServerTool } = await import("./mcp-service")
+      await callServerTool(mcp.serverId, mcp.name, args, { fromApprovedAgent: true })
+      if (entry) settleSideEffect(entry.id, "ok")
+    } catch (error) {
+      if (entry) settleSideEffect(entry.id, "error")
+      throw error
+    }
     return { kind: "ok" }
   }
   throw new Error(`Approved tool "${pending.name}" cannot be resumed after restart.`)
@@ -131,33 +156,40 @@ async function resumeSessionHeartbeat(sessionId: string, args: Record<string, un
 }
 
 async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {
+  const extras = {
+    runId: currentToolRunId() ?? undefined,
+    sessionId: run.input.sessionId,
+    signal: run.abort.signal,
+    toolTimeoutMs: readPreferences().toolTimeoutMs
+  }
   const { createWorkspaceHost, getWorkspace } = await import("./workspace")
   if (run.input.workspaceId) {
     const record = await getWorkspace(run.input.workspaceId)
     if (record.kind !== "ssh" && !looksLikeSshRoot(record.rootPath)) {
-      return createWorkspaceHost(record.rootPath)
+      return createWorkspaceHost(record.rootPath, extras)
     }
     const { resolveWorkspaceHost } = await import("./workspace-host-factory")
-    return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
+    return resolveWorkspaceHost(record, extras, createWorkspaceHost)
   }
   if (looksLikeSshRoot(run.workspaceRoot)) {
     throw disconnectedError("tool")
   }
-  return createWorkspaceHost(run.workspaceRoot)
+  return createWorkspaceHost(run.workspaceRoot, extras)
 }
 
 /** code_mode = 写脚本 + 执行，与工具 execute 保持同一顺序。 */
 async function resumeCodeMode(
   host: AgentWorkspaceHost,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  opts?: WorkspaceHostCallOpts
 ): Promise<void> {
   const source = typeof args.source === "string" ? args.source : ""
   const command = typeof args.command === "string" ? args.command : ""
   if (!source || !command) {
     throw new Error("code_mode approval is missing source or command.")
   }
-  await host.writeFile(args.path as string, source)
-  await host.bash(command)
+  await host.writeFile(args.path as string, source, { ...opts, op: "code_mode_script" })
+  await host.bash(command, opts)
 }
 
 /** MCP 工具名经字符清洗不可逆，只能对当前可见工具表反查。 */

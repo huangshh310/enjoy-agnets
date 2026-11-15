@@ -1,0 +1,383 @@
+/**
+ * 每轮副作用账本：以 runId 为键，独立于 activeRuns；deleteActiveRun 之后仍保留。
+ * settle 后按 LRU 回收，上限与 SETTLED_RUNS_CAP 对齐（200）。
+ */
+import type { BrowserWindow } from "electron"
+import {
+  STOP_KILL_GRACE_MS,
+  STOP_STUCK_AFTER_MS,
+  type StopReceipt,
+  type TurnOutcome
+} from "@enjoy-agents/ipc-contract"
+import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { emitEvent } from "./agent-run-state"
+import { persistTurnWorkflow, readSessionWorkflow, stickyTurnOutcome, turnOutcomeForRun } from "./apply-turn-outcome"
+import { forceKillTree, isWindowsPlatform } from "./command"
+import {
+  decideStopReceipt,
+  type ReceiptKnownTool,
+  type ReceiptLedgerEntry,
+  type ReceiptLedgerOp,
+  type ReceiptLedgerOutcome
+} from "./stop-receipt-decide"
+
+export type SideEffectOp = ReceiptLedgerOp
+export type SideEffectOutcome = ReceiptLedgerOutcome
+export type SideEffectEntry = ReceiptLedgerEntry
+
+const SETTLED_LEDGER_CAP = 200
+
+let entrySeq = 0
+
+type RekillHook = () => void
+
+type RunLedger = {
+  runId: string
+  sessionId?: string
+  window?: BrowserWindow
+  tools: ThreadToolCall[]
+  input?: RunAgentInput
+  abortAt?: number
+  entries: Map<string, SideEffectEntry>
+  waiters: Array<() => void>
+  rekillHooks: RekillHook[]
+  stuckEmitted: boolean
+  terminalEmitted: boolean
+  archived: boolean
+  settledOrder?: number
+  timers: ReturnType<typeof setTimeout>[]
+  knownTools: ReceiptKnownTool[]
+}
+
+const ledgers = new Map<string, RunLedger>()
+let settledSeq = 0
+
+function ledgerOf(runId: string): RunLedger {
+  const existing = ledgers.get(runId)
+  if (existing) return existing
+  const created: RunLedger = {
+    runId,
+    tools: [],
+    entries: new Map(),
+    waiters: [],
+    rekillHooks: [],
+    stuckEmitted: false,
+    terminalEmitted: false,
+    archived: false,
+    timers: [],
+    knownTools: []
+  }
+  ledgers.set(runId, created)
+  return created
+}
+
+export function hasUnsettled(runId: string): boolean {
+  const ledger = ledgers.get(runId)
+  if (!ledger) return false
+  for (const entry of ledger.entries.values()) {
+    if (entry.phase !== "settled" && entry.phase !== "blocked_before_start") return true
+  }
+  return false
+}
+
+export function latestDeadlineAt(runId: string): number | undefined {
+  const ledger = ledgers.get(runId)
+  if (!ledger || ledger.entries.size === 0) return undefined
+  let max = 0
+  for (const entry of ledger.entries.values()) {
+    if (entry.deadlineAt > max) max = entry.deadlineAt
+  }
+  return max || undefined
+}
+
+export function begin(
+  op: SideEffectOp,
+  ctx: {
+    runId: string
+    toolCallId?: string
+    toolTimeoutMs?: number
+    external?: "ssh" | "mcp"
+    now?: number
+  }
+): SideEffectEntry {
+  const now = ctx.now ?? Date.now()
+  const timeout = ctx.toolTimeoutMs ?? 30_000
+  const entry: SideEffectEntry = {
+    id: `se_${Date.now().toString(36)}_${(entrySeq += 1).toString(36)}`,
+    runId: ctx.runId,
+    toolCallId: ctx.toolCallId,
+    op,
+    phase: "started",
+    startedAt: now,
+    deadlineAt: now + timeout + STOP_KILL_GRACE_MS,
+    ...(ctx.external ? { external: ctx.external } : {})
+  }
+  const ledger = ledgerOf(ctx.runId)
+  ledger.entries.set(entry.id, entry)
+  return entry
+}
+
+export function spawned(id: string, pid: number): void {
+  const entry = findEntry(id)
+  if (!entry || entry.phase === "settled") return
+  entry.phase = "spawned"
+  entry.pid = pid
+  entry.tree = isWindowsPlatform() ? "best_effort" : "confirmed"
+}
+
+export function settle(
+  id: string,
+  outcome: SideEffectOutcome,
+  extra?: { tree?: SideEffectEntry["tree"] }
+): void {
+  const entry = findEntry(id)
+  if (!entry || entry.phase === "settled") return
+  entry.phase = "settled"
+  entry.outcome = outcome
+  entry.settledAt = Date.now()
+  if (extra?.tree) entry.tree = extra.tree
+  notifyIfSettled(entry.runId)
+}
+
+export function markBlocked(id: string): void {
+  const entry = findEntry(id)
+  if (!entry || entry.phase === "settled" || entry.phase === "blocked_before_start") return
+  entry.phase = "blocked_before_start"
+  entry.settledAt = Date.now()
+  notifyIfSettled(entry.runId)
+}
+
+export function blocked(
+  op: SideEffectOp,
+  ctx: { runId: string; toolCallId?: string; now?: number; toolTimeoutMs?: number; external?: "ssh" | "mcp" }
+): SideEffectEntry {
+  const now = ctx.now ?? Date.now()
+  const timeout = ctx.toolTimeoutMs ?? 30_000
+  const entry: SideEffectEntry = {
+    id: `se_${now.toString(36)}_${(entrySeq += 1).toString(36)}`,
+    runId: ctx.runId,
+    toolCallId: ctx.toolCallId,
+    op,
+    phase: "blocked_before_start",
+    outcome: undefined,
+    startedAt: now,
+    settledAt: now,
+    deadlineAt: now + timeout + STOP_KILL_GRACE_MS,
+    ...(ctx.external ? { external: ctx.external } : {})
+  }
+  const ledger = ledgerOf(ctx.runId)
+  ledger.entries.set(entry.id, entry)
+  notifyIfSettled(ctx.runId)
+  return entry
+}
+
+export function summarize(runId: string): SideEffectEntry[] {
+  const ledger = ledgers.get(runId)
+  if (!ledger) return []
+  return [...ledger.entries.values()]
+}
+
+export function waitSettled(runId: string): Promise<void> {
+  if (!hasUnsettled(runId)) return Promise.resolve()
+  return new Promise((resolve) => {
+    ledgerOf(runId).waiters.push(resolve)
+  })
+}
+
+/** 登记 STUCK 夹具等对「再停一次」的响应。返回取消函数。 */
+export function onRekill(runId: string, hook: RekillHook): () => void {
+  const ledger = ledgerOf(runId)
+  ledger.rekillHooks.push(hook)
+  return () => {
+    ledger.rekillHooks = ledger.rekillHooks.filter((item) => item !== hook)
+  }
+}
+
+export async function rekill(runId: string): Promise<void> {
+  const ledger = ledgers.get(runId)
+  if (!ledger) return
+  const hooks = [...ledger.rekillHooks]
+  for (const hook of hooks) {
+    try {
+      hook()
+    } catch (error) {
+      console.error("[stop] rekill hook failed", error)
+    }
+  }
+  const pids = [...ledger.entries.values()].map((entry) => entry.pid).filter((pid): pid is number => typeof pid === "number")
+  await Promise.all(pids.map((pid) => forceKillTree(pid)))
+}
+
+export type SettleWatchContext = {
+  runId: string
+  sessionId: string
+  window: BrowserWindow
+  tools: ThreadToolCall[]
+  input: RunAgentInput
+  abortAt?: number
+  knownTools?: ReceiptKnownTool[]
+}
+
+/**
+ * 脱离 IPC 的 settle 监视：8s 最多一条 stuck 快照；终态只发一条（settled 或 final）。
+ */
+export function armSettleWatch(ctx: SettleWatchContext): void {
+  const ledger = ledgerOf(ctx.runId)
+  if (ledger.terminalEmitted) return
+  ledger.sessionId = ctx.sessionId
+  ledger.window = ctx.window
+  ledger.tools = ctx.tools
+  ledger.input = ctx.input
+  ledger.abortAt = ctx.abortAt ?? Date.now()
+  ledger.knownTools = ctx.knownTools ?? ledger.knownTools
+  clearLedgerTimers(ledger)
+
+  const emitStuck = () => {
+    if (ledger.terminalEmitted || ledger.stuckEmitted || !hasUnsettled(ctx.runId)) return
+    ledger.stuckEmitted = true
+    emitStopped(ledger, "stuck", receiptOf(ledger, "stuck"))
+  }
+
+  const emitHardFinal = () => {
+    if (ledger.terminalEmitted) return
+    closeUnsettledAsUnconfirmed(ctx.runId)
+    finishTerminal(ledger, "final")
+  }
+
+  // 8s stuck 从 stopRequestedAt / abortAt（主进程收到 abort 的 t0）起算。
+  const stuckDelay = Math.max(0, (ledger.abortAt ?? Date.now()) + STOP_STUCK_AFTER_MS - Date.now())
+  const stuckTimer = setTimeout(emitStuck, stuckDelay)
+  stuckTimer.unref?.()
+  ledger.timers.push(stuckTimer)
+
+  const deadlineAt = latestDeadlineAt(ctx.runId) ?? ledger.abortAt + 30_000 + STOP_KILL_GRACE_MS
+  const hardDelay = Math.max(0, deadlineAt - Date.now())
+  const hardTimer = setTimeout(emitHardFinal, hardDelay)
+  hardTimer.unref?.()
+  ledger.timers.push(hardTimer)
+
+  void waitSettled(ctx.runId).then(() => {
+    if (ledger.terminalEmitted) return
+    finishTerminal(ledger, ledger.stuckEmitted ? "final" : "settled")
+  })
+}
+
+export function rememberKnownTools(runId: string, tools: ReceiptKnownTool[]): void {
+  ledgerOf(runId).knownTools = tools
+}
+
+export function receiptFor(runId: string, phase: "stuck" | "settled" | "final"): StopReceipt {
+  return receiptOf(ledgerOf(runId), phase)
+}
+
+function finishTerminal(ledger: RunLedger, phase: "settled" | "final"): void {
+  if (ledger.terminalEmitted) return
+  ledger.terminalEmitted = true
+  clearLedgerTimers(ledger)
+  const receipt = receiptOf(ledger, phase)
+  const turn = turnFromReceipt(ledger, receipt)
+  emitStopped(ledger, phase, receipt, turn)
+  if (!ledger.archived && ledger.sessionId && turn) persistTurnWorkflow(ledger.sessionId, turn)
+  markSettledAndEvict(ledger)
+}
+
+function turnFromReceipt(ledger: RunLedger, receipt: StopReceipt): TurnOutcome | undefined {
+  if (!ledger.input) return undefined
+  if (receipt.write === "none_confirmed") {
+    return stickyTurnOutcome(
+      { workflow: "in_progress", attention: "stopped" },
+      readSessionWorkflow(ledger.input.sessionId)
+    )
+  }
+  return turnOutcomeForRun({ tools: ledger.tools, input: ledger.input }, "abort")
+}
+
+function emitStopped(
+  ledger: RunLedger,
+  phase: "stuck" | "settled" | "final",
+  receipt: StopReceipt,
+  turn?: TurnOutcome
+): void {
+  if (!ledger.window || !ledger.sessionId) return
+  emitEvent(ledger.window, {
+    type: "run.stopped",
+    runId: ledger.runId,
+    sessionId: ledger.sessionId,
+    phase,
+    receipt,
+    ...(phase !== "stuck" && turn ? { turn } : {})
+  })
+}
+
+function receiptOf(ledger: RunLedger, phase: "stuck" | "settled" | "final"): StopReceipt {
+  const entries = [...ledger.entries.values()]
+  const tree = entries.map((item) => item.tree).find((item) => item === "confirmed" || item === "best_effort")
+  return decideStopReceipt({
+    entries,
+    knownTools: ledger.knownTools,
+    phase,
+    abortAt: ledger.abortAt,
+    tree
+  })
+}
+
+function closeUnsettledAsUnconfirmed(runId: string): void {
+  const ledger = ledgers.get(runId)
+  if (!ledger) return
+  const now = Date.now()
+  for (const entry of ledger.entries.values()) {
+    if (entry.phase === "settled" || entry.phase === "blocked_before_start") continue
+    if (typeof entry.pid === "number") {
+      console.error("[stop] leftover process after hard deadline", { runId, pid: entry.pid, op: entry.op })
+    }
+    entry.phase = "settled"
+    entry.outcome = "unconfirmed"
+    entry.settledAt = now
+  }
+  notifyIfSettled(runId)
+}
+
+function notifyIfSettled(runId: string): void {
+  if (hasUnsettled(runId)) return
+  const ledger = ledgers.get(runId)
+  if (!ledger) return
+  const waiters = ledger.waiters
+  ledger.waiters = []
+  for (const resolve of waiters) resolve()
+}
+
+function clearLedgerTimers(ledger: RunLedger): void {
+  for (const timer of ledger.timers) clearTimeout(timer)
+  ledger.timers = []
+}
+
+function markSettledAndEvict(ledger: RunLedger): void {
+  ledger.settledOrder = (settledSeq += 1)
+  // 只回收已经发出终态的账本，保留未 settle 的。
+  const done = [...ledgers.values()].filter((item) => item.terminalEmitted).sort((a, b) => (a.settledOrder ?? 0) - (b.settledOrder ?? 0))
+  while (done.length > SETTLED_LEDGER_CAP) {
+    const oldest = done.shift()
+    if (!oldest) break
+    ledgers.delete(oldest.runId)
+  }
+}
+
+function findEntry(id: string): SideEffectEntry | undefined {
+  for (const ledger of ledgers.values()) {
+    const entry = ledger.entries.get(id)
+    if (entry) return entry
+  }
+  return undefined
+}
+
+export function resetRunSideEffectsForTest(): void {
+  for (const ledger of ledgers.values()) clearLedgerTimers(ledger)
+  ledgers.clear()
+  entrySeq = 0
+  settledSeq = 0
+}
+
+export function ledgerSizeForTest(): number {
+  return ledgers.size
+}

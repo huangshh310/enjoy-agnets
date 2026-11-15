@@ -2,11 +2,19 @@
  * SSH AgentWorkspaceHost：文件 / bash / git 经连接层，路径 jail 在 remote_path。
  * bash 先在本机拆成 argv 再 quote，禁止把用户字符串直接拼进远端 shell。
  */
-import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
-import { parseExecutableCommand } from "../command.ts"
+import type { AgentWorkspaceHost, WorkspaceHostCallOpts } from "@enjoy-agents/agent-core"
+import { parseExecutableCommand, toAbortError } from "../command.ts"
 import { quoteRemote, resolveRemoteJail, toRemoteRelative } from "./ssh-path.ts"
 import { disconnectedError } from "./ssh-errors.ts"
 import type { SshConnectionLayer } from "./ssh.types.ts"
+import type { HostExtras } from "../workspace-host-factory.ts"
+import {
+  begin as beginSideEffect,
+  blocked as blockSideEffect,
+  settle as settleSideEffect,
+  type SideEffectOp
+} from "../run-side-effects.ts"
+import { mergeHostSignals } from "../workspace-host.ts"
 
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
 
@@ -17,7 +25,11 @@ type HostCtx = {
   requireLive: () => void
 }
 
-export function createSshWorkspaceHost(conn: SshConnectionLayer, remotePath: string): AgentWorkspaceHost {
+export function createSshWorkspaceHost(
+  conn: SshConnectionLayer,
+  remotePath: string,
+  extras?: HostExtras
+): AgentWorkspaceHost {
   const ctx: HostCtx = {
     conn,
     remotePath,
@@ -26,35 +38,64 @@ export function createSshWorkspaceHost(conn: SshConnectionLayer, remotePath: str
       if (conn.status !== "connected") throw disconnectedError("io")
     }
   }
-  return { ...fileOps(ctx), ...searchOps(ctx), ...gitOps(ctx), isRemote: true }
+  return { ...fileOps(ctx, extras), ...searchOps(ctx), ...gitOps(ctx, extras), isRemote: true }
 }
 
-function fileOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "readFile" | "writeFile" | "editFile" | "listDir" | "bash"> {
+function sshGate(op: SideEffectOp, extras: HostExtras | undefined, opts?: WorkspaceHostCallOpts): { entryId?: string } {
+  const signal = mergeHostSignals(extras?.signal, opts?.signal)
+  const runId = extras?.runId
+  if (!runId) {
+    if (signal?.aborted) throw toAbortError(signal)
+    return {}
+  }
+  const ctx = { runId, toolCallId: opts?.toolCallId, toolTimeoutMs: extras?.toolTimeoutMs, external: "ssh" as const }
+  if (signal?.aborted) {
+    blockSideEffect(op, ctx)
+    throw toAbortError(signal)
+  }
+  return { entryId: beginSideEffect(op, ctx).id }
+}
+
+async function sshSettled<T>(entryId: string | undefined, run: () => Promise<T>): Promise<T> {
+  try {
+    const result = await run()
+    if (entryId) settleSideEffect(entryId, "ok")
+    return result
+  } catch (error) {
+    if (entryId) settleSideEffect(entryId, "error")
+    throw error
+  }
+}
+
+function fileOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "readFile" | "writeFile" | "editFile" | "listDir" | "bash"> {
   return {
     readFile: async (relativePath) => {
       ctx.requireLive()
       return ctx.conn.readFile(ctx.jail(relativePath))
     },
-    writeFile: async (relativePath, content) => {
+    writeFile: async (relativePath, content, opts) => {
+      const { entryId } = sshGate("write_file", extras, opts)
       ctx.requireLive()
-      await ctx.conn.writeFile(ctx.jail(relativePath), content)
+      await sshSettled(entryId, () => ctx.conn.writeFile(ctx.jail(relativePath), content))
     },
-    editFile: async (relativePath, oldText, newText) => {
+    editFile: async (relativePath, oldText, newText, opts) => {
       ctx.requireLive()
       const abs = ctx.jail(relativePath)
       const current = await ctx.conn.readFile(abs)
       if (!current.includes(oldText)) throw new Error(`oldText not found in ${relativePath}`)
+      const { entryId } = sshGate("edit_file", extras, opts)
       const next = current.replace(oldText, newText)
-      await ctx.conn.writeFile(abs, next)
+      await sshSettled(entryId, () => ctx.conn.writeFile(abs, next))
       return next
     },
     listDir: async (relativePath) => {
       ctx.requireLive()
       return (await ctx.conn.listDir(ctx.jail(relativePath))).filter((entry) => !IGNORED.has(entry.name))
     },
-    bash: async (command) => {
+    bash: async (command, opts) => {
+      const { entryId } = sshGate("bash", extras, opts)
       ctx.requireLive()
-      const result = await ctx.conn.exec(remoteArgvCommand(ctx.remotePath, command))
+      const result = await sshSettled(entryId, () => ctx.conn.exec(remoteArgvCommand(ctx.remotePath, command)))
       return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode }
     }
   }
@@ -100,7 +141,7 @@ async function grepFiles(ctx: HostCtx, files: string[], pattern: string) {
   return matches
 }
 
-function gitOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "gitStatus" | "gitDiff" | "gitLog" | "gitCommit" | "gitPush" | "gitBranch"> {
+function gitOps(ctx: HostCtx, extras?: HostExtras): Pick<AgentWorkspaceHost, "gitStatus" | "gitDiff" | "gitLog" | "gitCommit" | "gitPush" | "gitBranch"> {
   const run = (args: string[]) => git(ctx.conn, ctx.remotePath, args)
   return {
     gitStatus: async () => {
@@ -118,23 +159,32 @@ function gitOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "gitStatus" | "gitDiff" 
       return (await run(args)).stdout
     },
     gitCommit: async (message, options) => {
+      const { entryId } = sshGate("git_commit", extras, options)
       ctx.requireLive()
-      if (options?.stageAll) await run(["add", "-A"])
-      const result = await run(["commit", "-m", message])
-      if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
-      return result.stdout || result.stderr
+      return sshSettled(entryId, async () => {
+        if (options?.stageAll) await run(["add", "-A"])
+        const result = await run(["commit", "-m", message])
+        if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
+        return result.stdout || result.stderr
+      })
     },
-    gitPush: async () => {
+    gitPush: async (opts) => {
+      const { entryId } = sshGate("git_push", extras, opts)
       ctx.requireLive()
-      const result = await run(["push"])
-      if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
-      return result.stdout || result.stderr
+      return sshSettled(entryId, async () => {
+        const result = await run(["push"])
+        if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
+        return result.stdout || result.stderr
+      })
     },
-    gitBranch: async (name, checkout) => {
+    gitBranch: async (name, checkout, opts) => {
+      const { entryId } = sshGate("git_branch", extras, opts)
       ctx.requireLive()
-      const result = await run(checkout ? ["checkout", "-b", name] : ["branch", name])
-      if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
-      return result.stdout || result.stderr
+      return sshSettled(entryId, async () => {
+        const result = await run(checkout ? ["checkout", "-b", name] : ["branch", name])
+        if (result.exitCode !== 0) throw disconnectedOrGit(result.stderr)
+        return result.stdout || result.stderr
+      })
     }
   }
 }
