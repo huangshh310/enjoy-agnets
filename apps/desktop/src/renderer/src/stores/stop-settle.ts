@@ -15,6 +15,7 @@ import {
   type StopSettleState,
   type ToolStopView
 } from "./stop-settle-reducer"
+import { followupPausedReason, pauseFollowups } from "../hooks/followup-queue"
 
 type StopSettleStore = StopSettleState & { dispatch: (action: StopSettleAction) => void }
 
@@ -24,9 +25,22 @@ export const useStopSettleStore = create<StopSettleStore>((set, get) => ({
     const { bySession, settled } = get()
     const next = reduceStopSettle({ bySession, settled }, action)
     if (next.bySession !== bySession || next.settled !== settled) set(next)
+    for (const sessionId of Object.keys(bySession)) {
+      if (!next.bySession[sessionId]) holdQueueAfterSettle(sessionId)
+    }
     scheduleTick()
   }
 }))
+
+/**
+ * jojo F2：收尾期间排队项发不出去（锁挡住自启），但期间可能被解除了暂停（点了暂停行的「继续」）或新排了几条。
+ * 落定那一刻没有任何东西会再踢自启——排队行会一直显示「排队中 / 下一句」却不发。
+ * 落定时这个会话的队列还有东西、又没停着：按「你停止了上一轮」停住（与刷新后的暂停态同一份文案 / 行为），等用户点「继续」。
+ */
+function holdQueueAfterSettle(sessionId: string): void {
+  if (followupPausedReason(sessionId)) return
+  pauseFollowups(sessionId, "stopped")
+}
 
 let timer: ReturnType<typeof setTimeout> | null = null
 let now: () => number = () => Date.now()

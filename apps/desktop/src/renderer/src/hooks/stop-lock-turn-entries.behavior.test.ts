@@ -87,7 +87,7 @@ function assertUntouched(label: string) {
   assert.equal(s.error, "已停止", `${label}：错误条没被清`)
 }
 
-test("C1b ①：没能停下时点助手气泡「重新生成」（regenerateAssistantTurn）不开新一轮、不截断", async () => {
+test("C1b ①：没能停下时点最后一条助手气泡「重新生成」（regenerateAssistantTurn）不开新一轮、不截断", async () => {
   stoppingSession("stuck")
   await regenerateAssistantTurn("a0")
   await flush()
