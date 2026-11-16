@@ -5,6 +5,14 @@
  * 降级看当前级自己的实测宽；升级只看目标级自己实测的宽 + 8px 回滞（C4），缺缓存就探一级。
  */
 
+import {
+  narrowSidebarWindow,
+  onSidebarWidth,
+  sidebarCollapsed,
+  sidebarOverlay,
+  type SidebarCollapseState
+} from "../../app-shell/chrome/sidebar-collapse-state.ts"
+
 export const FOOTER_UPGRADE_HYSTERESIS_PX = 8
 export const FOOTER_SUBPIXEL_PX = 0.5
 export const FOOTER_STEPS = ["0", "1", "2", "3a", "3b", "3c", "3d", "3e"] as const
@@ -33,6 +41,12 @@ export const FOOTER_LEFT_CLIP =
 export const FOOTER_GE2_ONLY_INLINE =
   "hidden group-data-[footer-density=2]/footer:inline-flex group-data-[footer-density=3]/footer:inline-flex"
 
+/**
+ * 左组被裁时（hook 在 row 上挂 data-footer-clipped：当前级整行所需宽 > 行内宽）尾部 20px 渐隐，
+ * 拖窗那一两帧被裁切壳切开的半个字 / 半个数字不再生硬露出（luna e9034ae0 should）。只是 mask，不改任何宽度；放得下时不挂。
+ */
+export const FOOTER_LEFT_CLIP_FADE =
+  "group-data-[footer-clipped]/footer:[mask-image:linear-gradient(to_right,#000_calc(100%_-_20px),transparent)]"
 export function footerStepIndex(step: FooterStep): number {
   return FOOTER_STEPS.indexOf(step)
 }
@@ -153,16 +167,24 @@ export function footerSidebarShift(nav: { current: number; target: number; overl
   return Math.abs(d) <= FOOTER_SUBPIXEL_PX ? 0 : d
 }
 
-/** 侧栏要把聊天区挤窄时，提前按落定后的宽度选级（行内宽加上负的 shift），动画一开始就落到终态级、全程单向不裁切。 */
-export function footerTargetInner(inner: number, shift: number): number {
-  return shift < 0 ? inner + shift : inner
+/**
+ * 侧栏收展时按落定后的宽度选级：
+ * - shift < 0（要挤窄）：行内宽 + shift，动画一开始就落到终态级、全程单向不裁切。
+ * - shift > 0 且是窄窗自动收起（ahead：拖窗跨过自动收起断点，侧栏 DOM / 动画要晚一两帧才跟上，#228 jojo M1）：
+ *   同样按收起后的宽度一步落到「当前窗宽 + 侧栏目标态」的静态级——iw < 768 不再按「侧栏还展开」那一两帧的窄聊天区停在 / 降到 3e。
+ *   动画期间左组多出来的部分由裁切壳裁（尾部渐隐），不折行、右组不动。
+ * - shift > 0 是点开关收起：按当前行宽逐级升（只升不降），左组不越框。
+ */
+export function footerTargetInner(inner: number, shift: number, ahead = false): number {
+  if (shift < 0) return inner + shift
+  return ahead && shift > 0 ? inner + shift : inner
 }
 
 /**
  * RO（容器宽度变化）触发的换级闸门（#228 luna H2 / jojo 768 拖窗）：
  * 窗口跨 768 时，窗口先变 ±8~16px、下一帧侧栏才开始收 / 展动画，聊天区宽度先「反向」一两帧再单调变化，
  * 照单全收会画出 3d→3e→3d / 3a→2→3a 这类来回。
- * - 停靠侧栏正在把聊天区推宽（shift > 0）：只升不降（降级只可能来自中途反向，交给尾随复核）。
+ * - 停靠侧栏正在把聊天区推宽（shift > 0）：选级已按目标宽算（footerTargetInner），只升不降（降级只可能来自中途反向，交给尾随复核）。
  * - 停靠侧栏正在把聊天区挤窄（shift < 0）：选级已按目标宽算（footerTargetInner），直接提交，一步到终态。
  * - 侧栏不动：行宽没变（内容引起的 RO）照常提交；一串 RO 的第一下（距上一下超过一个空档）先不换级；
  *   串内宽度在变大时不降级、在变小时不升级，都交给尾随复核（最后一下 RO 之后两帧按落定宽度再判）。
@@ -173,23 +195,27 @@ export const FOOTER_RESIZE_BURST_GAP_MS = 50
 /** 跨窄窗断点时窗口单步回弹的上限（拖窗 2~16px，jojo 单跳 800→740 是 60px）。 */
 export const FOOTER_RESIZE_DIP_PX = 96
 /**
- * 跨窄窗断点拖窗（jojo 9b「逐步扫宽」）：停靠侧栏展开、窗宽已在断点上方 LOOKAHEAD 以内且还在变窄时，
- * 再窄一两 px 侧栏就自动收起、把聊天区推宽 ~220——这时降级多半只亮几帧就被推宽抵消（3d→3e→3d）。
- * 这段里的降级先等 WAIT_MS：拖过断点就直接随侧栏收起单向升级；停在这段里，WAIT_MS 后照常按同宽静态落级。
+ * 侧栏目标态（#228 H2 / jojo M1 慢拖 768）：不靠延时，按侧栏自己的自动收起判断推它这一刻要落到哪一态、占主区多宽。
+ * 窗宽是否窄窗只经 narrowSidebarWindow 判（与 nav-card 同一判断 / 同一常量 NARROW_SIDEBAR_PX，不另写字面量），
+ * 再按 onSidebarWidth 推下一态：收起 / 浮层只占轨道宽，停靠展开占展开宽。
+ * 窗口刚跨过断点的那一帧（nav-card 的 resize 监听 / store / 动画都还没跟上）就已按收起后的宽度判：shift > 0 → 只升不降，
+ * iw < 768 不会再按「侧栏仍展开」的窄聊天区降到 3e。断点上方（侧栏目标仍是展开）照常按当前宽度选级 = 同宽静态级。
+ * 只决定目标宽（喂 footerSidebarShift），不改选级本身（常量 / 回滞 / C1 不动）。
  */
-export const FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX = 16
-export const FOOTER_AUTO_COLLAPSE_WAIT_MS = 150
-export function footerNearAutoCollapse(input: {
-  /** 侧栏停靠且展开（不是浮层、没收起）。 */
-  docked: boolean
+export function footerSidebarIntent(input: {
+  state: SidebarCollapseState
+  /** 当前窗宽；非有限值（无 window）= 只看 store 现态。 */
   windowW: number
-  lastWindowW: number | null
-  /** 自动收起断点（app-shell NARROW_SIDEBAR_PX，窗宽 < 它即收起）。 */
-  narrowPx: number
-}): boolean {
-  const { docked, windowW, lastWindowW, narrowPx } = input
-  if (!docked || lastWindowW == null || !Number.isFinite(windowW)) return false
-  return windowW >= narrowPx && windowW < narrowPx + FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX && windowW < lastWindowW - FOOTER_SUBPIXEL_PX
+  expandedPx: number
+  collapsedPx: number
+}): { target: number; ahead: boolean } {
+  const { state, windowW, expandedPx, collapsedPx } = input
+  const next = Number.isFinite(windowW) ? onSidebarWidth(state, narrowSidebarWindow(windowW)) : state
+  const narrowNext = sidebarCollapsed(next) || sidebarOverlay(next)
+  // ahead：这次收起是窄窗自动收起推出来的（拖窗跨过断点）——侧栏 DOM / 动画要晚一两帧才跟上，按目标宽选级；
+  // 点开关收起不算（逐级升，左组不越框）。
+  const autoNarrow = Number.isFinite(windowW) && narrowSidebarWindow(windowW)
+  return { target: narrowNext ? collapsedPx : expandedPx, ahead: narrowNext && autoNarrow }
 }
 export function footerResizeGate(input: {
   cur: FooterStep
@@ -200,14 +226,11 @@ export function footerResizeGate(input: {
   shift?: number
   /** 当前级整行所需宽 − 行内宽（>0 即左组被裁）。 */
   overflow?: number
-  /** footerNearAutoCollapse：窗宽在自动收起断点上方一小段且还在变窄。 */
-  nearAutoCollapse?: boolean
 }): "commit" | "defer" {
-  const { cur, next, inner, lastInner, sinceLastMs, shift = 0, overflow = 0, nearAutoCollapse = false } = input
+  const { cur, next, inner, lastInner, sinceLastMs, shift = 0, overflow = 0 } = input
   const down = footerStepIndex(next) > footerStepIndex(cur)
   if (shift > FOOTER_SUBPIXEL_PX) return down ? "defer" : "commit"
   if (shift < -FOOTER_SUBPIXEL_PX) return "commit"
-  if (down && nearAutoCollapse && overflow <= FOOTER_RESIZE_DIP_PX) return "defer"
   if (lastInner == null) return "commit"
   if (Math.abs(inner - lastInner) <= FOOTER_SUBPIXEL_PX) return "commit"
   if (sinceLastMs > FOOTER_RESIZE_BURST_GAP_MS) return down && overflow > FOOTER_RESIZE_DIP_PX ? "commit" : "defer"

@@ -999,8 +999,8 @@ for (const lang of ["zh", "en"] as const) {
 /** 逐帧（rAF）记底栏级 / 行高 / 发送钮底 / 是否在跑，直到 stop()。 */
 async function recordFrames(window: Page) {
   await window.evaluate(() => {
-    const w = window as unknown as { __h2rec?: { f: [string, number, number | null, number][]; stop: boolean } }
-    const st = { f: [] as [string, number, number | null, number][], stop: false }
+    const w = window as unknown as { __h2rec?: { f: [string, number, number | null, number, number][]; stop: boolean } }
+    const st = { f: [] as [string, number, number | null, number, number][], stop: false }
     w.__h2rec = st
     const loop = () => {
       const row = document.querySelector('[data-testid="composer-footer-row"]')
@@ -1009,7 +1009,8 @@ async function recordFrames(window: Page) {
         `${row?.getAttribute("data-footer-density") ?? "?"}${row?.getAttribute("data-footer-overflow") ?? ""}`,
         row ? Math.round(row.getBoundingClientRect().height) : -1,
         send ? Math.round(send.getBoundingClientRect().bottom) : null,
-        document.querySelector('[data-testid="composer-stop"]') ? 1 : 0
+        document.querySelector('[data-testid="composer-stop"]') ? 1 : 0,
+        window.innerWidth
       ])
       if (!st.stop) requestAnimationFrame(loop)
     }
@@ -1017,7 +1018,7 @@ async function recordFrames(window: Page) {
   })
   return async () =>
     window.evaluate(() => {
-      const st = (window as unknown as { __h2rec: { f: [string, number, number | null, number][]; stop: boolean } }).__h2rec
+      const st = (window as unknown as { __h2rec: { f: [string, number, number | null, number, number][]; stop: boolean } }).__h2rec
       st.stop = true
       return st.f
     })
@@ -1034,37 +1035,113 @@ const levelDirChanges = (levels: string[]) => {
   return n
 }
 
+/** 等 n 个 rAF（按帧等，不按毫秒猜）。 */
+const waitFrames = (window: Page, n: number) =>
+  window.evaluate(
+    (k) =>
+      new Promise<void>((resolve) => {
+        let i = 0
+        const f = () => (++i >= k ? resolve() : requestAnimationFrame(f))
+        requestAnimationFrame(f)
+      }),
+    n
+  )
+/** 侧栏落定（宽度连续 6 帧不变）+ 底栏落定（settle）。替代固定 sleep。 */
+async function settleSidebar(window: Page) {
+  await expect
+    .poll(
+      () =>
+        window.evaluate(
+          () =>
+            new Promise<boolean>((resolve) => {
+              // 用 setTimeout 采样（每 16ms 一次、连续 6 次不变），不靠 rAF：拖窗后偶发 rAF 一段时间不回调，
+              // 整个 evaluate 挂住、poll 10s 超时（#228 neo ② H2 去偶发，r10 2/40）。单次最多 600ms 就交回 poll 重试。
+              const nav = () => document.querySelector("[data-nav-card]")?.getBoundingClientRect().width ?? -1
+              const first = nav()
+              let i = 0
+              const deadline = setTimeout(() => resolve(false), 600)
+              const f = () => {
+                if (nav() !== first) {
+                  clearTimeout(deadline)
+                  return resolve(false)
+                }
+                if (++i >= 6) {
+                  clearTimeout(deadline)
+                  return resolve(true)
+                }
+                setTimeout(f, 16)
+              }
+              setTimeout(f, 16)
+            })
+        ),
+      { timeout: 10_000, intervals: [50] }
+    )
+    .toBe(true)
+  await settle(window)
+}
+/** 「一直跑」桩（e2e-stub「slow hold」：不自己结束，直到 Stop）——整段检查期间都在跑，不靠一轮慢回复的长度碰运气（#228 neo ②）。 */
+const HOLD = "slow hold a b c"
+
 for (const lang of ["zh", "en"] as const) {
-  test(`#228 H2（${lang}）：CU 运行中拖窗跨 768（侧栏自动收 / 展）与点侧栏开关 —— 级别逐帧单向不回弹、每帧一行、发送钮不越界`, async () => {
+  test(`#228 H2（${lang}）：CU 运行中拖窗跨 768（侧栏自动收 / 展）、逐步扫宽（快 / 慢拖每 2px 停 200ms）与点侧栏开关 —— 级别逐帧单向不回弹、每帧一行、发送钮不越界`, async () => {
     const testInfo = test.info()
-    test.setTimeout(240_000)
+    test.setTimeout(300_000)
     const { app, window, roErrors } = await boot(lang, { cu: true })
     try {
       const input = window.getByTestId("composer-input")
-      const ensureRunning = async () => {
-        if ((await window.getByTestId("composer-stop").count()) > 0) return
-        await expect(window.getByTestId("composer-send")).toHaveAttribute("aria-label", /^(Send|发送)$/, { timeout: 30_000 })
-        await sendComposer(window, input, SLOW)
-        await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
-        await window.waitForTimeout(600)
-      }
+      await expect(window.getByTestId("composer-send")).toHaveAttribute("aria-label", /^(Send|发送)$/, { timeout: 30_000 })
+      await sendComposer(window, input, HOLD)
+      await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+      await settle(window)
       const check = async (label: string, act: () => Promise<void>) => {
-        await ensureRunning()
+        await expect(window.getByTestId("composer-stop"), `${label} 检查前在跑`).toBeVisible()
         const stop = await recordFrames(window)
         await act()
-        await window.waitForTimeout(900)
+        await settleSidebar(window)
+        await waitFrames(window, 10)
         const f = await stop()
         const ran = f.filter((x) => x[3] === 1)
         const levels = ran.map((x) => x[0]).filter((k, i, a) => i === 0 || a[i - 1] !== k)
-        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
+        // jojo M1 口径（与 jojo 门 jh2v 一致）：每帧 = 当前窗宽 + 侧栏目标态的静态级，768 停靠时静态级本身就是 3e、766 收起后升回，
+        // 所以按窗宽是否跨过自动收起断点（iw < 768）切段，每段内级别单向；iw < 768 任何一帧不出现 3e。
+        const segs: string[][] = []
+        let segNarrow: boolean | null = null
+        for (const x of ran) {
+          const narrow = x[4] < 768
+          if (narrow !== segNarrow) {
+            segs.push([])
+            segNarrow = narrow
+          }
+          const s = segs[segs.length - 1]
+          if (s[s.length - 1] !== x[0]) s.push(x[0])
+        }
+        const narrow3e = ran.filter((x) => x[4] < 768 && x[0].startsWith("3e")).map((x) => `${x[0]}@${x[4]}`)
+        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, segs, narrow3e: narrow3e.length, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
         console.log(`[composer-733-oneline] ${line}`)
         await testInfo.attach(label, { body: line, contentType: "application/json" })
-        expect(ran.length, `${label} 全程在跑 ${line}`).toBeGreaterThan(20)
-        expect(levelDirChanges(levels), `${label} 级别单向 ${line}`).toBe(0)
+        expect(ran.length, `${label} 全程在跑 ${line}`).toBe(f.length)
+        expect(f.length, `${label} 有帧 ${line}`).toBeGreaterThan(5)
+        expect(
+          segs.reduce((n, s) => n + levelDirChanges(s), 0),
+          `${label} 跨 768 前后各段级别单向 ${line}`
+        ).toBe(0)
+        expect(narrow3e, `${label} iw<768 无 3e ${line}`).toEqual([])
         for (const x of f) {
           expect(x[1], `${label} 每帧一行 ${line}`).toBeLessThanOrEqual(46)
           expect(x[2] ?? 0, `${label} 发送钮底 ≤ ${SEND_MAX_733} ${line}`).toBeLessThanOrEqual(SEND_MAX_733 + 0.5)
         }
+      }
+      const prep = async (w: number) => {
+        await window.setViewportSize({ width: w, height: 480 })
+        await settleSidebar(window)
+      }
+      // jojo 裁定：CU 开着、运行中窄宽（800 侧栏展开 = 3d）chip 进溢出菜单（§10 第 1 条），状态在菜单小节里看得到
+      await prep(800)
+      if ((await window.getByTestId("composer-footer-row").getByTestId("computer-use-chip").count()) === 0) {
+        await window.getByTestId("composer-overflow").click()
+        await expect(window.getByTestId("composer-overflow-footer-items").getByTestId("computer-use-chip"), "运行中 CU 在溢出菜单里").toBeVisible()
+        await window.keyboard.press("Escape")
+        await expect(window.getByTestId("composer-overflow-footer-items")).toHaveCount(0)
       }
       for (const [a, b] of [
         [800, 740],
@@ -1074,35 +1151,135 @@ for (const lang of ["zh", "en"] as const) {
         [776, 764],
         [764, 776]
       ] as const) {
-        await ensureRunning()
-        await resize(window, a, 480)
+        await prep(a)
         await check(`H2-drag-${a}-${b}-${lang}`, async () => {
           await window.setViewportSize({ width: b, height: 480 })
         })
       }
-      // jojo 9b 逐步扫宽：每 55ms 2px 跨 768（776↔760），断点上方那几 px 不先降一级再被侧栏收起推回
-      for (const [a, b] of [
-        [776, 760],
-        [760, 776]
+      // jojo 9b 逐步扫宽（每步等 3 帧）与慢拖（每 2px 停 200ms，jojo 门的口径）：跨 768（776↔760），断点上方不先降一级再被侧栏收起推回。
+      // 不靠时间：意图信号按窗宽 / 侧栏状态判，停多久结果都一样。
+      for (const [mode, dwell] of [
+        ["sweep", 0],
+        ["slow", 200]
       ] as const) {
-        await ensureRunning()
-        await resize(window, a, 480)
-        await check(`H2-sweep-${a}-${b}-${lang}`, async () => {
-          const dir = Math.sign(b - a)
-          for (let x = a + dir * 2; dir > 0 ? x <= b : x >= b; x += dir * 2) {
-            await window.setViewportSize({ width: x, height: 480 })
-            await window.waitForTimeout(55)
-          }
-        })
+        for (const [a, b] of [
+          [776, 760],
+          [760, 776]
+        ] as const) {
+          await prep(a)
+          await check(`H2-${mode}-${a}-${b}-${lang}`, async () => {
+            const dir = Math.sign(b - a)
+            for (let x = a + dir * 2; dir > 0 ? x <= b : x >= b; x += dir * 2) {
+              await window.setViewportSize({ width: x, height: 480 })
+              if (dwell) await window.waitForTimeout(dwell)
+              else await waitFrames(window, 3)
+            }
+          })
+        }
       }
       // 点侧栏开关（宽窗，停靠）：收 / 展各一次
       for (const w of [1100, 900, 800]) {
-        await ensureRunning()
-        await resize(window, w, 480)
+        await prep(w)
         for (const dir of ["collapse", "expand"]) {
           await check(`H2-toggle-${w}-${dir}-${lang}`, async () => {
             await window.getByTestId("sidebar-toggle").click()
           })
+        }
+      }
+      expect(roErrors, "no ResizeObserver loop").toEqual([])
+      await window.getByTestId("composer-stop").click()
+      await expect(window.getByTestId("composer-send")).toBeVisible({ timeout: 10_000 })
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
+// #228 jojo M1（门的口径）：慢拖每 2px 停 200ms 跨 768 双向，zh/en × 运行中 / idle。
+// 静态梯 = 同方向每 2px 落定（settle）的级别；慢拖每一帧的级别只能是「这一步 / 上一步」窗宽的静态级（换级那一两帧的尾随复核），
+// 停够 200ms 后 = 这一步的静态级；iw < 768（侧栏目标已收起）任何一帧不出现 3e。
+for (const lang of ["zh", "en"] as const) {
+  test(`#228 H2 慢拖（${lang}）：每 2px 停 200ms 跨 768 双向，运行中 / idle —— 每帧 = 同宽静态级、iw<768 无 3e`, async () => {
+    const testInfo = test.info()
+    test.setTimeout(300_000)
+    const { app, window, roErrors } = await boot(lang, { cu: true })
+    try {
+      const input = window.getByTestId("composer-input")
+      const step = async (w: number) => {
+        await window.setViewportSize({ width: w, height: 480 })
+      }
+      const level = () =>
+        window.evaluate(() => {
+          const r = document.querySelector('[data-testid="composer-footer-row"]')
+          return `${r?.getAttribute("data-footer-density") ?? "?"}${r?.getAttribute("data-footer-overflow") ?? ""}`
+        })
+      const HI = 780
+      const LO = 756
+      for (const mode of ["running", "idle"] as const) {
+        if (mode === "running") {
+          await expect(window.getByTestId("composer-send")).toHaveAttribute("aria-label", /^(Send|发送)$/, { timeout: 30_000 })
+          await sendComposer(window, input, HOLD)
+          await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+        }
+        for (const [a, b] of [
+          [HI, LO],
+          [LO, HI]
+        ] as const) {
+          const dir = Math.sign(b - a)
+          const widths: number[] = []
+          for (let x = a + dir * 2; dir > 0 ? x <= b : x >= b; x += dir * 2) widths.push(x)
+          // 静态梯（同方向、每步落定）
+          await step(a)
+          await settleSidebar(window)
+          const ladder = new Map<number, string>([[a, await level()]])
+          for (const x of widths) {
+            await step(x)
+            await settleSidebar(window)
+            ladder.set(x, await level())
+          }
+          // 慢拖
+          await step(a)
+          await settleSidebar(window)
+          expect(await level(), `${mode} ${a} 起点 = 静态`).toBe(ladder.get(a))
+          const stop = await recordFrames(window)
+          const ends: Array<[number, string]> = []
+          for (const x of widths) {
+            await step(x)
+            await window.waitForTimeout(200)
+            ends.push([x, await level()])
+          }
+          await settleSidebar(window)
+          const f = await stop()
+          const label = `H2-slow200-${mode}-${a}-${b}-${lang}`
+          const bad: string[] = []
+          let prevW = a
+          const allowedPrev = new Map<number, number>()
+          for (const x of widths) {
+            allowedPrev.set(x, prevW)
+            prevW = x
+          }
+          for (const x of f) {
+            const iw = x[4]
+            const ok = new Set([ladder.get(iw), ladder.get(allowedPrev.get(iw) ?? iw)])
+            if (!ok.has(x[0])) bad.push(`${x[0]}@${iw}`)
+            if (iw < 768 && x[0].startsWith("3e")) bad.push(`3e@${iw}`)
+          }
+          const endBad = ends.filter(([x, d]) => d !== ladder.get(x)).map(([x, d]) => `${d}@${x}≠${ladder.get(x)}`)
+          const line = JSON.stringify({ label, frames: f.length, ladder: Object.fromEntries(ladder), endBad, bad: bad.slice(0, 12), badN: bad.length, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
+          console.log(`[composer-733-oneline] ${line}`)
+          await testInfo.attach(label, { body: line, contentType: "application/json" })
+          if (mode === "running") expect(f.every((x) => x[3] === 1), `${label} 全程在跑 ${line}`).toBe(true)
+          expect(bad, `${label} 每帧 = 这一步 / 上一步的静态级，iw<768 无 3e ${line}`).toEqual([])
+          expect(endBad, `${label} 停够 200ms = 同宽静态级 ${line}`).toEqual([])
+          for (const x of f) {
+            expect(x[1], `${label} 每帧一行 ${line}`).toBeLessThanOrEqual(46)
+            expect(x[2] ?? 0, `${label} 发送钮底 ≤ ${SEND_MAX_733} ${line}`).toBeLessThanOrEqual(SEND_MAX_733 + 0.5)
+          }
+        }
+        if (mode === "running") {
+          await window.getByTestId("composer-stop").click()
+          await expect(window.getByTestId("composer-send")).toBeVisible({ timeout: 10_000 })
+          await settle(window)
         }
       }
       expect(roErrors, "no ResizeObserver loop").toEqual([])

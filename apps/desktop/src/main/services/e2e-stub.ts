@@ -305,6 +305,11 @@ export async function* createE2eStubStream(
     return
   }
   const body = `stub-ok ${prompt.slice(0, 48)}`.trim()
+  // 「slow hold」：每 400ms 吐一个词、永远不自己结束，直到 Stop（abort）——给「整段检查期间都在跑」的 e2e 用（#228 neo）。
+  if (/\bslow hold\b/i.test(prompt)) {
+    yield* emitHold(body, signal, 400)
+    return
+  }
   const slow = /\bslow\b/i.test(prompt)
   yield* emitText(body, signal, slow ? 400 : 0)
 }
@@ -356,6 +361,16 @@ async function* emitRawMarkdown(
   if (!signal.aborted) yield { type: "text-delta", text }
   yield { type: "text-end", id: "text" }
   yield { type: "finish", usage: { inputTokens: 4, outputTokens: 8, totalTokens: 12 } }
+}
+
+async function* emitHold(text: string, signal: AbortSignal, delayMs: number): AsyncGenerator<Record<string, unknown>> {
+  yield { type: "text-start", id: "text" }
+  yield { type: "text-delta", text: `${text} ` }
+  for (let i = 0; !signal.aborted; i += 1) {
+    await wait(delayMs)
+    if (signal.aborted) return
+    yield { type: "text-delta", text: `h${i} ` }
+  }
 }
 
 async function* emitText(

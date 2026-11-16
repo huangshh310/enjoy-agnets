@@ -30,7 +30,7 @@ import { ComputerUseChip } from "./computer-use-chip"
 import { PresetDesktopBiasPill } from "./preset-desktop-bias-pill"
 import { HostInjectBar } from "./host-inject/host-inject-bar"
 import { useI18n, type TranslateFn } from "@renderer/i18n"
-import { FOOTER_GE2_HIDDEN, FOOTER_LEFT_CLIP, footerOverflowItems } from "./footer-density"
+import { FOOTER_GE2_HIDDEN, FOOTER_LEFT_CLIP, FOOTER_LEFT_CLIP_FADE, footerOverflowItems } from "./footer-density"
 import { useFooterDensity } from "./use-footer-density"
 import { footerDotTone, useFooterOptionalChips, type FooterOptionalChips } from "./use-footer-optional-chips"
 import { hostInjectWarns } from "./host-inject/host-inject-view.ts"
@@ -150,14 +150,14 @@ export function ComposerFooter({
     >
       {/* 左组 shrink-0：宽恒为各项自然宽之和，flex 不再压扁任何一项（#228 jojo B1 / luna H1）；放不下由选级降级，溢出由裁切壳裁。
           裁切壳：只在 L≥1 横向裁切（L0 放得下、不裁，1440 合成层与现网一致）；纵向不裁，「已切换」浮签照常外溢 */}
-      <div className={cx("flex min-w-0 flex-1", FOOTER_LEFT_CLIP)}>
+      <div className={cx("flex min-w-0 flex-1", FOOTER_LEFT_CLIP, FOOTER_LEFT_CLIP_FADE)}>
       {/* 计量（session-meter）本身在表单容器 <36rem 时 display:none：放进一行底栏后，它会随宽度跨 576 出现 / 消失，
           左组自然宽跟着 ±26px，选级在侧栏动画里被它来回推（#228 luna H2）。底栏里改成窄时只隐身（visibility:hidden）、
           保留占位：≥36rem 与现网一模一样；<36rem 看起来仍不显示，但左组宽恒定，选级只随宽度单调变化。 */}
       <div
         ref={leftRef}
         data-testid="composer-footer-left"
-        className="flex w-max shrink-0 flex-nowrap items-center gap-1.5 [&_[data-testid=session-meter]]:inline-flex [&_[data-testid=session-meter]]:invisible @[36rem]:[&_[data-testid=session-meter]]:visible"
+        className="flex w-max shrink-0 flex-nowrap items-center gap-1.5 [&_[data-session-meter]]:inline-flex [&_[data-session-meter]]:invisible @[36rem]:[&_[data-session-meter]]:visible"
       >
         <ComposerAttachMenu onPickFiles={onPickFiles} />
         {onPreviewToggle && !moved.preview ? (
@@ -259,7 +259,7 @@ function FooterOverflowSection({
         </div>
       ) : null}
       {meter || library || preview ? (
-        <div className="flex flex-wrap items-center gap-1.5 [&_[data-testid=session-meter]]:inline-flex">
+        <div className="flex flex-wrap items-center gap-1.5 [&_[data-session-meter]]:inline-flex">
           {meter ? <SessionMeter /> : null}
           {library ? <ComposerPromptLibraryButton /> : null}
           {preview && onPreviewToggle ? (

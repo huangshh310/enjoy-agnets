@@ -8,11 +8,11 @@ import { useT } from "@renderer/i18n"
 import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { AppModuleId } from "../app-shell.types"
-import { NAV_CARD_COLLAPSED_PX, NAV_CARD_EXPANDED_PX, NARROW_SIDEBAR_PX } from "../constants"
+import { NAV_CARD_COLLAPSED_PX, NAV_CARD_EXPANDED_PX } from "../constants"
 import { ActivityBar } from "./activity-bar"
 import { ContextColumn } from "./context-column"
 import { createOverlayNavWatcher, overlayClickClosesAfterSelect, overlayKeyAction } from "./nav-overlay-keys"
-import { sidebarOverlay } from "./sidebar-collapse-state"
+import { narrowSidebarWindow, sidebarOverlay } from "./sidebar-collapse-state"
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -40,7 +40,7 @@ export function NavCard({
 
   useEffect(() => {
     // 窄窗（< NARROW_SIDEBAR_PX）本次运行自动收起，不写偏好；回到宽窗恢复偏好（luna 5042 / leo #151）。
-    const check = () => setNarrow(window.innerWidth < NARROW_SIDEBAR_PX)
+    const check = () => setNarrow(narrowSidebarWindow(window.innerWidth))
     check()
     window.addEventListener("resize", check)
     return () => window.removeEventListener("resize", check)
@@ -118,6 +118,7 @@ export function NavCard({
       ref={asideRef}
       onClick={overlay ? handleOverlayClick : undefined}
       data-testid="nav-card"
+      data-nav-card=""
       data-collapsed={collapsed ? "true" : "false"}
       data-overlay={overlay ? "true" : "false"}
       role={overlay ? "dialog" : undefined}

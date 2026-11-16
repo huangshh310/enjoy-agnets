@@ -1,7 +1,7 @@
 /**
  * 底栏选级 hook：RO 只看 row / leftInner / right 三个节点；回调先读完再判，最多写一次。
  * 宽度缓存只放 ref，不进 store。contentKey 一变，所有级缓存全清（C1）。
- * #228 H2：另读停靠侧栏（nav-card）的现宽 / 目标宽（MutationObserver 只看它的 style / data-collapsed / data-overlay），
+ * #228 H2：另读停靠侧栏（[data-nav-card]）现在占主区多宽，并按侧栏自己的自动收起判断推它落定后的宽（footerSidebarIntent，订阅 store 的侧栏状态），
  * 侧栏收展动画期间与跨窄窗断点拖窗时级别只单向走（footerResizeGate / footerTargetInner），终态仍按同宽静态选级。
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
@@ -10,9 +10,8 @@ import {
   FOOTER_MAX_STEPS,
   FOOTER_SUBPIXEL_PX,
   footerDecide,
-  FOOTER_AUTO_COLLAPSE_WAIT_MS,
   footerDensityOf,
-  footerNearAutoCollapse,
+  footerSidebarIntent,
   footerResizeGate,
   footerOverflowOf,
   footerSidebarShift,
@@ -21,22 +20,18 @@ import {
   type FooterDecideState,
   type FooterStep
 } from "./footer-density"
-import { NARROW_SIDEBAR_PX } from "../../app-shell/constants"
+import { NAV_CARD_COLLAPSED_PX, NAV_CARD_EXPANDED_PX } from "../../app-shell/constants"
+import { useChatStore } from "@renderer/stores/chat-store"
 
 type RowStyle = { padL: number; padR: number; gapX: number }
 
-/** 停靠侧栏（app-shell nav-card）：现宽与目标宽（inline style width）。只读，不改它。 */
-const NAV_CARD_SELECTOR = '[data-testid="nav-card"]'
-function readNavCard(): { current: number; target: number; overlay: boolean; collapsed: boolean } | null {
+/** 停靠侧栏（app-shell nav-card）：现在占主区多宽（浮层只占轨道宽的槽）。只读，不改它。 */
+const NAV_CARD_SELECTOR = "[data-nav-card]"
+function readNavCardMain(): number | null {
   if (typeof document === "undefined") return null
   const nav = document.querySelector<HTMLElement>(NAV_CARD_SELECTOR)
   if (!nav) return null
-  return {
-    current: nav.getBoundingClientRect().width,
-    target: parseFloat(nav.style.width),
-    overlay: nav.getAttribute("data-overlay") === "true",
-    collapsed: nav.getAttribute("data-collapsed") === "true"
-  }
+  return nav.getAttribute("data-overlay") === "true" ? NAV_CARD_COLLAPSED_PX : nav.getBoundingClientRect().width
 }
 
 export function useFooterDensity({
@@ -64,9 +59,6 @@ export function useFooterDensity({
   const lastShift = useRef(0)
   /** 最近一次读到的「当前级整行所需宽 − 行内宽」。 */
   const lastOverflow = useRef(0)
-  /** 最近一次读到的窗宽 / 是否在自动收起断点上方那一小段里变窄（footerNearAutoCollapse）。 */
-  const lastWindowW = useRef<number | null>(null)
-  const lastNear = useRef(false)
   /** 读相 + 判定；返回下一级（不写）。 */
   const decide = useCallback((): FooterStep | null => {
     const row = rowRef.current
@@ -88,28 +80,30 @@ export function useFooterDensity({
     }
     const leftW = left.getBoundingClientRect().width
     const rightW = right.getBoundingClientRect().width
-    const navCard = readNavCard()
-    const shift = footerSidebarShift(navCard)
+    const navMain = readNavCardMain()
+    // 侧栏落定后占主区多宽：按侧栏自己的自动收起判断（narrowSidebarWindow / onSidebarWidth）推，不等它的 React 渲染 / 动画开始。
     const windowW = typeof window !== "undefined" ? window.innerWidth : NaN
-    lastNear.current = footerNearAutoCollapse({
-      docked: Boolean(navCard && !navCard.overlay && !navCard.collapsed),
+    const intent = footerSidebarIntent({
+      state: useChatStore.getState().sidebarCollapseState,
       windowW,
-      lastWindowW: lastWindowW.current,
-      narrowPx: NARROW_SIDEBAR_PX
+      expandedPx: NAV_CARD_EXPANDED_PX,
+      collapsedPx: NAV_CARD_COLLAPSED_PX
     })
-    lastWindowW.current = windowW
+    const shift = navMain == null ? 0 : footerSidebarShift({ current: navMain, target: intent.target, overlay: false })
     if (clientWidth <= 0) return null
     // —— 计算 ——
     const { padL, padR, gapX } = rowStyle.current.style
     lastInner.current = clientWidth - padL - padR
     lastShift.current = shift
     lastOverflow.current = leftW + gapX + rightW - (clientWidth - padL - padR)
+    // 显示层：左组此刻被裁就挂 data-footer-clipped（尾部渐隐，FOOTER_LEFT_CLIP_FADE）；只是属性，不影响布局 / 选级
+    row.toggleAttribute("data-footer-clipped", lastOverflow.current > FOOTER_SUBPIXEL_PX)
     const st = state.current
     const before = st.stepsUsed
     const next = footerDecide(st, {
       cur: stepRef.current,
-      // 侧栏正把聊天区挤窄：按落定后的宽度选级（见 footerTargetInner）。
-      rowInner: footerTargetInner(clientWidth - padL - padR, shift),
+      // 侧栏正在收展 / 目标态已变：按落定后的宽度选级（见 footerTargetInner）。
+      rowInner: footerTargetInner(clientWidth - padL - padR, shift, intent.ahead),
       gapX,
       left: leftW,
       right: rightW
@@ -158,31 +152,22 @@ export function useFooterDensity({
     // 由尾随复核（最后一下 RO 之后两帧）按落定的宽度再判一次。被闸住的那一两帧左组只被裁切壳裁，不折行、右组不动。
     let lastRoAt = -Infinity
     let tail = 0
-    let tailTimer: ReturnType<typeof setTimeout> | undefined
     const schedTail = () => {
       if (tail) cancelAnimationFrame(tail)
-      tail = 0
-      if (tailTimer !== undefined) clearTimeout(tailTimer)
-      tailTimer = undefined
-      const run = () => {
+      tail = requestAnimationFrame(() => {
         tail = requestAnimationFrame(() => {
-          tail = requestAnimationFrame(() => {
-            tail = 0
-            state.current.stepsUsed = 0
-            const prevInner = lastInner.current
-            const cur = stepRef.current
-            const next = decide()
-            if (!next) return
-            // 宽度还在变（窗口这一帧又动了，侧栏收展可能还没开始）：交给随后的 RO；侧栏正把聊天区推宽：只升不降。
-            if (prevInner != null && Math.abs((lastInner.current ?? 0) - prevInner) > FOOTER_SUBPIXEL_PX) return
-            if (lastShift.current > 0 && footerStepIndex(next) > footerStepIndex(cur)) return
-            commit(next, false)
-          })
+          tail = 0
+          state.current.stepsUsed = 0
+          const prevInner = lastInner.current
+          const cur = stepRef.current
+          const next = decide()
+          if (!next) return
+          // 宽度还在变（窗口这一帧又动了，侧栏收展可能还没开始）：交给随后的 RO；侧栏正把聊天区推宽 / 即将收起：只升不降。
+          if (prevInner != null && Math.abs((lastInner.current ?? 0) - prevInner) > FOOTER_SUBPIXEL_PX) return
+          if (lastShift.current > 0 && footerStepIndex(next) > footerStepIndex(cur)) return
+          commit(next, false)
         })
-      }
-      // 断点上方那一小段还在变窄：多等一会儿，拖过断点就交给侧栏收起（单向升级），停在这儿再按同宽静态落级。
-      if (lastNear.current) tailTimer = setTimeout(run, FOOTER_AUTO_COLLAPSE_WAIT_MS)
-      else run()
+      })
     }
     const ro = new ResizeObserver(() => {
       const now = performance.now()
@@ -201,33 +186,28 @@ export function useFooterDensity({
         lastInner: prevInner,
         sinceLastMs,
         shift: lastShift.current,
-        overflow: lastOverflow.current,
-        nearAutoCollapse: lastNear.current
+        overflow: lastOverflow.current
       })
       if (gate === "commit") commit(next, true)
     })
     ro.observe(row)
     ro.observe(left)
     ro.observe(right)
-    // 侧栏目标宽一变（点开关 / 跨窄窗断点自动收展）就按新目标判一次：要挤窄时动画第一帧前就落到终态级，左组不越出裁切壳。
-    const nav = typeof document !== "undefined" ? document.querySelector(NAV_CARD_SELECTOR) : null
-    const mo =
-      nav && typeof MutationObserver !== "undefined"
-        ? new MutationObserver(() => {
-            const cur = stepRef.current
-            state.current.stepsUsed = 0
-            const next = decide()
-            schedTail()
-            if (!next) return
-            if (lastShift.current < 0 || footerStepIndex(next) < footerStepIndex(cur)) commit(next, true)
-          })
-        : null
-    if (mo && nav) mo.observe(nav, { attributes: true, attributeFilter: ["style", "data-collapsed", "data-overlay"] })
+    // 侧栏状态一变（点开关 / 跨窄窗断点自动收展，store 里先变、DOM 后变）就按新目标判一次：
+    // 要挤窄时动画第一帧前就落到终态级，左组不越出裁切壳。订阅 store 而不是盯 DOM 节点（浮层切换会换父节点重挂，leo S5）。
+    const unsub = useChatStore.subscribe((s, prev) => {
+      if (s.sidebarCollapseState === prev.sidebarCollapseState) return
+      const cur = stepRef.current
+      state.current.stepsUsed = 0
+      const next = decide()
+      schedTail()
+      if (!next) return
+      if (lastShift.current < 0 || footerStepIndex(next) < footerStepIndex(cur)) commit(next, true)
+    })
     return () => {
       ro.disconnect()
-      mo?.disconnect()
+      unsub()
       if (tail) cancelAnimationFrame(tail)
-      if (tailTimer !== undefined) clearTimeout(tailTimer)
     }
   }, [rowRef, leftRef, rightRef, decide, commit])
 
