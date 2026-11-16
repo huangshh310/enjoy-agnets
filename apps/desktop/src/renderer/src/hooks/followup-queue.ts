@@ -31,6 +31,11 @@ let persistEnabled = true
  */
 export type FollowupPausedReason = "stopped" | "engineSwitched" | "held" | "error" | "quota" | "midTurn"
 const paused = new Map<string, FollowupPausedReason>()
+/**
+ * E1 ⑨（jojo，只改显示层）：held 是从哪种用户暂停转来的。只给说明行选句子用，
+ * 不参与暂停 / 解除的时机与条件（#163 / #169 原样）。
+ */
+const heldFrom = new Map<string, "stopped" | "engineSwitched">()
 /** 暂停之后这个会话开跑过新的一轮（run.start）。被停的那一轮迟到的 run.end 不算（luna P3：只有之后真发过一轮才改说 held）。 */
 const startedSincePause = new Set<string>()
 let hint: RuntimeHintCode = null
@@ -60,6 +65,7 @@ export function hydrateFollowupQueueFromMain(): void {
   const snap = loadFollowupQueueSnapshot()
   items = snap.items.map((item) => ({ ...item, status: item.status === "elevated_to_steer" ? "elevated_to_steer" : "pending" }))
   paused.clear()
+  heldFrom.clear()
   for (const [sessionId, reason] of Object.entries(snap.paused)) {
     paused.set(sessionId, reason)
   }
@@ -81,6 +87,7 @@ export function setFollowupPersistEnabledForTest(enabled: boolean): void {
 export function resetFollowupHydrationForTest(): void {
   items = []
   paused.clear()
+  heldFrom.clear()
   startedSincePause.clear()
   hint = null
   hintSessionId = null
@@ -114,6 +121,7 @@ export function pauseFollowups(sessionId: string | null | undefined, reason: Fol
   // 换助手时先记 engineSwitched，随后被停那一轮的「用户停止」run.error 回来：不改回普通「停止」。
   if (current === "engineSwitched" && reason === "stopped") return true
   paused.set(sessionId, reason)
+  heldFrom.delete(sessionId)
   startedSincePause.delete(sessionId)
   notify()
   return true
@@ -127,6 +135,7 @@ export function settleNeutralPause(sessionId: string | null | undefined): void {
   if (current !== "stopped" && current !== "engineSwitched") return
   if (!startedSincePause.has(sessionId)) return
   paused.set(sessionId, "held")
+  heldFrom.set(sessionId, current)
   notify()
 }
 
@@ -141,14 +150,23 @@ export function resumeFollowups(sessionId: string | null | undefined): void {
   ensureHydrated()
   if (!sessionId || !paused.has(sessionId)) return
   paused.delete(sessionId)
+  heldFrom.delete(sessionId)
   startedSincePause.delete(sessionId)
   notify()
+}
+
+/** E1 ⑨：held 由哪种用户暂停转来（只供显示）；不是 held 返回 null。 */
+export function followupHeldFrom(sessionId: string | null | undefined): "stopped" | "engineSwitched" | null {
+  ensureHydrated()
+  if (!sessionId || paused.get(sessionId) !== "held") return null
+  return heldFrom.get(sessionId) ?? null
 }
 
 /** 测试用。 */
 export function resetFollowupsForTest(): void {
   items = []
   paused.clear()
+  heldFrom.clear()
   startedSincePause.clear()
   hint = null
   hintSessionId = null

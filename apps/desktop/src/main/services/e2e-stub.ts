@@ -22,7 +22,7 @@
  * 走真实 classify / persist，闸同 seed（stub + 未打包 + 隔离 userData）。
  */
 import type { ModelMessage } from "ai"
-import { e2eStubPackaged, isE2eStub } from "./e2e-stub-gate.ts"
+import { e2eStubPackaged, effectiveToolTimeoutMs, isE2eStub } from "./e2e-stub-gate.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 import {
   isVerySlowPrompt,
@@ -69,6 +69,16 @@ export {
   writeStubApprovedFile
 } from "./e2e-stub-write.ts"
 import { e2eSendFixture, e2eSendFixtureDelayMs, e2eSendFixtureError } from "./e2e-send-fixture.ts"
+import { tmpdir } from "node:os"
+import { runExecutableTree, setTreeLivenessOverride, clearTreeLivenessOverride } from "./command.ts"
+import {
+  begin as beginSideEffect,
+  markBlocked,
+  onRekill,
+  settle as settleSideEffect,
+  settleOrBlock,
+  spawned as spawnedSideEffect
+} from "./run-side-effects.ts"
 
 function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -93,6 +103,8 @@ export type E2eStubStreamOpts = {
   env?: NodeJS.ProcessEnv
   /** 测试注入：隔离 userData 路径。 */
   userData?: string
+  /** 本轮 runId，给慢工具 / STUCK 夹具登记账本。 */
+  runId?: string
 }
 
 export { isE2eStub, setE2eStubPackagedForTest } from "./e2e-stub-gate.ts"
@@ -237,8 +249,25 @@ export async function* createE2eStubStream(
   }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
-    if (process.env.ENJOY_E2E_SLOW_TOOL === "1") await wait(8_000)
-    await writeStubApprovedFile()
+    if (process.env.ENJOY_E2E_STUCK_TOOL === "1") {
+      await runStuckToolFixture(opts?.runId, toolCallId, signal)
+      return
+    }
+    if (process.env.ENJOY_E2E_SLOW_TOOL === "1") {
+      const entry = opts?.runId
+        ? beginSideEffect("stub_write", { runId: opts.runId, toolCallId })
+        : undefined
+      await abortableDelay(8_000, signal)
+      if (signal.aborted) {
+        if (entry) markBlocked(entry.id)
+        return
+      }
+      const written = await writeStubApprovedFile(undefined, { signal })
+      if (entry) settleSideEffect(entry.id, written ? "ok" : "error")
+    } else {
+      await writeStubApprovedFile(undefined, { signal })
+    }
+    if (signal.aborted) return
     yield stubApprovedWriteResult(toolCallId)
     if (isWriteSlowNotePrompt(prompt)) {
       yield* emitText(STUB_VERY_SLOW_WORDS.join(" "), signal, verySlowDelayMs())
@@ -392,4 +421,60 @@ function pushAttachedNames(text: string, names: string[]) {
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+
+/**
+ * ENJOY_E2E_STUCK_TOOL：从最底层把探活钉成仍存活，走与真实进程同一套
+ * 探活 / rekill / 最迟上限代码。rekill 后取消覆盖，下一轮探活见到死亡即落定。
+ * 不写盘。只在 isE2eStub() 下生效。
+ */
+async function runStuckToolFixture(
+  runId: string | undefined,
+  toolCallId: string,
+  signal: AbortSignal
+): Promise<void> {
+  if (!isE2eStub()) return
+  const entry = runId
+    ? beginSideEffect("bash", {
+        runId,
+        toolCallId,
+        toolTimeoutMs: effectiveToolTimeoutMs(30_000)
+      })
+    : undefined
+  let pid: number | undefined
+  const clearOverride = () => {
+    if (typeof pid === "number") clearTreeLivenessOverride(pid)
+  }
+  const off = runId
+    ? onRekill(runId, () => {
+        clearOverride()
+      })
+    : () => undefined
+  try {
+    const result = await runExecutableTree(tmpdir(), process.execPath, ["-e", "setTimeout(() => {}, 120000)"], {
+      signal,
+      timeoutMs: 120_000,
+      // Electron 主进程里 execPath 是 electron 本体：不带 ELECTRON_RUN_AS_NODE 会把 -e 当 app 路径，约 0.2s 就退出。
+      extraEnv: { ELECTRON_RUN_AS_NODE: "1" },
+      onSpawn: (spawnedPid) => {
+        pid = spawnedPid
+        setTreeLivenessOverride(spawnedPid, true)
+        if (entry) spawnedSideEffect(entry.id, spawnedPid)
+      }
+    })
+    if (entry) {
+      const outcome =
+        result.processExit === "exited" || result.processExit === "killed" || result.processExit === "unconfirmed"
+          ? result.processExit
+          : "exited"
+      settleSideEffect(entry.id, outcome)
+    }
+  } catch (error) {
+    if (entry) settleOrBlock(entry.id, "error")
+    throw error
+  } finally {
+    off()
+    clearOverride()
+  }
 }

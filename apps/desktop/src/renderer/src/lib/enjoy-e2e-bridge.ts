@@ -56,6 +56,8 @@ export type EnjoyE2eBridge = {
   }
   injectSheetChip: (chip: TurnSourceChip) => void
   injectThisTurnWrite: (path: string) => void
+  /** E1 C1b 自门：给最后一条助手消息挂一份未完成的 Todo（逼出 Todo Dock「继续」，不经 IPC）。 */
+  injectTodoList?: (titles: string[]) => void
   addQuotedFileChip: (title?: string) => void
   openArchiveGuard: () => void
   setReviewChrome: (input: {
@@ -174,6 +176,27 @@ export function createEnjoyE2eBridge(): EnjoyE2eBridge {
               name: "write_file",
               state: "output-available",
               args: { path }
+            }
+          ]
+        }
+      ])
+    },
+    injectTodoList(titles) {
+      const store = useChatStore.getState()
+      const messages = store.messages
+      const last = messages.at(-1)
+      if (!last || last.role !== "assistant") return
+      store.setMessages([
+        ...messages.slice(0, -1),
+        {
+          ...last,
+          tools: [
+            ...(last.tools ?? []),
+            {
+              id: "e2e-todo",
+              name: "todo_write",
+              state: "output-available",
+              args: { todos: titles.map((title, index) => ({ title, status: index === 0 ? "completed" : "pending" })) }
             }
           ]
         }

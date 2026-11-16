@@ -24,3 +24,11 @@ test("有草稿只出发送，空草稿运行中只出 Stop，二者不同时出
   assert.equal(composerActionSlot(false, true), "send")
   assert.equal(composerActionSlot(false, false), "none")
 })
+
+test("E1 M3：运行中有草稿 → 停止与排队并排；运行中空草稿只出停止；空闲不出停止", async () => {
+  const { composerActionButtons } = await import("./composer-submit-intent.ts")
+  assert.deepEqual(composerActionButtons(true, true), { stop: true, send: "queue", paired: true })
+  assert.deepEqual(composerActionButtons(true, false), { stop: true, send: "none", paired: false })
+  assert.deepEqual(composerActionButtons(false, true), { stop: false, send: "send", paired: false })
+  assert.deepEqual(composerActionButtons(false, false), { stop: false, send: "none", paired: false })
+})

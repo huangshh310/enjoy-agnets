@@ -10,6 +10,7 @@ import { focusComposerEnd } from "./composer-focus"
 import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
 import { setQuotedContexts, takeQuotedContexts } from "./quoted-context"
 import { sendComposerMessage } from "./send-composer"
+import { isStopLocked } from "../stores/stop-settle"
 
 export { resolveActionChipIntent }
 
@@ -27,6 +28,8 @@ export function applyActionChip(chip: ActionChip) {
   const intent = resolveActionChipIntent(store.running, chip.actionType)
   const quotes = chip.referencedContext ?? []
   if (intent === "send") {
+    // leo C1：收尾没落定不发，引用 Chip 不取走。
+    if (isStopLocked(store.sessionId)) return
     const pending = takeQuotedContexts()
     void sendComposerMessage({ content: composeChipSendPrompt(pending, quotes, chip.prompt) })
     return

@@ -192,10 +192,15 @@ test("起步窗口（runId 还没认领）里停止：随后冒出的开跑 + �
   assert.equal(useChatStore.getState().running, false)
 })
 
-test("停止后（卡迟到）「从这里重来」不被 running 挡住", async () => {
+test("停止后（卡迟到）「从这里重来」：落定前被停止锁挡住，落定后不被 running 挡住", async () => {
   const { sessionId, runId } = running("rewind")
   await abortComposerRun()
   dispatchAgentEvent(approval(runId, sessionId))
+  // E1 C1b：还没落定（停止锁在）时「从这里重来」按忙处理，免得截掉正在收尾的那一轮
+  const locked = await rewindFromUserTurn({ userMessageId: "u1", restoreFiles: false })
+  assert.equal((locked as { code?: string }).code, "REWIND_BUSY", "落定前被停止锁挡住")
+  // 落定后：迟到的卡不能再用 running 挡住它
+  dispatchAgentEvent({ type: "run.stopped", runId, sessionId, phase: "final", receipt: { write: "none", tools: [] } } as never)
   const result = await rewindFromUserTurn({ userMessageId: "u1", restoreFiles: false })
   assert.notEqual((result as { code?: string }).code, "REWIND_BUSY")
 })

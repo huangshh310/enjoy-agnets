@@ -14,9 +14,10 @@ export function createCodeModeTool(host: AgentWorkspaceHost) {
       source: z.string(),
       command: z.string()
     }),
-    execute: async ({ path, source, command }, options: { toolCallId?: string }) => {
-      await host.writeFile(path, source)
-      const result = await host.bash(command)
+    execute: async ({ path, source, command }, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
+      const base = { signal: options?.abortSignal, toolCallId: options?.toolCallId }
+      await host.writeFile(path, source, { ...base, op: "code_mode_script" })
+      const result = await host.bash(command, base)
       const model = modelCommandText(options?.toolCallId, result.stdout, result.stderr)
       return { path, exitCode: result.exitCode, stdout: model.stdout, stderr: model.stderr }
     }

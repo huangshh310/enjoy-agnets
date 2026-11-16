@@ -16,8 +16,12 @@ export function createGitWriteTools(host: AgentWorkspaceHost) {
         message: z.string(),
         stageAll: z.boolean().optional()
       }),
-      execute: async ({ message, stageAll }) => {
-        const result = await host.gitCommit(message, { stageAll: stageAll === true })
+      execute: async ({ message, stageAll }, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
+        const result = await host.gitCommit(message, {
+          stageAll: stageAll === true,
+          signal: options?.abortSignal,
+          toolCallId: options?.toolCallId
+        })
         return { result: clipToolText(result, CLIP_COMMAND_CHARS) }
       }
     }),
@@ -27,9 +31,12 @@ export function createGitWriteTools(host: AgentWorkspaceHost) {
         name: z.string(),
         checkout: z.boolean().optional()
       }),
-      execute: async ({ name, checkout }) => {
+      execute: async ({ name, checkout }, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
         if (!host.gitBranch) throw new Error("git_branch is not available.")
-        const result = await host.gitBranch(name, checkout === true)
+        const result = await host.gitBranch(name, checkout === true, {
+          signal: options?.abortSignal,
+          toolCallId: options?.toolCallId
+        })
         return { result: clipToolText(result, CLIP_COMMAND_CHARS) }
       }
     }),
@@ -37,8 +44,13 @@ export function createGitWriteTools(host: AgentWorkspaceHost) {
       description:
         "Push the current branch to its upstream. Requires user approval. Fails if there is no upstream.",
       inputSchema: z.object({}),
-      execute: async () => {
-        return { result: clipToolText(await host.gitPush(), CLIP_COMMAND_CHARS) }
+      execute: async (_args, options?: { toolCallId?: string; abortSignal?: AbortSignal }) => {
+        return {
+          result: clipToolText(
+            await host.gitPush({ signal: options?.abortSignal, toolCallId: options?.toolCallId }),
+            CLIP_COMMAND_CHARS
+          )
+        }
       }
     })
   }

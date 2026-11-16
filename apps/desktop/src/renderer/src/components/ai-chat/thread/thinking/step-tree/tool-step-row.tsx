@@ -15,10 +15,12 @@ import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
 import { sameReviewPath } from "@renderer/components/ai-chat/right-pane/views/review/same-review-path"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useToolStopView } from "@renderer/stores/stop-settle"
 import { useT } from "@renderer/i18n"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { DomainPills } from "./domain-pills"
 import { formatDisplayPath } from "./format-display-path"
+import { stoppedToolTitle } from "./tool-human-copy"
 import { ExploredPagesBranch } from "./explored-pages-branch"
 import { QuoteStepButton } from "@renderer/components/ai-chat/composer/runtime-interact/quote-step-button"
 
@@ -69,18 +71,23 @@ function StepTitleRow({
   onToggle: () => void
 }) {
   const t = useT()
+  const stopView = useToolStopView(node.id)
+  const stoppedTitle =
+    node.status === "stopped" ? stoppedToolTitle(stopView, node.kind === "editing", t) : null
   return (
     <div
       onClick={onToggle}
       className={cx("group flex w-fit items-center gap-2 text-caption-1-medium", hasDetail && "cursor-pointer")}
     >
-      {(node.kind === "editing" || node.kind === "reading") && node.fileName ? (
+      {stoppedTitle ? (
+        <StoppedTitle node={node} title={stoppedTitle} view={stopView} />
+      ) : (node.kind === "editing" || node.kind === "reading") && node.fileName ? (
         <FileTitle node={node} />
       ) : (
         <span className="font-semibold text-text-primary group-hover:text-accent-500">{node.title}</span>
       )}
       {node.status === "running" ? <RiLoader4Line className="size-3 animate-spin text-accent-500" /> : null}
-      {node.status === "stopped" ? (
+      {node.status === "stopped" && !stoppedTitle ? (
         <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-tertiary">
           <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
             <RiCloseLine className="size-2.5 text-text-tertiary" />
@@ -125,6 +132,21 @@ function StepTitleRow({
       ) : null}
       <QuoteStepButton node={node} />
     </div>
+  )
+}
+
+/**
+ * E1 M2 / luna ⑥：标题只写状态，对象（文件名，或命令摘要）弱化跟在后面，例如「已停止 · 没有写入  e2e-stub.txt」。
+ * 收尾中带转圈；不出「写了 / 完成」类字样。
+ */
+function StoppedTitle({ node, title, view }: { node: AgentStepNode; title: string; view: string | null }) {
+  const object = node.kind === "editing" || node.kind === "reading" ? node.fileName || node.filePath : node.title
+  return (
+    <span data-testid="tool-stop-title" data-stop-view={view ?? "stopped"} className="inline-flex min-w-0 items-center gap-1.5">
+      <span className={cx("font-semibold", view === "stuck" ? "text-status-yellow-text" : "text-text-primary")}>{title}</span>
+      {object ? <span className="truncate font-normal text-text-tertiary">{object}</span> : null}
+      {view === "stopping" ? <RiLoader4Line className="size-3 animate-spin text-text-tertiary" aria-hidden /> : null}
+    </span>
   )
 }
 

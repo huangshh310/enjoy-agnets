@@ -63,6 +63,16 @@ export const zhChat = {
   sessionReviewWaiting: "等你确认",
   runStopped: "已停止",
   toolStopped: "已停止",
+  /** E1 M2：停止收尾（luna 设计 §1.1–§1.3.1）。 */
+  stopStopping: "正在停下…",
+  stopStuck: "没能停下",
+  stopStuckHint: "手头的工作可能还在进行。可以再试一次，或等它自己结束。",
+  stopAgain: "再停一次",
+  stopStuckHeader: "没停干净",
+  placeholderStopping: "正在停下，稍等…",
+  placeholderStuck: "可以先写下一句，停干净后再发送",
+  toolStoppedNothingWritten: "已停止 · 没有写入",
+  toolStoppedMaybePartial: "已停止 · 可能只做了一半",
   stackedTasksProgress: "{done}/{total} 项已完成",
   environmentTitle: "环境",
   environmentToggle: "环境",
@@ -81,6 +91,8 @@ export const zhChat = {
   placeholder: "描述要做的改动，或直接提问…",
   placeholderRunning: "任务进行中。Enter 排队，{mod}+Enter 马上发给它…",
   placeholderRunningPaused: "排队已暂停：Enter 先排着，点「继续」才发；{mod}+Enter 马上发给它…",
+  /** E1 M3：运行中占位句尾的 Esc 提示（只在有一轮在跑时接上）。 */
+  placeholderEscStop: "，Esc 停止。",
   quoteStep: "引用此步骤",
   runtimeQueue: "排队，完成后执行",
   runtimeSteer: "马上发给它（{mod}+Enter）",
@@ -215,6 +227,8 @@ export const zhChat = {
   voice: "语音（实验性）",
   noRealtime: "当前模型未声明 Realtime 能力。",
   stop: "停止",
+  /** E1 M3：停止钮 aria / title（有草稿与排队并排时；空草稿只作 title）。 */
+  stopRunEsc: "停止这一轮（Esc）",
   fastMode: "快速",
   fastModeHint: "优先更快出结果。",
   fastModeOnHint: "快速已开：优先低延迟。",
@@ -829,6 +843,8 @@ export const zhChat = {
   editHint: "Ctrl/Cmd+Enter 发送 · Esc 取消",
   saveResend: "保存并重新发送",
   editMessage: "编辑消息",
+  /** luna C1b：收尾没落定时，重新生成 / 编辑重发 / 重试 / Todo 继续置灰的说明。 */
+  stopLockedTryLater: "停干净后再试",
   goodResponse: "觉得有帮助",
   badResponse: "觉得不准确",
   extracting: "正在提取…",

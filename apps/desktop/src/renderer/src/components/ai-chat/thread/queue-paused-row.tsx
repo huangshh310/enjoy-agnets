@@ -11,7 +11,7 @@
 import { useEffect, useSyncExternalStore } from "react"
 import { RiPauseCircleLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import type { FollowupPausedReason } from "@renderer/hooks/followup-queue"
+import { followupHeldFrom, type FollowupPausedReason } from "@renderer/hooks/followup-queue"
 import { useComposerHasDraft } from "@renderer/hooks/runtime-interact/use-composer-has-draft"
 import { useRetryKeptDraftAvailable } from "@renderer/hooks/retry-kept-draft"
 import { useT } from "@renderer/i18n"
@@ -66,7 +66,8 @@ export function QueuePausedRow({ reason, count }: { reason: FollowupPausedReason
       failureCardRetryShowing: retryAvailable && failureCardOffersRetry(error)
     }),
     provider,
-    t
+    t,
+    heldFrom: reason === "held" ? followupHeldFrom(sessionId) : null
   })
   return (
     // 窄（行宽 < 35rem，如 768 带侧栏、英文出错句）：原因换窄句（不说条数），放不下时按钮折到第二行靠右，原因最多 2 行，全文在 title 里。

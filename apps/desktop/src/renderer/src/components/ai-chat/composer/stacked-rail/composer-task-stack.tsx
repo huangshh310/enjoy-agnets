@@ -13,6 +13,9 @@ import { dockHonestyCounts } from "@/components/ai-elements/task-list-honesty"
 import type { TaskStatus } from "@/components/ai-elements/task-list.types"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useStopLocked } from "@renderer/stores/stop-settle"
+import { cx } from "@/utils/cx"
+import { STOP_LOCKED_CLASS, StopLockedTooltip } from "../../thread/stop-locked-tooltip"
 import { useT } from "@renderer/i18n"
 import { latestSessionTodoList } from "../../thread/tool-surfaces/select-turn-tool-surfaces"
 import { ComposerStackedRow, stackedActionClass } from "./composer-stacked-row"
@@ -25,6 +28,8 @@ export function ComposerTaskStack() {
   const t = useT()
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
+  // luna C1b：停止后这里正好显示「已停止＋继续」——收尾没落定时「继续」可见但置灰，悬停说「停干净后再试」；continueTodoTurn 入口再挡一层。
+  const stopLocked = useStopLocked(useChatStore((state) => state.sessionId))
   const todos = latestSessionTodoList(messages)
   const [open, setOpen] = useState(false)
   if (!todos || todos.tasks.length === 0) return null
@@ -49,13 +54,20 @@ export function ComposerTaskStack() {
         onToggle={() => setOpen((next) => !next)}
         actions={
           !running && !allDone ? (
-            <button
-              type="button"
-              className={stackedActionClass("h-6 w-auto px-2")}
-              onClick={() => void continueTodoTurn()}
-            >
-              {t("chat.continueTodos")}
-            </button>
+            <StopLockedTooltip locked={stopLocked} hint={t("chat.stopLockedTryLater")}>
+              <button
+                type="button"
+                data-testid="todo-continue"
+                aria-disabled={stopLocked || undefined}
+                data-stop-locked={stopLocked || undefined}
+                className={cx(stackedActionClass("h-6 w-auto px-2"), stopLocked && STOP_LOCKED_CLASS)}
+                onClick={() => {
+                  if (!stopLocked) void continueTodoTurn()
+                }}
+              >
+                {t("chat.continueTodos")}
+              </button>
+            </StopLockedTooltip>
           ) : null
         }
       >

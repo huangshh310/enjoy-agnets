@@ -6,6 +6,7 @@ import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { composerSendReady } from "@renderer/hooks/runtime-interact/send-composer-guard"
+import { composerActionButtons } from "@renderer/hooks/composer-submit-intent"
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -77,6 +78,8 @@ export function ComposerFooter({
   const chrome = composerChromeFor(runtimeId)
   const sendReady = composerSendReady({ runtimeId, hasKey, modelId, workspaceKind, remoteStatus })
   const showVoice = chrome.voice && canRealtime
+  // E1 M3（luna §1.4 733 让位）：停止 + 排队并排时收起过程 chip（顶部已有「执行中」），不折行、不抬高 form。
+  const showRunChip = running && !composerActionButtons(running, hasDraft).paired
   return (
     <div className="flex min-w-0 flex-col">
     {workspaceKind === "ssh" ? (
@@ -131,7 +134,7 @@ export function ComposerFooter({
             <RiMicLine className="size-4.5" aria-hidden />
           </button>
         ) : null}
-        {running ? (
+        {showRunChip ? (
           <span className="flex max-w-[140px] items-center gap-1.5 truncate px-2 font-mono text-caption-2-medium text-accent-500 select-none">
             <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
             <span className="truncate">{displayThinkingLabel(thinkingLabel, t)}</span>

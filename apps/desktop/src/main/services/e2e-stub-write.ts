@@ -40,11 +40,13 @@ export function stubApprovedWriteResult(toolCallId: string): Record<string, unkn
   }
 }
 
-/** 活泵允许后补写盘；无工作区根则只吐 tool-result，不假装已经落盘。 */
+/** 活泵允许后补写盘；无工作区根则只吐 tool-result，不假装已经落盘。中止后不写。 */
 export async function writeStubApprovedFile(
-  root = process.env.ENJOY_E2E_WORKSPACE
+  root = process.env.ENJOY_E2E_WORKSPACE,
+  opts?: { signal?: AbortSignal }
 ): Promise<string | null> {
   if (!isE2eStub()) return null
+  if (opts?.signal?.aborted) return null
   const workspace = root?.trim()
   if (!workspace) return null
   const abs = resolveInsideWorkspace(workspace, STUB_WRITE_PATH)

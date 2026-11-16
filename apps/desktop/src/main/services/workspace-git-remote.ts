@@ -4,7 +4,7 @@
  */
 
 import type { GitCommitResult } from "@enjoy-agents/ipc-contract"
-import { runGit } from "./command"
+import { runGit, runGitTree, type RunExecutableTreeOptions } from "./command"
 import type { ChangeRow } from "./workspace-git-status"
 
 export async function readUpstream(workspaceRoot: string): Promise<string> {
@@ -54,12 +54,17 @@ export async function readWorkspacePatch(
   return tracked.trim()
 }
 
-export async function pushWorkspace(workspaceRoot: string): Promise<GitCommitResult> {
+export async function pushWorkspace(
+  workspaceRoot: string,
+  options?: RunExecutableTreeOptions
+): Promise<GitCommitResult> {
   const upstream = await readUpstream(workspaceRoot)
   if (!upstream) {
     throw new Error("no upstream branch")
   }
-  const res = await runGit(workspaceRoot, ["push"])
+  const res = options
+    ? await runGitTree(workspaceRoot, ["push"], options)
+    : await runGit(workspaceRoot, ["push"])
   if (res.exitCode !== 0) {
     throw new Error(res.stderr.trim() || "git push failed")
   }

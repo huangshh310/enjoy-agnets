@@ -4,68 +4,147 @@
 import { promises as fs } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, extname, join } from "node:path"
-import { assertSandboxCommand, type AgentWorkspaceHost } from "@enjoy-agents/agent-core"
-import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
-import { parseExecutableCommand, runExecutable, runGit } from "./command"
+import type { AgentWorkspaceHost, WorkspaceHostCallOpts } from "@enjoy-agents/agent-core"
+import { assertSandboxCommand } from "../../../../../packages/agent-core/src/policies/sandbox.ts"
+import { parseExecutableCommand, runExecutableTree, runGit, toAbortError } from "./command"
 import { buildSeatbeltProfile, seatbeltWrap, shouldUseOsSandbox } from "./os-sandbox"
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths"
 import { gitLogCommandArgs } from "./workspace-git-agent-log"
 import { readPreferences } from "./preferences"
+import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { commitWorkspaceAll } from "./workspace-git"
 import { createWorkspaceBranch } from "./workspace-git-branch"
 import { pushWorkspace } from "./workspace-git-remote"
+import type { HostExtras } from "./workspace-host-factory"
+import {
+  begin as beginSideEffect,
+  blocked as blockSideEffect,
+  settle as settleSideEffect,
+  settleOrBlock,
+  spawned as spawnedSideEffect,
+  markPidChildExited,
+  type SideEffectOp
+} from "./run-side-effects"
 
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
 
 type TouchKind = "file" | "directory"
 type NoteTouched = (relativePath: string, kind: TouchKind) => void
 
-export function createWorkspaceHost(
-  workspaceRoot: string,
-  extras?: {
-    takeQuestionAnswers?: () => AskUserAnswers | undefined
-    /** 模型工具碰到的路径。大纲 / glob / grep 不得走这条回调。 */
-    onTouchedPath?: (relativePath: string, kind: TouchKind) => void
+type BoundHost = {
+  runId?: string
+  sessionId?: string
+  signal?: AbortSignal
+  toolTimeoutMs?: number
+}
+
+const LEDGER_OPS = new Set<SideEffectOp>([
+  "write_file",
+  "edit_file",
+  "code_mode_script",
+  "bash",
+  "git_commit",
+  "git_branch",
+  "git_push",
+  "mcp",
+  "stub_write"
+])
+
+export function mergeHostSignals(bound?: AbortSignal, perCall?: AbortSignal): AbortSignal | undefined {
+  if (bound && perCall) return AbortSignal.any([bound, perCall])
+  return bound ?? perCall
+}
+
+function ledgerOp(raw: string | undefined, fallback: SideEffectOp): SideEffectOp {
+  if (raw && LEDGER_OPS.has(raw as SideEffectOp)) return raw as SideEffectOp
+  return fallback
+}
+
+function timeoutMs(bound?: BoundHost): number {
+  return effectiveToolTimeoutMs(bound?.toolTimeoutMs ?? readPreferences().toolTimeoutMs)
+}
+
+function gateOrBegin(
+  op: SideEffectOp,
+  bound: BoundHost | undefined,
+  opts: WorkspaceHostCallOpts | undefined,
+  signal: AbortSignal | undefined
+): { entryId?: string } {
+  const runId = bound?.runId
+  if (!runId) {
+    if (signal?.aborted) throw toAbortError(signal)
+    return {}
   }
-): AgentWorkspaceHost {
+  const ctx = { runId, toolCallId: opts?.toolCallId, toolTimeoutMs: timeoutMs(bound) }
+  if (signal?.aborted) {
+    blockSideEffect(op, ctx)
+    throw toAbortError(signal)
+  }
+  return { entryId: beginSideEffect(op, ctx).id }
+}
+
+export function createWorkspaceHost(workspaceRoot: string, extras?: HostExtras): AgentWorkspaceHost {
   const note: NoteTouched = (relativePath, kind) => extras?.onTouchedPath?.(relativePath, kind)
+  const bound: BoundHost = {
+    runId: extras?.runId,
+    sessionId: extras?.sessionId,
+    signal: extras?.signal,
+    toolTimeoutMs: extras?.toolTimeoutMs
+  }
   return {
-    ...workspaceFileOps(workspaceRoot, note),
+    ...workspaceFileOps(workspaceRoot, note, bound),
     glob: async (pattern) => collectFiles(workspaceRoot, pattern),
     grep: async (pattern, glob) => grepFiles(workspaceRoot, pattern, glob),
-    bash: (command) => runWorkspaceBash(workspaceRoot, command),
-    ...workspaceGitOps(workspaceRoot),
+    bash: (command, opts) => runWorkspaceBash(workspaceRoot, command, bound, opts),
+    ...workspaceGitOps(workspaceRoot, bound),
     takeQuestionAnswers: extras?.takeQuestionAnswers
   }
 }
 
-function workspaceFileOps(workspaceRoot: string, note: NoteTouched) {
+function workspaceFileOps(workspaceRoot: string, note: NoteTouched, bound: BoundHost) {
   return {
     readFile: async (relativePath: string) => {
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
       note(toWorkspaceRelative(workspaceRoot, absolute), "file")
       return fs.readFile(absolute, "utf8")
     },
-    writeFile: async (relativePath: string, content: string) => {
+    writeFile: async (relativePath: string, content: string, opts?: WorkspaceHostCallOpts) => {
+      const signal = mergeHostSignals(bound.signal, opts?.signal)
+      const op = ledgerOp(opts?.op, "write_file")
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
       note(toWorkspaceRelative(workspaceRoot, absolute), "file")
-      await fs.mkdir(dirname(absolute), { recursive: true })
-      await fs.writeFile(absolute, content, "utf8")
-      await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot))
-      await triggerOnSaveForRoot(workspaceRoot)
+      const { entryId } = gateOrBegin(op, bound, opts, signal)
+      try {
+        await fs.mkdir(dirname(absolute), { recursive: true })
+        await fs.writeFile(absolute, content, "utf8")
+        if (entryId) settleSideEffect(entryId, "ok")
+      } catch (error) {
+        if (entryId) settleSideEffect(entryId, "error")
+        throw error
+      }
+      await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot, bound))
+      if (!signal?.aborted) await triggerOnSaveForRoot(workspaceRoot, bound)
     },
-    editFile: async (relativePath: string, oldText: string, newText: string) => {
+    editFile: async (relativePath: string, oldText: string, newText: string, opts?: WorkspaceHostCallOpts) => {
+      const signal = mergeHostSignals(bound.signal, opts?.signal)
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
       note(toWorkspaceRelative(workspaceRoot, absolute), "file")
       const current = await fs.readFile(absolute, "utf8")
       if (!current.includes(oldText)) {
         throw new Error(`oldText not found in ${relativePath}`)
       }
+      const { entryId } = gateOrBegin("edit_file", bound, opts, signal)
       const next = current.replace(oldText, newText)
-      await fs.writeFile(absolute, next, "utf8")
-      await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot))
-      await triggerOnSaveForRoot(workspaceRoot)
+      try {
+        await fs.writeFile(absolute, next, "utf8")
+        if (entryId) settleSideEffect(entryId, "ok")
+      } catch (error) {
+        if (entryId) settleSideEffect(entryId, "error")
+        throw error
+      }
+      await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot, bound))
+      if (!signal?.aborted) await triggerOnSaveForRoot(workspaceRoot, bound)
       return next
     },
     listDir: async (relativePath: string, options?: { touch?: boolean }) => {
@@ -84,22 +163,50 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched) {
   }
 }
 
-async function runWorkspaceBash(workspaceRoot: string, command: string) {
+async function runWorkspaceBash(
+  workspaceRoot: string,
+  command: string,
+  bound: BoundHost,
+  opts?: WorkspaceHostCallOpts
+) {
   const prefs = readPreferences()
+  const signal = mergeHostSignals(bound.signal, opts?.signal)
   assertSandboxCommand(command, { allowNetwork: prefs.sandboxNetwork })
   const parsed = parseExecutableCommand(command)
-  const launched = shouldUseOsSandbox()
-    ? seatbeltWrap(
-        parsed.executable,
-        parsed.args,
-        buildSeatbeltProfile({
-          workspaceRoot,
-          tmpDir: tmpdir(),
-          allowNetwork: prefs.sandboxNetwork
-        })
-      )
-    : parsed
-  return runExecutable(workspaceRoot, launched.executable, launched.args, prefs.toolTimeoutMs)
+  const { entryId } = gateOrBegin("bash", bound, opts, signal)
+  try {
+    const launched = shouldUseOsSandbox()
+      ? seatbeltWrap(
+          parsed.executable,
+          parsed.args,
+          buildSeatbeltProfile({
+            workspaceRoot,
+            tmpDir: tmpdir(),
+            allowNetwork: prefs.sandboxNetwork
+          })
+        )
+      : parsed
+    const result = await runExecutableTree(workspaceRoot, launched.executable, launched.args, {
+      timeoutMs: timeoutMs(bound),
+      signal,
+      onSpawn: (pid) => {
+        if (entryId) spawnedSideEffect(entryId, pid)
+      },
+      onChildExit: (pid) => {
+        markPidChildExited(pid)
+      }
+    })
+    if (entryId) {
+      const outcome = result.processExit === "exited" && !signal?.aborted ? "exited" : result.processExit
+      settleSideEffect(entryId, outcome === "exited" || outcome === "killed" || outcome === "unconfirmed" ? outcome : "exited", {
+        tree: result.tree
+      })
+    }
+    return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode }
+  } catch (error) {
+    if (entryId) settleOrBlock(entryId, "error")
+    throw error
+  }
 }
 
 export async function saveHostHeartbeat(input: import("@enjoy-agents/agent-core").SessionHeartbeatRequest) {
@@ -125,7 +232,7 @@ function gitPathArgs(workspaceRoot: string, filePath?: string): string[] {
   return ["--", rel]
 }
 
-function workspaceGitOps(workspaceRoot: string) {
+function workspaceGitOps(workspaceRoot: string, bound: BoundHost) {
   return {
     gitStatus: async () => (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout,
     gitDiff: async (filePath?: string) => {
@@ -140,13 +247,51 @@ function workspaceGitOps(workspaceRoot: string) {
       const result = await runGit(workspaceRoot, gitLogCommandArgs({ limit: options?.limit, path }))
       return result.stdout.trim() ? result.stdout : result.stderr
     },
-    gitCommit: async (message: string, options?: { stageAll?: boolean }) => {
-      const result = await commitWorkspaceAll(workspaceRoot, message, options?.stageAll === true)
-      return result.output
+    gitCommit: async (message: string, options?: { stageAll?: boolean } & WorkspaceHostCallOpts) => {
+      const signal = mergeHostSignals(bound.signal, options?.signal)
+      const { entryId } = gateOrBegin("git_commit", bound, options, signal)
+      try {
+        const result = await commitWorkspaceAll(workspaceRoot, message, options?.stageAll === true)
+        if (entryId) settleSideEffect(entryId, "ok")
+        return result.output
+      } catch (error) {
+        if (entryId) settleSideEffect(entryId, "error")
+        throw error
+      }
     },
-    gitBranch: async (name: string, checkout?: boolean) =>
-      createWorkspaceBranch(workspaceRoot, name, checkout),
-    gitPush: async () => (await pushWorkspace(workspaceRoot)).output
+    gitBranch: async (name: string, checkout?: boolean, opts?: WorkspaceHostCallOpts) => {
+      const signal = mergeHostSignals(bound.signal, opts?.signal)
+      const { entryId } = gateOrBegin("git_branch", bound, opts, signal)
+      try {
+        const result = await createWorkspaceBranch(workspaceRoot, name, checkout)
+        if (entryId) settleSideEffect(entryId, "ok")
+        return result
+      } catch (error) {
+        if (entryId) settleSideEffect(entryId, "error")
+        throw error
+      }
+    },
+    gitPush: async (opts?: WorkspaceHostCallOpts) => {
+      const signal = mergeHostSignals(bound.signal, opts?.signal)
+      const { entryId } = gateOrBegin("git_push", bound, opts, signal)
+      try {
+        const result = await pushWorkspace(workspaceRoot, {
+          signal,
+          timeoutMs: timeoutMs(bound),
+          onSpawn: (pid) => {
+            if (entryId) spawnedSideEffect(entryId, pid)
+          },
+          onChildExit: (pid) => {
+            markPidChildExited(pid)
+          }
+        })
+        if (entryId) settleSideEffect(entryId, signal?.aborted ? "killed" : "ok")
+        return result.output
+      } catch (error) {
+        if (entryId) settleSideEffect(entryId, signal?.aborted ? "killed" : "error")
+        throw error
+      }
+    }
   }
 }
 
@@ -207,10 +352,19 @@ async function grepFiles(workspaceRoot: string, pattern: string, glob?: string) 
   return matches
 }
 
-async function triggerOnSaveForRoot(workspaceRoot: string): Promise<void> {
-  const { fireOnSaveAutomations } = await import("./automations-run")
-  const active = await activeRunForRoot(workspaceRoot)
+async function triggerOnSaveForRoot(workspaceRoot: string, bound?: BoundHost): Promise<void> {
+  if (bound?.signal?.aborted) return
+  const { getActiveRun, listActiveRuns } = await import("./agent-run-state")
+  const active = bound?.runId
+    ? (() => {
+        const run = getActiveRun(bound.runId!)
+        return run ? { runId: bound.runId as string, run } : undefined
+      })()
+    : listActiveRuns().find((item) => item.run.workspaceRoot === workspaceRoot)
   if (!active) return
+  const { fireOnSaveAutomations } = await import("./automations-run")
+  if (bound?.signal?.aborted) return
+  if (bound?.runId && active.runId !== bound.runId) return
   await fireOnSaveAutomations(
     active.run.window,
     active.run.input.workspaceId,
@@ -218,7 +372,12 @@ async function triggerOnSaveForRoot(workspaceRoot: string): Promise<void> {
   )
 }
 
-async function turnCheckpointMeta(workspaceRoot: string) {
+async function turnCheckpointMeta(workspaceRoot: string, bound?: BoundHost) {
+  if (bound?.runId) {
+    const sessionId = bound.sessionId ?? (await activeRunForRoot(workspaceRoot))?.run.input.sessionId
+    if (!sessionId) return { sessionId: bound.runId, runId: bound.runId, kind: "turn" as const }
+    return { sessionId, runId: bound.runId, kind: "turn" as const }
+  }
   const active = await activeRunForRoot(workspaceRoot)
   if (!active) return undefined
   return {

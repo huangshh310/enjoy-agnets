@@ -27,6 +27,8 @@ import {
 import { RegenerateConfirmDialog } from "./turns/regenerate-confirm-dialog"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
+import { isStopLocked, useStopLocked } from "@renderer/stores/stop-settle"
+import { STOP_LOCKED_CLASS, StopLockedTooltip } from "./stop-locked-tooltip"
 import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
@@ -69,6 +71,8 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
   const sessionId = useChatStore((state) => state.sessionId)
+  // luna C1b：收尾没落定时「重试」可见但置灰，悬停说「停干净后再试」；不清红卡、不开新一轮。
+  const stopLocked = useStopLocked(sessionId)
   const errorRetry = useChatStore((state) => state.errorRetry)
   const [copiedInstall, setCopiedInstall] = useState(false)
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null)
@@ -104,6 +108,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const lastUser = messages.filter((item) => item.role === "user").at(-1)
 
   function handleRetry() {
+    if (isStopLocked(sessionId)) return
     // jojo P1：被截断闸挡下的重新生成 / 编辑重发，重试的是最初点的那一轮，不是「最后一轮」。
     // leo #147 MF-2：目标只认挂在**这条**错误上的；别的错误（429 等）走原来的兜底。
     const target = resolveRetryTarget(sessionId, messages, retryTargetForError(error, errorRetry))
@@ -359,15 +364,22 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             // 还稿条：字已在输入框，「重新生成」会重跑上一轮，与提示矛盾。
             kind !== "send_restore" &&
             !running ? (
+              <StopLockedTooltip locked={stopLocked} hint={t("chat.stopLockedTryLater")}>
               <button
                 type="button"
                 data-testid="thread-error-retry"
+                aria-disabled={stopLocked || undefined}
+                data-stop-locked={stopLocked || undefined}
                 onClick={handleRetry}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs hover:border-accent-500/40 hover:bg-background-secondary-hover"
+                className={cx(
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs hover:border-accent-500/40 hover:bg-background-secondary-hover",
+                  stopLocked && STOP_LOCKED_CLASS
+                )}
               >
                 <RiRefreshLine className="size-3 text-accent-500" />
                 <span>{t("common.retry")}</span>
               </button>
+              </StopLockedTooltip>
             ) : null}
           </div>
         </div>
@@ -378,6 +390,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
         onConfirm={() => {
           const id = confirmTarget
           setConfirmTarget(null)
+          if (isStopLocked(sessionId)) return
           setError(null)
           if (id) void regenerateAssistantTurn(id)
         }}

@@ -23,6 +23,7 @@ import { translateTruncateNotice } from "./truncate-notice"
 import { isBlockedStart, startWithTruncateRetry, type RetryHistoryEntry } from "./truncate-retry"
 import { composerCanSend } from "./runtime-interact/composer-can-send"
 import { pauseFollowupsAfterFailedStart } from "./followup-pause"
+import { isStopLocked } from "../stores/stop-settle"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -31,6 +32,8 @@ function currentCaps(store: ChatStore) {
 /** 重新生成指定助手消息轮次 */
 export async function regenerateAssistantTurn(assistantMessageId: string): Promise<void> {
   const store = useChatStore.getState()
+  // leo C1b：本会话收尾没落定（正在停下… / 没能停下）不开新一轮——在截断历史之前就挡，什么都不动。
+  if (isStopLocked(store.sessionId)) return
   if (store.running || !hasIde()) return
   if (!store.workspaceId || !store.sessionId) return
 
@@ -57,6 +60,7 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 /** 返回是否真的起跑了（false = 静默没动，调用方要自己兜底）。 */
 export async function regenerateUserTurn(userMessageId: string): Promise<boolean> {
   const store = useChatStore.getState()
+  if (isStopLocked(store.sessionId)) return false
   if (store.running || !hasIde()) return false
   if (!store.workspaceId || !store.sessionId) return false
   const userIndex = store.messages.findIndex((m) => m.id === userMessageId && m.role === "user")
@@ -143,12 +147,17 @@ async function regenerateFromUserIndex(store: ChatStore, userIndex: number): Pro
   return true
 }
 
-/** 编辑指定用户消息并重新发送生成 */
+/**
+ * 编辑指定用户消息并重新发送生成。
+ * 返回 "stop-locked"：本会话还在收尾，什么都没动——调用方别收起编辑框，改过的字留着（leo C1b）。
+ */
 export async function editAndResendUserTurn(
   userMessageId: string,
   newContent: string
-): Promise<void> {
+): Promise<"stop-locked" | void> {
   const store = useChatStore.getState()
+  // leo C1b：收尾没落定，在改消息 / 截断之前就挡。
+  if (isStopLocked(store.sessionId)) return "stop-locked"
   if (store.running || !hasIde()) return
   if (!store.workspaceId || !store.sessionId) return
   const messages = store.messages
@@ -367,6 +376,8 @@ async function reloadSession(sessionId: string, title: string): Promise<void> {
  * 真起跑才收红卡（regenerate 起跑时自己清）；没起跑：红卡留着，原话放回输入框，不自动发。
  */
 export async function retryFailedUserTurn(lastUser: { id?: string; content: string }): Promise<boolean> {
+  // leo C1b：收尾没落定——不重跑、也不往输入框还稿（红卡留着，落定后再点），什么都不动。
+  if (isStopLocked(useChatStore.getState().sessionId)) return false
   const started = lastUser.id ? await regenerateUserTurn(lastUser.id) : false
   if (started) return true
   // luna P2：只 setComposer 不够——写回锁（建会话 / 首发入队留下）会拦住 store→输入框，DOM 也不跟。

@@ -18,6 +18,7 @@ import { useT } from "@renderer/i18n"
 import { displaySessionTitle } from "@renderer/lib/session-title"
 import { AttachedPrChip } from "@renderer/components/ai-chat/pr-flow"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useStopPhase } from "@renderer/stores/stop-settle"
 
 export function ChatStageHeader({
   workspaceName,
@@ -44,6 +45,7 @@ export function ChatStageHeader({
 }) {
   const t = useT()
   const sessionId = useChatStore((state) => state.sessionId)
+  const stopPhase = useStopPhase(sessionId)
   const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
     <header className="@container/header flex h-12 shrink-0 items-center gap-2 px-5">
@@ -112,7 +114,7 @@ export function ChatStageHeader({
             <span className="hidden truncate @[44rem]/header:inline">{t("sessionOps.ledgerTitle")}</span>
           </button>
         ) : null}
-        {reviewPhase ? <ReviewGateHeader phase={reviewPhase} /> : null}
+        {reviewPhase || stopPhase ? <ReviewGateHeader phase={reviewPhase ?? "running"} stopPhase={stopPhase} /> : null}
         <QuietIconButton
           icon={RiLayoutRight2Line}
           data-testid="right-pane-toggle"

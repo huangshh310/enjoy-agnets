@@ -33,6 +33,7 @@ import { isTruncateRetryable } from "./truncate-notice"
 import { resolveTruncateTail } from "./resolve-truncate-tail"
 import { decideTruncateRetry } from "./truncate-retry"
 import { lastUserMessageId, skipNextSendScroll } from "../components/ai-chat/thread/scroll-on-send"
+import { isStopLocked } from "../stores/stop-settle"
 
 export type RewindResult =
   /**
@@ -53,7 +54,8 @@ export async function rewindFromUserTurn(input: {
 }): Promise<RewindResult> {
   const store = useChatStore.getState()
   // 跑着或坞待批：禁止执行（入口应已灰掉；这里硬门，禁静默丢审批）。
-  if (store.running || store.pendingApproval || !hasIde() || !store.sessionId) {
+  // leo C1b：停止收尾没落定（running 已落下）同样算忙——否则会把正在停的那一轮截掉。
+  if (store.running || store.pendingApproval || !hasIde() || !store.sessionId || isStopLocked(store.sessionId)) {
     return { ok: false, code: "REWIND_BUSY" }
   }
   if (!canRewindConversation(store.runtimeId)) {

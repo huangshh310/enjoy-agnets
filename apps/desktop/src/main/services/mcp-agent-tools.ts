@@ -9,6 +9,15 @@ import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { rememberMcpReadOnlyHint } from "@enjoy-agents/ipc-contract/tool-names"
 import { mcpAgentToolName, mcpReadOnlyHintApplies } from "@enjoy-agents/mcp"
 import { callServerTool, listVisibleMcpTools } from "./mcp-service"
+import { currentToolRunId } from "./active-run-id"
+import { toAbortError } from "./command"
+import { effectiveToolTimeoutMs } from "./e2e-stub-gate"
+import { readPreferences } from "./preferences"
+import {
+  begin as beginSideEffect,
+  blocked as blockSideEffect,
+  settle as settleSideEffect
+} from "./run-side-effects"
 
 export function createMcpAgentTools(opts?: { mode?: AgentMode }): Record<string, object> {
   const readOnly = opts?.mode === "plan" || opts?.mode === "ask"
@@ -28,15 +37,39 @@ export function createMcpAgentTools(opts?: { mode?: AgentMode }): Record<string,
       description: `MCP ${item.serverName}: ${item.description ?? item.name}`,
       inputSchema: item.inputSchema ? jsonSchemaToZod(item.inputSchema) : z.record(z.string(), z.unknown()),
       // 只有写/命令类工具才会在 ToolLoop 批准后进 execute；读工具不得冒充已批。
-      execute: async (input: Record<string, unknown>) => {
+      execute: async (
+        input: Record<string, unknown>,
+        options?: { abortSignal?: AbortSignal; toolCallId?: string }
+      ) => {
         const approved = isMcpWriteToolName(id)
-        const result = await callServerTool(
-          item.serverId,
-          item.name,
-          input,
-          approved ? { fromApprovedAgent: true } : undefined
-        )
-        return clipToolPayload(result, CLIP_COMMAND_CHARS)
+        const signal = options?.abortSignal
+        const runId = currentToolRunId()
+        const ctx = runId
+          ? {
+              runId,
+              toolCallId: options?.toolCallId,
+              toolTimeoutMs: effectiveToolTimeoutMs(readPreferences().toolTimeoutMs ?? 30_000),
+              external: "mcp" as const
+            }
+          : undefined
+        if (signal?.aborted) {
+          if (ctx) blockSideEffect("mcp", ctx)
+          throw toAbortError(signal)
+        }
+        const entry = ctx ? beginSideEffect("mcp", ctx) : undefined
+        try {
+          const result = await callServerTool(
+            item.serverId,
+            item.name,
+            input,
+            approved ? { fromApprovedAgent: true } : undefined
+          )
+          if (entry) settleSideEffect(entry.id, "ok")
+          return clipToolPayload(result, CLIP_COMMAND_CHARS)
+        } catch (error) {
+          if (entry) settleSideEffect(entry.id, "error")
+          throw error
+        }
       }
     })
   }

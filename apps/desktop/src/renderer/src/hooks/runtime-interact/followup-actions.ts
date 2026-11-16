@@ -19,6 +19,7 @@ import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { releaseQueuedDraftAssets } from "../../lib/session-draft-storage"
 import type { SteerOutcome } from "./steer-composer"
 import { sendComposerMessage, steerPreparedText } from "../send-composer"
+import { isStopLocked } from "../../stores/stop-settle"
 
 /**
  * 空闲立刻开下一轮；运行中走纠偏，不把排队塞进当前 turn 的 tool 边界。
@@ -26,6 +27,8 @@ import { sendComposerMessage, steerPreparedText } from "../send-composer"
  * leo MUST 2：ACP（外部 CLI）运行中收不了图——带图的这条留在队列等下一轮，给可见提示。
  */
 export async function sendFollowupNow(item: FollowupItem) {
+  // leo C1：这个会话还在收尾时「立即发送」不取出排队项，原样留在队列里（发送口本身也锁，这里先挡住免得取出后丢）。
+  if (isStopLocked(item.sessionId)) return
   const taken = elevateToSteer(item.id)
   if (!taken) return
   const store = useChatStore.getState()

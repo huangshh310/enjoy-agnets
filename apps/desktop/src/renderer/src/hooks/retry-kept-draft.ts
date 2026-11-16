@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { ThreadMessage } from "@renderer/stores/chat-store.types"
 import { sendComposerMessage } from "@renderer/hooks/send-composer"
+import { isStopLocked } from "@renderer/stores/stop-settle"
 import { retryFailedUserTurn } from "@renderer/hooks/regenerate-turn"
 import { listComposerAssets, removeComposerAsset, subscribeComposerAssets } from "@renderer/hooks/composer-assets"
 import { readComposerForMerge, writeComposerAfterMerge } from "@renderer/stores/composer-io"
@@ -38,6 +39,8 @@ export function currentRetryKeptDraftPlan(
 
 export function retryKeptDraft(): void {
   const state = useChatStore.getState()
+  // leo C1：收尾没落定不重发（先挡住，免得把那一句从输入框摘掉后撞上发送锁）。
+  if (isStopLocked(state.sessionId)) return
   const current = readComposerForMerge(state.composer)
   const plan = currentRetryKeptDraftPlan(state, current)
   const kept = keptFor(state.sessionId)

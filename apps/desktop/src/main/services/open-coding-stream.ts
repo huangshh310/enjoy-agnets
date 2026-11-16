@@ -59,7 +59,8 @@ function openedE2eStub(
     stream: createE2eStubStream(input.messages, input.abortSignal, {
       isToolApproved: (toolName, toolInput) =>
         resolveToolApproval(toolName, input.mode, policy, toolInput) === "approved",
-      userData: app.getPath("userData")
+      userData: app.getPath("userData"),
+      runId: input.runId
     }),
     result: {},
     dispose: async () => undefined,

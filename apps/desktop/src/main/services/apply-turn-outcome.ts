@@ -14,12 +14,14 @@ export { shouldWriteSessionWorkflow, stickyTurnOutcome }
 
 export function turnOutcomeForRun(
   run: Pick<ActiveRun, "tools" | "input">,
-  ended: "end" | "error" | "abort" | "archive"
+  ended: "end" | "error" | "abort" | "archive",
+  opts?: { mayHaveWritten?: boolean }
 ): TurnOutcome {
-  const base = stickyTurnOutcome(
-    decideTurnOutcome({ ended, tools: run.tools }),
-    readSessionWorkflow(run.input.sessionId)
-  )
+  const decided = decideTurnOutcome({ ended, tools: run.tools })
+  // 停止回执判了可能写过（maybe_partial / completed）：工单一律待验收，与有写入同路。
+  const computed: TurnOutcome =
+    opts?.mayHaveWritten && decided.workflow !== "needs_review" ? { ...decided, workflow: "needs_review" } : decided
+  const base = stickyTurnOutcome(computed, readSessionWorkflow(run.input.sessionId))
   if (base.workflow !== "needs_review") return base
   const changedFiles = reviewFilesFromTools(run.tools)
   // completedAt 与 persistSessionReview 落库的值对齐：本轮真写过文件才刷新，否则就是库里现有的那个（persistSessionReview 此时不写）。

@@ -22,6 +22,8 @@ import { CopyMessageButton } from "../copy-message-button"
 import { canForkTurn, ForkTurnButton } from "./fork-turn-button"
 import { MessageMoreMenu } from "./message-more-menu"
 import { useT } from "@renderer/i18n"
+import { useStopLocked } from "@renderer/stores/stop-settle"
+import { STOP_LOCKED_CLASS } from "../stop-locked-tooltip"
 
 export function AssistantActions({
   message,
@@ -38,7 +40,10 @@ export function AssistantActions({
   const runtimeId = useChatStore((s) => s.runtimeId)
   const canRewind = canRewindConversation(runtimeId)
   const userMessageId = usePrecedingUserMessageId(message.id)
-  const rewindBlockReason = pendingApproval ? "pending" : running ? "running" : null
+  // luna C1b：收尾没落定时「重新生成」可见但置灰，悬停说「停干净后再试」；入口函数再挡一层。
+  const stopLocked = useStopLocked(useChatStore((s) => s.sessionId))
+  // 「从这里改」同样会截掉后面几轮：收尾没落定时按「等这轮停下来再改到这里」挡（复用 running 的原因与文案）。
+  const rewindBlockReason = pendingApproval ? "pending" : running || stopLocked ? "running" : null
   const laterTurns = useChatStore((s) => laterTurnCount(s.messages, message.id))
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [rewindOpen, setRewindOpen] = useState(false)
@@ -69,10 +74,14 @@ export function AssistantActions({
         <RiThumbDownLine className="size-4" />
       </MessageAction>
       <MessageAction
-        tooltip={regenerating ? t("chat.regenerating") : t("chat.regenerate")}
+        tooltip={stopLocked ? t("chat.stopLockedTryLater") : regenerating ? t("chat.regenerating") : t("chat.regenerate")}
         label={t("chat.regenerate")}
         disabled={running || regenerating}
+        aria-disabled={stopLocked || undefined}
+        data-stop-locked={stopLocked || undefined}
+        className={stopLocked ? STOP_LOCKED_CLASS : undefined}
         onClick={() => {
+          if (stopLocked) return
           // 不是最后一条：先确认后面几轮会删掉（jojo P1）。
           if (laterTurns > 0) setConfirmOpen(true)
           else regenerate()
@@ -83,7 +92,9 @@ export function AssistantActions({
       <RegenerateConfirmDialog
         open={confirmOpen}
         laterTurns={laterTurns}
-        onConfirm={regenerate}
+        onConfirm={() => {
+          if (!stopLocked) regenerate()
+        }}
         onOpenChange={setConfirmOpen}
       />
       <CopyMessageButton message={message} prompt={prompt} label={t("chat.copyResponse")} />

@@ -9,10 +9,13 @@ import {
   RiLoader4Line
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { cx } from "@/utils/cx"
 import { Message, MessageAction, MessageActions, MessageContent } from "@/components/ai-elements/message"
 import { editAndResendUserTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { useStopLocked } from "@renderer/stores/stop-settle"
+import { STOP_LOCKED_CLASS, StopLockedTooltip } from "../stop-locked-tooltip"
 import { replaceQuotedDraft, splitQuotedDisplay } from "@enjoy-agents/ipc-contract"
 import { extractHostModeFence, stripHostModePrefix } from "../../composer/mentions/host-mode-prefix.ts"
 import { visibleUserText } from "@renderer/lib/user-message-text"
@@ -30,6 +33,8 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const running = useChatStore((s) => s.running)
+  // luna C1b：收尾没落定时「编辑」「保存并重新发送」可见但置灰，悬停说「停干净后再试」；入口函数再挡一层。
+  const stopLocked = useStopLocked(useChatStore((s) => s.sessionId))
 
   useEffect(() => {
     setDraftContent(visibleUserText(message.content) || message.content)
@@ -45,11 +50,12 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
   const canResend = composerCanSend({ text: draftContent, assetCount: message.assets?.length })
 
   async function handleSaveAndResend() {
-    if (!canResend || isSubmitting || running) return
+    if (!canResend || isSubmitting || running || stopLocked) return
     setIsSubmitting(true)
     try {
-      await editAndResendUserTurn(message.id, replaceVisibleUserDraft(message.content, draftContent))
-      setIsEditing(false)
+      const outcome = await editAndResendUserTurn(message.id, replaceVisibleUserDraft(message.content, draftContent))
+      // leo C1b：收尾没落定没发出去——编辑框和改过的字都留着。
+      if (outcome !== "stop-locked") setIsEditing(false)
     } finally {
       setIsSubmitting(false)
     }
@@ -109,11 +115,14 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 {t("common.cancel")}
               </Button>
 
+              <StopLockedTooltip locked={stopLocked} hint={t("chat.stopLockedTryLater")}>
               <Button
                 size="sm"
                 disabled={!canResend || isSubmitting || running}
+                aria-disabled={stopLocked || undefined}
+                data-stop-locked={stopLocked || undefined}
                 onClick={() => void handleSaveAndResend()}
-                className="gap-1 h-6.5 px-2.5 text-caption-2-medium shadow-xs"
+                className={cx("gap-1 h-6.5 px-2.5 text-caption-2-medium shadow-xs", stopLocked && STOP_LOCKED_CLASS)}
               >
                 {isSubmitting ? (
                   <RiLoader4Line className="size-3 animate-spin" />
@@ -122,6 +131,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 )}
                 <span>{t("chat.saveResend")}</span>
               </Button>
+              </StopLockedTooltip>
             </div>
           </div>
         </div>
@@ -137,9 +147,14 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
           <MessageActions className="-mr-1 justify-end">
             {!running ? (
               <MessageAction
-                tooltip={t("chat.editMessage")}
+                tooltip={stopLocked ? t("chat.stopLockedTryLater") : t("chat.editMessage")}
                 label={t("chat.editMessage")}
-                onClick={() => setIsEditing(true)}
+                aria-disabled={stopLocked || undefined}
+                data-stop-locked={stopLocked || undefined}
+                className={stopLocked ? STOP_LOCKED_CLASS : undefined}
+                onClick={() => {
+                  if (!stopLocked) setIsEditing(true)
+                }}
               >
                 <RiEditLine className="size-3.5" />
               </MessageAction>
