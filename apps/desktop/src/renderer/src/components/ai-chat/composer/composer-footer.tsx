@@ -196,7 +196,7 @@ export function ComposerFooter({
             aria-label={displayThinkingLabel(thinkingLabel, t)}
             className="flex max-w-[140px] items-center gap-1.5 truncate px-2 font-mono text-caption-2-medium text-accent-500 select-none group-data-[footer-density=2]/footer:w-3 group-data-[footer-density=2]/footer:justify-center group-data-[footer-density=2]/footer:px-0 group-data-[footer-density=3]/footer:w-3 group-data-[footer-density=3]/footer:justify-center group-data-[footer-density=3]/footer:px-0"
           >
-            <span className="size-1.5 rounded-full bg-accent-500 animate-pulse group-data-[footer-density=2]/footer:size-3 group-data-[footer-density=3]/footer:size-3" />
+            <span data-testid="composer-run-dot" className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
             <span className={cx("truncate", FOOTER_GE2_HIDDEN)}>{displayThinkingLabel(thinkingLabel, t)}</span>
           </span>
         ) : null}

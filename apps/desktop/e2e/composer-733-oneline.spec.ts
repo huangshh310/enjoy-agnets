@@ -365,6 +365,23 @@ test("733×480 英文三条：待验收 + 有图 · 运行中 + 有图展开 · 
     await window.getByTestId("composer-input").press("Enter")
     await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
     await expect(window.locator('[data-testid="composer-asset-chip"]')).toHaveCount(0, { timeout: 8_000 })
+    await settle(window)
+    // 运行点（luna §16，空草稿运行中才单显运行点）：L≥2 槽 12px（w-3），里面仍是现网 6px 呼吸点、水平 / 垂直居中，不放大
+    const runDot = await window.evaluate(() => {
+      const slot = document.querySelector('[data-testid="composer-run-chip"]')?.getBoundingClientRect()
+      const dot = document.querySelector('[data-testid="composer-run-dot"]')?.getBoundingClientRect()
+      const density = document.querySelector('[data-testid="composer-footer-row"]')?.getAttribute("data-footer-density")
+      if (!slot || !dot) return null
+      return { density, slotW: slot.width, dotW: dot.width, dotH: dot.height, dx: Math.abs(dot.x + dot.width / 2 - (slot.x + slot.width / 2)), dy: Math.abs(dot.y + dot.height / 2 - (slot.y + slot.height / 2)) }
+    })
+    expect(runDot, "running 时有运行点").not.toBeNull()
+    expect(Number(runDot!.density), "733 运行中在 L≥2").toBeGreaterThanOrEqual(2)
+    expect(runDot!.slotW).toBeCloseTo(12, 0)
+    expect(runDot!.dotW).toBeCloseTo(6, 0)
+    expect(runDot!.dotH).toBeCloseTo(6, 0)
+    expect(runDot!.dx).toBeLessThanOrEqual(0.5)
+    expect(runDot!.dy).toBeLessThanOrEqual(0.5)
+    await window.getByTestId("composer-footer-row").screenshot({ path: testInfo.outputPath("733-en-run-dot-row.png") })
     await attachImage(window, "blue-run.png")
     const tray = window.getByTestId("composer-attachment-tray")
     const expand = tray.getByRole("button", { name: /1 image/ })

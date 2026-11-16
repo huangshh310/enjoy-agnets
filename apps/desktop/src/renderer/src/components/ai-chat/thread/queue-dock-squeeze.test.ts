@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import {
   DOCK_SQUEEZE_OFF,
+  foldOnSqueeze,
   nextDockSqueeze,
   pillFitsBelow,
   squeezedDockHeight,
@@ -95,4 +96,30 @@ test("接线：挤压态 py-0.5、整行高、说明行 sticky 钉顶不透明 2
   // 排队行组件本身不动（行高 30 = py-0.5 + 行内钮）
   const turn = src("./turns/queued-user-turn.tsx")
   assert.doesNotMatch(turn, /snap-/)
+})
+
+test("#228 S2：挤压态喂 availPx（区高 + 对话区多出的那截）与改前喂 dockHeight，foldOnSqueeze 判定处处一致", () => {
+  // 改前：区拿到 flex 分的 D，对话区压在 min-height（多出 0）。挤压态：区收到整行高 h，零头 D − h 还给对话区。
+  let differsIfRaw = 0
+  for (let D = 62; D <= 152; D += 0.5) {
+    for (const count of [2, 3, 5]) {
+      const layout = squeezedLayout(D, count)
+      if (!layout) continue
+      const h = layout.heightPx
+      const availPx = h + Math.max(0, D - h)
+      for (const seenRoomy of [false, true]) {
+        for (const hidden of [0, 1, 3]) {
+          for (const autoFolded of [false, true]) {
+            assert.equal(
+              foldOnSqueeze(seenRoomy, availPx, hidden, autoFolded),
+              foldOnSqueeze(seenRoomy, D, hidden, autoFolded),
+              `D=${D} count=${count} seen=${seenRoomy} hidden=${hidden} af=${autoFolded}`
+            )
+            if (foldOnSqueeze(seenRoomy, h, hidden, autoFolded) !== foldOnSqueeze(seenRoomy, D, hidden, autoFolded)) differsIfRaw += 1
+          }
+        }
+      }
+    }
+  }
+  assert.ok(differsIfRaw > 0, "对照：若直接喂收缩后的区高，会在部分几何下改变判定（所以要喂 availPx）")
 })

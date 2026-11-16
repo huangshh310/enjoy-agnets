@@ -45,6 +45,8 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
           type="button"
           data-testid="composer-thinking-effort"
           aria-label={t("chat.effortAria")}
+          // L≥2 文字收起只剩图标：悬停提示复用现有 chat.effortAria（不新增 i18n 键）。
+          title={compact ? t("chat.effortAria") : undefined}
           className={cx(
             "group flex shrink-0 items-center whitespace-nowrap rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-border-focus-ring",
             compact

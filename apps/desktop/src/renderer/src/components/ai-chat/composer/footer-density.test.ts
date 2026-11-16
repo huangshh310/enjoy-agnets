@@ -14,6 +14,7 @@ import {
   footerDensityOf,
   footerOverflowItems,
   footerOverflowOf,
+  footerStepIndex,
   pickFooterDensity,
   type FooterStep,
   type FooterWidthCache
@@ -351,9 +352,11 @@ test("hook 驱动：升级探测放不下时当帧退回、不留在探测级；
   assert.ok(r.moves <= 2, `moves=${r.moves}`)
 })
 
-test("L2 尺寸契约（产品 §L2）：思考强度 / ThoughtChip 走 28px 图标钮；运行点 L≥2 本身 12px，占位 w-3", () => {
+test("L2 尺寸契约（产品 §L2 / luna §16）：思考强度 / ThoughtChip 走 28px 图标钮；运行点 L≥2 槽 w-3（12）居中、点本身仍是现网 6px 不放大", () => {
   const footer = read("composer-footer.tsx")
-  assert.match(footer, /size-1\.5 rounded-full bg-accent-500 animate-pulse group-data-\[footer-density=2\]\/footer:size-3 group-data-\[footer-density=3\]\/footer:size-3/)
+  assert.match(footer, /<span data-testid="composer-run-dot" className="size-1\.5 rounded-full bg-accent-500 animate-pulse" \/>/)
+  assert.doesNotMatch(footer, /footer-density=[23]\]\/footer:size-3/)
+  assert.match(footer, /data-testid="composer-run-chip"[\s\S]*?group-data-\[footer-density=2\]\/footer:w-3 group-data-\[footer-density=2\]\/footer:justify-center/)
   assert.match(footer, /data-testid="composer-run-chip"[\s\S]*?group-data-\[footer-density=2\]\/footer:w-3/)
   const reasoning = readFileSync(join(dir, "..", "reasoning-effort-toggle.tsx"), "utf8")
   assert.match(reasoning, /compact\s*\?\s*cx\([^)]*FOOTER_GE2_ICON_BUTTON\)/)
@@ -394,4 +397,79 @@ test("换级瞬间冻结底栏后代过渡：hook 挂 data-footer-switching、�
   const footer = read("composer-footer.tsx")
   assert.match(footer, /\[&\[data-footer-switching\]_\*\]:transition-none/)
   assert.doesNotMatch(footer, /group\/footer[^"]*(?<!\]_\*\]:)\btransition-none/)
+})
+
+test("#228 M1：3a / 3b 交界、桌面 chip 开着，连续改 contentKey（轮次开始 / 结束）级别不变、不落中间态", () => {
+  // 3a 左组带桌面 chip（+40）；3b 起三颗 chip 进菜单。右组 196，gap 4。
+  const CHIP = 40
+  const left: Record<FooterStep, number> = { "0": 900, "1": 800, "2": 700, "3a": 500, "3b": 500, "3c": 470, "3d": 440, "3e": 410 }
+  const withChip = (chipFirstFrame: () => boolean) => (s: FooterStep) => ({
+    left: left[s] + (FOOTER_STEPS.indexOf(s) < FOOTER_STEPS.indexOf("3b") && chipFirstFrame() ? CHIP : 0),
+    right: 196
+  })
+  // 交界带：3a（带 chip）+8 放不下，3b 放得下；3a 若漏量 chip 则 +8 放得下。
+  for (let rowInner = 708; rowInner < 500 + CHIP + 196 + 4 + 8; rowInner += 4) {
+    // 共享读：重挂首帧就是已知值（chip 在），探测量到真实宽度。
+    const st = { cache: {} as FooterWidthCache, stepsUsed: 0 }
+    let step = driveTick(st, "3b", rowInner, withChip(() => true)).step
+    assert.equal(step, "3b", `rowInner=${rowInner} 起始级`)
+    for (let turn = 0; turn < 10; turn += 1) {
+      st.cache = {} // contentKey 变（running 开始 / 结束）→ 缓存全清，从当前级重新量、探 3a
+      const r = driveTick(st, step, rowInner, withChip(() => true))
+      assert.equal(r.step, "3b", `rowInner=${rowInner} 第 ${turn + 1} 轮落到 ${r.step}`)
+      assert.ok(r.moves <= 2, `rowInner=${rowInner} 探测往返应在同一回调内（moves=${r.moves}）`)
+      step = r.step
+    }
+    // 对照（改前）：重挂首帧 chip 缺席 → 探测误判放得下，留在 3a 被画出来（之后 IPC 回来再降回 3b = 闪一次）。
+    const old = { cache: {} as FooterWidthCache, stepsUsed: 0 }
+    const landed = driveTick(old, "3b", rowInner, withChip(() => false)).step
+    assert.equal(landed, "3a", `rowInner=${rowInner} 对照应复现误升`)
+  }
+})
+
+test("#228 M1：底栏可选 chip 与 ComputerUseChip 共用同一个共享读 hook（模块态初值，非 useState(false)）", () => {
+  const hook = readFileSync(join(dir, "../../../hooks/use-computer-use-enabled.ts"), "utf8")
+  assert.match(hook, /useSyncExternalStore\(subscribe, getSnapshot/)
+  assert.doesNotMatch(hook, /useState\(false\)/)
+  assert.match(hook, /if \(known !== null \|\| inflight \|\| !hasIde\(\)\) return/)
+  assert.doesNotMatch(hook, /builtinTools\.(toggle|set)/)
+  for (const f of ["computer-use-chip.tsx", "use-footer-optional-chips.ts"]) {
+    assert.match(read(f), /from "@renderer\/hooks\/use-computer-use-enabled"/, f)
+  }
+})
+
+test("C4 回滞（jojo #228 产品门）：L0→L1 … L3d→L3e 每个交界，1px 拖窄降级点与拖宽升级点之差都 ≥8", () => {
+  // 三套宽度模型（各级 left + right + gap 的实测总需宽）：间距宽 / 间距 2px / 相邻两级等宽（3a=3b，M1 那种）。
+  const models: Record<string, number[]> = {
+    spaced: [940, 880, 820, 760, 700, 640, 580, 520],
+    tight: [700, 698, 696, 694, 692, 690, 688, 686],
+    equal: [900, 800, 700, 500, 500, 470, 440, 410]
+  }
+  for (const [name, need] of Object.entries(models)) {
+    const widths = (s: FooterStep) => ({ left: need[FOOTER_STEPS.indexOf(s)]! - 4 - 196, right: 196 })
+    const st = { cache: {} as FooterWidthCache, stepsUsed: 0 }
+    let step: FooterStep = "0"
+    const hi = need[0]! + 40
+    const lo = need[need.length - 1]! - 40
+    const down: number[] = []
+    const up: number[] = []
+    for (let w = hi; w >= lo; w -= 1) {
+      const before = footerStepIndex(step)
+      step = driveTick(st, step, w, widths).step
+      const after = footerStepIndex(step)
+      for (let k = before; k < after; k += 1) down[k] = w
+    }
+    for (let w = lo; w <= hi; w += 1) {
+      const before = footerStepIndex(step)
+      step = driveTick(st, step, w, widths).step
+      const after = footerStepIndex(step)
+      for (let k = after; k < before; k += 1) up[k] = w
+    }
+    assert.equal(step, "0", `${name}: 拖回最宽应回到 L0`)
+    for (let k = 0; k < FOOTER_MAX_STEPS; k += 1) {
+      const label = `${name} L${FOOTER_STEPS[k]}↔L${FOOTER_STEPS[k + 1]}`
+      assert.ok(down[k] != null && up[k] != null, `${label}: 两个方向都应经过`)
+      assert.ok(up[k]! - down[k]! >= FOOTER_UPGRADE_HYSTERESIS_PX, `${label}: 降 ${down[k]} / 升 ${up[k]}，差 ${up[k]! - down[k]!} < 8`)
+    }
+  }
 })

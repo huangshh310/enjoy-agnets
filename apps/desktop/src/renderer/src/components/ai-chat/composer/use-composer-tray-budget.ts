@@ -4,6 +4,7 @@
  */
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
 import { readStatusBarTop, shouldUseTrayStrip, trayStripSlot } from "./composer-tray-leftover.ts"
+import { nextTraySqueeze, TRAY_SQUEEZE_OFF, type TraySqueeze } from "./composer-tray-squeeze.ts"
 
 export type ComposerTrayBudget = {
   /** 横向单行条 + mb=0。 */
@@ -12,16 +13,19 @@ export type ComposerTrayBudget = {
   reclaimSlack: boolean
   /** 最近一次 slot（取整），没有验收框时为 null。只用于 data 属性与排查。 */
   slot: number | null
+  /** 没有验收框、但 Composer 外壳被挤到内容放不下时（composer-tray-squeeze.ts）。 */
+  squeezed: boolean
 }
 
 export const IDLE_COMPOSER_TRAY_BUDGET: ComposerTrayBudget = {
   strip: false,
   reclaimSlack: false,
-  slot: null
+  slot: null,
+  squeezed: false
 }
 
 function sameBudget(a: ComposerTrayBudget, b: ComposerTrayBudget): boolean {
-  return a.strip === b.strip && a.reclaimSlack === b.reclaimSlack && a.slot === b.slot
+  return a.strip === b.strip && a.reclaimSlack === b.reclaimSlack && a.slot === b.slot && a.squeezed === b.squeezed
 }
 
 function visibleBottom(el: Element | null): number | null {
@@ -38,9 +42,11 @@ export function useComposerTrayBudget(args: {
   const [budget, setBudget] = useState<ComposerTrayBudget>(IDLE_COMPOSER_TRAY_BUDGET)
   const budgetRef = useRef(budget)
   budgetRef.current = budget
+  const squeezeRef = useRef<TraySqueeze>(TRAY_SQUEEZE_OFF)
 
   useLayoutEffect(() => {
     if (!args.enabled) {
+      squeezeRef.current = TRAY_SQUEEZE_OFF
       if (!sameBudget(budgetRef.current, IDLE_COMPOSER_TRAY_BUDGET)) setBudget(IDLE_COMPOSER_TRAY_BUDGET)
       return
     }
@@ -65,11 +71,25 @@ export function useComposerTrayBudget(args: {
         conversationHeight: convHeight,
         conversationFloor: convFloor
       })
-      const strip = shouldUseTrayStrip(slot)
+      // 没有验收框时的兜底：只看 Composer 外壳（表单的父级）自己内容放不放得下。
+      const shell = form.parentElement
+      if (slot == null && shell) {
+        const slack = convHeight != null && convFloor != null && Number.isFinite(convFloor) ? convHeight - convFloor : 0
+        squeezeRef.current = nextTraySqueeze(squeezeRef.current, {
+          contentPx: shell.scrollHeight,
+          boxPx: shell.clientHeight,
+          conversationSlackPx: slack
+        })
+      } else {
+        squeezeRef.current = TRAY_SQUEEZE_OFF
+      }
+      const squeezed = squeezeRef.current.on
+      const strip = shouldUseTrayStrip(slot) || squeezed
       const next: ComposerTrayBudget = {
         strip,
         reclaimSlack: strip,
-        slot: slot == null ? null : Math.round(slot)
+        slot: slot == null ? null : Math.round(slot),
+        squeezed
       }
       if (!sameBudget(prev, next)) setBudget(next)
     }
@@ -82,6 +102,7 @@ export function useComposerTrayBudget(args: {
     if (observer && form) observer.observe(form)
     if (observer && tray) observer.observe(tray)
     if (observer && conv) observer.observe(conv)
+    if (observer && form?.parentElement) observer.observe(form.parentElement)
     window.addEventListener("resize", measure)
     return () => {
       observer?.disconnect()
