@@ -2,7 +2,7 @@
  * E1 / leo C1b + luna 设计口径：停止没落定（正在停下… / 没能停下）时，会开新一轮的入口——
  * Todo Dock「继续」、用户气泡「编辑」、助手气泡「重新生成」（有就验）——保持可见但置灰（aria-disabled），
  * 悬停 tooltip「停干净后再试」/ "Try again once it stops."；点了不开新一轮、历史不少；落定后自动恢复可用。
- * Todo 列表经 e2e 桥 injectTodoList 挂到最后一条助手消息上（只在 stub 桥上有，不经 IPC）。
+ * Todo 列表经 e2e 桥 injectTodoList 挂到最后一条助手消息上（只在 stub 桥上有，不经 IPC），「继续」在输入框上方任务栈（composer-task-stack）。
  */
 import { existsSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "@playwright/test"
@@ -52,11 +52,15 @@ for (const lang of ["zh", "en"] as const) {
       await window.waitForTimeout(300)
       await window.getByTestId("composer-stop").click()
       await waitPhase(window, "stopping", 2_000)
-      await window.evaluate(() => (globalThis as any).__enjoyE2e?.injectTodoList?.(["a", "b", "c"]))
       for (const phase of ["stopping", "stuck"] as const) {
         if (phase === "stuck") await waitPhase(window, "stuck", 12_000)
-        const before = await threadSnapshot(window)
+        // 收尾事件可能整批改写消息：每态挂一次，直到 Dock 出现
         const cont = window.getByTestId("todo-continue")
+        await expect.poll(async () => {
+          if ((await cont.count()) === 0) await window.evaluate(() => (globalThis as any).__enjoyE2e?.injectTodoList?.(["a", "b", "c"]))
+          return cont.count()
+        }, { timeout: 5_000, intervals: [200] }).toBeGreaterThan(0)
+        const before = await threadSnapshot(window)
         await expectLockedWithHint(window, cont, HINT)
         await expect(cont).toHaveText(CONT)
         await cont.click({ force: true })

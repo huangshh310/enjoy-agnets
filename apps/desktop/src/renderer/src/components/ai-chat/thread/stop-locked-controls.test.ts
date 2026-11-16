@@ -47,14 +47,10 @@ test("重试（红卡）：锁住时置灰 + tooltip；handleRetry 先挡，不�
   assert.match(s, /function handleRetry\(\) \{\n\s*if \(isStopLocked\(sessionId\)\) return/)
 })
 
-test("Todo「继续」：Dock 锁住时传 continueDisabledHint；ContinueButton 有提示即 aria-disabled、tooltip、点了不动", () => {
-  const dock = src("../composer/composer-todo-dock.tsx")
-  assert.match(dock, /continueDisabledHint=\{stopLocked \? t\("chat\.stopLockedTryLater"\) : undefined\}/)
-  const btn = src("../../../../../../../../packages/ui/components/ai-elements/task-list-helpers.tsx")
-  assert.match(btn, /aria-disabled=\{locked \|\| undefined\}/)
-  assert.match(btn, /if \(!locked\) onContinue\(\)/)
-  assert.match(btn, /<TooltipContent>\s*<p>\{disabledHint\}<\/p>/)
-  for (const f of ["task-list.tsx", "task-list-dock.tsx"]) {
-    assert.match(src(`../../../../../../../../packages/ui/components/ai-elements/${f}`), /<ContinueButton onContinue=\{onContinue\} disabledHint=\{continueDisabledHint\} \/>/)
-  }
+test("Todo「继续」（输入框上方任务栈）：锁住时可见、aria-disabled、tooltip，点了不动", () => {
+  const s = src("../composer/stacked-rail/composer-task-stack.tsx")
+  assert.match(s, /const stopLocked = useStopLocked\(/)
+  assert.match(s, /<StopLockedTooltip locked=\{stopLocked\} hint=\{t\("chat\.stopLockedTryLater"\)\}>\s*<button[\s\S]*?data-testid="todo-continue"[\s\S]*?aria-disabled=\{stopLocked \|\| undefined\}/)
+  assert.match(s, /if \(!stopLocked\) void continueTodoTurn\(\)/)
+  assert.doesNotMatch(s, /!running && !allDone && !stopLocked/, "不隐藏")
 })

@@ -18,8 +18,6 @@ export interface TaskListProps {
   live?: boolean
   /** 停跑且任务未完成时，点「继续」再开一轮。 */
   onContinue?: () => void
-  /** 有值时「继续」可见但置灰，悬停说明原因（如停止收尾没落定）。 */
-  continueDisabledHint?: string
   /** 额外的右侧快捷操作（如关联的预览/链接按钮）。 */
   action?: React.ReactNode
   /** 控制舱底部附加区域（如合并展示的文件改动栏）。 */
