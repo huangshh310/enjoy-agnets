@@ -8,13 +8,20 @@ import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import {
   FOOTER_MAX_STEPS,
+  FOOTER_RESIZE_BURST_GAP_MS,
+  FOOTER_RESIZE_DIP_PX,
   FOOTER_STEPS,
   FOOTER_UPGRADE_HYSTERESIS_PX,
   footerDecide,
+  FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX,
   footerDensityOf,
+  footerNearAutoCollapse,
   footerOverflowItems,
   footerOverflowOf,
+  footerResizeGate,
+  footerSidebarShift,
   footerStepIndex,
+  footerTargetInner,
   pickFooterDensity,
   type FooterStep,
   type FooterWidthCache
@@ -203,7 +210,7 @@ test("源码：底栏一行不折行；级别只在 row 上；不读 i18n.langua
   assert.equal(footer.includes('"ml-auto flex flex-wrap items-center justify-end gap-1"'), false)
   const main = footer.slice(0, footer.indexOf("function FooterOverflowSection"))
   assert.equal(/\bflex-wrap\b/.test(main), false)
-  assert.ok(footer.includes('className="flex w-max shrink-0 flex-nowrap items-center gap-1.5"'))
+  assert.ok(footer.includes('className="flex w-max shrink-0 flex-nowrap items-center gap-1.5 '))
   assert.ok(footer.includes("ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-1"))
   assert.ok(footer.includes("group/footer flex min-w-0 flex-nowrap"))
   assert.equal(footer.split("data-footer-density=").length - 1, 1)
@@ -220,7 +227,11 @@ test("源码：底栏一行不折行；级别只在 row 上；不读 i18n.langua
   assert.equal(clip.includes("overflow-hidden"), false)
   assert.equal(/i18n\.language|innerWidth|matchMedia/.test(footer), false)
   const hook = read("use-footer-density.ts")
-  assert.equal(/innerWidth|matchMedia|setInterval/.test(hook), false)
+  assert.equal(/matchMedia|setInterval/.test(hook), false)
+  // 选级只按实测行宽；窗宽只读一处，只喂给 footerNearAutoCollapse（侧栏自动收起断点前的降级闸门，#228 H2 jojo 9b），不进 footerDecide
+  assert.equal(hook.split("innerWidth").length - 1, 1)
+  assert.match(hook, /const windowW = typeof window !== "undefined" \? window\.innerWidth : NaN\n\s+lastNear\.current = footerNearAutoCollapse\(\{/)
+  assert.equal(/rowInner:[^\n]*windowW/.test(hook), false)
   assert.ok(hook.includes("flushSync"))
   // RO 只看三个节点
   assert.equal(hook.split("ro.observe(").length - 1, 3)
@@ -493,7 +504,7 @@ test("#228 产品门 B1（jojo）：底栏可选 chip 不收缩、不折行（�
   // 附件钮（luna H1：被压到 20–22，应 30）
   assert.match(read("composer-attach-menu.tsx"), /className="flex size-7\.5 shrink-0 [^"]*whitespace-nowrap"/)
   // 左组本身不收缩：宽 = 各项自然宽之和，选级量到的就是自然宽（放不下 → 降级，而不是 flex 去压其中某项）
-  assert.match(read("composer-footer.tsx"), /data-testid="composer-footer-left" className="flex w-max shrink-0 flex-nowrap/)
+  assert.match(read("composer-footer.tsx"), /data-testid="composer-footer-left"\s+className="flex w-max shrink-0 flex-nowrap/)
 })
 
 test("#228 luna S1：「回到底部」浮钮只在对话区放得下整颗（bottom-4 16 + size-9 36 + 上沿 8）时渲染；只读视口高", () => {
@@ -504,4 +515,257 @@ test("#228 luna S1：「回到底部」浮钮只在对话区放得下整颗（bo
   assert.match(thread, /fits \? <ConversationScrollButton \/> : null/)
   const fn = thread.slice(thread.indexOf("function FittedConversationScrollButton"), thread.indexOf("function useSendScrollTick"))
   assert.doesNotMatch(fn, /scrollTo|scrollTop\s*=|useChatStore|setState\(/, "只读高度，不改滚动 / store")
+})
+
+// —— #228 H2（luna sbx2 / jojo 768 拖窗）：运行中跨窄窗断点不回弹 ——
+
+/** zh + CU 运行中实测各级左组宽（right 144，gap-1.5）。 */
+const H2_LEFT: Record<FooterStep, number> = { "0": 700, "1": 520, "2": 444, "3a": 412.8, "3b": 290.4, "3c": 264, "3d": 230, "3e": 196 }
+const H2_GAP = 6
+const h2Widths = (s: FooterStep) => ({ left: H2_LEFT[s], right: 144 })
+
+type H2Frame = { inner: number; shift: number; sinceLastMs: number }
+/**
+ * 照 use-footer-density 的驱动方式逐帧跑：RO 回调（按目标宽判 → 闸门决定提不提交）→ 提交后布局 effect 连判到不动；
+ * 串结束两帧后尾随复核（侧栏已停，不过闸）。返回每帧画出来的级。gate=false 即修前（照单全收、按当前宽判）。
+ */
+function h2Run(start: FooterStep, startInner: number, frames: H2Frame[], gate: boolean) {
+  const st = { cache: {} as FooterWidthCache, stepsUsed: 0 } as { cache: FooterWidthCache; stepsUsed: number; upgradeProbeFrom?: FooterStep }
+  const settle = (cur: FooterStep, rowInner: number) => {
+    let step = cur
+    for (let g = 0; g < 50; g += 1) {
+      const next = footerDecide(st, { cur: step, rowInner, gapX: H2_GAP, ...h2Widths(step) })
+      if (next === null) break
+      step = next
+    }
+    return step
+  }
+  st.stepsUsed = 0
+  let step = settle(start, startInner)
+  let lastInner: number | null = startInner
+  const painted: FooterStep[] = []
+  for (const f of frames) {
+    st.stepsUsed = 0
+    const rowInner = gate ? footerTargetInner(f.inner, f.shift) : f.inner
+    const w = h2Widths(step)
+    const next = footerDecide(st, { cur: step, rowInner, gapX: H2_GAP, ...w })
+    if (next) {
+      const ok = !gate || footerResizeGate({ cur: step, next, inner: f.inner, lastInner, sinceLastMs: f.sinceLastMs, shift: f.shift, overflow: w.left + H2_GAP + w.right - f.inner }) === "commit"
+      if (ok) step = settle(next, rowInner)
+    }
+    lastInner = f.inner
+    painted.push(step)
+  }
+  st.stepsUsed = 0
+  const final = settle(step, frames.at(-1)!.inner)
+  painted.push(final)
+  return { painted, final }
+}
+const dirChanges = (seq: FooterStep[]) => {
+  let n = 0
+  let dir = 0
+  for (let i = 1; i < seq.length; i += 1) {
+    const d = Math.sign(footerStepIndex(seq[i]!) - footerStepIndex(seq[i - 1]!))
+    if (!d) continue
+    if (dir && d !== dir) n += 1
+    dir = d
+  }
+  return n
+}
+/** 同宽静态级：从远处（更窄 / 更宽）拖过来落定，两种回滞结果之一。 */
+function h2Static(inner: number) {
+  const out = new Set<FooterStep>()
+  for (const from of [inner - 150, inner + 150]) {
+    const st = { cache: {} as FooterWidthCache, stepsUsed: 0 }
+    let step: FooterStep = "0"
+    for (const w of [from, inner]) {
+      for (let k = 0; k < 4; k += 1) step = driveTickGap(st, step, w).step
+    }
+    out.add(step)
+  }
+  return out
+}
+function driveTickGap(st: { cache: FooterWidthCache; stepsUsed: number; upgradeProbeFrom?: FooterStep }, cur: FooterStep, rowInner: number) {
+  st.stepsUsed = 0
+  let step = cur
+  for (let g = 0; g < 50; g += 1) {
+    const next = footerDecide(st, { cur: step, rowInner, gapX: H2_GAP, ...h2Widths(step) })
+    if (next === null) break
+    step = next
+  }
+  return { step }
+}
+
+/** sbx2 实测帧宽：窗 776→764（侧栏开始收，第一帧先窄 8px），聊天区最后落到 592。 */
+const COLLAPSE_INNER = [372, 379, 391, 410, 440, 472, 502, 525, 543, 556, 567, 575, 581, 586, 589, 591, 592]
+/** 窗 764→776（侧栏开始展，第一帧先宽 12px），聊天区最后落到 384。 */
+const EXPAND_INNER = [604, 565, 537, 503, 470, 440, 420, 405, 395, 389, 386, 384]
+const h2Frames = (inners: number[], target: number): H2Frame[] =>
+  inners.map((inner, i) => ({ inner, shift: i === 0 || i === inners.length - 1 ? 0 : target - inner, sinceLastMs: i === 0 ? 1000 : 16 }))
+
+test("#228 H2：运行中拖窗跨 768（侧栏自动收 / 展）——级别逐帧单向、终态 = 同宽静态级；修前会回弹", () => {
+  const cases = [
+    { name: "776→764 收", start: 380, frames: h2Frames(COLLAPSE_INNER, 592) },
+    { name: "764→776 展", start: 592, frames: h2Frames(EXPAND_INNER, 384) },
+    // jojo 单跳 800→740：窗口一次窄 60px，侧栏下一帧才收
+    { name: "800→740 单跳", start: 412, frames: h2Frames([352, 360, 380, 420, 470, 510, 540, 560, 572, 578, 580], 580) }
+  ]
+  for (const c of cases) {
+    const startStep = h2Run("0", c.start, [{ inner: c.start, shift: 0, sinceLastMs: 1000 }], true).final
+    const fixed = h2Run(startStep, c.start, c.frames, true)
+    assert.equal(dirChanges([startStep, ...fixed.painted]), 0, `${c.name} 修后回弹：${[startStep, ...fixed.painted].join(" ")}`)
+    assert.ok(h2Static(c.frames.at(-1)!.inner).has(fixed.final), `${c.name} 终态 ${fixed.final} ≠ 同宽静态 ${[...h2Static(c.frames.at(-1)!.inner)].join("/")}`)
+    const before = h2Run(startStep, c.start, c.frames, false)
+    assert.ok(dirChanges([startStep, ...before.painted]) > 0, `${c.name} 修前也单向了？测试没咬住：${[startStep, ...before.painted].join(" ")}`)
+  }
+})
+
+test("#228 H2：侧栏点开 / 收起（1100–800）——挤窄时按目标宽一步到终态级、全程不越出行宽；推宽时只升不降", () => {
+  // 侧栏展开把聊天区从 600 挤到 380：第一帧就落到 380 的级，之后每帧都放得下（左组不越出裁切壳）
+  const inners = [600, 590, 560, 520, 480, 450, 425, 405, 392, 385, 381, 380]
+  const frames = inners.map((inner, i) => ({ inner, shift: i === inners.length - 1 ? 0 : 380 - inner, sinceLastMs: i === 0 ? 1000 : 16 }))
+  const start = h2Run("0", 600, [{ inner: 600, shift: 0, sinceLastMs: 1000 }], true).final
+  const r = h2Run(start, 600, frames, true)
+  assert.equal(dirChanges([start, ...r.painted]), 0)
+  r.painted.slice(0, -1).forEach((s, i) => {
+    const w = h2Widths(s)
+    assert.ok(w.left + H2_GAP + w.right - 0.5 <= frames[i]!.inner || s === "3e", `第 ${i} 帧 ${s} 放不下 ${frames[i]!.inner}`)
+  })
+  // 收起：聊天区 380→600，只升
+  const back = inners.slice().reverse()
+  const r2 = h2Run(r.final, 380, back.map((inner, i) => ({ inner, shift: i === back.length - 1 ? 0 : 600 - inner, sinceLastMs: i === 0 ? 1000 : 16 })), true)
+  assert.equal(dirChanges([r.final, ...r2.painted]), 0)
+})
+
+test("#228 H2：footerResizeGate / footerSidebarShift / footerTargetInner 规则", () => {
+  const g = (o: Partial<Parameters<typeof footerResizeGate>[0]>) =>
+    footerResizeGate({ cur: "3d", next: "3e", inner: 372, lastInner: 380, sinceLastMs: 16, ...o })
+  // 侧栏正把聊天区推宽：只升不降
+  assert.equal(g({ shift: 200 }), "defer")
+  assert.equal(g({ shift: 200, next: "3c" }), "commit")
+  // 侧栏正把聊天区挤窄：按目标宽选的级直接提交
+  assert.equal(g({ shift: -200 }), "commit")
+  assert.equal(g({ shift: -200, next: "3c" }), "commit")
+  // 侧栏不动：串首先不换级；但大跨度拉窄（当前级超出 > FOOTER_RESIZE_DIP_PX）照常降级
+  assert.equal(g({ sinceLastMs: FOOTER_RESIZE_BURST_GAP_MS + 1, overflow: 8 }), "defer")
+  assert.equal(g({ sinceLastMs: FOOTER_RESIZE_BURST_GAP_MS + 1, overflow: FOOTER_RESIZE_DIP_PX + 1 }), "commit")
+  assert.equal(g({ sinceLastMs: FOOTER_RESIZE_BURST_GAP_MS + 1, next: "3c", inner: 400 }), "defer")
+  // 串内：与宽度走向相反的换级不提交，同向照常
+  assert.equal(g({ inner: 390, lastInner: 380 }), "defer")
+  assert.equal(g({ inner: 370, lastInner: 380 }), "commit")
+  assert.equal(g({ next: "3c", inner: 370, lastInner: 380 }), "defer")
+  assert.equal(g({ next: "3c", inner: 390, lastInner: 380 }), "commit")
+  // 行宽没变（内容引起的 RO）、首次：照常
+  assert.equal(g({ inner: 380, lastInner: 380, sinceLastMs: 5000 }), "commit")
+  assert.equal(g({ lastInner: null }), "commit")
+  assert.equal(footerSidebarShift(null), 0)
+  assert.equal(footerSidebarShift({ current: 280, target: 60, overlay: false }), 220)
+  assert.equal(footerSidebarShift({ current: 60, target: 280, overlay: false }), -220)
+  assert.equal(footerSidebarShift({ current: 60, target: 280, overlay: true }), 0)
+  assert.equal(footerSidebarShift({ current: 280.3, target: 280, overlay: false }), 0)
+  assert.equal(footerSidebarShift({ current: 280, target: Number.NaN, overlay: false }), 0)
+  assert.equal(footerTargetInner(600, -220), 380)
+  assert.equal(footerTargetInner(380, 220), 380)
+})
+
+/**
+ * jojo 9b「逐步扫宽」：窗口每 55ms 窄 2px（每一下都是串首）。770→768 侧栏还停靠（768 不算窄窗）、聊天区再窄 2px 刚好跨 3d→3e；
+ * 再一下 766 侧栏自动收起、聊天区被推宽到 594。修前 768 那几帧尾随复核落 3e，随后推宽又回 3d→…→2（3d→3e→3d）。
+ * 修后：768 在断点上方 LOOKAHEAD 内且在变窄 → 降级先等 FOOTER_AUTO_COLLAPSE_WAIT_MS（> 一步 55ms），拖过去就随侧栏收起单向升级。
+ */
+function h2Sweep(start: FooterStep, startInner: number, frames: (H2Frame & { near: boolean; dwell: boolean })[], lookahead: boolean) {
+  const st = { cache: {} as FooterWidthCache, stepsUsed: 0 } as { cache: FooterWidthCache; stepsUsed: number; upgradeProbeFrom?: FooterStep }
+  const settle = (cur: FooterStep, rowInner: number) => {
+    let step = cur
+    for (let g = 0; g < 50; g += 1) {
+      const next = footerDecide(st, { cur: step, rowInner, gapX: H2_GAP, ...h2Widths(step) })
+      if (next === null) break
+      step = next
+    }
+    return step
+  }
+  let step = start
+  let lastInner: number | null = startInner
+  const painted: FooterStep[] = []
+  for (const f of frames) {
+    const near = lookahead && f.near
+    st.stepsUsed = 0
+    const rowInner = footerTargetInner(f.inner, f.shift)
+    const w = h2Widths(step)
+    const next = footerDecide(st, { cur: step, rowInner, gapX: H2_GAP, ...w })
+    if (next) {
+      const gate = footerResizeGate({ cur: step, next, inner: f.inner, lastInner, sinceLastMs: f.sinceLastMs, shift: f.shift, overflow: w.left + H2_GAP + w.right - f.inner, nearAutoCollapse: near })
+      if (gate === "commit") step = settle(next, rowInner)
+    }
+    lastInner = f.inner
+    painted.push(step)
+    // 尾随复核：两帧后（断点上方那段要等 WAIT_MS，比下一步 55ms 长，等不到）；侧栏推宽时只升不降
+    if (f.dwell && !near) {
+      st.stepsUsed = 0
+      const t = settle(step, rowInner)
+      if (!(f.shift > 0 && footerStepIndex(t) > footerStepIndex(step))) step = t
+      painted.push(step)
+    }
+  }
+  st.stepsUsed = 0
+  const final = settle(step, frames.at(-1)!.inner)
+  painted.push(final)
+  return { painted, final }
+}
+
+test("#228 H2（jojo 9b 逐步扫宽）：窗每 55ms 窄 2px 跨 768——断点上方那几 px 不先降 3e 再被侧栏收起推回，级别单向、终态 = 同宽静态", () => {
+  const collapse = [376, 383, 395, 414, 444, 476, 506, 529, 547, 560, 571, 579, 585, 590, 593, 594]
+  const frames = [
+    { inner: 386, shift: 0, sinceLastMs: 55, near: true, dwell: true }, // 772
+    { inner: 384, shift: 0, sinceLastMs: 55, near: true, dwell: true }, // 770
+    { inner: 378, shift: 0, sinceLastMs: 55, near: true, dwell: true }, // 768：3d 放不下了
+    ...collapse.map((inner, i) => ({ inner, shift: i === collapse.length - 1 ? 0 : 594 - inner, sinceLastMs: i === 0 ? 55 : 16, near: false, dwell: i === 0 || i === collapse.length - 1 }))
+  ]
+  const start = h2Run("0", 388, [{ inner: 388, shift: 0, sinceLastMs: 1000 }], true).final
+  assert.equal(start, "3d")
+  const fixed = h2Sweep(start, 388, frames, true)
+  assert.equal(dirChanges([start, ...fixed.painted]), 0, `修后：${[start, ...fixed.painted].join(" ")}`)
+  assert.equal(fixed.painted.includes("3e"), false, `修后不该亮 3e：${fixed.painted.join(" ")}`)
+  assert.ok(h2Static(594).has(fixed.final), `终态 ${fixed.final}`)
+  const before = h2Sweep(start, 388, frames, false)
+  assert.ok(dirChanges([start, ...before.painted]) > 0 && before.painted.includes("3e"), `修前应复现 3d→3e→3d：${before.painted.join(" ")}`)
+  // 停在 768 不再动：WAIT_MS 后尾随复核照常落 3e（= 同宽静态）
+  const stay = h2Sweep(start, 388, [frames[0]!, frames[1]!, frames[2]!, { inner: 378, shift: 0, sinceLastMs: 1000, near: false, dwell: true }], true)
+  assert.ok(h2Static(378).has(stay.final) && stay.final === "3e", `停在 768：${stay.painted.join(" ")}`)
+})
+
+test("#228 H2：footerNearAutoCollapse —— 只在停靠展开、断点上方 LOOKAHEAD 内、且在变窄时为真", () => {
+  const n = (o: Partial<Parameters<typeof footerNearAutoCollapse>[0]>) =>
+    footerNearAutoCollapse({ docked: true, windowW: 768, lastWindowW: 770, narrowPx: 768, ...o })
+  assert.equal(n({}), true)
+  assert.equal(n({ windowW: 768 + FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX - 1, lastWindowW: 800 }), true)
+  assert.equal(n({ windowW: 768 + FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX, lastWindowW: 800 }), false)
+  assert.equal(n({ windowW: 766, lastWindowW: 768 }), false) // 已过断点：侧栏会收起，交给 shift
+  assert.equal(n({ windowW: 770, lastWindowW: 768 }), false) // 变宽
+  assert.equal(n({ windowW: 768, lastWindowW: 768 }), false) // 没动（内容引起的 RO / 尾随复核）
+  assert.equal(n({ lastWindowW: null }), false)
+  assert.equal(n({ docked: false }), false) // 已收起 / 浮层
+  const g = (near: boolean, o: Partial<Parameters<typeof footerResizeGate>[0]> = {}) =>
+    footerResizeGate({ cur: "3d", next: "3e", inner: 378, lastInner: 380, sinceLastMs: 16, nearAutoCollapse: near, ...o })
+  assert.equal(g(false), "commit")
+  assert.equal(g(true), "defer")
+  assert.equal(g(true, { next: "3c", inner: 382 }), "commit") // 升级不受影响
+  assert.equal(g(true, { overflow: FOOTER_RESIZE_DIP_PX + 1 }), "commit") // 大跨度照常
+})
+
+test("#228 H2 源码：计量在底栏里窄时只隐身占位（不随容器查询 0↔20px 跳宽）；hook 接闸门、侧栏目标宽、字形补载也守只升不降", () => {
+  const footer = read("composer-footer.tsx")
+  assert.match(footer, /\[&_\[data-testid=session-meter\]\]:inline-flex \[&_\[data-testid=session-meter\]\]:invisible @\[36rem\]:\[&_\[data-testid=session-meter\]\]:visible/)
+  const meter = readFileSync(join(dir, "..", "usage", "session-meter.tsx"), "utf8")
+  assert.match(meter, /data-testid="session-meter"/)
+  const hook = read("use-footer-density.ts")
+  assert.match(hook, /footerResizeGate\(\{/)
+  assert.match(hook, /rowInner: footerTargetInner\(/)
+  assert.match(hook, /new MutationObserver/)
+  assert.match(hook, /if \(mo && nav\) mo\.observe\(nav, /)
+  assert.match(hook, /attributeFilter: \["style", "data-collapsed", "data-overlay"\]/)
+  assert.match(hook, /lastShift\.current > 0 && footerStepIndex\(next\) > footerStepIndex\(cur\)/)
+  assert.match(hook, /nearAutoCollapse: lastNear\.current/)
+  assert.match(hook, /NARROW_SIDEBAR_PX/)
+  assert.doesNotMatch(hook, /__fd/)
 })

@@ -151,7 +151,14 @@ export function ComposerFooter({
       {/* 左组 shrink-0：宽恒为各项自然宽之和，flex 不再压扁任何一项（#228 jojo B1 / luna H1）；放不下由选级降级，溢出由裁切壳裁。
           裁切壳：只在 L≥1 横向裁切（L0 放得下、不裁，1440 合成层与现网一致）；纵向不裁，「已切换」浮签照常外溢 */}
       <div className={cx("flex min-w-0 flex-1", FOOTER_LEFT_CLIP)}>
-      <div ref={leftRef} data-testid="composer-footer-left" className="flex w-max shrink-0 flex-nowrap items-center gap-1.5">
+      {/* 计量（session-meter）本身在表单容器 <36rem 时 display:none：放进一行底栏后，它会随宽度跨 576 出现 / 消失，
+          左组自然宽跟着 ±26px，选级在侧栏动画里被它来回推（#228 luna H2）。底栏里改成窄时只隐身（visibility:hidden）、
+          保留占位：≥36rem 与现网一模一样；<36rem 看起来仍不显示，但左组宽恒定，选级只随宽度单调变化。 */}
+      <div
+        ref={leftRef}
+        data-testid="composer-footer-left"
+        className="flex w-max shrink-0 flex-nowrap items-center gap-1.5 [&_[data-testid=session-meter]]:inline-flex [&_[data-testid=session-meter]]:invisible @[36rem]:[&_[data-testid=session-meter]]:visible"
+      >
         <ComposerAttachMenu onPickFiles={onPickFiles} />
         {onPreviewToggle && !moved.preview ? (
           <ComposerPreviewToggle previewOpen={previewOpen} onToggle={onPreviewToggle} />

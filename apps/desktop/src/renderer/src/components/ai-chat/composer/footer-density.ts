@@ -142,3 +142,76 @@ export function footerDecide(
   }
   return next
 }
+
+/**
+ * 停靠侧栏（nav-card）在动画途中还会把聊天区推宽（+）/ 挤窄（−）多少 px：现宽 − 目标宽（目标宽就是它 inline style 的 width）。
+ * 浮层侧栏不占主区、没在动画、量不到 → 0。只读 DOM，不读窗宽。
+ */
+export function footerSidebarShift(nav: { current: number; target: number; overlay: boolean } | null): number {
+  if (!nav || nav.overlay || !Number.isFinite(nav.current) || !Number.isFinite(nav.target)) return 0
+  const d = nav.current - nav.target
+  return Math.abs(d) <= FOOTER_SUBPIXEL_PX ? 0 : d
+}
+
+/** 侧栏要把聊天区挤窄时，提前按落定后的宽度选级（行内宽加上负的 shift），动画一开始就落到终态级、全程单向不裁切。 */
+export function footerTargetInner(inner: number, shift: number): number {
+  return shift < 0 ? inner + shift : inner
+}
+
+/**
+ * RO（容器宽度变化）触发的换级闸门（#228 luna H2 / jojo 768 拖窗）：
+ * 窗口跨 768 时，窗口先变 ±8~16px、下一帧侧栏才开始收 / 展动画，聊天区宽度先「反向」一两帧再单调变化，
+ * 照单全收会画出 3d→3e→3d / 3a→2→3a 这类来回。
+ * - 停靠侧栏正在把聊天区推宽（shift > 0）：只升不降（降级只可能来自中途反向，交给尾随复核）。
+ * - 停靠侧栏正在把聊天区挤窄（shift < 0）：选级已按目标宽算（footerTargetInner），直接提交，一步到终态。
+ * - 侧栏不动：行宽没变（内容引起的 RO）照常提交；一串 RO 的第一下（距上一下超过一个空档）先不换级；
+ *   串内宽度在变大时不降级、在变小时不升级，都交给尾随复核（最后一下 RO 之后两帧按落定宽度再判）。
+ *   例外：串首这一下要降级、而当前级已超出行宽 FOOTER_RESIZE_DIP_PX 以上（大跨度拉窗，不是跨断点那一两帧的回弹），照常提交，免得左组被裁一大截。
+ * 只决定「这一下提不提交」，不改选级本身（常量 / 回滞 / C1 不动）；尾随复核照常选级，终态与同宽静态一致。
+ */
+export const FOOTER_RESIZE_BURST_GAP_MS = 50
+/** 跨窄窗断点时窗口单步回弹的上限（拖窗 2~16px，jojo 单跳 800→740 是 60px）。 */
+export const FOOTER_RESIZE_DIP_PX = 96
+/**
+ * 跨窄窗断点拖窗（jojo 9b「逐步扫宽」）：停靠侧栏展开、窗宽已在断点上方 LOOKAHEAD 以内且还在变窄时，
+ * 再窄一两 px 侧栏就自动收起、把聊天区推宽 ~220——这时降级多半只亮几帧就被推宽抵消（3d→3e→3d）。
+ * 这段里的降级先等 WAIT_MS：拖过断点就直接随侧栏收起单向升级；停在这段里，WAIT_MS 后照常按同宽静态落级。
+ */
+export const FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX = 16
+export const FOOTER_AUTO_COLLAPSE_WAIT_MS = 150
+export function footerNearAutoCollapse(input: {
+  /** 侧栏停靠且展开（不是浮层、没收起）。 */
+  docked: boolean
+  windowW: number
+  lastWindowW: number | null
+  /** 自动收起断点（app-shell NARROW_SIDEBAR_PX，窗宽 < 它即收起）。 */
+  narrowPx: number
+}): boolean {
+  const { docked, windowW, lastWindowW, narrowPx } = input
+  if (!docked || lastWindowW == null || !Number.isFinite(windowW)) return false
+  return windowW >= narrowPx && windowW < narrowPx + FOOTER_AUTO_COLLAPSE_LOOKAHEAD_PX && windowW < lastWindowW - FOOTER_SUBPIXEL_PX
+}
+export function footerResizeGate(input: {
+  cur: FooterStep
+  next: FooterStep
+  inner: number
+  lastInner: number | null
+  sinceLastMs: number
+  shift?: number
+  /** 当前级整行所需宽 − 行内宽（>0 即左组被裁）。 */
+  overflow?: number
+  /** footerNearAutoCollapse：窗宽在自动收起断点上方一小段且还在变窄。 */
+  nearAutoCollapse?: boolean
+}): "commit" | "defer" {
+  const { cur, next, inner, lastInner, sinceLastMs, shift = 0, overflow = 0, nearAutoCollapse = false } = input
+  const down = footerStepIndex(next) > footerStepIndex(cur)
+  if (shift > FOOTER_SUBPIXEL_PX) return down ? "defer" : "commit"
+  if (shift < -FOOTER_SUBPIXEL_PX) return "commit"
+  if (down && nearAutoCollapse && overflow <= FOOTER_RESIZE_DIP_PX) return "defer"
+  if (lastInner == null) return "commit"
+  if (Math.abs(inner - lastInner) <= FOOTER_SUBPIXEL_PX) return "commit"
+  if (sinceLastMs > FOOTER_RESIZE_BURST_GAP_MS) return down && overflow > FOOTER_RESIZE_DIP_PX ? "commit" : "defer"
+  if (down && inner > lastInner + FOOTER_SUBPIXEL_PX) return "defer"
+  if (!down && inner < lastInner - FOOTER_SUBPIXEL_PX) return "defer"
+  return "commit"
+}

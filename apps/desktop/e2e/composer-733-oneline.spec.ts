@@ -995,3 +995,119 @@ for (const lang of ["zh", "en"] as const) {
     }
   })
 }
+
+/** 逐帧（rAF）记底栏级 / 行高 / 发送钮底 / 是否在跑，直到 stop()。 */
+async function recordFrames(window: Page) {
+  await window.evaluate(() => {
+    const w = window as unknown as { __h2rec?: { f: [string, number, number | null, number][]; stop: boolean } }
+    const st = { f: [] as [string, number, number | null, number][], stop: false }
+    w.__h2rec = st
+    const loop = () => {
+      const row = document.querySelector('[data-testid="composer-footer-row"]')
+      const send = document.querySelector('[data-testid="composer-send"],[data-testid="composer-stop"]')
+      st.f.push([
+        `${row?.getAttribute("data-footer-density") ?? "?"}${row?.getAttribute("data-footer-overflow") ?? ""}`,
+        row ? Math.round(row.getBoundingClientRect().height) : -1,
+        send ? Math.round(send.getBoundingClientRect().bottom) : null,
+        document.querySelector('[data-testid="composer-stop"]') ? 1 : 0
+      ])
+      if (!st.stop) requestAnimationFrame(loop)
+    }
+    requestAnimationFrame(loop)
+  })
+  return async () =>
+    window.evaluate(() => {
+      const st = (window as unknown as { __h2rec: { f: [string, number, number | null, number][]; stop: boolean } }).__h2rec
+      st.stop = true
+      return st.f
+    })
+}
+const levelDirChanges = (levels: string[]) => {
+  let n = 0
+  let dir = 0
+  for (let i = 1; i < levels.length; i += 1) {
+    const d = Math.sign(STEPS.indexOf(levels[i] as (typeof STEPS)[number]) - STEPS.indexOf(levels[i - 1] as (typeof STEPS)[number]))
+    if (!d) continue
+    if (dir && d !== dir) n += 1
+    dir = d
+  }
+  return n
+}
+
+for (const lang of ["zh", "en"] as const) {
+  test(`#228 H2（${lang}）：CU 运行中拖窗跨 768（侧栏自动收 / 展）与点侧栏开关 —— 级别逐帧单向不回弹、每帧一行、发送钮不越界`, async () => {
+    const testInfo = test.info()
+    test.setTimeout(240_000)
+    const { app, window, roErrors } = await boot(lang, { cu: true })
+    try {
+      const input = window.getByTestId("composer-input")
+      const ensureRunning = async () => {
+        if ((await window.getByTestId("composer-stop").count()) > 0) return
+        await expect(window.getByTestId("composer-send")).toHaveAttribute("aria-label", /^(Send|发送)$/, { timeout: 30_000 })
+        await sendComposer(window, input, SLOW)
+        await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+        await window.waitForTimeout(600)
+      }
+      const check = async (label: string, act: () => Promise<void>) => {
+        await ensureRunning()
+        const stop = await recordFrames(window)
+        await act()
+        await window.waitForTimeout(900)
+        const f = await stop()
+        const ran = f.filter((x) => x[3] === 1)
+        const levels = ran.map((x) => x[0]).filter((k, i, a) => i === 0 || a[i - 1] !== k)
+        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
+        console.log(`[composer-733-oneline] ${line}`)
+        await testInfo.attach(label, { body: line, contentType: "application/json" })
+        expect(ran.length, `${label} 全程在跑 ${line}`).toBeGreaterThan(20)
+        expect(levelDirChanges(levels), `${label} 级别单向 ${line}`).toBe(0)
+        for (const x of f) {
+          expect(x[1], `${label} 每帧一行 ${line}`).toBeLessThanOrEqual(46)
+          expect(x[2] ?? 0, `${label} 发送钮底 ≤ ${SEND_MAX_733} ${line}`).toBeLessThanOrEqual(SEND_MAX_733 + 0.5)
+        }
+      }
+      for (const [a, b] of [
+        [800, 740],
+        [740, 800],
+        [780, 760],
+        [760, 780],
+        [776, 764],
+        [764, 776]
+      ] as const) {
+        await ensureRunning()
+        await resize(window, a, 480)
+        await check(`H2-drag-${a}-${b}-${lang}`, async () => {
+          await window.setViewportSize({ width: b, height: 480 })
+        })
+      }
+      // jojo 9b 逐步扫宽：每 55ms 2px 跨 768（776↔760），断点上方那几 px 不先降一级再被侧栏收起推回
+      for (const [a, b] of [
+        [776, 760],
+        [760, 776]
+      ] as const) {
+        await ensureRunning()
+        await resize(window, a, 480)
+        await check(`H2-sweep-${a}-${b}-${lang}`, async () => {
+          const dir = Math.sign(b - a)
+          for (let x = a + dir * 2; dir > 0 ? x <= b : x >= b; x += dir * 2) {
+            await window.setViewportSize({ width: x, height: 480 })
+            await window.waitForTimeout(55)
+          }
+        })
+      }
+      // 点侧栏开关（宽窗，停靠）：收 / 展各一次
+      for (const w of [1100, 900, 800]) {
+        await ensureRunning()
+        await resize(window, w, 480)
+        for (const dir of ["collapse", "expand"]) {
+          await check(`H2-toggle-${w}-${dir}-${lang}`, async () => {
+            await window.getByTestId("sidebar-toggle").click()
+          })
+        }
+      }
+      expect(roErrors, "no ResizeObserver loop").toEqual([])
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
