@@ -8,7 +8,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { hostInjectChipLane } from "./host-inject-chip-label.ts"
 import { HostInjectPopover } from "./host-inject-popover.tsx"
-import type { HostInjectBarView } from "./host-inject-view.ts"
+import { hostInjectWarns, type HostInjectBarView } from "./host-inject-view.ts"
 import { useHostInjectBar } from "./use-host-inject-bar.ts"
 
 export function HostInjectBar() {
@@ -39,7 +39,7 @@ function HostInjectChip({
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
-  const unsupported = view.kind === "unsupported" || view.kind === "failed"
+  const unsupported = hostInjectWarns(view)
   const label =
     lane === "both"
       ? t("chat.hostInjectChip", { mcp: enabledMcp, skills: enabledSkills })

@@ -28,6 +28,11 @@ export type HostInjectBarView =
   | { kind: "failed"; skipped: HostInjectSkip[] }
   | { kind: "unsupported"; mcp: boolean; skills: boolean }
 
+/** 芯片黄色警告判据（底栏芯片的警告图标与 L3 溢出钮的黄点共用）：只有 failed / unsupported；部分跳过不算。 */
+export function hostInjectWarns(view: HostInjectBarView): boolean {
+  return view.kind === "unsupported" || view.kind === "failed"
+}
+
 export function hostInjectBarView(input: {
   runtimeId: string
   snapshot?: Pick<HostInjectSnapshot, "runtimeId" | "mcp" | "skills"> | null

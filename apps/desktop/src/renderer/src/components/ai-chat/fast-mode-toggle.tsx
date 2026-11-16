@@ -5,6 +5,7 @@ import { RiFlashlightLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { FOOTER_GE2_HIDDEN, FOOTER_GE2_ICON_BUTTON } from "./composer/footer-density"
 
 export function FastModeToggle() {
   const t = useT()
@@ -22,7 +23,8 @@ export function FastModeToggle() {
         "group flex h-8 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2.5 text-caption-1-medium shadow-2xs outline-none transition-all duration-150 select-none active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         isFastMode
           ? "border border-status-yellow-text/40 bg-status-yellow-background/15 font-semibold text-status-yellow-text ring-1 ring-status-yellow-text/25 dark:text-status-yellow-text"
-          : "border border-border-button-default bg-background-primary-default text-text-secondary hover:border-border-button-hover hover:bg-background-secondary-hover hover:text-text-primary"
+          : "border border-border-button-default bg-background-primary-default text-text-secondary hover:border-border-button-hover hover:bg-background-secondary-hover hover:text-text-primary",
+        FOOTER_GE2_ICON_BUTTON
       )}
     >
       <RiFlashlightLine
@@ -31,7 +33,7 @@ export function FastModeToggle() {
           isFastMode ? "text-status-yellow-text dark:text-status-yellow-text" : "text-text-tertiary"
         )}
       />
-      <span className="whitespace-nowrap text-caption-1-medium font-medium">{t("chat.fastMode")}</span>
+      <span className={cx("whitespace-nowrap text-caption-1-medium font-medium", FOOTER_GE2_HIDDEN)}>{t("chat.fastMode")}</span>
     </button>
   )
 }

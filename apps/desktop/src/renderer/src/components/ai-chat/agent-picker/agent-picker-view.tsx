@@ -10,6 +10,7 @@ import { AgentBrandIcon } from "./agent-brand-icon"
 import { CliModelMark } from "./cli-model-mark"
 import { ComposerModelFlyout } from "./composer-model-flyout"
 import type { AgentPickerModel } from "./use-agent-picker"
+import { FOOTER_GE1_HIDDEN } from "../composer/footer-density"
 
 export function AgentPickerView(model: AgentPickerModel) {
   return (
@@ -61,7 +62,7 @@ function ChipLabel({ model }: { model: AgentPickerModel }) {
   const shownId = shownModelId(model)
   const listed = model.models.find((item) => item.id === shownId)
   return (
-    <span className="flex min-w-0 flex-1 items-center overflow-hidden">
+    <span className={cx("flex min-w-0 flex-1 items-center overflow-hidden", FOOTER_GE1_HIDDEN)}>
       <span className={cx("hidden shrink-0 @[18rem]:inline", model.pickerLocked ? "text-accent-500" : "text-text-secondary")}>
         {model.chip.engine}
       </span>

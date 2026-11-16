@@ -139,10 +139,11 @@ test("P2 窄句：中性暂停（停止 / 换助手 / held）在输入框那版�
   assert.equal(heldPlain.shortText, heldPlain.text)
 })
 
-test("接线：宽（≥35rem）显示全句、窄显示窄句；窄句仍 line-clamp-2，两个都带 title 全文", () => {
+test("接线：宽（≥35rem）显示全句、窄显示窄句；两句都单行 truncate（K6，luna §15），两个都带 title 全文", () => {
   const row = readFileSync(new URL("./queue-paused-row.tsx", import.meta.url), "utf8")
-  assert.match(row, /data-testid="queue-paused-reason"\s+className=\{cx\(\s+"hidden [^"]*@\[35rem\]:block"/)
-  assert.match(row, /data-testid="queue-paused-reason-short"\s+className=\{cx\(\s+"line-clamp-2 [^"]*@\[35rem\]:hidden"/)
+  assert.match(row, /data-testid="queue-paused-reason"\s+className=\{cx\(\s+"hidden [^"]*\btruncate\b[^"]*@\[35rem\]:block"/)
+  assert.match(row, /data-testid="queue-paused-reason-short"\s+className=\{cx\(\s+"truncate [^"]*@\[35rem\]:hidden"/)
+  assert.doesNotMatch(row, /line-clamp-2/)
   assert.equal(row.match(/title=\{view\.text\}/g)?.length, 2)
   assert.match(row, /\{view\.shortText\}/)
 })

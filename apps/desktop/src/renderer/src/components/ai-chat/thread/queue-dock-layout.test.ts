@@ -106,7 +106,8 @@ test("luna #170 r-luna ① 接线：挤到 <64px 折成一行（squeezed）；�
   assert.equal(dock.match(/setExpanded\(true\)/g)?.length, 1, "展开只有 expand 这一处")
   assert.match(dock, /if \(paused && \(pausedCollapsed\(short, expanded\) \|\| squeezed\)\)/)
   assert.match(dock, /const mode = dockMode\(items\.length, tight, expanded, squeezed\)/)
-  assert.match(dock, /useFoldOnSqueeze\(expanded, dockHeight, hiddenBelow, autoFolded, foldSqueezed\)/)
+  // K6（luna §15）：挤压态区高是自己取整行收的，喂可用高；不在挤压态时仍是区实测高（判定 foldOnSqueeze 不动）。
+  assert.match(dock, /useFoldOnSqueeze\(expanded, squeeze\.squeezed \? squeeze\.availPx : dockHeight, hiddenBelow, autoFolded, foldSqueezed\)/)
   assert.match(dock, /const dockHeight = useDockHeight\(ref, expanded \|\| hiddenBelow > 0\)/)
   assert.match(dock, /if \(foldOnSqueeze\(seenRoomy\.current, dockHeight, hiddenBelow, autoFolded\)\) \{\s+seenRoomy\.current = false\s+fold\(\)/)
   assert.match(dock, /if \(pillFitsBelow\(dockHeight\)\) seenRoomy\.current = true/)

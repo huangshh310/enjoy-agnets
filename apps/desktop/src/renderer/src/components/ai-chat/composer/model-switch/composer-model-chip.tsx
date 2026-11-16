@@ -18,6 +18,7 @@ import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-
 import { clearModelSwitchBadge, showModelSwitchNotice } from "./model-switch-notice"
 import { ModelSwitchChipBadge, ModelSwitchNotice } from "./model-switch-feedback"
 import { ModelSwitchPanel, type SwitchableModel } from "./model-switch-panel"
+import { FOOTER_GE1_HIDDEN, FOOTER_MODEL_CHIP_WIDTH } from "../footer-density"
 import { useComposerModelSwitch } from "./use-composer-model-switch"
 
 export function ComposerModelChip({
@@ -115,6 +116,7 @@ export function ComposerModelChip({
             aria-label={t("chat.modelSwitch.menuTitle")}
             className={cx(
               "inline-flex h-6 max-w-[16rem] items-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2.5 text-caption-2-medium outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+              FOOTER_MODEL_CHIP_WIDTH,
               state.unsupported
                 ? "cursor-not-allowed bg-background-secondary-default text-text-tertiary opacity-60 ring-1 ring-border-button-default"
                 : busy
@@ -125,10 +127,10 @@ export function ComposerModelChip({
             <span className="flex size-3.5 shrink-0 items-center justify-center">
               <AgentBrandIcon id={state.runtimeId} size={14} />
             </span>
-            <span className="shrink-0 text-text-secondary">{state.chip.engine}</span>
+            <span className={cx("shrink-0 text-text-secondary", FOOTER_GE1_HIDDEN)}>{state.chip.engine}</span>
             {state.chip.model ? (
               <>
-                <span className="text-text-tertiary">·</span>
+                <span className={cx("text-text-tertiary", FOOTER_GE1_HIDDEN)}>·</span>
                 <span className="min-w-0 truncate font-semibold">{state.chip.model}</span>
               </>
             ) : null}

@@ -36,14 +36,14 @@ test("9：失败卡 / 发送闸白卡的 × 有 aria-label（和 title 同一句
   assert.equal((enChat as any).dismissError, "Dismiss error")
 })
 
-test("4：暂停行按容器宽排——窄（<35rem）时 wrap、原因最多 2 行带 title；宽时一行不截断", () => {
+test("4：暂停行按容器宽排——窄（<35rem）时 wrap；原因一律单行 truncate 带 title（K6，luna §15）", () => {
   const row = src("./queue-paused-row.tsx")
   assert.match(row, /data-testid="queue-paused-row" data-reason=\{reason\} className="@container min-w-0 shrink-0"/)
   assert.match(row, /flex min-w-0 flex-wrap items-center [^"]*@\[35rem\]:flex-nowrap/)
   assert.match(row, /className="flex min-w-0 flex-auto items-center gap-1\.5 @\[35rem\]:flex-1"/)
   assert.match(row, /title=\{view\.text\}/)
-  // luna #170：窄时换窄句（不说条数），仍 line-clamp-2 + title 全文兜底；宽时全句不截断。
-  assert.match(row, /"hidden min-w-0 flex-1 text-caption-1-regular @\[35rem\]:block"/)
-  assert.match(row, /"line-clamp-2 min-w-0 flex-1 text-caption-1-regular @\[35rem\]:hidden"/)
+  // luna #170：窄时换窄句（不说条数）；K6（luna §15）：宽句、窄句都单行 truncate，title 全文兜底。
+  assert.match(row, /"hidden min-w-0 flex-1 truncate text-caption-1-regular @\[35rem\]:block"/)
+  assert.match(row, /"truncate min-w-0 flex-1 text-caption-1-regular @\[35rem\]:hidden"/)
   assert.match(row, /className="ml-auto flex shrink-0 items-center gap-0\.5"/)
 })

@@ -138,6 +138,33 @@ test("1440×920 待验收展开：slot ≥ 108，不转单行条（托盘 108 �
   assert.equal(shouldUseTrayStrip(slot), false)
 })
 
+test("733 底栏一行（段 A）：form 156 未收余量 → 87；已收余量 130 → 83；都 < 108 → 仍是单行条", () => {
+  const raw = trayStripSlot({
+    statusBarTop: STATUS_TOP,
+    viewportHeight: VP,
+    formHeight: 156,
+    slackApplied: false,
+    frameBottom: FRAME_BOTTOM_EXPANDED,
+    conversationHeight: CONV_EXPANDED,
+    conversationFloor: 56
+  })
+  const reclaimed = trayStripSlot({
+    statusBarTop: STATUS_TOP,
+    viewportHeight: VP,
+    formHeight: 130,
+    slackApplied: true,
+    frameBottom: FRAME_BOTTOM_EXPANDED,
+    conversationHeight: CONV_EXPANDED,
+    conversationFloor: 56
+  })
+  assert.equal(raw, 430 - (156 - 30) - (209 + 8))
+  assert.equal(raw, 87)
+  assert.equal(reclaimed, 430 - 130 - (209 + 8))
+  assert.equal(reclaimed, 83)
+  assert.equal(shouldUseTrayStrip(raw), true)
+  assert.equal(shouldUseTrayStrip(reclaimed), true)
+})
+
 test("阈值：slot 恰为 108 不触发，107 触发；null / NaN 不触发", () => {
   assert.equal(EXPANDED_TRAY_COMFORT_PX, 108)
   assert.equal(shouldUseTrayStrip(108), false)
