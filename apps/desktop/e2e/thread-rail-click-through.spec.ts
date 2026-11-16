@@ -90,8 +90,13 @@ test("1099 宽、两条带字用户消息、无文件账本：右侧刻度不吃
     const cancel = message.getByRole("button", { name: "取消" })
     const save = message.getByRole("button", { name: "保存并重新发送" })
     await expectTicksClear(ticks, [editor, cancel, save], "editor")
-    expect(await hitsSelf(cancel), "cancel: elementFromPoint not the button").toBe(true)
-    expect(await hitsSelf(save), "save: elementFromPoint not the button").toBe(true)
+    // 编辑框展开会让列表滚一下：virtua 滚动期间整层 pointer-events:none（neo #226 定位），一次性命中测试会撞上。
+    // 和 L76 一样 poll 到落定；最终必须命中按钮本身，没命中时把命中元素的 outerHTML 打进失败信息。
+    for (const [name, button] of [["cancel", cancel], ["save", save]] as const) {
+      await expect
+        .poll(() => hitSelfOrWhat(button), { timeout: 3_000, message: `${name}: elementFromPoint not the button` })
+        .toBe(true)
+    }
     await snap(window, "1100x720-rail-editor")
     await clickCenter(window, cancel)
     await expect(editor).toHaveCount(0, { timeout: 5_000 })
@@ -234,6 +239,16 @@ async function clickCenter(window: Page, locator: Locator): Promise<void> {
   const b = await box(locator)
   await window.mouse.move(b.x + b.width / 2, b.y + b.height / 2)
   await window.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+}
+
+/** 命中按钮本身返回 true；否则返回命中元素 outerHTML 的前 200 字符（poll 失败时显示在 Received 里）。 */
+async function hitSelfOrWhat(locator: Locator): Promise<true | string> {
+  return locator.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+    if (hit && (hit === el || el.contains(hit))) return true as const
+    return `hit: ${hit ? hit.outerHTML.slice(0, 200) : "null"}`
+  })
 }
 
 async function hitsSelf(locator: Locator): Promise<boolean> {
