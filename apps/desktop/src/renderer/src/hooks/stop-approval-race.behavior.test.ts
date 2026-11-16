@@ -6,6 +6,7 @@
  */
 import assert from "node:assert/strict"
 import { afterEach, test } from "node:test"
+import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 
 const memory = new Map<string, string>()
 ;(globalThis as any).localStorage = { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v), removeItem: (k: string) => void memory.delete(k) }
@@ -200,7 +201,8 @@ test("停止后（卡迟到）「从这里重来」：落定前被停止锁挡�
   const locked = await rewindFromUserTurn({ userMessageId: "u1", restoreFiles: false })
   assert.equal((locked as { code?: string }).code, "REWIND_BUSY", "落定前被停止锁挡住")
   // 落定后：迟到的卡不能再用 running 挡住它
-  dispatchAgentEvent({ type: "run.stopped", runId, sessionId, phase: "final", receipt: { write: "none", tools: [] } } as never)
+  const settled: StreamEvent = { type: "run.stopped", runId, sessionId, phase: "final", receipt: { write: "none_confirmed", tools: [] } }
+  dispatchAgentEvent(settled)
   const result = await rewindFromUserTurn({ userMessageId: "u1", restoreFiles: false })
   assert.notEqual((result as { code?: string }).code, "REWIND_BUSY")
 })
