@@ -160,6 +160,44 @@ test("C1b：落定后同一会话照常能「继续」和「重新生成」", as
   assert.equal(agentRuns().length, 1, "落定后重新生成照常起跑")
 })
 
+test("C1b ② 正向对照：落定后同一会话「保存并重新发送」照常发出（改过的那句进 agent.run），不再返回 stop-locked", async () => {
+  const sid = stoppingSession("stopping")
+  assert.equal(await editAndResendUserTurn("u0", "改过的这句"), "stop-locked", "前提：收尾期间被挡")
+  assert.equal(agentRuns().length, 0)
+  settle(sid)
+  const outcome = await editAndResendUserTurn("u0", "改过的这句")
+  await flush()
+  assert.notEqual(outcome, "stop-locked", "落定后不再按锁挡")
+  assert.equal(agentRuns().length, 1, "落定后编辑重发起跑")
+  assert.equal(agentRuns()[0].arg.sessionId, sid)
+  assert.match(JSON.stringify(agentRuns()[0].arg), /改过的这句/, "发出去的是改过的那句")
+})
+
+test("C1b ③ 正向对照：落定后同一会话出错横幅「重试」照常重跑（有 id）", async () => {
+  const sid = stoppingSession("stuck")
+  assert.equal(await retryFailedUserTurn({ id: "u0", content: "写个文件" }), false, "前提：收尾期间被挡")
+  assert.equal(agentRuns().length, 0)
+  settle(sid)
+  const started = await retryFailedUserTurn({ id: "u0", content: "写个文件" })
+  await flush()
+  assert.equal(started, true, "落定后重试起跑")
+  assert.equal(agentRuns().length, 1)
+  assert.equal(agentRuns()[0].arg.sessionId, sid)
+})
+
+test("C1b ③b 正向对照：落定后没有 id 的失败轮重试照常把原话还回输入框", async () => {
+  const sid = stoppingSession("stuck")
+  await retryFailedUserTurn({ content: "写个文件" })
+  assert.equal(useChatStore.getState().composer, "", "前提：收尾期间不还稿")
+  settle(sid)
+  const started = await retryFailedUserTurn({ content: "写个文件" })
+  await flush()
+  assert.equal(started, false, "没 id 不重跑")
+  assert.equal(useChatStore.getState().composer, "写个文件", "落定后原话还回输入框")
+})
+
+// 行为验证在 e2e/e1-stop-entries-locked.spec.ts「流水线启动」（锁住不建 workflow run、落定后建出一条，已进 CI）：
+// startPipeline 是 workflows-page.tsx 组件里的闭包，node:test 加载不了 .tsx，单测层只能留这条结构断言做硬门兜底。
 test("C1b：流水线「启动」在当前会话里跑 agent.run，收尾期间同样先挡", () => {
   assert.match(
     src("../components/workflows/workflows-page.tsx"),
