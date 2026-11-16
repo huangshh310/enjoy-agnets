@@ -848,6 +848,7 @@ export const enChat = {
   editHint: "Ctrl/Cmd+Enter to send · Esc to cancel",
   saveResend: "Save and resend",
   editMessage: "Edit message",
+  stopLockedTryLater: "Try again once it stops.",
   goodResponse: "Good response",
   badResponse: "Bad response",
   extracting: "Extracting…",

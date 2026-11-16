@@ -27,6 +27,7 @@ export function TaskList({
   variant = "dock",
   live = true,
   onContinue,
+  continueDisabledHint,
   action,
   footer,
   fused
@@ -57,6 +58,7 @@ export function TaskList({
           live={live}
           onToggle={() => setCollapsed((value) => !value)}
           onContinue={onContinue}
+          continueDisabledHint={continueDisabledHint}
           action={action}
           footer={footer}
           fused={fused}
@@ -82,7 +84,7 @@ export function TaskList({
           {title ?? uiT("任务", "Tasks")}
         </span>
         <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary">
-          {onContinue && !live && !allDone ? <ContinueButton onContinue={onContinue} /> : null}
+          {onContinue && !live && !allDone ? <ContinueButton onContinue={onContinue} disabledHint={continueDisabledHint} /> : null}
           <span className="tabular-nums">
             {completedCount}/{total} {uiT("完成", "complete")}
           </span>

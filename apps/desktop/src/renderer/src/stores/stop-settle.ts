@@ -114,6 +114,11 @@ export function isStopLocked(sessionId: string | null | undefined): boolean {
   return Boolean(sessionId && useStopSettleStore.getState().bySession[sessionId])
 }
 
+/** 本会话收尾没落定（正在停下 / 没能停下）：发送锁与重新生成 / 编辑重发 / 重试 / Todo 继续共用这一个判断。 */
+export function useStopLocked(sessionId: string | null | undefined): boolean {
+  return useStopSettleStore((state) => Boolean(sessionId && state.bySession[sessionId]))
+}
+
 export function useToolStopView(toolCallId: string): ToolStopView | null {
   return useStopSettleStore((state) => toolStopView(state, toolCallId))
 }

@@ -843,6 +843,8 @@ export const zhChat = {
   editHint: "Ctrl/Cmd+Enter 发送 · Esc 取消",
   saveResend: "保存并重新发送",
   editMessage: "编辑消息",
+  /** luna C1b：收尾没落定时，重新生成 / 编辑重发 / 重试 / Todo 继续置灰的说明。 */
+  stopLockedTryLater: "停干净后再试",
   goodResponse: "觉得有帮助",
   badResponse: "觉得不准确",
   extracting: "正在提取…",

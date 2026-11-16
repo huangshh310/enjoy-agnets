@@ -4,6 +4,7 @@
 import { RiCheckLine } from "@remixicon/react"
 import { uiT } from "@/i18n/ui-locale"
 import { cx } from "@/utils/cx"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { NormalizedTask, TaskItem, TaskStatus } from "./task-list.types"
 import { statusFromIndex } from "./task-list-status"
 
@@ -29,18 +30,39 @@ export function normalizeTasks(
   })
 }
 
-export function ContinueButton({ onContinue }: { onContinue: () => void }) {
-  return (
+/**
+ * disabledHint：可见但置灰（aria-disabled，不用原生 disabled——否则 tooltip 出不来），悬停给说明，点了不动。
+ * 桌面端在停止收尾没落定时传「停干净后再试」（luna C1b）。
+ */
+export function ContinueButton({ onContinue, disabledHint }: { onContinue: () => void; disabledHint?: string }) {
+  const locked = Boolean(disabledHint)
+  const button = (
     <button
       type="button"
+      data-testid="todo-continue"
+      aria-disabled={locked || undefined}
       onClick={(event) => {
         event.stopPropagation()
-        onContinue()
+        if (!locked) onContinue()
       }}
-      className="rounded-full border border-border-button-default bg-background-primary-default px-2 py-0.5 text-caption-2-medium text-text-secondary hover:text-text-primary"
+      className={cx(
+        "rounded-full border border-border-button-default bg-background-primary-default px-2 py-0.5 text-caption-2-medium text-text-secondary",
+        locked ? "cursor-not-allowed opacity-40" : "hover:text-text-primary"
+      )}
     >
       {uiT("继续", "Continue")}
     </button>
+  )
+  if (!locked) return button
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent>
+          <p>{disabledHint}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 

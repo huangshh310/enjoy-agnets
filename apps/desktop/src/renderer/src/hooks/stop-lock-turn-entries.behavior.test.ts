@@ -167,3 +167,12 @@ test("C1b：流水线「启动」在当前会话里跑 agent.run，收尾期间�
     "startPipeline 在 workflow.start 之前判 isStopLocked"
   )
 })
+
+test("C1b：「从这里改」（rewindFromUserTurn）收尾期间同样算忙，不截断", async () => {
+  stoppingSession("stopping")
+  const { rewindFromUserTurn } = await import("./rewind-from-here.ts")
+  const result = await rewindFromUserTurn({ userMessageId: "u0", restoreFiles: false })
+  await flush()
+  assert.deepEqual(result, { ok: false, code: "REWIND_BUSY" })
+  assertUntouched("从这里改")
+})

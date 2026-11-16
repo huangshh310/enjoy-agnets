@@ -5,6 +5,7 @@ import { TaskList } from "@/components/ai-elements/task-list"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useStopLocked } from "@renderer/stores/stop-settle"
 import { useT } from "@renderer/i18n"
 import { latestSessionTodoList } from "../thread/tool-surfaces/select-turn-tool-surfaces"
 import { useSessionReviewModel } from "./session-review/use-session-review-model"
@@ -26,6 +27,8 @@ export function ComposerTodoDock() {
   const running = useChatStore((state) => state.running)
   const runStartedAt = useChatStore((state) => state.runStartedAt)
   const waitingApproval = Boolean(useChatStore((state) => state.pendingApproval))
+  // luna C1b：停止后 Dock 正好显示「已停止＋继续」——收尾没落定时「继续」可见但置灰，悬停说「停干净后再试」。
+  const stopLocked = useStopLocked(useChatStore((state) => state.sessionId))
   const modelLabel = useComposerActiveModelLabel()
   const todos = latestSessionTodoList(messages)
   const reviewModel = useSessionReviewModel()
@@ -119,6 +122,7 @@ export function ComposerTodoDock() {
         action={previewAction}
         footer={reviewFooter}
         onContinue={running || allCompleted ? undefined : continueOpenTodos}
+        continueDisabledHint={stopLocked ? t("chat.stopLockedTryLater") : undefined}
       />
       <ConfirmDialog
         open={undoOpen}

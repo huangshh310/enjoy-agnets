@@ -22,6 +22,7 @@ export function TaskListDock({
   live,
   onToggle,
   onContinue,
+  continueDisabledHint,
   action,
   footer,
   fused,
@@ -33,6 +34,7 @@ export function TaskListDock({
   live: boolean
   onToggle: () => void
   onContinue?: () => void
+  continueDisabledHint?: string
   action?: React.ReactNode
   footer?: React.ReactNode
   fused?: boolean
@@ -85,7 +87,7 @@ export function TaskListDock({
         </span>
         <TaskProgressBar completed={completedCount} total={total} />
         {action ? <div className="shrink-0">{action}</div> : null}
-        {showContinue && onContinue ? <ContinueButton onContinue={onContinue} /> : null}
+        {showContinue && onContinue ? <ContinueButton onContinue={onContinue} disabledHint={continueDisabledHint} /> : null}
         <RiArrowDownSLine
           className={cx(
             "size-4 shrink-0 text-foreground-icon-secondary transition-transform",
