@@ -203,7 +203,7 @@ test("源码：底栏一行不折行；级别只在 row 上；不读 i18n.langua
   assert.equal(footer.includes('"ml-auto flex flex-wrap items-center justify-end gap-1"'), false)
   const main = footer.slice(0, footer.indexOf("function FooterOverflowSection"))
   assert.equal(/\bflex-wrap\b/.test(main), false)
-  assert.ok(footer.includes('className="flex w-max flex-nowrap items-center gap-1.5"'))
+  assert.ok(footer.includes('className="flex w-max shrink-0 flex-nowrap items-center gap-1.5"'))
   assert.ok(footer.includes("ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-1"))
   assert.ok(footer.includes("group/footer flex min-w-0 flex-nowrap"))
   assert.equal(footer.split("data-footer-density=").length - 1, 1)
@@ -472,4 +472,36 @@ test("C4 回滞（jojo #228 产品门）：L0→L1 … L3d→L3e 每个交界，
       assert.ok(up[k]! - down[k]! >= FOOTER_UPGRADE_HYSTERESIS_PX, `${label}: 降 ${down[k]} / 升 ${up[k]}，差 ${up[k]! - down[k]!} < 8`)
     }
   }
+})
+
+test("#228 产品门 B1（jojo）：底栏可选 chip 不收缩、不折行（桌面 / 更倾向桌面 / 扩展外壳 / 附件钮 shrink-0 + whitespace-nowrap；左组 shrink-0）——否则 chip 被 flex 挤扁、左组实测宽不溢出，选级看不见", () => {
+  const chipClass = (src: string, testid: string) => {
+    const m = src.match(new RegExp(`data-testid="${testid}"\\s*\\n\\s*className="([^"]+)"`))
+    assert.ok(m, `${testid} className 应为静态字符串`)
+    return m![1]!.split(/\s+/)
+  }
+  for (const [file, testid] of [
+    ["computer-use-chip.tsx", "computer-use-chip"],
+    ["preset-desktop-bias-pill.tsx", "preset-desktop-bias-pill"]
+  ] as const) {
+    const cls = chipClass(read(file), testid)
+    assert.ok(cls.includes("shrink-0"), `${testid} 必须 shrink-0`)
+    assert.ok(cls.includes("whitespace-nowrap"), `${testid} 必须 whitespace-nowrap`)
+    assert.ok(!cls.some((c) => /^(shrink|flex-1|flex-auto|truncate|min-w-0)$/.test(c)), `${testid} 不得可收缩 / 截断`)
+  }
+  assert.match(read("host-inject/host-inject-bar.tsx"), /<div className="shrink-0 whitespace-nowrap" data-testid="host-inject-bar"/)
+  // 附件钮（luna H1：被压到 20–22，应 30）
+  assert.match(read("composer-attach-menu.tsx"), /className="flex size-7\.5 shrink-0 [^"]*whitespace-nowrap"/)
+  // 左组本身不收缩：宽 = 各项自然宽之和，选级量到的就是自然宽（放不下 → 降级，而不是 flex 去压其中某项）
+  assert.match(read("composer-footer.tsx"), /data-testid="composer-footer-left" className="flex w-max shrink-0 flex-nowrap/)
+})
+
+test("#228 luna S1：「回到底部」浮钮只在对话区放得下整颗（bottom-4 16 + size-9 36 + 上沿 8）时渲染；只读视口高", () => {
+  const thread = readFileSync(join(dir, "..", "ai-chat-thread.tsx"), "utf8")
+  assert.match(thread, /const SCROLL_BUTTON_MIN_VIEWPORT_PX = 16 \+ 36 \+ 8/)
+  assert.match(thread, /<FittedConversationScrollButton \/>/)
+  assert.doesNotMatch(thread, /^\s*<ConversationScrollButton \/>\s*$/m)
+  assert.match(thread, /fits \? <ConversationScrollButton \/> : null/)
+  const fn = thread.slice(thread.indexOf("function FittedConversationScrollButton"), thread.indexOf("function useSendScrollTick"))
+  assert.doesNotMatch(fn, /scrollTo|scrollTop\s*=|useChatStore|setState\(/, "只读高度，不改滚动 / store")
 })

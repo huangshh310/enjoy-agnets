@@ -81,7 +81,7 @@ export function AiChatThread({
           {error && !isComposerRailNotice(error) ? <ThreadErrorBanner error={error} /> : null}
           <div id="thread-turn-end" />
         </ConversationContent>
-        <ConversationScrollButton />
+        <FittedConversationScrollButton />
         <ConversationViewportStick />
         {/* 最后一条用户消息换了就贴底（用户的各种发送都算，哪怕之前往上翻过）；只有排队自动发出 / 重来打了一次性「这次别滚」（host #170）。 */}
         <ConversationScrollOnChange trigger={sendTick} />
@@ -90,6 +90,26 @@ export function AiChatThread({
       <SubagentPill messages={visible} />
     </div>
   )
+}
+
+/**
+ * 「回到底部」浮钮（absolute bottom-4 · size-9）只在对话区放得下整颗 + 上沿 8px 时才渲染；
+ * K6 挤压态等把对话区压到几十 px 时，浮钮会被对话区上沿切掉一半（luna #228 S1）。只读视口高，不改滚动 / 贴底逻辑。
+ */
+const SCROLL_BUTTON_MIN_VIEWPORT_PX = 16 + 36 + 8
+function FittedConversationScrollButton() {
+  const { scrollRef } = useStickToBottomContext()
+  const [fits, setFits] = useState(true)
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const read = () => setFits(el.clientHeight >= SCROLL_BUTTON_MIN_VIEWPORT_PX)
+    read()
+    const ro = new ResizeObserver(read)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [scrollRef])
+  return fits ? <ConversationScrollButton /> : null
 }
 
 /** 同一会话里最后一条用户消息换了、且不是排队自动发出 / 重来，计数 +1；切会话只更新记号、不计数。 */

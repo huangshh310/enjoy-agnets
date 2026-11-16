@@ -148,9 +148,10 @@ export function ComposerFooter({
         compactVerticalSlack && "gap-y-0.5 pt-0 pb-2"
       )}
     >
-      {/* 裁切壳：只在 L≥1 横向裁切（L0 放得下、不裁，1440 合成层与现网一致）；纵向不裁，「已切换」浮签照常外溢 */}
+      {/* 左组 shrink-0：宽恒为各项自然宽之和，flex 不再压扁任何一项（#228 jojo B1 / luna H1）；放不下由选级降级，溢出由裁切壳裁。
+          裁切壳：只在 L≥1 横向裁切（L0 放得下、不裁，1440 合成层与现网一致）；纵向不裁，「已切换」浮签照常外溢 */}
       <div className={cx("flex min-w-0 flex-1", FOOTER_LEFT_CLIP)}>
-      <div ref={leftRef} data-testid="composer-footer-left" className="flex w-max flex-nowrap items-center gap-1.5">
+      <div ref={leftRef} data-testid="composer-footer-left" className="flex w-max shrink-0 flex-nowrap items-center gap-1.5">
         <ComposerAttachMenu onPickFiles={onPickFiles} />
         {onPreviewToggle && !moved.preview ? (
           <ComposerPreviewToggle previewOpen={previewOpen} onToggle={onPreviewToggle} />

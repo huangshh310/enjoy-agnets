@@ -790,6 +790,91 @@ for (const lang of ["zh", "en"] as const) {
   })
 }
 
+/** 左组每一项：实际宽 vs 自然宽（同 group 上下文里 absolute 克隆量）、文字行数、高；chip 不许被 flex 压扁 / 折行。 */
+async function leftItemsNatural(window: Page) {
+  return window.evaluate(() => {
+    const row = document.querySelector('[data-testid="composer-footer-row"]') as HTMLElement
+    const left = document.querySelector('[data-testid="composer-footer-left"]') as HTMLElement
+    const lines = (el: Element) => {
+      const tops = new Set<number>()
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+      let n: Node | null
+      while ((n = walker.nextNode())) {
+        if (!n.textContent?.trim()) continue
+        const range = document.createRange()
+        range.selectNodeContents(n)
+        for (const r of range.getClientRects()) if (r.width > 0) tops.add(Math.round(r.top))
+      }
+      return tops.size
+    }
+    const items = [...left.children].flatMap((el, i) => {
+      const b = el.getBoundingClientRect()
+      if (!b.width && !b.height) return []
+      const clone = el.cloneNode(true) as HTMLElement
+      clone.removeAttribute("data-testid")
+      clone.querySelectorAll("[data-testid]").forEach((c) => c.removeAttribute("data-testid"))
+      clone.style.cssText += ";position:absolute;visibility:hidden;flex-shrink:0;left:0;top:0;pointer-events:none"
+      left.appendChild(clone)
+      const natural = clone.getBoundingClientRect().width
+      clone.remove()
+      const id = el.getAttribute("data-testid") ?? el.querySelector("[data-testid]")?.getAttribute("data-testid") ?? `#${i}`
+      return [{ id, width: b.width, natural, height: b.height, lines: lines(el) }]
+    })
+    const attach = left.querySelector(":scope > button, :scope > * > button") as HTMLElement | null
+    return {
+      step: `${row.getAttribute("data-footer-density")}${row.getAttribute("data-footer-overflow") ?? ""}`,
+      items,
+      attachWidth: attach ? attach.getBoundingClientRect().width : null,
+      chipsOnBar: ["computer-use-chip", "preset-desktop-bias-pill", "host-inject-chip"].filter((id) => row.querySelector(`[data-testid="${id}"]`)),
+      chipHeights: Object.fromEntries(["computer-use-chip", "preset-desktop-bias-pill", "host-inject-chip"].flatMap((id) => { const el = row.querySelector(`[data-testid="${id}"]`); return el ? [[id, el.getBoundingClientRect().height]] : [] }))
+    }
+  })
+}
+
+for (const lang of ["zh", "en"] as const) {
+  test(`#228 H1（${lang}）：新会话 + 桌面预设，空首屏与紧接着那一轮 × 1440 / 1080 / 984 / 733 —— chip 与附件钮按自然宽、不压扁不折行，放不下就降级进菜单`, async () => {
+    const testInfo = test.info()
+    test.setTimeout(240_000)
+    const { app, window, roErrors } = await boot(lang, { cu: true, skills: true })
+    try {
+      await window.getByTestId("sidebar-new-session").click()
+      await window.waitForTimeout(600)
+      await applyDesktopBiasPreset(window, lang)
+      const check = async (phase: string) => {
+        for (const w of [1440, 1080, 984, 733]) {
+          await resize(window, w, 480)
+          const label = `H1-${phase}-${w}x480-${lang}`
+          await footerDiag(window, testInfo, label)
+          const d = await leftItemsNatural(window)
+          const line = JSON.stringify({ label, ...d })
+          console.log(`[composer-733-oneline] ${line}`)
+          await testInfo.attach(label, { body: line, contentType: "application/json" })
+          for (const it of d.items) {
+            expect(it.width, `${label} ${it.id} 不被压（实际 ≥ 自然 − 0.5）${line}`).toBeGreaterThanOrEqual(it.natural - 0.5)
+            expect(it.lines, `${label} ${it.id} 文字一行 ${line}`).toBeLessThanOrEqual(1)
+          }
+          for (const id of d.chipsOnBar) {
+            expect(d.chipHeights[id], `${label} ${id} 高 24（未被压成多行）${line}`).toBeLessThanOrEqual(24.5)
+          }
+          expect(d.attachWidth, `${label} 附件钮 30 ${line}`).toBeCloseTo(30, 0)
+          // 三颗 chip 不在条上 ⇔ 已降到 L3b 及以后（进菜单），不是被挤没
+          if (d.chipsOnBar.length === 0) expect(STEPS.indexOf(d.step as (typeof STEPS)[number]), `${label} chips moved ⇒ ≥3b`).toBeGreaterThanOrEqual(STEPS.indexOf("3b"))
+          if (shotsDir) await window.screenshot({ path: join(shotsDir, `${label}.png`) })
+        }
+      }
+      await check("empty")
+      await resize(window, 1440, 480)
+      await sendComposer(window, window.getByTestId("composer-input"), lang === "en" ? "hello there" : "你好")
+      await expect(window.locator("body")).toContainText("stub-ok", { timeout: 20_000 })
+      await expect(window.getByTestId("composer-send")).toHaveAttribute("aria-label", /^(Send|发送)$/, { timeout: 30_000 })
+      await check("turn")
+      expect(roErrors, "no ResizeObserver loop").toEqual([])
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
 for (const lang of ["zh", "en"] as const) {
   test(`K6（${lang}）：733×480 暂停 2 + 待验收，点开暂停排队区 → 挤压态整行、说明行单行钉顶、5/5；1024 / 1440 不进挤压态`, async () => {
     test.setTimeout(180_000)

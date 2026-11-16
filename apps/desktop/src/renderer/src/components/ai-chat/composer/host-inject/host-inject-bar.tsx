@@ -47,7 +47,7 @@ function HostInjectChip({
         ? t("chat.hostInjectChipMcp", { mcp: enabledMcp })
         : t("chat.hostInjectChipSkills", { skills: enabledSkills })
   return (
-    <div className="shrink-0" data-testid="host-inject-bar" data-kind={view.kind}>
+    <div className="shrink-0 whitespace-nowrap" data-testid="host-inject-bar" data-kind={view.kind}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
