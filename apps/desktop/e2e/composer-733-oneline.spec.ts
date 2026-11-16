@@ -367,14 +367,39 @@ test("733×480 英文三条：待验收 + 有图 · 运行中 + 有图展开 · 
     await expect(window.locator('[data-testid="composer-asset-chip"]')).toHaveCount(0, { timeout: 8_000 })
     await settle(window)
     // 运行点（luna §16，空草稿运行中才单显运行点）：L≥2 槽 12px（w-3），里面仍是现网 6px 呼吸点、水平 / 垂直居中，不放大
-    const runDot = await window.evaluate(() => {
-      const slot = document.querySelector('[data-testid="composer-run-chip"]')?.getBoundingClientRect()
-      const dot = document.querySelector('[data-testid="composer-run-dot"]')?.getBoundingClientRect()
-      const density = document.querySelector('[data-testid="composer-footer-row"]')?.getAttribute("data-footer-density")
-      if (!slot || !dot) return null
-      return { density, slotW: slot.width, dotW: dot.width, dotH: dot.height, dx: Math.abs(dot.x + dot.width / 2 - (slot.x + slot.width / 2)), dy: Math.abs(dot.y + dot.height / 2 - (slot.y + slot.height / 2)) }
-    })
-    expect(runDot, "running 时有运行点").not.toBeNull()
+    // 运行点只在「运行中 + 空草稿 + 不并排」时挂（composer-footer showRunChip）。一次性读会撞上 Enter 后草稿清空 /
+    // 运行态落 store 之前的那一帧（spec10 全量负载下 1/96 读到 null，单跑 4/4 绿）→ 轮询到运行点挂上，且读时仍在运行。
+    type RunDot = { density: string | null; slotW: number; dotW: number; dotH: number; dx: number; dy: number }
+    let runDot = null as RunDot | null
+    let lastSeen = ""
+    await expect
+      .poll(
+        async () => {
+          const r = await window.evaluate(() => {
+            const slot = document.querySelector('[data-testid="composer-run-chip"]')?.getBoundingClientRect()
+            const dot = document.querySelector('[data-testid="composer-run-dot"]')?.getBoundingClientRect()
+            const density = document.querySelector('[data-testid="composer-footer-row"]')?.getAttribute("data-footer-density") ?? null
+            const seen = JSON.stringify({
+              stop: document.querySelectorAll('[data-testid="composer-stop"]').length,
+              pair: document.querySelectorAll('[data-testid="composer-action-pair"]').length,
+              draft: (document.querySelector('[data-testid="composer-input"]') as HTMLTextAreaElement | null)?.value?.length ?? -1,
+              density
+            })
+            if (!slot || !dot) return { dot: null, seen }
+            return {
+              seen,
+              dot: { density, slotW: slot.width, dotW: dot.width, dotH: dot.height, dx: Math.abs(dot.x + dot.width / 2 - (slot.x + slot.width / 2)), dy: Math.abs(dot.y + dot.height / 2 - (slot.y + slot.height / 2)) }
+            }
+          })
+          lastSeen = r.seen
+          runDot = r.dot
+          return runDot !== null
+        },
+        { timeout: 8_000, intervals: [100, 200, 250], message: "running 时有运行点（轮询 8s）" }
+      )
+      .toBe(true)
+    await expect(window.getByTestId("composer-stop"), "读运行点时仍在运行").toBeVisible()
+    expect(runDot, `running 时有运行点（${lastSeen}）`).not.toBeNull()
     expect(Number(runDot!.density), "733 运行中在 L≥2").toBeGreaterThanOrEqual(2)
     expect(runDot!.slotW).toBeCloseTo(12, 0)
     expect(runDot!.dotW).toBeCloseTo(6, 0)
