@@ -1410,7 +1410,9 @@ for (const lang of ["zh", "en"] as const) {
         const dbg = JSON.stringify({ form, frame: frameB, thumb: t })
         if (frameB) expect(t.y, `${label}: thumb top ≥ review frame bottom ${dbg}`).toBeGreaterThanOrEqual(frameB.y + frameB.height - 0.5)
         expect(t.y + t.height, `${label}: thumb bottom ≤ form top ${dbg}`).toBeLessThanOrEqual(form.y + 0.5)
-        expect(t.height, `${label}: thumb 整张（≥ 40）${dbg}`).toBeGreaterThanOrEqual(40)
+        console.log(`[composer-733-oneline] K12-thumb ${label} ${dbg}`)
+        // 产品锁：缩略图 44（p2-composer-733-oneline-product.md「缩略图 44」；与 expectThumbAndConversation 同判据，#229 leo M2）
+        expect(t.height, `${label}: thumb 整张（≥ 44）${dbg}`).toBeGreaterThanOrEqual(44)
         await hit5(chips.first(), `${label} thumb`)
       }
       // 运行中 + 审批 + 托盘展开：停止钮整颗在状态栏之上、5/5
