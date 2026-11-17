@@ -97,6 +97,10 @@ export function ComposerQueue({
         data-tray-slot={budget.slot ?? undefined}
         data-tray-squeezed={budget.squeezed ? "true" : undefined}
         data-tray-approval-clip={budget.approvalClip ? "true" : undefined}
+        data-cluster-yield={budget.hintYield ? "true" : undefined}
+        data-cluster-residual={budget.hintYield ? budget.residualPx : undefined}
+        data-cluster-hint={budget.hintPresent ? "true" : undefined}
+        data-tray-handover={budget.handover ?? undefined}
         className={cx(
           // 舒适态：-mb 只让底部留白（pb-4）藏到输入框下，缩略图本身不被任何条盖住。
           // 单行条：mb=0，托盘底边落在 form.y 之上，不再叠进卡片。

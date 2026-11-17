@@ -192,7 +192,7 @@ export function AiChatComposer({
       <ExploreDesktopBanner />
       <ExploreInterceptBanner />
       <ComposerBranchMismatch />
-      <ComposerActivityFrame />
+      <ComposerActivityFrame hintYield={trayBudget.hintYield} />
       {/* 附件托盘必须紧挨输入框：它靠 -mb 把底边塞进输入框下面，放在别的条上方会把下一条拉上来盖住缩略图。 */}
       <ComposerQueue formRef={formRef} onBudgetChange={setTrayBudget} />
       <form

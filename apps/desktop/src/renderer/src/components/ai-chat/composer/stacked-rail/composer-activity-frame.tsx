@@ -7,6 +7,8 @@
  * 只在「审批在场且芯片本来要画」（同 ComposerQueueChip 的判据：有会话且该会话有排队项）时连包裹一起不渲染：
  * 这样帽檐框里没别的东西时整框按 empty:hidden 收掉，把那一行还给审批卡（733×480 三钮整颗留在对话列内）；
  * 没排队的审批态 DOM 与改前完全一样（包裹仍在、芯片自己 return null），1440 等宽窗零像素变化。只读排队列表，不写。
+ * 446 P1-a（luna design §9 R2）：hintYield 时 rail 不渲染；若框里再没有非空子项（只剩芯片空包裹），整框显式隐藏，
+ * 只在让位时加这条 :has 规则——不全局删空包裹（1024 / 1440 空闲零变化）。框与 rail 由同一个 prop 同一次提交落地（R3）。
  */
 import { useSyncExternalStore } from "react"
 import { listFollowups, subscribeFollowups } from "@renderer/hooks/followup-queue"
@@ -19,7 +21,7 @@ import { ComposerFollowupRail } from "../runtime-interact/composer-followup-rail
 import { ComposerQueueChip } from "../runtime-interact/composer-queue-chip"
 import { ComposerPreviousPreparingRail } from "../runtime-interact/composer-previous-preparing-rail"
 
-export function ComposerActivityFrame() {
+export function ComposerActivityFrame({ hintYield = false }: { hintYield?: boolean } = {}) {
   const pendingApproval = useChatStore((state) => state.pendingApproval)
   const sessionId = useChatStore((state) => state.sessionId)
   const queueChipShown = useSyncExternalStore(
@@ -36,7 +38,10 @@ export function ComposerActivityFrame() {
           <ComposerLiveChanges />
         </div>
       )}
-      <div className={`${STACKED_FRAME_CLASS_NAME} isolate shrink-0`}>
+      <div
+        data-composer-cap-frame=""
+        className={`${STACKED_FRAME_CLASS_NAME} isolate shrink-0${hintYield ? " [&:not(:has(>:not(:empty)))]:hidden" : ""}`}
+      >
         <ComposerTaskStack />
         <ComposerContextRail />
         {pendingApproval && queueChipShown ? null : (
@@ -44,7 +49,7 @@ export function ComposerActivityFrame() {
             <ComposerQueueChip />
           </div>
         )}
-        <ComposerFollowupRail />
+        <ComposerFollowupRail yieldRow={hintYield} />
         <ComposerPreviousPreparingRail />
       </div>
     </>

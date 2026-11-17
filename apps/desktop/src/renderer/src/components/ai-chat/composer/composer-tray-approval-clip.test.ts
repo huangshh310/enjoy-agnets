@@ -329,6 +329,10 @@ test("三路 OR：slot 非 null 时这一路不参与（审批时 slot 恒为 nu
   assert.equal(trayStripFromPaths({ slotStrip: false, slot: null, squeezed: false, approvalClip: false }), false)
 })
 
+test("446 P1-c：slot 120（≥108）但 K12 squeezed → 仍转条", () => {
+  assert.equal(trayStripFromPaths({ slotStrip: false, slot: 120, squeezed: true, approvalClip: false }), true)
+})
+
 test("C2 源码断言：判定纯函数与 hook 不复算 CSS 地板、不写死地板值", () => {
   const dir = dirname(fileURLToPath(import.meta.url))
   for (const file of ["composer-tray-approval-clip.ts", "use-composer-tray-budget.ts"]) {

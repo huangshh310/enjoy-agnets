@@ -63,8 +63,12 @@ test("E1 队列停着：「马上发 / 图片插话退回」不受影响——�
 test("接线：帽檐和审批卡上方紧凑区都把 paused 交给 runtimeHintPlacement（源码正则）", async () => {
   const { readFileSync } = await import("node:fs")
   const rail = readFileSync(new URL("./composer-followup-rail.tsx", import.meta.url), "utf8")
+  // 446 leo M1：帽檐的显示判定收进只读谓词 followupRailWouldRender（composer-cluster-yield.ts），rail 与托盘预算 hook 共用。
+  const predicate = readFileSync(new URL("../composer-cluster-yield.ts", import.meta.url), "utf8")
   const dock = readFileSync(new URL("../../thread/dock-runtime-hint.tsx", import.meta.url), "utf8")
-  assert.match(rail, /runtimeHintPlacement\(hint, approvalPending, listFollowups\(sessionId\)\.length, paused\)/)
+  assert.match(predicate, /runtimeHintPlacement\(hint, approvalPending, listFollowups\(sessionId\)\.length, paused\)/)
+  assert.match(predicate, /const paused = followupPausedReason\(sessionId\) != null/)
+  assert.match(rail, /followupRailWouldRender\(sessionId, approvalPending\)/)
   assert.match(dock, /runtimeHintPlacement\(hint, approvalId != null, queuedCount, paused\)/)
   assert.match(dock, /setPaused\(followupPausedReason\(sessionId\) != null\)/)
 })
