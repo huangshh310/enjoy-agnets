@@ -1001,8 +1001,8 @@ for (const lang of ["zh", "en"] as const) {
 /** 逐帧（rAF）记底栏级 / 行高 / 发送钮底 / 是否在跑，直到 stop()。 */
 async function recordFrames(window: Page) {
   await window.evaluate(() => {
-    const w = window as unknown as { __h2rec?: { f: [string, number, number | null, number, number][]; stop: boolean } }
-    const st = { f: [] as [string, number, number | null, number, number][], stop: false }
+    const w = window as unknown as { __h2rec?: { f: [string, number, number | null, number, number, number, number][]; stop: boolean } }
+    const st = { f: [] as [string, number, number | null, number, number, number, number][], stop: false }
     w.__h2rec = st
     const loop = () => {
       const row = document.querySelector('[data-testid="composer-footer-row"]')
@@ -1012,7 +1012,10 @@ async function recordFrames(window: Page) {
         row ? Math.round(row.getBoundingClientRect().height) : -1,
         send ? Math.round(send.getBoundingClientRect().bottom) : null,
         document.querySelector('[data-testid="composer-stop"]') ? 1 : 0,
-        window.innerWidth
+        window.innerWidth,
+        // [5] 帧时间（ms）、[6] 侧栏宽（px，取两位）：#229 leo M1 判「侧栏动画进行中」
+        Math.round(performance.now() * 10) / 10,
+        Math.round((document.querySelector("[data-nav-card]")?.getBoundingClientRect().width ?? -1) * 100) / 100
       ])
       if (!st.stop) requestAnimationFrame(loop)
     }
@@ -1020,7 +1023,7 @@ async function recordFrames(window: Page) {
   })
   return async () =>
     window.evaluate(() => {
-      const st = (window as unknown as { __h2rec: { f: [string, number, number | null, number, number][]; stop: boolean } }).__h2rec
+      const st = (window as unknown as { __h2rec: { f: [string, number, number | null, number, number, number, number][]; stop: boolean } }).__h2rec
       st.stop = true
       return st.f
     })
@@ -1095,6 +1098,7 @@ for (const lang of ["zh", "en"] as const) {
       await sendComposer(window, input, HOLD)
       await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
       await settle(window)
+      let navAnimMs = 0
       // ladder：同方向逐宽落定的静态级（拖窗 / 扫宽才有；点开关没有窗宽变化，不传）
       const check = async (label: string, act: () => Promise<void>, ladder?: Map<number, string>) => {
         await expect(window.getByTestId("composer-stop"), `${label} 检查前在跑`).toBeVisible()
@@ -1124,13 +1128,19 @@ for (const lang of ["zh", "en"] as const) {
         // 换宽后的第一帧允许是上一宽的判定（rAF 先于 RO，帧里读到的级是上一帧按上一宽判的）。终态 = 终点宽的静态级。
         const ladderBad: string[] = []
         let ladderEnd: string | null = null
+        const downAnim: number[] = []
+        let stallMax = 0
         if (ladder) {
           const ix = (k: string) => STEPS.indexOf(k as (typeof STEPS)[number])
           const within = (v: number, a: number, b: number) => v >= Math.min(a, b) && v <= Math.max(a, b)
           let entry = ix(ran[0]![0])
-          // 停滞：换宽后第一帧之后，该升级（同宽静态级比当前级更宽松）却一帧没动，每宽最多容 2 帧（闸门 tail 两帧）。
-          // 「hook 不传 ahead」时拖窄跨 768 会在 740 / 760 / 764 停在 3d 七到十帧、766 停在 768 的静态级上几帧才往回走——这一停不看是不是 3e。
-          // 该降级却停着不算：断点带里降级由 150ms 闸门压着（leo F-d 已接受，左组被裁不换行、send 不动），768 那一下 3d 停 2–3 帧再落 3e 是设计内的。
+          // 停滞：换宽后第一帧之后，级别 ≠ 同宽静态级却一帧没动。升级、降级都计数，每宽最多容 2 帧——现码闸门（footerResizeGate）
+          // 压住的换级由尾随复核在最后一下 RO 之后两个 rAF 再提交（use-footer-density.ts schedTail），上界就是 2 帧。
+          // 唯一放宽（#229 leo M1）：侧栏动画进行中（侧栏宽本帧与上一帧不同）该降级却停着不计——侧栏正把聊天区推宽时
+          // 闸门 shift > 0 只升不降（footerResizeGate、tail 同判），要等动画收尾那一下 RO 才落。只有窗宽跨 NARROW_SIDEBAR_PX
+          // 触发自动收 / 展时侧栏才动（本检查不点开关），所以放宽只落在跨断点那一步及其动画期内；动画一停照常 ≤2 帧。
+          // 上限：被放宽的帧须全落在一次侧栏动画内，跨度 ≤ 侧栏真实动画时长（nav-card 计算样式 transition-duration，
+          // 产品 nav-card.tsx `transition-[width] duration-300`）+ 1 帧量化。旧注释里的「150ms 闸门」已在 790bb240 删除，不再作理由。
           let stall = 0
           let stallLv = ""
           const flushStall = (w: number) => {
@@ -1138,8 +1148,8 @@ for (const lang of ["zh", "en"] as const) {
             stall = 0
           }
           for (let k = 1; k < ran.length; k += 1) {
-            const [lv, , , , iw] = ran[k]!
-            const [pv, , , , piw] = ran[k - 1]!
+            const [lv, , , , iw, ts, nav] = ran[k]!
+            const [pv, , , , piw, , pnav] = ran[k - 1]!
             if (iw !== piw) {
               flushStall(piw)
               entry = ix(pv)
@@ -1149,9 +1159,14 @@ for (const lang of ["zh", "en"] as const) {
               ladderBad.push(`?@${iw}`)
               continue
             }
-            if (iw === piw && lv === pv && ix(t) < ix(lv)) {
-              if (stall === 0) stallLv = lv
-              stall += 1
+            if (iw === piw && lv === pv && lv !== t) {
+              if (ix(t) > ix(lv) && nav !== pnav) {
+                downAnim.push(ts)
+              } else {
+                if (stall === 0) stallLv = lv
+                stall += 1
+                stallMax = Math.max(stallMax, stall)
+              }
             }
             const c = ix(lv)
             const p = ix(pv)
@@ -1168,7 +1183,7 @@ for (const lang of ["zh", "en"] as const) {
           flushStall(last[4])
           if (last[0] !== ladder.get(last[4])) ladderEnd = `${last[0]}@${last[4]}≠${ladder.get(last[4])}`
         }
-        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, segs, narrow3e: narrow3e.length, ladder: ladder ? Object.fromEntries(ladder) : undefined, ladderBad: ladderBad.slice(0, 12), ladderBadN: ladderBad.length, ladderEnd, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
+        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, segs, narrow3e: narrow3e.length, ladder: ladder ? Object.fromEntries(ladder) : undefined, ladderBad: ladderBad.slice(0, 12), ladderBadN: ladderBad.length, ladderEnd, stallMax, downAnimN: downAnim.length, downAnimMs: downAnim.length ? Math.round(downAnim.at(-1)! - downAnim[0]!) : 0, navAnimMs, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
         console.log(`[composer-733-oneline] ${line}`)
         await testInfo.attach(label, { body: line, contentType: "application/json" })
         expect(ran.length, `${label} 全程在跑 ${line}`).toBe(f.length)
@@ -1180,6 +1195,8 @@ for (const lang of ["zh", "en"] as const) {
         if (ladder) {
           expect(ladderBad, `${label} 逐帧对照静态梯：每帧在进入级与同宽静态级之间、换级只朝静态级走不越过 ${line}`).toEqual([])
           expect(ladderEnd, `${label} 终态 = 终点宽静态级 ${line}`).toBeNull()
+          // 侧栏动画期内放宽的降级停滞：跨度不超过一次侧栏动画（真实时长 + 1 帧量化）
+          expect(downAnim.length ? downAnim.at(-1)! - downAnim[0]! : 0, `${label} 动画期降级停滞 ≤ 侧栏动画 ${navAnimMs}ms ${line}`).toBeLessThanOrEqual(navAnimMs + 17)
         }
         expect(narrow3e, `${label} iw<768 无 3e ${line}`).toEqual([])
         for (const x of f) {
@@ -1214,6 +1231,18 @@ for (const lang of ["zh", "en"] as const) {
       }
       // jojo 裁定：CU 开着、运行中窄宽（800 侧栏展开 = 3d）chip 进溢出菜单（§10 第 1 条），状态在菜单小节里看得到
       await prep(800)
+      // 侧栏真实动画时长：停靠态 nav-card 的计算样式（width 过渡），不在测试里写死 300
+      navAnimMs = await window.evaluate(() => {
+        const el = document.querySelector("[data-nav-card]")
+        if (!el || el.getAttribute("data-overlay") === "true") return -1
+        const cs = getComputedStyle(el)
+        const props = cs.transitionProperty.split(",").map((x) => x.trim())
+        const durs = cs.transitionDuration.split(",").map((x) => (x.trim().endsWith("ms") ? parseFloat(x) : parseFloat(x) * 1000))
+        const i = props.indexOf("width")
+        return i < 0 ? -1 : (durs[i] ?? durs[0] ?? -1)
+      })
+      expect(navAnimMs, "停靠侧栏有 width 过渡（产品 nav-card duration-300）").toBeGreaterThan(0)
+      expect(navAnimMs).toBeLessThanOrEqual(1000)
       if ((await window.getByTestId("composer-footer-row").getByTestId("computer-use-chip").count()) === 0) {
         await window.getByTestId("composer-overflow").click()
         await expect(window.getByTestId("composer-overflow-footer-items").getByTestId("computer-use-chip"), "运行中 CU 在溢出菜单里").toBeVisible()
