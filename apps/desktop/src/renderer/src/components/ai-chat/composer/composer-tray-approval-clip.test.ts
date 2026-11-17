@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url"
 import {
   APPROVAL_CLIP_RELEASE_PX,
   nextTrayApprovalClip,
+  refreshHandoverNeed,
+  squeezeHandoverOnRelease,
   TRAY_APPROVAL_CLIP_OFF,
   trayStripFromPaths,
   type TrayApprovalClip,
@@ -73,6 +75,56 @@ test("R2：长回量在转条后首帧开始量、只增不减（67），表单�
   const s1 = nextTrayApprovalClip(TRAY_APPROVAL_CLIP_OFF, m({ footerBottom: 208, clipBottom: 185, clipH: 64, clusterPx: 258 }))
   const s1b = nextTrayApprovalClip(s1, m({ footerBottom: 208, clipBottom: 185, clipH: 64, clusterPx: 258, stripApplied: false }))
   assert.equal(s1b.regrowPx, null)
+})
+
+test("leo ①：条带态内序列 205 → 201 → 197 → 长回量 67；之后打字簇变高 217 / 240，长回量不降", () => {
+  let s = nextTrayApprovalClip(TRAY_APPROVAL_CLIP_OFF, m({ footerBottom: 204, clipBottom: 179, clipH: 58, clusterPx: 264 }))
+  assert.equal(s.entryClusterPx, 264)
+  const seen: Array<number | null> = []
+  for (const clusterPx of [205, 201, 197]) {
+    s = nextTrayApprovalClip(s, m({ footerBottom: 241, clipBottom: 246, clipH: 125, clusterPx, stripApplied: true }))
+    seen.push(s.regrowPx)
+  }
+  assert.deepEqual(seen, [59, 63, 67])
+  for (const clusterPx of [217, 240]) {
+    s = nextTrayApprovalClip(s, m({ footerBottom: 241, clipBottom: 246, clipH: 125, clusterPx, stripApplied: true }))
+    assert.equal(s.regrowPx, 67, `cluster ${clusterPx}`)
+    assert.equal(s.on, true)
+  }
+})
+
+test("leo ①：只增不减不跨轮——释放 / 审批消失 / 附件数变后都清零，下一次进入从首帧重新量", () => {
+  const strip = (st: TrayApprovalClip, clusterPx: number, over: Partial<TrayApprovalClipInput> = {}) =>
+    nextTrayApprovalClip(st, m({ footerBottom: 241, clipBottom: 246, clipH: 125, clusterPx, stripApplied: true, ...over }))
+  const enter = (st: TrayApprovalClip, clusterPx = 264, over: Partial<TrayApprovalClipInput> = {}) =>
+    nextTrayApprovalClip(st, m({ footerBottom: 204, clipBottom: 179, clipH: 58, clusterPx, ...over }))
+  // 第一轮长回 67
+  let s = strip(strip(enter(TRAY_APPROVAL_CLIP_OFF), 205), 197)
+  assert.equal(s.regrowPx, 67)
+  // (a) 几何释放 → regrow / entry 清空
+  const released = nextTrayApprovalClip(s, m({ footerBottom: 300, clipBottom: 305, clipH: 309, floorPx: 125, clusterPx: 197, stripApplied: true }))
+  assert.equal(released.on, false)
+  assert.equal(released.regrowPx, null)
+  assert.equal(released.entryClusterPx, null)
+  // 下一次进入：入口簇 250，首帧 207 → 43（不是带过来的 67）
+  let r = enter(released, 250)
+  assert.equal(r.regrowPx, null)
+  r = strip(r, 207)
+  assert.equal(r.regrowPx, 43)
+  // (b) 审批消失 → 全清
+  const gone = nextTrayApprovalClip(s, m({ footerBottom: null, clipBottom: 246, clipH: 125 }))
+  assert.deepEqual(gone, TRAY_APPROVAL_CLIP_OFF)
+  assert.equal(strip(enter(gone, 250), 207).regrowPx, 43)
+  // (c) 附件数变 → 当轮作废（regrowPx = null，不保留 67），只等审批消失；消失后再进入照常重新量
+  s = strip(s, 197, { attachCount: 2 })
+  assert.equal(s.regrowPx, null)
+  assert.equal(s.regrowUnknown, true)
+  s = strip(s, 150, { attachCount: 2 })
+  assert.equal(s.regrowPx, null, "作废后不再按只增不减累积")
+  // 审批消失：即使长回量偏大 / 未知也无条件释放
+  const off = nextTrayApprovalClip({ ...s, regrowPx: 9999, regrowUnknown: false }, m({ footerBottom: null, clipBottom: 246, clipH: 125 }))
+  assert.equal(off.on, false)
+  assert.equal(strip(enter(off, 250, { attachCount: 2 }), 207, { attachCount: 2 }).regrowPx, 43)
 })
 
 test("R1：条带 q2 131/80.5、q0 125/80.5，长回 67 → 保持；不读「裁切线 − footer 底」", () => {
@@ -236,6 +288,34 @@ test("R4 防抖闩：几何释放后同一外壳下又被裁 → 重进并闩住
   assert.ok(flips(seq) <= 2, `seq=${seq.join(",")}`)
   // footer 消失清闩
   assert.deepEqual(nextTrayApprovalClip(s, m({ footerBottom: null, clipBottom: 165, clipH: 160 })), TRAY_APPROVAL_CLIP_OFF)
+})
+
+test("K12 交接：审批消失时按 K12 原式（盒 + 对话余量 ≥ 条带内容 + 长回 + 8）判一次——放得下立即放，放不下以 K12 态接手", () => {
+  // 真机 733×480 q0 释放帧：条带内容 197、长回 67 → 整托盘 264；盒 197 + 对话余量 125 − 56 = 69 → 266 < 272 → 接手
+  assert.deepEqual(squeezeHandoverOnRelease({ regrowPx: 67, contentPx: 197, boxPx: 197, conversationSlackPx: 69 }), { on: true, needPx: 264 })
+  // 释放线：room = need + 8 → 放
+  assert.equal(squeezeHandoverOnRelease({ regrowPx: 67, contentPx: 197, boxPx: 197, conversationSlackPx: 75 }), null)
+  assert.deepEqual(squeezeHandoverOnRelease({ regrowPx: 67, contentPx: 197, boxPx: 197, conversationSlackPx: 74.5 }), { on: true, needPx: 264 })
+  // 1024×670：对话余量 180 → 立即放（零变化）
+  assert.equal(squeezeHandoverOnRelease({ regrowPx: 67, contentPx: 197, boxPx: 197, conversationSlackPx: 180 }), null)
+  // 长回量未知（附件数变作废）→ 不接，交回 K12 自己判
+  assert.equal(squeezeHandoverOnRelease({ regrowPx: null, contentPx: 197, boxPx: 197, conversationSlackPx: 0 }), null)
+  // 负余量按 0
+  assert.deepEqual(squeezeHandoverOnRelease({ regrowPx: 10, contentPx: 200, boxPx: 200, conversationSlackPx: -5 }), { on: true, needPx: 210 })
+})
+
+test("K12 交接后 needPx 只增不减跟上条带内容（审批走后晚一帧多一行 197 → 233）", () => {
+  assert.equal(refreshHandoverNeed(264, 197, 67), 264)
+  assert.equal(refreshHandoverNeed(264, 233, 67), 300)
+  assert.equal(refreshHandoverNeed(300, 220, 67), 300)
+  assert.equal(refreshHandoverNeed(null, 200, 67), 267)
+})
+
+test("条带已由 K12 / slot 画着时 footer 越线不进入（量不到转条前簇高；条带也帮不上）", () => {
+  const input = m({ footerBottom: 208, clipBottom: 185, clipH: 64, clusterPx: 191, stripApplied: true, stripHeldElsewhere: true })
+  assert.equal(nextTrayApprovalClip(TRAY_APPROVAL_CLIP_OFF, input), TRAY_APPROVAL_CLIP_OFF)
+  // 自己已在条带态时这个标记不影响（hook 只在 clip 未 on 时置位）
+  assert.equal(nextTrayApprovalClip(TRAY_APPROVAL_CLIP_OFF, { ...input, stripHeldElsewhere: false }).on, true)
 })
 
 test("三路 OR：slot 非 null 时这一路不参与（审批时 slot 恒为 null，仍写成断言）", () => {

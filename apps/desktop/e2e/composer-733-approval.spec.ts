@@ -15,7 +15,7 @@ if (shots) mkdirSync(shots, { recursive: true })
 type Lang = "zh" | "en"
 
 /** 使用 queue-sendnow-approval.spec 的 launchApproval 同款 fixture（vision，无新 stub）。 */
-async function boot(lang: Lang, cu = false) {
+async function boot(lang: Lang, cu = false, prompt = "please write a note", waitApproval = true) {
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-apclip-ws-"))
   const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-apclip-ud-"))
   writeFileSync(join(workspace, "readme.md"), "# e2e\n")
@@ -39,8 +39,8 @@ async function boot(lang: Lang, cu = false) {
     const skip = page.getByRole("button", { name: /^(跳过设置|Skip setup)$/ })
     if (await skip.count()) await skip.click()
     const composer = page.getByTestId("composer-input")
-    await sendComposer(page, composer, "please write a note")
-    await expect(page.getByTestId("approval-allow")).toBeVisible({ timeout: 20_000 })
+    await sendComposer(page, composer, prompt)
+    if (waitApproval) await expect(page.getByTestId("approval-allow")).toBeVisible({ timeout: 20_000 })
     return { app, page, errors, cleanup: async () => {
       await closeForRelaunch(app)
       rmSync(workspace, { recursive: true, force: true })
@@ -153,20 +153,32 @@ async function check(page: Page, info: TestInfo, label: string, expectedStrip: b
   return g
 }
 
-/** 录 rAF：只对下一帧仍存在的审批三钮做 5-point 命中。记录 strip/clip/height，便于数「已绘制翻转」。 */
+type Frame = Record<string, unknown> & {
+  t: number; clip: boolean; strip: boolean; h: number; w: number; trayH: number | null; clusterH: number | null
+  gap: number | null; misses: string[]; actionMisses: string[]; late: boolean
+}
+
+/**
+ * 逐帧录「已绘制」态：rAF 里 post 一个 MessageChannel 任务，任务在本帧 rendering steps（rAF → 布局 → RO → 绘制）之后跑，
+ * 读到的就是本帧真正画出来的 DOM（rAF 回调本身在 RO 之前，读到的是 RO 提交前的态，会把同帧已修正的判定误记成晚一帧）。
+ * 每帧记：审批三钮 5 点命中；send / stop / 排队芯片 / 排队坞按钮 5 点命中 + bottom ≤430（733×480）+ ≤ 状态栏 top−13；
+ * 对话列内任何按钮中心是否被托盘接走（covered）；late = footer 已越过裁切线（gap < −0.5）但 data-tray-approval-clip 还没 on（判定晚帧，C3）。
+ */
 async function startFrames(page: Page) {
   await page.evaluate(() => {
-    const state = { stop: false, frames: [] as Array<Record<string, unknown> & { clip: boolean; misses: string[] }> }
+    const state = { stop: false, frames: [] as unknown[] }
     ;(globalThis as any).__apclipFrames = state
-    const tick = () => {
+    const five = (el: Element) => {
+      const r = el.getBoundingClientRect()
+      const pts = [[r.left + 5, r.top + 5], [r.right - 5, r.top + 5], [r.left + 5, r.bottom - 5], [r.right - 5, r.bottom - 5], [r.left + r.width / 2, r.top + r.height / 2]]
+      return pts.every(([x, y]) => { const hit = document.elementFromPoint(x!, y!); return !!hit && (hit === el || el.contains(hit)) })
+    }
+    const tick = (t: number) => {
       const tray = document.querySelector('[data-testid="composer-attachment-tray"]')
       const misses: string[] = []
       for (const id of ["approval-session", "approval-deny", "approval-allow"]) {
         const el = document.querySelector(`[data-testid="${id}"]`)
-        if (!el) continue
-        const r = el.getBoundingClientRect()
-        const pts = [[r.left + 5, r.top + 5], [r.right - 5, r.top + 5], [r.left + 5, r.bottom - 5], [r.right - 5, r.bottom - 5], [r.left + r.width / 2, r.top + r.height / 2]]
-        if (!pts.every(([x, y]) => { const hit = document.elementFromPoint(x!, y!); return !!hit && (hit === el || el.contains(hit)) })) misses.push(id)
+        if (el && !five(el)) misses.push(id)
       }
       const conv = document.querySelector('[data-testid="chat-conversation"]')
       const shell = conv?.parentElement?.getBoundingClientRect()
@@ -179,54 +191,166 @@ async function startFrames(page: Page) {
           if (hit && tray.contains(hit)) misses.push(`covered:${el.getAttribute("data-testid") ?? el.textContent?.slice(0, 20)}`)
         }
       }
+      // send / stop / 排队：每帧都要 5/5、≤430（733×480）、≤ 状态栏 top−13（jojo §11）。
+      const actionMisses: string[] = []
+      const bar = document.querySelector('[data-testid="status-context-meter"]')?.closest("[data-toast-clearance]")
+      const barTop = bar?.getBoundingClientRect().top ?? null
+      const actionEls = [
+        ...["composer-send", "composer-stop", "composer-queue-chip"].map((id) => [id, document.querySelector(`[data-testid="${id}"]`)] as const),
+        ...Array.from(document.querySelectorAll('[data-testid="queued-followups-docked"] [data-testid="queued-collapsed"]')).map((e, i) => [`queued-collapsed-${i}`, e] as const)
+      ]
+      for (const [id, el] of actionEls) {
+        if (!el) continue
+        const r = el.getBoundingClientRect()
+        if (r.height <= 0 || r.width <= 0) continue
+        if (id.startsWith("composer-")) {
+          if (innerWidth === 733 && innerHeight === 480 && r.bottom > 430.5) actionMisses.push(`${id}:>430(${r.bottom})`)
+          if (barTop != null && r.bottom > barTop - 13 + 0.5) actionMisses.push(`${id}:>top-13(${r.bottom}/${barTop})`)
+        }
+        if (!five(el)) actionMisses.push(`${id}:5pt`)
+      }
       const art = conv?.querySelector('[data-testid="permission-dock"] article')
       const thread = conv?.querySelector(":scope > [data-thread-root]")
       const slack = (e: Element | null | undefined) => e ? Math.max(0, e.getBoundingClientRect().height - (parseFloat(getComputedStyle(e).minHeight) || 0)) : 0
       const cluster = document.querySelector("form[data-composer]")?.parentElement?.getBoundingClientRect()
       const footer = conv?.querySelector('[data-testid="permission-dock"] article > footer')?.getBoundingClientRect()
+      const clip = tray?.getAttribute("data-tray-approval-clip") === "true"
+      const gap = shell && footer && footer.height > 0 ? shell.bottom - footer.bottom : null
       state.frames.push({
-        clip: tray?.getAttribute("data-tray-approval-clip") === "true",
+        t,
+        clip,
         strip: tray?.getAttribute("data-tray-strip") === "true",
+        squeezed: tray?.getAttribute("data-tray-squeezed") === "true",
+        slot: tray?.getAttribute("data-tray-slot") ?? null,
+        review: !!document.querySelector('[data-testid="composer-review-frame"]'),
         h: innerHeight,
         w: innerWidth,
+        trayH: tray ? tray.getBoundingClientRect().height : null,
         shellH: shell?.height ?? null,
         floor: conv ? getComputedStyle(conv).minHeight : null,
         clusterH: cluster?.height ?? null,
-        gap: shell && footer ? shell.bottom - footer.bottom : null,
+        gap,
         need: conv && footer ? footer.bottom - conv.getBoundingClientRect().top - slack(thread) - slack(art) : null,
         dock: document.querySelector('[data-testid="queued-followups-docked"]')?.getAttribute("data-mode") ?? null,
-        misses
+        barTop,
+        misses,
+        actionMisses,
+        late: gap != null && gap < -0.5 && !clip
       })
     }
-    const loop = () => {
-      tick()
+    const afterPaint = (t: number) => {
+      const ch = new MessageChannel()
+      ch.port1.onmessage = () => tick(t)
+      ch.port2.postMessage(0)
+    }
+    const loop = (t: number) => {
+      afterPaint(t)
       if (!state.stop) requestAnimationFrame(loop)
     }
     // 先同步记一帧当前已绘制态，再逐帧记。
-    tick()
+    tick(performance.now())
     requestAnimationFrame(loop)
   })
 }
 
-/**
- * maxBadFrames：进入转条时（拉窄 / 点展开）表单收回余量有 CSS 过渡（不在本刀可改文件内），产品锁 §3.2 允许 ≤ 数帧过渡、终态 5/5；
- * 条内「收起 / 展开」、排队展开、拉宽释放、高度往返一律 0。
- */
-async function endFrames(page: Page, info: TestInfo, label: string, maxTransitions = 0, maxBadFrames = 0) {
-  const fs = await page.evaluate(() => { const s = (globalThis as any).__apclipFrames; s.stop = true; return s.frames as Array<Record<string, unknown> & { clip: boolean; misses: string[] }> })
+type FrameOpts = {
+  /** data-tray-approval-clip 翻转次数上限。 */
+  maxTransitions?: number
+  /** 审批三钮 / covered 坏帧上限：进入转条 ≤3（jojo §11），其余 0。 */
+  maxBad?: number
+  /** 进入转条：单向收缩（strip 只翻一次、转条后托盘不回 108、簇高不回升 > 1px）。 */
+  entry?: boolean
+  /** 释放：过渡帧（clip off 后任何可点物不合规）≤3、covered 0。 */
+  release?: boolean
+  /** 段内 send/stop 越线是 base 既有（本刀判定全程未参与，base d4ad6b93 同场景同值）：只记录、不判红，原因写进日志与附件。 */
+  knownBaseActionBad?: string
+}
+
+async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameOpts = {}) {
+  const { maxTransitions = 0, maxBad = 0, entry = false, release = false, knownBaseActionBad } = opts
+  await page.waitForTimeout(50)
+  const fs = await page.evaluate(() => { const s = (globalThis as any).__apclipFrames; s.stop = true; return s.frames }) as Frame[]
   const changes = fs.filter((f, i) => i > 0 && f.clip !== fs[i - 1]!.clip).length
+  const stripChanges = fs.filter((f, i) => i > 0 && f.strip !== fs[i - 1]!.strip).length
   const bad = fs.filter((f) => f.misses.length > 0)
-  await info.attach(label, { body: JSON.stringify({ changes, bad, frames: fs }), contentType: "application/json" })
-  if (shots) writeFileSync(join(shots, `${label}-frames.json`), JSON.stringify({ changes, bad, frames: fs }))
-  console.log(`APCLIP ${label} frames=${fs.length} transitions=${changes} bad=${bad.length}`)
-  expect(bad.length, `${label} painted 5-point misses ${JSON.stringify(bad)}`).toBeLessThanOrEqual(maxBadFrames)
+  const actionBad = fs.filter((f) => f.actionMisses.length > 0)
+  const late = fs.filter((f) => f.late)
+  // 释放后又被裁回（off → on 出现在某次 on → off 之后）
+  let reclip = 0
+  let releasedOnce = false
+  fs.forEach((f, i) => {
+    if (i === 0) return
+    const p = fs[i - 1]!
+    if (p.clip && !f.clip) releasedOnce = true
+    if (!p.clip && f.clip && releasedOnce) reclip += 1
+  })
+  const firstClip = fs.findIndex((f) => f.clip)
+  const firstClipped = fs.findIndex((f) => f.gap != null && f.gap < -0.5)
+  const badMs = bad.length ? bad[bad.length - 1]!.t - bad[0]!.t : 0
+  const summary = { label, frames: fs.length, changes, stripChanges, bad: bad.length, badMs: Math.round(badMs), actionBad: actionBad.length, late: late.length, reclip, firstClip, firstClipped }
+  await info.attach(label, { body: JSON.stringify({ summary, bad, actionBad, late, frames: fs }), contentType: "application/json" })
+  if (shots) writeFileSync(join(shots, `${label}-frames.json`), JSON.stringify({ summary, bad, actionBad, late, frames: fs }))
+  console.log(`APCLIP ${label} frames=${fs.length} transitions=${changes} bad=${bad.length} badMs=${summary.badMs} actionBad=${actionBad.length} late=${late.length} reclip=${reclip} firstClip=${firstClip} firstClipped=${firstClipped}`)
+  expect(bad.length, `${label} painted 5-point misses ${JSON.stringify(bad)}`).toBeLessThanOrEqual(maxBad)
   expect(changes, `${label} no painted reversal`).toBeLessThanOrEqual(maxTransitions)
+  if (knownBaseActionBad) {
+    console.log(`APCLIP ${label} KNOWN-BASE actionBad=${actionBad.length} (${knownBaseActionBad}) sample=${JSON.stringify(actionBad[0]?.actionMisses ?? [])}`)
+    test.info().annotations.push({ type: "known-base", description: `${label}: ${knownBaseActionBad} actionBad=${actionBad.length}` })
+    expect(fs.every((f) => !f.clip), `${label} known-base segment must not involve approval clip`).toBe(true)
+  } else {
+    expect(actionBad.length, `${label} send/stop/queue every frame ≤430, ≤top−13, 5/5 ${JSON.stringify(actionBad)}`).toBe(0)
+  }
+  // C3：判定不晚于第一帧被裁——任何已绘制帧里 footer 越线时 data-tray-approval-clip 必须已 on。
+  expect(late.length, `${label} decision late (clipped but clip attr off) ${JSON.stringify(late)}`).toBe(0)
+  expect(reclip, `${label} re-clipped after release`).toBe(0)
+  if (entry) {
+    expect(stripChanges, `${label} strip flips once`).toBeLessThanOrEqual(1)
+    const s0 = fs.findIndex((f) => f.strip)
+    expect(s0, `${label} reached strip`).toBeGreaterThanOrEqual(0)
+    const after = fs.slice(s0)
+    expect(after.every((f) => f.strip), `${label} no strip⇄108`).toBe(true)
+    for (let i = 1; i < after.length; i++) {
+      expect(after[i]!.clusterH! - after[i - 1]!.clusterH!, `${label} monotonic shrink @${s0 + i}`).toBeLessThanOrEqual(1)
+      expect(after[i]!.trayH!, `${label} tray never back to 108 @${s0 + i}`).toBeLessThan(100)
+    }
+    // 坏帧（三钮未满 5/5）只能出现在转条第一帧起的连续过渡里，且第一帧已是 clip on（坏帧 = 纯 CSS 高度过渡）。
+    for (const b of bad) expect(b.clip, `${label} bad frame must already be clip on`).toBe(true)
+  }
+  // 释放（jojo §11 / §9）：过渡帧 = clip off 起任何一项可点物不满足（三钮 / covered / send·stop·排队）的帧，≤3；covered 必须 0。
+  // 托盘自身的 CSS 高度动画帧（#224 现成过渡，不在本刀可改文件内）单独记 trayAnim，不算坏帧。
+  let releaseTransition = 0
+  let trayAnim = 0
+  if (release) {
+    const off = fs.findIndex((f, i) => i > 0 && fs[i - 1]!.clip && !f.clip)
+    expect(off, `${label} released`).toBeGreaterThan(0)
+    const tail = fs.slice(off)
+    const finalH = fs[fs.length - 1]!.trayH!
+    trayAnim = tail.filter((f) => f.trayH != null && Math.abs(f.trayH - finalH) > 0.5).length
+    releaseTransition = tail.filter((f) => f.misses.length > 0 || f.actionMisses.length > 0).length
+    const covered = tail.filter((f) => f.misses.some((m) => m.startsWith("covered:"))).length
+    const stripFlipsAfter = tail.filter((f, i) => i > 0 && f.strip !== tail[i - 1]!.strip).length
+    console.log(`APCLIP ${label} releaseTransition=${releaseTransition} covered=${covered} trayAnim=${trayAnim} stripFlipsAfter=${stripFlipsAfter} finalTrayH=${finalH} finalStrip=${fs[fs.length - 1]!.strip} squeezed=${fs[fs.length - 1]!.squeezed}`)
+    expect(releaseTransition, `${label} release transition ≤3 frames`).toBeLessThanOrEqual(3)
+    expect(covered, `${label} release never covers clickable`).toBe(0)
+    // 释放后 strip 至多翻一次（条 → 108，或 K12 接手保持条），不出现条 → 108 → 条
+    expect(stripFlipsAfter, `${label} release strip flips`).toBeLessThanOrEqual(1)
+  }
   const at = fs.find((f, i) => i > 0 && f.clip !== fs[i - 1]!.clip)
-  return { changes, bad: bad.length, frames: fs.length, atHeight: (at?.h as number | undefined) ?? null }
+  return { changes, bad: bad.length, frames: fs.length, releaseTransition, trayAnim, fs, atHeight: (at?.h as number | undefined) ?? null }
 }
 
 test.beforeAll(() => { test.skip(!existsSync(mainEntry), "out missing; build desktop first") })
 
+/**
+ * 真机逐 px 释放（上行）/ 进入（下行）窗高，leo ② 口径：q0 521 / 504，q2 555 / 502。
+ * q2 释放点取决于释放前一帧排队坞的模式（useDockTight 的回行模式线由折叠时那一刻的列高决定，属 K6 / 排队坞，不在本刀）：
+ * 坞已回行模式（all，需求 131）→ 555；坞仍折叠（collapsed，需求 87）→ 513。两种都按实测内容需求放、放后不被裁回。
+ */
+const SWITCH_AT: Record<string, { up: number; down: number }> = {
+  q0: { up: 521, down: 504 },
+  "q2-all": { up: 555, down: 502 },
+  "q2-collapsed": { up: 513, down: 502 }
+}
 const CELLS: Array<[Lang, number, boolean]> = [["zh", 0, false], ["zh", 2, false], ["en", 0, false], ["en", 2, false], ["en", 2, true]]
 for (const [lang, count, cu] of CELLS) {
   test(`B′ 审批托盘裁切（${lang} q${count}${cu ? " CU" : ""}）：紧凑/展开/收起，条内收起/展开三钮5/5零翻转、队列展开，大小屏释放重进与高502↔521`, async () => {
@@ -251,7 +375,7 @@ for (const [lang, count, cu] of CELLS) {
       await startFrames(page)
       await expand().click()
       const strip = await check(page, info, `${tag}-expanded-strip`, true)
-      await endFrames(page, info, `${tag}-expand-entry`, 1, 3)
+      await endFrames(page, info, `${tag}-expand-entry`, { maxTransitions: 1, maxBad: 3, entry: true })
       expect(strip.tray!.height).toBeGreaterThanOrEqual(52)
       expect(strip.tray!.height).toBeLessThanOrEqual(56)
       await startFrames(page)
@@ -259,10 +383,11 @@ for (const [lang, count, cu] of CELLS) {
       await check(page, info, `${tag}-strip-collapse`, true)
       await expand().click()
       await check(page, info, `${tag}-strip-expand`, true)
-      await endFrames(page, info, `${tag}-toggle`, 0)
+      await endFrames(page, info, `${tag}-toggle`)
       // 高往返（含 502–521）：480 → 600 → 480 逐 px。q0 释放 521 / 进入 504（实测）；
       // q2 拉高时排队坞从折叠回到行模式，列内容需求变大，释放点高于 521（按需求放，放后不被裁回）。每个方向恰好切一次。
       const switchAt: Record<string, number | null> = {}
+      let releaseDock = "none"
       for (const [direction, heights] of [
         ["up", Array.from({ length: 121 }, (_, i) => 480 + i)],
         ["down", Array.from({ length: 121 }, (_, i) => 600 - i)]
@@ -270,12 +395,22 @@ for (const [lang, count, cu] of CELLS) {
         await startFrames(page)
         for (const h of heights) { await page.setViewportSize({ width: 733, height: h }); await page.waitForTimeout(32) }
         await settle(page)
-        const r = await endFrames(page, info, `${tag}-height-${direction}`, 1)
+        const r = await endFrames(page, info, `${tag}-height-${direction}`, { maxTransitions: 1 })
+        if (direction === "up") {
+          const i = r.fs.findIndex((f, k) => k > 0 && r.fs[k - 1]!.clip && !f.clip)
+          releaseDock = String(r.fs[i - 1]?.dock ?? "none")
+        }
         expect(r.changes, `${tag} ${direction} exactly one transition`).toBe(1)
         switchAt[direction] = r.atHeight
       }
       console.log(`APCLIP ${tag} height switch ${JSON.stringify(switchAt)}`)
       expect(switchAt.up! - switchAt.down!, `${tag} hysteresis ≥ 8px window height`).toBeGreaterThanOrEqual(8)
+      // leo ②：逐 px 实测释放 / 进入窗高（±1 容取整）。q2 释放点取决于拉高途中排队坞是否先回到行模式
+      // （zh / CU 在 511 / 509 回行模式 → 按内容需求 131 晚放到 555；en 无 CU 时坞一直折叠 → 需求 87、513 放），两种都不被裁回。
+      const want = SWITCH_AT[count ? `q2-${releaseDock}` : "q0"]!
+      console.log(`APCLIP ${tag} release dock mode=${releaseDock} want=${JSON.stringify(want)}`)
+      expect(Math.abs(switchAt.up! - want.up), `${tag} release at ${switchAt.up} ≈ ${want.up} (dock ${releaseDock})`).toBeLessThanOrEqual(1)
+      expect(Math.abs(switchAt.down! - want.down), `${tag} enter at ${switchAt.down} ≈ ${want.down}`).toBeLessThanOrEqual(1)
       await check(page, info, `${tag}-after-height`, true)
       // 审批挂着拉宽须放、拉窄须重进；无 strip 且托盘 108。
       for (const [w, h] of [[1024, 670], [1440, 920]]) {
@@ -285,17 +420,17 @@ for (const [lang, count, cu] of CELLS) {
         expect(wide.tray!.height).toBe(108)
         expect(wide.clip).toBeNull()
         expect(wide.actions.every((a) => a.rect!.bottom <= wide.barTop! - 19 + 0.5)).toBe(true)
-        await endFrames(page, info, `${tag}-to-${w}`, 1)
+        await endFrames(page, info, `${tag}-to-${w}`, { maxTransitions: 1, release: w === 1024 })
       }
       await startFrames(page)
       await resize(page, 733, 480)
       await check(page, info, `${tag}-back-733`, true)
-      await endFrames(page, info, `${tag}-to-733`, 1, 3)
+      await endFrames(page, info, `${tag}-to-733`, { maxTransitions: 1, maxBad: 3, entry: true })
       // 宽屏回来后排队坞可能是行模式（需求 > 地板）：慢拉高到 600，最多切一次、零坏帧（释放后不被裁回）。
       await startFrames(page)
       for (let h = 480; h <= 600; h += 2) { await page.setViewportSize({ width: 733, height: h }); await page.waitForTimeout(32) }
       await settle(page)
-      const tall = await endFrames(page, info, `${tag}-height-up-after-wide`, 1)
+      const tall = await endFrames(page, info, `${tag}-height-up-after-wide`, { maxTransitions: 1 })
       console.log(`APCLIP ${tag} after-wide release at ${tall.atHeight}`)
       await resize(page, 733, 480)
       await check(page, info, `${tag}-back-480`, true)
@@ -310,7 +445,7 @@ for (const [lang, count, cu] of CELLS) {
         await startFrames(page)
         await dock.locator("button").first().click()
         await check(page, info, `${tag}-queue-expanded`, true)
-        await endFrames(page, info, `${tag}-queue-expand`, 0)
+        await endFrames(page, info, `${tag}-queue-expand`)
       }
       // 收起后的终态（在大屏释放 clip 后，按用户收起回到紧凑；再缩小保持不转）。
       await resize(page, 1440, 920)
@@ -332,10 +467,75 @@ for (const [lang, count, cu] of CELLS) {
       }
       await page.waitForTimeout(600)
       await settle(page)
-      await endFrames(page, info, `${tag}-release`, 1)
+      await endFrames(page, info, `${tag}-release`, { maxTransitions: 1, release: true })
       const after = await geometry(page)
       expect(after.clip).toBeNull()
       for (const a of after.actions) expect(a.hits.every((h) => h.ok), `${tag} release ${a.id} ${JSON.stringify(a.hits)}`).toBe(true)
+      expect(after.thumb.hits.every((h) => h.ok), `${tag} release thumb`).toBe(true)
+      if (shots) { writeFileSync(join(shots, `${tag}-released.json`), JSON.stringify(after, null, 2)); await page.screenshot({ path: join(shots, `${tag}-released.png`) }) }
+      expect(errors).toEqual([])
+    } finally { await cleanup() }
+  })
+}
+
+/**
+ * 第三条进入路径（jojo §11）：托盘已展开（733×480、运行中、无审批）时审批卡出现 → 裁切 → 转条。
+ * 「very slow」桩先慢吐 5 词（约 7.5s）再停写盘审批，期间排队 / 加图 / 展开。≤3 坏帧、单向收缩、每帧 send/stop/排队合规、判定首帧即 on；
+ * 之后批准 → 释放（托盘长回 ≤3 过渡帧、不盖任何可点项）。
+ */
+const APPEAR_H = Number(process.env.APCLIP_APPEAR_H ?? 480)
+for (const [lang, count] of [["zh", 0], ["zh", 2], ["en", 0], ["en", 2]] as Array<[Lang, number]>) {
+  test(`B′ 托盘已展开时审批出现（${lang} q${count}）：转条 ≤3 帧、判定首帧 on，批准后释放 ≤3 帧不盖可点项`, async () => {
+    const info = test.info()
+    test.setTimeout(180_000)
+    const { page, errors, cleanup } = await boot(lang, false, "very slow", false)
+    const tag = `${lang}-q${count}-appear`
+    try {
+      await expect(page.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
+      for (let i = 0; i < count; i++) {
+        await page.getByTestId("composer-input").fill(`${lang === "zh" ? "排队" : "queued"} ${i + 1}`)
+        await page.getByTestId("composer-input").press("Enter")
+      }
+      await page.getByTestId("composer-attach").setInputFiles({ name: "tray.png", mimeType: "image/png", buffer: PNG })
+      await expect(page.getByTestId("composer-asset-chip")).toHaveCount(1)
+      const tray = page.getByTestId("composer-attachment-tray")
+      await resize(page, 733, APPEAR_H)
+      await tray.getByTitle(lang === "zh" ? "展开附件检视面板" : "Expand attachment panel").click()
+      await settle(page)
+      expect(await page.getByTestId("approval-allow").count(), `${tag} approval must not be up yet (very slow head)`).toBe(0)
+      const before = await geometry(page)
+      console.log(`APCLIP ${tag}-before ${JSON.stringify({ tray: before.tray, strip: before.strip, clip: before.clip })}`)
+      expect(before.clip).toBeNull()
+      // q2：排队芯片行让 Composer 更高，733×480 无审批时 K12 已先转条（data-tray-squeezed）——审批出现时已是条带，不经过裁切进入。
+      const k12Before = before.strip === "true"
+      if (k12Before) {
+        const sq = await page.getByTestId("composer-attachment-tray").getAttribute("data-tray-squeezed")
+        expect(sq, `${tag} strip before approval must be K12`).toBe("true")
+      }
+      await startFrames(page)
+      await expect(page.getByTestId("approval-allow")).toBeVisible({ timeout: 20_000 })
+      if (count) await expect(page.getByTestId("queued-followups-docked")).toHaveAttribute("data-count", String(count))
+      const strip = await check(page, info, `${tag}-strip`, k12Before ? null : true)
+      expect(strip.strip).toBe("true")
+      expect(strip.tray!.height).toBeLessThanOrEqual(56)
+      const entry = await endFrames(page, info, `${tag}-entry`, { maxTransitions: 1, maxBad: 3, entry: true })
+      if (k12Before) expect(entry.fs.every((f) => f.strip), `${tag} K12 strip held through approval appear`).toBe(true)
+      await startFrames(page)
+      await page.getByTestId("approval-allow").click({ timeout: 5_000 })
+      await expect(page.getByTestId("approval-allow")).toHaveCount(0, { timeout: 15_000 })
+      await page.waitForTimeout(600)
+      await settle(page)
+      // q2 + K12 先转条：批准写盘后出现待验收框（#224 slot）+ 排队芯片行，send 446 > 430——base d4ad6b93 同场景同值（本刀 clip 全程未参与），另报，不在本刀。
+      const knownBase = k12Before ? "base d4ad6b93 同值 send 446：#224 slot + 排队芯片行，clip 未参与" : undefined
+      await endFrames(page, info, `${tag}-release`, { maxTransitions: 1, release: !k12Before && strip.clip === "true", knownBaseActionBad: knownBase })
+      const after = await geometry(page)
+      expect(after.clip).toBeNull()
+      for (const a of after.actions) {
+        expect(a.hits.every((h) => h.ok), `${tag} release ${a.id}`).toBe(true)
+        if (knownBase) continue
+        expect(a.rect!.bottom, `${tag} release ${a.id} ≤430`).toBeLessThanOrEqual(430.5)
+        expect(a.margin!, `${tag} release ${a.id} ≤top−13`).toBeGreaterThanOrEqual(-0.5)
+      }
       expect(after.thumb.hits.every((h) => h.ok), `${tag} release thumb`).toBe(true)
       if (shots) { writeFileSync(join(shots, `${tag}-released.json`), JSON.stringify(after, null, 2)); await page.screenshot({ path: join(shots, `${tag}-released.png`) }) }
       expect(errors).toEqual([])

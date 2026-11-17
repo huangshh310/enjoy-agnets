@@ -17,6 +17,8 @@
  * - 防抖闩（R4，仿 K6 blockedBelowPx）：几何释放后又被裁回来 → 重进并把闩设在重进后条带首帧的外壳高；
  *   外壳再长 ≥ 8 才允许再次几何释放。footer 消失时清闩。
  */
+import { TRAY_SQUEEZE_RELEASE_PX } from "./composer-tray-squeeze.ts"
+
 export const APPROVAL_CLIP_SUBPIXEL_PX = 0.5
 export const APPROVAL_CLIP_RELEASE_PX = 8
 
@@ -66,6 +68,8 @@ export type TrayApprovalClipInput = {
   attachCount: number
   /** 上一帧已经按单行条渲染（budget.strip 已提交）。 */
   stripApplied: boolean
+  /** 条带已由别的路（#224 slot / K12 squeeze）画着：此时 footer 越线转条也帮不上，且量不到转条前簇高 → 不进入。 */
+  stripHeldElsewhere?: boolean
 }
 
 function finite(n: number | null): n is number {
@@ -78,6 +82,7 @@ export function nextTrayApprovalClip(prev: TrayApprovalClip, m: TrayApprovalClip
     return prev === TRAY_APPROVAL_CLIP_OFF ? prev : TRAY_APPROVAL_CLIP_OFF
   }
   if (!prev.on) {
+    if (m.stripHeldElsewhere) return prev
     const clipPx = m.footerBottom - m.clipBottom
     if (!(clipPx > APPROVAL_CLIP_SUBPIXEL_PX)) return prev
     return {
@@ -124,4 +129,33 @@ export function nextTrayApprovalClip(prev: TrayApprovalClip, m: TrayApprovalClip
 export function trayStripFromPaths(args: { slotStrip: boolean; slot: number | null; squeezed: boolean; approvalClip: boolean }): boolean {
   if (args.slot != null) return args.slotStrip
   return args.squeezed || args.approvalClip
+}
+
+/**
+ * 审批消失时的 K12 交接（jojo §11 释放 ≤3 帧、§9 释放不盖可点项）：审批走掉后 Composer 外壳从 shrink-0 变回可让位，
+ * 「此后是否挤压由现有 K12 squeeze 决定」。K12 自己要等托盘长回（CSS 过渡）、内容溢出、RO 再晚一帧才进，
+ * 中间会画出 send 掉到状态栏下的帧（真机 zh / en q0：2 帧 453 > 430，条 → 108 → 条）。
+ * 这里在释放的同一帧把条带交给 K12：needPx = 条带内容高 + 长回量（= 整托盘内容高，即 K12 进入时会量到的值），
+ * 再按 K12 原式（盒高 + 对话区高出保底的部分 ≥ needPx + 8）判一次——放得下就立即放（1024 / 1440 不变），放不下以 K12 态接手。
+ * 长回量未知（附件数变作废）→ 不交接，交回 K12 自己判。不改 composer-tray-squeeze 的常量与公式。
+ */
+export function squeezeHandoverOnRelease(args: {
+  regrowPx: number | null
+  contentPx: number
+  boxPx: number
+  conversationSlackPx: number
+}): { on: true; needPx: number } | null {
+  if (args.regrowPx == null || !Number.isFinite(args.regrowPx)) return null
+  const needPx = args.contentPx + args.regrowPx
+  const room = args.boxPx + Math.max(0, args.conversationSlackPx)
+  return room >= needPx + TRAY_SQUEEZE_RELEASE_PX ? null : { on: true, needPx }
+}
+
+/**
+ * 交接后 K12 态内：审批走后 Composer 里可能晚一两帧多出一行（真机条带内容 197 → 233），整托盘内容随之变高；
+ * needPx 只增不减地跟上「条带内容高 + 长回量」，免得按偏小的 needPx 提前放、放了又被 K12 挤回（条 ⇄ 108）。
+ */
+export function refreshHandoverNeed(needPx: number | null, contentPx: number, regrowPx: number): number {
+  const full = contentPx + regrowPx
+  return needPx == null || full > needPx ? full : needPx
 }

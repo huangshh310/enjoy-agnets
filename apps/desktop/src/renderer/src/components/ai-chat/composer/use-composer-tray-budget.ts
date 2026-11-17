@@ -5,10 +5,13 @@
  * composer-tray-approval-clip.ts）。审批裁切只读 DOM 几何；对话列地板复用下面同一次 computed min-height 读数。
  */
 import { useLayoutEffect, useRef, useState, type RefObject } from "react"
+import { flushSync } from "react-dom"
 import { readStatusBarTop, shouldUseTrayStrip, trayStripSlot } from "./composer-tray-leftover.ts"
 import { nextTraySqueeze, TRAY_SQUEEZE_OFF, type TraySqueeze } from "./composer-tray-squeeze.ts"
 import {
   nextTrayApprovalClip,
+  refreshHandoverNeed,
+  squeezeHandoverOnRelease,
   TRAY_APPROVAL_CLIP_OFF,
   trayStripFromPaths,
   type TrayApprovalClip
@@ -60,6 +63,8 @@ export function useComposerTrayBudget(args: {
   budgetRef.current = budget
   const squeezeRef = useRef<TraySqueeze>(TRAY_SQUEEZE_OFF)
   const clipRef = useRef<TrayApprovalClip>(TRAY_APPROVAL_CLIP_OFF)
+  // 审批消失时交给 K12 的长回量（squeezeHandoverOnRelease）；K12 放掉 / 附件数变即清。
+  const handoverRegrowRef = useRef<number | null>(null)
   // 只读订阅：审批出现 / 消失时重跑 effect，把 dock 挂进 RO（dock 挂载时对话列尺寸可能不变）。
   const hasApproval = useChatStore((state) => state.pendingApproval != null)
 
@@ -67,13 +72,16 @@ export function useComposerTrayBudget(args: {
     if (!args.enabled) {
       squeezeRef.current = TRAY_SQUEEZE_OFF
       clipRef.current = TRAY_APPROVAL_CLIP_OFF
+      handoverRegrowRef.current = null
       if (!sameBudget(budgetRef.current, IDLE_COMPOSER_TRAY_BUDGET)) setBudget(IDLE_COMPOSER_TRAY_BUDGET)
       return
     }
     // 附件数只作审批裁切长回量的失效键；只读订阅，effect 清理时退订。
     let attachCount = listComposerAssets().length
 
-    const measure = () => {
+    // sync：RO 回调（布局后、绘制前）与 resize 回调里，React 会把非离散事件的 setState 排到绘制之后（晚一帧）。
+    // 只有审批裁切这一路翻转时 flushSync，让判定在同一帧绘制前提交（C3）；#224 slot / K12 squeeze 时序不变。
+    const measure = (sync = false) => {
       const form = args.formRef.current
       if (!form || typeof window === "undefined") {
         if (!sameBudget(budgetRef.current, IDLE_COMPOSER_TRAY_BUDGET)) setBudget(IDLE_COMPOSER_TRAY_BUDGET)
@@ -97,6 +105,12 @@ export function useComposerTrayBudget(args: {
       const shell = form.parentElement
       if (slot == null && shell) {
         const slack = convHeight != null && convFloor != null && Number.isFinite(convFloor) ? convHeight - convFloor : 0
+        if (handoverRegrowRef.current != null && squeezeRef.current.on && prev.strip) {
+          squeezeRef.current = {
+            ...squeezeRef.current,
+            needPx: refreshHandoverNeed(squeezeRef.current.needPx, shell.scrollHeight, handoverRegrowRef.current)
+          }
+        }
         squeezeRef.current = nextTraySqueeze(squeezeRef.current, {
           contentPx: shell.scrollHeight,
           boxPx: shell.clientHeight,
@@ -105,12 +119,16 @@ export function useComposerTrayBudget(args: {
       } else {
         squeezeRef.current = TRAY_SQUEEZE_OFF
       }
+      if (!squeezeRef.current.on) handoverRegrowRef.current = null
       // 审批裁切：裁切线 = 对话外壳（chat-conversation 的父级），不是对话列本身。
       if (slot == null && conv) {
         const clipShell = conv.parentElement
         const clipBox = clipShell ? clipShell.getBoundingClientRect() : null
         const footer = conv.querySelector('[data-testid="permission-dock"] article > footer')
-        // 列内容压到最小后到 footer 底的需求：消息区与审批卡各自比 computed min-height 多出的高是可让出的（同 K6 的读法）。
+        // 列内容压到最小后到 footer 底的需求（leo ②，只量 DOM）：footer 底 − 对话列顶 − 消息区可让出的高 − 审批卡可让出的高；
+        // 可让出 = 该节点 rect 高 − 它自己的 computed min-height（同 K6 的读法），排队坞 / 「马上发」提示整块按实高计入、不写死行高。
+        // 排队坞跨释放只可能「行模式 → 折叠」（useDockTight 只在列长高到 restoreAt 才回行模式，释放只会让列变矮），
+        // 折叠态（一行）需求 ≤ 行模式，所以当前态实测即两态中较大的那个。
         const slackOf = (el: Element | null | undefined) => {
           if (!el) return 0
           const min = Number.parseFloat(getComputedStyle(el).minHeight)
@@ -121,7 +139,8 @@ export function useComposerTrayBudget(args: {
           footerBox && footerBox.height > 0
             ? footerBox.bottom - conv.getBoundingClientRect().top - slackOf(conv.querySelector(":scope > [data-thread-root]")) - slackOf(footer?.parentElement)
             : null
-        clipRef.current = nextTrayApprovalClip(clipRef.current, {
+        const before = clipRef.current
+        clipRef.current = nextTrayApprovalClip(before, {
           footerBottom: visibleBottom(footer),
           clipBottom: clipBox && clipBox.height > 0 ? clipBox.bottom : null,
           clipH: clipBox && clipBox.height > 0 ? clipBox.height : null,
@@ -129,8 +148,22 @@ export function useComposerTrayBudget(args: {
           contentNeedPx,
           clusterPx: shell ? shell.getBoundingClientRect().height : null,
           attachCount,
-          stripApplied: prev.strip
+          stripApplied: prev.strip,
+          stripHeldElsewhere: prev.strip && !before.on
         })
+        // 审批消失（非几何释放）且条带已画：同一帧按释放后的布局代 K12 判一次，放不下就以 K12 态接手（不先画 108 再挤回）。
+        if (before.on && !clipRef.current.on && !clipRef.current.releasedByGeometry && prev.strip && !squeezeRef.current.on && shell) {
+          const handover = squeezeHandoverOnRelease({
+            regrowPx: before.regrowUnknown ? null : before.regrowPx,
+            contentPx: shell.scrollHeight,
+            boxPx: shell.clientHeight,
+            conversationSlackPx: convHeight != null && convFloor != null && Number.isFinite(convFloor) ? convHeight - convFloor : 0
+          })
+          if (handover) {
+            squeezeRef.current = handover
+            handoverRegrowRef.current = before.regrowPx
+          }
+        }
       } else {
         clipRef.current = TRAY_APPROVAL_CLIP_OFF
       }
@@ -144,11 +177,14 @@ export function useComposerTrayBudget(args: {
         squeezed,
         approvalClip
       }
-      if (!sameBudget(prev, next)) setBudget(next)
+      if (sameBudget(prev, next)) return
+      if (sync && next.approvalClip !== prev.approvalClip) flushSync(() => setBudget(next))
+      else setBudget(next)
     }
 
     measure()
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure)
+    const syncMeasure = () => measure(true)
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(syncMeasure)
     const form = args.formRef.current
     const tray = args.trayRef.current
     const conv = document.querySelector('[data-testid="chat-conversation"]')
@@ -162,15 +198,16 @@ export function useComposerTrayBudget(args: {
     if (observer && clipShell?.parentElement) observer.observe(clipShell.parentElement)
     const dock = conv?.querySelector('[data-testid="permission-dock"]') ?? null
     if (observer && dock) observer.observe(dock)
-    window.addEventListener("resize", measure)
+    window.addEventListener("resize", syncMeasure)
     const unsubscribe = subscribeComposerAssets((items) => {
       if (items.length === attachCount) return
       attachCount = items.length
+      handoverRegrowRef.current = null
       measure()
     })
     return () => {
       observer?.disconnect()
-      window.removeEventListener("resize", measure)
+      window.removeEventListener("resize", syncMeasure)
       unsubscribe()
     }
   }, [args.enabled, args.formRef, args.trayRef, hasApproval])
