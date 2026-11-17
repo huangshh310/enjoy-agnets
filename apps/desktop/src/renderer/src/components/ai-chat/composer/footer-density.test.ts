@@ -195,6 +195,36 @@ test("C4 回滞字面值边界（#228 跟进 ①）：升级 +7 不升 / +8 升 
   }
 })
 
+test("降级亚像素容差字面值边界（#229 leo S1）：当前级 / 降级目标级各容 0.5px——差 0.4 / 0.5 不降，差 0.6 才降", () => {
+  // 产品：降级看当前级自己的实测宽，容 0.5px 亚像素（FOOTER_SUBPIXEL_PX）；落点同样容 0.5px。钉住两处 −ε，任一处 ε 改 0 或改大都会红。
+  // L2 量过且远放不下：不会往上探，只看降级这一道
+  const c: FooterWidthCache = { "2": { left: 900, right: 190 }, "3a": { left: 400, right: 190 }, "3b": { left: 300, right: 190 }, "3c": { left: 200, right: 190 } }
+  // 1. 当前级（:110）：rowInner 比 L3a 所需少 0.4 / 0.5 → 留在 L3a；少 0.6 → 降到 L3b
+  for (const [d, want] of [
+    [0.4, "3a"],
+    [0.5, "3a"],
+    [0.6, "3b"]
+  ] as const) {
+    assert.deepEqual(
+      pickFooterDensity({ cur: "3a", rowInner: need(c, "3a") - d, gapX: GAP, cache: c }),
+      { next: want, probe: false },
+      `当前级 need−${d} → ${want}`
+    )
+  }
+  // 2. 降级落点（:114）：L3a 远放不下时，L3b 少 0.4 / 0.5 仍落 L3b；少 0.6 才继续落到 L3c
+  for (const [d, want] of [
+    [0.4, "3b"],
+    [0.5, "3b"],
+    [0.6, "3c"]
+  ] as const) {
+    assert.deepEqual(
+      pickFooterDensity({ cur: "3a", rowInner: need(c, "3b") - d, gapX: GAP, cache: c }),
+      { next: want, probe: false },
+      `降级落点 need(3b)−${d} → ${want}`
+    )
+  }
+})
+
 test("C1：chip 出现 / 消失（缓存全清后重新量），级别最多变一次", () => {
   const withChips = table(FOOTER_STEPS.map((s) => EN[s]!.left + (FOOTER_STEPS.indexOf(s) < 4 ? 305 : 0)), FOOTER_STEPS.map((s) => EN[s]!.right))
   const w = need(EN, "2") + FOOTER_UPGRADE_HYSTERESIS_PX + 2
