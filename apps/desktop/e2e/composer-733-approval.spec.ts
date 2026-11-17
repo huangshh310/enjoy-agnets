@@ -32,8 +32,8 @@ async function boot(lang: Lang, cu = false, prompt = "please write a note", wait
   try {
     const page = await firstWindow(app)
     const errors: string[] = []
-    page.on("pageerror", (e) => { if (/ResizeObserver loop/.test(String(e))) errors.push(String(e)) })
-    page.on("console", (msg) => { if (/ResizeObserver loop/.test(msg.text())) errors.push(msg.text()) })
+    page.on("pageerror", (e) => { if (/ResizeObserver loop|flushSync was called from inside a lifecycle/.test(String(e))) errors.push(String(e)) })
+    page.on("console", (msg) => { if (/ResizeObserver loop|flushSync was called from inside a lifecycle/.test(msg.text())) errors.push(msg.text()) })
     await page.setViewportSize({ width: 1440, height: 920 })
     await page.waitForTimeout(800)
     const skip = page.getByRole("button", { name: /^(跳过设置|Skip setup)$/ })
@@ -172,29 +172,7 @@ type Frame = Record<string, unknown> & {
   gap: number | null; misses: string[]; actionMisses: string[]; late: boolean; squeezed: boolean; appr: boolean; stopHits: number | null; sendHits: number | null; barHits: number; sendB: number | null; stopB: number | null
 }
 
-/**
- * base 既有越线豁免（leo #230 门 M1/M2 + jojo / leo 选 (a)，host 转；事实依据 jojo gate-230-q2-base-d4ad6b93.md 与 mike base 实测）：
- * 只在「审批出现 q2」用例显式开启（tag `${lang}-q2-appear-release`），其它路径（含 q0）一律不豁免。
- * 批准后段以桩 run 停（composer-stop 消失那一帧）为界：
- *   ① 不设帧数上限：446 持续约 7.5s，结束点是 #224 slot 释放（不是 run 结束），帧数随帧率变。
- *   ② 越线帧（只认 composer-send / composer-stop 的「>430」「>top−13」）每帧：落在 run 中、clip off、bottom ≤ KNOWN_BASE_SEND_CAP + 0.5、
- *      stop / send 五点 5/5（stop 命中分布另记录）、五点无一落在状态栏。其余 actionMisses（排队芯片 / 排队坞等）照判。
- *   ③ slot 释放那一刻允许 ≤1 帧 strip 掉成 108（托盘 92、send / stop 467），仍在 run 中（stop 消失前约 0.3s）；该帧 bottom ≤ KNOWN_BASE_FLIP_SEND_CAP + 0.5，
- *      5 点只记录不判（base 同为 2/5），下一帧 K12 挤回条后不再翻。
- *   ④ run 停后到终态（等 stop 消失 + 条态稳定，无固定延时）：0 帧越线，终态 send / stop / 排队 ≤430、≤top−13、5/5。
- * 三钮 5 点 / covered、释放过渡 ≤3、late、reclip 不豁免；strip 翻转只允许 ③ 那一帧来回（≤2 次翻转且 strip 掉的帧 ≤1）。
- * 出处：base d4ad6b93 同 spec 同路径真跑（2026-11-16 ~21:50 PST，mike；733×480，very slow 桩）：批准后 send / stop 446（barTop 443）约 7.5s；
- *   zh 第 458 帧 / en 第 457 帧 1 帧 strip=false、托盘 92、send 467，下一帧 K12 回条 426→424，stop 约 6 帧后消失。
- *   原始帧 JSON：/workspace/enjoy-docs/shots/p2-composer-733-approval/base-q2-approval-appear/（600ms 窗 + hold-10s/ 长窗）。
- */
-const KNOWN_BASE_LABEL = /^(zh|en)-q2-appear-release$/
-const KNOWN_BASE_EXEMPT = /^composer-(send|stop):>(430|top-13)\(/
-const KNOWN_BASE_FLIP_EXEMPT = /^composer-(send|stop):(>(430|top-13)\(|5pt$)/
-/** base d4ad6b93 实测越线段 send / stop bottom（px）。 */
-const KNOWN_BASE_SEND_CAP = 446
-/** base d4ad6b93 实测 slot 放掉那 1 帧 108 的 send / stop bottom（px）。 */
-const KNOWN_BASE_FLIP_SEND_CAP = 467
-type KnownBase = { reason: string }
+/** 446 刀起删除 base 越线豁免，批准后与其它路径一样逐帧硬断言。 */
 
 /**
  * 逐帧录「已绘制」态：rAF 里 post 一个 MessageChannel 任务，任务在本帧 rendering steps（rAF → 布局 → RO → 绘制）之后跑，
@@ -332,12 +310,10 @@ type FrameOpts = {
   entry?: boolean
   /** 释放：过渡帧（clip off 后任何可点物不合规）≤3、covered 0。 */
   release?: boolean
-  /** 仅「审批出现 q2」批准后段：send/stop 越线为 base 既有，按 base 实测封顶（帧数 ≤ base、逐帧 ≤ BASE_SEND_CAP），其余照常。 */
-  knownBaseActionBad?: KnownBase
 }
 
 async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameOpts = {}) {
-  const { maxTransitions = 0, maxBad = 0, entry = false, release = false, knownBaseActionBad } = opts
+  const { maxTransitions = 0, maxBad = 0, entry = false, release = false } = opts
   await page.waitForTimeout(50)
   const fs = await page.evaluate(() => { const s = (globalThis as any).__apclipFrames; s.stop = true; return s.frames }) as Frame[]
   const changes = fs.filter((f, i) => i > 0 && f.clip !== fs[i - 1]!.clip).length
@@ -363,59 +339,8 @@ async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameO
   console.log(`APCLIP ${label} frames=${fs.length} transitions=${changes} bad=${bad.length} badMs=${summary.badMs} actionBad=${actionBad.length} late=${late.length} reclip=${reclip} firstClip=${firstClip} firstClipped=${firstClipped}`)
   expect(bad.length, `${label} painted 5-point misses ${JSON.stringify(bad)}`).toBeLessThanOrEqual(maxBad)
   expect(changes, `${label} no painted reversal`).toBeLessThanOrEqual(maxTransitions)
-  // 豁免只在 run 停前剥掉 send/stop 的 >430 / >top−13（③ 那 1 帧再加 send/stop 5pt）；排队芯片 / 排队坞、run 停后全部照判。
-  const runStop = knownBaseActionBad ? fs.findIndex((f, i) => i > 0 && fs[i - 1]!.stopB != null && f.stopB == null) : -1
-  const filtered = new Map(fs.map((f, i) => [f, !knownBaseActionBad || runStop < 0 || i >= runStop
-    ? f.actionMisses
-    : f.actionMisses.filter((m) => !(f.strip ? KNOWN_BASE_EXEMPT : KNOWN_BASE_FLIP_EXEMPT).test(m))]))
-  const actMiss = (f: Frame) => filtered.get(f)!
-  if (knownBaseActionBad) {
-    const pre = fs.slice(0, Math.max(runStop, 0))
-    const flips = pre.filter((f) => !f.strip)
-    const maxSend = Math.max(0, ...pre.filter((f) => f.strip).flatMap((f) => [f.sendB ?? 0, f.stopB ?? 0]))
-    console.log(`APCLIP ${label} KNOWN-BASE runStop=${runStop} frames=${fs.length} actionBadPre=${pre.filter((f) => f.actionMisses.length > 0).length} actionBadPost=${fs.slice(Math.max(runStop, 0)).filter((f) => f.actionMisses.length > 0).length} maxSendPre=${maxSend} flip108=${JSON.stringify(flips.map((f) => ({ i: fs.indexOf(f), trayH: f.trayH, sendB: f.sendB, stopB: f.stopB })))} (${knownBaseActionBad.reason}) kinds=${JSON.stringify([...new Set(actionBad.flatMap((f) => f.actionMisses.map((m) => m.replace(/\(.*$/, ""))))])}`)
-    test.info().annotations.push({ type: "known-base", description: `${label}: ${knownBaseActionBad.reason} runStop=${runStop} maxSendPre=${maxSend}≤${KNOWN_BASE_SEND_CAP} flip108=${flips.length}≤1` })
-    expect(label, `known-base exemption only for q2 approval-appear release`).toMatch(KNOWN_BASE_LABEL)
-    expect(runStop, `${label} stub run stopped inside segment`).toBeGreaterThan(0)
-    expect(fs.every((f) => !f.clip), `${label} known-base segment must not involve approval clip`).toBe(true)
-    const other = fs.filter((f) => actMiss(f).length > 0)
-    expect(other.length, `${label} non-exempt send/stop/queue misses ${JSON.stringify(other.map((f) => [fs.indexOf(f), actMiss(f)]))}`).toBe(0)
-    // ①：每个越线帧都必须落在 run 中（停前）；run 停后零豁免。
-    const overLine = fs.map((f, i) => [i, f] as const).filter(([, f]) => f.strip && f.actionMisses.some((m) => KNOWN_BASE_EXEMPT.test(m)))
-    expect(overLine.every(([i]) => i < runStop), `${label} every over-line frame within stub run (runStop=${runStop})`).toBe(true)
-    // 记录（不断言）越线段 stop 5 点命中数分布，写进 PR body。
-    const stopHits: Record<string, number> = {}
-    for (const [, f] of overLine) stopHits[String(f.stopHits)] = (stopHits[String(f.stopHits)] ?? 0) + 1
-    console.log(`APCLIP ${label} KNOWN-BASE overLine=${overLine.length} stopHits=${JSON.stringify(stopHits)}`)
-    // ②：越线帧 stop / send 仍 5/5（记录分布见上），且五点无一落在状态栏上。
-    for (const [i, f] of overLine) {
-      if (f.stopHits != null) expect(f.stopHits, `${label} over-line stop 5/5 @${i}`).toBe(5)
-      if (f.sendHits != null) expect(f.sendHits, `${label} over-line send 5/5 @${i}`).toBe(5)
-      expect(f.barHits, `${label} over-line send/stop points on statusbar @${i}`).toBe(0)
-    }
-    test.info().annotations.push({ type: "known-base-stop-hits", description: `${label}: overLine=${overLine.length} stopHits=${JSON.stringify(stopHits)}` })
-    // ①：run 停前逐帧 send / stop ≤446.5（base 同值 446），不设帧数上限。
-    pre.forEach((f, i) => {
-      if (!f.strip) return
-      expect(f.sendB ?? 0, `${label} send bottom ≤${KNOWN_BASE_SEND_CAP}.5 @${i}`).toBeLessThanOrEqual(KNOWN_BASE_SEND_CAP + 0.5)
-      expect(f.stopB ?? 0, `${label} stop bottom ≤${KNOWN_BASE_SEND_CAP}.5 @${i}`).toBeLessThanOrEqual(KNOWN_BASE_SEND_CAP + 0.5)
-    })
-    // ③：slot 放掉的 108 帧 ≤1，send / stop ≤467.5（base d4ad6b93 同值 467，见 base-q2-approval-appear/hold-10s/）。
-    expect(flips.length, `${label} slot→108→K12 flip frames ≤1 (base d4ad6b93 same)`).toBeLessThanOrEqual(1)
-    for (const f of flips) {
-      // 只记录 5 点命中（base d4ad6b93 同为 2/5），不判 5/5。
-      console.log(`APCLIP ${label} KNOWN-BASE flip108 @${fs.indexOf(f)} trayH=${f.trayH} sendB=${f.sendB} stopB=${f.stopB} sendHits=${f.sendHits} stopHits=${f.stopHits} barHits=${f.barHits}`)
-      expect(f.sendB ?? 0, `${label} flip send ≤${KNOWN_BASE_FLIP_SEND_CAP}.5`).toBeLessThanOrEqual(KNOWN_BASE_FLIP_SEND_CAP + 0.5)
-      expect(f.stopB ?? 0, `${label} flip stop ≤${KNOWN_BASE_FLIP_SEND_CAP}.5`).toBeLessThanOrEqual(KNOWN_BASE_FLIP_SEND_CAP + 0.5)
-    }
-    // ③：108 帧之后回条态，不再翻。
-    if (flips.length) expect(fs.slice(fs.indexOf(flips[0]!) + 1).every((f) => f.strip), `${label} back to strip after flip, no further flips`).toBe(true)
-    // ②：run 停后逐帧（含终态末帧）零豁免。
-    expect(fs.slice(runStop).every((f) => f.strip), `${label} after run stop strip held`).toBe(true)
-    expect(fs[fs.length - 1]!.actionMisses, `${label} final frame send/stop/queue ≤430, ≤top−13, 5/5`).toEqual([])
-  } else {
-    expect(actionBad.length, `${label} send/stop/queue every frame ≤430, ≤top−13, 5/5 ${JSON.stringify(actionBad)}`).toBe(0)
-  }
+  const actMiss = (f: Frame) => f.actionMisses
+  expect(actionBad.length, `${label} send/stop/queue every frame ≤430, ≤top−13, 5/5 ${JSON.stringify(actionBad)}`).toBe(0)
   // C3：判定不晚于第一帧被裁——任何已绘制帧里 footer 越线时 data-tray-approval-clip 必须已 on。
   expect(late.length, `${label} decision late (clipped but clip attr off) ${JSON.stringify(late)}`).toBe(0)
   expect(reclip, `${label} re-clipped after release`).toBe(0)
@@ -437,10 +362,9 @@ async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameO
   let releaseTransition = 0
   let trayAnim = 0
   if (release) {
-    // 释放起点：clip on → off；豁免段（clip 全程 off，条带来自 K12）以审批消失那一帧为起点。
-    const off = knownBaseActionBad
-      ? fs.findIndex((f, i) => i > 0 && fs[i - 1]!.appr && !f.appr)
-      : fs.findIndex((f, i) => i > 0 && fs[i - 1]!.clip && !f.clip)
+    // 释放起点：clip on → off；clip 全程 off（条带来自 slot / K12）时以审批消失那一帧为起点。
+    const clipOff = fs.findIndex((f, i) => i > 0 && fs[i - 1]!.clip && !f.clip)
+    const off = clipOff > 0 ? clipOff : fs.findIndex((f, i) => i > 0 && fs[i - 1]!.appr && !f.appr)
     expect(off, `${label} released`).toBeGreaterThan(0)
     const tail = fs.slice(off)
     const finalH = fs[fs.length - 1]!.trayH!
@@ -451,11 +375,9 @@ async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameO
     console.log(`APCLIP ${label} releaseTransition=${releaseTransition} covered=${covered} trayAnim=${trayAnim} stripFlipsAfter=${stripFlipsAfter} finalTrayH=${finalH} finalStrip=${fs[fs.length - 1]!.strip} squeezed=${fs[fs.length - 1]!.squeezed}`)
     expect(releaseTransition, `${label} release transition ≤3 frames`).toBeLessThanOrEqual(3)
     expect(covered, `${label} release never covers clickable`).toBe(0)
-    // 释放后 strip 至多翻一次（条 → 108，或 K12 接手保持条），不出现条 → 108 → 条；
-    // 唯一例外是豁免段 ③：base 同型的 slot→108→K12 单帧来回（上面已断言 strip 掉的帧 ≤1），即翻转 ≤2。
+    // 释放后 strip 至多翻一次（条 → 108，或 K12 接手保持条），不出现条 → 108 → 条（P1-b 后 slot 释放同帧交接，无例外）。
     const flipFrames = tail.filter((f) => !f.strip).length
-    const allowFlips = knownBaseActionBad && flipFrames <= 1 ? 2 : 1
-    expect(stripFlipsAfter, `${label} release strip flips (strip-off frames ${flipFrames})`).toBeLessThanOrEqual(allowFlips)
+    expect(stripFlipsAfter, `${label} release strip flips (strip-off frames ${flipFrames})`).toBeLessThanOrEqual(1)
   }
   const at = fs.find((f, i) => i > 0 && f.clip !== fs[i - 1]!.clip)
   return { changes, bad: bad.length, frames: fs.length, releaseTransition, trayAnim, fs, atHeight: (at?.h as number | undefined) ?? null }
@@ -498,7 +420,7 @@ for (const [lang, count, cu] of CELLS) {
       await startFrames(page)
       await expand().click()
       const strip = await check(page, info, `${tag}-expanded-strip`, true)
-      await endFrames(page, info, `${tag}-expand-entry`, { maxTransitions: 1, maxBad: 3, entry: true })
+      await endFrames(page, info, `${tag}-expand-entry`, { maxTransitions: 1, maxBad: 1, entry: true })
       expect(strip.tray!.height).toBeGreaterThanOrEqual(52)
       expect(strip.tray!.height).toBeLessThanOrEqual(56)
       await startFrames(page)
@@ -548,7 +470,7 @@ for (const [lang, count, cu] of CELLS) {
       await startFrames(page)
       await resize(page, 733, 480)
       await check(page, info, `${tag}-back-733`, true)
-      await endFrames(page, info, `${tag}-to-733`, { maxTransitions: 1, maxBad: 3, entry: true })
+      await endFrames(page, info, `${tag}-to-733`, { maxTransitions: 1, maxBad: 1, entry: true })
       // 宽屏回来后排队坞可能是行模式（需求 > 地板）：慢拉高到 600，最多切一次、零坏帧（释放后不被裁回）。
       await startFrames(page)
       for (let h = 480; h <= 600; h += 2) { await page.setViewportSize({ width: 733, height: h }); await page.waitForTimeout(32) }
@@ -646,7 +568,7 @@ for (const [lang, count] of [["zh", 0], ["zh", 2], ["en", 0], ["en", 2]] as Arra
       const strip = await check(page, info, `${tag}-strip`, k12Before ? null : true)
       expect(strip.strip).toBe("true")
       expect(strip.tray!.height).toBeLessThanOrEqual(56)
-      const entry = await endFrames(page, info, `${tag}-entry`, { maxTransitions: 1, maxBad: 3, entry: true })
+      const entry = await endFrames(page, info, `${tag}-entry`, { maxTransitions: 1, maxBad: 1, entry: true })
       if (count === 2) {
         // M4：q2 下排队芯片行让 Composer 更高，733×480 无审批时 K12 已先转条；审批出现时条带由 K12 画着（stripHeldElsewhere），
         // clip 按设计不进入——整段 clip off、strip 全程来自 K12（squeezed）。裁切判定由 q0 本用例与 B′ 裁切矩阵覆盖。
@@ -661,12 +583,11 @@ for (const [lang, count] of [["zh", 0], ["zh", 2], ["en", 0], ["en", 2]] as Arra
       await page.getByTestId("approval-allow").click({ timeout: 5_000 })
       await expect(page.getByTestId("approval-allow")).toHaveCount(0, { timeout: 15_000 })
       // q2 + K12 先转条：批准写盘后出现待验收框（#224 slot）+ 排队芯片行，send / stop 446 > 430，持续到桩 run 停——base d4ad6b93 同路径实测同型
-      // （本刀 clip 全程未参与，follow-up 另报）。q2 等 run 真停（composer-stop 消失）再收帧，停前 / 停后分段断言（见 KNOWN_BASE_* 注释）；q0 照旧。
+      // （本刀 clip 全程未参与，follow-up 另报）。q2 等 run 真停（composer-stop 消失）再收帧，停前 / 停后分段断言（446 刀起无豁免）；q0 照旧。
       if (count === 2) await expect(page.getByTestId("composer-stop")).toHaveCount(0, { timeout: 30_000 })
       else await page.waitForTimeout(600)
       await settle(page)
-      const knownBase: KnownBase | undefined = count === 2 ? { reason: "base d4ad6b93 同路径 send/stop 446 越线：#224 slot + 排队芯片行，clip 未参与" } : undefined
-      await endFrames(page, info, `${tag}-release`, { maxTransitions: 1, release: true, knownBaseActionBad: knownBase })
+      await endFrames(page, info, `${tag}-release`, { maxTransitions: 1, release: true })
       await expectUserForm(page, `${tag}-release`, "expanded")
       const after = await geometry(page)
       console.log(`APCLIP ${tag}-final ${JSON.stringify({ barTop: after.barTop, actions: after.actions.map((a) => ({ id: a.id, bottom: a.rect!.bottom, margin: a.margin, hits: a.hits.filter((h) => h.ok).length })), strip: after.strip, tray: after.tray?.height })}`)
