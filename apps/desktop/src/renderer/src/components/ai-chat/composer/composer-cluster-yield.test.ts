@@ -361,6 +361,38 @@ test("C4′ 交接三分支：K12 已开 → k12；K12 关 + 长回量已知 →
   assert.equal(r.out[3].handover, "fallback")
 })
 
+test("F-a（leo ①）：fallback 只在 K12 关且长回量未知时出现；下一次 measure 放不下 → K12 当次接手、strip、标记清掉、sync 下 flush", () => {
+  const slotOn = (p = {}) => meas({ frameBottom: 209, content: 233, box: 233, shellH: 233, ...p })
+  const release = (p = {}) => meas({ frameBottom: null, content: 233, box: 233, shellH: 233, ...p })
+  const prefix = [{ m: slotOn({ shellH: 300, box: 300, content: 300 }) }, { m: slotOn() }, { m: slotOn({ attach: 2 }) }]
+  // 1a) K12 关 + 长回量未知 → fallback
+  const fb = stepSeq([...prefix, { m: release({ attach: 2 }) }])
+  assert.equal(fb.out[3].handover, "fallback")
+  assert.equal(fb.out[3].strip, false)
+  assert.equal(fb.out[3].squeezed, false)
+  // 1b) K12 开（同样附件数变、长回量未知）→ 不出 fallback，走 k12
+  const k12 = stepSeq([
+    { m: slotOn({ shellH: 300, box: 233, content: 300 }) },
+    { m: slotOn({ content: 300 }) },
+    { m: slotOn({ content: 300, attach: 2 }) },
+    { m: release({ content: 300, attach: 2 }) }
+  ])
+  assert.equal(k12.out[2].squeezed, true)
+  assert.equal(k12.out[3].handover, "k12")
+  // 1c) K12 关 + 长回量已知 → 不出 fallback（regrow 接手）
+  const known = stepSeq([{ m: slotOn({ shellH: 300, box: 300, content: 300 }) }, { m: slotOn() }, { m: slotOn() }, { m: release() }])
+  assert.equal(known.out[3].handover, "regrow")
+  for (const r of [k12, known]) assert.ok(r.out.every((b) => b.handover !== "fallback"))
+  // 2) fallback 之后下一次 measure 外壳放不下（content > box）→ K12 当次进入、strip = true、标记清掉：fallback 态最多 1 次 measure
+  const next = stepTrayBudget(fb.state, fb.out[3], release({ attach: 2, content: 300, box: 233 }))
+  assert.equal(next.budget.squeezed, true)
+  assert.equal(next.budget.strip, true)
+  assert.notEqual(next.budget.handover, "fallback")
+  assert.notEqual(next.state.handover, "fallback")
+  // 3) 这次翻转在 sync（resize / RO 回调）下同帧绘制前提交
+  assert.equal(trayBudgetCommit(fb.out[3], next.budget, true), "flush")
+})
+
 test("C12 守门：内容不变时 needPx 恒等（#228 K12 进入 → 条带 → 拖宽序列）；内容变高才只增", () => {
   // K12 自己进：内容 330 > 盒 300（盒高封顶），条带后外壳盒 = 263，内容 263。
   const seq = [

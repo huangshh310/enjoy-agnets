@@ -334,8 +334,9 @@ export function stepTrayBudget(
   const squeezed = squeeze.on
   const approvalClip = clip.on
   const strip = trayStripFromPaths({ slotStrip: shouldUseTrayStrip(slot), slot, squeezed, approvalClip })
-  // fallback 是门上要数的标记（那一帧条带撤、交 K12 自判），保留到下一次 slot 出现；其余标记随条带结束清。
-  if (!strip && handover !== "fallback") handover = null
+  // fallback 是门上要数的标记（那一帧条带撤、交 K12 自判），保留到 K12 接手或下一次 slot 出现；其余标记随条带结束清。
+  // leo F-a：fallback 态最多 1 次 measure——下一次 measure 放不下时 K12 当次进入（strip），标记随即清掉。
+  if (strip ? handover === "fallback" : handover !== "fallback") handover = null
   const regrow = nextStripRegrow(state.regrow, {
     prevStrip: prev.strip,
     nextStrip: strip,
