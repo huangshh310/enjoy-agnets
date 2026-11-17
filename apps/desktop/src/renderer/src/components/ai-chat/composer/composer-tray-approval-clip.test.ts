@@ -159,6 +159,9 @@ test("R1 补：列内容需求（排队坞行模式）大于地板时按需求�
   // 真机 q2 坞两行：H=513 外壳 164、地板 88.75 → 只比地板会放（75.25 ≥ 75），放后外壳 97 < 需求 → 被裁回
   assert.equal(nextTrayApprovalClip(s, m({ footerBottom: 280, clipBottom: 285, clipH: 164, floorPx: 88.75, clusterPx: 191, stripApplied: true })).on, false)
   assert.equal(nextTrayApprovalClip(s, m({ footerBottom: 280, clipBottom: 285, clipH: 164, floorPx: 88.75, contentNeedPx: 118, clusterPx: 191, stripApplied: true })).on, true)
+  // S1：坞仍折叠（collapsed，实测需求 87 < 地板 88.75）→ 按地板放：释放线 88.75 + 67 + 8 = 163.75（真机 H=513 外壳 164 放，即 e2e q2-collapsed 513）
+  assert.equal(nextTrayApprovalClip(s, m({ footerBottom: 280, clipBottom: 285, clipH: 164, floorPx: 88.75, contentNeedPx: 87, clusterPx: 191, stripApplied: true })).on, false)
+  assert.equal(nextTrayApprovalClip(s, m({ footerBottom: 280, clipBottom: 285, clipH: 163.5, floorPx: 88.75, contentNeedPx: 87, clusterPx: 191, stripApplied: true })).on, true)
   // 需求 118 → 外壳 ≥ 118 + 67 + 8 = 193 才放
   assert.equal(nextTrayApprovalClip(s, m({ footerBottom: 280, clipBottom: 285, clipH: 192.5, floorPx: 95, contentNeedPx: 118, clusterPx: 191, stripApplied: true })).on, true)
   assert.equal(nextTrayApprovalClip(s, m({ footerBottom: 280, clipBottom: 285, clipH: 193, floorPx: 95, contentNeedPx: 118, clusterPx: 191, stripApplied: true })).on, false)
