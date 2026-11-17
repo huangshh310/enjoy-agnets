@@ -19,6 +19,8 @@ import { join } from "node:path"
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test"
 import { closeForRelaunch, firstWindow, mainEntry, relaunchElectron, stubPath } from "./approval-restart-helpers"
 import { sendComposer } from "./send-composer"
+// 侧栏自动收起断点：用产品常量（app-shell 唯一来源），不在测试里另写 768（leo F-e）
+import { NARROW_SIDEBAR_PX } from "../src/renderer/src/components/app-shell/chrome/sidebar-collapse-state"
 
 const SEND_GAP = 13
 const SEND_MAX_733 = 430
@@ -1093,7 +1095,8 @@ for (const lang of ["zh", "en"] as const) {
       await sendComposer(window, input, HOLD)
       await expect(window.getByTestId("composer-stop")).toBeVisible({ timeout: 10_000 })
       await settle(window)
-      const check = async (label: string, act: () => Promise<void>) => {
+      // ladder：同方向逐宽落定的静态级（拖窗 / 扫宽才有；点开关没有窗宽变化，不传）
+      const check = async (label: string, act: () => Promise<void>, ladder?: Map<number, string>) => {
         await expect(window.getByTestId("composer-stop"), `${label} 检查前在跑`).toBeVisible()
         const stop = await recordFrames(window)
         await act()
@@ -1107,7 +1110,7 @@ for (const lang of ["zh", "en"] as const) {
         const segs: string[][] = []
         let segNarrow: boolean | null = null
         for (const x of ran) {
-          const narrow = x[4] < 768
+          const narrow = x[4] < NARROW_SIDEBAR_PX
           if (narrow !== segNarrow) {
             segs.push([])
             segNarrow = narrow
@@ -1115,8 +1118,57 @@ for (const lang of ["zh", "en"] as const) {
           const s = segs[segs.length - 1]
           if (s[s.length - 1] !== x[0]) s.push(x[0])
         }
-        const narrow3e = ran.filter((x) => x[4] < 768 && x[0].startsWith("3e")).map((x) => `${x[0]}@${x[4]}`)
-        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, segs, narrow3e: narrow3e.length, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
+        const narrow3e = ran.filter((x) => x[4] < NARROW_SIDEBAR_PX && x[0].startsWith("3e")).map((x) => `${x[0]}@${x[4]}`)
+        // #228 跟进 ⑤（F-d）：逐帧对照静态梯。分段单向抓不到「跨段回弹」（段 1 停在 3d、段 2 先跳到更远的级再往回走），
+        // 这里不按段：每一帧都要落在「进入这一宽时的级 → 这一宽的静态级」之间，且每次换级都朝这一宽的静态级走、不越过。
+        // 换宽后的第一帧允许是上一宽的判定（rAF 先于 RO，帧里读到的级是上一帧按上一宽判的）。终态 = 终点宽的静态级。
+        const ladderBad: string[] = []
+        let ladderEnd: string | null = null
+        if (ladder) {
+          const ix = (k: string) => STEPS.indexOf(k as (typeof STEPS)[number])
+          const within = (v: number, a: number, b: number) => v >= Math.min(a, b) && v <= Math.max(a, b)
+          let entry = ix(ran[0]![0])
+          // 停滞：换宽后第一帧之后，该升级（同宽静态级比当前级更宽松）却一帧没动，每宽最多容 2 帧（闸门 tail 两帧）。
+          // 「hook 不传 ahead」时拖窄跨 768 会在 740 / 760 / 764 停在 3d 七到十帧、766 停在 768 的静态级上几帧才往回走——这一停不看是不是 3e。
+          // 该降级却停着不算：断点带里降级由 150ms 闸门压着（leo F-d 已接受，左组被裁不换行、send 不动），768 那一下 3d 停 2–3 帧再落 3e 是设计内的。
+          let stall = 0
+          let stallLv = ""
+          const flushStall = (w: number) => {
+            if (stall > 2) ladderBad.push(`停滞 ${stallLv}@${w}×${stall}≠${ladder.get(w)}`)
+            stall = 0
+          }
+          for (let k = 1; k < ran.length; k += 1) {
+            const [lv, , , , iw] = ran[k]!
+            const [pv, , , , piw] = ran[k - 1]!
+            if (iw !== piw) {
+              flushStall(piw)
+              entry = ix(pv)
+            }
+            const t = ladder.get(iw)
+            if (t == null) {
+              ladderBad.push(`?@${iw}`)
+              continue
+            }
+            if (iw === piw && lv === pv && ix(t) < ix(lv)) {
+              if (stall === 0) stallLv = lv
+              stall += 1
+            }
+            const c = ix(lv)
+            const p = ix(pv)
+            const okFor = (target: string | undefined) => {
+              if (target == null) return false
+              const ti = ix(target)
+              // 落在进入级与目标级之间；这一帧若换了级，只能朝目标走、不越过
+              return within(c, entry, ti) && (c === p || ((c - p) * (ti - p) > 0 && Math.abs(c - p) <= Math.abs(ti - p)))
+            }
+            const lag = iw !== piw
+            if (!okFor(t) && !(lag && okFor(ladder.get(piw)))) ladderBad.push(`${pv}→${lv}@${piw}/${iw}≠${t}`)
+          }
+          const last = ran[ran.length - 1]!
+          flushStall(last[4])
+          if (last[0] !== ladder.get(last[4])) ladderEnd = `${last[0]}@${last[4]}≠${ladder.get(last[4])}`
+        }
+        const line = JSON.stringify({ label, frames: f.length, running: ran.length, levels, segs, narrow3e: narrow3e.length, ladder: ladder ? Object.fromEntries(ladder) : undefined, ladderBad: ladderBad.slice(0, 12), ladderBadN: ladderBad.length, ladderEnd, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
         console.log(`[composer-733-oneline] ${line}`)
         await testInfo.attach(label, { body: line, contentType: "application/json" })
         expect(ran.length, `${label} 全程在跑 ${line}`).toBe(f.length)
@@ -1125,6 +1177,10 @@ for (const lang of ["zh", "en"] as const) {
           segs.reduce((n, s) => n + levelDirChanges(s), 0),
           `${label} 跨 768 前后各段级别单向 ${line}`
         ).toBe(0)
+        if (ladder) {
+          expect(ladderBad, `${label} 逐帧对照静态梯：每帧在进入级与同宽静态级之间、换级只朝静态级走不越过 ${line}`).toEqual([])
+          expect(ladderEnd, `${label} 终态 = 终点宽静态级 ${line}`).toBeNull()
+        }
         expect(narrow3e, `${label} iw<768 无 3e ${line}`).toEqual([])
         for (const x of f) {
           expect(x[1], `${label} 每帧一行 ${line}`).toBeLessThanOrEqual(46)
@@ -1134,6 +1190,27 @@ for (const lang of ["zh", "en"] as const) {
       const prep = async (w: number) => {
         await window.setViewportSize({ width: w, height: 480 })
         await settleSidebar(window)
+      }
+      /**
+       * 静态梯：从 a 出发、同方向依次落到 widths 里每一宽（每宽 settleSidebar），记各宽静态级，再跳回 a。
+       * 回滞带里静态级和起步级有关（同一宽从 3d 下来还是 3e，取决于从哪来），所以要求「梯的起步级 = 跳回 a 后的级」
+       * （检查就从跳回后的状态起步，走同一条路）；不等就从跳回后的状态再建一次（最多 3 次）。
+       */
+      const ladderOf = async (a: number, widths: number[]) => {
+        await prep(a)
+        let start = await stepOf(window)
+        for (let attempt = 0; ; attempt += 1) {
+          const m = new Map<number, string>([[a, start]])
+          for (const x of widths) {
+            await prep(x)
+            m.set(x, await stepOf(window))
+          }
+          await prep(a)
+          const back = await stepOf(window)
+          if (back === start) return m
+          expect(attempt, `ladder ${a}→${widths.at(-1)} 起步级稳定（${start} / 跳回 ${back}）`).toBeLessThan(2)
+          start = back
+        }
       }
       // jojo 裁定：CU 开着、运行中窄宽（800 侧栏展开 = 3d）chip 进溢出菜单（§10 第 1 条），状态在菜单小节里看得到
       await prep(800)
@@ -1151,10 +1228,14 @@ for (const lang of ["zh", "en"] as const) {
         [776, 764],
         [764, 776]
       ] as const) {
-        await prep(a)
-        await check(`H2-drag-${a}-${b}-${lang}`, async () => {
-          await window.setViewportSize({ width: b, height: 480 })
-        })
+        const ladder = await ladderOf(a, [b])
+        await check(
+          `H2-drag-${a}-${b}-${lang}`,
+          async () => {
+            await window.setViewportSize({ width: b, height: 480 })
+          },
+          ladder
+        )
       }
       // jojo 9b 逐步扫宽（每步等 3 帧）与慢拖（每 2px 停 200ms，jojo 门的口径）：跨 768（776↔760），断点上方不先降一级再被侧栏收起推回。
       // 不靠时间：意图信号按窗宽 / 侧栏状态判，停多久结果都一样。
@@ -1166,15 +1247,21 @@ for (const lang of ["zh", "en"] as const) {
           [776, 760],
           [760, 776]
         ] as const) {
-          await prep(a)
-          await check(`H2-${mode}-${a}-${b}-${lang}`, async () => {
-            const dir = Math.sign(b - a)
-            for (let x = a + dir * 2; dir > 0 ? x <= b : x >= b; x += dir * 2) {
-              await window.setViewportSize({ width: x, height: 480 })
-              if (dwell) await window.waitForTimeout(dwell)
-              else await waitFrames(window, 3)
-            }
-          })
+          const dir = Math.sign(b - a)
+          const widths: number[] = []
+          for (let x = a + dir * 2; dir > 0 ? x <= b : x >= b; x += dir * 2) widths.push(x)
+          const ladder = await ladderOf(a, widths)
+          await check(
+            `H2-${mode}-${a}-${b}-${lang}`,
+            async () => {
+              for (const x of widths) {
+                await window.setViewportSize({ width: x, height: 480 })
+                if (dwell) await window.waitForTimeout(dwell)
+                else await waitFrames(window, 3)
+              }
+            },
+            ladder
+          )
         }
       }
       // 点侧栏开关（宽窗，停靠）：收 / 展各一次
@@ -1262,7 +1349,7 @@ for (const lang of ["zh", "en"] as const) {
             const iw = x[4]
             const ok = new Set([ladder.get(iw), ladder.get(allowedPrev.get(iw) ?? iw)])
             if (!ok.has(x[0])) bad.push(`${x[0]}@${iw}`)
-            if (iw < 768 && x[0].startsWith("3e")) bad.push(`3e@${iw}`)
+            if (iw < NARROW_SIDEBAR_PX && x[0].startsWith("3e")) bad.push(`3e@${iw}`)
           }
           const endBad = ends.filter(([x, d]) => d !== ladder.get(x)).map(([x, d]) => `${d}@${x}≠${ladder.get(x)}`)
           const line = JSON.stringify({ label, frames: f.length, ladder: Object.fromEntries(ladder), endBad, bad: bad.slice(0, 12), badN: bad.length, maxRowH: Math.max(...f.map((x) => x[1])), maxSendB: Math.max(...f.map((x) => x[2] ?? 0)) })
@@ -1280,6 +1367,210 @@ for (const lang of ["zh", "en"] as const) {
           await window.getByTestId("composer-stop").click()
           await expect(window.getByTestId("composer-send")).toBeVisible({ timeout: 10_000 })
           await settle(window)
+        }
+      }
+      expect(roErrors, "no ResizeObserver loop").toEqual([])
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
+// #228 跟进 ②（leo F-b）：K12 / k8m 托盘进入条件（产品 §10.3）并进 CI——之前只有 mike 本地 harness（e2e/mike-k/k8m.spec.ts）。
+// 733×480：审批 + 排队 2 + 附图 → 展开托盘 → 马上发 → 停止（运行中）：托盘转为单行条；send / stop / 排队芯片整颗 bottom ≤ 430 且
+// ≤ 状态栏 top − 13、5/5；缩略图整张在验收条下（有验收条时）、输入上。1024 / 1440 不进挤压态（data-tray-squeezed 不在）、send 5/5。
+// 托盘展开 + 运行中 + 审批时审批三键 0/5 为存量（main 同，§10.3 接受条件），这里不断言。
+for (const lang of ["zh", "en"] as const) {
+  test(`#228 K12（${lang}）：733×480 托盘展开 + 运行中 + 审批 + 排队 → 马上发 → 停止：托盘单行条、send ≤430 5/5、缩略图整张；1024 / 1440 不挤压`, async () => {
+    test.setTimeout(180_000)
+    const { app, window, roErrors } = await boot(lang, {})
+    try {
+      const composer = window.getByTestId("composer-input")
+      const tray = window.getByTestId("composer-attachment-tray")
+      await sendComposer(window, composer, "please write a note")
+      await expect(window.getByTestId("approval-allow")).toBeVisible({ timeout: 15_000 })
+      await resize(window, 733, 480)
+      for (const i of [1, 2]) {
+        await composer.click()
+        await window.keyboard.type(`${lang === "en" ? "queued line" : "排队的一句"} ${i}`)
+        await composer.press("Enter")
+        await expect(window.getByTestId("queued-followups-docked")).toHaveAttribute("data-count", String(i), { timeout: 5_000 })
+      }
+      await attachImage(window, "tray.png")
+      // 展开托盘（紧凑态那颗「1 张图片 / 1 image」）
+      await tray.getByRole("button", { name: /1 张图片|1 image/ }).first().click()
+      await settle(window)
+      const thumbClear = async (label: string) => {
+        const form = await box(window.locator("form[data-composer]"))
+        const chips = window.locator('[data-testid="composer-asset-chip"]')
+        expect(await chips.count(), `${label}: attachment chip`).toBeGreaterThan(0)
+        const frame = window.locator('[data-testid="composer-review-frame"]')
+        const frameB = (await frame.count()) > 0 && (await frame.isVisible()) ? await box(frame) : null
+        const t = await box(chips.first())
+        const dbg = JSON.stringify({ form, frame: frameB, thumb: t })
+        if (frameB) expect(t.y, `${label}: thumb top ≥ review frame bottom ${dbg}`).toBeGreaterThanOrEqual(frameB.y + frameB.height - 0.5)
+        expect(t.y + t.height, `${label}: thumb bottom ≤ form top ${dbg}`).toBeLessThanOrEqual(form.y + 0.5)
+        expect(t.height, `${label}: thumb 整张（≥ 40）${dbg}`).toBeGreaterThanOrEqual(40)
+        await hit5(chips.first(), `${label} thumb`)
+      }
+      // 运行中 + 审批 + 托盘展开：停止钮整颗在状态栏之上、5/5
+      await expectActionClear(window, "composer-stop", `K12 ${lang} 733 running+approval+tray expanded`)
+      // 马上发（真实坐标点击）
+      const collapsed = window.getByTestId("queued-collapsed")
+      if (await collapsed.isVisible().catch(() => false)) await collapsed.click()
+      const sendNow = window.getByTestId("queued-user-turn").first().getByTestId("queued-send-now")
+      const sb = await box(sendNow)
+      await window.mouse.click(sb.x + sb.width / 2, sb.y + sb.height / 2)
+      await expect(window.getByTestId("queued-user-turn")).toHaveCount(1, { timeout: 5_000 })
+      await settle(window)
+      await expectActionClear(window, "composer-stop", `K12 ${lang} 733 after send-now`)
+      await snap(window, `K12-${lang}-733-after-send-now`)
+      // 停止（运行中）：审批走掉、队列停着 → 托盘转单行条，send 不越界
+      const stopB = await box(window.getByTestId("composer-stop"))
+      await window.mouse.click(stopB.x + stopB.width / 2, stopB.y + stopB.height / 2)
+      await expect(window.getByTestId("approval-allow")).toHaveCount(0, { timeout: 15_000 })
+      await expect(window.getByTestId("composer-send")).toBeVisible({ timeout: 10_000 })
+      for (const wait of [800, 3000]) {
+        await window.waitForTimeout(wait === 800 ? 800 : 2200)
+        await settle(window)
+        const label = `K12 ${lang} 733 stopped +${wait}ms`
+        await expect(tray, `${label}: 托盘转为单行条`).toHaveAttribute("data-tray-strip", "true")
+        await expectActionClear(window, "composer-send", label)
+        const chip = window.getByTestId("composer-queue-chip")
+        if (await chip.isVisible().catch(() => false)) await expectActionClear(window, "composer-queue-chip", label)
+        await thumbClear(label)
+        await expectConversationAndForm(window, label)
+      }
+      await snap(window, `K12-${lang}-733-stopped`)
+      for (const [w, h] of [[1024, 670], [1440, 920]] as const) {
+        await resize(window, w, h)
+        await settle(window)
+        const label = `K12 ${lang} ${w} stopped`
+        await expect(tray, `${label}: 不进挤压态`).not.toHaveAttribute("data-tray-squeezed", "true")
+        await expectActionClear(window, "composer-send", label)
+        await thumbClear(label)
+      }
+      expect(roErrors, "no ResizeObserver loop").toEqual([])
+    } finally {
+      await closeForRelaunch(app)
+    }
+  })
+}
+
+// #228 跟进 ④（leo F-c）：mike 临时 hyst harness（e2e/mike-k/hyst.spec.ts，不提交）里 CU 开着的两条并进正式 spec。
+// 1px 扫宽（只扫侧栏已收起的 760 ↔ 560 段，窗宽与行宽同步变）找 3a↔3b 交界、回滞 ≥ 8；再在交界带里每个代表宽度、
+// 从带上 / 带下两个方向进带，各跑 3 轮短回复，rAF 逐帧记「级 | 发送钮状态 | 电脑操控 chip 是否在 DOM」。
+// 断言（leo F-c 口径）：整体级别方向变化 0 次（不回头）；内容（发送钮状态 / chip）不变的段内级别不变。
+// 原 :158 要求 3 轮里只出现过一个级——开跑那一帧右组多出停止键 / 运行点放不下而降一级是内容驱动、单向的，不算闪。
+// 注：开跑后 chip 离开底栏（3a → 3b 时三颗 chip 进溢出菜单）是否符合预期，不在这里用断言盖掉，见 PR 正文。
+for (const lang of ["zh", "en"] as const) {
+  test(`#228 回滞 / 防闪（${lang}，CU 开）：1px 扫宽 3a↔3b 交界回滞 ≥8；交界带内两向进带各 3 轮——级别不回头、内容不变段内级别不变`, async () => {
+    const testInfo = test.info()
+    test.setTimeout(300_000)
+    const H = 480
+    const HI = 760
+    const LO = 560
+    const { app, window, roErrors } = await boot(lang, { cu: true })
+    const sample = () =>
+      window.evaluate(
+        () =>
+          new Promise<{ s: string; inner: number }>((resolve) =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                const row = document.querySelector('[data-testid="composer-footer-row"]') as HTMLElement
+                const cs = getComputedStyle(row)
+                resolve({
+                  s: `${row.getAttribute("data-footer-density")}${row.getAttribute("data-footer-overflow") ?? ""}`,
+                  inner: Math.round((row.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) * 100) / 100
+                })
+              })
+            )
+          )
+      )
+    const idle = () =>
+      window.waitForFunction(() => /^(Send|发送)$/.test(document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? ""), undefined, { timeout: 30_000 })
+    const turn = async () => {
+      await sendComposer(window, window.getByTestId("composer-input"), lang === "en" ? "short turn" : "短一轮")
+      await window
+        .waitForFunction(() => !/^(Send|发送)$/.test(document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? ""), undefined, { timeout: 10_000 })
+        .catch(() => undefined)
+      await idle()
+      await window.waitForTimeout(400)
+    }
+    try {
+      await sendComposer(window, window.getByTestId("composer-input"), lang === "en" ? "hello there" : "你好")
+      await expect(window.locator("body")).toContainText("stub-ok", { timeout: 20_000 })
+      await idle()
+      await window.setViewportSize({ width: HI, height: H })
+      await settleSidebar(window)
+      // 1px 扫宽：记每次换级（降 / 升）时的窗宽与行宽
+      type T = { dir: "down" | "up"; x: number; s: string; inner: number; from?: string }
+      const tr: T[] = []
+      let prev: { s: string; inner: number } | null = null
+      const go = async (x: number, dir: "down" | "up") => {
+        await window.setViewportSize({ width: x, height: H })
+        const r = await sample()
+        if (!prev || r.s !== prev.s) tr.push({ dir, x, ...r, from: prev?.s })
+        prev = r
+      }
+      for (let x = HI; x >= LO; x -= 1) await go(x, "down")
+      for (let x = LO; x <= HI; x += 1) await go(x, "up")
+      const down = [...tr].reverse().find((t) => t.dir === "down" && t.from === "3a" && t.s === "3b")
+      const up = tr.find((t) => t.dir === "up" && t.from === "3b" && t.s === "3a")
+      const bline = JSON.stringify({ lang, down, up, transitions: tr.map((t) => `${t.dir}:${t.from}>${t.s}@${t.x}/${t.inner}`) })
+      console.log(`[composer-733-oneline] hyst-bounds ${bline}`)
+      await testInfo.attach(`hyst-bounds-${lang}`, { body: bline, contentType: "application/json" })
+      expect(down, `扫宽找到 3a→3b 降级点 ${bline}`).toBeTruthy()
+      expect(up, `扫宽找到 3b→3a 升级点 ${bline}`).toBeTruthy()
+      expect.soft(up!.inner - down!.inner, `3a↔3b 回滞（升级点行宽 − 降级点行宽）≥ 8 ${bline}`).toBeGreaterThanOrEqual(8)
+      // 交界带：两个方向进带，各跑 3 轮
+      const xs = [down!.x, Math.round((down!.x + up!.x) / 2), up!.x - 1, up!.x]
+      for (const x of xs) {
+        for (const from of ["above", "below"] as const) {
+          await window.setViewportSize({ width: from === "above" ? up!.x + 40 : down!.x - 40, height: H })
+          await settleSidebar(window)
+          await window.setViewportSize({ width: x, height: H })
+          await settleSidebar(window)
+          const start = await stepOf(window)
+          await window.evaluate(() => {
+            const w = window as unknown as { __hy?: { f: [string, string, number][]; run: boolean } }
+            const st = { f: [] as [string, string, number][], run: true }
+            w.__hy = st
+            const loop = () => {
+              if (!st.run) return
+              const row = document.querySelector('[data-testid="composer-footer-row"]')
+              st.f.push([
+                `${row?.getAttribute("data-footer-density") ?? "?"}${row?.getAttribute("data-footer-overflow") ?? ""}`,
+                document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? "stop",
+                document.querySelector('[data-testid="computer-use-chip"]') ? 1 : 0
+              ])
+              requestAnimationFrame(loop)
+            }
+            requestAnimationFrame(loop)
+          })
+          for (let k = 0; k < 3; k += 1) await turn()
+          const f = await window.evaluate(() => {
+            const st = (window as unknown as { __hy: { f: [string, string, number][]; run: boolean } }).__hy
+            st.run = false
+            return st.f
+          })
+          const levels = f.map((x) => x[0]).filter((k, i, a) => i === 0 || a[i - 1] !== k)
+          // 内容段：发送钮状态 + chip 在不在，任一变了就是新段；段内只许一个级
+          const segs: Array<{ key: string; levels: string[] }> = []
+          for (const [s, run, cu] of f) {
+            const key = `${run}|${cu}`
+            const last = segs[segs.length - 1]
+            if (!last || last.key !== key) segs.push({ key, levels: [s] })
+            else if (last.levels[last.levels.length - 1] !== s) last.levels.push(s)
+          }
+          const mixed = segs.filter((g) => g.levels.length > 1).map((g) => `${g.key}:${g.levels.join(">")}`)
+          const line = JSON.stringify({ lang, x, from, start, frames: f.length, levels, segs: segs.length, mixed, keys: segs.map((g) => `${g.key}:${g.levels.join(">")}`).slice(0, 16) })
+          console.log(`[composer-733-oneline] hyst-flicker ${line}`)
+          await testInfo.attach(`hyst-flicker-${lang}-${x}-${from}`, { body: line, contentType: "application/json" })
+          expect.soft(f.length, `${lang} x=${x} from=${from} 有帧 ${line}`).toBeGreaterThan(30)
+          expect.soft(levels[0], `${lang} x=${x} from=${from} 记录起点 = 进带后静态级 ${line}`).toBe(start)
+          expect.soft(levelDirChanges(levels), `${lang} x=${x} from=${from} 整体级别不回头（方向变化 0 次）${line}`).toBe(0)
+          expect.soft(mixed, `${lang} x=${x} from=${from} 内容（发送钮 / chip）不变的段内级别不变 ${line}`).toEqual([])
         }
       }
       expect(roErrors, "no ResizeObserver loop").toEqual([])
