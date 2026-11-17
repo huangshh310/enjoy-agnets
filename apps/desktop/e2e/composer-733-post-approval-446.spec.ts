@@ -6,6 +6,8 @@
  *   (a) q2：very slow → 运行中排队 2 → 加图 → 733×H → 展开托盘 → 写盘审批 → 批准；run 由桩**自然结束**；
  *   (b) 无审批：slow hold → 排队 2 → 加图 → 733×H → 展开；状态轮询等 slot / K12 / 让位落地后**测试里点 Stop 人工结束 run**
  *       （host 03:17 PST 拍板：与 q2 的自然结束不同；点 Stop 那一帧 stop 5/5 且过硬线本身是断言）。
+ *       硬判起算点（leo 追加裁定 A1–A4）：第一帧 733×H 且 nav-card data-collapsed="true" 已提交，且距首个 733×H 帧 ≤1 帧；
+ *       之前的帧须仍未收起（§13 侧栏提交滞后存量，本刀不改侧栏），单独记录帧号 / 几何 / 五点落点；不跳固定帧、不缩录帧窗口。
  * 都录到 stop 消失 +3s（页内按帧时间戳判，不用固定 sleep 当断言点）。另有 fallback 格（slot 期加图 → slot 释放）
  * 与 luna R6 格（733×480 排队 0、运行中 Ctrl+Enter 马上发 → 批准）。阅读位置只记录（console APP446 read-pos），不断言。
  */
@@ -88,14 +90,29 @@ type Frame = {
   t: number; w: number; h: number; barTop: number | null; run: boolean; appr: boolean
   strip: boolean; squeezed: boolean; slot: string | null; clip: boolean; yld: boolean; residual: number | null; hint: boolean; handover: string | null
   rail: number; cap: { h: number; vis: number } | null; conv: number | null; trayH: number | null
-  act: Record<string, { b: number; n: number; edgeBar: number; bar5: number }>; readPos: number | null
+  act: Record<string, { b: number; n: number; edgeBar: number; bar5: number; miss?: string[] }>; readPos: number | null
+  /** leo B-1 可观测：window resize 事件计数 / 最近一次 resize 时的视口；documentElement RO 回调计数 / 最近一次 RO 尺寸；采样时 performance.now()；form 宽。 */
+  rz: number; rzW: number | null; rzH: number | null; ro: number; roW: number | null; roH: number | null; pn: number; formW: number | null
+  /** nav-card data-collapsed（leo A1 锚点：§13 侧栏收起状态是否已提交）。 */
+  nav: string | null
 }
 
 /** 逐「已绘制」帧（rAF → MessageChannel，同 composer-733-approval.spec）记录。 */
 async function startFrames(page: Page) {
   await page.evaluate(() => {
-    const S = { stop: false, frames: [] as unknown[] }
+    const S = { stop: false, frames: [] as unknown[], rz: 0, rzW: null as number | null, rzH: null as number | null, ro: 0, roW: null as number | null, roH: null as number | null }
     ;(globalThis as any).__f446 = S
+    addEventListener("resize", () => { S.rz += 1; S.rzW = innerWidth; S.rzH = innerHeight })
+    new ResizeObserver((es) => {
+      S.ro += 1
+      const r = es[es.length - 1]!.contentRect
+      S.roW = Math.round(r.width); S.roH = Math.round(r.height)
+    }).observe(document.documentElement)
+    const desc = (e: Element | null) => {
+      if (!e) return "null"
+      const tid = e.closest("[data-testid]")?.getAttribute("data-testid")
+      return `${e.tagName.toLowerCase()}${tid ? `@${tid}` : ""}`
+    }
     const tick = (t: number) => {
       const bar = document.querySelector('[data-testid="status-context-meter"]')?.closest("[data-toast-clearance]") ?? null
       const barTop = bar ? bar.getBoundingClientRect().top : null
@@ -109,13 +126,17 @@ async function startFrames(page: Page) {
         const pts = [[r.left + 5, r.top + 5], [r.right - 5, r.top + 5], [r.left + 5, r.bottom - 5], [r.right - 5, r.bottom - 5], [r.left + r.width / 2, r.top + r.height / 2]]
         let n = 0
         let bar5 = 0
+        const miss: string[] = []
         for (const [x, y] of pts) {
           const hit = document.elementFromPoint(x!, y!)
           if (hit && (hit === el || el.contains(hit))) n += 1
-          else if (hit && bar?.contains(hit)) bar5 += 1
+          else {
+            miss.push(desc(hit))
+            if (hit && bar?.contains(hit)) bar5 += 1
+          }
         }
         const edgeBar = [0.25, 0.5, 0.75].map((k) => document.elementFromPoint(r.left + r.width * k, r.bottom - 1.5)).filter((a) => !!a && !!bar && bar.contains(a)).length
-        act[id] = { b: r.bottom, n, edgeBar, bar5 }
+        act[id] = miss.length ? { b: r.bottom, n, edgeBar, bar5, miss } : { b: r.bottom, n, edgeBar, bar5 }
       }
       const rail = document.querySelector("[data-composer-followup-rail]")
       const capEl = document.querySelector("[data-composer-cap-frame]")
@@ -138,7 +159,10 @@ async function startFrames(page: Page) {
         conv: conv ? conv.getBoundingClientRect().height : null,
         trayH: tray ? tray.getBoundingClientRect().height : null,
         act,
-        readPos: scroller ? scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight : null
+        readPos: scroller ? scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight : null,
+        rz: S.rz, rzW: S.rzW, rzH: S.rzH, ro: S.ro, roW: S.roW, roH: S.roH, pn: performance.now(),
+        formW: (() => { const f = document.querySelector("form[data-composer]"); return f ? Math.round(f.getBoundingClientRect().width) : null })(),
+        nav: document.querySelector('[data-testid="nav-card"]')?.getAttribute("data-collapsed") ?? null
       })
     }
     const loop = (t: number) => {
@@ -186,16 +210,28 @@ function analyse(label: string, fs: Frame[]) {
   const minConv = Math.min(...fs.map((f) => f.conv ?? Number.POSITIVE_INFINITY))
   const end = fs.findIndex((f, i) => i > 0 && fs[i - 1]!.run && !f.run)
   const stripFlips = fs.filter((f, i) => i > 0 && f.strip !== fs[i - 1]!.strip).length
-  const tray108 = fs.filter((f) => f.trayH != null && f.trayH > 100).length
+  // leo S-3：托盘 >100 的帧数，是时长计数（随帧率浮动），不是翻转次数；V3 比对不纳入。
+  const tray108Frames = fs.filter((f) => f.trayH != null && f.trayH > 100).length
   const fallback = fs.filter((f) => f.handover === "fallback" && !f.strip).length
-  const handovers = [...new Set(fs.map((f) => f.handover).filter(Boolean))]
+  // leo S-1：录制期间 data-tray-handover 出现过的不同取值，按首次出现时间排列的事件种类，不是一次 measure 里的求值顺序。
+  const handoverKindsSeen = [...new Set(fs.map((f) => f.handover).filter(Boolean))]
   const readPos = [...new Set(fs.map((f) => (f.readPos == null ? null : Math.round(f.readPos))))].slice(0, 12)
-  const summary = { label, frames: fs.length, bad: bad.length, emptyCap, railNoCap, hintMismatch, yieldEnters, yieldLeaves, residualMax, minConv, runEnd: end, stripFlips, tray108, fallback, handovers,
+  const summary = { label, frames: fs.length, bad: bad.length, emptyCap, railNoCap, hintMismatch, yieldEnters, yieldLeaves, residualMax, minConv, runEnd: end, stripFlips, tray108Frames, fallback, handoverKindsSeen,
     maxSend: Math.max(0, ...fs.map((f) => f.act["composer-send"]?.b ?? 0)), maxStop: Math.max(0, ...fs.map((f) => f.act["composer-stop"]?.b ?? 0)),
     slots: [...new Set(fs.map((f) => f.slot))].slice(0, 8), barTops: [...new Set(fs.map((f) => f.barTop))] }
   console.log(`APP446 ${JSON.stringify(summary)}`)
   console.log(`APP446 read-pos ${label} ${JSON.stringify(readPos)}`)
-  if (shots) writeFileSync(join(shots, `${label}-frames.json`), JSON.stringify({ summary, bad: bad.slice(0, 40), frames: fs }))
+  // leo B-1：任何坏帧都把硬线条目与 w/h/rz/ro/t/pn 写进日志和 frames.json，不切帧。
+  const badDetail = bad.map(([i, m]) => {
+    const f = fs[i]!
+    const p = fs[i - 1]
+    return { i, m, t: f.t, pn: f.pn, w: f.w, h: f.h, rz: f.rz, rzW: f.rzW, rzH: f.rzH, ro: f.ro, roW: f.roW, roH: f.roH, formW: f.formW, barTop: f.barTop, act: f.act,
+      strip: f.strip, squeezed: f.squeezed, slot: f.slot, trayH: f.trayH, prev: p ? { t: p.t, pn: p.pn, w: p.w, h: p.h, rz: p.rz, ro: p.ro, formW: p.formW } : null,
+      next: fs[i + 1] ? (({ t, pn, w, h, rz, ro, roW, roH, formW, act }) => ({ t, pn, w, h, rz, ro, roW, roH, formW, act }))(fs[i + 1]!) : null }
+  })
+  for (const d of badDetail.slice(0, 10)) console.log(`APP446 bad-frame ${label} ${JSON.stringify(d)}`)
+  const rep = test.info().repeatEachIndex
+  if (shots) writeFileSync(join(shots, `${label}${rep ? `-r${rep}` : ""}-frames.json`), JSON.stringify({ summary, bad: badDetail.slice(0, 40), frames: fs }))
   return { summary, bad }
 }
 
@@ -208,9 +244,11 @@ function expectHard(label: string, fs: Frame[], opts: { maxYieldEnters?: number 
   expect(summary.residualMax, `${label} 让位后 residual`).toBe(0)
   expect(summary.minConv, `${label} 对话区 ≥56`).toBeGreaterThanOrEqual(55.5)
   expect(summary.yieldEnters, `${label} 让位单向一次`).toBeLessThanOrEqual(opts.maxYieldEnters ?? 1)
+  // leo F-b：矩阵内 fallback 交接不可达（释放时一定走 k12 / clip / regrow）；到达即回 leo 重审开放项 ①。
+  expect(summary.fallback, `${label} fallback 帧（到达即回 leo 重审 ①）`).toBe(0)
   // 「不回 108」约束的是 q2/q0 已进入条态后的 slot 释放交接，不是尚未入条的初态。
   // 558 的审批初态能容纳展开 108；(b) 528/558 全程容纳 108，不应凭高度强制条带（#224 公式不动）。
-  // 原始 tray108 计数保留在 summary 供 V3 比对，硬线仍是所有采样帧严格断言。
+  // 原始 tray108Frames 计数保留在 summary（时长计数，V3 不比），硬线仍是所有采样帧严格断言。
   if (!label.endsWith("-noappr")) {
     const firstStrip = fs.findIndex((f) => f.strip)
     const afterStrip = firstStrip < 0 ? [] : fs.slice(firstStrip)
@@ -275,24 +313,35 @@ for (const lang of ["zh", "en"] as const) {
         expect(hardLine(atStop), `${label} stop frame at click`).toEqual([])
         await page.getByTestId("composer-stop").click({ timeout: 5_000 })
         const fs = await recordUntilRunEndPlus3s(page)
-        // 从到达 733×H 后第一帧起判（之前是 1440 宽）。
-        const from = fs.findIndex((f) => f.w === 733 && f.h === height)
-        const seg = fs.slice(from)
-        // 缩窗那一刻的进条过渡帧 ≤1（§14 进条坏帧上限），且只能落在缩窗后的前 30 帧里；之后逐帧零违例。
-        const entryBad = seg.map((f, i) => [i, hardLine(f).length > 0] as const).filter(([, b]) => b).map(([i]) => i)
-        console.log(`APP446 ${label} resize-entry-bad ${JSON.stringify(entryBad)}`)
-        expect(entryBad.length, `${label} resize entry bad frames`).toBeLessThanOrEqual(1)
-        expect(entryBad.every((i) => i < 30), `${label} entry bad only in resize transition`).toBe(true)
-        expectHard(label, seg.slice(entryBad.length ? entryBad[0]! + 1 : 0))
+        // leo B-1 + 追加裁定 A1–A4（删除旧的缩窗首帧放宽，不写固定跳帧、不缩录帧窗口、不改侧栏）：
+        // A1 起算点 = 第一帧 innerWidth=733 且 innerHeight=H 且 nav-card data-collapsed="true" 已提交；此后每帧过硬线、0 坏帧、5/5。
+        const first733 = fs.findIndex((f) => f.w === 733 && f.h === height)
+        expect(first733, `${label} reached 733×${height}`).toBeGreaterThanOrEqual(0)
+        const anchor = fs.findIndex((f, i) => i >= first733 && f.w === 733 && f.h === height && f.nav === "true")
+        // A2 防空过：起算点必须出现，且最多在首个 733×H 帧之后 1 帧。
+        expect(anchor, `${label} 起算点（733×H 且侧栏已收起）出现`).toBeGreaterThanOrEqual(0)
+        expect(anchor - first733, `${label} 起算点距首个 733×H 帧 ≤1 帧`).toBeLessThanOrEqual(1)
+        // A2：起算点之前（从首个 733×H 帧起）的帧侧栏必须仍是 data-collapsed="false"（§13 存量滞后）；已收起却越线的帧在下面全段计坏帧。
+        const preAnchor = fs.slice(first733, anchor)
+        // A3：起算点之前的帧单独记录（帧号、send/stop 几何、五点落点）。
+        for (const [k, f] of preAnchor.entries()) {
+          console.log(`APP446 pre-anchor ${label} ${JSON.stringify({ frame: first733 + k, k, nav: f.nav, w: f.w, h: f.h, rz: f.rz, ro: f.ro, roW: f.roW, roH: f.roH, formW: f.formW, barTop: f.barTop, act: f.act, hard: hardLine(f) })}`)
+        }
+        if (shots) writeFileSync(join(shots, `${label}${test.info().repeatEachIndex ? `-r${test.info().repeatEachIndex}` : ""}-pre-anchor.json`), JSON.stringify({ first733, anchor, frames: preAnchor.map((f, k) => ({ frame: first733 + k, ...f, hard: hardLine(f) })) }))
+        expect(preAnchor.every((f) => f.nav === "false"), `${label} 起算点前的帧侧栏均未收起`).toBe(true)
+        test.info().annotations.push({ type: "pre-anchor", description: `${label}: ${preAnchor.length} 帧（${preAnchor.map((f) => hardLine(f).length ? "bad" : "ok").join(",") || "无"}）` })
+        // 已收起的帧（含首个 733×H 之后的全部已收起帧）一律硬判；起算点之后全段不切帧。
+        expect(fs.slice(first733).filter((f) => f.nav === "true" && hardLine(f).length > 0).length, `${label} 已收起却越线的帧`).toBe(0)
+        expectHard(label, fs.slice(anchor))
         expect(errors).toEqual([])
       } finally { await cleanup() }
     })
   }
 }
 
-/** fallback 格（产品 §16 Q-8）：slot 期加一张图（附件数变 → 统一长回量作废）→ slot 释放；fallback 帧 ≤1 且过硬线；不可达则记标记 + 截图。 */
+/** fallback 格（产品 §16 Q-8）：slot 期加一张图（附件数变 → 统一长回量作废）→ slot 释放；fallback 帧 =0（矩阵内不可达，到达即回 leo 重审 ①）且过硬线；记标记 + 截图。 */
 for (const lang of ["zh", "en"] as const) {
-  test(`446 fallback（${lang} 733×480）：slot 期加图 → slot 释放，fallback 帧 ≤1 且过硬线`, async () => {
+  test(`446 fallback（${lang} 733×480）：slot 期加图 → slot 释放，fallback 帧 =0 且过硬线`, async () => {
     test.setTimeout(150_000)
     const { page, errors, cleanup } = await boot(lang, "very slow")
     const label = `${lang}-h480-fallback`
@@ -308,9 +357,9 @@ for (const lang of ["zh", "en"] as const) {
       const fs = await recordUntilRunEndPlus3s(page)
       if (shots) await page.screenshot({ path: join(shots, `${label}-terminal.png`) })
       const s = expectHard(label, fs)
-      console.log(`APP446 fallback-reach ${label} handovers=${JSON.stringify(s.handovers)} fallbackFrames=${s.fallback}`)
-      expect(s.fallback, `${label} fallback frames`).toBeLessThanOrEqual(1)
-      test.info().annotations.push({ type: "fallback", description: `${label}: handovers=${JSON.stringify(s.handovers)} fallbackFrames=${s.fallback}` })
+      // fallback===0 已在 expectHard 里断言（leo F-b：从 ≤1 收到 =0，到达即回 leo 重审 ①）；annotation 与截图保留。
+      console.log(`APP446 fallback-reach ${label} handoverKindsSeen=${JSON.stringify(s.handoverKindsSeen)} fallbackFrames=${s.fallback}`)
+      test.info().annotations.push({ type: "fallback", description: `${label}: handoverKindsSeen=${JSON.stringify(s.handoverKindsSeen)} fallbackFrames=${s.fallback}` })
       expect(errors).toEqual([])
     } finally { await cleanup() }
   })
