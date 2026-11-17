@@ -1534,6 +1534,16 @@ for (const lang of ["zh", "en"] as const) {
       await sendComposer(window, window.getByTestId("composer-input"), lang === "en" ? "hello there" : "你好")
       await expect(window.locator("body")).toContainText("stub-ok", { timeout: 20_000 })
       await idle()
+      // #229 leo S2：CU 真开着（ENJOY_E2E_CU_READY 失效会悄悄退化成 CU 关、这条变成空跑）——入口 computer-use-chip 在场：
+      // 在底栏，或这一级已收进溢出菜单（§10）时在菜单的底栏小节里
+      if ((await window.getByTestId("composer-footer-row").getByTestId("computer-use-chip").count()) === 0) {
+        await window.getByTestId("composer-overflow").click()
+        await expect(window.getByTestId("composer-overflow-footer-items").getByTestId("computer-use-chip"), `${lang} CU 开：computer-use-chip 在溢出菜单里`).toBeVisible()
+        await window.keyboard.press("Escape")
+        await expect(window.getByTestId("composer-overflow-footer-items")).toHaveCount(0)
+      } else {
+        await expect(window.getByTestId("composer-footer-row").getByTestId("computer-use-chip"), `${lang} CU 开：computer-use-chip 在底栏`).toBeVisible()
+      }
       await window.setViewportSize({ width: HI, height: H })
       await settleSidebar(window)
       // 1px 扫宽：记每次换级（降 / 升）时的窗宽与行宽
