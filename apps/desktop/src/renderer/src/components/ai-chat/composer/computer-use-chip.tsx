@@ -15,7 +15,7 @@ export function ComputerUseChip() {
   return (
     <span
       data-testid="computer-use-chip"
-      className="inline-flex h-6 items-center rounded-full bg-accent-500/10 px-2 text-caption-2-semibold text-accent-600 ring-1 ring-accent-500/25"
+      className="inline-flex h-6 shrink-0 items-center rounded-full whitespace-nowrap bg-accent-500/10 px-2 text-caption-2-semibold text-accent-600 ring-1 ring-accent-500/25"
     >
       {t("chat.desktopChip")}
     </span>

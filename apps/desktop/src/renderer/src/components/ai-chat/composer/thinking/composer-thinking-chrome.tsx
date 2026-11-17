@@ -19,6 +19,7 @@ import { thoughtChoiceCopy, thoughtToneAt } from "./thought-choice-copy"
 import { useComposerModelSwitch } from "../model-switch/use-composer-model-switch"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { FOOTER_GE2_HIDDEN, FOOTER_GE2_ICON_BUTTON } from "../footer-density"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
 export function ComposerThinkingChrome({
@@ -155,13 +156,15 @@ function ThoughtChip({
         type="button"
         data-testid={testId}
         title={title}
+        aria-label={label}
         className={cx(
           "inline-flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded-full px-2 text-caption-2-medium ring-1 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+          FOOTER_GE2_ICON_BUTTON,
           className ?? "bg-background-tertiary-default/90 text-text-secondary ring-border-button-default/80 hover:bg-background-tertiary-hover hover:text-text-primary"
         )}
       >
         <RiBrainLine className="size-3 shrink-0" aria-hidden />
-        <span className="hidden whitespace-nowrap @[28rem]:inline">{label}</span>
+        <span className={cx("hidden whitespace-nowrap @[28rem]:inline", FOOTER_GE2_HIDDEN)}>{label}</span>
       </button>
     </PopoverTrigger>
   )

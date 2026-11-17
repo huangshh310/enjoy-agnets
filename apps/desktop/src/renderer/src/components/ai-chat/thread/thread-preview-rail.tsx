@@ -4,7 +4,7 @@
  */
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { cx } from "@/utils/cx"
 import { PreviewRail } from "@/components/ai-elements/preview-rail"
 import { useT } from "@renderer/i18n"
@@ -12,6 +12,7 @@ import { previewItemsFromMessages, railItemSize } from "./thread-preview-rail-it
 import { promptScaleItems } from "./prompt-scale"
 import { revealThreadMessage } from "@renderer/lib/search-thread-messages"
 import { visibleUserText } from "@renderer/lib/user-message-text"
+import { pickRailActive, resolveRailActive, type RailVisible } from "./thread-preview-rail-active"
 
 const MESSAGE_ATTR = "data-thread-message"
 
@@ -24,7 +25,8 @@ export function ThreadPreviewRail({
 }) {
   const t = useT()
   const items = useMemo(() => userScaleItems(messages, t), [messages, t])
-  const [activeId, setActiveId] = useActiveThreadMessage(messages)
+  const itemIds = useMemo(() => items.map((item) => item.id), [items])
+  const [activeId, setActiveId] = useActiveThreadMessage(messages, itemIds)
 
   if (items.length < 2) return null
 
@@ -39,7 +41,7 @@ export function ThreadPreviewRail({
       <PreviewRail
         items={items}
         label={t("chat.previewRailLabel")}
-        activeId={activeId}
+        activeId={resolveRailActive(activeId, itemIds)}
         itemSize={railItemSize(items.length)}
         // 外框约 256×256 只是给悬停预览留位，透明处必须让点击穿透到消息（编辑/重来/复制/保存/取消）。
         // 只有刻度按钮自己接指针事件。
@@ -52,24 +54,42 @@ export function ThreadPreviewRail({
   )
 }
 
-function useActiveThreadMessage(messages: Array<{ id: string }>): [string, (id: string) => void] {
-  const [activeId, setActiveId] = useState(messages.at(-1)?.id ?? "")
+function useActiveThreadMessage(messages: Array<{ id: string }>, itemIds: string[]): [string, (id: string) => void] {
+  const [activeId, setActiveId] = useState(() => resolveRailActive("", itemIds))
+  const activeRef = useRef(activeId)
+  activeRef.current = activeId
   useEffect(() => {
-    setActiveId((current) => (messages.some((item) => item.id === current) ? current : (messages.at(-1)?.id ?? "")))
-  }, [messages])
-  useEffect(() => watchVisibleMessage(messages.length, setActiveId), [messages])
+    setActiveId((current) => resolveRailActive(current, itemIds))
+  }, [itemIds])
+  useEffect(
+    () => watchVisibleMessage(messages.map((m) => m.id), itemIds, () => activeRef.current, setActiveId),
+    [messages, itemIds]
+  )
   return [activeId, setActiveId]
 }
 
-function watchVisibleMessage(count: number, setActiveId: (id: string) => void): () => void {
-  if (count < 2) return () => undefined
+function watchVisibleMessage(
+  order: string[],
+  itemIds: string[],
+  previous: () => string,
+  setActiveId: (id: string) => void
+): () => void {
+  if (itemIds.length < 2) return () => undefined
   const nodes = [...document.querySelectorAll<HTMLElement>(`[${MESSAGE_ATTR}]`)]
   if (nodes.length === 0) return () => undefined
+  // 回调只给「跨过阈值」的那几条：可见集合跨回调累积，每次在全部可见节点里挑（面积为 0 / 不在视口内的剔掉）。
+  const visible = new Map<string, RailVisible>()
   const observer = new IntersectionObserver((entries) => {
-    const hit = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-    const id = hit?.target.getAttribute(MESSAGE_ATTR)
-    if (id) setActiveId(id)
-  }, { threshold: [0.25, 0.5, 0.8] })
+    for (const entry of entries) {
+      const id = entry.target.getAttribute(MESSAGE_ATTR)
+      if (!id) continue
+      const area = entry.intersectionRect.width * entry.intersectionRect.height
+      if (entry.isIntersecting && area > 0) visible.set(id, { ratio: entry.intersectionRatio, area })
+      else visible.delete(id)
+    }
+    const next = pickRailActive({ visible, order, itemIds, previous: previous() })
+    if (next !== previous()) setActiveId(next)
+  }, { threshold: [0, 0.25, 0.5, 0.8] })
   for (const node of nodes) observer.observe(node)
   return () => observer.disconnect()
 }

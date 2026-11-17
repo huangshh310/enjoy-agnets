@@ -21,7 +21,7 @@ export function ComposerAttachMenu({ onPickFiles }: { onPickFiles: () => void })
           type="button"
           aria-label={t("chat.addSources")}
           title={t("chat.addSources")}
-          className="flex size-7.5 items-center justify-center rounded-full border border-border-button-default/50 text-foreground-icon-secondary shadow-2xs transition-all hover:scale-105 hover:border-border-button-default hover:bg-background-secondary-hover hover:text-text-primary active:scale-95"
+          className="flex size-7.5 shrink-0 items-center justify-center rounded-full border border-border-button-default/50 text-foreground-icon-secondary shadow-2xs transition-all hover:scale-105 hover:border-border-button-default hover:bg-background-secondary-hover hover:text-text-primary active:scale-95 whitespace-nowrap"
         >
           <RiAddLine className="size-4.5" />
         </button>

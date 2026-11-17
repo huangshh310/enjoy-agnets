@@ -20,6 +20,9 @@
  *   一轮只自动折一次：折过之后用户再点开就一直开着（autoFolded，换审批 / 暂停原因、窗口变矮收起、切会话、排队清空时清）；
  * - 点开过，窗口再被拉到 ≤600 高：重新折成一行（refoldOnShort，m211-33）；
  * - 停着且对话里挂着失败卡：给对话区留 data-keep-thread，chat-stage 据此给对话区保底高度，「再发一次」整颗露出。
+ *
+ * K6（luna §15）：停着的排队区点开后被挤（区内容高 > 可视高，只看区自己的实测）→ 挤压态（data-squeezed）：
+ * py-0.5、说明行钉顶（sticky、压到 24、不透明底）、排队行整行吸附滚动，区高取整行，零头还给对话区。见 nextDockSqueeze。
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { RiArrowDownSLine } from "@remixicon/react"
@@ -34,7 +37,7 @@ import {
 import { useShortWindow } from "@renderer/hooks/use-short-window"
 import { QueuePausedRow, QueuePausedIcon } from "./queue-paused-row"
 import { pausedCollapsed } from "./queue-paused-view"
-import { foldOnSqueeze, keepThreadForFailureCard, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill } from "./queue-dock-layout"
+import { DOCK_SQUEEZE_OFF, DOCK_SQUEEZED_DESC_PX, DOCK_ROW_GAP_PX, foldOnSqueeze, keepThreadForFailureCard, nextDockSqueeze, pillFitsBelow, refoldOnShort, rowsHiddenBelow, showHiddenBelowPill, type DockSqueeze } from "./queue-dock-layout"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QueuedUserTurn } from "./turns/queued-user-turn"
@@ -194,8 +197,10 @@ function DockedRows({
   // 区内滚的是里面这层；「还有 N 条」放得下就画在它下面、不进滚动区，不盖任何一行（leo #170 soft-5）。
   const scrollRef = useRef<HTMLDivElement>(null)
   const hiddenBelow = useRowsHiddenBelow(scrollRef, mode === "all", items.length)
+  const squeeze = useDockSqueeze(ref, scrollRef, expanded && paused != null && mode === "all", items.length)
   const dockHeight = useDockHeight(ref, expanded || hiddenBelow > 0)
-  useFoldOnSqueeze(expanded, dockHeight, hiddenBelow, autoFolded, foldSqueezed)
+  // 挤压态里区高是自己取整行收的（零头还给对话区），不是被挤：「挤没挤」照旧看空间，喂给 foldOnSqueeze 的是可用高（判定本身不动）。
+  useFoldOnSqueeze(expanded, squeeze.squeezed ? squeeze.availPx : dockHeight, hiddenBelow, autoFolded, foldSqueezed)
   // 放不下单独一行（审批卡 + 733×480 挤到一行高）就不画，不再贴区底盖住那一行的字（luna #170 01d）。
   const pill = showHiddenBelowPill(hiddenBelow, dockHeight) ? (
     <DockSummaryButton
@@ -217,18 +222,27 @@ function DockedRows({
       data-count={items.length}
       data-keep-thread={keepThread ? "true" : undefined}
       data-hidden-below={hiddenBelow > 0 ? hiddenBelow : undefined}
+      data-squeezed={squeeze.squeezed ? squeeze.rows : undefined}
       // 默认整行画（shrink-0）；用户点开后才让位：shrink 远大于审批卡（PermissionDock 是 shrink 1），最少留一行、区内滚。
       // relative z-30：盖过对话目录条（z-20），× 点得到。
+      // 挤压态（K6）：py-0.5，区高取整行（style.height），零头还给对话区；max-h / min-h / shrink 不动。
       className={cx(
         "relative z-30 mx-6 flex flex-col overflow-hidden",
         expanded ? "max-h-[9.5rem] min-h-9 shrink-[1000] py-1" : "shrink-0",
-        !expanded && (mode === "collapsed" ? "py-0.5" : "py-1")
+        !expanded && (mode === "collapsed" ? "py-0.5" : "py-1"),
+        expanded && squeeze.squeezed && "!py-0.5"
       )}
+      style={squeeze.squeezed ? { height: squeeze.heightPx } : undefined}
     >
       <div
         ref={scrollRef}
         data-testid="queued-followups-scroll"
-        className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto [scrollbar-width:none]"
+        className={cx(
+          "flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto [scrollbar-width:none]",
+          squeeze.squeezed && SQUEEZED_SCROLL_CLASS_NAME
+        )}
+        // 吸附时让开钉顶的说明行（实测高 + 行间距），整行停在说明行下面。
+        style={squeeze.squeezed ? { scrollPaddingTop: squeeze.descPx + DOCK_ROW_GAP_PX } : undefined}
       >
         {paused ? <QueuePausedRow reason={paused} count={items.length} /> : null}
         {mode === "collapsed" ? (
@@ -265,6 +279,72 @@ function DockedRows({
     </div>
   )
 }
+
+/**
+ * 挤压态滚动区：排队行 y 向强制吸附、每行 snap-start；说明行（QueuePausedRow 外层）钉顶、不透明、压到 24（内层 py-0 + min-h-6）。
+ * 从滚动区往下选，QueuePausedRow / QueuedUserTurn 本身的类名不动（只在挤压态生效）。
+ */
+const SQUEEZED_SCROLL_CLASS_NAME = [
+  "snap-y snap-mandatory",
+  "[&>[data-testid=queued-user-turn]]:snap-start",
+  "[&>[data-testid=queue-paused-row]]:sticky [&>[data-testid=queue-paused-row]]:top-0 [&>[data-testid=queue-paused-row]]:z-10",
+  "[&>[data-testid=queue-paused-row]]:bg-background-primary-default",
+  "[&>[data-testid=queue-paused-row]>div]:min-h-6 [&>[data-testid=queue-paused-row]>div]:py-0"
+].join(" ")
+
+type DockSqueezeView = DockSqueeze & { descPx: number; availPx: number }
+
+/**
+ * K6 挤压态：只看排队区自己的实测（点开着、滚动区内容高 > 可视高），不看窗宽、不看语言。
+ * 可用高 = 区现在的高 + 对话区（data-thread-root）比它 min-height 多出来的那截；不在 chat-conversation 里（空会话落地页）不进。
+ * 一次 ResizeObserver 回调里先读完再最多写一次。
+ */
+function useDockSqueeze(
+  ref: RefObject<HTMLDivElement | null>,
+  scrollRef: RefObject<HTMLDivElement | null>,
+  enabled: boolean,
+  count: number
+): DockSqueezeView {
+  const [state, setState] = useState<DockSqueezeView>(SQUEEZE_VIEW_OFF)
+  useLayoutEffect(() => {
+    setState((prev) => (prev.squeezed || prev.blockedBelowPx != null ? SQUEEZE_VIEW_OFF : prev))
+    if (!enabled) return
+    const el = ref.current
+    const sc = scrollRef.current
+    const column = el?.parentElement
+    const thread = column?.querySelector<HTMLElement>(":scope > [data-thread-root]")
+    if (!el || !sc || !column || !thread) return
+    const check = () => {
+      const desc = sc.querySelector<HTMLElement>(':scope > [data-testid="queue-paused-row"]')
+      const dockPx = el.getBoundingClientRect().height
+      const slack = thread.getBoundingClientRect().height - (parseFloat(getComputedStyle(thread).minHeight) || 0)
+      const m = {
+        open: true,
+        contentPx: sc.scrollHeight,
+        visiblePx: sc.clientHeight,
+        availPx: dockPx + Math.max(0, slack),
+        descPx: desc ? desc.getBoundingClientRect().height : DOCK_SQUEEZED_DESC_PX,
+        count
+      }
+      setState((prev) => {
+        const next = nextDockSqueeze(prev, m)
+        const descPx = next.squeezed ? Math.max(DOCK_SQUEEZED_DESC_PX, m.descPx) : DOCK_SQUEEZED_DESC_PX
+        const availPx = next.squeezed ? m.availPx : 0
+        return next === prev && descPx === prev.descPx && availPx === prev.availPx ? prev : { ...next, descPx, availPx }
+      })
+    }
+    check()
+    const observer = new ResizeObserver(check)
+    observer.observe(el)
+    observer.observe(sc)
+    observer.observe(thread)
+    for (const child of Array.from(sc.children)) observer.observe(child)
+    return () => observer.disconnect()
+  }, [ref, scrollRef, enabled, count])
+  return enabled ? state : SQUEEZE_VIEW_OFF
+}
+
+const SQUEEZE_VIEW_OFF: DockSqueezeView = { ...DOCK_SQUEEZE_OFF, descPx: DOCK_SQUEEZED_DESC_PX, availPx: 0 }
 
 function DockSummaryButton({
   testId,

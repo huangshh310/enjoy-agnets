@@ -21,6 +21,7 @@ import {
   getEffortLevels,
   getEffortMeta
 } from "./reasoning-effort-config"
+import { FOOTER_GE2_HIDDEN, FOOTER_GE2_ICON_BUTTON } from "./composer/footer-density"
 import { MiniEnergyMeter, ReasoningEnergyBar } from "./reasoning-energy-bar"
 
 export function ReasoningEffortToggle({ compact = false }: { compact?: boolean } = {}) {
@@ -44,10 +45,12 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
           type="button"
           data-testid="composer-thinking-effort"
           aria-label={t("chat.effortAria")}
+          // L≥2 文字收起只剩图标：悬停提示复用现有 chat.effortAria（不新增 i18n 键）。
+          title={compact ? t("chat.effortAria") : undefined}
           className={cx(
             "group flex shrink-0 items-center whitespace-nowrap rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-border-focus-ring",
             compact
-              ? "h-6 gap-1 px-2 text-caption-2-medium ring-1 ring-border-button-default/80"
+              ? cx("h-6 gap-1 px-2 text-caption-2-medium ring-1 ring-border-button-default/80", FOOTER_GE2_ICON_BUTTON)
               : "h-8 gap-1.5 px-2.5 text-caption-1-medium shadow-2xs",
             currentMeta.value !== "none"
               ? currentMeta.badgeClass
@@ -55,7 +58,7 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
           )}
         >
           <RiBrainLine className={cx("size-3 shrink-0 transition-colors", currentMeta.iconColorClass)} />
-          <span className="whitespace-nowrap font-semibold">{currentMeta.label}</span>
+          <span className={cx("whitespace-nowrap font-semibold", compact && FOOTER_GE2_HIDDEN)}>{currentMeta.label}</span>
           {compact ? null : (
             <span className="ml-0.5 inline-flex">
               <MiniEnergyMeter value={reasoningEffort} />

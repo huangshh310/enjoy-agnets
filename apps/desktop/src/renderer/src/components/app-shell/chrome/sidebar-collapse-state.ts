@@ -11,6 +11,11 @@
  */
 export const NARROW_SIDEBAR_PX = 768
 
+/** 窗宽算不算窄窗（自动收起 / 浮层的唯一判断；nav-card 与底栏选级共用）。 */
+export function narrowSidebarWindow(windowWidth: number): boolean {
+  return windowWidth < NARROW_SIDEBAR_PX
+}
+
 export type SidebarCollapseState = {
   /** 用户偏好：手动收起过且没再展开。只有它进持久化。 */
   preferred: boolean

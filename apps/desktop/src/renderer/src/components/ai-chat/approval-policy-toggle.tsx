@@ -12,6 +12,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { chipHintForPolicy, classifyApprovalPolicy, toneForPolicy } from "./approval-policy"
 import { ApprovalPolicyMenuBody, PRESET_ICONS, titleCase } from "./approval-policy-menu"
+import { FOOTER_GE2_HIDDEN, FOOTER_GE2_ICON_BUTTON } from "./composer/footer-density"
 import { useApprovalPolicyEditor } from "./use-approval-policy-editor"
 
 export function ApprovalPolicyToggle() {
@@ -56,12 +57,13 @@ function PolicyTrigger({
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         tone.bgClass,
         tone.colorClass,
+        FOOTER_GE2_ICON_BUTTON,
         className
       )}
       {...props}
     >
       <Icon className={cx("size-3.5 shrink-0", tone.iconColor)} />
-      <span className="whitespace-nowrap font-medium">
+      <span className={cx("whitespace-nowrap font-medium", FOOTER_GE2_HIDDEN)}>
         {kind === "custom" ? t("common.permissionCustom") : titleCase(kind, t)}
       </span>
     </button>

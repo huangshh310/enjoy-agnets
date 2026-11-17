@@ -34,12 +34,7 @@ export function HostInjectPopover({
             value={injectedPair(t, view.mcp, view.skills)}
           />
         ) : null}
-        {view.kind === "unsupported" ? <UnsupportedLines view={view} /> : null}
-        {view.kind === "failed" ? (
-          <p className="text-caption-2-regular text-status-yellow-text">
-            {t("chat.hostInjectSkipped", { names: view.skipped.map((item) => item.name).join(" · ") })}
-          </p>
-        ) : null}
+        <HostInjectWarnLines view={view} />
         {view.kind === "injected" && view.skipped.length > 0 ? (
           <p className="text-caption-2-regular text-status-yellow-text">
             {t("chat.hostInjectSkipped", { names: view.skipped.map((item) => item.name).join(" · ") })}
@@ -65,6 +60,20 @@ export function HostInjectPopover({
       </button>
     </div>
   )
+}
+
+/** failed / unsupported 的黄色说明（popover 与 L3 溢出菜单共用，判据与文案不变）。 */
+export function HostInjectWarnLines({ view }: { view: HostInjectBarView }) {
+  const t = useT()
+  if (view.kind === "unsupported") return <UnsupportedLines view={view} />
+  if (view.kind === "failed") {
+    return (
+      <p className="text-caption-2-regular text-status-yellow-text">
+        {t("chat.hostInjectSkipped", { names: view.skipped.map((item) => item.name).join(" · ") })}
+      </p>
+    )
+  }
+  return null
 }
 
 function UnsupportedLines({ view }: { view: Extract<HostInjectBarView, { kind: "unsupported" }> }) {

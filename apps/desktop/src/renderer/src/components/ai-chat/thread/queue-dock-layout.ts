@@ -71,3 +71,85 @@ export function foldOnSqueeze(seenRoomy: boolean, dockHeight: number, hiddenBelo
   return !autoFolded && seenRoomy && hiddenBelow > 0 && !pillFitsBelow(dockHeight)
 }
 
+
+/**
+ * K6（luna §15）：暂停排队区点开后被挤（区内容高 > 可视高）时的「挤压态」——只看排队区自己的实测，不看窗宽、不看语言。
+ * 挤压态里：区上下 padding py-1 → py-0.5（共 4），说明行钉在顶上（sticky，压到 24），排队行在它下面按整行吸附滚动；
+ * 可见高度取整行 n×30 + (n−1)×4，n = floor((可用 + 4) / 34)，零头还给对话区。任何滚动位置都不露半行。
+ * n < 1：不进挤压态，照现网（foldOnSqueeze 等判定都不动）。
+ * 释放：可用高度回到进入时量的「正常排法需要的高度」+ 8px 回滞，和底栏判级同一套规矩。
+ * 「还有 N 条」照 pillFitsBelow：挤压态高度 ≥ 64 且底下还有行时它会画在滚动区下面，所以这时先给它留出一行再算 n。
+ */
+export const DOCK_ROW_PX = 30
+export const DOCK_ROW_GAP_PX = 4
+export const DOCK_SQUEEZED_PAD_PX = 4
+export const DOCK_SQUEEZED_DESC_PX = 24
+export const DOCK_NORMAL_PAD_PX = 8
+export const DOCK_SQUEEZE_RELEASE_PX = 8
+/** 「还有 N 条」单独一行：mt-1 + min-h-6。 */
+export const DOCK_PILL_ROW_PX = 28
+/** 点开时排队区 max-h-[9.5rem]。 */
+export const DOCK_EXPANDED_MAX_PX = 152
+
+export type DockSqueeze = {
+  squeezed: boolean
+  /** 进入时量的正常排法需要的区高（内容 + py-1）；释放看它 + 8。 */
+  needPx: number | null
+  rows: number
+  heightPx: number
+  /** 挤压态算出 n < 1 被迫退出时记下可用高：回滞 8px 之前不再进，免得来回抖。 */
+  blockedBelowPx: number | null
+}
+
+export const DOCK_SQUEEZE_OFF: DockSqueeze = { squeezed: false, needPx: null, rows: 0, heightPx: 0, blockedBelowPx: null }
+
+/** 挤压态 n 行时整个排队区的高度（padding + 说明行 + 间距 + n 行 + 行间距）。 */
+export function squeezedDockHeight(rows: number, descPx = DOCK_SQUEEZED_DESC_PX): number {
+  return DOCK_SQUEEZED_PAD_PX + descPx + DOCK_ROW_GAP_PX + rows * DOCK_ROW_PX + Math.max(0, rows - 1) * DOCK_ROW_GAP_PX
+}
+
+/** 可用区高里放得下几整行排队行：n = floor((行区可用 + 4) / 34)。 */
+export function squeezedRowsFor(availPx: number, descPx = DOCK_SQUEEZED_DESC_PX): number {
+  const rowsAvail = availPx - DOCK_SQUEEZED_PAD_PX - descPx - DOCK_ROW_GAP_PX
+  return Math.floor((rowsAvail + DOCK_ROW_GAP_PX + 0.5) / (DOCK_ROW_PX + DOCK_ROW_GAP_PX))
+}
+
+/** 给定可用高 / 条数，挤压态取几行、区多高（含「还有 N 条」那一行，若它会画）；放不下一整行返回 null。 */
+export function squeezedLayout(availPx: number, count: number, descPx = DOCK_SQUEEZED_DESC_PX): { rows: number; heightPx: number } | null {
+  const avail = Math.min(availPx, DOCK_EXPANDED_MAX_PX)
+  const n = squeezedRowsFor(avail, descPx)
+  if (n < 1 || count < 1) return null
+  if (n >= count) return { rows: count, heightPx: squeezedDockHeight(count, descPx) }
+  if (!pillFitsBelow(squeezedDockHeight(n, descPx))) return { rows: n, heightPx: squeezedDockHeight(n, descPx) }
+  // 底下还有行、区又 ≥ 64：现网会把「还有 N 条」画在滚动区下面（pillFitsBelow），先给它留一行。
+  const withPill = squeezedRowsFor(avail - DOCK_PILL_ROW_PX, descPx)
+  if (withPill >= 1) return { rows: withPill, heightPx: squeezedDockHeight(withPill, descPx) + DOCK_PILL_ROW_PX }
+  // 留了胶囊就一行都放不下：退到 1 行不带胶囊（1 行区高 < 64，胶囊本来就不画）。
+  const one = squeezedDockHeight(1, descPx)
+  return pillFitsBelow(one) ? null : { rows: 1, heightPx: one }
+}
+
+/**
+ * 挤压态下一帧：只吃排队区自己的实测。
+ * - contentPx / visiblePx：滚动区的 scrollHeight / clientHeight（不在挤压态时就是正常排法）；
+ * - availPx：排队区现在的高 + 对话区比它的 min-height 多出来的那截（零头还回去之后还能要回来）；
+ * - descPx：挤压态里说明行实测高（窄到按钮折行时会比 24 高），不在挤压态时按 24 算。
+ */
+export function nextDockSqueeze(
+  prev: DockSqueeze,
+  m: { open: boolean; contentPx: number; visiblePx: number; availPx: number; descPx: number; count: number }
+): DockSqueeze {
+  if (!m.open) return DOCK_SQUEEZE_OFF
+  if (!prev.squeezed) {
+    if (prev.blockedBelowPx != null && m.availPx < prev.blockedBelowPx + DOCK_SQUEEZE_RELEASE_PX) return prev
+    if (m.contentPx <= m.visiblePx + 0.5) return prev.blockedBelowPx == null ? prev : DOCK_SQUEEZE_OFF
+    const layout = squeezedLayout(m.availPx, m.count)
+    if (!layout) return prev
+    return { squeezed: true, needPx: m.contentPx + DOCK_NORMAL_PAD_PX, rows: layout.rows, heightPx: layout.heightPx, blockedBelowPx: null }
+  }
+  if (prev.needPx != null && m.availPx >= prev.needPx + DOCK_SQUEEZE_RELEASE_PX) return DOCK_SQUEEZE_OFF
+  const layout = squeezedLayout(m.availPx, m.count, Math.max(DOCK_SQUEEZED_DESC_PX, m.descPx))
+  if (!layout) return { ...DOCK_SQUEEZE_OFF, blockedBelowPx: m.availPx }
+  if (layout.rows === prev.rows && layout.heightPx === prev.heightPx) return prev
+  return { ...prev, rows: layout.rows, heightPx: layout.heightPx }
+}
