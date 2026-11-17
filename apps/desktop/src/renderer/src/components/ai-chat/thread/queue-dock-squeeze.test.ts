@@ -14,7 +14,8 @@ import {
   squeezedRowsFor
 } from "./queue-dock-layout.ts"
 
-const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8")
+// Windows 检出可能是 CRLF：统一成 \n，源码正则里的 \n 才在三端一致
+const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 test("算账：733×480 区 62 → 62 − 4 − 24 − 4 = 30，正好 1 整行（n 不写死）", () => {
   assert.equal(squeezedRowsFor(62), 1)
