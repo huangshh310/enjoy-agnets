@@ -125,9 +125,13 @@ export function nextTrayApprovalClip(prev: TrayApprovalClip, m: TrayApprovalClip
   return next
 }
 
-/** 三路 OR：#224 slot（有验收框时只由它决定）→ 否则 K12 squeeze 或审批裁切。 */
+/**
+ * 三路 OR：#224 slot → 否则 K12 squeeze 或审批裁切。
+ * 446 P1-c：有验收框时 K12 不再清零，slot 分支 = slotStrip ‖ squeezed（slot ≥ 108 但外壳仍放不下时由 K12 接住，
+ * 733×510–558 批准后 send/stop 511 / stop 0/5）；审批裁切仍只在没有验收框时判。
+ */
 export function trayStripFromPaths(args: { slotStrip: boolean; slot: number | null; squeezed: boolean; approvalClip: boolean }): boolean {
-  if (args.slot != null) return args.slotStrip
+  if (args.slot != null) return args.slotStrip || args.squeezed
   return args.squeezed || args.approvalClip
 }
 
