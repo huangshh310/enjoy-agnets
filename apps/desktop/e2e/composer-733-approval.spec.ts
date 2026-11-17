@@ -155,8 +155,24 @@ async function check(page: Page, info: TestInfo, label: string, expectedStrip: b
 
 type Frame = Record<string, unknown> & {
   t: number; clip: boolean; strip: boolean; h: number; w: number; trayH: number | null; clusterH: number | null
-  gap: number | null; misses: string[]; actionMisses: string[]; late: boolean
+  gap: number | null; misses: string[]; actionMisses: string[]; late: boolean; squeezed: boolean; appr: boolean; sendB: number | null; stopB: number | null
 }
+
+/**
+ * base 既有越线豁免（leo #230 门 M1/M2，jojo 条件③，host / neo 预审 ci-4b2df151.md）：只在「审批出现 q2」用例显式开启（tag `${lang}-q2-appear-release`）。
+ * 只豁免 composer-send / composer-stop 的「>430」「>top−13」两类；逐帧 bottom ≤ KNOWN_BASE_SEND_CAP + 0.5，越线帧数 ≤ KNOWN_BASE_MAX_FRAMES（写死，不在运行时量 base）。
+ * 三钮 / covered / 5 点命中 / 排队芯片 / 排队坞、释放过渡 ≤3 / covered 0 / stripFlipsAfter ≤1、clip 全程 off、late、reclip、终态 ≤430 / ≤top−13 / 5/5 全部照常断言。
+ * 出处：base d4ad6b93 同 spec 同路径真跑（2026-11-16 ~21:50 PST，mike；733×480，very slow 桩，批准后 600ms+settle）：
+ *   zh 53 帧中 actionBad 48、en 54 帧中 actionBad 48，send / stop bottom 均 446（barTop 443）；
+ *   原始帧 JSON 与长窗探针：/workspace/enjoy-docs/shots/p2-composer-733-approval/base-q2-approval-appear/。
+ */
+const KNOWN_BASE_LABEL = /^(zh|en)-q2-appear-release$/
+const KNOWN_BASE_EXEMPT = /^composer-(send|stop):>(430|top-13)\(/
+/** base d4ad6b93 实测 send / stop 最大 bottom（px）。 */
+const KNOWN_BASE_SEND_CAP = 446
+/** base d4ad6b93 实测 actionBad 帧数 48（zh / en）的上界，leo M2 写死 ≤50。 */
+const KNOWN_BASE_MAX_FRAMES = 50
+type KnownBase = { reason: string }
 
 /**
  * 逐帧录「已绘制」态：rAF 里 post 一个 MessageChannel 任务，任务在本帧 rendering steps（rAF → 布局 → RO → 绘制）之后跑，
@@ -209,6 +225,10 @@ async function startFrames(page: Page) {
         }
         if (!five(el)) actionMisses.push(`${id}:5pt`)
       }
+      const bottomOf = (id: string) => {
+        const r = document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect()
+        return r && r.height > 0 && r.width > 0 ? r.bottom : null
+      }
       const art = conv?.querySelector('[data-testid="permission-dock"] article')
       const thread = conv?.querySelector(":scope > [data-thread-root]")
       const slack = (e: Element | null | undefined) => e ? Math.max(0, e.getBoundingClientRect().height - (parseFloat(getComputedStyle(e).minHeight) || 0)) : 0
@@ -233,6 +253,9 @@ async function startFrames(page: Page) {
         need: conv && footer ? footer.bottom - conv.getBoundingClientRect().top - slack(thread) - slack(art) : null,
         dock: document.querySelector('[data-testid="queued-followups-docked"]')?.getAttribute("data-mode") ?? null,
         barTop,
+        appr: !!document.querySelector('[data-testid="approval-allow"]'),
+        sendB: bottomOf("composer-send"),
+        stopB: bottomOf("composer-stop"),
         misses,
         actionMisses,
         late: gap != null && gap < -0.5 && !clip
@@ -262,8 +285,8 @@ type FrameOpts = {
   entry?: boolean
   /** 释放：过渡帧（clip off 后任何可点物不合规）≤3、covered 0。 */
   release?: boolean
-  /** 段内 send/stop 越线是 base 既有（本刀判定全程未参与，base d4ad6b93 同场景同值）：只记录、不判红，原因写进日志与附件。 */
-  knownBaseActionBad?: string
+  /** 仅「审批出现 q2」批准后段：send/stop 越线为 base 既有，按 base 实测封顶（帧数 ≤ base、逐帧 ≤ BASE_SEND_CAP），其余照常。 */
+  knownBaseActionBad?: KnownBase
 }
 
 async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameOpts = {}) {
@@ -293,10 +316,21 @@ async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameO
   console.log(`APCLIP ${label} frames=${fs.length} transitions=${changes} bad=${bad.length} badMs=${summary.badMs} actionBad=${actionBad.length} late=${late.length} reclip=${reclip} firstClip=${firstClip} firstClipped=${firstClipped}`)
   expect(bad.length, `${label} painted 5-point misses ${JSON.stringify(bad)}`).toBeLessThanOrEqual(maxBad)
   expect(changes, `${label} no painted reversal`).toBeLessThanOrEqual(maxTransitions)
+  // 豁免只剥掉 send/stop 的 >430 / >top−13 两项；5 点命中、排队芯片 / 排队坞仍逐帧判。
+  const actMiss = (f: Frame) => knownBaseActionBad ? f.actionMisses.filter((m) => !KNOWN_BASE_EXEMPT.test(m)) : f.actionMisses
   if (knownBaseActionBad) {
-    console.log(`APCLIP ${label} KNOWN-BASE actionBad=${actionBad.length} (${knownBaseActionBad}) sample=${JSON.stringify(actionBad[0]?.actionMisses ?? [])}`)
-    test.info().annotations.push({ type: "known-base", description: `${label}: ${knownBaseActionBad} actionBad=${actionBad.length}` })
+    const maxSend = Math.max(0, ...fs.flatMap((f) => [f.sendB ?? 0, f.stopB ?? 0]))
+    console.log(`APCLIP ${label} KNOWN-BASE actionBad=${actionBad.length} firstBad=${fs.findIndex((f) => f.actionMisses.length > 0)} lastBad=${fs.map((f) => f.actionMisses.length > 0).lastIndexOf(true)} frames=${fs.length} maxSend=${maxSend} capFrames=${KNOWN_BASE_MAX_FRAMES} capSend=${KNOWN_BASE_SEND_CAP} (${knownBaseActionBad.reason}) kinds=${JSON.stringify([...new Set(actionBad.flatMap((f) => f.actionMisses.map((m) => m.replace(/\(.*$/, ""))))])}`)
+    test.info().annotations.push({ type: "known-base", description: `${label}: ${knownBaseActionBad.reason} actionBad=${actionBad.length}≤${KNOWN_BASE_MAX_FRAMES} maxSend=${maxSend}≤${KNOWN_BASE_SEND_CAP}` })
+    expect(label, `known-base exemption only for q2 approval-appear release`).toMatch(KNOWN_BASE_LABEL)
     expect(fs.every((f) => !f.clip), `${label} known-base segment must not involve approval clip`).toBe(true)
+    const other = fs.filter((f) => actMiss(f).length > 0)
+    expect(other.length, `${label} non-exempt send/stop/queue misses ${JSON.stringify(other.map((f) => actMiss(f)))}`).toBe(0)
+    expect(actionBad.length, `${label} send/stop over-line frames ≤ ${KNOWN_BASE_MAX_FRAMES} (base d4ad6b93: 48)`).toBeLessThanOrEqual(KNOWN_BASE_MAX_FRAMES)
+    fs.forEach((f, i) => {
+      expect(f.sendB ?? 0, `${label} send bottom ≤${KNOWN_BASE_SEND_CAP}.5 @${i}`).toBeLessThanOrEqual(KNOWN_BASE_SEND_CAP + 0.5)
+      expect(f.stopB ?? 0, `${label} stop bottom ≤${KNOWN_BASE_SEND_CAP}.5 @${i}`).toBeLessThanOrEqual(KNOWN_BASE_SEND_CAP + 0.5)
+    })
   } else {
     expect(actionBad.length, `${label} send/stop/queue every frame ≤430, ≤top−13, 5/5 ${JSON.stringify(actionBad)}`).toBe(0)
   }
@@ -321,12 +355,15 @@ async function endFrames(page: Page, info: TestInfo, label: string, opts: FrameO
   let releaseTransition = 0
   let trayAnim = 0
   if (release) {
-    const off = fs.findIndex((f, i) => i > 0 && fs[i - 1]!.clip && !f.clip)
+    // 释放起点：clip on → off；豁免段（clip 全程 off，条带来自 K12）以审批消失那一帧为起点。
+    const off = knownBaseActionBad
+      ? fs.findIndex((f, i) => i > 0 && fs[i - 1]!.appr && !f.appr)
+      : fs.findIndex((f, i) => i > 0 && fs[i - 1]!.clip && !f.clip)
     expect(off, `${label} released`).toBeGreaterThan(0)
     const tail = fs.slice(off)
     const finalH = fs[fs.length - 1]!.trayH!
     trayAnim = tail.filter((f) => f.trayH != null && Math.abs(f.trayH - finalH) > 0.5).length
-    releaseTransition = tail.filter((f) => f.misses.length > 0 || f.actionMisses.length > 0).length
+    releaseTransition = tail.filter((f) => f.misses.length > 0 || actMiss(f).length > 0).length
     const covered = tail.filter((f) => f.misses.some((m) => m.startsWith("covered:"))).length
     const stripFlipsAfter = tail.filter((f, i) => i > 0 && f.strip !== tail[i - 1]!.strip).length
     console.log(`APCLIP ${label} releaseTransition=${releaseTransition} covered=${covered} trayAnim=${trayAnim} stripFlipsAfter=${stripFlipsAfter} finalTrayH=${finalH} finalStrip=${fs[fs.length - 1]!.strip} squeezed=${fs[fs.length - 1]!.squeezed}`)
@@ -508,6 +545,8 @@ for (const [lang, count] of [["zh", 0], ["zh", 2], ["en", 0], ["en", 2]] as Arra
       expect(before.clip).toBeNull()
       // q2：排队芯片行让 Composer 更高，733×480 无审批时 K12 已先转条（data-tray-squeezed）——审批出现时已是条带，不经过裁切进入。
       const k12Before = before.strip === "true"
+      // M1：豁免启用条件按路径写死：只有 q2 在审批出现前已被 K12 转条；q0 或其他路径命中 K12 预转条即判红（不让运行时条件扩大豁免面）。
+      expect(k12Before, `${tag} K12 pre-strip before approval expected only for q2`).toBe(count === 2)
       if (k12Before) {
         const sq = await page.getByTestId("composer-attachment-tray").getAttribute("data-tray-squeezed")
         expect(sq, `${tag} strip before approval must be K12`).toBe("true")
@@ -519,20 +558,30 @@ for (const [lang, count] of [["zh", 0], ["zh", 2], ["en", 0], ["en", 2]] as Arra
       expect(strip.strip).toBe("true")
       expect(strip.tray!.height).toBeLessThanOrEqual(56)
       const entry = await endFrames(page, info, `${tag}-entry`, { maxTransitions: 1, maxBad: 3, entry: true })
-      if (k12Before) expect(entry.fs.every((f) => f.strip), `${tag} K12 strip held through approval appear`).toBe(true)
+      if (count === 2) {
+        // M4：q2 下排队芯片行让 Composer 更高，733×480 无审批时 K12 已先转条；审批出现时条带由 K12 画着（stripHeldElsewhere），
+        // clip 按设计不进入——整段 clip off、strip 全程来自 K12（squeezed）。裁切判定由 q0 本用例与 B′ 裁切矩阵覆盖。
+        expect(entry.fs.every((f) => !f.clip), `${tag} q2 entry clip off throughout`).toBe(true)
+        expect(entry.fs.every((f) => f.strip && f.squeezed), `${tag} q2 strip held by K12 through approval appear`).toBe(true)
+      } else {
+        // M4：q0 审批出现必须真的走裁切判定（clip on），且判定首帧即 on（late=0 已在 endFrames 断言）。
+        expect(entry.fs.findIndex((f) => f.clip), `${tag} q0 approval clip actually turns on`).toBeGreaterThanOrEqual(0)
+        expect(entry.fs[entry.fs.length - 1]!.clip, `${tag} q0 ends clip on`).toBe(true)
+      }
       await startFrames(page)
       await page.getByTestId("approval-allow").click({ timeout: 5_000 })
       await expect(page.getByTestId("approval-allow")).toHaveCount(0, { timeout: 15_000 })
       await page.waitForTimeout(600)
       await settle(page)
-      // q2 + K12 先转条：批准写盘后出现待验收框（#224 slot）+ 排队芯片行，send 446 > 430——base d4ad6b93 同场景同值（本刀 clip 全程未参与），另报，不在本刀。
-      const knownBase = k12Before ? "base d4ad6b93 同值 send 446：#224 slot + 排队芯片行，clip 未参与" : undefined
-      await endFrames(page, info, `${tag}-release`, { maxTransitions: 1, release: !k12Before && strip.clip === "true", knownBaseActionBad: knownBase })
+      // q2 + K12 先转条：批准写盘后出现待验收框（#224 slot）+ 排队芯片行，send 446 > 430——base d4ad6b93 同路径实测同型（本刀 clip 全程未参与），
+      // follow-up 另报。豁免只给本段、只剥 send/stop 越线两项，帧数 / send 按 base 实测封顶；释放检查（过渡 ≤3、covered 0、stripFlipsAfter ≤1）照常。
+      const knownBase: KnownBase | undefined = count === 2 ? { reason: "base d4ad6b93 同路径 send/stop 446 越线：#224 slot + 排队芯片行，clip 未参与" } : undefined
+      await endFrames(page, info, `${tag}-release`, { maxTransitions: 1, release: true, knownBaseActionBad: knownBase })
       const after = await geometry(page)
+      console.log(`APCLIP ${tag}-final ${JSON.stringify({ barTop: after.barTop, actions: after.actions.map((a) => ({ id: a.id, bottom: a.rect!.bottom, margin: a.margin, hits: a.hits.filter((h) => h.ok).length })), strip: after.strip, tray: after.tray?.height })}`)
       expect(after.clip).toBeNull()
       for (const a of after.actions) {
         expect(a.hits.every((h) => h.ok), `${tag} release ${a.id}`).toBe(true)
-        if (knownBase) continue
         expect(a.rect!.bottom, `${tag} release ${a.id} ≤430`).toBeLessThanOrEqual(430.5)
         expect(a.margin!, `${tag} release ${a.id} ≤top−13`).toBeGreaterThanOrEqual(-0.5)
       }
