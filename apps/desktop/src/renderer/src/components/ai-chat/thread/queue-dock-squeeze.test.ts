@@ -14,7 +14,8 @@ import {
   squeezedRowsFor
 } from "./queue-dock-layout.ts"
 
-const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8")
+// Windows 检出可能是 CRLF：统一成 \n，源码正则里的 \n 才在三端一致
+const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 test("算账：733×480 区 62 → 62 − 4 − 24 − 4 = 30，正好 1 整行（n 不写死）", () => {
   assert.equal(squeezedRowsFor(62), 1)
@@ -98,20 +99,52 @@ test("接线：挤压态 py-0.5、整行高、说明行 sticky 钉顶不透明 2
   assert.doesNotMatch(turn, /snap-/)
 })
 
-test("#228 S2：挤压态喂 availPx（区高 + 对话区多出的那截）与改前喂 dockHeight，foldOnSqueeze 判定处处一致", () => {
-  // 改前：区拿到 flex 分的 D，对话区压在 min-height（多出 0）。挤压态：区收到整行高 h，零头 D − h 还给对话区。
+test("#228 S2（跟进 ③）：用 useDockSqueeze 源码里真实的 availPx / slack 式子闭环求值——挤压后零头还给对话区，下一帧可用高仍 = 改前 D；挤压态不抖、foldOnSqueeze 处处与改前一致", () => {
+  // 旧写法在测试里自己拼 availPx = h + max(0, D − h)，D ≥ h 时恒等于 D，hook 的式子改成什么都不会红。
+  // 这里直接取 hook 源码里的式子求值：区高 dockPx、对话区多出 min-height 的那截 slack 都按真实排法喂。
+  const dock = src("./queued-followups.tsx")
+  const hook = dock.slice(dock.indexOf("function useDockSqueeze"), dock.indexOf("const SQUEEZE_VIEW_OFF"))
+  // slack 只读对话区（data-thread-root）实测高 − 它的 min-height（不读窗宽、不读排队区自己）
+  assert.match(hook, /const thread = column\?\.querySelector<HTMLElement>\(":scope > \[data-thread-root\]"\)/)
+  assert.equal(
+    /const slack = (.+)\n/.exec(hook)?.[1],
+    "thread.getBoundingClientRect().height - (parseFloat(getComputedStyle(thread).minHeight) || 0)"
+  )
+  assert.match(hook, /const dockPx = el\.getBoundingClientRect\(\)\.height\n/)
+  const expr = /\bavailPx: (.+),\n/.exec(hook)?.[1]
+  assert.ok(expr, "useDockSqueeze 里有 availPx: … 这一项")
+  const hookAvail = new Function("dockPx", "slack", `return ${expr}`) as (dockPx: number, slack: number) => number
+  // 挤压态才把 availPx 交给 foldOnSqueeze（第 203 行），不在挤压态时清零
+  assert.match(hook, /const availPx = next\.squeezed \? m\.availPx : 0/)
+  assert.match(dock, /useFoldOnSqueeze\(expanded, squeeze\.squeezed \? squeeze\.availPx : dockHeight, hiddenBelow, autoFolded, foldSqueezed\)/)
+  // 对话区比 min-height 还矮（slack < 0，比如刚换窗高的那一帧）：不从区高里倒扣
+  assert.equal(hookAvail(62, -12), 62, "slack < 0 时可用高 = 区高")
+  assert.equal(hookAvail(62, 0), 62)
+
+  const MIN_H = 56
+  let squeezedN = 0
   let differsIfRaw = 0
   for (let D = 62; D <= 152; D += 0.5) {
     for (const count of [2, 3, 5]) {
-      const layout = squeezedLayout(D, count)
-      if (!layout) continue
-      const h = layout.heightPx
-      const availPx = h + Math.max(0, D - h)
+      // 帧 1：还没挤压，区拿到 flex 分的 D，对话区压在 min-height（slack 0）；内容比可视高高 → 进挤压态
+      const contentPx = D + 40
+      const m1 = { open: true, contentPx, visiblePx: D - 8, availPx: hookAvail(D, 0), descPx: 24, count }
+      const s1 = nextDockSqueeze(DOCK_SQUEEZE_OFF, m1)
+      if (!s1.squeezed) continue
+      squeezedN += 1
+      const h = s1.heightPx!
+      assert.ok(h <= D + 0.5, `D=${D} 区高取整行、不超过分到的 ${D}（h=${h}）`)
+      // 帧 2：区收到整行高 h，零头 D − h 还给对话区（对话区 = min-height + (D − h)）→ hook 再量一次
+      const a2 = hookAvail(h, MIN_H + (D - h) - MIN_H)
+      // 整行高可比 D 多 0.5px 亚像素容差：那时对话区反而矮了 0.5（slack < 0），可用高按区高 h 算
+      assert.equal(a2, Math.max(D, h), `D=${D} count=${count}：挤压后 hook 量到的可用高仍 = 改前 D（零头要得回来）`)
+      const s2 = nextDockSqueeze(s1, { ...m1, availPx: a2, visiblePx: h - 8 })
+      assert.equal(s2, s1, `D=${D} count=${count}：挤压态下一帧不变（不抖、不释放）`)
       for (const seenRoomy of [false, true]) {
         for (const hidden of [0, 1, 3]) {
           for (const autoFolded of [false, true]) {
             assert.equal(
-              foldOnSqueeze(seenRoomy, availPx, hidden, autoFolded),
+              foldOnSqueeze(seenRoomy, a2, hidden, autoFolded),
               foldOnSqueeze(seenRoomy, D, hidden, autoFolded),
               `D=${D} count=${count} seen=${seenRoomy} hidden=${hidden} af=${autoFolded}`
             )
@@ -121,5 +154,6 @@ test("#228 S2：挤压态喂 availPx（区高 + 对话区多出的那截）与�
       }
     }
   }
+  assert.ok(squeezedN > 100, `闭环里真有挤压态（${squeezedN}）`)
   assert.ok(differsIfRaw > 0, "对照：若直接喂收缩后的区高，会在部分几何下改变判定（所以要喂 availPx）")
 })
