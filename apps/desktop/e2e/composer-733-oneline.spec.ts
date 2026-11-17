@@ -1460,11 +1460,12 @@ for (const lang of ["zh", "en"] as const) {
 // #228 跟进 ④（leo F-c）：mike 临时 hyst harness（e2e/mike-k/hyst.spec.ts，不提交）里 CU 开着的两条并进正式 spec。
 // 1px 扫宽（只扫侧栏已收起的 760 ↔ 560 段，窗宽与行宽同步变）找 3a↔3b 交界、回滞 ≥ 8；再在交界带里每个代表宽度、
 // 从带上 / 带下两个方向进带，各跑 3 轮短回复，rAF 逐帧记「级 | 发送钮状态 | 电脑操控 chip 是否在 DOM」。
-// 断言（leo F-c 口径）：整体级别方向变化 0 次（不回头）；内容（发送钮状态 / chip）不变的段内级别不变。
+// 断言按 jojo #228 口径 3：开轮窗口（停止键在）内至多 1 次换级、收轮窗口（回到发送）内至多 1 次换级（=单向、窗口内不回跳）；
+// 每帧单行、发送 / 停止钮底不越界；每轮前后发送钮 5/5。另加 leo F-c：交界带内整体级别方向变化 0 次（回滞带里收轮不升回）。
 // 原 :158 要求 3 轮里只出现过一个级——开跑那一帧右组多出停止键 / 运行点放不下而降一级是内容驱动、单向的，不算闪。
-// 注：开跑后 chip 离开底栏（3a → 3b 时三颗 chip 进溢出菜单）是否符合预期，不在这里用断言盖掉，见 PR 正文。
+// jojo 已裁定为预期（§10 + 口径 3）：运行中 CU 等 chip 进溢出菜单（3a → 3b），收轮后停在回滞带不升回。
 for (const lang of ["zh", "en"] as const) {
-  test(`#228 回滞 / 防闪（${lang}，CU 开）：1px 扫宽 3a↔3b 交界回滞 ≥8；交界带内两向进带各 3 轮——级别不回头、内容不变段内级别不变`, async () => {
+  test(`#228 回滞 / 防闪（${lang}，CU 开）：1px 扫宽 3a↔3b 交界回滞 ≥8；交界带内两向进带各 3 轮——开轮 / 收轮各至多 1 次换级、整体不回头、每帧单行、send 5/5`, async () => {
     const testInfo = test.info()
     test.setTimeout(300_000)
     const H = 480
@@ -1496,6 +1497,7 @@ for (const lang of ["zh", "en"] as const) {
         .catch(() => undefined)
       await idle()
       await window.waitForTimeout(400)
+      await hit5(window.getByTestId("composer-send"), `${lang} 收轮后 send`)
     }
     try {
       await sendComposer(window, window.getByTestId("composer-input"), lang === "en" ? "hello there" : "你好")
@@ -1533,44 +1535,59 @@ for (const lang of ["zh", "en"] as const) {
           await settleSidebar(window)
           const start = await stepOf(window)
           await window.evaluate(() => {
-            const w = window as unknown as { __hy?: { f: [string, string, number][]; run: boolean } }
-            const st = { f: [] as [string, string, number][], run: true }
+            const w = window as unknown as { __hy?: { f: [string, string, number, number, number][]; run: boolean } }
+            const st = { f: [] as [string, string, number, number, number][], run: true }
             w.__hy = st
             const loop = () => {
               if (!st.run) return
               const row = document.querySelector('[data-testid="composer-footer-row"]')
+              const act = document.querySelector('[data-testid="composer-send"],[data-testid="composer-stop"]')
               st.f.push([
                 `${row?.getAttribute("data-footer-density") ?? "?"}${row?.getAttribute("data-footer-overflow") ?? ""}`,
                 document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? "stop",
-                document.querySelector('[data-testid="computer-use-chip"]') ? 1 : 0
+                document.querySelector('[data-testid="computer-use-chip"]') ? 1 : 0,
+                row ? Math.round(row.getBoundingClientRect().height) : -1,
+                act ? Math.round(act.getBoundingClientRect().bottom) : -1
               ])
               requestAnimationFrame(loop)
             }
             requestAnimationFrame(loop)
           })
+          await hit5(window.getByTestId("composer-send"), `${lang} x=${x} 开轮前 send`)
           for (let k = 0; k < 3; k += 1) await turn()
           const f = await window.evaluate(() => {
-            const st = (window as unknown as { __hy: { f: [string, string, number][]; run: boolean } }).__hy
+            const st = (window as unknown as { __hy: { f: [string, string, number, number, number][]; run: boolean } }).__hy
             st.run = false
             return st.f
           })
           const levels = f.map((x) => x[0]).filter((k, i, a) => i === 0 || a[i - 1] !== k)
-          // 内容段：发送钮状态 + chip 在不在，任一变了就是新段；段内只许一个级
-          const segs: Array<{ key: string; levels: string[] }> = []
-          for (const [s, run, cu] of f) {
-            const key = `${run}|${cu}`
-            const last = segs[segs.length - 1]
-            if (!last || last.key !== key) segs.push({ key, levels: [s] })
-            else if (last.levels[last.levels.length - 1] !== s) last.levels.push(s)
+          // 口径 3 窗口：按「停止键在不在」切成开轮窗口 / 收轮窗口（第一段是开轮前的静止段）；
+          // 第 k 帧的换级算进第 k 帧所在窗口。每个窗口至多 1 次换级（单向、窗口内不出现已绘制的回跳）。
+          const wins: Array<{ run: boolean; levels: string[]; changes: number }> = []
+          for (let k = 0; k < f.length; k += 1) {
+            const [s, label] = f[k]!
+            const run = label === "stop"
+            const last = wins[wins.length - 1]
+            if (!last || last.run !== run) wins.push({ run, levels: [s], changes: k > 0 && f[k - 1]![0] !== s ? 1 : 0 })
+            else if (last.levels[last.levels.length - 1] !== s) {
+              last.levels.push(s)
+              last.changes += 1
+            }
           }
-          const mixed = segs.filter((g) => g.levels.length > 1).map((g) => `${g.key}:${g.levels.join(">")}`)
-          const line = JSON.stringify({ lang, x, from, start, frames: f.length, levels, segs: segs.length, mixed, keys: segs.map((g) => `${g.key}:${g.levels.join(">")}`).slice(0, 16) })
+          const winBad = wins.filter((g) => g.changes > 1).map((g) => `${g.run ? "开轮" : "收轮"}:${g.levels.join(">")}`)
+          const turns = wins.filter((g) => g.run).length
+          const maxRowH = Math.max(...f.map((r) => r[3]))
+          const maxActB = Math.max(...f.map((r) => r[4]))
+          const line = JSON.stringify({ lang, x, from, start, frames: f.length, levels, turns, winBad, maxRowH, maxActB, wins: wins.map((g) => `${g.run ? "R" : "I"}:${g.levels.join(">")}`).slice(0, 16), chip: [...new Set(f.map((r) => `${r[0]}|${r[2]}`))] })
           console.log(`[composer-733-oneline] hyst-flicker ${line}`)
           await testInfo.attach(`hyst-flicker-${lang}-${x}-${from}`, { body: line, contentType: "application/json" })
           expect.soft(f.length, `${lang} x=${x} from=${from} 有帧 ${line}`).toBeGreaterThan(30)
           expect.soft(levels[0], `${lang} x=${x} from=${from} 记录起点 = 进带后静态级 ${line}`).toBe(start)
           expect.soft(levelDirChanges(levels), `${lang} x=${x} from=${from} 整体级别不回头（方向变化 0 次）${line}`).toBe(0)
-          expect.soft(mixed, `${lang} x=${x} from=${from} 内容（发送钮 / chip）不变的段内级别不变 ${line}`).toEqual([])
+          expect.soft(turns, `${lang} x=${x} from=${from} 录到 3 轮开轮 ${line}`).toBe(3)
+          expect.soft(winBad, `${lang} x=${x} from=${from} 口径 3：开轮 / 收轮窗口内各至多 1 次换级 ${line}`).toEqual([])
+          expect.soft(maxRowH, `${lang} x=${x} from=${from} 每帧单行（行高 ≤ 46）${line}`).toBeLessThanOrEqual(46)
+          expect.soft(maxActB, `${lang} x=${x} from=${from} 发送 / 停止钮底 ≤ ${SEND_MAX_733} ${line}`).toBeLessThanOrEqual(SEND_MAX_733 + 0.5)
         }
       }
       expect(roErrors, "no ResizeObserver loop").toEqual([])
